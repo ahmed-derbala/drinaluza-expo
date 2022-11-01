@@ -1,0 +1,32 @@
+{
+  "name": "drinaluza-expo",
+  "version": "1.0.0",
+  "main": "node_modules/expo/AppEntry.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web",
+    "update:all": "ncu -u && npm run packages:install && npm run android",
+    "clean": "rm -f package-lock.json && rm -r -f node_modules",
+    "clean:install": "rm -f package-lock.json && rm -r -f node_modules && npm run update:all",
+    "start:code": "code . && npm run android",
+    "git": "git add . && git commit -m",
+    "postgit": "git push && npm run android",
+    "packages:install": "npm i --force"
+  },
+  "dependencies": {
+    "@react-navigation/bottom-tabs": "^6.4.0",
+    "axios": "^1.1.2",
+    "expo": "~46.0.15",
+    "expo-status-bar": "~1.4.0",
+    "react": "18.2.0",
+    "react-native": "0.70.3",
+    "react-native-elements": "^3.4.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.19.3",
+    "npm-check-updates": "^16.3.11"
+  },
+  "private": true
+}
