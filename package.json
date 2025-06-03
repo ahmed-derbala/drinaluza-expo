@@ -19,7 +19,7 @@
     "restore": "cp backups/package.json.backup package.json && cp backups/package-lock.json.backup package-lock.json && mv backups/node_modules.backup node_modules && npm run start:local",
     "ncu": "npm i -D npm-check-updates && ncu -u",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
-     "push": "npm run format && git add . && git commit -m",
+    "push": "npm run format && git add . && git commit -m",
     "postpush": "git push && npm run start:local",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
