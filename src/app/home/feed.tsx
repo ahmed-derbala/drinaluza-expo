@@ -1,46 +1,37 @@
+import React, { useEffect, useState } from 'react'
 import { View, Text, FlatList, StyleSheet } from 'react-native'
-import { useEffect, useState } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import axios from 'axios'
-import { useTheme } from '@/core/theme'
-import { FeedItem, FeedResponse } from '@/components/feed/feed.service'
+import { getFeed, FeedItem } from '@/components/feed/feed.api'
 
 export default function FeedScreen() {
-	const [feedData, setFeedData] = useState<FeedItem[]>([])
-	const { themeStyles } = useTheme()
+	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 
 	useEffect(() => {
 		const fetchFeed = async () => {
 			try {
-				const token = await AsyncStorage.getItem('authToken')
-				const response = await axios.get<FeedResponse>('http://192.168.1.15:5001/api/feed', {
-					headers: { Authorization: `Bearer ${token}` }
-				})
-				setFeedData(response.data.data.data)
+				const response = await getFeed()
+				setFeedItems(response.data.data)
 			} catch (error) {
-				console.error('Feed fetch error:', error)
-				alert('Failed to load feed')
+				console.error('Failed to fetch feed:', error)
 			}
 		}
 		fetchFeed()
 	}, [])
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
-		<View style={[styles.card, themeStyles.card]}>
-			<Text style={[styles.cardTitle, themeStyles.text]}>{item.name}</Text>
-			<Text style={themeStyles.text}>Business: {item.business.name}</Text>
-			<Text style={themeStyles.text}>Shop: {item.shops[0]?.name || 'N/A'}</Text>
-			<Text style={themeStyles.text}>
+		<View style={styles.card}>
+			<Text style={styles.cardTitle}>{item.name}</Text>
+			<Text style={styles.cardText}>Business: {item.business.name}</Text>
+			<Text style={styles.cardText}>Shop: {item.shops[0]?.name}</Text>
+			<Text style={styles.cardText}>Created by: {item.createdByUser.username}</Text>
+			<Text style={styles.cardText}>
 				Unit: {item.unit.name} (Min: {item.unit.min})
 			</Text>
-			<Text style={themeStyles.text}>Created By: {item.createdByUser.username}</Text>
-			<Text style={themeStyles.text}>Created At: {new Date(item.createdAt).toLocaleDateString()}</Text>
 		</View>
 	)
 
 	return (
-		<View style={[styles.container, themeStyles.background]}>
-			<FlatList data={feedData} renderItem={renderItem} keyExtractor={(item) => item._id} contentContainerStyle={styles.list} />
+		<View style={styles.container}>
+			<FlatList data={feedItems} renderItem={renderItem} keyExtractor={(item) => item._id} contentContainerStyle={styles.list} />
 		</View>
 	)
 }
@@ -48,20 +39,25 @@ export default function FeedScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		padding: 10
+		backgroundColor: '#1a1a1a'
 	},
 	list: {
-		paddingBottom: 20
+		padding: 10
 	},
 	card: {
+		backgroundColor: '#333',
 		padding: 15,
-		marginVertical: 10,
-		borderRadius: 8,
-		borderWidth: 1
+		marginBottom: 10,
+		borderRadius: 5
 	},
 	cardTitle: {
+		color: '#fff',
 		fontSize: 18,
 		fontWeight: 'bold',
 		marginBottom: 5
+	},
+	cardText: {
+		color: '#fff',
+		fontSize: 14
 	}
 })

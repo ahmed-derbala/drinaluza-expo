@@ -1,56 +1,36 @@
-import { View, Text, TextInput, Button, StyleSheet } from 'react-native'
-import { useState } from 'react'
+import React, { useState } from 'react'
+import { View, TextInput, Button, StyleSheet, Text } from 'react-native'
 import { useRouter } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import axios from 'axios'
-import { useTheme } from '@/core/theme'
+import { signIn, signUp } from '@/core/auth/auth.api'
 
 export default function AuthScreen() {
 	const [username, setUsername] = useState('')
 	const [password, setPassword] = useState('')
 	const router = useRouter()
-	const { themeStyles } = useTheme()
 
 	const handleSignIn = async () => {
 		try {
-			const response = await axios.post('http://192.168.1.15:5001/api/auth/signin', {
-				username,
-				password
-			})
-			await AsyncStorage.setItem('authToken', response.data.data.token)
+			await signIn(username, password)
 			router.replace('/home')
 		} catch (error) {
-			console.error('Sign-in error:', error)
-			alert('Sign-in failed')
+			console.error('Sign in failed:', error)
 		}
 	}
 
 	const handleSignUp = async () => {
 		try {
-			const response = await axios.post('http://192.168.1.15:5001/api/auth/signup', {
-				username,
-				password
-			})
-			await AsyncStorage.setItem('authToken', response.data.data.token)
+			await signUp(username, password)
 			router.replace('/home')
 		} catch (error) {
-			console.error('Sign-up error:', error)
-			alert('Sign-up failed')
+			console.error('Sign up failed:', error)
 		}
 	}
 
 	return (
-		<View style={[styles.container, themeStyles.background]}>
-			<Text style={[styles.title, themeStyles.text]}>Drinaluza</Text>
-			<TextInput style={[styles.input, themeStyles.input]} placeholder="Username" placeholderTextColor={themeStyles.input.placeholderTextColor} value={username} onChangeText={setUsername} />
-			<TextInput
-				style={[styles.input, themeStyles.input]}
-				placeholder="Password"
-				placeholderTextColor={themeStyles.input.placeholderTextColor}
-				value={password}
-				onChangeText={setPassword}
-				secureTextEntry
-			/>
+		<View style={styles.container}>
+			<Text style={styles.title}>Drinaluza</Text>
+			<TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
+			<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
 			<View style={styles.buttonContainer}>
 				<Button title="Sign In" onPress={handleSignIn} />
 				<Button title="Sign Up" onPress={handleSignUp} />
@@ -63,24 +43,27 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1,
 		justifyContent: 'center',
-		alignItems: 'center',
-		padding: 20
+		padding: 20,
+		backgroundColor: '#1a1a1a'
 	},
 	title: {
 		fontSize: 24,
-		marginBottom: 20
+		fontWeight: 'bold',
+		color: '#fff',
+		marginBottom: 20,
+		textAlign: 'center'
 	},
 	input: {
-		width: '100%',
-		padding: 10,
-		marginVertical: 10,
 		borderWidth: 1,
-		borderRadius: 5
+		borderColor: '#444',
+		padding: 10,
+		marginBottom: 10,
+		borderRadius: 5,
+		color: '#fff',
+		backgroundColor: '#333'
 	},
 	buttonContainer: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		width: '100%',
-		marginTop: 20
+		justifyContent: 'space-between'
 	}
 })

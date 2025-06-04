@@ -1,37 +1,58 @@
-import { View, Text, Button, StyleSheet } from 'react-native'
+import React, { useEffect, useState } from 'react'
+import { View, Text, Button, StyleSheet, Appearance } from 'react-native'
+import { Picker } from '@react-native-picker/picker'
 import { useRouter } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import axios from 'axios'
-import { useTheme } from '@/core/theme'
-import { useSettings } from '@/components/settings/settings.service'
+import { signOut } from '@/core/auth/auth.api'
+import { getTheme, setTheme, Theme } from '@/components/settings/settings.api'
 
 export default function SettingsScreen() {
+	const [theme, setThemeState] = useState<Theme>('dark')
 	const router = useRouter()
-	const { theme, setTheme, themeStyles } = useTheme()
-	const { handleSignOut } = useSettings()
 
-	const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
-		setTheme(newTheme)
+	useEffect(() => {
+		const loadTheme = async () => {
+			const savedTheme = await getTheme()
+			setThemeState(savedTheme)
+			applyTheme(savedTheme)
+		}
+		loadTheme()
+	}, [])
+
+	const applyTheme = (theme: Theme) => {
+		// In a real app, you'd implement theme switching logic here
+		// For simplicity, we're just storing the preference
+		if (theme === 'system') {
+			const systemTheme = Appearance.getColorScheme()
+			// Apply system theme
+		}
 	}
 
-	const signOut = async () => {
-		await handleSignOut()
-		router.replace('/auth')
+	const handleThemeChange = async (newTheme: Theme) => {
+		setThemeState(newTheme)
+		await setTheme(newTheme)
+		applyTheme(newTheme)
+	}
+
+	const handleSignOut = async () => {
+		try {
+			await signOut()
+			router.replace('/auth')
+		} catch (error) {
+			console.error('Sign out failed:', error)
+		}
 	}
 
 	return (
-		<View style={[styles.container, themeStyles.background]}>
-			<Text style={[styles.title, themeStyles.text]}>Settings</Text>
-			<View style={styles.section}>
-				<Text style={[styles.sectionTitle, themeStyles.text]}>Theme</Text>
-				<View style={styles.buttonGroup}>
-					<Button title="Light" onPress={() => handleThemeChange('light')} disabled={theme === 'light'} />
-					<Button title="Dark" onPress={() => handleThemeChange('dark')} disabled={theme === 'dark'} />
-					<Button title="System" onPress={() => handleThemeChange('system')} disabled={theme === 'system'} />
-				</View>
-			</View>
-			<View style={styles.section}>
-				<Button title="Sign Out" onPress={signOut} />
+		<View style={styles.container}>
+			<Text style={styles.title}>Settings</Text>
+			<Text style={styles.label}>Theme</Text>
+			<Picker selectedValue={theme} style={styles.picker} onValueChange={(value: Theme) => handleThemeChange(value)}>
+				<Picker.Item label="Dark" value="dark" />
+				<Picker.Item label="Light" value="light" />
+				<Picker.Item label="System" value="system" />
+			</Picker>
+			<View style={styles.button}>
+				<Button title="Sign Out" onPress={handleSignOut} />
 			</View>
 		</View>
 	)
@@ -40,21 +61,26 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1,
-		padding: 20
+		padding: 20,
+		backgroundColor: '#1a1a1a'
 	},
 	title: {
 		fontSize: 24,
+		fontWeight: 'bold',
+		color: '#fff',
 		marginBottom: 20
 	},
-	section: {
-		marginVertical: 20
-	},
-	sectionTitle: {
-		fontSize: 18,
+	label: {
+		fontSize: 16,
+		color: '#fff',
 		marginBottom: 10
 	},
-	buttonGroup: {
-		flexDirection: 'row',
-		justifyContent: 'space-between'
+	picker: {
+		backgroundColor: '#333',
+		color: '#fff',
+		marginBottom: 20
+	},
+	button: {
+		marginTop: 20
 	}
 })

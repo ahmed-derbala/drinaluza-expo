@@ -1,30 +1,21 @@
-import { Stack } from 'expo-router'
-import { ThemeProvider } from '@/core/theme'
+import { Slot } from 'expo-router'
 import { useEffect } from 'react'
-import { useRouter } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Appearance } from 'react-native'
+import { getTheme } from '@/components/settings/settings.api'
 
 export default function RootLayout() {
-	const router = useRouter()
-
 	useEffect(() => {
-		const checkToken = async () => {
-			const token = await AsyncStorage.getItem('authToken')
-			if (token) {
-				router.replace('/home')
+		const initializeTheme = async () => {
+			const theme = await getTheme()
+			if (theme === 'system') {
+				const systemTheme = Appearance.getColorScheme()
+				// Apply system theme
 			} else {
-				router.replace('/auth')
+				// Apply stored theme
 			}
 		}
-		checkToken()
+		initializeTheme()
 	}, [])
 
-	return (
-		<ThemeProvider>
-			<Stack screenOptions={{ headerShown: false }}>
-				<Stack.Screen name="auth" />
-				<Stack.Screen name="home" />
-			</Stack>
-		</ThemeProvider>
-	)
+	return <Slot />
 }
