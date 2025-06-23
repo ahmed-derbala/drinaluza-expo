@@ -4,8 +4,8 @@ import { useRouter } from 'expo-router'
 import { signIn, signUp } from '@/core/auth/auth.api'
 
 export default function AuthScreen() {
-	const [username, setUsername] = useState('')
-	const [password, setPassword] = useState('')
+	const [username, setUsername] = useState('ahmed')
+	const [password, setPassword] = useState('123')
 	const router = useRouter()
 
 	const handleSignIn = async () => {
