@@ -24,7 +24,7 @@ export default function FeedScreen() {
 			<Text style={styles.cardText}>Shop: {item.shops[0]?.name}</Text>
 			<Text style={styles.cardText}>Created by: {item.createdByUser.username}</Text>
 			<Text style={styles.cardText}>
-				Unit: {item.unit.name} (Min: {item.unit.min})
+				Unit: {item.price.unit.name} (Min: {item.price.unit.min})
 			</Text>
 		</View>
 	)
