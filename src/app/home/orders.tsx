@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, FlatList, StyleSheet } from 'react-native'
-import { getFeed } from '@/components/feed/feed.api'
-import { FeedItem } from '@/components/feed/feed.interface'
+import { getFeed } from '@/components/orders/orders.api'
+import { FeedItem } from '@/components/orders/orders.interface'
 
 export default function FeedScreen() {
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
@@ -18,14 +18,14 @@ export default function FeedScreen() {
 		fetchFeed()
 	}, [])
 
-	const renderItem = ({ item }: { item: FeedItem }) => (
+	const renderItem = ({ item }: { item: any }) => (
 		<View style={styles.card}>
 			<Text style={styles.cardTitle}>{item.name}</Text>
 			<Text style={styles.cardText}>Business: {item.business.name}</Text>
-			<Text style={styles.cardText}>Shop: {item.shops[0]?.name}</Text>
+			<Text style={styles.cardText}>Shop: {item.shop.name}</Text>
 			<Text style={styles.cardText}>Created by: {item.createdByUser.username}</Text>
 			<Text style={styles.cardText}>
-				Unit: {item.price.unit.name} (Min: {item.price.unit.min})
+				Unit: {item.products[0].product.price.unit.name} (Min: {item.products[0].product.price.unit.min})
 			</Text>
 		</View>
 	)

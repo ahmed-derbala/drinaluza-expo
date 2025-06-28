@@ -11,6 +11,7 @@
     "test": "jest --watchAll",
     "i": "npm i",
     "i:prod": "NODE_ENV=production npm ci --omit=dev",
+    "code": "codium . && npm run start:local",
     "clean": "npm run clean:only && npm run i && npm run start:local",
     "clean:prod": "rm -r -f node_modules  && npm run i:prod",
     "clean:only": "rm -f package-lock.json && rm -r -f node_modules ",

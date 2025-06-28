@@ -19,6 +19,8 @@ export default function HomeLayout() {
 	return (
 		<Tabs screenOptions={{ headerShown: false, tabBarStyle: { backgroundColor: '#1a1a1a' } }}>
 			<Tabs.Screen name="feed" options={{ title: 'Feed', tabBarActiveTintColor: '#fff' }} />
+			<Tabs.Screen name="orders" options={{ title: 'Orders', tabBarActiveTintColor: '#fff' }} />
+
 			<Tabs.Screen name="settings" options={{ title: 'Settings', tabBarActiveTintColor: '#fff' }} />
 		</Tabs>
 	)
