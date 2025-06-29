@@ -1,12 +1,26 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, FlatList, StyleSheet } from 'react-native'
+import { View, Text, FlatList, StyleSheet, Button, Alert } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getFeed } from '@/components/feed/feed.api'
 import { FeedItem } from '@/components/feed/feed.interface'
 
 export default function FeedScreen() {
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
+	const [basket, setBasket] = useState<FeedItem[]>([])
 
 	useEffect(() => {
+		// Load basket from storage on mount
+		const loadBasket = async () => {
+			try {
+				const storedBasket = await AsyncStorage.getItem('basket')
+				if (storedBasket) {
+					setBasket(JSON.parse(storedBasket))
+				}
+			} catch (error) {
+				console.error('Failed to load basket:', error)
+			}
+		}
+
 		const fetchFeed = async () => {
 			try {
 				const response = await getFeed()
@@ -15,18 +29,33 @@ export default function FeedScreen() {
 				console.error('Failed to fetch feed:', error)
 			}
 		}
+
+		loadBasket()
 		fetchFeed()
 	}, [])
+
+	const addToBasket = async (item: FeedItem) => {
+		try {
+			const newBasket = [...basket, item]
+			setBasket(newBasket)
+			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+			Alert.alert('Success', `${item.name} added to basket`)
+		} catch (error) {
+			console.error('Failed to add to basket:', error)
+			Alert.alert('Error', 'Failed to add item to basket')
+		}
+	}
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
 		<View style={styles.card}>
 			<Text style={styles.cardTitle}>{item.name}</Text>
 			<Text style={styles.cardText}>Business: {item.business.name}</Text>
-			<Text style={styles.cardText}>Shop: {item.shops[0]?.name}</Text>
+			<Text style={styles.cardText}>Shop: {item.shop?.name}</Text>
 			<Text style={styles.cardText}>Created by: {item.createdByUser.username}</Text>
 			<Text style={styles.cardText}>
 				Unit: {item.price.unit.name} (Min: {item.price.unit.min})
 			</Text>
+			{item.card.type === 'product' && <Button title="Add to Basket" onPress={() => addToBasket(item)} color="#007AFF" />}
 		</View>
 	)
 
@@ -59,6 +88,7 @@ const styles = StyleSheet.create({
 	},
 	cardText: {
 		color: '#fff',
-		fontSize: 14
+		fontSize: 14,
+		marginBottom: 5
 	}
 })

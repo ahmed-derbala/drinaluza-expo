@@ -1,4 +1,4 @@
-export interface FeedItem {
+export interface OrderItem {
 	_id: string
 	createdByUser: {
 		_id: string
@@ -33,7 +33,7 @@ export interface FeedItem {
 	updatedAt: string
 }
 
-export interface FeedResponse {
+export interface OrderResponse {
 	status: number
 	data: {
 		pagination: {
@@ -47,6 +47,6 @@ export interface FeedResponse {
 			prevPage: number | null
 			returnedDocsCount: number
 		}
-		data: FeedItem[]
+		data: OrderItem[]
 	}
 }

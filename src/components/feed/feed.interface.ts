@@ -12,12 +12,12 @@ export interface FeedItem {
 		createdAt: string
 		updatedAt: string
 	}
-	shops: Array<{
+	shop: {
 		_id: string
 		name: string
 		createdAt: string
 		updatedAt: string
-	}>
+	}
 	name: string
 	unit: {
 		name: string
