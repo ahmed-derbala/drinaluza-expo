@@ -16,3 +16,12 @@ export const createOrder = async ({ products }) => {
 	const response = await apiClient.post('/orders', body)
 	return response.data
 }
+
+export const cancelOrderAPI = async ({ orderId, by }) => {
+	let body = {}
+	let status = 'cancelled_by_user'
+	if (by === 'shop') status = 'cancelled_by_shop'
+	body.status = status
+	const response = await apiClient.patch('/orders/${orderId}/status', body)
+	return response.data
+}

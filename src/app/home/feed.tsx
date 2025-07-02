@@ -1,38 +1,52 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text, FlatList, StyleSheet, Button, Alert } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, FlatList, StyleSheet, Button, Alert, RefreshControl } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getFeed } from '@/components/feed/feed.api'
 import { FeedItem } from '@/components/feed/feed.interface'
+import { useFocusEffect } from '@react-navigation/native'
 
 export default function FeedScreen() {
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [basket, setBasket] = useState<FeedItem[]>([])
+	const [refreshing, setRefreshing] = useState(false)
 
-	useEffect(() => {
-		// Load basket from storage on mount
-		const loadBasket = async () => {
-			try {
-				const storedBasket = await AsyncStorage.getItem('basket')
-				if (storedBasket) {
-					setBasket(JSON.parse(storedBasket))
-				}
-			} catch (error) {
-				console.error('Failed to load basket:', error)
+	const loadBasket = async () => {
+		try {
+			const storedBasket = await AsyncStorage.getItem('basket')
+			if (storedBasket) {
+				setBasket(JSON.parse(storedBasket))
 			}
+		} catch (error) {
+			console.error('Failed to load basket:', error)
 		}
+	}
 
-		const fetchFeed = async () => {
-			try {
-				const response = await getFeed()
-				setFeedItems(response.data.data)
-			} catch (error) {
-				console.error('Failed to fetch feed:', error)
-			}
+	const fetchFeed = async () => {
+		try {
+			const response = await getFeed()
+			setFeedItems(response.data.data)
+		} catch (error) {
+			console.error('Failed to fetch feed:', error)
 		}
+	}
 
-		loadBasket()
-		fetchFeed()
+	const refreshData = useCallback(async () => {
+		setRefreshing(true)
+		await Promise.all([loadBasket(), fetchFeed()])
+		setRefreshing(false)
 	}, [])
+
+	// Refresh data when the Feed tab is focused
+	useFocusEffect(
+		useCallback(() => {
+			refreshData()
+		}, [refreshData])
+	)
+
+	// Initial load on mount (optional, as useFocusEffect will handle it)
+	useEffect(() => {
+		refreshData()
+	}, [refreshData])
 
 	const addToBasket = async (item: FeedItem) => {
 		try {
@@ -61,7 +75,13 @@ export default function FeedScreen() {
 
 	return (
 		<View style={styles.container}>
-			<FlatList data={feedItems} renderItem={renderItem} keyExtractor={(item) => item._id} contentContainerStyle={styles.list} />
+			<FlatList
+				data={feedItems}
+				renderItem={renderItem}
+				keyExtractor={(item) => item._id}
+				contentContainerStyle={styles.list}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} />}
+			/>
 		</View>
 	)
 }

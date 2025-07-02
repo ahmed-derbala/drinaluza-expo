@@ -1,12 +1,24 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { View, TextInput, Button, StyleSheet, Text } from 'react-native'
 import { useRouter } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { signIn, signUp } from '@/core/auth/auth.api'
 
 export default function AuthScreen() {
 	const [username, setUsername] = useState('ahmed')
 	const [password, setPassword] = useState('123')
 	const router = useRouter()
+
+	// 🔒 Check if already authenticated
+	useEffect(() => {
+		const checkIfAuthenticated = async () => {
+			const token = await AsyncStorage.getItem('authToken')
+			if (token) {
+				router.replace('/home')
+			}
+		}
+		checkIfAuthenticated()
+	}, [])
 
 	const handleSignIn = async () => {
 		try {

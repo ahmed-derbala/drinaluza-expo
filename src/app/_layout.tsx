@@ -2,6 +2,7 @@ import { Slot } from 'expo-router'
 import { useEffect } from 'react'
 import { Appearance } from 'react-native'
 import { getTheme } from '@/components/settings/settings.api'
+import React from 'react'
 
 export default function RootLayout() {
 	useEffect(() => {

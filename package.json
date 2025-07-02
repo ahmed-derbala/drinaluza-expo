@@ -1,7 +1,20 @@
 {
   "name": "drinaluza",
-  "main": "expo-router/entry",
   "version": "1.0.0",
+  "main": "expo-router/entry",
+  "description": "Frontend of drinaluza. A mobile first app to manage small businesses",
+  "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
+  "private": true,
+  "engines": {
+    "node": "24"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ahmed-derbala/drinaluza-expo"
+  },
+  "keywords": [
+    "drinaluza"
+  ],
   "scripts": {
     "start": "expo start",
     "start:local": "expo start -c",
@@ -33,10 +46,10 @@
     "@react-native-picker/picker": "2.11.1",
     "@react-navigation/native": "^7.1.14",
     "axios": "^1.10.0",
-    "expo": "~53.0.12",
-    "expo-font": "~13.3.1",
-    "expo-linking": "~7.1.5",
-    "expo-router": "~5.1.0",
+    "expo": "~53.0.15",
+    "expo-font": "~13.3.2",
+    "expo-linking": "~7.1.6",
+    "expo-router": "~5.1.2",
     "expo-secure-store": "^14.2.3",
     "expo-splash-screen": "~0.30.9",
     "expo-status-bar": "~2.2.3",
@@ -44,22 +57,21 @@
     "expo-web-browser": "~14.2.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "react-native": "0.80.0",
+    "react-native": "0.80.1",
     "react-native-appearance": "^0.3.4",
     "react-native-reanimated": "~3.18.0",
-    "react-native-safe-area-context": "5.5.0",
+    "react-native-safe-area-context": "5.5.1",
     "react-native-screens": "~4.11.1",
     "react-native-web": "~0.20.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.27.4",
+    "@babel/core": "^7.28.0",
     "@types/react": "~19.1.8",
     "jest": "^30.0.3",
-    "jest-expo": "~53.0.7",
+    "jest-expo": "~53.0.8",
     "npm-check-updates": "^18.0.1",
-    "prettier": "^3.6.1",
+    "prettier": "^3.6.2",
     "react-test-renderer": "19.1.0",
     "typescript": "~5.8.3"
-  },
-  "private": true
+  }
 }

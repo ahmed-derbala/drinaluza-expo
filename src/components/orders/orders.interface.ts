@@ -29,6 +29,7 @@ export interface OrderItem {
 		endDate: string | null
 		startDate: string
 	}
+	status: string
 	createdAt: string
 	updatedAt: string
 }

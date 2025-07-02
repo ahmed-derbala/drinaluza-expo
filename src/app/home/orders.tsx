@@ -1,37 +1,60 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Button } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Button, RefreshControl } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getOrder, createOrder } from '@/components/orders/orders.api'
+import { getOrder, createOrder, cancelOrderAPI } from '@/components/orders/orders.api'
 import { OrderItem } from '@/components/orders/orders.interface'
+import { useFocusEffect } from '@react-navigation/native'
 
 export default function OrdersScreen() {
 	const [orderItems, setOrderItems] = useState<OrderItem[]>([])
 	const [basket, setBasket] = useState<OrderItem[]>([])
 	const [selectedTab, setSelectedTab] = useState(0) // 0 for Basket, 1 for Orders
+	const [refreshing, setRefreshing] = useState(false)
 
-	useEffect(() => {
-		const loadBasket = async () => {
-			try {
-				const storedBasket = await AsyncStorage.getItem('basket')
-				//console.log(storedBasket)
-				if (storedBasket) setBasket(JSON.parse(storedBasket))
-			} catch (error) {
-				console.error('Failed to load basket:', error)
-			}
+	const loadBasket = async () => {
+		try {
+			const storedBasket = await AsyncStorage.getItem('basket')
+			if (storedBasket) setBasket(JSON.parse(storedBasket))
+		} catch (error) {
+			console.error('Failed to load basket:', error)
 		}
+	}
 
-		const fetchOrder = async () => {
-			try {
-				const response = await getOrder()
-				setOrderItems(response.data.data)
-			} catch (error) {
-				console.error('Failed to fetch order:', error)
-			}
+	const fetchOrder = async () => {
+		try {
+			const response = await getOrder()
+			setOrderItems(response.data.data)
+		} catch (error) {
+			console.error('Failed to fetch order:', error)
 		}
+	}
 
-		loadBasket()
-		fetchOrder()
-	}, [])
+	const refreshData = useCallback(async () => {
+		setRefreshing(true)
+		if (selectedTab === 0) {
+			await loadBasket()
+		} else {
+			await fetchOrder()
+		}
+		setRefreshing(false)
+	}, [selectedTab])
+
+	// Refresh data when the screen is focused or selectedTab changes
+	useFocusEffect(
+		useCallback(() => {
+			refreshData()
+		}, [refreshData, selectedTab])
+	)
+
+	// Handle tab switch and refresh
+	const handleTabSwitch = (tabIndex: number) => {
+		setSelectedTab(tabIndex)
+		// No need to call refreshData here since useFocusEffect will handle it via selectedTab dependency
+	}
+
+	const onRefresh = useCallback(() => {
+		refreshData()
+	}, [refreshData])
 
 	const addToBasket = async (item: OrderItem) => {
 		try {
@@ -76,33 +99,44 @@ export default function OrdersScreen() {
 		}))
 	}
 
-	const renderItem = ({ item }: { item: OrderItem }) => (
+	const renderOrderItem = ({ item }: { item: OrderItem }) => (
 		<View style={styles.card}>
 			<Text style={styles.cardTitle}>{item.name}</Text>
 			<Text style={styles.cardText}>Business: {item.business.name}</Text>
 			<Text style={styles.cardText}>Shop: {item?.shop?.name}</Text>
 			<Text style={styles.cardText}>Created by: {item.createdByUser.username}</Text>
-
-			{selectedTab === 1 ? (
-				<View style={styles.buttonContainer}>
-					<Button title="Add to Basket" onPress={() => addToBasket(item)} color="#007AFF" />
-				</View>
-			) : (
-				<View style={styles.buttonContainer}>
-					<Button title="Remove" onPress={() => removeFromBasket(item._id)} color="#FF3B30" />
-				</View>
-			)}
+			<Text style={styles.cardText}>Status: {item.status}</Text>
+			<View style={styles.buttonContainer}>
+				<Button title="Cancel" onPress={() => cancelOrder({ orderId: item._id })} color="#FF3B30" />
+			</View>
 		</View>
 	)
+
+	const handleBuy = async (shopItems: OrderItem[]) => {
+		try {
+			const response = await createOrder({ products: shopItems })
+			const remaining = basket.filter((item) => !shopItems.some((si) => si._id === item._id))
+			setBasket(remaining)
+			await AsyncStorage.setItem('basket', JSON.stringify(remaining))
+			Alert.alert('Success', 'Order placed successfully!')
+			// Refresh orders after placing an order
+			if (selectedTab === 1) {
+				await fetchOrder()
+			}
+		} catch (error) {
+			console.error('Failed to place order:', error)
+			Alert.alert('Error', 'Failed to place order')
+		}
+	}
 
 	return (
 		<View style={styles.container}>
 			{/* Top Bar Switch */}
 			<View style={styles.topBar}>
-				<TouchableOpacity style={[styles.tab, selectedTab === 0 && styles.activeTab]} onPress={() => setSelectedTab(0)}>
+				<TouchableOpacity style={[styles.tab, selectedTab === 0 && styles.activeTab]} onPress={() => handleTabSwitch(0)}>
 					<Text style={[styles.tabText, selectedTab === 0 && styles.activeTabText]}>Basket ({basket.length})</Text>
 				</TouchableOpacity>
-				<TouchableOpacity style={[styles.tab, selectedTab === 1 && styles.activeTab]} onPress={() => setSelectedTab(1)}>
+				<TouchableOpacity style={[styles.tab, selectedTab === 1 && styles.activeTab]} onPress={() => handleTabSwitch(1)}>
 					<Text style={[styles.tabText, selectedTab === 1 && styles.activeTabText]}>Orders</Text>
 				</TouchableOpacity>
 			</View>
@@ -127,28 +161,28 @@ export default function OrdersScreen() {
 						</View>
 					)}
 					contentContainerStyle={styles.list}
+					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
 				/>
 			) : (
-				<FlatList data={orderItems} renderItem={renderItem} keyExtractor={(item) => item._id} contentContainerStyle={styles.list} />
+				<FlatList
+					data={orderItems}
+					renderItem={renderOrderItem}
+					keyExtractor={(item) => item._id}
+					contentContainerStyle={styles.list}
+					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+				/>
 			)}
 		</View>
 	)
 }
 
-const handleBuy = async (shopItems: OrderItem[]) => {
+const cancelOrder = async ({ orderId }: { orderId: string }) => {
 	try {
-		//console.log(shopItems)
-		//console.log('*****')
-		const response = await createOrder({ products: shopItems })
-		// Optional: Remove bought items from basket
-		const remaining = basket.filter((item) => !shopItems.some((si) => si._id === item._id))
-		setBasket(remaining)
-		await AsyncStorage.setItem('basket', JSON.stringify(remaining))
-
-		Alert.alert('Success', 'Order placed successfully!')
+		await cancelOrderAPI({ orderId })
+		Alert.alert('Success', 'Order cancelled successfully')
 	} catch (error) {
-		console.error('Failed to place order:', error)
-		Alert.alert('Error', 'Failed to place order')
+		console.error('Failed to cancel order:', error)
+		Alert.alert('Error', 'Failed to cancel order')
 	}
 }
 
