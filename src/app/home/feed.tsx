@@ -4,6 +4,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getFeed } from '@/components/feed/feed.api'
 import { FeedItem } from '@/components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
+import { ProductCard } from '@/components/products/products.card' // adjust path as needed
+import { ProductType } from '@/components/products/products.type'
 
 export default function FeedScreen() {
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
@@ -60,18 +62,7 @@ export default function FeedScreen() {
 		}
 	}
 
-	const renderItem = ({ item }: { item: FeedItem }) => (
-		<View style={styles.card}>
-			<Text style={styles.cardTitle}>{item.name}</Text>
-			<Text style={styles.cardText}>Business: {item.business.name}</Text>
-			<Text style={styles.cardText}>Shop: {item.shop?.name}</Text>
-			<Text style={styles.cardText}>Created by: {item.createdByUser.username}</Text>
-			<Text style={styles.cardText}>
-				Unit: {item.price.unit.name} (Min: {item.price.unit.min})
-			</Text>
-			{item.card.type === 'product' && <Button title="Add to Basket" onPress={() => addToBasket(item)} color="#007AFF" />}
-		</View>
-	)
+	const renderItem = ({ item }: { item: ProductType }) => <ProductCard item={item} addToBasket={addToBasket} />
 
 	return (
 		<View style={styles.container}>
