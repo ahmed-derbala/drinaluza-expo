@@ -35,6 +35,8 @@ export default function FeedScreen() {
 	const refreshData = useCallback(async () => {
 		setRefreshing(true)
 		await Promise.all([loadBasket(), fetchFeed()])
+		const keys = await AsyncStorage.getAllKeys()
+		console.log(keys)
 		setRefreshing(false)
 	}, [])
 
