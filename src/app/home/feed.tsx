@@ -56,6 +56,13 @@ export default function FeedScreen() {
 			setFeedItems(response.data.data)
 		} catch (error) {
 			console.error('Failed to fetch feed:', error)
+			// Show user-friendly error message
+			Alert.alert('Network Error', 'Unable to connect to the server. Please check your server settings and ensure the server is running.', [
+				{
+					text: 'OK',
+					onPress: () => console.log('User acknowledged network error')
+				}
+			])
 		}
 	}
 

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Theme, ServerMode, ServerConfig, LocalServer } from './settings.interface'
+import { getApiUrl, getLocalApiUrl, defaultLocalServers, Environment } from '@/core/config'
 
 export const setTheme = async (theme: Theme) => {
 	await AsyncStorage.setItem('theme', theme)
@@ -21,16 +22,8 @@ export const getServerConfig = async (): Promise<ServerConfig> => {
 	}
 	return {
 		mode: 'local',
-		customUrl: '192.168.1.15',
-		localServers: [
-			{
-				id: 'default',
-				name: 'Default Local',
-				url: '192.168.1.15',
-				port: 5001,
-				lastUsed: Date.now()
-			}
-		]
+		customUrl: '10.173.243.120',
+		localServers: defaultLocalServers
 	}
 }
 
@@ -81,12 +74,16 @@ export const getBaseUrl = async (): Promise<string> => {
 		case 'local':
 			// Use the most recently used local server
 			const mostRecentServer = config.localServers.sort((a, b) => b.lastUsed - a.lastUsed)[0]
-			return `http://${mostRecentServer?.url || '192.168.1.15'}:${mostRecentServer?.port || 5001}/api`
+			if (mostRecentServer) {
+				return getLocalApiUrl(mostRecentServer.url, mostRecentServer.port)
+			}
+			// Fallback to default local server
+			return getLocalApiUrl('10.173.243.120', 5001)
 		case 'development':
-			return 'https://dev.drinaluza.com/api'
+			return getApiUrl('development')
 		case 'production':
-			return 'https://drinaluza.com/api'
+			return getApiUrl('production')
 		default:
-			return 'http://192.168.1.15:5001/api'
+			return getApiUrl('local')
 	}
 }

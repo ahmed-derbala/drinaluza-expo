@@ -15,8 +15,8 @@ export default function AuthScreen() {
 	const [username, setUsername] = useState('ahmed')
 	const [password, setPassword] = useState('123')
 	const [showServerSettings, setShowServerSettings] = useState(false)
-	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
-	const [customUrl, setCustomUrl] = useState('192.168.1.15')
+	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '10.173.243.120', localServers: [] })
+	const [customUrl, setCustomUrl] = useState('10.173.243.120')
 	const router = useRouter()
 
 	const styles = createThemedStyles((colors) => ({
@@ -127,6 +127,32 @@ export default function AuthScreen() {
 			color: colors.buttonText,
 			fontSize: 16,
 			fontWeight: '600'
+		},
+		clearStorageContainer: {
+			marginTop: 20,
+			paddingTop: 20,
+			borderTopWidth: 1,
+			borderTopColor: colors.border,
+			alignItems: 'center'
+		},
+		clearStorageButton: {
+			backgroundColor: '#ff4444',
+			padding: 12,
+			borderRadius: 8,
+			alignItems: 'center',
+			marginBottom: 8,
+			minWidth: 200
+		},
+		clearStorageButtonText: {
+			color: '#ffffff',
+			fontSize: 16,
+			fontWeight: '600'
+		},
+		clearStorageDescription: {
+			color: colors.textSecondary,
+			fontSize: 12,
+			textAlign: 'center',
+			paddingHorizontal: 20
 		}
 	}))(colors)
 
@@ -146,7 +172,7 @@ export default function AuthScreen() {
 		const loadServerConfig = async () => {
 			const savedServerConfig = await getServerConfig()
 			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '192.168.1.15')
+			setCustomUrl(savedServerConfig.customUrl || '10.173.243.120')
 		}
 		loadServerConfig()
 	}, [])
@@ -223,6 +249,39 @@ export default function AuthScreen() {
 		Alert.alert('Server Settings', 'Server configuration saved successfully!')
 	}
 
+	const handleClearStorage = () => {
+		Alert.alert('Clear Storage', 'This will delete all application data including login tokens, server settings, and cached data. Are you sure you want to continue?', [
+			{
+				text: 'Cancel',
+				style: 'cancel'
+			},
+			{
+				text: 'Clear All Data',
+				style: 'destructive',
+				onPress: async () => {
+					try {
+						// Clear all AsyncStorage data
+						await AsyncStorage.clear()
+
+						// Reset state to defaults
+						setUsername('ahmed')
+						setPassword('123')
+						setCustomUrl('10.173.243.120')
+						setServerConfigState({ mode: 'local', customUrl: '10.173.243.120', localServers: [] })
+
+						// Close the modal
+						setShowServerSettings(false)
+
+						Alert.alert('Success', 'All application data has been cleared. The app will restart fresh.')
+					} catch (error) {
+						console.error('Failed to clear storage:', error)
+						Alert.alert('Error', 'Failed to clear storage. Please try again.')
+					}
+				}
+			}
+		])
+	}
+
 	return (
 		<View style={styles.container}>
 			{/* Server Settings Button */}
@@ -254,12 +313,20 @@ export default function AuthScreen() {
 						{serverConfig.mode === 'local' && (
 							<View style={styles.inputContainer}>
 								<Text style={styles.inputLabel}>Local Server IP</Text>
-								<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="192.168.1.15" placeholderTextColor={colors.textSecondary} />
+								<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="10.173.243.120" placeholderTextColor={colors.textSecondary} />
 								<TouchableOpacity style={[styles.addButton, { marginTop: 8 }]} onPress={handleQuickAddServer}>
 									<Text style={styles.addButtonText}>Save to Servers</Text>
 								</TouchableOpacity>
 							</View>
 						)}
+
+						{/* Clear Storage Button */}
+						<View style={styles.clearStorageContainer}>
+							<TouchableOpacity style={styles.clearStorageButton} onPress={handleClearStorage}>
+								<Text style={styles.clearStorageButtonText}>🗑️ Clear All Data</Text>
+							</TouchableOpacity>
+							<Text style={styles.clearStorageDescription}>This will delete all app data including login tokens, settings, and cache</Text>
+						</View>
 
 						<View style={styles.modalButtonContainer}>
 							<Button title="Save" onPress={handleSaveServerSettings} />
