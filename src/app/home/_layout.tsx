@@ -1,9 +1,11 @@
+import React from 'react'
 import { Tabs } from 'expo-router'
 import { useEffect, useState } from 'react'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { StatusBar, View, Platform } from 'react-native'
+import { View, Platform } from 'react-native'
+import { StatusBar } from 'expo-status-bar'
 
 export default function HomeLayout() {
 	const router = useRouter()
@@ -48,15 +50,6 @@ export default function HomeLayout() {
 	return (
 		<SafeAreaProvider>
 			<SafeAreaView style={{ flex: 1, backgroundColor: '#1a1a1a' }} edges={['right', 'left']}>
-				{/* View to set status bar background color on Android */}
-				{Platform.OS === 'android' && (
-					<View
-						style={{
-							height: StatusBar.currentHeight || 0,
-							backgroundColor: '#1a1a1a'
-						}}
-					/>
-				)}
 				<StatusBar translucent={true} style="light" />
 				<Tabs
 					screenOptions={{
@@ -80,6 +73,8 @@ export default function HomeLayout() {
 							tabBarBadge: ordersCount !== undefined && ordersCount > 0 ? ordersCount : undefined
 						}}
 					/>
+					<Tabs.Screen name="shops" options={{ title: 'My Shops', tabBarActiveTintColor: '#fff' }} />
+					<Tabs.Screen name="profile" options={{ title: 'Profile', tabBarActiveTintColor: '#fff' }} />
 					<Tabs.Screen name="settings" options={{ title: 'Settings', tabBarActiveTintColor: '#fff' }} />
 				</Tabs>
 			</SafeAreaView>
