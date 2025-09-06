@@ -6,8 +6,10 @@ import { useRouter } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { useTheme } from '@/contexts/ThemeContext'
 
 export default function HomeLayout() {
+	const { colors, isDark } = useTheme()
 	const router = useRouter()
 	const [ordersCount, setOrdersCount] = useState<number | undefined>(undefined)
 
@@ -49,33 +51,33 @@ export default function HomeLayout() {
 
 	return (
 		<SafeAreaProvider>
-			<SafeAreaView style={{ flex: 1, backgroundColor: '#1a1a1a' }} edges={['right', 'left']}>
-				<StatusBar translucent={true} style="light" />
+			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['right', 'left']}>
+				<StatusBar translucent={true} style={isDark ? 'light' : 'dark'} />
 				<Tabs
 					screenOptions={{
 						headerShown: false,
 						tabBarStyle: {
-							backgroundColor: '#1a1a1a',
-							borderTopColor: '#333',
+							backgroundColor: colors.background,
+							borderTopColor: colors.border,
 							paddingBottom: 0,
 							height: 50
 						},
-						tabBarActiveTintColor: '#fff',
-						tabBarInactiveTintColor: '#aaa'
+						tabBarActiveTintColor: colors.primary,
+						tabBarInactiveTintColor: colors.textSecondary
 					}}
 				>
-					<Tabs.Screen name="feed" options={{ title: 'Feed', tabBarActiveTintColor: '#fff' }} />
+					<Tabs.Screen name="feed" options={{ title: 'Feed', tabBarActiveTintColor: colors.primary }} />
 					<Tabs.Screen
 						name="orders"
 						options={{
 							title: 'Orders',
-							tabBarActiveTintColor: '#fff',
+							tabBarActiveTintColor: colors.primary,
 							tabBarBadge: ordersCount !== undefined && ordersCount > 0 ? ordersCount : undefined
 						}}
 					/>
-					<Tabs.Screen name="shops" options={{ title: 'My Shops', tabBarActiveTintColor: '#fff' }} />
-					<Tabs.Screen name="profile" options={{ title: 'Profile', tabBarActiveTintColor: '#fff' }} />
-					<Tabs.Screen name="settings" options={{ title: 'Settings', tabBarActiveTintColor: '#fff' }} />
+					<Tabs.Screen name="shops" options={{ title: 'My Shops', tabBarActiveTintColor: colors.primary }} />
+					<Tabs.Screen name="profile" options={{ title: 'Profile', tabBarActiveTintColor: colors.primary }} />
+					<Tabs.Screen name="settings" options={{ title: 'Settings', tabBarActiveTintColor: colors.primary }} />
 				</Tabs>
 			</SafeAreaView>
 		</SafeAreaProvider>

@@ -6,11 +6,38 @@ import { FeedItem } from '@/components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
 import { ProductCard } from '@/components/products/products.card' // adjust path as needed
 import { ProductType } from '@/components/products/products.type'
+import { useTheme } from '@/contexts/ThemeContext'
+import { createThemedStyles, commonThemedStyles } from '@/core/theme/createThemedStyles'
 
 export default function FeedScreen() {
+	const { colors } = useTheme()
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [basket, setBasket] = useState<FeedItem[]>([])
 	const [refreshing, setRefreshing] = useState(false)
+
+	const styles = createThemedStyles((colors) => ({
+		...commonThemedStyles(colors),
+		container: {
+			flex: 1,
+			backgroundColor: colors.background
+		},
+		title: {
+			fontSize: 24,
+			fontWeight: 'bold',
+			color: colors.text,
+			marginBottom: 16,
+			paddingHorizontal: 16
+		},
+		emptyText: {
+			fontSize: 16,
+			color: colors.textSecondary,
+			textAlign: 'center',
+			marginTop: 50
+		},
+		list: {
+			padding: 10
+		}
+	}))(colors)
 
 	const loadBasket = async () => {
 		try {
@@ -78,30 +105,3 @@ export default function FeedScreen() {
 		</View>
 	)
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#1a1a1a'
-	},
-	list: {
-		padding: 10
-	},
-	card: {
-		backgroundColor: '#333',
-		padding: 15,
-		marginBottom: 10,
-		borderRadius: 5
-	},
-	cardTitle: {
-		color: '#fff',
-		fontSize: 18,
-		fontWeight: 'bold',
-		marginBottom: 5
-	},
-	cardText: {
-		color: '#fff',
-		fontSize: 14,
-		marginBottom: 5
-	}
-})
