@@ -11,8 +11,8 @@ import { Theme, LocalServer } from '@/components/settings/settings.interface'
 
 export default function SettingsScreen() {
 	const { theme, colors, setTheme } = useTheme()
-	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '10.173.243.120', localServers: [] })
-	const [customUrl, setCustomUrl] = useState('10.173.243.120')
+	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
+	const [customUrl, setCustomUrl] = useState('192.168.1.15')
 	const [showLocalServers, setShowLocalServers] = useState(false)
 	const [showAddServer, setShowAddServer] = useState(false)
 	const [newServerName, setNewServerName] = useState('')
@@ -149,7 +149,7 @@ export default function SettingsScreen() {
 		const loadServerSettings = async () => {
 			const savedServerConfig = await getServerConfig()
 			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '10.173.243.120')
+			setCustomUrl(savedServerConfig.customUrl || '192.168.1.15')
 		}
 		loadServerSettings()
 	}, [])
@@ -310,7 +310,7 @@ export default function SettingsScreen() {
 
 					<View style={styles.inputContainer}>
 						<Text style={styles.inputLabel}>Quick Add Server</Text>
-						<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="10.173.243.120" placeholderTextColor={colors.textSecondary} />
+						<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="192.168.1.15" placeholderTextColor={colors.textSecondary} />
 					</View>
 				</>
 			)}
@@ -348,7 +348,7 @@ export default function SettingsScreen() {
 						<TextInput style={styles.textInput} value={newServerName} onChangeText={setNewServerName} placeholder="My Development Server" placeholderTextColor={colors.textSecondary} />
 
 						<Text style={styles.inputLabel}>Server URL</Text>
-						<TextInput style={styles.textInput} value={newServerUrl} onChangeText={setNewServerUrl} placeholder="10.173.243.120" placeholderTextColor={colors.textSecondary} />
+						<TextInput style={styles.textInput} value={newServerUrl} onChangeText={setNewServerUrl} placeholder="192.168.1.15" placeholderTextColor={colors.textSecondary} />
 
 						<Text style={styles.inputLabel}>Port</Text>
 						<TextInput style={styles.textInput} value={newServerPort} onChangeText={setNewServerPort} placeholder="5001" placeholderTextColor={colors.textSecondary} keyboardType="numeric" />

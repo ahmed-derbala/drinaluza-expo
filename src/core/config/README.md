@@ -15,7 +15,7 @@ const devConfig = getConfig('development')
 const prodConfig = getConfig('production')
 
 // Get API URLs
-const localApiUrl = getApiUrl('local') // http://10.173.243.120/api
+const localApiUrl = getApiUrl('local') // http://192.168.1.15/api
 const devApiUrl = getApiUrl('development') // https://dev.drinaluza.com/api
 const prodApiUrl = getApiUrl('production') // https://drinaluza.com/api
 

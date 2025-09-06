@@ -26,7 +26,7 @@ const configs: Record<Environment, AppConfig> = {
 		version: '1.0.0',
 		environment: 'local',
 		server: {
-			baseUrl: 'http://10.173.243.120',
+			baseUrl: 'http://192.168.1.15',
 			apiPath: '/api',
 			timeout: 10000,
 			retryAttempts: 3
@@ -76,14 +76,14 @@ export const defaultLocalServers = [
 	{
 		id: 'default',
 		name: 'Default Local',
-		url: '10.173.243.120',
+		url: '192.168.1.15',
 		port: 5001,
 		lastUsed: Date.now()
 	},
 	{
 		id: 'backup',
 		name: 'Backup Local',
-		url: '10.173.243.120',
+		url: '192.168.1.15',
 		port: 5001,
 		lastUsed: Date.now() - 86400000 // 1 day ago
 	}

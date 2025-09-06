@@ -51,8 +51,8 @@ export default function HomeLayout() {
 
 	return (
 		<SafeAreaProvider>
-			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['right', 'left']}>
-				<StatusBar translucent={true} style={isDark ? 'light' : 'dark'} />
+			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'right', 'left']}>
+				<StatusBar translucent={false} style={isDark ? 'light' : 'dark'} />
 				<Tabs
 					screenOptions={{
 						headerShown: false,

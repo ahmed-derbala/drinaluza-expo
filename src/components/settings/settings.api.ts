@@ -18,11 +18,16 @@ export const setServerConfig = async (config: ServerConfig) => {
 export const getServerConfig = async (): Promise<ServerConfig> => {
 	const config = await AsyncStorage.getItem('serverConfig')
 	if (config) {
-		return JSON.parse(config)
+		const parsedConfig = JSON.parse(config)
+		// Ensure localServers is always an array
+		if (!parsedConfig.localServers || !Array.isArray(parsedConfig.localServers)) {
+			parsedConfig.localServers = defaultLocalServers
+		}
+		return parsedConfig
 	}
 	return {
 		mode: 'local',
-		customUrl: '10.173.243.120',
+		customUrl: '192.168.1.15',
 		localServers: defaultLocalServers
 	}
 }
@@ -33,6 +38,11 @@ export const addLocalServer = async (server: Omit<LocalServer, 'id' | 'lastUsed'
 		...server,
 		id: Date.now().toString(),
 		lastUsed: Date.now()
+	}
+
+	// Ensure localServers is initialized as an array
+	if (!config.localServers || !Array.isArray(config.localServers)) {
+		config.localServers = []
 	}
 
 	// Add to the beginning of the array
@@ -49,6 +59,13 @@ export const addLocalServer = async (server: Omit<LocalServer, 'id' | 'lastUsed'
 
 export const updateLocalServer = async (id: string, updates: Partial<Omit<LocalServer, 'id'>>): Promise<void> => {
 	const config = await getServerConfig()
+
+	// Ensure localServers is initialized as an array
+	if (!config.localServers || !Array.isArray(config.localServers)) {
+		config.localServers = []
+		return // No servers to update
+	}
+
 	const serverIndex = config.localServers.findIndex((server) => server.id === id)
 
 	if (serverIndex !== -1) {
@@ -63,6 +80,13 @@ export const updateLocalServer = async (id: string, updates: Partial<Omit<LocalS
 
 export const removeLocalServer = async (id: string): Promise<void> => {
 	const config = await getServerConfig()
+
+	// Ensure localServers is initialized as an array
+	if (!config.localServers || !Array.isArray(config.localServers)) {
+		config.localServers = []
+		return // No servers to remove
+	}
+
 	config.localServers = config.localServers.filter((server) => server.id !== id)
 	await setServerConfig(config)
 }
@@ -73,12 +97,16 @@ export const getBaseUrl = async (): Promise<string> => {
 	switch (config.mode) {
 		case 'local':
 			// Use the most recently used local server
+			// Ensure localServers is initialized as an array
+			if (!config.localServers || !Array.isArray(config.localServers)) {
+				config.localServers = defaultLocalServers
+			}
 			const mostRecentServer = config.localServers.sort((a, b) => b.lastUsed - a.lastUsed)[0]
 			if (mostRecentServer) {
 				return getLocalApiUrl(mostRecentServer.url, mostRecentServer.port)
 			}
 			// Fallback to default local server
-			return getLocalApiUrl('10.173.243.120', 5001)
+			return getLocalApiUrl('192.168.1.15', 5001)
 		case 'development':
 			return getApiUrl('development')
 		case 'production':

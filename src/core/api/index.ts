@@ -81,7 +81,7 @@ updateApiBaseUrl()
 // Utility function to test server connectivity
 export const testServerConnection = async (): Promise<{ success: boolean; error?: string }> => {
 	try {
-		const response = await apiClient.get('/health', { timeout: 5000 })
+		const response = await apiClient.get('/', { timeout: 5000 })
 		return { success: true }
 	} catch (error: any) {
 		if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {

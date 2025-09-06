@@ -3,6 +3,8 @@ import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, Modal, Ale
 import { Picker } from '@react-native-picker/picker'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { StatusBar } from 'expo-status-bar'
 import { signIn, signUp } from '@/core/auth/auth.api'
 import { getServerConfig, setServerConfig, addLocalServer } from '@/components/settings/settings.api'
 import { ServerMode, ServerConfig } from '@/components/settings/settings.interface'
@@ -11,12 +13,12 @@ import { useTheme } from '@/contexts/ThemeContext'
 import { createThemedStyles, commonThemedStyles } from '@/core/theme/createThemedStyles'
 
 export default function AuthScreen() {
-	const { colors } = useTheme()
+	const { colors, isDark } = useTheme()
 	const [username, setUsername] = useState('ahmed')
 	const [password, setPassword] = useState('123')
 	const [showServerSettings, setShowServerSettings] = useState(false)
-	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '10.173.243.120', localServers: [] })
-	const [customUrl, setCustomUrl] = useState('10.173.243.120')
+	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
+	const [customUrl, setCustomUrl] = useState('192.168.1.15')
 	const router = useRouter()
 
 	const styles = createThemedStyles((colors) => ({
@@ -172,7 +174,7 @@ export default function AuthScreen() {
 		const loadServerConfig = async () => {
 			const savedServerConfig = await getServerConfig()
 			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '10.173.243.120')
+			setCustomUrl(savedServerConfig.customUrl || '192.168.1.15')
 		}
 		loadServerConfig()
 	}, [])
@@ -266,8 +268,8 @@ export default function AuthScreen() {
 						// Reset state to defaults
 						setUsername('ahmed')
 						setPassword('123')
-						setCustomUrl('10.173.243.120')
-						setServerConfigState({ mode: 'local', customUrl: '10.173.243.120', localServers: [] })
+						setCustomUrl('192.168.1.15')
+						setServerConfigState({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
 
 						// Close the modal
 						setShowServerSettings(false)
@@ -283,58 +285,63 @@ export default function AuthScreen() {
 	}
 
 	return (
-		<View style={styles.container}>
-			{/* Server Settings Button */}
-			<TouchableOpacity style={styles.serverSettingsButton} onPress={() => setShowServerSettings(true)}>
-				<Text style={styles.serverSettingsButtonText}>⚙️</Text>
-			</TouchableOpacity>
+		<SafeAreaProvider>
+			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'right', 'left']}>
+				<StatusBar translucent={false} style={isDark ? 'light' : 'dark'} />
+				<View style={styles.container}>
+					{/* Server Settings Button */}
+					<TouchableOpacity style={styles.serverSettingsButton} onPress={() => setShowServerSettings(true)}>
+						<Text style={styles.serverSettingsButtonText}>⚙️</Text>
+					</TouchableOpacity>
 
-			<Text style={styles.title}>Drinaluza</Text>
-			<TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
-			<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-			<View style={styles.buttonContainer}>
-				<Button title="Sign In" onPress={handleSignIn} />
-				<Button title="Sign Up" onPress={handleSignUp} />
-			</View>
-
-			{/* Server Settings Modal */}
-			<Modal visible={showServerSettings} animationType="slide" transparent={true} onRequestClose={() => setShowServerSettings(false)}>
-				<View style={styles.modalOverlay}>
-					<View style={styles.modalContent}>
-						<Text style={styles.modalTitle}>Server Settings</Text>
-
-						<Text style={styles.modalLabel}>Server Mode</Text>
-						<Picker selectedValue={serverConfig.mode} style={styles.modalPicker} onValueChange={(value: ServerMode) => handleServerModeChange(value)}>
-							<Picker.Item label="Local" value="local" />
-							<Picker.Item label="Development" value="development" />
-							<Picker.Item label="Production" value="production" />
-						</Picker>
-
-						{serverConfig.mode === 'local' && (
-							<View style={styles.inputContainer}>
-								<Text style={styles.inputLabel}>Local Server IP</Text>
-								<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="10.173.243.120" placeholderTextColor={colors.textSecondary} />
-								<TouchableOpacity style={[styles.addButton, { marginTop: 8 }]} onPress={handleQuickAddServer}>
-									<Text style={styles.addButtonText}>Save to Servers</Text>
-								</TouchableOpacity>
-							</View>
-						)}
-
-						{/* Clear Storage Button */}
-						<View style={styles.clearStorageContainer}>
-							<TouchableOpacity style={styles.clearStorageButton} onPress={handleClearStorage}>
-								<Text style={styles.clearStorageButtonText}>🗑️ Clear All Data</Text>
-							</TouchableOpacity>
-							<Text style={styles.clearStorageDescription}>This will delete all app data including login tokens, settings, and cache</Text>
-						</View>
-
-						<View style={styles.modalButtonContainer}>
-							<Button title="Save" onPress={handleSaveServerSettings} />
-							<Button title="Cancel" onPress={() => setShowServerSettings(false)} />
-						</View>
+					<Text style={styles.title}>Drinaluza</Text>
+					<TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
+					<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+					<View style={styles.buttonContainer}>
+						<Button title="Sign In" onPress={handleSignIn} />
+						<Button title="Sign Up" onPress={handleSignUp} />
 					</View>
+
+					{/* Server Settings Modal */}
+					<Modal visible={showServerSettings} animationType="slide" transparent={true} onRequestClose={() => setShowServerSettings(false)}>
+						<View style={styles.modalOverlay}>
+							<View style={styles.modalContent}>
+								<Text style={styles.modalTitle}>Server Settings</Text>
+
+								<Text style={styles.modalLabel}>Server Mode</Text>
+								<Picker selectedValue={serverConfig.mode} style={styles.modalPicker} onValueChange={(value: ServerMode) => handleServerModeChange(value)}>
+									<Picker.Item label="Local" value="local" />
+									<Picker.Item label="Development" value="development" />
+									<Picker.Item label="Production" value="production" />
+								</Picker>
+
+								{serverConfig.mode === 'local' && (
+									<View style={styles.inputContainer}>
+										<Text style={styles.inputLabel}>Local Server IP</Text>
+										<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="192.168.1.15" placeholderTextColor={colors.textSecondary} />
+										<TouchableOpacity style={[styles.addButton, { marginTop: 8 }]} onPress={handleQuickAddServer}>
+											<Text style={styles.addButtonText}>Save to Servers</Text>
+										</TouchableOpacity>
+									</View>
+								)}
+
+								{/* Clear Storage Button */}
+								<View style={styles.clearStorageContainer}>
+									<TouchableOpacity style={styles.clearStorageButton} onPress={handleClearStorage}>
+										<Text style={styles.clearStorageButtonText}>🗑️ Clear All Data</Text>
+									</TouchableOpacity>
+									<Text style={styles.clearStorageDescription}>This will delete all app data including login tokens, settings, and cache</Text>
+								</View>
+
+								<View style={styles.modalButtonContainer}>
+									<Button title="Save" onPress={handleSaveServerSettings} />
+									<Button title="Cancel" onPress={() => setShowServerSettings(false)} />
+								</View>
+							</View>
+						</View>
+					</Modal>
 				</View>
-			</Modal>
-		</View>
+			</SafeAreaView>
+		</SafeAreaProvider>
 	)
 }
