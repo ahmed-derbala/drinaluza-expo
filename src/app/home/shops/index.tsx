@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Modal, TextInput, Alert } from 'react-native'
+import { useRouter } from 'expo-router'
 import { getMyShops, createShop } from '@/components/shops/shops.api'
 import { Shop, CreateShopRequest } from '@/components/shops/shops.interface'
 
 export default function ShopsScreen() {
+	const router = useRouter()
 	const [shops, setShops] = useState<Shop[]>([])
 	const [loading, setLoading] = useState<boolean>(true)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
@@ -29,6 +31,16 @@ export default function ShopsScreen() {
 	useEffect(() => {
 		loadShops()
 	}, [])
+
+	const handleShopPress = (shop: Shop) => {
+		router.push({
+			pathname: '/home/shops/[shopId]/products',
+			params: {
+				shopId: shop._id,
+				shopName: shop.name
+			}
+		})
+	}
 
 	const onRefresh = () => {
 		setRefreshing(true)
@@ -93,19 +105,22 @@ export default function ShopsScreen() {
 				keyExtractor={(item) => item._id}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" colors={['#fff']} />}
 				renderItem={({ item }) => (
-					<View style={styles.card}>
-						<Text style={styles.shopName}>{item.name || 'Unnamed Shop'}</Text>
-						{item.createdByUser && (
-							<Text style={styles.meta}>
-								Owner: {item.createdByUser.name} (@{item.createdByUser.username})
-							</Text>
-						)}
-						{item.location?.coordinates && item.location.coordinates.length === 2 && (
-							<Text style={styles.meta}>{`Location: (${item.location.coordinates[1].toFixed(4)}, ${item.location.coordinates[0].toFixed(4)})`}</Text>
-						)}
-						{typeof item.deliveryRadiusKm === 'number' && <Text style={styles.meta}>{`Delivery radius: ${item.deliveryRadiusKm} km`}</Text>}
-						<Text style={styles.status}>{item.isActive ? 'Active' : 'Inactive'}</Text>
-					</View>
+					<TouchableOpacity onPress={() => handleShopPress(item)}>
+						<View style={styles.card}>
+							<Text style={styles.shopName}>{item.name || 'Unnamed Shop'}</Text>
+							{item.owner && (
+								<Text style={styles.meta}>
+									Owner: {item.owner.name} (@{item.owner.slug})
+								</Text>
+							)}
+							{item.location?.coordinates && item.location.coordinates.length === 2 && (
+								<Text style={styles.meta}>{`Location: (${item.location.coordinates[1].toFixed(4)}, ${item.location.coordinates[0].toFixed(4)})`}</Text>
+							)}
+							{typeof item.deliveryRadiusKm === 'number' && <Text style={styles.meta}>{`Delivery radius: ${item.deliveryRadiusKm} km`}</Text>}
+							<Text style={styles.status}>{item.isActive ? 'Active' : 'Inactive'}</Text>
+							<Text style={styles.tapHint}>Tap to view products →</Text>
+						</View>
+					</TouchableOpacity>
 				)}
 				ListEmptyComponent={<Text style={styles.meta}>You have no shops yet.</Text>}
 				contentContainerStyle={{ paddingBottom: 100 }}
@@ -205,6 +220,12 @@ const styles = StyleSheet.create({
 	status: {
 		marginTop: 4,
 		color: '#9ad36a'
+	},
+	tapHint: {
+		marginTop: 8,
+		color: '#007AFF',
+		fontSize: 14,
+		fontStyle: 'italic'
 	},
 	modalOverlay: {
 		flex: 1,

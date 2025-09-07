@@ -3,9 +3,9 @@ export type GeoPoint = {
 	coordinates: [number, number]
 }
 
-export type CreatedByUser = {
+export type Owner = {
 	_id: string
-	username: string
+	slug: string
 	name: string
 	updatedAt?: string
 }
@@ -13,7 +13,7 @@ export type CreatedByUser = {
 export type Shop = {
 	_id: string
 	name: string
-	createdByUser: CreatedByUser
+	owner: Owner
 	location?: GeoPoint
 	address?: unknown
 	operatingHours?: Record<string, unknown>

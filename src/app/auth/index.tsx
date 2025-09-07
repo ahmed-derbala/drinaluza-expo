@@ -14,7 +14,7 @@ import { createThemedStyles, commonThemedStyles } from '@/core/theme/createTheme
 
 export default function AuthScreen() {
 	const { colors, isDark } = useTheme()
-	const [username, setUsername] = useState('ahmed')
+	const [slug, setUsername] = useState('ahmed')
 	const [password, setPassword] = useState('123')
 	const [showServerSettings, setShowServerSettings] = useState(false)
 	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
@@ -181,7 +181,7 @@ export default function AuthScreen() {
 
 	const handleSignIn = async () => {
 		try {
-			await signIn(username, password)
+			await signIn(slug, password)
 			router.push('/home' as any)
 		} catch (error) {
 			console.error('Sign in failed:', error)
@@ -190,7 +190,7 @@ export default function AuthScreen() {
 
 	const handleSignUp = async () => {
 		try {
-			await signUp(username, password)
+			await signUp(slug, password)
 			router.push('/home' as any)
 		} catch (error) {
 			console.error('Sign up failed:', error)
@@ -295,7 +295,7 @@ export default function AuthScreen() {
 					</TouchableOpacity>
 
 					<Text style={styles.title}>Drinaluza</Text>
-					<TextInput style={styles.input} placeholder="Username" value={username} onChangeText={setUsername} />
+					<TextInput style={styles.input} placeholder="Username" value={slug} onChangeText={setUsername} />
 					<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
 					<View style={styles.buttonContainer}>
 						<Button title="Sign In" onPress={handleSignIn} />

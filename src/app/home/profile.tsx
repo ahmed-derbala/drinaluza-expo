@@ -15,7 +15,7 @@ interface UserProfile {
 }
 
 interface UserData {
-	username: string
+	slug: string
 	name: string
 	email: string
 	phone: {
@@ -38,7 +38,7 @@ interface UserData {
 
 export default function ProfileScreen() {
 	const [userData, setUserData] = useState<UserData>({
-		username: '',
+		slug: '',
 		name: '',
 		email: '',
 		phone: {
@@ -84,10 +84,10 @@ export default function ProfileScreen() {
 				}
 				setUserData(parsed)
 			} else {
-				// Fallback to old username storage
-				const storedUsername = await AsyncStorage.getItem('user.username')
+				// Fallback to old slug storage
+				const storedUsername = await AsyncStorage.getItem('user.slug')
 				if (storedUsername) {
-					setUserData((prev) => ({ ...prev, username: storedUsername }))
+					setUserData((prev) => ({ ...prev, slug: storedUsername }))
 				}
 			}
 		} catch (e) {
@@ -171,9 +171,9 @@ export default function ProfileScreen() {
 				<View style={styles.fieldGroup}>
 					<Text style={styles.label}>Username</Text>
 					{isEditing ? (
-						<TextInput style={styles.input} value={userData.username} onChangeText={(value) => updateField('username', value)} placeholder="Enter username" placeholderTextColor="#666" />
+						<TextInput style={styles.input} value={userData.slug} onChangeText={(value) => updateField('slug', value)} placeholder="Enter slug" placeholderTextColor="#666" />
 					) : (
-						<Text style={styles.value}>{userData.username || 'Not set'}</Text>
+						<Text style={styles.value}>{userData.slug || 'Not set'}</Text>
 					)}
 				</View>
 
