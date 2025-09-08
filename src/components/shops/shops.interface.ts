@@ -42,7 +42,10 @@ export type ShopsData = {
 
 export type ShopsResponse = {
 	status: number
-	data: ShopsData
+	data: {
+		pagination: Pagination
+		data: Shop[]
+	}
 	req: {
 		headers: {
 			tid: string

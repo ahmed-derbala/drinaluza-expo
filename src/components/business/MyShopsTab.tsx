@@ -1,306 +1,498 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Modal, TextInput, Alert } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react'
+import {
+	View,
+	Text,
+	FlatList,
+	StyleSheet,
+	RefreshControl,
+	TouchableOpacity,
+	Modal,
+	TextInput,
+	Alert,
+	ActivityIndicator,
+	KeyboardAvoidingView,
+	Platform,
+	ScrollView,
+	ViewStyle,
+	TextInput as RNTextInput,
+	TextStyle
+} from 'react-native'
 import { useRouter } from 'expo-router'
 import { getMyShops, createShop } from '@/components/shops/shops.api'
 import { Shop, CreateShopRequest } from '@/components/shops/shops.interface'
 import { useFocusEffect } from '@react-navigation/native'
+import { useTheme } from '@/contexts/ThemeContext'
+import { debounce } from 'lodash'
 
-export default function MyShopsTab() {
+interface ThemeType {
+	primary: string
+	text: string
+	textSecondary: string
+	background: string
+	card: string
+	border: string
+}
+
+interface ShopItemProps {
+	shop: Shop
+	isNavigating: boolean
+	onPress: (shop: Shop) => void
+	theme: ThemeType
+}
+
+interface CreateShopFormProps {
+	visible: boolean
+	loading: boolean
+	shopName: string
+	deliveryRadius: string
+	onShopNameChange: (text: string) => void
+	onDeliveryRadiusChange: (text: string) => void
+	onSubmit: () => void
+	onDismiss: () => void
+	theme: ThemeType & { textSecondary: string }
+}
+
+interface ShopState {
+	shops: Shop[]
+	loading: boolean
+	refreshing: boolean
+	modalVisible: boolean
+	shopName: string
+	deliveryRadius: string
+	creating: boolean
+	navigatingShopId: string | null
+	error: string | null
+}
+
+const DEBOUNCE_DELAY = 300
+const MIN_SHOP_NAME_LENGTH = 3
+const MAX_SHOP_NAME_LENGTH = 50
+
+const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPress, theme }) => (
+	<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating}>
+		<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+			<View style={styles.shopHeader}>
+				<Text style={[styles.shopName, { color: theme.text }]}>{shop.name || 'Unnamed Shop'}</Text>
+				{isNavigating && <ActivityIndicator size="small" color={theme.primary} style={styles.loadingIndicator} />}
+			</View>
+			{shop.owner && (
+				<Text style={[styles.meta, { color: theme.textSecondary }]}>
+					Owner: {shop.owner.name} (@{shop.owner.slug})
+				</Text>
+			)}
+			{shop.location?.coordinates?.length === 2 && (
+				<Text style={[styles.meta, { color: theme.textSecondary }]}>
+					Location: ({shop.location.coordinates[1].toFixed(4)}, {shop.location.coordinates[0].toFixed(4)})
+				</Text>
+			)}
+			{typeof shop.deliveryRadiusKm === 'number' && <Text style={[styles.meta, { color: theme.textSecondary }]}>Delivery radius: {shop.deliveryRadiusKm} km</Text>}
+			<Text style={[styles.status, { color: shop.isActive ? '#4CAF50' : '#F44336' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
+			<Text style={[styles.tapHint, { color: theme.primary }]}>Tap to view products →</Text>
+		</View>
+	</TouchableOpacity>
+))
+
+const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(({ visible, loading, shopName, deliveryRadius, onShopNameChange, onDeliveryRadiusChange, onSubmit, onDismiss, theme }) => {
+	const deliveryRadiusInputRef = useRef<RNTextInput>(null)
+	const isFormValid = shopName.trim().length >= MIN_SHOP_NAME_LENGTH && shopName.trim().length <= MAX_SHOP_NAME_LENGTH
+
+	return (
+		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+				<View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+					<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Shop</Text>
+
+					<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name</Text>
+					<TextInput
+						style={[
+							styles.input,
+							{
+								borderColor: theme.border,
+								color: theme.text,
+								backgroundColor: theme.background
+							}
+						]}
+						value={shopName}
+						onChangeText={onShopNameChange}
+						placeholder="Enter shop name"
+						placeholderTextColor={theme.textSecondary}
+						maxLength={MAX_SHOP_NAME_LENGTH}
+						autoFocus
+						returnKeyType="next"
+						onSubmitEditing={() => deliveryRadiusInputRef.current?.focus()}
+					/>
+					<Text style={[styles.characterCount, { color: theme.textSecondary }]}>
+						{shopName.length}/{MAX_SHOP_NAME_LENGTH}
+					</Text>
+
+					<Text style={[styles.inputLabel, { color: theme.text }]}>Delivery Radius (km)</Text>
+					<TextInput
+						ref={deliveryRadiusInputRef}
+						style={[
+							styles.input,
+							{
+								borderColor: theme.border,
+								color: theme.text,
+								backgroundColor: theme.background
+							}
+						]}
+						value={deliveryRadius}
+						onChangeText={onDeliveryRadiusChange}
+						placeholder="Enter delivery radius in kilometers"
+						placeholderTextColor={theme.textSecondary}
+						keyboardType="numeric"
+						returnKeyType="done"
+						onSubmitEditing={onSubmit}
+					/>
+
+					<View style={styles.modalButtons}>
+						<TouchableOpacity style={[styles.modalButton, { borderWidth: 1, borderColor: theme.border }]} onPress={onDismiss} disabled={loading}>
+							<Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+						</TouchableOpacity>
+						<TouchableOpacity
+							style={[
+								styles.modalButton,
+								{
+									backgroundColor: isFormValid ? theme.primary : '#999',
+									opacity: isFormValid ? 1 : 0.6
+								}
+							]}
+							onPress={onSubmit}
+							disabled={!isFormValid || loading}
+						>
+							{loading ? <ActivityIndicator color="#fff" /> : <Text style={[styles.modalButtonText, { color: '#fff' }]}>Create Shop</Text>}
+						</TouchableOpacity>
+					</View>
+				</View>
+			</KeyboardAvoidingView>
+		</Modal>
+	)
+})
+
+const MyShopsTab: React.FC = () => {
 	const router = useRouter()
-	const [shops, setShops] = useState<Shop[]>([])
-	const [loading, setLoading] = useState<boolean>(true)
-	const [refreshing, setRefreshing] = useState<boolean>(false)
-	const [modalVisible, setModalVisible] = useState<boolean>(false)
-	const [shopName, setShopName] = useState<string>('')
-	const [deliveryRadius, setDeliveryRadius] = useState<string>('')
-	const [creating, setCreating] = useState<boolean>(false)
+	const { colors } = useTheme()
+	const [state, setState] = useState<ShopState>({
+		shops: [],
+		loading: true,
+		refreshing: false,
+		modalVisible: false,
+		shopName: '',
+		deliveryRadius: '5',
+		creating: false,
+		navigatingShopId: null,
+		error: null
+	})
 
-	const loadShops = async () => {
-		try {
-			const res = await getMyShops()
-			setShops(res.data.data || [])
-		} catch (e) {
-			console.error('Error loading shops:', e)
-			Alert.alert('Error', 'Failed to load shops')
-		} finally {
-			setLoading(false)
-			setRefreshing(false)
-		}
-	}
+	const { shops, loading, refreshing, modalVisible, shopName, deliveryRadius, creating, navigatingShopId, error } = state
+
+	const updateState = useCallback((updates: Partial<ShopState>) => {
+		setState((prev) => ({ ...prev, ...updates }))
+	}, [])
+
+	const loadShops = useCallback(
+		async (showRefreshing = false) => {
+			try {
+				updateState(showRefreshing ? { refreshing: true } : { loading: true, error: null })
+				const response = await getMyShops()
+				// Extract the shops array from the nested data property
+				const shops = response.data?.data || []
+				updateState({
+					shops: shops.sort((a, b) => a.name.localeCompare(b.name)),
+					loading: false,
+					refreshing: false,
+					error: null
+				})
+			} catch (err) {
+				console.error('Failed to load shops:', err)
+				updateState({
+					loading: false,
+					refreshing: false,
+					error: 'Failed to load shops. Please try again.'
+				})
+			}
+		},
+		[updateState]
+	)
+
+	const debouncedLoadShops = useMemo(() => debounce(loadShops, DEBOUNCE_DELAY), [loadShops])
 
 	useFocusEffect(
 		useCallback(() => {
-			loadShops()
-		}, [])
+			debouncedLoadShops(false)
+			return () => debouncedLoadShops.cancel()
+		}, [debouncedLoadShops])
 	)
 
-	const handleShopPress = (shop: Shop) => {
-		router.push({
-			pathname: '/home/shops/[shopId]/products',
-			params: {
-				shopId: shop._id,
-				shopName: shop.name
-			}
-		})
-	}
+	const handleRefresh = useCallback(() => {
+		debouncedLoadShops(true)
+	}, [debouncedLoadShops])
 
-	const onRefresh = () => {
-		setRefreshing(true)
-		loadShops()
-	}
-
-	const handleCreateShop = async () => {
-		if (!shopName.trim()) {
-			Alert.alert('Error', 'Please enter a shop name')
+	const handleCreateShop = useCallback(async () => {
+		if (shopName.trim().length < MIN_SHOP_NAME_LENGTH || shopName.trim().length > MAX_SHOP_NAME_LENGTH) {
 			return
 		}
 
-		setCreating(true)
 		try {
-			const shopData: CreateShopRequest = {
+			updateState({ creating: true, error: null })
+
+			const newShop: CreateShopRequest = {
 				name: shopName.trim(),
-				location: {
-					type: 'Point'
-				}
+				deliveryRadiusKm: parseFloat(deliveryRadius) || 5
 			}
 
-			if (deliveryRadius.trim()) {
-				const radius = parseFloat(deliveryRadius)
-				if (!isNaN(radius) && radius > 0) {
-					shopData.deliveryRadiusKm = radius
-				}
-			}
-
-			await createShop(shopData)
+			await createShop(newShop)
 			await loadShops()
-
-			setModalVisible(false)
-			setShopName('')
-			setDeliveryRadius('')
-
-			Alert.alert('Success', 'Shop created successfully!')
-		} catch (error) {
-			console.error('Error creating shop:', error)
-			Alert.alert('Error', 'Failed to create shop. Please try again.')
-		} finally {
-			setCreating(false)
+			updateState({
+				modalVisible: false,
+				shopName: '',
+				deliveryRadius: '5',
+				creating: false
+			})
+		} catch (err) {
+			console.error('Failed to create shop:', err)
+			updateState({
+				error: 'Failed to create shop. Please try again.',
+				creating: false
+			})
 		}
-	}
+	}, [shopName, deliveryRadius, loadShops, updateState])
 
-	const renderShopItem = ({ item }: { item: Shop }) => (
-		<TouchableOpacity onPress={() => handleShopPress(item)}>
-			<View style={styles.card}>
-				<Text style={styles.shopName}>{item.name || 'Unnamed Shop'}</Text>
-				{item.owner && (
-					<Text style={styles.meta}>
-						Owner: {item.owner.name} (@{item.owner.slug})
-					</Text>
-				)}
-				{item.location?.coordinates && item.location.coordinates.length === 2 && (
-					<Text style={styles.meta}>
-						Location: ({item.location.coordinates[1].toFixed(4)}, {item.location.coordinates[0].toFixed(4)})
-					</Text>
-				)}
-				{typeof item.deliveryRadiusKm === 'number' && <Text style={styles.meta}>Delivery radius: {item.deliveryRadiusKm} km</Text>}
-				<Text style={styles.status}>{item.isActive ? 'Active' : 'Inactive'}</Text>
-				<Text style={styles.tapHint}>Tap to view products →</Text>
-			</View>
-		</TouchableOpacity>
+	const handleShopPress = useCallback(
+		(shop: Shop) => {
+			if (!shop._id) return
+
+			updateState({ navigatingShopId: shop._id })
+
+			// Use the correct absolute path for expo-router with products segment
+			router.push({
+				pathname: '/home/shops/[shopId]/products',
+				params: { shopId: shop._id }
+			})
+
+			// Reset navigation state after a delay in case navigation fails
+			setTimeout(() => {
+				updateState({ navigatingShopId: null })
+			}, 5000)
+		},
+		[router, updateState]
 	)
 
-	if (loading) {
-		return (
-			<View style={styles.container}>
-				<Text style={styles.loadingText}>Loading shops...</Text>
-			</View>
-		)
-	}
+	const sortedShops = useMemo(() => {
+		return [...shops].sort((a, b) => {
+			// Sort by active status first, then by name
+			if (a.isActive !== b.isActive) {
+				return a.isActive ? -1 : 1
+			}
+			return a.name.localeCompare(b.name)
+		})
+	}, [shops])
 
 	return (
-		<View style={styles.container}>
-			<Text style={styles.title}>My Shops</Text>
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<FlatList
-				data={shops}
+				data={sortedShops}
 				keyExtractor={(item) => item._id}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#fff" colors={['#fff']} />}
-				renderItem={renderShopItem}
-				ListEmptyComponent={<Text style={styles.emptyText}>You have no shops yet.</Text>}
-				contentContainerStyle={styles.list}
+				contentContainerStyle={styles.listContent}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				ListEmptyComponent={
+					!loading && !refreshing ? (
+						<View style={styles.emptyContainer}>
+							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error || 'No shops found. Create your first shop to get started.'}</Text>
+							{error && (
+								<TouchableOpacity onPress={() => loadShops()} style={[styles.retryButton, { borderColor: colors.primary }]}>
+									<Text style={[styles.retryButtonText, { color: colors.primary }]}>Retry</Text>
+								</TouchableOpacity>
+							)}
+						</View>
+					) : null
+				}
+				renderItem={({ item }) => (
+					<ShopItem
+						shop={item}
+						isNavigating={navigatingShopId === item._id}
+						onPress={handleShopPress}
+						theme={{
+							primary: colors.primary,
+							text: colors.text,
+							textSecondary: colors.textSecondary,
+							background: colors.background,
+							card: colors.card || colors.background,
+							border: colors.border || '#444'
+						}}
+					/>
+				)}
 			/>
 
-			<TouchableOpacity style={styles.floatingAddButton} onPress={() => setModalVisible(true)}>
-				<Text style={styles.floatingAddButtonText}>+</Text>
+			<TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => updateState({ modalVisible: true })}>
+				<Text style={styles.fabText}>+</Text>
 			</TouchableOpacity>
 
-			<Modal animationType="slide" transparent={true} visible={modalVisible} onRequestClose={() => setModalVisible(false)}>
-				<View style={styles.modalOverlay}>
-					<View style={styles.modalContent}>
-						<Text style={styles.modalTitle}>Create New Shop</Text>
-
-						<Text style={styles.inputLabel}>Shop Name *</Text>
-						<TextInput style={styles.input} value={shopName} onChangeText={setShopName} placeholder="Enter shop name" placeholderTextColor="#666" />
-
-						<Text style={styles.inputLabel}>Delivery Radius (km)</Text>
-						<TextInput style={styles.input} value={deliveryRadius} onChangeText={setDeliveryRadius} placeholder="Enter delivery radius" placeholderTextColor="#666" keyboardType="numeric" />
-
-						<View style={styles.modalButtons}>
-							<TouchableOpacity
-								style={[styles.modalButton, styles.cancelButton]}
-								onPress={() => {
-									setModalVisible(false)
-									setShopName('')
-									setDeliveryRadius('')
-								}}
-							>
-								<Text style={styles.cancelButtonText}>Cancel</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity style={[styles.modalButton, styles.createButton]} onPress={handleCreateShop} disabled={creating}>
-								<Text style={styles.createButtonText}>{creating ? 'Creating...' : 'Create Shop'}</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-			</Modal>
+			<CreateShopForm
+				visible={modalVisible}
+				loading={creating}
+				shopName={shopName}
+				deliveryRadius={deliveryRadius}
+				onShopNameChange={(text) => updateState({ shopName: text })}
+				onDeliveryRadiusChange={(text) => updateState({ deliveryRadius: text })}
+				onSubmit={handleCreateShop}
+				onDismiss={() =>
+					updateState({
+						modalVisible: false,
+						shopName: '',
+						deliveryRadius: '5',
+						error: null
+					})
+				}
+				theme={{
+					primary: colors.primary,
+					text: colors.text,
+					textSecondary: colors.textSecondary,
+					background: colors.background,
+					card: colors.card || colors.background,
+					border: colors.border || '#444'
+				}}
+			/>
 		</View>
 	)
 }
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1,
-		padding: 10
+		flex: 1
 	},
-	title: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#fff',
-		marginBottom: 16,
-		paddingHorizontal: 10
-	},
-	loadingText: {
-		color: '#fff',
-		fontSize: 16,
-		textAlign: 'center',
-		marginTop: 50
-	},
-	list: {
-		paddingBottom: 100
+	listContent: {
+		padding: 16
 	},
 	card: {
-		backgroundColor: '#333',
-		padding: 15,
-		marginHorizontal: 10,
-		marginBottom: 10,
 		borderRadius: 8,
-		borderWidth: 1,
-		borderColor: '#444'
+		padding: 16,
+		marginBottom: 12,
+		borderWidth: 1
+	},
+	disabledCard: {
+		opacity: 0.7
+	},
+	shopHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 8
 	},
 	shopName: {
-		fontSize: 16,
-		color: '#fff',
-		fontWeight: 'bold',
-		marginBottom: 5
+		fontSize: 18,
+		fontWeight: '600'
 	},
 	meta: {
-		color: '#bbb',
 		fontSize: 14,
-		marginBottom: 3
+		marginBottom: 4
 	},
 	status: {
-		marginTop: 5,
-		color: '#9ad36a',
-		fontSize: 14
+		fontSize: 14,
+		fontWeight: '500',
+		marginTop: 8
 	},
 	tapHint: {
-		marginTop: 8,
-		color: '#007AFF',
 		fontSize: 14,
-		fontStyle: 'italic'
+		marginTop: 8,
+		fontWeight: '500'
 	},
-	emptyText: {
-		color: '#bbb',
-		fontSize: 16,
-		textAlign: 'center',
-		marginTop: 50
+	loadingIndicator: {
+		marginLeft: 8
 	},
-	floatingAddButton: {
+	fab: {
 		position: 'absolute',
-		bottom: 20,
 		right: 20,
-		backgroundColor: '#007AFF',
+		bottom: 20,
 		width: 56,
 		height: 56,
 		borderRadius: 28,
-		justifyContent: 'center',
 		alignItems: 'center',
-		boxShadow: '0 4px 4.65px rgba(0,0,0,0.3)'
+		justifyContent: 'center',
+		elevation: 4,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.3,
+		shadowRadius: 2
 	},
-	floatingAddButtonText: {
+	fabText: {
 		color: '#fff',
-		fontSize: 28,
-		fontWeight: 'bold'
+		fontSize: 24,
+		lineHeight: 24
 	},
 	modalOverlay: {
 		flex: 1,
 		backgroundColor: 'rgba(0, 0, 0, 0.5)',
 		justifyContent: 'center',
-		alignItems: 'center'
+		padding: 20
 	},
 	modalContent: {
-		backgroundColor: '#242424',
-		borderRadius: 12,
+		backgroundColor: '#fff',
+		borderRadius: 8,
 		padding: 20,
-		width: '90%',
-		maxWidth: 400
+		maxHeight: '80%'
 	},
 	modalTitle: {
 		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#fff',
+		fontWeight: '600',
 		marginBottom: 20,
 		textAlign: 'center'
 	},
-	inputLabel: {
-		fontSize: 16,
-		color: '#fff',
-		marginBottom: 8,
-		marginTop: 12
-	},
 	input: {
-		backgroundColor: '#333',
-		borderRadius: 8,
-		padding: 12,
-		color: '#fff',
-		fontSize: 16,
 		borderWidth: 1,
-		borderColor: '#555'
+		borderColor: '#ddd',
+		borderRadius: 4,
+		padding: 10,
+		marginBottom: 16
+	},
+	inputLabel: {
+		marginBottom: 8,
+		fontWeight: '500'
 	},
 	modalButtons: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		marginTop: 20
+		justifyContent: 'flex-end',
+		marginTop: 16
 	},
 	modalButton: {
+		padding: 10,
+		marginLeft: 10,
+		minWidth: 80,
+		alignItems: 'center',
+		borderRadius: 4
+	},
+	modalButtonText: {
+		fontWeight: '500'
+	},
+	errorText: {
+		color: '#f44336',
+		marginBottom: 16
+	},
+	characterCount: {
+		textAlign: 'right',
+		fontSize: 12,
+		color: '#666',
+		marginTop: -12,
+		marginBottom: 8
+	},
+	emptyContainer: {
 		flex: 1,
-		padding: 12,
-		borderRadius: 8,
-		marginHorizontal: 5
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20
 	},
-	cancelButton: {
-		backgroundColor: '#666'
-	},
-	createButton: {
-		backgroundColor: '#007AFF'
-	},
-	cancelButtonText: {
-		color: '#fff',
+	emptyText: {
 		textAlign: 'center',
-		fontWeight: 'bold'
+		marginBottom: 16
 	},
-	createButtonText: {
-		color: '#fff',
-		textAlign: 'center',
-		fontWeight: 'bold'
+	retryButton: {
+		borderWidth: 1,
+		borderRadius: 4,
+		paddingHorizontal: 16,
+		paddingVertical: 8
+	},
+	retryButtonText: {
+		fontWeight: '500'
 	}
 })
+
+export default MyShopsTab

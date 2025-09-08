@@ -24,45 +24,45 @@ export interface ThemeColors {
 }
 
 const lightTheme: ThemeColors = {
-	background: '#ffffff',
-	surface: '#f8f9fa',
-	primary: '#007bff',
-	secondary: '#6c757d',
-	text: '#212529',
-	textSecondary: '#6c757d',
-	border: '#dee2e6',
-	accent: '#28a745',
-	error: '#dc3545',
-	success: '#28a745',
-	warning: '#ffc107',
+	background: '#f8fafc',
+	surface: '#ffffff',
+	primary: '#2563eb', // Vibrant blue-600
+	secondary: '#4f46e5', // Indigo-600
+	text: '#1e293b', // Slate-800
+	textSecondary: '#64748b', // Slate-500
+	border: '#e2e8f0', // Slate-200
+	accent: '#2563eb', // Blue-600
+	error: '#dc2626', // Red-600
+	success: '#16a34a', // Green-600
+	warning: '#ea580c', // Orange-600
 	card: '#ffffff',
-	button: '#007bff',
+	button: '#2563eb', // Blue-600
 	buttonText: '#ffffff',
 	input: '#ffffff',
-	inputBorder: '#ced4da',
+	inputBorder: '#cbd5e1', // Slate-300
 	modal: '#ffffff',
 	modalOverlay: 'rgba(0, 0, 0, 0.5)'
 }
 
 const darkTheme: ThemeColors = {
-	background: '#1a1a1a',
-	surface: '#2d2d2d',
-	primary: '#0d6efd',
-	secondary: '#6c757d',
-	text: '#ffffff',
-	textSecondary: '#adb5bd',
-	border: '#495057',
-	accent: '#20c997',
-	error: '#dc3545',
-	success: '#198754',
-	warning: '#ffc107',
-	card: '#2d2d2d',
-	button: '#0d6efd',
+	background: '#0f172a', // Slate-900
+	surface: '#1e293b', // Slate-800
+	primary: '#3b82f6', // Blue-500
+	secondary: '#818cf8', // Indigo-400
+	text: '#f8fafc', // Slate-50
+	textSecondary: '#94a3b8', // Slate-400
+	border: '#334155', // Slate-700
+	accent: '#60a5fa', // Blue-400
+	error: '#f87171', // Red-400
+	success: '#4ade80', // Green-400
+	warning: '#fb923c', // Orange-400
+	card: '#1e293b', // Slate-800
+	button: '#3b82f6', // Blue-500
 	buttonText: '#ffffff',
-	input: '#333333',
-	inputBorder: '#555555',
-	modal: '#2d2d2d',
-	modalOverlay: 'rgba(0, 0, 0, 0.7)'
+	input: '#1e293b', // Slate-800
+	inputBorder: '#334155', // Slate-700
+	modal: '#1e293b', // Slate-800
+	modalOverlay: 'rgba(15, 23, 42, 0.8)' // Slate-900 with opacity
 }
 
 interface ThemeContextType {
