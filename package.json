@@ -16,7 +16,7 @@
     "drinaluza"
   ],
   "scripts": {
-    "apk": "eas build --platform android --profile production --local --output=docs/drinaluza.apk",
+    "apk": "npx expo-doctor && npx expo install --check &&eas build --platform android --profile production --local --output=docs/drinaluza.apk",
     "start": "expo start",
     "start:local": "expo start -c",
     "android": "expo start --android",

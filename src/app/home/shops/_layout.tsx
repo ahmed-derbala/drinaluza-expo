@@ -9,53 +9,38 @@ export default function ShopsLayout() {
 	return (
 		<Stack
 			screenOptions={{
-				// Platform-specific animations
 				animation: Platform.select({
 					ios: 'slide_from_right',
 					android: 'slide_from_right',
 					web: 'fade'
-				}),
+				}) as any, // Type assertion for animation prop
 				headerShown: true,
-				// Native presentation
-				presentation: 'card',
-				gestureEnabled: Platform.OS !== 'web',
-				fullScreenGestureEnabled: Platform.OS === 'ios',
-				// Header styling
 				headerStyle: {
-					backgroundColor: '#333' // Changed to ensure visibility against dark screen
+					backgroundColor: '#333'
 				},
-				headerTintColor: colors.text,
+				headerTintColor: '#fff',
 				headerTitleStyle: {
-					fontWeight: Platform.select({
-						ios: '600',
-						android: '500',
-						web: '600'
-					}),
-					fontSize: Platform.select({
-						ios: 17,
-						android: 20,
-						web: 18
-					})
+					fontWeight: '600',
+					color: '#fff'
 				},
-				// Clean back button without title
-				headerBackVisible: true
+				headerBackTitle: 'Back',
+				gestureEnabled: true
 			}}
 		>
 			<Stack.Screen
 				name="index"
 				options={{
-					title: 'Shops',
-					headerShown: false
+					headerShown: false,
+					animation: 'fade'
 				}}
 			/>
 			<Stack.Screen
 				name="[shopId]/products"
-				options={({ route }) => ({
-					title: `${(route.params as any)?.shopName || 'Shop'} Products`,
-					headerShown: true,
-					headerBackVisible: true,
-					headerBackTitleVisible: false
-				})}
+				options={{
+					headerTitle: 'Shop Products',
+					headerBackTitle: 'Back',
+					animation: 'slide_from_right'
+				}}
 			/>
 		</Stack>
 	)

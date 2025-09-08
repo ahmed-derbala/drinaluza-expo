@@ -1,23 +1,9 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Modal, TextInput, Alert, ScrollView } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Modal, TextInput, Alert, ScrollView, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { getShopProducts, createProduct, getDefaultProducts, CreateProductRequest } from '@/components/products/products.api'
 import { ProductType } from '@/components/products/products.type'
 import { DefaultProduct } from '@/components/products/products.api'
-
-export const screenOptions = ({ route }: any) => ({
-	title: `${(route.params as any)?.shopName || 'Shop'} Products`,
-	headerShown: true,
-	headerStyle: {
-		backgroundColor: '#333'
-	},
-	headerTintColor: '#fff',
-	headerTitleStyle: {
-		fontWeight: 'bold'
-	},
-	headerBackVisible: true,
-	headerBackTitleVisible: false
-})
 
 export default function ShopProductsScreen() {
 	const { shopId, shopName } = useLocalSearchParams<{ shopId: string; shopName: string }>()
@@ -150,6 +136,15 @@ export default function ShopProductsScreen() {
 
 	return (
 		<View style={styles.container}>
+			{/* Custom Header */}
+			<View style={styles.header}>
+				<TouchableOpacity onPress={() => router.push('/home/business/my-shops')} style={styles.backButton}>
+					<Text style={styles.backButtonText}>← Back</Text>
+				</TouchableOpacity>
+				<Text style={styles.headerTitle}>Shop Products</Text>
+				<View style={styles.headerSpacer} />
+			</View>
+
 			<FlatList
 				data={products}
 				keyExtractor={(item) => item._id}
@@ -163,7 +158,12 @@ export default function ShopProductsScreen() {
 						<Text style={styles.status}>Updated: {new Date(item.updatedAt).toLocaleDateString()}</Text>
 					</View>
 				)}
-				ListEmptyComponent={<Text style={styles.meta}>No products found for this shop.</Text>}
+				ListEmptyComponent={
+					<View style={styles.emptyContainer}>
+						<Text style={styles.emptyText}>No products found for this shop.</Text>
+						<Text style={styles.emptySubtext}>Tap the + button to add your first product.</Text>
+					</View>
+				}
 				contentContainerStyle={{ paddingBottom: 100 }}
 			/>
 
@@ -240,6 +240,34 @@ const styles = StyleSheet.create({
 		flex: 1,
 		backgroundColor: '#1a1a1a'
 	},
+	header: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#333',
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+		paddingTop: Platform.OS === 'ios' ? 50 : 16,
+		borderBottomWidth: 1,
+		borderBottomColor: '#444'
+	},
+	backButton: {
+		padding: 8,
+		marginRight: 16
+	},
+	backButtonText: {
+		color: '#fff',
+		fontSize: 16,
+		fontWeight: '600'
+	},
+	headerTitle: {
+		color: '#fff',
+		fontSize: 18,
+		fontWeight: 'bold',
+		flex: 1
+	},
+	headerSpacer: {
+		width: 48 // To balance the back button width
+	},
 	title: {
 		fontSize: 24,
 		fontWeight: 'bold',
@@ -263,6 +291,23 @@ const styles = StyleSheet.create({
 		color: '#fff',
 		fontSize: 28,
 		fontWeight: 'bold'
+	},
+	emptyContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 20
+	},
+	emptyText: {
+		color: '#bbb',
+		fontSize: 16,
+		textAlign: 'center',
+		marginBottom: 8
+	},
+	emptySubtext: {
+		color: '#666',
+		fontSize: 14,
+		textAlign: 'center'
 	},
 	card: {
 		backgroundColor: '#242424',

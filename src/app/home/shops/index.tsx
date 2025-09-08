@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, Modal, TextInput, Alert } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useNavigation } from '@react-navigation/native'
+import type { RootNavigationProp } from '@/types/navigation'
 import { getMyShops, createShop } from '@/components/shops/shops.api'
 import { Shop, CreateShopRequest } from '@/components/shops/shops.interface'
 
 export default function ShopsScreen() {
 	const router = useRouter()
+	const navigation = useNavigation<RootNavigationProp>()
 	const [shops, setShops] = useState<Shop[]>([])
 	const [loading, setLoading] = useState<boolean>(true)
 	const [refreshing, setRefreshing] = useState<boolean>(false)
@@ -33,12 +36,9 @@ export default function ShopsScreen() {
 	}, [])
 
 	const handleShopPress = (shop: Shop) => {
-		router.push({
-			pathname: '/home/shops/[shopId]/products',
-			params: {
-				shopId: shop._id,
-				shopName: shop.name
-			}
+		navigation.navigate('home/shops/[shopId]/products', {
+			shopId: shop._id,
+			shopName: shop.name
 		})
 	}
 
