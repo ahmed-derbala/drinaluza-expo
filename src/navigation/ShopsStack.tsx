@@ -2,7 +2,7 @@ import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
 import { useTheme } from '@/contexts/ThemeContext'
 
-export default function ShopsLayout() {
+export default function ShopsStack() {
 	const { colors } = useTheme()
 
 	return (
@@ -25,15 +25,16 @@ export default function ShopsLayout() {
 			}}
 		>
 			<Stack.Screen
-				name="[shopId]/index"
+				name="index"
 				options={{
-					headerTitle: 'Shop Details'
+					title: 'My Shops',
+					headerShown: false
 				}}
 			/>
 			<Stack.Screen
-				name="[shopId]/products"
+				name="[shopId]"
 				options={{
-					headerTitle: 'Products'
+					headerTitle: 'Shop Details'
 				}}
 			/>
 		</Stack>

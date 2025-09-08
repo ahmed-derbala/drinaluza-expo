@@ -26,16 +26,16 @@ export interface AppConfig {
 export const config: AppConfig = {
 	servers: {
 		local: {
-			url: '192.168.1.148',
+			url: '10.173.243.120',
 			port: 5001
 		},
 		development: {
-			url: 'dev-api.drinaluza.com',
-			port: 443
+			url: '10.173.243.120',
+			port: 5001
 		},
 		production: {
-			url: 'api.drinaluza.com',
-			port: 443
+			url: '10.173.243.120',
+			port: 5001
 		}
 	},
 	app: {
@@ -49,7 +49,7 @@ export const config: AppConfig = {
 // Helper functions to get server URLs
 export const getServerUrl = (environment: Environment): string => {
 	const server = config.servers[environment]
-	const protocol = environment === 'local' ? 'http' : 'https'
+	const protocol = environment === 'local' ? 'http' : 'http'
 	return `${protocol}://${server.url}:${server.port}/api`
 }
 
@@ -80,14 +80,14 @@ export const defaultLocalServers = [
 	{
 		id: '1',
 		name: 'aroma',
-		url: '192.168.1.148',
+		url: '10.173.243.120',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},
 	{
 		id: '2',
 		name: 'wifi',
-		url: '192.168.1.15',
+		url: '10.173.243.120',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},

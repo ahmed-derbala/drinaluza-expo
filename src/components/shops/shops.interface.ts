@@ -40,12 +40,64 @@ export type ShopsData = {
 	data: Shop[]
 }
 
-export type ShopsResponse = {
+export type ShopProductsResponse = {
 	status: number
 	data: {
 		pagination: Pagination
-		data: Shop[]
+		data: Product[]
 	}
+	req: {
+		headers: {
+			tid: string
+		}
+	}
+}
+
+export interface Product {
+	_id: string
+	shop: Shop
+	name: string
+	price: {
+		value: {
+			tnd: number
+		}
+		unit: {
+			name: string
+			min: number
+		}
+		createdAt: string
+		updatedAt: string
+	}
+	searchTerms: string[]
+	isActive: boolean
+	availability: {
+		endDate: string | null
+		startDate: string
+	}
+	stock: {
+		quantity: number
+		minThreshold: number
+	}
+	photos: string[]
+	slug: string
+	createdAt: string
+	updatedAt: string
+	__v: number
+}
+
+export type ShopResponse = {
+	status: number
+	data: Shop
+	req: {
+		headers: {
+			tid: string
+		}
+	}
+}
+
+export type ShopsResponse = {
+	status: number
+	data: Shop[]
 	req: {
 		headers: {
 			tid: string
