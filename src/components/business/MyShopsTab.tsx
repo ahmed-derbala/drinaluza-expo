@@ -18,8 +18,20 @@ import {
 	TextStyle
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { getMyShops, createShop } from '@/components/shops/shops.api'
 import { Shop, CreateShopRequest } from '@/components/shops/shops.interface'
+
+type ShopsStackParamList = {
+	ShopDetails: { shopId: string }
+	// Add other screens in the shops stack here
+}
+
+type MyShopsTabNavigationProp = NativeStackNavigationProp<ShopsStackParamList, 'ShopDetails'>
+
+interface MyShopsTabProps {
+	navigation?: MyShopsTabNavigationProp
+}
 import { useFocusEffect } from '@react-navigation/native'
 import { useTheme } from '@/contexts/ThemeContext'
 import { debounce } from 'lodash'
@@ -87,7 +99,7 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 			)}
 			{typeof shop.deliveryRadiusKm === 'number' && <Text style={[styles.meta, { color: theme.textSecondary }]}>Delivery radius: {shop.deliveryRadiusKm} km</Text>}
 			<Text style={[styles.status, { color: shop.isActive ? '#4CAF50' : '#F44336' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
-			<Text style={[styles.tapHint, { color: theme.primary }]}>Tap to view products →</Text>
+			<Text style={[styles.tapHint, { color: theme.primary }]}>Tap to view details →</Text>
 		</View>
 	</TouchableOpacity>
 ))
@@ -169,7 +181,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(({ visible, loa
 	)
 })
 
-const MyShopsTab: React.FC = () => {
+const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
 	const [state, setState] = useState<ShopState>({
@@ -196,9 +208,9 @@ const MyShopsTab: React.FC = () => {
 				updateState(showRefreshing ? { refreshing: true } : { loading: true, error: null })
 				const response = await getMyShops()
 				// Extract the shops array from the nested data property
-				const shops = response.data?.data || []
+				const shops = Array.isArray(response.data?.data) ? response.data.data : []
 				updateState({
-					shops: shops.sort((a, b) => a.name.localeCompare(b.name)),
+					shops: shops.sort((a: Shop, b: Shop) => a.name.localeCompare(b.name)),
 					loading: false,
 					refreshing: false,
 					error: null
@@ -252,28 +264,35 @@ const MyShopsTab: React.FC = () => {
 		} catch (err) {
 			console.error('Failed to create shop:', err)
 			updateState({
-				error: 'Failed to create shop. Please try again.',
-				creating: false
+				error: 'Failed to create shop. Please try again.'
 			})
 		}
-	}, [shopName, deliveryRadius, loadShops, updateState])
+	}, [shopName, deliveryRadius, updateState, loadShops])
 
 	const handleShopPress = useCallback(
 		(shop: Shop) => {
-			if (!shop._id) return
+			if (!shop?._id) return
 
 			updateState({ navigatingShopId: shop._id })
 
-			// Use the correct absolute path for expo-router with products segment
-			router.push({
-				pathname: '/home/shops/[shopId]/products',
-				params: { shopId: shop._id }
-			})
+			// Navigate to the shop details using expo-router
+			if (router) {
+				router.push({
+					pathname: '/(tabs)/home/shops/[shopId]',
+					params: { shopId: shop._id }
+				} as any)
+			}
 
 			// Reset navigation state after a delay in case navigation fails
-			setTimeout(() => {
-				updateState({ navigatingShopId: null })
+			const timeoutId = setTimeout(() => {
+				setState((prevState) => ({
+					...prevState,
+					navigatingShopId: null
+				}))
 			}, 5000)
+
+			// Clean up the timeout if the component unmounts
+			return () => clearTimeout(timeoutId)
 		},
 		[router, updateState]
 	)

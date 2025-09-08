@@ -22,7 +22,11 @@
         "backgroundColor": "#1C2526"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.ahmedderbala.drinaluza"
+      "package": "com.ahmedderbala.drinaluza",
+      "config": {
+        "usesCleartextTraffic": true,
+        "networkSecurityConfig": "@xml/network_security_config"
+      }
     },
     "web": {
       "bundler": "metro",
