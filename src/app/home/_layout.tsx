@@ -123,10 +123,34 @@ export default function HomeLayout() {
 							tabBarBadge: ordersCount !== undefined && ordersCount > 0 ? ordersCount : undefined
 						}}
 					/>
-					<Tabs.Screen name="profile" options={{ title: 'Profile', tabBarActiveTintColor: colors.primary }} />
-					<Tabs.Screen name="settings" options={{ title: 'Settings', tabBarActiveTintColor: colors.primary }} />
-					{userRole === 'shop_owner' && <Tabs.Screen name="business" options={{ title: 'Business', tabBarActiveTintColor: colors.primary }} />}
-					<Tabs.Screen name="shops" options={{ href: null }} />
+					<Tabs.Screen
+						name="profile"
+						options={{
+							title: 'Profile',
+							tabBarActiveTintColor: colors.primary
+						}}
+					/>
+					<Tabs.Screen
+						name="settings"
+						options={{
+							title: 'Settings',
+							tabBarActiveTintColor: colors.primary
+						}}
+					/>
+					<Tabs.Screen
+						name="business/index"
+						options={{
+							title: 'Business',
+							tabBarActiveTintColor: colors.primary,
+							href: userRole === 'shop_owner' ? undefined : null
+						}}
+					/>
+					<Tabs.Screen
+						name="shops"
+						options={{
+							href: null
+						}}
+					/>
 				</Tabs>
 			</SafeAreaView>
 		</SafeAreaProvider>

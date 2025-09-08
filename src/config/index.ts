@@ -26,7 +26,7 @@ export interface AppConfig {
 export const config: AppConfig = {
 	servers: {
 		local: {
-			url: '10.173.243.120',
+			url: '192.168.1.148',
 			port: 5001
 		},
 		development: {
@@ -79,13 +79,20 @@ export const DEFAULT_PROD_PORT = config.servers.production.port
 export const defaultLocalServers = [
 	{
 		id: '1',
+		name: 'aroma',
+		url: '192.168.1.148',
+		port: DEFAULT_LOCAL_PORT,
+		lastUsed: Date.now()
+	},
+	{
+		id: '2',
 		name: 'wifi',
 		url: '192.168.1.15',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},
 	{
-		id: '2',
+		id: '3',
 		name: '4G',
 		url: DEFAULT_LOCAL_URL,
 		port: DEFAULT_LOCAL_PORT,

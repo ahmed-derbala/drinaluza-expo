@@ -35,7 +35,13 @@ export default function MyShopsTab() {
 	)
 
 	const handleShopPress = (shop: Shop) => {
-		router.push(`/home/shops/${shop._id}/products`)
+		router.push({
+			pathname: '/home/shops/[shopId]/products',
+			params: {
+				shopId: shop._id,
+				shopName: shop.name
+			}
+		})
 	}
 
 	const onRefresh = () => {

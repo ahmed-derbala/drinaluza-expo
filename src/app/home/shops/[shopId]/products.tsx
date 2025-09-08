@@ -5,6 +5,20 @@ import { getShopProducts, createProduct, getDefaultProducts, CreateProductReques
 import { ProductType } from '@/components/products/products.type'
 import { DefaultProduct } from '@/components/products/products.api'
 
+export const screenOptions = ({ route }: any) => ({
+	title: `${(route.params as any)?.shopName || 'Shop'} Products`,
+	headerShown: true,
+	headerStyle: {
+		backgroundColor: '#333'
+	},
+	headerTintColor: '#fff',
+	headerTitleStyle: {
+		fontWeight: 'bold'
+	},
+	headerBackVisible: true,
+	headerBackTitleVisible: false
+})
+
 export default function ShopProductsScreen() {
 	const { shopId, shopName } = useLocalSearchParams<{ shopId: string; shopName: string }>()
 	const router = useRouter()

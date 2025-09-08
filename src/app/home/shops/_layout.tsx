@@ -15,27 +15,14 @@ export default function ShopsLayout() {
 					android: 'slide_from_right',
 					web: 'fade'
 				}),
+				headerShown: true,
 				// Native presentation
 				presentation: 'card',
 				gestureEnabled: Platform.OS !== 'web',
 				fullScreenGestureEnabled: Platform.OS === 'ios',
 				// Header styling
 				headerStyle: {
-					backgroundColor: colors.background,
-					// Platform-specific header shadows
-					...Platform.select({
-						ios: {
-							boxShadow: '0 1px 4px rgba(0,0,0,0.1)'
-						},
-						android: {
-							elevation: 4
-						},
-						web: {
-							borderBottomWidth: 1,
-							borderBottomColor: colors.border,
-							boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-						}
-					})
+					backgroundColor: '#333' // Changed to ensure visibility against dark screen
 				},
 				headerTintColor: colors.text,
 				headerTitleStyle: {
@@ -57,7 +44,7 @@ export default function ShopsLayout() {
 			<Stack.Screen
 				name="index"
 				options={{
-					title: 'My Shops',
+					title: 'Shops',
 					headerShown: false
 				}}
 			/>
