@@ -95,14 +95,21 @@ export type ShopResponse = {
 	}
 }
 
-export type ShopsResponse = {
+export interface ShopsResponse {
 	status: number
-	data: Shop[]
+	data: {
+		data: Shop[]
+		pagination: Pagination
+	}
 	req: {
 		headers: {
 			tid: string
 		}
 	}
+	headers: {
+		tid: string
+	}
+	tid: string
 }
 
 export type CreateShopRequest = {
