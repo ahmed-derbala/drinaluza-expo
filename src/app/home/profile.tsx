@@ -18,6 +18,7 @@ interface UserData {
 	slug: string
 	name: string
 	email: string
+	role?: string
 	phone: {
 		fullNumber: string
 		countryCode: string
@@ -41,6 +42,7 @@ export default function ProfileScreen() {
 		slug: '',
 		name: '',
 		email: '',
+		role: '',
 		phone: {
 			fullNumber: '',
 			countryCode: '+216',
@@ -82,7 +84,37 @@ export default function ProfileScreen() {
 				if (parsed.profile?.birthDate) {
 					parsed.profile.birthDate = new Date(parsed.profile.birthDate)
 				}
-				setUserData(parsed)
+				// Merge with default structure to ensure all properties exist
+				setUserData((prev) => ({
+					...prev,
+					...parsed,
+					phone: {
+						fullNumber: '',
+						countryCode: '+216',
+						shortNumber: '',
+						...parsed.phone
+					},
+					profile: {
+						firstName: '',
+						middleName: '',
+						lastName: '',
+						birthDate: null,
+						photo: { url: '' },
+						...parsed.profile
+					},
+					address: {
+						text: '',
+						country: '',
+						city: '',
+						street: '',
+						...parsed.address
+					},
+					settings: {
+						lang: 'en',
+						currency: 'TND',
+						...parsed.settings
+					}
+				}))
 			} else {
 				// Fallback to old slug storage
 				const storedUsername = await AsyncStorage.getItem('user.slug')
@@ -146,14 +178,20 @@ export default function ProfileScreen() {
 			{/* Profile Photo */}
 			<View style={styles.photoSection}>
 				<View style={styles.photoContainer}>
-					{userData.profile.photo.url ? (
-						<Image source={{ uri: userData.profile.photo.url }} style={styles.profilePhoto} />
+					{userData.profile?.photo?.url ? (
+						<Image source={{ uri: userData.profile?.photo?.url }} style={styles.profilePhoto} />
 					) : (
 						<View style={styles.placeholderPhoto}>
-							<Text style={styles.placeholderText}>
-								{userData.profile.firstName.charAt(0)}
-								{userData.profile.lastName.charAt(0)}
-							</Text>
+							{userData.profile?.firstName || userData.profile?.lastName ? (
+								<Text style={styles.placeholderText}>
+									{userData.profile.firstName?.charAt(0) || ''}
+									{userData.profile.lastName?.charAt(0) || ''}
+								</Text>
+							) : (
+								<View style={styles.defaultAvatarContainer}>
+									<Text style={styles.defaultAvatarIcon}>👤</Text>
+								</View>
+							)}
 						</View>
 					)}
 				</View>
@@ -202,6 +240,20 @@ export default function ProfileScreen() {
 						<Text style={styles.value}>{userData.email || 'Not set'}</Text>
 					)}
 				</View>
+
+				<View style={styles.fieldGroup}>
+					<Text style={styles.label}>Account Type</Text>
+					<View style={styles.roleContainer}>
+						<Text style={[styles.value, styles.roleText]}>
+							{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'customer' ? 'Customer' : userData.role === 'super' ? 'Administrator' : userData.role || 'Not set'}
+						</Text>
+						{userData.role && (
+							<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+								<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? '🏪' : userData.role === 'super' ? '👑' : '👤'}</Text>
+							</View>
+						)}
+					</View>
+				</View>
 			</View>
 
 			{/* Profile Details Section */}
@@ -213,13 +265,13 @@ export default function ProfileScreen() {
 					{isEditing ? (
 						<TextInput
 							style={styles.input}
-							value={userData.profile.firstName}
+							value={userData.profile?.firstName || ''}
 							onChangeText={(value) => updateField('firstName', value, 'profile')}
 							placeholder="Enter first name"
 							placeholderTextColor="#666"
 						/>
 					) : (
-						<Text style={styles.value}>{userData.profile.firstName || 'Not set'}</Text>
+						<Text style={styles.value}>{userData.profile?.firstName || 'Not set'}</Text>
 					)}
 				</View>
 
@@ -228,13 +280,13 @@ export default function ProfileScreen() {
 					{isEditing ? (
 						<TextInput
 							style={styles.input}
-							value={userData.profile.middleName}
+							value={userData.profile?.middleName || ''}
 							onChangeText={(value) => updateField('middleName', value, 'profile')}
 							placeholder="Enter middle name (optional)"
 							placeholderTextColor="#666"
 						/>
 					) : (
-						<Text style={styles.value}>{userData.profile.middleName || 'Not set'}</Text>
+						<Text style={styles.value}>{userData.profile?.middleName || 'Not set'}</Text>
 					)}
 				</View>
 
@@ -243,13 +295,13 @@ export default function ProfileScreen() {
 					{isEditing ? (
 						<TextInput
 							style={styles.input}
-							value={userData.profile.lastName}
+							value={userData.profile?.lastName || ''}
 							onChangeText={(value) => updateField('lastName', value, 'profile')}
 							placeholder="Enter last name"
 							placeholderTextColor="#666"
 						/>
 					) : (
-						<Text style={styles.value}>{userData.profile.lastName || 'Not set'}</Text>
+						<Text style={styles.value}>{userData.profile?.lastName || 'Not set'}</Text>
 					)}
 				</View>
 
@@ -257,10 +309,10 @@ export default function ProfileScreen() {
 					<Text style={styles.label}>Birth Date</Text>
 					{isEditing ? (
 						<TouchableOpacity style={styles.dateButton} onPress={() => setShowDatePicker(true)}>
-							<Text style={styles.dateButtonText}>{formatDate(userData.profile.birthDate)}</Text>
+							<Text style={styles.dateButtonText}>{formatDate(userData.profile?.birthDate)}</Text>
 						</TouchableOpacity>
 					) : (
-						<Text style={styles.value}>{formatDate(userData.profile.birthDate)}</Text>
+						<Text style={styles.value}>{formatDate(userData.profile?.birthDate)}</Text>
 					)}
 				</View>
 			</View>
@@ -422,7 +474,7 @@ export default function ProfileScreen() {
 				</TouchableOpacity>
 			)}
 
-			{showDatePicker && <DateTimePicker value={userData.profile.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />}
+			{showDatePicker && <DateTimePicker value={userData.profile?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />}
 		</ScrollView>
 	)
 }
@@ -584,5 +636,43 @@ const styles = StyleSheet.create({
 		color: '#fff',
 		fontSize: 16,
 		fontWeight: '600'
+	},
+	roleContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between'
+	},
+	roleText: {
+		flex: 1
+	},
+	roleBadge: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginLeft: 10
+	},
+	shopOwnerBadge: {
+		backgroundColor: '#007AFF'
+	},
+	adminBadge: {
+		backgroundColor: '#FF9500'
+	},
+	customerBadge: {
+		backgroundColor: '#34C759'
+	},
+	roleBadgeText: {
+		fontSize: 16
+	},
+	defaultAvatarContainer: {
+		width: '100%',
+		height: '100%',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	defaultAvatarIcon: {
+		fontSize: 50,
+		color: '#007AFF'
 	}
 })

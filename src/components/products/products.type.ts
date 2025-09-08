@@ -13,6 +13,21 @@ export type ProductType = {
 		updatedAt: string
 	}
 	name: string
+	photos?: Array<{
+		url: string
+		alt?: string
+	}>
+	price?: {
+		value?: {
+			tnd?: number
+			eur?: number
+			usd?: number
+		}
+		unit?: {
+			name: string
+			min: number
+		}
+	}
 	unit: {
 		name: string
 		min: number

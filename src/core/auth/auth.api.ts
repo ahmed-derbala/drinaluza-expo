@@ -7,6 +7,7 @@ export const signIn = async (slug: string, password: string) => {
 		await AsyncStorage.setItem('authToken', response.data.data.token)
 	}
 	if (response.data.data.user) {
+		await AsyncStorage.setItem('userData', JSON.stringify(response.data.data.user))
 		await AsyncStorage.setItem('user._id', response.data.data.user._id)
 		await AsyncStorage.setItem('user.slug', response.data.data.user.slug)
 	}
@@ -17,6 +18,11 @@ export const signUp = async (slug: string, password: string) => {
 	const response = await apiClient.post('/auth/signup', { slug, password })
 	if (response.data.data.token) {
 		await AsyncStorage.setItem('authToken', response.data.data.token)
+	}
+	if (response.data.data.user) {
+		await AsyncStorage.setItem('userData', JSON.stringify(response.data.data.user))
+		await AsyncStorage.setItem('user._id', response.data.data.user._id)
+		await AsyncStorage.setItem('user.slug', response.data.data.user.slug)
 	}
 	return response.data
 }
@@ -36,6 +42,7 @@ export const signOut = async () => {
 		const t = await AsyncStorage.getItem('authToken')
 		console.log('Clearing auth token:', t)
 		await AsyncStorage.removeItem('authToken')
+		await AsyncStorage.removeItem('userData')
 		await AsyncStorage.removeItem('user._id')
 		await AsyncStorage.removeItem('user.slug')
 		console.log('Local storage cleared successfully')

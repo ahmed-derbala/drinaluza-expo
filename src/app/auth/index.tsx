@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react'
-import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, Modal, Alert } from 'react-native'
+import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, Modal, Alert, FlatList } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { signIn, signUp } from '@/core/auth/auth.api'
-import { getServerConfig, setServerConfig, addLocalServer } from '@/components/settings/settings.api'
-import { ServerMode, ServerConfig } from '@/components/settings/settings.interface'
+import { getServerConfig, setServerConfig, addLocalServer, updateLocalServer, removeLocalServer } from '@/components/settings/settings.api'
+import { DEFAULT_LOCAL_URL } from '@/config'
+import { ServerMode, ServerConfig, LocalServer } from '@/components/settings/settings.interface'
 import { updateApiBaseUrl } from '@/core/api'
 import { useTheme } from '@/contexts/ThemeContext'
 import { createThemedStyles, commonThemedStyles } from '@/core/theme/createThemedStyles'
@@ -17,8 +18,13 @@ export default function AuthScreen() {
 	const [slug, setUsername] = useState('ahmed')
 	const [password, setPassword] = useState('123')
 	const [showServerSettings, setShowServerSettings] = useState(false)
-	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
-	const [customUrl, setCustomUrl] = useState('192.168.1.15')
+	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: DEFAULT_LOCAL_URL, localServers: [] })
+	const [customUrl, setCustomUrl] = useState(DEFAULT_LOCAL_URL)
+	const [showAddServer, setShowAddServer] = useState(false)
+	const [newServerName, setNewServerName] = useState('')
+	const [newServerUrl, setNewServerUrl] = useState('')
+	const [newServerPort, setNewServerPort] = useState('5001')
+	const [editingServer, setEditingServer] = useState<LocalServer | null>(null)
 	const router = useRouter()
 
 	const styles = createThemedStyles((colors) => ({
@@ -155,6 +161,59 @@ export default function AuthScreen() {
 			fontSize: 12,
 			textAlign: 'center',
 			paddingHorizontal: 20
+		},
+		serverItem: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			backgroundColor: colors.surface,
+			padding: 12,
+			marginVertical: 4,
+			borderRadius: 8,
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		serverInfo: {
+			flex: 1
+		},
+		serverName: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: colors.text,
+			marginBottom: 4
+		},
+		serverUrl: {
+			fontSize: 14,
+			color: colors.textSecondary
+		},
+		serverActions: {
+			flexDirection: 'row',
+			gap: 8
+		},
+		actionButton: {
+			padding: 8,
+			borderRadius: 6,
+			backgroundColor: colors.primary
+		},
+		actionButtonText: {
+			color: colors.buttonText,
+			fontSize: 12,
+			fontWeight: '600'
+		},
+		deleteButton: {
+			backgroundColor: colors.error
+		},
+		editButton: {
+			backgroundColor: colors.accent
+		},
+		savedServersContainer: {
+			marginBottom: 20
+		},
+		savedServersTitle: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: colors.text,
+			marginBottom: 10
 		}
 	}))(colors)
 
@@ -174,7 +233,7 @@ export default function AuthScreen() {
 		const loadServerConfig = async () => {
 			const savedServerConfig = await getServerConfig()
 			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '192.168.1.15')
+			setCustomUrl(savedServerConfig.customUrl || '10.173.243.120')
 		}
 		loadServerConfig()
 	}, [])
@@ -246,10 +305,117 @@ export default function AuthScreen() {
 		}
 	}
 
-	const handleSaveServerSettings = () => {
-		setShowServerSettings(false)
-		Alert.alert('Server Settings', 'Server configuration saved successfully!')
+	const handleAddServer = async () => {
+		if (!newServerName.trim() || !newServerUrl.trim() || !newServerPort.trim()) {
+			Alert.alert('Error', 'Please fill in all fields')
+			return
+		}
+
+		try {
+			if (editingServer) {
+				// Update existing server
+				await updateLocalServer(editingServer.id, {
+					name: newServerName.trim(),
+					url: newServerUrl.trim(),
+					port: parseInt(newServerPort, 10)
+				})
+				Alert.alert('Success', 'Server updated successfully')
+			} else {
+				// Add new server
+				await addLocalServer({
+					name: newServerName.trim(),
+					url: newServerUrl.trim(),
+					port: parseInt(newServerPort, 10)
+				})
+				Alert.alert('Success', 'Server added successfully')
+			}
+
+			// Refresh server config
+			const updatedConfig = await getServerConfig()
+			setServerConfigState(updatedConfig)
+
+			// Reset form
+			setNewServerName('')
+			setNewServerUrl('')
+			setNewServerPort('5001')
+			setEditingServer(null)
+			setShowAddServer(false)
+		} catch (error) {
+			console.error('Failed to save server:', error)
+			Alert.alert('Error', 'Failed to save server')
+		}
 	}
+
+	const handleUseServer = async (server: LocalServer) => {
+		try {
+			await updateLocalServer(server.id, { lastUsed: Date.now() })
+			setCustomUrl(server.url)
+			await handleCustomUrlChange(server.url)
+
+			// Refresh server config
+			const updatedConfig = await getServerConfig()
+			setServerConfigState(updatedConfig)
+
+			Alert.alert('Success', `Switched to ${server.name}`)
+		} catch (error) {
+			console.error('Failed to switch server:', error)
+			Alert.alert('Error', 'Failed to switch server')
+		}
+	}
+
+	const handleEditServer = (server: LocalServer) => {
+		setEditingServer(server)
+		setNewServerName(server.name)
+		setNewServerUrl(server.url)
+		setNewServerPort(server.port.toString())
+		setShowAddServer(true)
+	}
+
+	const handleDeleteServer = async (server: LocalServer) => {
+		Alert.alert('Delete Server', `Are you sure you want to delete "${server.name}"?`, [
+			{ text: 'Cancel', style: 'cancel' },
+			{
+				text: 'Delete',
+				style: 'destructive',
+				onPress: async () => {
+					try {
+						await removeLocalServer(server.id)
+
+						// Refresh server config
+						const updatedConfig = await getServerConfig()
+						setServerConfigState(updatedConfig)
+
+						Alert.alert('Success', 'Server deleted successfully')
+					} catch (error) {
+						console.error('Failed to delete server:', error)
+						Alert.alert('Error', 'Failed to delete server')
+					}
+				}
+			}
+		])
+	}
+
+	const renderServerItem = ({ item }: { item: LocalServer }) => (
+		<View style={styles.serverItem}>
+			<View style={styles.serverInfo}>
+				<Text style={styles.serverName}>{item.name}</Text>
+				<Text style={styles.serverUrl}>
+					{item.url}:{item.port}
+				</Text>
+			</View>
+			<View style={styles.serverActions}>
+				<TouchableOpacity style={styles.actionButton} onPress={() => handleUseServer(item)}>
+					<Text style={styles.actionButtonText}>Use</Text>
+				</TouchableOpacity>
+				<TouchableOpacity style={[styles.actionButton, styles.editButton]} onPress={() => handleEditServer(item)}>
+					<Text style={styles.actionButtonText}>Edit</Text>
+				</TouchableOpacity>
+				<TouchableOpacity style={[styles.actionButton, styles.deleteButton]} onPress={() => handleDeleteServer(item)}>
+					<Text style={styles.actionButtonText}>Del</Text>
+				</TouchableOpacity>
+			</View>
+		</View>
+	)
 
 	const handleClearStorage = () => {
 		Alert.alert('Clear Storage', 'This will delete all application data including login tokens, server settings, and cached data. Are you sure you want to continue?', [
@@ -268,8 +434,8 @@ export default function AuthScreen() {
 						// Reset state to defaults
 						setUsername('ahmed')
 						setPassword('123')
-						setCustomUrl('192.168.1.15')
-						setServerConfigState({ mode: 'local', customUrl: '192.168.1.15', localServers: [] })
+						setCustomUrl(DEFAULT_LOCAL_URL)
+						setServerConfigState({ mode: 'local', customUrl: DEFAULT_LOCAL_URL, localServers: [] })
 
 						// Close the modal
 						setShowServerSettings(false)
@@ -287,7 +453,7 @@ export default function AuthScreen() {
 	return (
 		<SafeAreaProvider>
 			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'right', 'left']}>
-				<StatusBar translucent={false} style={isDark ? 'light' : 'dark'} />
+				<StatusBar style={isDark ? 'light' : 'dark'} />
 				<View style={styles.container}>
 					{/* Server Settings Button */}
 					<TouchableOpacity style={styles.serverSettingsButton} onPress={() => setShowServerSettings(true)}>
@@ -316,13 +482,29 @@ export default function AuthScreen() {
 								</Picker>
 
 								{serverConfig.mode === 'local' && (
-									<View style={styles.inputContainer}>
-										<Text style={styles.inputLabel}>Local Server IP</Text>
-										<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder="192.168.1.15" placeholderTextColor={colors.textSecondary} />
-										<TouchableOpacity style={[styles.addButton, { marginTop: 8 }]} onPress={handleQuickAddServer}>
-											<Text style={styles.addButtonText}>Save to Servers</Text>
-										</TouchableOpacity>
-									</View>
+									<>
+										{/* Saved Servers List */}
+										{serverConfig.localServers && serverConfig.localServers.length > 0 && (
+											<View style={styles.savedServersContainer}>
+												<Text style={styles.savedServersTitle}>Saved Servers</Text>
+												<FlatList data={serverConfig.localServers} renderItem={renderServerItem} keyExtractor={(item) => item.id} style={{ maxHeight: 200 }} />
+											</View>
+										)}
+
+										{/* Current Server Input */}
+										<View style={styles.inputContainer}>
+											<Text style={styles.inputLabel}>Current Server IP</Text>
+											<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder={DEFAULT_LOCAL_URL} placeholderTextColor={colors.textSecondary} />
+											<View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={handleQuickAddServer}>
+													<Text style={styles.addButtonText}>Quick Save</Text>
+												</TouchableOpacity>
+												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={() => setShowAddServer(true)}>
+													<Text style={styles.addButtonText}>Add New Server</Text>
+												</TouchableOpacity>
+											</View>
+										</View>
+									</>
 								)}
 
 								{/* Clear Storage Button */}
@@ -334,8 +516,50 @@ export default function AuthScreen() {
 								</View>
 
 								<View style={styles.modalButtonContainer}>
-									<Button title="Save" onPress={handleSaveServerSettings} />
 									<Button title="Cancel" onPress={() => setShowServerSettings(false)} />
+								</View>
+							</View>
+						</View>
+					</Modal>
+
+					{/* Add/Edit Server Modal */}
+					<Modal
+						visible={showAddServer}
+						animationType="slide"
+						transparent={true}
+						onRequestClose={() => {
+							setShowAddServer(false)
+							setEditingServer(null)
+							setNewServerName('')
+							setNewServerUrl('')
+							setNewServerPort('5001')
+						}}
+					>
+						<View style={styles.modalOverlay}>
+							<View style={styles.modalContent}>
+								<Text style={styles.modalTitle}>{editingServer ? 'Edit Server' : 'Add New Server'}</Text>
+
+								<Text style={styles.inputLabel}>Server Name</Text>
+								<TextInput style={styles.textInput} value={newServerName} onChangeText={setNewServerName} placeholder="My Development Server" placeholderTextColor={colors.textSecondary} />
+
+								<Text style={styles.inputLabel}>Server URL</Text>
+								<TextInput style={styles.textInput} value={newServerUrl} onChangeText={setNewServerUrl} placeholder={DEFAULT_LOCAL_URL} placeholderTextColor={colors.textSecondary} />
+
+								<Text style={styles.inputLabel}>Port</Text>
+								<TextInput style={styles.textInput} value={newServerPort} onChangeText={setNewServerPort} placeholder="5001" placeholderTextColor={colors.textSecondary} keyboardType="numeric" />
+
+								<View style={styles.modalButtonContainer}>
+									<Button
+										title="Cancel"
+										onPress={() => {
+											setShowAddServer(false)
+											setEditingServer(null)
+											setNewServerName('')
+											setNewServerUrl('')
+											setNewServerPort('5001')
+										}}
+									/>
+									<Button title={editingServer ? 'Update' : 'Add'} onPress={handleAddServer} />
 								</View>
 							</View>
 						</View>

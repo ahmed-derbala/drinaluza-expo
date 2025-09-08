@@ -1,5 +1,6 @@
+import React from 'react'
 import { Stack } from 'expo-router'
-import { ThemeProvider } from '@/core/theme'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export default function RootLayout() {
 	return (

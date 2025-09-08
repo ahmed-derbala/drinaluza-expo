@@ -103,7 +103,7 @@ export default function OrdersScreen() {
 		<View style={styles.card}>
 			<Text style={styles.cardTitle}>{item.name}</Text>
 			<Text style={styles.cardText}>Shop: {item?.shop?.name}</Text>
-			<Text style={styles.cardText}>Created by: {item.owner.slug}</Text>
+			<Text style={styles.cardText}>Created by: {item.owner?.slug || 'Unknown'}</Text>
 			<Text style={styles.cardText}>Status: {item.status}</Text>
 			<View style={styles.buttonContainer}>
 				<Button title="Cancel" onPress={() => cancelOrder({ orderId: item._id })} color="#FF3B30" />
@@ -150,7 +150,7 @@ export default function OrdersScreen() {
 							{group.items.map((item) => (
 								<View key={item._id} style={styles.card}>
 									<Text style={styles.cardTitle}>{item.name}</Text>
-									<Text style={styles.cardText}>Created by: {item.owner.slug}</Text>
+									<Text style={styles.cardText}>Created by: {item.owner?.slug || 'Unknown'}</Text>
 									<View style={styles.buttonContainer}>
 										<Button title="Remove" onPress={() => removeFromBasket(item._id)} color="#FF3B30" />
 									</View>

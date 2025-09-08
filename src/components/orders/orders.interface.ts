@@ -1,6 +1,12 @@
 export interface OrderItem {
 	_id: string
-	owner: {
+	owner?: {
+		_id: string
+		slug: string
+		createdAt: string
+		updatedAt: string
+	}
+	customer: {
 		_id: string
 		slug: string
 		createdAt: string

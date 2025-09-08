@@ -1,21 +1,46 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Theme, ServerMode, ServerConfig, LocalServer } from './settings.interface'
-import { getApiUrl, getLocalApiUrl, defaultLocalServers, Environment } from '@/core/config'
+
+export { Theme } from './settings.interface'
+import { getServerUrl, getLocalServerUrl, Environment, DEFAULT_LOCAL_URL, DEFAULT_LOCAL_PORT, defaultLocalServers } from '@/config'
 
 export const setTheme = async (theme: Theme) => {
+	// Check if we're in a browser environment
+	if (typeof window === 'undefined') {
+		return // Skip AsyncStorage operations during server-side rendering
+	}
 	await AsyncStorage.setItem('theme', theme)
 }
 
 export const getTheme = async (): Promise<Theme> => {
+	// Check if we're in a browser environment
+	if (typeof window === 'undefined') {
+		return 'dark' // Return default theme for server-side rendering
+	}
 	const theme = await AsyncStorage.getItem('theme')
 	return (theme as Theme) || 'dark'
 }
 
 export const setServerConfig = async (config: ServerConfig) => {
+	// Check if we're in a browser environment
+	if (typeof window === 'undefined') {
+		return // Skip AsyncStorage operations during server-side rendering
+	}
 	await AsyncStorage.setItem('serverConfig', JSON.stringify(config))
 }
 
 export const getServerConfig = async (): Promise<ServerConfig> => {
+	// Check if we're in a browser environment
+	if (typeof window === 'undefined') {
+		// Return default config for server-side rendering
+		return {
+			mode: 'local' as ServerMode,
+			localServers: defaultLocalServers,
+			selectedLocalServerId: defaultLocalServers[0]?.id || '',
+			customUrl: ''
+		}
+	}
+
 	const config = await AsyncStorage.getItem('serverConfig')
 	if (config) {
 		const parsedConfig = JSON.parse(config)
@@ -27,7 +52,7 @@ export const getServerConfig = async (): Promise<ServerConfig> => {
 	}
 	return {
 		mode: 'local',
-		customUrl: '192.168.1.15',
+		customUrl: DEFAULT_LOCAL_URL,
 		localServers: defaultLocalServers
 	}
 }
@@ -103,15 +128,15 @@ export const getBaseUrl = async (): Promise<string> => {
 			}
 			const mostRecentServer = config.localServers.sort((a, b) => b.lastUsed - a.lastUsed)[0]
 			if (mostRecentServer) {
-				return getLocalApiUrl(mostRecentServer.url, mostRecentServer.port)
+				return getLocalServerUrl(mostRecentServer.url, mostRecentServer.port)
 			}
 			// Fallback to default local server
-			return getLocalApiUrl('192.168.1.15', 5001)
+			return getLocalServerUrl(DEFAULT_LOCAL_URL, DEFAULT_LOCAL_PORT)
 		case 'development':
-			return getApiUrl('development')
+			return getServerUrl('development')
 		case 'production':
-			return getApiUrl('production')
+			return getServerUrl('production')
 		default:
-			return getApiUrl('local')
+			return getServerUrl('local')
 	}
 }

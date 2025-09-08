@@ -1,4 +1,4 @@
-export type Theme = 'dark' | 'light' | 'system'
+export type Theme = 'light' | 'dark' | 'system'
 
 export type ServerMode = 'local' | 'development' | 'production'
 
@@ -14,4 +14,5 @@ export interface ServerConfig {
 	mode: ServerMode
 	customUrl?: string
 	localServers: LocalServer[]
+	selectedLocalServerId?: string
 }

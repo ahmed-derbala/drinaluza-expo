@@ -107,3 +107,8 @@ export const getDefaultProduct = async (id: string): Promise<{ status: number; d
 	const response = await apiClient.get(`/default-products/${id}`)
 	return response.data
 }
+
+export const getMyProducts = async (page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
+	const response = await apiClient.get(`/products/my-products?page=${page}&limit=${limit}`)
+	return response.data
+}

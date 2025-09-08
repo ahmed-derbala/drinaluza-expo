@@ -7,8 +7,8 @@ type ProductCardProps = {
 	addToBasket: (item: ProductType, quantity: number) => void
 }
 
-export const ProductCard = ({ item, addToBasket }: ProductCardProps) => {
-	const minQuantity = item.price.unit.min || 1
+export default function ProductCard({ item, addToBasket }: { item: ProductType; addToBasket?: (item: ProductType, quantity: number) => void }) {
+	const minQuantity = item.price?.unit?.min || 1
 	const [quantity, setQuantity] = useState(minQuantity)
 
 	const increment = () => setQuantity((prev) => prev + 1)
@@ -25,7 +25,7 @@ export const ProductCard = ({ item, addToBasket }: ProductCardProps) => {
 
 			{/* Price and Unit */}
 			<Text style={styles.cardText}>
-				{item.price.value.tnd} TND / {item.price.unit.name}
+				{item.price?.value?.tnd || 0} TND / {item.price?.unit?.name || item.unit?.name || 'PIECE'}
 			</Text>
 
 			{/* Quantity Controls */}
@@ -42,7 +42,7 @@ export const ProductCard = ({ item, addToBasket }: ProductCardProps) => {
 			</View>
 
 			{/* Order Button */}
-			<Button title="Order" onPress={() => addToBasket(item, quantity)} color="#007AFF" />
+			<Button title="Order" onPress={() => addToBasket?.(item, quantity)} color="#007AFF" />
 		</View>
 	)
 }
@@ -53,11 +53,7 @@ const styles = StyleSheet.create({
 		marginBottom: 12,
 		borderRadius: 8,
 		backgroundColor: '#fff',
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 4,
-		elevation: 3
+		boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
 	},
 	image: {
 		width: '100%',

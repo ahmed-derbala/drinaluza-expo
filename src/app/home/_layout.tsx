@@ -12,6 +12,7 @@ export default function HomeLayout() {
 	const { colors, isDark } = useTheme()
 	const router = useRouter()
 	const [ordersCount, setOrdersCount] = useState<number | undefined>(undefined)
+	const [userRole, setUserRole] = useState<string | null>(null)
 
 	// Load auth token
 	useEffect(() => {
@@ -24,10 +25,11 @@ export default function HomeLayout() {
 		checkAuth()
 	}, [])
 
-	// Load ordersCount from AsyncStorage
+	// Load ordersCount and userRole from AsyncStorage
 	useEffect(() => {
-		const loadOrdersCount = async () => {
+		const loadData = async () => {
 			try {
+				// Load orders count
 				const storedCount = await AsyncStorage.getItem('ordersCount')
 				if (storedCount !== null) {
 					setOrdersCount(parseInt(storedCount, 10))
@@ -41,29 +43,75 @@ export default function HomeLayout() {
 						setOrdersCount(0)
 					}
 				}
+
+				// Load user role
+				const storedUserData = await AsyncStorage.getItem('userData')
+				if (storedUserData) {
+					const userData = JSON.parse(storedUserData)
+					setUserRole(userData.role || null)
+				}
 			} catch (error) {
-				console.error('Failed to load ordersCount:', error)
+				console.error('Failed to load data:', error)
 				setOrdersCount(0) // Fallback to 0 on error
+				setUserRole(null)
 			}
 		}
-		loadOrdersCount()
+		loadData()
 	}, [])
 
 	return (
 		<SafeAreaProvider>
 			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'right', 'left']}>
-				<StatusBar translucent={false} style={isDark ? 'light' : 'dark'} />
+				<StatusBar style={isDark ? 'light' : 'dark'} />
 				<Tabs
 					screenOptions={{
 						headerShown: false,
+						// Platform-specific tab bar styling
 						tabBarStyle: {
 							backgroundColor: colors.background,
 							borderTopColor: colors.border,
-							paddingBottom: 0,
-							height: 50
+							paddingBottom: Platform.select({
+								ios: 0,
+								android: 0,
+								web: 10
+							}),
+							height: Platform.select({
+								ios: 50,
+								android: 60,
+								web: 60
+							}),
+							// Native-like shadows and borders
+							...Platform.select({
+								ios: {
+									boxShadow: '0 -1px 4px rgba(0,0,0,0.1)'
+								},
+								android: {
+									elevation: 8,
+									borderTopWidth: 0
+								},
+								web: {
+									borderTopWidth: 1,
+									boxShadow: '0 -2px 8px rgba(0,0,0,0.1)'
+								}
+							})
 						},
 						tabBarActiveTintColor: colors.primary,
-						tabBarInactiveTintColor: colors.textSecondary
+						tabBarInactiveTintColor: colors.textSecondary,
+						// Platform-specific tab bar behavior
+						tabBarHideOnKeyboard: Platform.OS === 'android',
+						tabBarShowLabel: true,
+						tabBarLabelStyle: {
+							fontSize: Platform.select({
+								ios: 10,
+								android: 12,
+								web: 12
+							}),
+							fontWeight: Platform.select({
+								ios: '600',
+								android: '500',
+								web: '500'
+							})
+						}
 					}}
 				>
 					<Tabs.Screen name="feed" options={{ title: 'Feed', tabBarActiveTintColor: colors.primary }} />
@@ -75,9 +123,10 @@ export default function HomeLayout() {
 							tabBarBadge: ordersCount !== undefined && ordersCount > 0 ? ordersCount : undefined
 						}}
 					/>
-					<Tabs.Screen name="shops" options={{ title: 'My Shops', tabBarActiveTintColor: colors.primary }} />
 					<Tabs.Screen name="profile" options={{ title: 'Profile', tabBarActiveTintColor: colors.primary }} />
 					<Tabs.Screen name="settings" options={{ title: 'Settings', tabBarActiveTintColor: colors.primary }} />
+					{userRole === 'shop_owner' && <Tabs.Screen name="business" options={{ title: 'Business', tabBarActiveTintColor: colors.primary }} />}
+					<Tabs.Screen name="shops" options={{ href: null }} />
 				</Tabs>
 			</SafeAreaView>
 		</SafeAreaProvider>

@@ -1,7 +1,7 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBaseUrl } from '@/components/settings/settings.api'
-import { getApiUrl, defaultConfig } from '@/core/config'
+import { getServerUrl, API_TIMEOUT } from '@/config'
 
 // Create a function to initialize the API client with dynamic base URL
 const createApiClient = async () => {
@@ -12,7 +12,7 @@ const createApiClient = async () => {
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		timeout: defaultConfig.server.timeout
+		timeout: API_TIMEOUT
 	})
 
 	client.interceptors.request.use(async (config) => {
@@ -41,11 +41,11 @@ const createApiClient = async () => {
 
 // Create the default API client
 const apiClient = axios.create({
-	baseURL: getApiUrl('local'), // Default fallback from config
+	baseURL: getServerUrl('local'), // Default fallback from config
 	headers: {
 		'Content-Type': 'application/json'
 	},
-	timeout: defaultConfig.server.timeout
+	timeout: API_TIMEOUT
 })
 
 apiClient.interceptors.request.use(async (config) => {
@@ -75,8 +75,10 @@ export const updateApiBaseUrl = async () => {
 	apiClient.defaults.baseURL = newBaseUrl
 }
 
-// Initialize with the stored configuration
-updateApiBaseUrl()
+// Initialize with the stored configuration (only on native platforms)
+if (typeof window === 'undefined') {
+	updateApiBaseUrl()
+}
 
 // Utility function to test server connectivity
 export const testServerConnection = async (): Promise<{ success: boolean; error?: string }> => {
