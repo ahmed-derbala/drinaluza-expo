@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 export default function HomeLayout() {
 	const { colors, isDark } = useTheme()

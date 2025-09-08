@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Button, RefreshControl } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getOrder, createOrder, cancelOrderAPI } from '@/components/orders/orders.api'
-import { OrderItem } from '@/components/orders/orders.interface'
+import { getOrder, createOrder, cancelOrderAPI } from '../../components/orders/orders.api'
+import { OrderItem } from '../../components/orders/orders.interface'
 import { useFocusEffect } from '@react-navigation/native'
 
 export default function OrdersScreen() {

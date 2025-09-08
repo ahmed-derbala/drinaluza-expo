@@ -1,7 +1,7 @@
 import React from 'react'
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 
 export default function AuthLayout() {
 	const { colors } = useTheme()

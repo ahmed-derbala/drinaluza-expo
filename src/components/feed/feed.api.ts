@@ -1,4 +1,4 @@
-import apiClient from '@/core/api'
+import apiClient from '../../core/api'
 import { FeedResponse } from './feed.interface'
 
 export const getFeed = async (): Promise<FeedResponse> => {

@@ -1,10 +1,10 @@
 import { Stack, useRouter } from 'expo-router'
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView, StatusBar } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../../../../contexts/ThemeContext'
 import { useEffect, useState } from 'react'
-import { getShopDetails } from '@/components/shops/shops.api'
-import { Shop } from '@/components/shops/shops.interface'
+import { getShopDetails } from '../../../../../components/shops/shops.api'
+import { Shop } from '../../../../../components/shops/shops.interface'
 
 export default function ShopDetailsScreen() {
 	const { shopId } = useLocalSearchParams<{ shopId: string }>()

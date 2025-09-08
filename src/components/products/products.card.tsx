@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, Button, StyleSheet, Image, TouchableOpacity } from 'react-native'
-import { ProductType } from '@/components/products/products.type'
+import { ProductType } from './products.type'
 
 type ProductCardProps = {
 	item: ProductType

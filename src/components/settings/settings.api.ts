@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Theme, ServerMode, ServerConfig, LocalServer } from './settings.interface'
 
 export { Theme } from './settings.interface'
-import { getServerUrl, getLocalServerUrl, Environment, DEFAULT_LOCAL_URL, DEFAULT_LOCAL_PORT, defaultLocalServers } from '@/config'
+import { getServerUrl, getLocalServerUrl, Environment, DEFAULT_LOCAL_URL, DEFAULT_LOCAL_PORT, defaultLocalServers } from '../../config'
 
 export const setTheme = async (theme: Theme) => {
 	// Check if we're in a browser environment

@@ -1,4 +1,4 @@
-import apiClient from '@/core/api'
+import apiClient from '../../core/api'
 import { OrderResponse } from './orders.interface'
 
 export const getOrder = async (): Promise<OrderResponse> => {

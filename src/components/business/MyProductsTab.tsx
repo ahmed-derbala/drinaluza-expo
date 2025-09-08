@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Alert } from 'react-native'
-import { getMyProducts } from '@/components/products/products.api'
-import { ProductType } from '@/components/products/products.type'
+import { getMyProducts } from '../products/products.api'
+import { ProductType } from '../products/products.type'
 import { useFocusEffect } from '@react-navigation/native'
 
 export default function MyProductsTab() {

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Alert } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useFocusEffect, useRouter } from 'expo-router'
 import { Tabs } from 'expo-router'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../../contexts/ThemeContext'
 
 export default function BusinessLayout() {
 	const { colors } = useTheme()

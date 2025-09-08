@@ -1,7 +1,7 @@
 import axios from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getBaseUrl } from '@/components/settings/settings.api'
-import { getServerUrl, API_TIMEOUT } from '@/config'
+import { getBaseUrl } from '../../components/settings/settings.api'
+import { getServerUrl, API_TIMEOUT } from '../../config'
 
 // Create a function to initialize the API client with dynamic base URL
 const createApiClient = async () => {

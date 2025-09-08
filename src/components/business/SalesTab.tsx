@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, ScrollView } from 'react-native'
-import { getSales, updateSaleOrderStatus } from '@/components/orders/orders.api'
-import { OrderItem } from '@/components/orders/orders.interface'
+import { getSales, updateSaleOrderStatus } from '../orders/orders.api'
+import { OrderItem } from '../orders/orders.interface'
 import { useFocusEffect } from '@react-navigation/native'
-import { orderStatusEnum, orderStatusColors, orderStatusLabels, getNextValidStatuses } from '@/constants/orderStatus'
+import { orderStatusEnum, orderStatusColors, orderStatusLabels, getNextValidStatuses } from '../../constants/orderStatus'
 
 export default function SalesTab() {
 	const [sales, setSales] = useState<OrderItem[]>([])

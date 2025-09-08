@@ -19,8 +19,8 @@ import {
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { getMyShops, createShop } from '@/components/shops/shops.api'
-import { Shop, CreateShopRequest } from '@/components/shops/shops.interface'
+import { getMyShops, createShop } from '../shops/shops.api'
+import { Shop, CreateShopRequest } from '../shops/shops.interface'
 
 type ShopsStackParamList = {
 	ShopDetails: { shopId: string }
@@ -33,7 +33,7 @@ interface MyShopsTabProps {
 	navigation?: MyShopsTabNavigationProp
 }
 import { useFocusEffect } from '@react-navigation/native'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../contexts/ThemeContext'
 import { debounce } from 'lodash'
 
 interface ThemeType {
@@ -207,8 +207,8 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			try {
 				updateState(showRefreshing ? { refreshing: true } : { loading: true, error: null })
 				const response = await getMyShops()
-				// Extract the shops array from the nested data property
-				const shops = Array.isArray(response.data?.data) ? response.data.data : []
+				// Access the shops array from the nested data property
+				const shops = response?.data?.data || []
 				updateState({
 					shops: shops.sort((a: Shop, b: Shop) => a.name.localeCompare(b.name)),
 					loading: false,

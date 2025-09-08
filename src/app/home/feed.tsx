@@ -1,13 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, Button, Alert, RefreshControl } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getFeed } from '@/components/feed/feed.api'
-import { FeedItem } from '@/components/feed/feed.interface'
+import { getFeed } from '../../components/feed/feed.api'
+import { FeedItem } from '../../components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
-import ProductCard from '@/components/products/products.card' // adjust path as needed
-import { ProductType } from '@/components/products/products.type'
-import { useTheme } from '@/contexts/ThemeContext'
-import { createThemedStyles, commonThemedStyles } from '@/core/theme/createThemedStyles'
+import ProductCard from '../../components/products/products.card' // adjust path as needed
+import { ProductType } from '../../components/products/products.type'
+import { useTheme } from '../../contexts/ThemeContext'
+import { createThemedStyles, commonThemedStyles } from '../../core/theme/createThemedStyles'
 
 export default function FeedScreen() {
 	const { colors } = useTheme()

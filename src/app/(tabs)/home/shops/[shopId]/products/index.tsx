@@ -1,8 +1,8 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router'
 import { View, Text, StyleSheet, ActivityIndicator, FlatList, TouchableOpacity, StatusBar } from 'react-native'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../../../../../contexts/ThemeContext'
 import { useEffect, useState } from 'react'
-import { getShopProducts } from '@/components/shops/shops.api'
+import { getShopProducts } from '../../../../../../components/shops/shops.api'
 
 interface Product {
 	_id: string

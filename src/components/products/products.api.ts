@@ -1,4 +1,4 @@
-import apiClient from '@/core/api'
+import apiClient from '../../core/api'
 import { ProductType } from './products.type'
 
 export interface CreateProductRequest {

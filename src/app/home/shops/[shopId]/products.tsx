@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
-import { getShopProducts } from '@/components/shops/shops.api'
-import { Product } from '@/components/shops/shops.interface'
-import { useTheme } from '@/contexts/ThemeContext'
+import { getShopProducts } from '../../../../components/shops/shops.api'
+import { Product } from '../../../../components/shops/shops.interface'
+import { useTheme } from '../../../../contexts/ThemeContext'
 
 export default function ShopProductsScreen() {
 	const { shopId, shopName } = useLocalSearchParams<{ shopId: string; shopName?: string }>()

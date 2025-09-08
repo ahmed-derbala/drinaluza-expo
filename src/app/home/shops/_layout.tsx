@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
-import { useTheme } from '@/contexts/ThemeContext'
+import { useTheme } from '../../../contexts/ThemeContext'
 
 export default function ShopsLayout() {
 	const { colors } = useTheme()

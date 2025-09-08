@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { Appearance, ColorSchemeName } from 'react-native'
-import { getTheme, setTheme, Theme } from '@/components/settings/settings.api'
+import { getTheme, setTheme, Theme } from '../components/settings/settings.api'
 
 export interface ThemeColors {
 	background: string

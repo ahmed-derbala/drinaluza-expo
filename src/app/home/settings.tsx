@@ -2,10 +2,10 @@ import React from 'react'
 import { View, Text, Button } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter } from 'expo-router'
-import { signOut } from '@/core/auth/auth.api'
-import { useTheme } from '@/contexts/ThemeContext'
-import { createThemedStyles, commonThemedStyles } from '@/core/theme/createThemedStyles'
-import { Theme } from '@/components/settings/settings.interface'
+import { signOut } from '../../core/auth/auth.api'
+import { useTheme } from '../../contexts/ThemeContext'
+import { createThemedStyles, commonThemedStyles } from '../../core/theme/createThemedStyles'
+import { Theme } from '../../components/settings/settings.interface'
 
 export default function SettingsScreen() {
 	const { theme, colors, setTheme } = useTheme()

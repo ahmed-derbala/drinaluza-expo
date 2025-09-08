@@ -1,5 +1,5 @@
 import { StyleSheet, TextStyle, ViewStyle, ImageStyle } from 'react-native'
-import { ThemeColors } from '@/contexts/ThemeContext'
+import { ThemeColors } from '../../contexts/ThemeContext'
 
 type NamedStyles<T> = { [P in keyof T]: ViewStyle | TextStyle | ImageStyle }
 

@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router'
 import React from 'react'
 import { Platform } from 'react-native'
-import { ThemeProvider } from '@/contexts/ThemeContext'
+import { ThemeProvider } from '../contexts/ThemeContext'
 
 export default function RootLayout() {
 	return (
