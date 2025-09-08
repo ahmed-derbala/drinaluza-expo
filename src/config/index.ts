@@ -49,7 +49,8 @@ export const config: AppConfig = {
 // Helper functions to get server URLs
 export const getServerUrl = (environment: Environment): string => {
 	const server = config.servers[environment]
-	const protocol = environment === 'local' ? 'http' : 'http'
+	//const protocol = environment === 'local' ? 'http' : 'http'
+	const protocol = 'http'
 	return `${protocol}://${server.url}:${server.port}/api`
 }
 
