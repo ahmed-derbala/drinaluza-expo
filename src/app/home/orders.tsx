@@ -14,7 +14,15 @@ export default function OrdersScreen() {
 	const loadBasket = async () => {
 		try {
 			const storedBasket = await AsyncStorage.getItem('basket')
-			if (storedBasket) setBasket(JSON.parse(storedBasket))
+			if (storedBasket) {
+				// Ensure items in basket are unique by _id
+				const basketItems = JSON.parse(storedBasket) as OrderItem[]
+				const uniqueItems = basketItems.reduce((acc: { [key: string]: OrderItem }, item: OrderItem) => {
+					acc[item._id] = item
+					return acc
+				}, {})
+				setBasket(Object.values(uniqueItems))
+			}
 		} catch (error) {
 			console.error('Failed to load basket:', error)
 		}
@@ -23,7 +31,12 @@ export default function OrdersScreen() {
 	const fetchOrder = async () => {
 		try {
 			const response = await getOrder()
-			setOrderItems(response.data.data)
+			// Filter out duplicate items by creating a map of unique items by _id
+			const uniqueItems = response.data.data.reduce((acc: { [key: string]: OrderItem }, item: OrderItem) => {
+				acc[item._id] = item
+				return acc
+			}, {})
+			setOrderItems(Object.values(uniqueItems))
 		} catch (error) {
 			console.error('Failed to fetch order:', error)
 		}
@@ -143,7 +156,7 @@ export default function OrdersScreen() {
 			{selectedTab === 0 ? (
 				<FlatList
 					data={groupItemsByShop(basket)}
-					keyExtractor={(group) => group.shopId}
+					keyExtractor={(group, index) => `${group.shopId}-${index}`}
 					renderItem={({ item: group }) => (
 						<View style={{ marginBottom: 20 }}>
 							<Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>🏪 {group.shopName}</Text>
@@ -166,7 +179,7 @@ export default function OrdersScreen() {
 				<FlatList
 					data={orderItems}
 					renderItem={renderOrderItem}
-					keyExtractor={(item) => item._id}
+					keyExtractor={(item, index) => `${item._id}-${index}`}
 					contentContainerStyle={styles.list}
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
 				/>

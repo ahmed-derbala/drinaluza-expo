@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useTheme } from '../../contexts/ThemeContext'
+import { MaterialIcons } from '@expo/vector-icons'
 
 export default function HomeLayout() {
 	const { colors, isDark } = useTheme()
@@ -135,14 +136,6 @@ export default function HomeLayout() {
 						options={{
 							title: 'Settings',
 							tabBarActiveTintColor: colors.primary
-						}}
-					/>
-					<Tabs.Screen
-						name="business/index"
-						options={{
-							title: 'Business',
-							tabBarActiveTintColor: colors.primary,
-							href: userRole === 'shop_owner' ? undefined : null
 						}}
 					/>
 					<Tabs.Screen
