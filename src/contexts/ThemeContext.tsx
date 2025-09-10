@@ -81,102 +81,102 @@ export interface ThemeColors {
 
 const lightColors: ThemeColors = {
 	// Background
-	background: '#ffffff',
-	surface: '#f8f9fa',
-	surfaceVariant: '#e9ecef',
-	surfaceDisabled: 'rgba(0, 0, 0, 0.12)',
+	background: '#FFFFFF',
+	surface: '#F8FAFC',
+	surfaceVariant: '#F1F5F9',
+	surfaceDisabled: 'rgba(15, 23, 42, 0.08)',
 
 	// Text
-	text: '#212529',
-	textSecondary: '#495057',
-	textTertiary: '#6c757d',
-	textDisabled: '#adb5bd',
-	textOnPrimary: '#ffffff',
-	textOnSecondary: '#000000',
+	text: '#0F172A',
+	textSecondary: '#334155',
+	textTertiary: '#64748B',
+	textDisabled: '#94A3B8',
+	textOnPrimary: '#FFFFFF',
+	textOnSecondary: '#0F172A',
 
-	// Primary
-	primary: '#2563eb',
-	primaryLight: '#3b82f6',
-	primaryDark: '#1d4ed8',
-	primaryContainer: '#dbeafe',
+	// Primary (Blue)
+	primary: '#3B82F6',
+	primaryLight: '#60A5FA',
+	primaryDark: '#2563EB',
+	primaryContainer: '#DBEAFE',
 
-	// Secondary
-	secondary: '#4f46e5',
-	secondaryLight: '#6366f1',
-	secondaryDark: '#4338ca',
-	secondaryContainer: '#e0e7ff',
+	// Secondary (Indigo)
+	secondary: '#6366F1',
+	secondaryLight: '#818CF8',
+	secondaryDark: '#4F46E5',
+	secondaryContainer: '#EEF2FF',
 
 	// Status
-	success: '#16a34a',
-	error: '#dc2626',
-	warning: '#ea580c',
-	info: '#0284c7',
+	success: '#10B981', // Green 500
+	error: '#EF4444', // Red 500
+	warning: '#F59E0B', // Amber 500
+	info: '#3B82F6', // Blue 500
 
 	// UI Elements
-	border: '#dee2e6',
-	borderLight: '#e9ecef',
-	separator: '#f1f3f5',
+	border: '#E2E8F0',
+	borderLight: '#F1F5F9',
+	separator: '#F1F5F9',
 
 	// Buttons
-	button: '#2563eb',
-	buttonText: '#ffffff',
-	buttonDisabled: '#a5b4fc',
-	buttonTextDisabled: '#e2e8f0',
+	button: '#3B82F6',
+	buttonText: '#FFFFFF',
+	buttonDisabled: '#BFDBFE',
+	buttonTextDisabled: '#94A3B8',
 
 	// Inputs
-	inputBackground: '#ffffff',
-	inputBorder: '#ced4da',
-	inputText: '#212529',
-	inputPlaceholder: '#6c757d',
+	inputBackground: '#FFFFFF',
+	inputBorder: '#E2E8F0',
+	inputText: '#0F172A',
+	inputPlaceholder: '#94A3B8',
 
 	// Cards
-	card: '#ffffff',
-	cardElevated: '#f8f9fa',
+	card: '#FFFFFF',
+	cardElevated: '#F8FAFC',
 
 	// Modal
-	modal: '#ffffff',
-	modalOverlay: 'rgba(0, 0, 0, 0.5)',
+	modal: '#FFFFFF',
+	modalOverlay: 'rgba(15, 23, 42, 0.5)',
 
 	// Tab Bar
-	tabBar: '#ffffff',
-	tabBarActiveTint: '#2563eb',
-	tabBarInactiveTint: '#64748b',
+	tabBar: '#FFFFFF',
+	tabBarActiveTint: '#3B82F6',
+	tabBarInactiveTint: '#64748B',
 
 	// Status Bar
-	statusBar: '#f8f9fa',
+	statusBar: '#F8FAFC',
 	statusBarContent: 'dark-content',
 
-	// Additional colors for auth screens
-	accent: '#4f46e5',
-	input: '#ffffff'
+	// Additional colors
+	accent: '#4F46E5',
+	input: '#FFFFFF'
 }
 
 const darkColors: ThemeColors = {
 	// Background
-	background: '#121212',
-	surface: '#1e1e1e',
-	surfaceVariant: '#2d2d2d',
-	surfaceDisabled: 'rgba(255, 255, 255, 0.12)',
+	background: '#0F172A',
+	surface: '#1E293B',
+	surfaceVariant: '#334155',
+	surfaceDisabled: 'rgba(226, 232, 240, 0.12)',
 
 	// Text
-	text: '#f8f9fa',
-	textSecondary: '#e9ecef',
-	textTertiary: '#ced4da',
-	textDisabled: '#6c757d',
-	textOnPrimary: '#121212',
-	textOnSecondary: '#f8f9fa',
+	text: '#F8FAFC',
+	textSecondary: '#E2E8F0',
+	textTertiary: '#94A3B8',
+	textDisabled: '#64748B',
+	textOnPrimary: '#F8FAFC',
+	textOnSecondary: '#F8FAFC',
 
-	// Primary
-	primary: '#3b82f6',
-	primaryLight: '#60a5fa',
-	primaryDark: '#2563eb',
-	primaryContainer: '#1e40af',
+	// Primary (Blue)
+	primary: '#60A5FA',
+	primaryLight: '#93C5FD',
+	primaryDark: '#3B82F6',
+	primaryContainer: '#1E40AF',
 
-	// Secondary
-	secondary: '#6366f1',
-	secondaryLight: '#818cf8',
-	secondaryDark: '#4f46e5',
-	secondaryContainer: '#3730a3',
+	// Secondary (Indigo)
+	secondary: '#818CF8',
+	secondaryLight: '#A5B4FC',
+	secondaryDark: '#6366F1',
+	secondaryContainer: '#3730A3',
 
 	// Status
 	success: '#22c55e',

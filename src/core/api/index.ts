@@ -28,10 +28,33 @@ const createApiClient = async () => {
 	client.interceptors.response.use(
 		(response) => response,
 		(error) => {
+			const requestUrl = error.config?.url || 'unknown'
+			const baseUrl = error.config?.baseURL || 'unknown'
+			const fullUrl = baseUrl && requestUrl ? `${baseUrl.replace(/\/+$/, '')}/${requestUrl.replace(/^\/+/, '')}` : 'unknown'
+
 			console.error('API Error:', error.message)
+			console.error('Request URL:', fullUrl)
+			console.error('Method:', error.config?.method?.toUpperCase() || 'UNKNOWN')
+
 			if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-				console.error('Network error - check server connection and settings')
+				console.error('\n=== NETWORK ERROR DETECTED ===')
+				console.error('Server URL in use:', baseUrl)
+				console.error('Endpoint:', requestUrl)
+				console.error('Full URL:', fullUrl)
+				console.error('Make sure the server is running and accessible from this device')
+				console.error('================================\n')
 			}
+
+			if (error.response) {
+				// The request was made and the server responded with a status code
+				// that falls out of the range of 2xx
+				console.error('Response status:', error.response.status)
+				console.error('Response data:', error.response.data)
+			} else if (error.request) {
+				// The request was made but no response was received
+				console.error('No response received from server')
+			}
+
 			return Promise.reject(error)
 		}
 	)
@@ -50,9 +73,10 @@ const apiClient = axios.create({
 
 apiClient.interceptors.request.use(async (config) => {
 	const token = await AsyncStorage.getItem('authToken')
-	//console.log(token)
 	if (token) {
+		// Set both Authorization and token headers for compatibility
 		config.headers.Authorization = `Bearer ${token}`
+		config.headers.token = token // Add token in the 'token' header for routes that expect it
 	}
 	return config
 })

@@ -1,252 +1,227 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Alert, Button, RefreshControl } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getOrder, createOrder, cancelOrderAPI } from '../../components/orders/orders.api'
-import { OrderItem } from '../../components/orders/orders.interface'
-import { useFocusEffect } from '@react-navigation/native'
+import React, { useState, useEffect, useMemo } from 'react'
+import { useLocalSearchParams } from 'expo-router'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
+import { useRouter } from 'expo-router'
+import { MaterialIcons } from '@expo/vector-icons'
+import { useTheme } from '../../contexts/ThemeContext'
 
-export default function OrdersScreen() {
-	const [orderItems, setOrderItems] = useState<OrderItem[]>([])
-	const [basket, setBasket] = useState<OrderItem[]>([])
-	const [selectedTab, setSelectedTab] = useState(0) // 0 for Basket, 1 for Orders
-	const [refreshing, setRefreshing] = useState(false)
-
-	const loadBasket = async () => {
-		try {
-			const storedBasket = await AsyncStorage.getItem('basket')
-			if (storedBasket) {
-				// Ensure items in basket are unique by _id
-				const basketItems = JSON.parse(storedBasket) as OrderItem[]
-				const uniqueItems = basketItems.reduce((acc: { [key: string]: OrderItem }, item: OrderItem) => {
-					acc[item._id] = item
-					return acc
-				}, {})
-				setBasket(Object.values(uniqueItems))
-			}
-		} catch (error) {
-			console.error('Failed to load basket:', error)
-		}
-	}
-
-	const fetchOrder = async () => {
-		try {
-			const response = await getOrder()
-			// Filter out duplicate items by creating a map of unique items by _id
-			const uniqueItems = response.data.data.reduce((acc: { [key: string]: OrderItem }, item: OrderItem) => {
-				acc[item._id] = item
-				return acc
-			}, {})
-			setOrderItems(Object.values(uniqueItems))
-		} catch (error) {
-			console.error('Failed to fetch order:', error)
-		}
-	}
-
-	const refreshData = useCallback(async () => {
-		setRefreshing(true)
-		if (selectedTab === 0) {
-			await loadBasket()
-		} else {
-			await fetchOrder()
-		}
-		setRefreshing(false)
-	}, [selectedTab])
-
-	// Refresh data when the screen is focused or selectedTab changes
-	useFocusEffect(
-		useCallback(() => {
-			refreshData()
-		}, [refreshData, selectedTab])
-	)
-
-	// Handle tab switch and refresh
-	const handleTabSwitch = (tabIndex: number) => {
-		setSelectedTab(tabIndex)
-		// No need to call refreshData here since useFocusEffect will handle it via selectedTab dependency
-	}
-
-	const onRefresh = useCallback(() => {
-		refreshData()
-	}, [refreshData])
-
-	const addToBasket = async (item: OrderItem) => {
-		try {
-			const newBasket = [...basket, item]
-			setBasket(newBasket)
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			Alert.alert('Success', `${item.name} added to basket`)
-		} catch (error) {
-			console.error('Failed to add to basket:', error)
-			Alert.alert('Error', 'Failed to add item to basket')
-		}
-	}
-
-	const removeFromBasket = async (itemId: string) => {
-		try {
-			const newBasket = basket.filter((item) => item._id !== itemId)
-			setBasket(newBasket)
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			Alert.alert('Success', 'Item removed from basket')
-		} catch (error) {
-			console.error('Failed to remove from basket:', error)
-			Alert.alert('Error', 'Failed to remove item from basket')
-		}
-	}
-
-	const groupItemsByShop = (items: OrderItem[]) => {
-		const grouped: { [shopId: string]: { shopName: string; items: OrderItem[] } } = {}
-
-		items.forEach((item) => {
-			const shopId = item.shop?._id || 'unknown'
-			const shopName = item.shop?.name || 'Unknown Shop'
-			if (!grouped[shopId]) {
-				grouped[shopId] = { shopName, items: [] }
-			}
-			grouped[shopId].items.push(item)
-		})
-
-		return Object.entries(grouped).map(([shopId, group]) => ({
-			shopId,
-			shopName: group.shopName,
-			items: group.items
-		}))
-	}
-
-	const renderOrderItem = ({ item }: { item: OrderItem }) => (
-		<View style={styles.card}>
-			<Text style={styles.cardTitle}>{item.name}</Text>
-			<Text style={styles.cardText}>Shop: {item?.shop?.name}</Text>
-			<Text style={styles.cardText}>Created by: {item.owner?.slug || 'Unknown'}</Text>
-			<Text style={styles.cardText}>Status: {item.status}</Text>
-			<View style={styles.buttonContainer}>
-				<Button title="Cancel" onPress={() => cancelOrder({ orderId: item._id })} color="#FF3B30" />
-			</View>
-		</View>
-	)
-
-	const handleBuy = async (shopItems: OrderItem[]) => {
-		try {
-			const response = await createOrder({ products: shopItems })
-			const remaining = basket.filter((item) => !shopItems.some((si) => si._id === item._id))
-			setBasket(remaining)
-			await AsyncStorage.setItem('basket', JSON.stringify(remaining))
-			Alert.alert('Success', 'Order placed successfully!')
-			// Refresh orders after placing an order
-			if (selectedTab === 1) {
-				await fetchOrder()
-			}
-		} catch (error) {
-			console.error('Failed to place order:', error)
-			Alert.alert('Error', 'Failed to place order')
-		}
-	}
-
-	return (
-		<View style={styles.container}>
-			{/* Top Bar Switch */}
-			<View style={styles.topBar}>
-				<TouchableOpacity style={[styles.tab, selectedTab === 0 && styles.activeTab]} onPress={() => handleTabSwitch(0)}>
-					<Text style={[styles.tabText, selectedTab === 0 && styles.activeTabText]}>Basket ({basket.length})</Text>
-				</TouchableOpacity>
-				<TouchableOpacity style={[styles.tab, selectedTab === 1 && styles.activeTab]} onPress={() => handleTabSwitch(1)}>
-					<Text style={[styles.tabText, selectedTab === 1 && styles.activeTabText]}>Orders</Text>
-				</TouchableOpacity>
-			</View>
-
-			{selectedTab === 0 ? (
-				<FlatList
-					data={groupItemsByShop(basket)}
-					keyExtractor={(group, index) => `${group.shopId}-${index}`}
-					renderItem={({ item: group }) => (
-						<View style={{ marginBottom: 20 }}>
-							<Text style={{ color: '#fff', fontSize: 16, fontWeight: 'bold', marginBottom: 10 }}>🏪 {group.shopName}</Text>
-							{group.items.map((item) => (
-								<View key={item._id} style={styles.card}>
-									<Text style={styles.cardTitle}>{item.name}</Text>
-									<Text style={styles.cardText}>Created by: {item.owner?.slug || 'Unknown'}</Text>
-									<View style={styles.buttonContainer}>
-										<Button title="Remove" onPress={() => removeFromBasket(item._id)} color="#FF3B30" />
-									</View>
-								</View>
-							))}
-							<Button title="Buy All from This Shop" onPress={() => handleBuy(group.items)} color="#34C759" accessibilityLabel={`Buy items from ${group.shopName}`} />
-						</View>
-					)}
-					contentContainerStyle={styles.list}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-				/>
-			) : (
-				<FlatList
-					data={orderItems}
-					renderItem={renderOrderItem}
-					keyExtractor={(item, index) => `${item._id}-${index}`}
-					contentContainerStyle={styles.list}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-				/>
-			)}
-		</View>
-	)
+interface OrderItem {
+	id: string
+	status: 'pending' | 'completed' | 'cancelled'
+	total: number
+	date: string
+	items: number
 }
 
-const cancelOrder = async ({ orderId }: { orderId: string }) => {
-	try {
-		await cancelOrderAPI({ orderId })
-		Alert.alert('Success', 'Order cancelled successfully')
-	} catch (error) {
-		console.error('Failed to cancel order:', error)
-		Alert.alert('Error', 'Failed to cancel order')
+const OrdersScreen = () => {
+	const { colors } = useTheme()
+	const router = useRouter()
+	const [refreshing, setRefreshing] = useState(false)
+	const [loading, setLoading] = useState(true)
+	const [orders, setOrders] = useState<OrderItem[]>([])
+	const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all')
+	const params = useLocalSearchParams()
+
+	// Apply filter from URL params if present
+	useEffect(() => {
+		if (params.filter === 'pending' || params.filter === 'completed') {
+			setFilter(params.filter as 'pending' | 'completed')
+		}
+	}, [params.filter])
+
+	const loadOrders = async () => {
+		try {
+			// TODO: Replace with actual API call
+			// const response = await fetchOrders(filter);
+			// setOrders(response.data);
+
+			// Mock data for now
+			setTimeout(() => {
+				setOrders([
+					{ id: '1', status: 'completed', total: 45.99, date: '2023-05-15', items: 2 },
+					{ id: '2', status: 'pending', total: 32.5, date: '2023-05-16', items: 1 },
+					{ id: '3', status: 'completed', total: 78.25, date: '2023-05-10', items: 3 }
+				])
+				setLoading(false)
+				setRefreshing(false)
+			}, 1000)
+		} catch (error) {
+			console.error('Error loading orders:', error)
+			setLoading(false)
+			setRefreshing(false)
+		}
 	}
+
+	const onRefresh = () => {
+		setRefreshing(true)
+		loadOrders()
+	}
+
+	useEffect(() => {
+		loadOrders()
+	}, [filter])
+
+	const filteredOrders = useMemo(() => (filter === 'all' ? orders : orders.filter((order) => order.status === filter)), [orders, filter])
+
+	const renderOrderItem = ({ item }: { item: OrderItem }) => (
+		<TouchableOpacity style={[styles.orderItem, { backgroundColor: colors.card }]} onPress={() => router.push(`/home/orders/${item.id}` as any)}>
+			<View style={styles.orderHeader}>
+				<Text style={[styles.orderId, { color: colors.text }]}>Order #{item.id}</Text>
+				<View
+					style={[
+						styles.statusBadge,
+						{
+							backgroundColor: item.status === 'completed' ? '#4CAF50' : '#FFA000',
+							opacity: 0.2
+						}
+					]}
+				>
+					<Text style={[styles.statusText, { color: item.status === 'completed' ? '#4CAF50' : '#FFA000' }]}>{item.status.charAt(0).toUpperCase() + item.status.slice(1)}</Text>
+				</View>
+			</View>
+			<View style={styles.orderDetails}>
+				<Text style={[styles.orderDetail, { color: colors.textSecondary }]}>
+					{item.items} {item.items === 1 ? 'item' : 'items'} • ${item.total.toFixed(2)}
+				</Text>
+				<Text style={[styles.orderDate, { color: colors.textTertiary }]}>{new Date(item.date).toLocaleDateString()}</Text>
+			</View>
+			<MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} style={styles.chevron} />
+		</TouchableOpacity>
+	)
+
+	if (loading) {
+		return (
+			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
+	}
+
+	const FilterButton = ({ status }: { status: 'all' | 'pending' | 'completed' }) => (
+		<TouchableOpacity style={[styles.filterButton, filter === status && { backgroundColor: colors.primary }, { borderColor: colors.border }]} onPress={() => setFilter(status)}>
+			<Text
+				style={[
+					styles.filterText,
+					{
+						color: filter === status ? '#fff' : colors.text,
+						opacity: filter === status ? 1 : 0.7
+					}
+				]}
+			>
+				{status.charAt(0).toUpperCase() + status.slice(1)}
+			</Text>
+		</TouchableOpacity>
+	)
+
+	return (
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<View style={[styles.filterContainer, { borderBottomColor: colors.border }]}>
+				<FilterButton status="all" />
+				<FilterButton status="pending" />
+				<FilterButton status="completed" />
+			</View>
+
+			<FlatList
+				data={filteredOrders}
+				renderItem={renderOrderItem}
+				keyExtractor={(item) => item.id}
+				contentContainerStyle={styles.listContent}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				ListEmptyComponent={
+					<View style={styles.emptyContainer}>
+						<MaterialIcons name="receipt" size={64} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+						<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No orders found</Text>
+					</View>
+				}
+			/>
+		</View>
+	)
 }
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1,
-		backgroundColor: '#1a1a1a'
+		flex: 1
 	},
-	topBar: {
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	filterContainer: {
 		flexDirection: 'row',
-		margin: 10,
-		backgroundColor: '#333',
-		borderRadius: 8,
-		overflow: 'hidden'
+		padding: 16,
+		borderBottomWidth: 1
 	},
-	tab: {
-		flex: 1,
-		padding: 12,
+	filterButton: {
+		paddingVertical: 8,
+		paddingHorizontal: 16,
+		borderRadius: 20,
+		marginRight: 8,
+		borderWidth: 1
+	},
+	filterText: {
+		fontSize: 14,
+		fontWeight: '500'
+	},
+	listContent: {
+		padding: 16
+	},
+	orderItem: {
+		borderRadius: 12,
+		padding: 16,
+		marginBottom: 12,
+		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'center'
+		justifyContent: 'space-between',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.1,
+		shadowRadius: 4,
+		elevation: 2
 	},
-	activeTab: {
-		backgroundColor: '#007AFF'
+	orderHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 8
 	},
-	tabText: {
-		color: '#aaa',
+	orderId: {
+		fontSize: 16,
+		fontWeight: '600',
+		marginRight: 8
+	},
+	statusBadge: {
+		paddingHorizontal: 8,
+		paddingVertical: 2,
+		borderRadius: 10
+	},
+	statusText: {
+		fontSize: 12,
 		fontWeight: '600'
 	},
-	activeTabText: {
-		color: '#fff'
+	orderDetails: {
+		flex: 1
 	},
-	list: {
-		padding: 10
-	},
-	card: {
-		backgroundColor: '#333',
-		padding: 15,
-		marginBottom: 10,
-		borderRadius: 5
-	},
-	cardTitle: {
-		color: '#fff',
-		fontSize: 18,
-		fontWeight: 'bold',
-		marginBottom: 5
-	},
-	cardText: {
-		color: '#fff',
+	orderDetail: {
 		fontSize: 14,
-		marginBottom: 5
+		marginBottom: 4
 	},
-	buttonContainer: {
-		marginTop: 10
+	orderDate: {
+		fontSize: 12
+	},
+	chevron: {
+		marginLeft: 8
+	},
+	emptyContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginTop: 100
+	},
+	emptyText: {
+		fontSize: 16,
+		marginTop: 16,
+		textAlign: 'center'
 	}
 })
+
+export default OrdersScreen

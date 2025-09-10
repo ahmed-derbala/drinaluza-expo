@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Alert, Dimensions, RefreshControl } from 'react-native'
+import React, { useState, useCallback, useEffect } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Dimensions, Alert, ActivityIndicator } from 'react-native'
+import { useRouter } from 'expo-router'
 import { useTheme } from '../../contexts/ThemeContext'
-import { MaterialIcons, MaterialCommunityIcons, FontAwesome5, AntDesign, Ionicons } from '@expo/vector-icons'
+import { LineChart } from 'react-native-chart-kit'
+import { MaterialIcons, Ionicons, AntDesign } from '@expo/vector-icons'
 import { getMyProducts } from '../products/products.api'
 import { getMyShops } from '../shops/shops.api'
-import { useNavigation } from '@react-navigation/native'
-import { LineChart } from 'react-native-chart-kit'
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window')
 
@@ -21,12 +21,13 @@ type DashboardCardProps = {
 
 const DashboardCard = ({ title, value, icon, color, onPress, trend, trendValue }: DashboardCardProps) => {
 	const { colors } = useTheme()
+	const styles = createStyles(colors, false)
 
 	const getTrendIcon = () => {
 		if (trend === 'up') {
-			return <AntDesign name="arrowup" size={14} color="#4CAF50" style={styles.trendIcon} />
+			return <AntDesign name="arrowup" size={14} color={colors.success} style={styles.trendIcon} />
 		} else if (trend === 'down') {
-			return <AntDesign name="arrowdown" size={14} color="#F44336" style={styles.trendIcon} />
+			return <AntDesign name="arrowdown" size={14} color={colors.error} style={styles.trendIcon} />
 		}
 		return null
 	}
@@ -39,20 +40,10 @@ const DashboardCard = ({ title, value, icon, color, onPress, trend, trendValue }
 			<View style={styles.cardContent}>
 				<Text style={styles.cardValue}>{value}</Text>
 				<Text style={styles.cardTitle}>{title}</Text>
-
 				{trend && trendValue && (
 					<View style={styles.trendContainer}>
 						{getTrendIcon()}
-						<Text
-							style={[
-								styles.trendText,
-								{
-									color: trend === 'up' ? '#4CAF50' : trend === 'down' ? '#F44336' : colors.text
-								}
-							]}
-						>
-							{trendValue} {trend === 'up' ? 'Increase' : trend === 'down' ? 'Decrease' : ''}
-						</Text>
+						<Text style={[styles.trendText, { color: trend === 'up' ? colors.success : colors.error }]}>{trendValue}</Text>
 					</View>
 				)}
 			</View>
@@ -60,291 +51,249 @@ const DashboardCard = ({ title, value, icon, color, onPress, trend, trendValue }
 	)
 }
 
-// Mock data for the chart
-const chartData = {
-	labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-	datasets: [
-		{
-			data: [2000, 4500, 2800, 8000, 9900, 12000],
-			color: (opacity = 1) => `rgba(33, 150, 243, ${opacity})`,
-			strokeWidth: 2
+const BusinessDashboard = () => {
+	const { colors, isDark } = useTheme()
+	const styles = createStyles(colors, isDark)
+	const router = useRouter()
+
+	// Helper function to navigate with type safety and debug logging
+	const navigateTo = (path: string) => {
+		console.log('Attempting to navigate to:', path)
+		try {
+			// @ts-ignore - Workaround for Expo Router type issues
+			router.push(path)
+			console.log('Navigation successful')
+		} catch (error) {
+			console.error('Navigation error:', error)
 		}
-	],
-	legend: ['Monthly Sales']
-}
-
-// Mock recent orders
-const recentOrders = [
-	{ id: '1', customer: 'John Doe', amount: 120, status: 'completed', date: '2023-06-15' },
-	{ id: '2', customer: 'Jane Smith', amount: 85, status: 'processing', date: '2023-06-14' },
-	{ id: '3', customer: 'Mike Johnson', amount: 220, status: 'shipped', date: '2023-06-13' },
-	{ id: '4', customer: 'Sarah Williams', amount: 150, status: 'completed', date: '2023-06-12' }
-]
-
-const chartConfig = {
-	backgroundColor: '#ffffff',
-	backgroundGradientFrom: '#ffffff',
-	backgroundGradientTo: '#ffffff',
-	decimalPlaces: 0,
-	color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-	labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-	style: {
-		borderRadius: 16
-	},
-	propsForDots: {
-		r: '4',
-		strokeWidth: '2',
-		stroke: '#2196F3'
 	}
-}
-
-export default function BusinessDashboard() {
-	const { colors } = useTheme()
-	const navigation = useNavigation()
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [stats, setStats] = useState({
+		totalSales: 0,
+		totalOrders: 0,
 		totalProducts: 0,
-		activeProducts: 0,
 		totalShops: 0,
-		totalSales: 12560,
-		monthlyGrowth: 12.5,
-		conversionRate: 3.2,
-		avgOrderValue: 89.5
+		avgOrderValue: 0,
+		orderCompletionRate: 0,
+		salesData: {
+			labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+			datasets: [
+				{
+					data: [2000, 4500, 2800, 8000, 9900, 4300],
+					color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`,
+					strokeWidth: 2
+				}
+			]
+		},
+		recentOrders: [
+			{ id: '1', customer: 'John Doe', amount: 120, status: 'completed', date: '2023-05-15' },
+			{ id: '2', customer: 'Jane Smith', amount: 85, status: 'pending', date: '2023-05-14' },
+			{ id: '3', customer: 'Bob Johnson', amount: 230, status: 'processing', date: '2023-05-13' },
+			{ id: '4', customer: 'Alice Brown', amount: 65, status: 'completed', date: '2023-05-12' },
+			{ id: '5', customer: 'Charlie Wilson', amount: 175, status: 'cancelled', date: '2023-05-11' }
+		]
 	})
 
-	const fetchDashboardData = async () => {
+	const fetchDashboardData = useCallback(async () => {
 		try {
-			setRefreshing(true)
+			setLoading(true)
 
-			// Fetch products
-			const productsResponse = await getMyProducts(1, 100)
-			const products = productsResponse.data.data || []
-			const activeProducts = products.filter((p) => p.isActive).length
+			// Fetch products and shops data
+			const [productsResponse, shopsResponse] = await Promise.all([getMyProducts(), getMyShops()])
 
-			// Fetch shops
-			const shopsResponse = await getMyShops(1, 100)
-			const shops = shopsResponse.data.data || []
-
-			// In a real app, you would fetch these values from your API
-			setStats((prevStats) => ({
-				...prevStats,
-				totalProducts: products.length,
-				activeProducts,
-				totalShops: shops.length
+			// Update stats with fetched data
+			setStats((prev) => ({
+				...prev,
+				totalProducts: productsResponse?.data?.length || 0,
+				totalShops: shopsResponse?.data?.length || 0
 			}))
 		} catch (error) {
-			console.error('Failed to load dashboard data:', error)
-			Alert.alert('Error', 'Failed to load dashboard data')
+			console.error('Error fetching dashboard data:', error)
+			Alert.alert('Error', 'Failed to load dashboard data. Please try again.')
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
 		}
-	}
+	}, [])
 
-	const onRefresh = () => {
+	const onRefresh = useCallback(() => {
+		setRefreshing(true)
 		fetchDashboardData()
-	}
+	}, [fetchDashboardData])
 
 	useEffect(() => {
 		fetchDashboardData()
-	}, [])
-
-	if (loading) {
-		return (
-			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-				<ActivityIndicator size="large" color={colors.primary} />
-				<Text style={[styles.loadingText, { color: colors.text }]}>Loading dashboard...</Text>
-			</View>
-		)
-	}
+	}, [fetchDashboardData])
 
 	const formatCurrency = (amount: number) => {
 		return new Intl.NumberFormat('en-US', {
 			style: 'currency',
 			currency: 'USD',
 			minimumFractionDigits: 0,
-			maximumFractionDigits: 2
+			maximumFractionDigits: 0
 		}).format(amount)
 	}
 
 	const getStatusColor = (status: string) => {
 		switch (status.toLowerCase()) {
 			case 'completed':
-				return '#4CAF50'
+				return colors.success
 			case 'processing':
-				return '#FFC107'
-			case 'shipped':
-				return '#2196F3'
+				return colors.warning
+			case 'pending':
+				return colors.info
+			case 'cancelled':
+				return colors.error
 			default:
-				return '#9E9E9E'
+				return colors.text
 		}
+	}
+
+	if (loading) {
+		return (
+			<View style={styles.loadingContainer}>
+				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
 	}
 
 	return (
 		<ScrollView
-			style={[styles.container, { backgroundColor: colors.background }]}
+			style={styles.container}
+			contentContainerStyle={styles.scrollContainer}
 			refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 		>
 			<View style={styles.header}>
-				<View style={styles.headerTopRow}>
-					<View>
-						<Text style={[styles.headerGreeting, { color: colors.textSecondary }]}>Welcome back!</Text>
-						<Text style={[styles.headerTitle, { color: colors.text }]}>Business Dashboard</Text>
-					</View>
-					<TouchableOpacity style={[styles.notificationButton, { backgroundColor: colors.card }]}>
-						<Ionicons name="notifications-outline" size={24} color={colors.text} />
-						<View style={[styles.notificationBadge, { backgroundColor: colors.primary }]} />
-					</TouchableOpacity>
-				</View>
-				<Text style={[styles.headerSubtitle, { color: colors.textSecondary }]}>Here's what's happening with your business today</Text>
+				<Text style={[styles.headerTitle, { color: colors.text }]}>Business Dashboard</Text>
+				<TouchableOpacity>
+					<Ionicons name="notifications-outline" size={24} color={colors.text} />
+				</TouchableOpacity>
 			</View>
 
-			{/* Stats Overview */}
-			<View style={styles.overviewContainer}>
-				<View style={styles.overviewCard}>
-					<View style={[styles.overviewIcon, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
-						<MaterialIcons name="trending-up" size={24} color="#4CAF50" />
-					</View>
-					<View style={styles.overviewTextContainer}>
-						<Text style={[styles.overviewValue, { color: colors.text }]}>{formatCurrency(stats.totalSales)}</Text>
-						<Text style={[styles.overviewLabel, { color: colors.textSecondary }]}>Total Revenue</Text>
-					</View>
-					<View style={styles.overviewTrend}>
-						<AntDesign name="arrowup" size={14} color="#4CAF50" />
-						<Text style={[styles.overviewTrendText, { color: '#4CAF50' }]}>{stats.monthlyGrowth}%</Text>
-					</View>
-				</View>
+			<View style={styles.statsRow}>
+				<DashboardCard
+					title="Total Sales"
+					value={formatCurrency(stats.totalSales)}
+					icon={<MaterialIcons name="attach-money" size={24} color="#fff" />}
+					color={colors.primary}
+					trend="up"
+					trendValue="12% from last month"
+				/>
+				<DashboardCard
+					title="Total Orders"
+					value={stats.totalOrders}
+					icon={<MaterialIcons name="shopping-cart" size={24} color="#fff" />}
+					color={colors.secondary}
+					trend="up"
+					trendValue="5% from last month"
+				/>
 			</View>
 
-			{/* Stats Grid */}
-			<View style={styles.statsGrid}>
+			<View style={styles.statsRow}>
+				<DashboardCard title="Products" value={stats.totalProducts} icon={<MaterialIcons name="inventory" size={24} color="#fff" />} color={colors.success} onPress={() => navigateTo('/home')} />
 				<DashboardCard
-					title="Total Products"
-					value={stats.totalProducts}
-					icon={<MaterialIcons name="inventory" size={20} color="#fff" />}
-					color="#4CAF50"
-					trend="up"
-					trendValue="5.2%"
-					onPress={() => navigation.navigate('my-products')}
-				/>
-				<DashboardCard
-					title="Active Products"
-					value={stats.activeProducts}
-					icon={<MaterialIcons name="check-circle" size={20} color="#fff" />}
-					color="#2196F3"
-					trend="up"
-					trendValue="2.1%"
-					onPress={() => navigation.navigate('my-products')}
-				/>
-				<DashboardCard
-					title="Total Shops"
+					title="Shops"
 					value={stats.totalShops}
-					icon={<MaterialIcons name="store" size={20} color="#fff" />}
-					color="#9C27B0"
-					trend="up"
-					trendValue="8.7%"
-					onPress={() => navigation.navigate('my-shops')}
-				/>
-				<DashboardCard
-					title="Conversion"
-					value={`${stats.conversionRate}%`}
-					icon={<MaterialIcons name="trending-up" size={20} color="#fff" />}
-					color="#FF9800"
-					trend="up"
-					trendValue="1.2%"
-					onPress={() => {}}
+					icon={<MaterialIcons name="store" size={24} color="#fff" />}
+					color={colors.warning}
+					onPress={() => router.push('/(tabs)/business/my-shops' as any)}
 				/>
 			</View>
 
-			{/* Sales Chart */}
 			<View style={[styles.chartContainer, { backgroundColor: colors.card }]}>
-				<View style={styles.chartHeader}>
-					<Text style={[styles.sectionTitle, { color: colors.text }]}>Sales Overview</Text>
-					<TouchableOpacity>
-						<Text style={[styles.viewAllText, { color: colors.primary }]}>View Report</Text>
-					</TouchableOpacity>
-				</View>
+				<Text style={[styles.sectionTitle, { color: colors.text }]}>Sales Overview</Text>
 				<LineChart
-					data={chartData}
+					data={stats.salesData}
 					width={SCREEN_WIDTH - 48}
 					height={220}
-					chartConfig={chartConfig}
+					chartConfig={{
+						backgroundColor: colors.card,
+						backgroundGradientFrom: colors.card,
+						backgroundGradientTo: colors.card,
+						decimalPlaces: 0,
+						color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+						labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+						style: {
+							borderRadius: 16
+						},
+						propsForDots: {
+							r: '4',
+							strokeWidth: '2',
+							stroke: colors.primary
+						}
+					}}
 					bezier
 					style={styles.chart}
-					withDots={false}
-					withShadow={false}
-					withInnerLines={false}
-					withOuterLines={false}
-					withVerticalLines={false}
-					withHorizontalLines={true}
-					withVerticalLabels={true}
-					withHorizontalLabels={true}
-					fromZero={true}
-					segments={5}
 				/>
 			</View>
 
-			{/* Recent Orders */}
-			<View style={styles.recentOrders}>
+			<View style={[styles.recentOrdersContainer, { backgroundColor: colors.card }]}>
 				<View style={styles.sectionHeader}>
 					<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Orders</Text>
-					<TouchableOpacity onPress={() => navigation.navigate('orders')}>
-						<Text style={[styles.viewAllText, { color: colors.primary }]}>View All</Text>
+					<TouchableOpacity onPress={() => router.push('/home/orders')}>
+						<Text style={{ color: colors.primary }}>View All</Text>
 					</TouchableOpacity>
 				</View>
 
-				{recentOrders.map((order) => (
-					<TouchableOpacity key={order.id} style={[styles.orderCard, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('order-details', { orderId: order.id })}>
+				{stats.recentOrders.map((order) => (
+					<TouchableOpacity
+						key={order.id}
+						style={styles.orderItem}
+						onPress={() =>
+							router.push({
+								pathname: '/home/orders',
+								params: { id: order.id }
+							})
+						}
+					>
 						<View style={styles.orderInfo}>
 							<Text style={[styles.orderCustomer, { color: colors.text }]}>{order.customer}</Text>
 							<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{new Date(order.date).toLocaleDateString()}</Text>
 						</View>
-						<View style={styles.orderDetails}>
+						<View style={styles.orderAmountContainer}>
 							<Text style={[styles.orderAmount, { color: colors.text }]}>{formatCurrency(order.amount)}</Text>
-							<View style={[styles.orderStatus, { backgroundColor: `${getStatusColor(order.status)}20` }]}>
-								<Text style={[styles.orderStatusText, { color: getStatusColor(order.status) }]}>{order.status.charAt(0).toUpperCase() + order.status.slice(1)}</Text>
+							<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(order.status)}20` }]}>
+								<Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</Text>
 							</View>
 						</View>
 					</TouchableOpacity>
 				))}
 			</View>
 
-			{/* Quick Actions */}
-			<View style={styles.quickActions}>
-				<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
-				<View style={styles.actionButtons}>
-					<TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('my-products', { screen: 'add-product' })}>
-						<View style={[styles.actionIcon, { backgroundColor: 'rgba(33, 150, 243, 0.1)' }]}>
-							<MaterialIcons name="add-circle-outline" size={24} color="#2196F3" />
+			<View style={[styles.quickActionsContainer, { backgroundColor: colors.card }]}>
+				<Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Quick Actions</Text>
+				<View style={styles.quickActionsGrid}>
+					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+						<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}20` }]}>
+							<MaterialIcons name="add-circle" size={24} color={colors.primary} />
 						</View>
-						<Text style={[styles.actionButtonText, { color: colors.text }]}>Add Product</Text>
+						<Text style={[styles.actionText, { color: colors.text }]}>Add Product</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('my-shops', { screen: 'add-shop' })}>
-						<View style={[styles.actionIcon, { backgroundColor: 'rgba(156, 39, 176, 0.1)' }]}>
-							<MaterialIcons name="add-business" size={24} color="#9C27B0" />
+					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+						<View style={[styles.actionIcon, { backgroundColor: `${colors.success}20` }]}>
+							<MaterialIcons name="add-shopping-cart" size={24} color={colors.success} />
 						</View>
-						<Text style={[styles.actionButtonText, { color: colors.text }]}>Add Shop</Text>
+						<Text style={[styles.actionText, { color: colors.text }]}>New Order</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('analytics')}>
-						<View style={[styles.actionIcon, { backgroundColor: 'rgba(76, 175, 80, 0.1)' }]}>
-							<MaterialIcons name="analytics" size={24} color="#4CAF50" />
+					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+						<View style={[styles.actionIcon, { backgroundColor: `${colors.info}20` }]}>
+							<MaterialIcons name="insights" size={24} color={colors.info} />
 						</View>
-						<Text style={[styles.actionButtonText, { color: colors.text }]}>Analytics</Text>
+						<Text style={[styles.actionText, { color: colors.text }]}>Analytics</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.card }]} onPress={() => navigation.navigate('promotions')}>
-						<View style={[styles.actionIcon, { backgroundColor: 'rgba(255, 152, 0, 0.1)' }]}>
-							<MaterialIcons name="local-offer" size={24} color="#FF9800" />
+					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+						<View style={[styles.actionIcon, { backgroundColor: `${colors.warning}20` }]}>
+							<Ionicons name="settings-outline" size={24} color={colors.warning} />
 						</View>
-						<Text style={[styles.actionButtonText, { color: colors.text }]}>Promotions</Text>
+						<Text style={[styles.actionText, { color: colors.text }]}>Settings</Text>
 					</TouchableOpacity>
 				</View>
 			</View>
 
-			{/* Performance Metrics */}
 			<View style={[styles.metricsContainer, { backgroundColor: colors.card }]}>
 				<Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Performance Metrics</Text>
 				<View style={styles.metricsGrid}>
@@ -352,15 +301,9 @@ export default function BusinessDashboard() {
 						<Text style={[styles.metricValue, { color: colors.primary }]}>{stats.avgOrderValue.toFixed(2)}</Text>
 						<Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Avg. Order Value</Text>
 					</View>
-					<View style={styles.metricDivider} />
 					<View style={styles.metricItem}>
-						<Text style={[styles.metricValue, { color: colors.primary }]}>24h</Text>
-						<Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Avg. Delivery Time</Text>
-					</View>
-					<View style={styles.metricDivider} />
-					<View style={styles.metricItem}>
-						<Text style={[styles.metricValue, { color: colors.primary }]}>92%</Text>
-						<Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Success Rate</Text>
+						<Text style={[styles.metricValue, { color: colors.success }]}>{stats.orderCompletionRate}%</Text>
+						<Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Completion Rate</Text>
 					</View>
 				</View>
 			</View>
@@ -368,303 +311,215 @@ export default function BusinessDashboard() {
 	)
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		padding: 16
-	},
-	loadingContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	loadingText: {
-		marginTop: 10,
-		fontSize: 16
-	},
-	header: {
-		marginBottom: 24
-	},
-	headerTopRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 8
-	},
-	headerGreeting: {
-		fontSize: 14,
-		marginBottom: 4
-	},
-	headerTitle: {
-		fontSize: 24,
-		fontWeight: 'bold',
-		marginBottom: 4
-	},
-	headerSubtitle: {
-		fontSize: 14,
-		color: '#666'
-	},
-	notificationButton: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		justifyContent: 'center',
-		alignItems: 'center',
-		position: 'relative'
-	},
-	notificationBadge: {
-		position: 'absolute',
-		top: 8,
-		right: 8,
-		width: 8,
-		height: 8,
-		borderRadius: 4
-	},
-	overviewContainer: {
-		marginBottom: 20
-	},
-	overviewCard: {
-		flexDirection: 'row',
-		backgroundColor: '#fff',
-		borderRadius: 16,
-		padding: 20,
-		alignItems: 'center',
-		elevation: 2,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 4
-	},
-	overviewIcon: {
-		width: 48,
-		height: 48,
-		borderRadius: 12,
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginRight: 16
-	},
-	overviewTextContainer: {
-		flex: 1
-	},
-	overviewValue: {
-		fontSize: 22,
-		fontWeight: 'bold',
-		marginBottom: 4
-	},
-	overviewLabel: {
-		fontSize: 14,
-		color: '#666'
-	},
-	overviewTrend: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: 'rgba(76, 175, 80, 0.1)',
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 12
-	},
-	overviewTrendText: {
-		marginLeft: 4,
-		fontSize: 12,
-		fontWeight: '600'
-	},
-	statsGrid: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		marginHorizontal: -6,
-		marginBottom: 20
-	},
-	card: {
-		width: '48%',
-		borderRadius: 16,
-		padding: 16,
-		margin: 4,
-		flexDirection: 'row',
-		alignItems: 'center',
-		elevation: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
-		marginBottom: 12
-	},
-	cardIconContainer: {
-		marginRight: 12
-	},
-	cardIcon: {
-		width: 40,
-		height: 40,
-		borderRadius: 12,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: 'rgba(255, 255, 255, 0.2)'
-	},
-	cardContent: {
-		flex: 1
-	},
-	cardValue: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		color: '#fff',
-		marginBottom: 2
-	},
-	cardTitle: {
-		fontSize: 12,
-		color: 'rgba(255, 255, 255, 0.8)',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5,
-		marginBottom: 2
-	},
-	trendContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		marginTop: 2
-	},
-	trendIcon: {
-		marginRight: 2
-	},
-	trendText: {
-		fontSize: 10,
-		fontWeight: '600'
-	},
-	chartContainer: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 20,
-		elevation: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2
-	},
-	chartHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 16
-	},
-	chart: {
-		marginVertical: 8,
-		borderRadius: 16
-	},
-	recentOrders: {
-		marginBottom: 20
-	},
-	sectionHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 16
-	},
-	viewAllText: {
-		fontSize: 14,
-		fontWeight: '500'
-	},
-	orderCard: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		padding: 16,
-		borderRadius: 12,
-		marginBottom: 12,
-		elevation: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2
-	},
-	orderInfo: {
-		flex: 1
-	},
-	orderCustomer: {
-		fontSize: 15,
-		fontWeight: '600',
-		marginBottom: 4
-	},
-	orderDate: {
-		fontSize: 12
-	},
-	orderDetails: {
-		alignItems: 'flex-end'
-	},
-	orderAmount: {
-		fontSize: 15,
-		fontWeight: '600',
-		marginBottom: 4
-	},
-	orderStatus: {
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 12
-	},
-	orderStatusText: {
-		fontSize: 11,
-		fontWeight: '600'
-	},
-	quickActions: {
-		marginBottom: 20
-	},
-	sectionTitle: {
-		fontSize: 18,
-		fontWeight: '600',
-		marginBottom: 16
-	},
-	actionButtons: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		marginHorizontal: -6
-	},
-	actionButton: {
-		width: '47%',
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: 12,
-		borderRadius: 12,
-		margin: 4,
-		marginBottom: 12,
-		elevation: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2
-	},
-	actionIcon: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginRight: 12
-	},
-	actionButtonText: {
-		fontSize: 14,
-		fontWeight: '500'
-	},
-	metricsContainer: {
-		borderRadius: 16,
-		padding: 20,
-		marginBottom: 20,
-		elevation: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2
-	},
-	metricsGrid: {
-		flexDirection: 'row',
-		justifyContent: 'space-between'
-	},
-	metricItem: {
-		alignItems: 'center',
-		flex: 1
-	},
-	metricValue: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		marginBottom: 4
-	},
-	metricLabel: {
-		fontSize: 12,
-		textAlign: 'center'
-	}
-})
+const createStyles = (colors: any, isDark: boolean) =>
+	StyleSheet.create({
+		container: {
+			flex: 1,
+			backgroundColor: colors.background
+		},
+		scrollContainer: {
+			padding: 16,
+			paddingBottom: 32
+		},
+		loadingContainer: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+			backgroundColor: colors.background
+		},
+		header: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginBottom: 24
+		},
+		headerTitle: {
+			fontSize: 24,
+			fontWeight: 'bold'
+		},
+		statsRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			marginBottom: 16
+		},
+		card: {
+			flex: 1,
+			borderRadius: 12,
+			padding: 16,
+			marginHorizontal: 4,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4
+		},
+		cardIconContainer: {
+			marginBottom: 12
+		},
+		cardIcon: {
+			width: 40,
+			height: 40,
+			borderRadius: 20,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		cardContent: {
+			flex: 1
+		},
+		cardValue: {
+			fontSize: 22,
+			fontWeight: 'bold',
+			color: '#fff',
+			marginBottom: 4
+		},
+		cardTitle: {
+			fontSize: 14,
+			color: 'rgba(255, 255, 255, 0.8)',
+			marginBottom: 8
+		},
+		trendContainer: {
+			flexDirection: 'row',
+			alignItems: 'center'
+		},
+		trendIcon: {
+			marginRight: 4
+		},
+		trendText: {
+			fontSize: 12,
+			fontWeight: '500'
+		},
+		chartContainer: {
+			borderRadius: 12,
+			padding: 16,
+			marginBottom: 16,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4
+		},
+		chart: {
+			marginVertical: 8,
+			borderRadius: 12
+		},
+		sectionHeader: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginBottom: 16
+		},
+		sectionTitle: {
+			fontSize: 18,
+			fontWeight: '600'
+		},
+		recentOrdersContainer: {
+			borderRadius: 12,
+			padding: 16,
+			marginBottom: 16,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4
+		},
+		orderItem: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			paddingVertical: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: colors.border
+		},
+		orderInfo: {
+			flex: 1
+		},
+		orderCustomer: {
+			fontSize: 15,
+			fontWeight: '500',
+			marginBottom: 4
+		},
+		orderDate: {
+			fontSize: 12
+		},
+		orderAmountContainer: {
+			alignItems: 'flex-end'
+		},
+		orderAmount: {
+			fontSize: 15,
+			fontWeight: '600',
+			marginBottom: 4
+		},
+		statusBadge: {
+			paddingHorizontal: 8,
+			paddingVertical: 2,
+			borderRadius: 10,
+			alignSelf: 'flex-end'
+		},
+		statusText: {
+			fontSize: 12,
+			fontWeight: '500',
+			textTransform: 'capitalize'
+		},
+		quickActionsContainer: {
+			borderRadius: 12,
+			padding: 16,
+			marginBottom: 16,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4
+		},
+		quickActionsGrid: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			marginHorizontal: -8
+		},
+		quickAction: {
+			width: '50%',
+			padding: 8,
+			alignItems: 'center',
+			marginBottom: 16
+		},
+		actionIcon: {
+			width: 56,
+			height: 56,
+			borderRadius: 16,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginBottom: 8
+		},
+		actionText: {
+			fontSize: 13,
+			textAlign: 'center',
+			paddingHorizontal: 4
+		},
+		metricsContainer: {
+			borderRadius: 12,
+			padding: 16,
+			elevation: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4
+		},
+		metricsGrid: {
+			flexDirection: 'row',
+			justifyContent: 'space-between'
+		},
+		metricItem: {
+			alignItems: 'center',
+			flex: 1
+		},
+		metricValue: {
+			fontSize: 22,
+			fontWeight: 'bold',
+			marginBottom: 4
+		},
+		metricLabel: {
+			fontSize: 13,
+			textAlign: 'center'
+		}
+	})
+
+export default BusinessDashboard

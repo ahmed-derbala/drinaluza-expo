@@ -12,7 +12,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 export default function HomeLayout() {
 	const { colors, isDark } = useTheme()
 	const router = useRouter()
-	const [ordersCount, setOrdersCount] = useState<number | undefined>(undefined)
+	// Removed ordersCount state as it's no longer needed
 	const [userRole, setUserRole] = useState<string | null>(null)
 
 	// Load auth token
@@ -30,20 +30,7 @@ export default function HomeLayout() {
 	useEffect(() => {
 		const loadData = async () => {
 			try {
-				// Load orders count
-				const storedCount = await AsyncStorage.getItem('ordersCount')
-				if (storedCount !== null) {
-					setOrdersCount(parseInt(storedCount, 10))
-				} else {
-					// Optional: Fallback to basket length if ordersCount isn't set
-					const storedBasket = await AsyncStorage.getItem('basket')
-					if (storedBasket) {
-						const basket = JSON.parse(storedBasket)
-						setOrdersCount(basket.length)
-					} else {
-						setOrdersCount(0)
-					}
-				}
+				// Removed orders count loading logic as it's no longer needed
 
 				// Load user role
 				const storedUserData = await AsyncStorage.getItem('userData')
@@ -52,8 +39,7 @@ export default function HomeLayout() {
 					setUserRole(userData.role || null)
 				}
 			} catch (error) {
-				console.error('Failed to load data:', error)
-				setOrdersCount(0) // Fallback to 0 on error
+				console.error('Failed to load user data:', error)
 				setUserRole(null)
 			}
 		}
@@ -115,27 +101,36 @@ export default function HomeLayout() {
 						}
 					}}
 				>
-					<Tabs.Screen name="feed" options={{ title: 'Feed', tabBarActiveTintColor: colors.primary }} />
 					<Tabs.Screen
-						name="orders"
+						name="feed"
 						options={{
-							title: 'Orders',
+							title: 'Feed',
 							tabBarActiveTintColor: colors.primary,
-							tabBarBadge: ordersCount !== undefined && ordersCount > 0 ? ordersCount : undefined
+							tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} />
+						}}
+					/>
+					<Tabs.Screen
+						name="customer-dashboard"
+						options={{
+							title: 'Dashboard',
+							tabBarActiveTintColor: colors.primary,
+							tabBarIcon: ({ color, size }) => <MaterialIcons name="dashboard" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen
 						name="profile"
 						options={{
 							title: 'Profile',
-							tabBarActiveTintColor: colors.primary
+							tabBarActiveTintColor: colors.primary,
+							tabBarIcon: ({ color, size }) => <MaterialIcons name="person" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen
 						name="settings"
 						options={{
 							title: 'Settings',
-							tabBarActiveTintColor: colors.primary
+							tabBarActiveTintColor: colors.primary,
+							tabBarIcon: ({ color, size }) => <MaterialIcons name="settings" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen

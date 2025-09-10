@@ -1,30 +1,73 @@
-export interface FeedItem {
+export interface ShopOwner {
 	_id: string
-	owner: {
-		_id: string
-		slug: string
-		createdAt: string
-		updatedAt: string
-	}
-	shop: {
-		_id: string
-		name: string
-		createdAt: string
-		updatedAt: string
-	}
+	slug: string
 	name: string
+	updatedAt: string
+}
+
+export interface ShopAddress {
+	street: string
+	city: string
+	state: string
+	postalCode: string
+	country: string
+}
+
+export interface ShopLocation {
+	type: string
+	coordinates: number[]
+}
+
+export interface Shop {
+	_id: string
+	name: string
+	slug: string
+	owner: ShopOwner
+	address: ShopAddress
+	location: ShopLocation
+	createdAt: string
+	updatedAt: string
+}
+
+export interface Price {
+	value: {
+		tnd: number
+	}
 	unit: {
 		name: string
 		min: number
 	}
+	createdAt: string
+	updatedAt: string
+}
+
+export interface Stock {
+	quantity: number
+	minThreshold: number
+}
+
+export interface CardInfo {
+	type: string
+}
+
+export interface FeedItem {
+	_id: string
+	shop: Shop
+	name: string
+	price: Price
 	searchTerms: string[]
 	isActive: boolean
 	availability: {
 		endDate: string | null
 		startDate: string
 	}
+	stock: Stock
+	photos: string[]
+	slug: string
 	createdAt: string
 	updatedAt: string
+	__v: number
+	card?: CardInfo
 }
 
 export interface FeedResponse {

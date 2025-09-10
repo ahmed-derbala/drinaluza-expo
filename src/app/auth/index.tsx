@@ -7,6 +7,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { signIn, signUp } from '../../core/auth/auth.api'
 import { getServerConfig, setServerConfig, addLocalServer, updateLocalServer, removeLocalServer } from '../../components/settings/settings.api'
+import { defaultLocalServers } from '../../config'
 import { DEFAULT_LOCAL_URL } from '../../config'
 import { ServerMode, ServerConfig, LocalServer } from '../../components/settings/settings.interface'
 import { updateApiBaseUrl } from '../../core/api'
@@ -233,17 +234,36 @@ export default function AuthScreen() {
 		const loadServerConfig = async () => {
 			const savedServerConfig = await getServerConfig()
 			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '10.173.243.120')
+			setCustomUrl(savedServerConfig.customUrl || '192.168.1.148')
 		}
 		loadServerConfig()
 	}, [])
 
 	const handleSignIn = async () => {
 		try {
-			await signIn(slug, password)
-			router.push('/home' as any)
-		} catch (error) {
-			console.error('Sign in failed:', error)
+			console.log('Attempting to sign in...')
+			const response = await signIn(slug, password)
+			console.log('Sign in response:', response)
+
+			// Verify token was stored
+			const token = await AsyncStorage.getItem('authToken')
+			console.log('Token stored after sign in:', token ? 'Yes' : 'No')
+
+			if (token) {
+				console.log('Navigating to /home')
+				router.replace('/home' as any)
+			} else {
+				console.error('No token received after sign in')
+				Alert.alert('Error', 'Sign in failed. Please try again.')
+			}
+		} catch (error: any) {
+			console.error('Sign in error details:', {
+				message: error.message,
+				response: error.response?.data,
+				status: error.response?.status,
+				stack: error.stack
+			})
+			Alert.alert('Error', error.response?.data?.message || 'Sign in failed. Please check your credentials and try again.')
 		}
 	}
 
@@ -483,13 +503,16 @@ export default function AuthScreen() {
 
 								{serverConfig.mode === 'local' && (
 									<>
-										{/* Saved Servers List */}
-										{serverConfig.localServers && serverConfig.localServers.length > 0 && (
-											<View style={styles.savedServersContainer}>
-												<Text style={styles.savedServersTitle}>Saved Servers</Text>
-												<FlatList data={serverConfig.localServers} renderItem={renderServerItem} keyExtractor={(item) => item.id} style={{ maxHeight: 200 }} />
-											</View>
-										)}
+										{/* Servers List */}
+										<View style={styles.savedServersContainer}>
+											<Text style={styles.savedServersTitle}>{serverConfig.localServers?.length ? 'Saved Servers' : 'Available Servers'}</Text>
+											<FlatList
+												data={serverConfig.localServers?.length ? serverConfig.localServers : defaultLocalServers}
+												renderItem={renderServerItem}
+												keyExtractor={(item) => item.id}
+												style={{ maxHeight: 200 }}
+											/>
+										</View>
 
 										{/* Current Server Input */}
 										<View style={styles.inputContainer}>
