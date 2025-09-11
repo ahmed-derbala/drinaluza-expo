@@ -234,7 +234,7 @@ export default function AuthScreen() {
 		const loadServerConfig = async () => {
 			const savedServerConfig = await getServerConfig()
 			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '192.168.1.148')
+			setCustomUrl(savedServerConfig.customUrl || '10.173.243.181')
 		}
 		loadServerConfig()
 	}, [])

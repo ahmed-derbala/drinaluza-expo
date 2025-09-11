@@ -1,9 +1,101 @@
 import apiClient from '../api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getToken, setToken, removeToken, secureSetItem, secureGetItem, secureRemoveItem, startSessionTimer, resetSessionTimer, isTokenExpired, defaultAuthSettings } from './authSettings'
+import * as SecureStore from 'expo-secure-store'
+import * as Keychain from 'react-native-keychain'
+import { Platform } from 'react-native'
 
-// Session timer reference
+// Default settings
+const defaultAuthSettings = {
+	tokenStorageKey: 'auth_token',
+	refreshTokenStorageKey: 'refresh_token',
+	enableAutoSignOut: false,
+	sessionTimeout: 30 * 60 * 1000, // 30 minutes
+	refreshTokenEndpoint: '/auth/refresh'
+}
+
+// Secure storage functions - using only AsyncStorage for now
+const secureSetItem = async (key: string, value: string): Promise<boolean> => {
+	try {
+		await AsyncStorage.setItem(key, value)
+		return true
+	} catch (error) {
+		console.error('Error storing item:', error)
+		return false
+	}
+}
+
+const secureGetItem = async (key: string): Promise<string | null> => {
+	try {
+		return await AsyncStorage.getItem(key)
+	} catch (error) {
+		console.error('Error getting item:', error)
+		return null
+	}
+}
+
+const secureRemoveItem = async (key: string): Promise<boolean> => {
+	try {
+		await AsyncStorage.removeItem(key)
+		return true
+	} catch (error) {
+		console.error('Error removing item:', error)
+		return false
+	}
+}
+
+// Helper to set user data
+const setUserData = async (user: any): Promise<boolean> => {
+	try {
+		await Promise.all([
+			secureSetItem('userData', JSON.stringify(user)),
+			secureSetItem('user._id', user._id),
+			secureSetItem('user.slug', user.slug),
+			...(user.settings ? [secureSetItem('user.settings', JSON.stringify(user.settings))] : [])
+		])
+		return true
+	} catch (error) {
+		console.error('Error storing user data:', error)
+		return false
+	}
+}
+
+// Token management
+const getToken = async (): Promise<string | null> => {
+	return await secureGetItem('authToken')
+}
+
+const setToken = async (token: string): Promise<boolean> => {
+	return await secureSetItem('authToken', token)
+}
+
+const removeToken = async (): Promise<boolean> => {
+	return await secureRemoveItem('authToken')
+}
+
+// Session timer functions
 let sessionTimer: ReturnType<typeof setTimeout> | null = null
+
+const startSessionTimer = (callback: () => void, timeout: number): NodeJS.Timeout => {
+	if (sessionTimer) clearTimeout(sessionTimer)
+	sessionTimer = setTimeout(callback, timeout)
+	return sessionTimer
+}
+
+const resetSessionTimer = (callback: () => void, timeout: number): void => {
+	if (sessionTimer) clearTimeout(sessionTimer)
+	sessionTimer = startSessionTimer(callback, timeout)
+}
+
+// Token expiration check
+const isTokenExpired = (token: string): boolean => {
+	try {
+		const payload = JSON.parse(atob(token.split('.')[1]))
+		return payload.exp * 1000 < Date.now()
+	} catch (error) {
+		console.error('Error checking token expiration:', error)
+		return true
+	}
+}
 
 interface AuthResponse {
 	data: {
@@ -20,13 +112,31 @@ interface AuthResponse {
 	[key: string]: any
 }
 
-export const signIn = async (slug: string, password: string): Promise<AuthResponse> => {
+interface SignInResponse {
+	status: number
+	data: {
+		token: string
+		user: {
+			_id: string
+			slug: string
+			name: string
+			role: string
+			settings?: {
+				lang: string
+				currency: string
+			}
+		}
+	}
+	req: {
+		headers: Record<string, string>
+	}
+}
+
+export const signIn = async (slug: string, password: string): Promise<SignInResponse> => {
 	try {
 		console.log('Calling signin API with:', { slug })
-		const response = await apiClient.post<AuthResponse>('/auth/signin', {
-			slug,
-			password
-		})
+
+		const response = await apiClient.post<SignInResponse>('/auth/signin', { slug, password })
 
 		console.log('Signin API response:', {
 			status: response.status,
@@ -39,33 +149,25 @@ export const signIn = async (slug: string, password: string): Promise<AuthRespon
 			throw new Error('No authentication token received from server')
 		}
 
-		// Store tokens securely
-		await secureSetItem('authToken', response.data.data.token)
-		console.log('Auth token stored successfully')
+		const { token, user } = response.data.data
 
-		if (response.data.data.refreshToken) {
-			await secureSetItem('refreshToken', response.data.data.refreshToken)
-			console.log('Refresh token stored successfully')
-		}
+		// Store token and user data
+		await Promise.all([setToken(token), setUserData(user)])
 
-		// Store user data
-		if (response.data.data.user) {
-			const userData = response.data.data.user
-			await Promise.all([secureSetItem('userData', JSON.stringify(userData)), secureSetItem('user._id', userData._id), secureSetItem('user.slug', userData.slug)])
-			console.log('User data stored successfully')
+		console.log('Authentication data stored successfully')
 
-			// Start session timer if auto-signout is enabled
-			if (defaultAuthSettings.enableAutoSignOut) {
-				if (sessionTimer) {
-					clearTimeout(sessionTimer)
-					console.log('Cleared existing session timer')
-				}
-				console.log('Starting new session timer')
-				sessionTimer = startSessionTimer(() => {
-					console.log('Session timeout - signing out')
-					signOut()
-				}, defaultAuthSettings.sessionTimeout)
+		// Start session timer if auto-signout is enabled
+		if (defaultAuthSettings.enableAutoSignOut) {
+			if (sessionTimer) {
+				clearTimeout(sessionTimer as NodeJS.Timeout)
+				console.log('Cleared existing session timer')
 			}
+
+			console.log('Starting new session timer')
+			sessionTimer = startSessionTimer(() => {
+				console.log('Session timeout - signing out')
+				signOut()
+			}, defaultAuthSettings.sessionTimeout)
 		}
 
 		return response.data

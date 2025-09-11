@@ -26,15 +26,15 @@ export interface AppConfig {
 export const config: AppConfig = {
 	servers: {
 		local: {
-			url: '192.168.1.15',
+			url: '10.173.243.181',
 			port: 5001
 		},
 		development: {
-			url: '192.168.1.148',
+			url: '10.173.243.181',
 			port: 5001
 		},
 		production: {
-			url: '192.168.1.148',
+			url: '10.173.243.181',
 			port: 5001
 		}
 	},
@@ -81,21 +81,21 @@ export const defaultLocalServers = [
 	{
 		id: '1',
 		name: '4G',
-		url: '10.173.243.120',
+		url: '10.173.243.181',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},
 	{
 		id: '2',
 		name: 'aroma',
-		url: '192.168.1.148',
+		url: '10.173.243.181',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},
 	{
 		id: '3',
 		name: 'wifi',
-		url: '192.168.1.15',
+		url: '10.173.243.181',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	}
