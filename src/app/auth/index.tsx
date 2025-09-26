@@ -370,11 +370,18 @@ export default function AuthScreen() {
 		try {
 			await updateLocalServer(server.id, { lastUsed: Date.now() })
 			setCustomUrl(server.url)
-			await handleCustomUrlChange(server.url)
 
-			// Refresh server config
-			const updatedConfig = await getServerConfig()
-			setServerConfigState(updatedConfig)
+			// Update the API base URL with both URL and port
+			const newConfig: ServerConfig = {
+				...serverConfig,
+				customUrl: server.url,
+				mode: 'local',
+				localServers: serverConfig.localServers.map((s) => (s.id === server.id ? { ...s, lastUsed: Date.now() } : s))
+			}
+
+			setServerConfigState(newConfig)
+			await setServerConfig(newConfig)
+			await updateApiBaseUrl()
 
 			Alert.alert('Success', `Switched to ${server.name}`)
 		} catch (error) {

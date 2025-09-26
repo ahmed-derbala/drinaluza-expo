@@ -1,4 +1,4 @@
-import apiClient from '../api'
+import { getApiClient } from '../api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import * as SecureStore from 'expo-secure-store'
 import * as Keychain from 'react-native-keychain'
@@ -73,12 +73,14 @@ const removeToken = async (): Promise<boolean> => {
 }
 
 // Session timer functions
-let sessionTimer: ReturnType<typeof setTimeout> | null = null
+type Timer = ReturnType<typeof setTimeout>
+let sessionTimer: Timer | null = null
 
-const startSessionTimer = (callback: () => void, timeout: number): NodeJS.Timeout => {
+const startSessionTimer = (callback: () => void, timeout: number): Timer => {
 	if (sessionTimer) clearTimeout(sessionTimer)
-	sessionTimer = setTimeout(callback, timeout)
-	return sessionTimer
+	const timer = setTimeout(callback, timeout)
+	sessionTimer = timer
+	return timer
 }
 
 const resetSessionTimer = (callback: () => void, timeout: number): void => {
@@ -136,6 +138,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 	try {
 		console.log('Calling signin API with:', { slug })
 
+		const apiClient = getApiClient()
 		const response = await apiClient.post<SignInResponse>('/auth/signin', { slug, password })
 
 		console.log('Signin API response:', {
@@ -159,7 +162,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 		// Start session timer if auto-signout is enabled
 		if (defaultAuthSettings.enableAutoSignOut) {
 			if (sessionTimer) {
-				clearTimeout(sessionTimer as NodeJS.Timeout)
+				clearTimeout(sessionTimer)
 				console.log('Cleared existing session timer')
 			}
 
@@ -190,6 +193,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 
 export const signUp = async (slug: string, password: string, userData: Partial<AuthResponse['data']['user']> = {}): Promise<AuthResponse> => {
 	try {
+		const apiClient = getApiClient()
 		const response = await apiClient.post<AuthResponse>('/auth/signup', {
 			slug,
 			password,
@@ -271,22 +275,28 @@ export const signOut = async (): Promise<boolean> => {
 // Token refresh functionality
 export const refreshAuthToken = async (): Promise<string | null> => {
 	try {
-		const refreshToken = await secureGetItem('refreshToken')
-		if (!refreshToken) {
-			throw new Error('No refresh token available')
+		const storedRefreshToken = await secureGetItem(defaultAuthSettings.refreshTokenStorageKey)
+
+		if (!storedRefreshToken) {
+			console.log('No refresh token found')
+			return null
 		}
 
-		const response = await apiClient.post<{ data: { token: string; refreshToken?: string } }>(defaultAuthSettings.refreshTokenEndpoint, { refreshToken })
+		console.log('Refreshing auth token...')
 
-		if (response.data?.data?.token) {
-			await setToken(response.data.data.token)
+		const apiClient = getApiClient()
+		const response = await apiClient.post<{ token: string; refreshToken?: string }>(defaultAuthSettings.refreshTokenEndpoint, { refreshToken: storedRefreshToken })
+
+		if (response.data?.token) {
+			await setToken(response.data.token)
 
 			// If a new refresh token is provided, store it
-			if (response.data.data.refreshToken) {
-				await secureSetItem('refreshToken', response.data.data.refreshToken)
+			if (response.data.refreshToken) {
+				await secureSetItem(defaultAuthSettings.refreshTokenStorageKey, response.data.refreshToken)
+				await secureSetItem('refreshToken', response.data.refreshToken)
 			}
 
-			return response.data.data.token
+			return response.data.token
 		}
 
 		return null

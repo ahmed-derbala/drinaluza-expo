@@ -26,7 +26,7 @@ export interface AppConfig {
 export const config: AppConfig = {
 	servers: {
 		local: {
-			url: '10.173.243.181',
+			url: '192.168.1.180',
 			port: 5001
 		},
 		development: {
@@ -88,7 +88,7 @@ export const defaultLocalServers = [
 	{
 		id: '2',
 		name: 'aroma',
-		url: '10.173.243.181',
+		url: '192.168.1.180',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},
