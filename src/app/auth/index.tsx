@@ -325,6 +325,36 @@ export default function AuthScreen() {
 		}
 	}
 
+	const handleApplyCurrentServer = async () => {
+		if (!customUrl.trim()) {
+			Alert.alert('Error', 'Please enter a server URL')
+			return
+		}
+
+		try {
+			// Build new server config using local mode and the current customUrl
+			const newConfig: ServerConfig = {
+				...serverConfig,
+				mode: 'local',
+				customUrl: customUrl.trim(),
+				localServers: serverConfig.localServers || []
+			}
+
+			// Persist and apply the new configuration
+			setServerConfigState(newConfig)
+			await setServerConfig(newConfig)
+			await updateApiBaseUrl()
+
+			// Close the modal
+			setShowServerSettings(false)
+
+			Alert.alert('Success', 'Current server applied')
+		} catch (error) {
+			console.error('Failed to apply current server:', error)
+			Alert.alert('Error', 'Failed to apply current server')
+		}
+	}
+
 	const handleAddServer = async () => {
 		if (!newServerName.trim() || !newServerUrl.trim() || !newServerPort.trim()) {
 			Alert.alert('Error', 'Please fill in all fields')
@@ -531,6 +561,9 @@ export default function AuthScreen() {
 												</TouchableOpacity>
 												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={() => setShowAddServer(true)}>
 													<Text style={styles.addButtonText}>Add New Server</Text>
+												</TouchableOpacity>
+												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={handleApplyCurrentServer}>
+													<Text style={styles.addButtonText}>Apply</Text>
 												</TouchableOpacity>
 											</View>
 										</View>
