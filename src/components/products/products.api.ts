@@ -1,4 +1,4 @@
-import apiClient from '../../core/api'
+import { getApiClient } from '../../core/api'
 import { ProductType } from './products.type'
 
 export interface CreateProductRequest {
@@ -88,27 +88,27 @@ export interface DefaultProductsResponse {
 }
 
 export const getShopProducts = async (shopId: string, page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
-	const response = await apiClient.get(`/shops/my-shops/${shopId}/products?page=${page}&limit=${limit}`)
+	const response = await getApiClient().get(`/shops/my-shops/${shopId}/products?page=${page}&limit=${limit}`)
 	return response.data
 }
 
 export const createProduct = async (productData: CreateProductRequest): Promise<{ status: number; data: ProductType }> => {
 	const { shopId, ...productPayload } = productData
-	const response = await apiClient.post(`/shops/my-shops/${shopId}/products/create`, productPayload)
+	const response = await getApiClient().post(`/shops/my-shops/${shopId}/products/create`, productPayload)
 	return response.data
 }
 
 export const getDefaultProducts = async (page: number = 1, limit: number = 50): Promise<DefaultProductsResponse> => {
-	const response = await apiClient.get(`/default-products?page=${page}&limit=${limit}`)
+	const response = await getApiClient().get(`/default-products?page=${page}&limit=${limit}`)
 	return response.data
 }
 
 export const getDefaultProduct = async (id: string): Promise<{ status: number; data: DefaultProduct }> => {
-	const response = await apiClient.get(`/default-products/${id}`)
+	const response = await getApiClient().get(`/default-products/${id}`)
 	return response.data
 }
 
 export const getMyProducts = async (page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
-	const response = await apiClient.get(`/products/my-products?page=${page}&limit=${limit}`)
+	const response = await getApiClient().get(`/products/my-products?page=${page}&limit=${limit}`)
 	return response.data
 }

@@ -8,8 +8,9 @@ type ProductCardProps = {
 	addToBasket: (item: FeedItem, quantity: number) => void
 }
 
-const { width } = Dimensions.get('window')
-const CARD_WIDTH = width * 0.9
+// Removed fixed width calculation
+// const { width } = Dimensions.get('window')
+// const CARD_WIDTH = width * 0.9
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const minQuantity = item.price?.unit?.min || 1
@@ -27,9 +28,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			<View style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
 					<Text style={styles.shopName}>{item.shop.name}</Text>
-					<Text style={styles.shopLocation}>
-						{item.shop.address.city}, {item.shop.address.country}
-					</Text>
+					<Text style={styles.shopLocation}>{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}</Text>
 				</View>
 				<MaterialIcons name="store" size={20} color="#666" />
 			</View>
@@ -94,16 +93,17 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 const styles = StyleSheet.create({
 	card: {
-		backgroundColor: '#fff',
-		borderRadius: 12,
-		margin: 8,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 4,
-		elevation: 3,
-		width: CARD_WIDTH,
-		alignSelf: 'center'
+		backgroundColor: '#E3F2FD', // Sky Blue 50
+		borderRadius: 16,
+		// margin: 8, // Removed margin to let parent control spacing
+		shadowColor: '#0288D1',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.15,
+		shadowRadius: 8,
+		elevation: 5,
+		width: '100%', // Changed from fixed width to 100%
+		borderWidth: 1,
+		borderColor: '#B3E5FC'
 	},
 	shopHeader: {
 		flexDirection: 'row',
@@ -111,47 +111,47 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		padding: 12,
 		borderBottomWidth: 1,
-		borderBottomColor: '#f0f0f0'
+		borderBottomColor: '#B3E5FC'
 	},
 	shopInfo: {
 		flex: 1
 	},
 	shopName: {
 		fontSize: 16,
-		fontWeight: '600',
-		color: '#333'
+		fontWeight: '700',
+		color: '#01579B' // Light Blue 900
 	},
 	shopLocation: {
 		fontSize: 12,
-		color: '#666',
+		color: '#0277BD', // Light Blue 800
 		marginTop: 2
 	},
 	imageContainer: {
 		width: '100%',
-		height: CARD_WIDTH * 0.6,
-		backgroundColor: '#f8f8f8',
+		aspectRatio: 1.6, // Use aspect ratio instead of fixed height
+		backgroundColor: '#E1F5FE',
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	productImage: {
 		width: '100%',
 		height: '100%',
-		borderRadius: 8
+		borderRadius: 0
 	},
 	imagePlaceholder: {
 		width: '100%',
 		height: '100%',
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: '#f0f0f0'
+		backgroundColor: '#E1F5FE'
 	},
 	productInfo: {
 		padding: 16
 	},
 	productName: {
-		fontSize: 18,
-		fontWeight: '600',
-		color: '#222',
+		fontSize: 20,
+		fontWeight: '700',
+		color: '#01579B',
 		marginBottom: 8
 	},
 	priceContainer: {
@@ -161,13 +161,13 @@ const styles = StyleSheet.create({
 		marginBottom: 16
 	},
 	priceText: {
-		fontSize: 20,
-		fontWeight: '700',
-		color: '#2e7d32'
+		fontSize: 22,
+		fontWeight: '800',
+		color: '#0288D1' // Light Blue 700
 	},
 	outOfStock: {
-		color: '#d32f2f',
-		fontWeight: '500',
+		color: '#D32F2F',
+		fontWeight: '600',
 		fontSize: 14
 	},
 	quantityContainer: {
@@ -175,30 +175,41 @@ const styles = StyleSheet.create({
 	},
 	quantityLabel: {
 		fontSize: 14,
-		color: '#555',
-		marginBottom: 8
+		color: '#0277BD',
+		marginBottom: 8,
+		fontWeight: '600'
 	},
 	quantityControls: {
 		flexDirection: 'row',
-		alignItems: 'center'
+		alignItems: 'center',
+		backgroundColor: '#B3E5FC',
+		borderRadius: 12,
+		padding: 4,
+		alignSelf: 'flex-start'
 	},
 	quantityButton: {
 		width: 36,
 		height: 36,
-		borderRadius: 18,
-		backgroundColor: '#f0f0f0',
+		borderRadius: 10,
+		backgroundColor: '#fff',
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
+		shadowColor: '#0288D1',
+		shadowOffset: { width: 0, height: 1 },
+		shadowOpacity: 0.2,
+		shadowRadius: 2,
+		elevation: 2
 	},
 	quantityButtonText: {
-		fontSize: 18,
+		fontSize: 20,
 		fontWeight: '600',
-		color: '#333'
+		color: '#0277BD'
 	},
 	quantityText: {
-		marginHorizontal: 16,
+		marginHorizontal: 20,
 		fontSize: 16,
-		fontWeight: '500'
+		fontWeight: '700',
+		color: '#01579B'
 	},
 	totalContainer: {
 		flexDirection: 'row',
@@ -207,31 +218,37 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 		paddingTop: 12,
 		borderTopWidth: 1,
-		borderTopColor: '#f0f0f0'
+		borderTopColor: '#B3E5FC'
 	},
 	totalLabel: {
 		fontSize: 16,
 		fontWeight: '600',
-		color: '#333'
+		color: '#0277BD'
 	},
 	totalPrice: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: '#2e7d32'
+		fontSize: 20,
+		fontWeight: '800',
+		color: '#01579B'
 	},
 	addToCartButton: {
-		backgroundColor: '#2e7d32',
-		paddingVertical: 14,
-		borderRadius: 8,
+		backgroundColor: '#039BE5', // Light Blue 600
+		paddingVertical: 16,
+		borderRadius: 12,
 		alignItems: 'center',
-		justifyContent: 'center'
+		justifyContent: 'center',
+		shadowColor: '#039BE5',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.3,
+		shadowRadius: 8,
+		elevation: 6
 	},
 	disabledButton: {
-		backgroundColor: '#9e9e9e'
+		backgroundColor: '#B0BEC5'
 	},
 	addToCartText: {
 		color: '#fff',
-		fontSize: 16,
-		fontWeight: '600'
+		fontSize: 18,
+		fontWeight: '700',
+		letterSpacing: 0.5
 	}
 })

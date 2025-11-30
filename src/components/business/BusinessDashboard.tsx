@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Dimensions, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Dimensions, Alert, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LineChart } from 'react-native-chart-kit'
@@ -25,9 +25,9 @@ const DashboardCard = ({ title, value, icon, color, onPress, trend, trendValue }
 
 	const getTrendIcon = () => {
 		if (trend === 'up') {
-			return <AntDesign name="arrowup" size={14} color={colors.success} style={styles.trendIcon} />
+			return <AntDesign name="arrow-up" size={14} color={colors.success} style={styles.trendIcon} />
 		} else if (trend === 'down') {
-			return <AntDesign name="arrowdown" size={14} color={colors.error} style={styles.trendIcon} />
+			return <AntDesign name="arrow-down" size={14} color={colors.error} style={styles.trendIcon} />
 		}
 		return null
 	}
@@ -55,6 +55,15 @@ const BusinessDashboard = () => {
 	const { colors, isDark } = useTheme()
 	const styles = createStyles(colors, isDark)
 	const router = useRouter()
+	const { width } = useWindowDimensions()
+	const isWide = width > 600
+	const contentWidth = Math.min(width, 800)
+	const chartWidth = contentWidth - 48 // 32px padding + 16px margins? Check styles.
+	// scrollContainer padding 16 -> 32 total. chartContainer padding 16 -> 32 total.
+	// Total horizontal padding = 16 (screen edge) + 16 (chart container) = 32 on each side?
+	// No, scrollContainer has padding 16. chartContainer has padding 16.
+	// So inside chartContainer, available width is contentWidth - 32 - 32 = contentWidth - 64.
+	// Let's use contentWidth - 64.
 
 	// Helper function to navigate with type safety and debug logging
 	const navigateTo = (path: string) => {
@@ -105,8 +114,8 @@ const BusinessDashboard = () => {
 			// Update stats with fetched data
 			setStats((prev) => ({
 				...prev,
-				totalProducts: productsResponse?.data?.length || 0,
-				totalShops: shopsResponse?.data?.length || 0
+				totalProducts: productsResponse?.data?.pagination?.totalDocs || 0,
+				totalShops: shopsResponse?.data?.pagination?.totalDocs || 0
 			}))
 		} catch (error) {
 			console.error('Error fetching dashboard data:', error)
@@ -191,13 +200,19 @@ const BusinessDashboard = () => {
 			</View>
 
 			<View style={styles.statsRow}>
-				<DashboardCard title="Products" value={stats.totalProducts} icon={<MaterialIcons name="inventory" size={24} color="#fff" />} color={colors.success} onPress={() => navigateTo('/home')} />
+				<DashboardCard
+					title="Products"
+					value={stats.totalProducts}
+					icon={<MaterialIcons name="inventory" size={24} color="#fff" />}
+					color={colors.success}
+					onPress={() => navigateTo('/home/business/my-products')}
+				/>
 				<DashboardCard
 					title="Shops"
 					value={stats.totalShops}
 					icon={<MaterialIcons name="store" size={24} color="#fff" />}
 					color={colors.warning}
-					onPress={() => router.push('/(tabs)/business/my-shops' as any)}
+					onPress={() => router.push('/home/business/my-shops' as any)}
 				/>
 			</View>
 
@@ -205,7 +220,7 @@ const BusinessDashboard = () => {
 				<Text style={[styles.sectionTitle, { color: colors.text }]}>Sales Overview</Text>
 				<LineChart
 					data={stats.salesData}
-					width={SCREEN_WIDTH - 48}
+					width={contentWidth - 64}
 					height={220}
 					chartConfig={{
 						backgroundColor: colors.card,
@@ -264,28 +279,28 @@ const BusinessDashboard = () => {
 			<View style={[styles.quickActionsContainer, { backgroundColor: colors.card }]}>
 				<Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Quick Actions</Text>
 				<View style={styles.quickActionsGrid}>
-					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
 						<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}20` }]}>
 							<MaterialIcons name="add-circle" size={24} color={colors.primary} />
 						</View>
 						<Text style={[styles.actionText, { color: colors.text }]}>Add Product</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
 						<View style={[styles.actionIcon, { backgroundColor: `${colors.success}20` }]}>
 							<MaterialIcons name="add-shopping-cart" size={24} color={colors.success} />
 						</View>
 						<Text style={[styles.actionText, { color: colors.text }]}>New Order</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
 						<View style={[styles.actionIcon, { backgroundColor: `${colors.info}20` }]}>
 							<MaterialIcons name="insights" size={24} color={colors.info} />
 						</View>
 						<Text style={[styles.actionText, { color: colors.text }]}>Analytics</Text>
 					</TouchableOpacity>
 
-					<TouchableOpacity style={styles.quickAction} onPress={() => navigateTo('/home')}>
+					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
 						<View style={[styles.actionIcon, { backgroundColor: `${colors.warning}20` }]}>
 							<Ionicons name="settings-outline" size={24} color={colors.warning} />
 						</View>
@@ -319,7 +334,10 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		scrollContainer: {
 			padding: 16,
-			paddingBottom: 32
+			paddingBottom: 32,
+			maxWidth: 800,
+			width: '100%',
+			alignSelf: 'center'
 		},
 		loadingContainer: {
 			flex: 1,

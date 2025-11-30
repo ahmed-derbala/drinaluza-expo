@@ -88,21 +88,48 @@ export default function BusinessLayout() {
 	}
 
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background }]}>
+		<Stack
+			screenOptions={{
+				headerStyle: {
+					backgroundColor: colors.background
+				},
+				headerTintColor: colors.text,
+				headerTitleStyle: {
+					fontWeight: 'bold'
+				},
+				contentStyle: {
+					backgroundColor: colors.background
+				}
+			}}
+		>
 			<Stack.Screen
+				name="index"
 				options={{
-					headerShown: true,
 					title: 'Business Dashboard',
-					headerStyle: {
-						backgroundColor: colors.background
-					},
-					headerTintColor: colors.text,
-					headerTitleStyle: {
-						fontWeight: 'bold'
-					}
+					headerShown: false // Dashboard has its own header
 				}}
 			/>
-			<BusinessDashboard />
-		</View>
+			<Stack.Screen
+				name="my-shops"
+				options={{
+					title: 'My Shops',
+					headerShown: true
+				}}
+			/>
+			<Stack.Screen
+				name="my-products"
+				options={{
+					title: 'My Products',
+					headerShown: true
+				}}
+			/>
+			<Stack.Screen
+				name="sales"
+				options={{
+					title: 'Sales Analytics',
+					headerShown: true
+				}}
+			/>
+		</Stack>
 	)
 }

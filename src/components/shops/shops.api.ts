@@ -1,10 +1,10 @@
-import apiClient from '../../core/api'
+import { getApiClient } from '../../core/api'
 import { ShopsResponse, CreateShopRequest, CreateShopResponse, ShopResponse, ShopProductsResponse } from './shops.interface'
 
 export const getMyShops = async (): Promise<ShopsResponse> => {
 	try {
 		console.log('🔄 Fetching shops from API...')
-		const response = await apiClient.get(`/shops/my-shops`)
+		const response = await getApiClient().get(`/shops/my-shops`)
 		console.log('✅ Shops API response status:', response.status)
 		return response.data
 	} catch (error: any) {
@@ -22,7 +22,7 @@ export const getMyShops = async (): Promise<ShopsResponse> => {
 export const createShop = async (shopData: CreateShopRequest): Promise<CreateShopResponse> => {
 	try {
 		console.log('🆕 Creating shop with data:', shopData)
-		const response = await apiClient.post('/shops/create', shopData)
+		const response = await getApiClient().post('/shops/create', shopData)
 		console.log('✅ Shop created successfully:', response.data)
 		return response.data
 	} catch (error: any) {
@@ -39,7 +39,7 @@ export const createShop = async (shopData: CreateShopRequest): Promise<CreateSho
 export const getShopDetails = async (shopId: string): Promise<ShopResponse> => {
 	try {
 		console.log(`🔄 Fetching details for shop ${shopId}...`)
-		const response = await apiClient.get(`/shops/my-shops/${shopId}`)
+		const response = await getApiClient().get(`/shops/my-shops/${shopId}`)
 		console.log('✅ Shop details fetched successfully')
 		return response.data
 	} catch (error: any) {
@@ -56,7 +56,7 @@ export const getShopDetails = async (shopId: string): Promise<ShopResponse> => {
 export const getShopProducts = async (shopId: string): Promise<ShopProductsResponse> => {
 	try {
 		console.log(`🔄 Fetching products for shop ${shopId}...`)
-		const response = await apiClient.get(`/shops/my-shops/${shopId}/products`)
+		const response = await getApiClient().get(`/shops/my-shops/${shopId}/products`)
 		console.log('✅ Shop products fetched successfully')
 		return response.data
 	} catch (error: any) {

@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestCo
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getBaseUrl } from '../../components/settings/settings.api'
 import { getServerUrl, API_TIMEOUT } from '../../config'
+import { logError } from '../../utils/errorHandler'
 
 // Create an API client with the given base URL
 const createApiClient = (baseURL: string): AxiosInstance => {
@@ -28,30 +29,8 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 	client.interceptors.response.use(
 		(response: AxiosResponse) => response,
 		(error: AxiosError) => {
-			const requestUrl = error.config?.url || 'unknown'
-			const baseUrl = error.config?.baseURL || 'unknown'
-			const fullUrl = baseUrl && requestUrl ? `${baseUrl.replace(/\/+$/, '')}/${requestUrl.replace(/^\/+/, '')}` : 'unknown'
-
-			console.error('API Error:', error.message)
-			console.error('Request URL:', fullUrl)
-			console.error('Method:', error.config?.method?.toUpperCase() || 'UNKNOWN')
-
-			if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-				console.error('\n=== NETWORK ERROR DETECTED ===')
-				console.error('Server URL in use:', baseUrl)
-				console.error('Endpoint:', requestUrl)
-				console.error('Full URL:', fullUrl)
-				console.error('Make sure the server is running and accessible from this device')
-				console.error('================================\n')
-			}
-
-			if (error.response) {
-				console.error('Response status:', error.response.status)
-				console.error('Response data:', error.response.data)
-			} else if (error.request) {
-				console.error('No response received from server')
-			}
-
+			// Log error details in development mode
+			logError(error, 'API Request')
 			return Promise.reject(error)
 		}
 	)

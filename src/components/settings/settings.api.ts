@@ -47,6 +47,30 @@ export const getServerConfig = async (): Promise<ServerConfig> => {
 		// Ensure localServers is always an array
 		if (!parsedConfig.localServers || !Array.isArray(parsedConfig.localServers)) {
 			parsedConfig.localServers = defaultLocalServers
+		} else {
+			// Sync with defaultLocalServers to ensure code changes (like IP updates) are reflected
+			const defaultServersMap = new Map(defaultLocalServers.map((s) => [s.id, s]))
+
+			parsedConfig.localServers = parsedConfig.localServers.map((server: LocalServer) => {
+				const defaultServer = defaultServersMap.get(server.id)
+				if (defaultServer) {
+					// Update static properties from code, keep dynamic ones (lastUsed)
+					return {
+						...server,
+						name: defaultServer.name,
+						url: defaultServer.url,
+						port: defaultServer.port
+					}
+				}
+				return server
+			})
+
+			// Add any new default servers that might be missing from storage
+			defaultLocalServers.forEach((defaultServer) => {
+				if (!parsedConfig.localServers.find((s: LocalServer) => s.id === defaultServer.id)) {
+					parsedConfig.localServers.push(defaultServer)
+				}
+			})
 		}
 		return parsedConfig
 	}

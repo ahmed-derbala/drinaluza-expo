@@ -20,7 +20,7 @@ export default function HomeLayout() {
 		const checkAuth = async () => {
 			const token = await AsyncStorage.getItem('authToken')
 			if (!token) {
-				router.replace('/auth')
+				// router.replace('/auth')
 			}
 		}
 		checkAuth()
@@ -128,9 +128,7 @@ export default function HomeLayout() {
 					<Tabs.Screen
 						name="settings"
 						options={{
-							title: 'Settings',
-							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }) => <MaterialIcons name="settings" size={size} color={color} />
+							href: null
 						}}
 					/>
 					<Tabs.Screen

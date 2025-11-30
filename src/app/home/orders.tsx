@@ -5,6 +5,9 @@ import { useRouter } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
 
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { FeedItem } from '../../components/feed/feed.interface'
+
 interface OrderItem {
 	id: string
 	status: 'pending' | 'completed' | 'cancelled'
@@ -19,7 +22,8 @@ const OrdersScreen = () => {
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [orders, setOrders] = useState<OrderItem[]>([])
-	const [filter, setFilter] = useState<'all' | 'pending' | 'completed'>('all')
+	const [basket, setBasket] = useState<any[]>([])
+	const [filter, setFilter] = useState<'cart' | 'all' | 'pending' | 'completed'>('cart')
 	const params = useLocalSearchParams()
 
 	// Apply filter from URL params if present
@@ -28,6 +32,17 @@ const OrdersScreen = () => {
 			setFilter(params.filter as 'pending' | 'completed')
 		}
 	}, [params.filter])
+
+	const loadBasket = async () => {
+		try {
+			const storedBasket = await AsyncStorage.getItem('basket')
+			if (storedBasket) {
+				setBasket(JSON.parse(storedBasket))
+			}
+		} catch (error) {
+			console.error('Failed to load basket:', error)
+		}
+	}
 
 	const loadOrders = async () => {
 		try {
@@ -55,11 +70,13 @@ const OrdersScreen = () => {
 	const onRefresh = () => {
 		setRefreshing(true)
 		loadOrders()
+		loadBasket()
 	}
 
 	useEffect(() => {
 		loadOrders()
-	}, [filter])
+		loadBasket()
+	}, [])
 
 	const filteredOrders = useMemo(() => (filter === 'all' ? orders : orders.filter((order) => order.status === filter)), [orders, filter])
 
@@ -89,6 +106,23 @@ const OrdersScreen = () => {
 		</TouchableOpacity>
 	)
 
+	const renderBasketItem = ({ item }: { item: any }) => (
+		<View style={[styles.orderItem, { backgroundColor: colors.card }]}>
+			<View style={styles.orderHeader}>
+				<Text style={[styles.orderId, { color: colors.text }]}>{item.name}</Text>
+				<View style={[styles.statusBadge, { backgroundColor: colors.primary, opacity: 0.2 }]}>
+					<Text style={[styles.statusText, { color: colors.primary }]}>In Cart</Text>
+				</View>
+			</View>
+			<View style={styles.orderDetails}>
+				<Text style={[styles.orderDetail, { color: colors.textSecondary }]}>
+					{item.quantity} {item.price?.unit?.name || 'units'} • {item.shop?.name}
+				</Text>
+				<Text style={[styles.orderDate, { color: colors.textTertiary }]}>Total: {((item.price?.value?.tnd || 0) * (item.quantity || 1)).toFixed(2)} TND</Text>
+			</View>
+		</View>
+	)
+
 	if (loading) {
 		return (
 			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
@@ -97,7 +131,7 @@ const OrdersScreen = () => {
 		)
 	}
 
-	const FilterButton = ({ status }: { status: 'all' | 'pending' | 'completed' }) => (
+	const FilterButton = ({ status }: { status: 'cart' | 'all' | 'pending' | 'completed' }) => (
 		<TouchableOpacity style={[styles.filterButton, filter === status && { backgroundColor: colors.primary }, { borderColor: colors.border }]} onPress={() => setFilter(status)}>
 			<Text
 				style={[
@@ -115,32 +149,79 @@ const OrdersScreen = () => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<View style={[styles.filterContainer, { borderBottomColor: colors.border }]}>
-				<FilterButton status="all" />
-				<FilterButton status="pending" />
-				<FilterButton status="completed" />
-			</View>
+			<View style={styles.responsiveContainer}>
+				<View style={styles.header}>
+					<TouchableOpacity onPress={() => router.navigate('/home/customer-dashboard')} style={styles.backButton}>
+						<MaterialIcons name="arrow-back" size={24} color={colors.text} />
+					</TouchableOpacity>
+					<Text style={[styles.headerTitle, { color: colors.text }]}>Orders</Text>
+				</View>
 
-			<FlatList
-				data={filteredOrders}
-				renderItem={renderOrderItem}
-				keyExtractor={(item) => item.id}
-				contentContainerStyle={styles.listContent}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-				ListEmptyComponent={
-					<View style={styles.emptyContainer}>
-						<MaterialIcons name="receipt" size={64} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-						<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No orders found</Text>
-					</View>
-				}
-			/>
+				<View style={[styles.filterContainer, { borderBottomColor: colors.border }]}>
+					<FilterButton status="cart" />
+					<FilterButton status="all" />
+					<FilterButton status="pending" />
+					<FilterButton status="completed" />
+				</View>
+
+				{filter === 'cart' ? (
+					<FlatList
+						data={basket}
+						renderItem={renderBasketItem}
+						keyExtractor={(item, index) => index.toString()}
+						contentContainerStyle={styles.listContent}
+						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+						ListEmptyComponent={
+							<View style={styles.emptyContainer}>
+								<MaterialIcons name="shopping-cart" size={64} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+								<Text style={[styles.emptyText, { color: colors.textSecondary }]}>Your cart is empty</Text>
+							</View>
+						}
+					/>
+				) : (
+					<FlatList
+						data={filteredOrders}
+						renderItem={renderOrderItem}
+						keyExtractor={(item) => item.id}
+						contentContainerStyle={styles.listContent}
+						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+						ListEmptyComponent={
+							<View style={styles.emptyContainer}>
+								<MaterialIcons name="receipt" size={64} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+								<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No orders found</Text>
+							</View>
+						}
+					/>
+				)}
+			</View>
 		</View>
 	)
 }
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1
+		flex: 1,
+		alignItems: 'center'
+	},
+	responsiveContainer: {
+		flex: 1,
+		width: '100%',
+		maxWidth: 600
+	},
+	header: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		padding: 16,
+		paddingTop: 60, // Adjust for status bar
+		borderBottomWidth: 1,
+		borderBottomColor: '#f0f0f0'
+	},
+	backButton: {
+		marginRight: 16
+	},
+	headerTitle: {
+		fontSize: 20,
+		fontWeight: 'bold'
 	},
 	loadingContainer: {
 		flex: 1,

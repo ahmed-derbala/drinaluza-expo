@@ -242,7 +242,7 @@ export const signOut = async (): Promise<boolean> => {
 		try {
 			const token = await getToken()
 			if (token) {
-				await apiClient.post(
+				await getApiClient().post(
 					'/auth/signout',
 					{},
 					{
@@ -337,4 +337,10 @@ export const getCurrentUser = async (): Promise<any> => {
 		console.error('Error getting user data:', error)
 		return null
 	}
+}
+
+// Simple check if user is authenticated (token exists)
+export const checkAuth = async (): Promise<boolean> => {
+	const token = await getToken()
+	return !!token
 }
