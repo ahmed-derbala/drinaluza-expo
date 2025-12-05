@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, Modal, Alert, FlatList } from 'react-native'
+import { View, TextInput, Button, StyleSheet, Text, TouchableOpacity, Modal, Alert, FlatList, useWindowDimensions } from 'react-native'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -16,6 +16,9 @@ import { createThemedStyles, commonThemedStyles } from '../../core/theme/createT
 
 export default function AuthScreen() {
 	const { colors, isDark } = useTheme()
+	const { width } = useWindowDimensions()
+	const maxWidth = 600
+	const isWideScreen = width > maxWidth
 	const [slug, setUsername] = useState('ahmed')
 	const [password, setPassword] = useState('123')
 	const [showServerSettings, setShowServerSettings] = useState(false)
@@ -34,7 +37,13 @@ export default function AuthScreen() {
 			flex: 1,
 			justifyContent: 'center',
 			padding: 20,
-			backgroundColor: colors.background
+			backgroundColor: colors.background,
+			alignItems: 'center'
+		},
+		innerContainer: {
+			width: '100%',
+			maxWidth: isWideScreen ? maxWidth : undefined,
+			alignSelf: isWideScreen ? 'center' : undefined
 		},
 		title: {
 			fontSize: 24,
@@ -517,116 +526,118 @@ export default function AuthScreen() {
 						<Text style={styles.serverSettingsButtonText}>⚙️</Text>
 					</TouchableOpacity>
 
-					<Text style={styles.title}>Drinaluza</Text>
-					<TextInput style={styles.input} placeholder="Username" value={slug} onChangeText={setUsername} />
-					<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-					<View style={styles.buttonContainer}>
-						<Button title="Sign In" onPress={handleSignIn} />
-						<Button title="Sign Up" onPress={handleSignUp} />
-					</View>
+					<View style={styles.innerContainer}>
+						<Text style={styles.title}>Drinaluza</Text>
+						<TextInput style={styles.input} placeholder="Username" value={slug} onChangeText={setUsername} />
+						<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
+						<View style={styles.buttonContainer}>
+							<Button title="Sign In" onPress={handleSignIn} />
+							<Button title="Sign Up" onPress={handleSignUp} />
+						</View>
 
-					{/* Server Settings Modal */}
-					<Modal visible={showServerSettings} animationType="slide" transparent={true} onRequestClose={() => setShowServerSettings(false)}>
-						<View style={styles.modalOverlay}>
-							<View style={styles.modalContent}>
-								<Text style={styles.modalTitle}>Server Settings</Text>
+						{/* Server Settings Modal */}
+						<Modal visible={showServerSettings} animationType="slide" transparent={true} onRequestClose={() => setShowServerSettings(false)}>
+							<View style={styles.modalOverlay}>
+								<View style={styles.modalContent}>
+									<Text style={styles.modalTitle}>Server Settings</Text>
 
-								<Text style={styles.modalLabel}>Server Mode</Text>
-								<Picker selectedValue={serverConfig.mode} style={styles.modalPicker} onValueChange={(value: ServerMode) => handleServerModeChange(value)}>
-									<Picker.Item label="Local" value="local" />
-									<Picker.Item label="Development" value="development" />
-									<Picker.Item label="Production" value="production" />
-								</Picker>
+									<Text style={styles.modalLabel}>Server Mode</Text>
+									<Picker selectedValue={serverConfig.mode} style={styles.modalPicker} onValueChange={(value: ServerMode) => handleServerModeChange(value)}>
+										<Picker.Item label="Local" value="local" />
+										<Picker.Item label="Development" value="development" />
+										<Picker.Item label="Production" value="production" />
+									</Picker>
 
-								{serverConfig.mode === 'local' && (
-									<>
-										{/* Servers List */}
-										<View style={styles.savedServersContainer}>
-											<Text style={styles.savedServersTitle}>{serverConfig.localServers?.length ? 'Saved Servers' : 'Available Servers'}</Text>
-											<FlatList
-												data={serverConfig.localServers?.length ? serverConfig.localServers : defaultLocalServers}
-												renderItem={renderServerItem}
-												keyExtractor={(item) => item.id}
-												style={{ maxHeight: 200 }}
-											/>
-										</View>
-
-										{/* Current Server Input */}
-										<View style={styles.inputContainer}>
-											<Text style={styles.inputLabel}>Current Server IP</Text>
-											<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder={DEFAULT_LOCAL_URL} placeholderTextColor={colors.textSecondary} />
-											<View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
-												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={handleQuickAddServer}>
-													<Text style={styles.addButtonText}>Quick Save</Text>
-												</TouchableOpacity>
-												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={() => setShowAddServer(true)}>
-													<Text style={styles.addButtonText}>Add New Server</Text>
-												</TouchableOpacity>
-												<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={handleApplyCurrentServer}>
-													<Text style={styles.addButtonText}>Apply</Text>
-												</TouchableOpacity>
+									{serverConfig.mode === 'local' && (
+										<>
+											{/* Servers List */}
+											<View style={styles.savedServersContainer}>
+												<Text style={styles.savedServersTitle}>{serverConfig.localServers?.length ? 'Saved Servers' : 'Available Servers'}</Text>
+												<FlatList
+													data={serverConfig.localServers?.length ? serverConfig.localServers : defaultLocalServers}
+													renderItem={renderServerItem}
+													keyExtractor={(item) => item.id}
+													style={{ maxHeight: 200 }}
+												/>
 											</View>
-										</View>
-									</>
-								)}
 
-								{/* Clear Storage Button */}
-								<View style={styles.clearStorageContainer}>
-									<TouchableOpacity style={styles.clearStorageButton} onPress={handleClearStorage}>
-										<Text style={styles.clearStorageButtonText}>🗑️ Clear All Data</Text>
-									</TouchableOpacity>
-									<Text style={styles.clearStorageDescription}>This will delete all app data including login tokens, settings, and cache</Text>
-								</View>
+											{/* Current Server Input */}
+											<View style={styles.inputContainer}>
+												<Text style={styles.inputLabel}>Current Server IP</Text>
+												<TextInput style={styles.textInput} value={customUrl} onChangeText={handleCustomUrlChange} placeholder={DEFAULT_LOCAL_URL} placeholderTextColor={colors.textSecondary} />
+												<View style={{ flexDirection: 'row', gap: 8, marginTop: 8 }}>
+													<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={handleQuickAddServer}>
+														<Text style={styles.addButtonText}>Quick Save</Text>
+													</TouchableOpacity>
+													<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={() => setShowAddServer(true)}>
+														<Text style={styles.addButtonText}>Add New Server</Text>
+													</TouchableOpacity>
+													<TouchableOpacity style={[styles.addButton, { flex: 1 }]} onPress={handleApplyCurrentServer}>
+														<Text style={styles.addButtonText}>Apply</Text>
+													</TouchableOpacity>
+												</View>
+											</View>
+										</>
+									)}
 
-								<View style={styles.modalButtonContainer}>
-									<Button title="Cancel" onPress={() => setShowServerSettings(false)} />
-								</View>
-							</View>
-						</View>
-					</Modal>
+									{/* Clear Storage Button */}
+									<View style={styles.clearStorageContainer}>
+										<TouchableOpacity style={styles.clearStorageButton} onPress={handleClearStorage}>
+											<Text style={styles.clearStorageButtonText}>🗑️ Clear All Data</Text>
+										</TouchableOpacity>
+										<Text style={styles.clearStorageDescription}>This will delete all app data including login tokens, settings, and cache</Text>
+									</View>
 
-					{/* Add/Edit Server Modal */}
-					<Modal
-						visible={showAddServer}
-						animationType="slide"
-						transparent={true}
-						onRequestClose={() => {
-							setShowAddServer(false)
-							setEditingServer(null)
-							setNewServerName('')
-							setNewServerUrl('')
-							setNewServerPort('5001')
-						}}
-					>
-						<View style={styles.modalOverlay}>
-							<View style={styles.modalContent}>
-								<Text style={styles.modalTitle}>{editingServer ? 'Edit Server' : 'Add New Server'}</Text>
-
-								<Text style={styles.inputLabel}>Server Name</Text>
-								<TextInput style={styles.textInput} value={newServerName} onChangeText={setNewServerName} placeholder="My Development Server" placeholderTextColor={colors.textSecondary} />
-
-								<Text style={styles.inputLabel}>Server URL</Text>
-								<TextInput style={styles.textInput} value={newServerUrl} onChangeText={setNewServerUrl} placeholder={DEFAULT_LOCAL_URL} placeholderTextColor={colors.textSecondary} />
-
-								<Text style={styles.inputLabel}>Port</Text>
-								<TextInput style={styles.textInput} value={newServerPort} onChangeText={setNewServerPort} placeholder="5001" placeholderTextColor={colors.textSecondary} keyboardType="numeric" />
-
-								<View style={styles.modalButtonContainer}>
-									<Button
-										title="Cancel"
-										onPress={() => {
-											setShowAddServer(false)
-											setEditingServer(null)
-											setNewServerName('')
-											setNewServerUrl('')
-											setNewServerPort('5001')
-										}}
-									/>
-									<Button title={editingServer ? 'Update' : 'Add'} onPress={handleAddServer} />
+									<View style={styles.modalButtonContainer}>
+										<Button title="Cancel" onPress={() => setShowServerSettings(false)} />
+									</View>
 								</View>
 							</View>
-						</View>
-					</Modal>
+						</Modal>
+
+						{/* Add/Edit Server Modal */}
+						<Modal
+							visible={showAddServer}
+							animationType="slide"
+							transparent={true}
+							onRequestClose={() => {
+								setShowAddServer(false)
+								setEditingServer(null)
+								setNewServerName('')
+								setNewServerUrl('')
+								setNewServerPort('5001')
+							}}
+						>
+							<View style={styles.modalOverlay}>
+								<View style={styles.modalContent}>
+									<Text style={styles.modalTitle}>{editingServer ? 'Edit Server' : 'Add New Server'}</Text>
+
+									<Text style={styles.inputLabel}>Server Name</Text>
+									<TextInput style={styles.textInput} value={newServerName} onChangeText={setNewServerName} placeholder="My Development Server" placeholderTextColor={colors.textSecondary} />
+
+									<Text style={styles.inputLabel}>Server URL</Text>
+									<TextInput style={styles.textInput} value={newServerUrl} onChangeText={setNewServerUrl} placeholder={DEFAULT_LOCAL_URL} placeholderTextColor={colors.textSecondary} />
+
+									<Text style={styles.inputLabel}>Port</Text>
+									<TextInput style={styles.textInput} value={newServerPort} onChangeText={setNewServerPort} placeholder="5001" placeholderTextColor={colors.textSecondary} keyboardType="numeric" />
+
+									<View style={styles.modalButtonContainer}>
+										<Button
+											title="Cancel"
+											onPress={() => {
+												setShowAddServer(false)
+												setEditingServer(null)
+												setNewServerName('')
+												setNewServerUrl('')
+												setNewServerPort('5001')
+											}}
+										/>
+										<Button title={editingServer ? 'Update' : 'Add'} onPress={handleAddServer} />
+									</View>
+								</View>
+							</View>
+						</Modal>
+					</View>
 				</View>
 			</SafeAreaView>
 		</SafeAreaProvider>

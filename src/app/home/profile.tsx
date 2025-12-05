@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
@@ -13,7 +13,10 @@ import { UserData } from '../../components/profile/profile.interface'
 export default function ProfileScreen() {
 	const router = useRouter()
 	const { colors, isDark } = useTheme()
-	const styles = createStyles(colors, isDark)
+	const { width } = useWindowDimensions()
+	const maxWidth = 800
+	const isWideScreen = width > maxWidth
+	const styles = createStyles(colors, isDark, isWideScreen, width)
 	const [userData, setUserData] = useState<UserData>({
 		slug: '',
 		name: '',
@@ -360,7 +363,7 @@ export default function ProfileScreen() {
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
+const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, width?: number) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
@@ -369,8 +372,8 @@ const createStyles = (colors: any, isDark: boolean) =>
 		contentContainer: {
 			padding: 20,
 			paddingBottom: 40,
-			maxWidth: 600,
-			alignSelf: 'center',
+			maxWidth: isWideScreen ? 800 : undefined,
+			alignSelf: isWideScreen ? 'center' : undefined,
 			width: '100%'
 		},
 		header: {

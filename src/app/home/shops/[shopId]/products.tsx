@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { getShopProducts } from '../../../../components/shops/shops.api'
 import { Product } from '../../../../components/shops/shops.interface'
@@ -8,6 +8,10 @@ import { useTheme } from '../../../../contexts/ThemeContext'
 export default function ShopProductsScreen() {
 	const { shopId, shopName } = useLocalSearchParams<{ shopId: string; shopName?: string }>()
 	const { colors } = useTheme()
+	const { width } = useWindowDimensions()
+	const maxWidth = 900
+	const isWideScreen = width > maxWidth
+	const numColumns = isWideScreen ? Math.max(2, Math.floor(width / 400)) : 1
 	const [products, setProducts] = useState<Product[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
@@ -68,7 +72,8 @@ export default function ShopProductsScreen() {
 				data={products}
 				renderItem={renderProductItem}
 				keyExtractor={(item) => item._id}
-				contentContainerStyle={styles.listContent}
+				numColumns={numColumns}
+				contentContainerStyle={[styles.listContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				ListEmptyComponent={
 					!loading && !refreshing ? (

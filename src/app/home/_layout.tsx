@@ -118,6 +118,14 @@ export default function HomeLayout() {
 						}}
 					/>
 					<Tabs.Screen
+						name="business"
+						options={{
+							title: 'Business',
+							tabBarActiveTintColor: colors.primary,
+							tabBarIcon: ({ color, size }) => <MaterialIcons name="business-center" size={size} color={color} />
+						}}
+					/>
+					<Tabs.Screen
 						name="profile"
 						options={{
 							title: 'Profile',

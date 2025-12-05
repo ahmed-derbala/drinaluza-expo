@@ -69,24 +69,6 @@ export default function BusinessLayout() {
 		)
 	}
 
-	// Show loading indicator while checking auth
-	if (loading) {
-		return (
-			<View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
-				<ActivityIndicator size="large" color={colors.primary} />
-			</View>
-		)
-	}
-
-	// Show access denied if not a shop owner
-	if (userRole !== 'shop_owner') {
-		return (
-			<View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
-				<Text style={[styles.accessDeniedText, { color: colors.text }]}>Access Denied. This section is only available for shop owners.</Text>
-			</View>
-		)
-	}
-
 	return (
 		<Stack
 			screenOptions={{

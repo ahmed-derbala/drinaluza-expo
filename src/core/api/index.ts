@@ -48,7 +48,6 @@ export const getApiClient = (): AxiosInstance => apiClient
 export const updateApiBaseUrl = async (): Promise<AxiosInstance> => {
 	try {
 		const baseURL = await getBaseUrl()
-		console.log('Updating API base URL to:', baseURL)
 		apiClient = createApiClient(baseURL)
 		return apiClient
 	} catch (error) {
@@ -71,24 +70,5 @@ const initializeApiClient = async () => {
 // Initialize the API client when the module loads
 initializeApiClient()
 
-// Utility function to test server connectivity
-export const testServerConnection = async (): Promise<{ success: boolean; error?: string }> => {
-	const client = getApiClient()
-	try {
-		const response = await client.get('/', { timeout: 5000 })
-		return { success: true }
-	} catch (error: any) {
-		if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-			return { success: false, error: 'Network connection failed. Check if server is running and accessible.' }
-		}
-		if (error.response?.status === 404) {
-			return { success: false, error: 'Server is running but health endpoint not found.' }
-		}
-		return { success: false, error: error.message || 'Unknown error occurred.' }
-	}
-}
-
-// Export the API client instance
-export { createApiClient }
-
+// Export the API client instance getter
 export default getApiClient

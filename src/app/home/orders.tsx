@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useLocalSearchParams } from 'expo-router'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -19,6 +19,9 @@ interface OrderItem {
 const OrdersScreen = () => {
 	const { colors } = useTheme()
 	const router = useRouter()
+	const { width } = useWindowDimensions()
+	const maxWidth = 800
+	const isWideScreen = width > maxWidth
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [orders, setOrders] = useState<OrderItem[]>([])

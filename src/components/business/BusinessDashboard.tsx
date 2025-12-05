@@ -58,20 +58,13 @@ const BusinessDashboard = () => {
 	const { width } = useWindowDimensions()
 	const isWide = width > 600
 	const contentWidth = Math.min(width, 800)
-	const chartWidth = contentWidth - 48 // 32px padding + 16px margins? Check styles.
-	// scrollContainer padding 16 -> 32 total. chartContainer padding 16 -> 32 total.
-	// Total horizontal padding = 16 (screen edge) + 16 (chart container) = 32 on each side?
-	// No, scrollContainer has padding 16. chartContainer has padding 16.
-	// So inside chartContainer, available width is contentWidth - 32 - 32 = contentWidth - 64.
-	// Let's use contentWidth - 64.
+	const chartWidth = contentWidth - 64
 
 	// Helper function to navigate with type safety and debug logging
 	const navigateTo = (path: string) => {
-		console.log('Attempting to navigate to:', path)
 		try {
 			// @ts-ignore - Workaround for Expo Router type issues
 			router.push(path)
-			console.log('Navigation successful')
 		} catch (error) {
 			console.error('Navigation error:', error)
 		}

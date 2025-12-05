@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { FeedItem } from '../feed/feed.interface'
 
@@ -7,10 +7,6 @@ type ProductCardProps = {
 	item: FeedItem
 	addToBasket: (item: FeedItem, quantity: number) => void
 }
-
-// Removed fixed width calculation
-// const { width } = Dimensions.get('window')
-// const CARD_WIDTH = width * 0.9
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const minQuantity = item.price?.unit?.min || 1
@@ -95,7 +91,6 @@ const styles = StyleSheet.create({
 	card: {
 		backgroundColor: '#E3F2FD', // Sky Blue 50
 		borderRadius: 16,
-		// margin: 8, // Removed margin to let parent control spacing
 		shadowColor: '#0288D1',
 		shadowOffset: { width: 0, height: 4 },
 		shadowOpacity: 0.15,

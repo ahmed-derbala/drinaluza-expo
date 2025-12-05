@@ -22,7 +22,6 @@ export const createOrder = async ({ products }: { products: any[] }) => {
 	for (let p of body.products) {
 		if (!p.quantity) p.quantity = 1
 	}
-	//console.log('body',body)
 	const response = await apiClient.post('/orders', body)
 	return response.data
 }

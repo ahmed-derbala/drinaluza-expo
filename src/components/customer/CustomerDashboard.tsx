@@ -18,7 +18,6 @@ const createStyles = (colors: any, isDark: boolean) =>
 			padding: 20,
 			paddingBottom: 40
 		},
-		// Header Styles
 		header: {
 			marginBottom: 32
 		},
@@ -325,10 +324,6 @@ const CustomerDashboard = () => {
 
 	const loadDashboardData = async () => {
 		try {
-			// TODO: Replace with actual API calls
-			// const response = await getCustomerDashboardData();
-			// setStats(response.data);
-
 			// Mock data for now
 			setStats({
 				totalOrders: 24,

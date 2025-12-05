@@ -26,12 +26,6 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 
 	const performSearch = useCallback(
 		async (text: string) => {
-			// Allow empty search to support filtering without text (e.g. "Shops")
-			// if (!text.trim()) {
-			//     onSearchClear()
-			//     return
-			// }
-
 			try {
 				const response = await searchFeed(text, 'en', selectedTypes)
 				onSearchResults(response.data.data)

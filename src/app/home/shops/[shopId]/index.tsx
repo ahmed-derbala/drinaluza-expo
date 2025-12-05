@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { getShopDetails } from '../../../../components/shops/shops.api'
 import { Shop } from '../../../../components/shops/shops.interface'
@@ -9,6 +9,9 @@ export default function ShopDetailsScreen() {
 	const { shopId } = useLocalSearchParams<{ shopId: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
+	const { width } = useWindowDimensions()
+	const maxWidth = 800
+	const isWideScreen = width > maxWidth
 	const [shop, setShop] = useState<Shop | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<string | null>(null)
@@ -57,7 +60,7 @@ export default function ShopDetailsScreen() {
 	}
 
 	return (
-		<ScrollView style={[styles.container, { backgroundColor: colors.background }]}>
+		<ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 			<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
 				<Text style={[styles.shopName, { color: colors.text }]}>{shop.name}</Text>
 

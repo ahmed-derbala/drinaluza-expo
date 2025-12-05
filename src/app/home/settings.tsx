@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { signOut } from '../../core/auth/auth.api'
@@ -10,8 +10,11 @@ import { APP_VERSION } from '../../config'
 export default function SettingsScreen() {
 	const { theme, colors, isDark, setTheme } = useTheme()
 	const router = useRouter()
+	const { width } = useWindowDimensions()
 	const [notificationsEnabled, setNotificationsEnabled] = useState(true)
 	const [emailNotifications, setEmailNotifications] = useState(true)
+	const maxWidth = 600
+	const isWideScreen = width > maxWidth
 
 	const styles = createStyles(colors, isDark)
 
@@ -83,7 +86,7 @@ export default function SettingsScreen() {
 	)
 
 	return (
-		<ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+		<ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 			<View style={styles.header}>
 				<Text style={styles.title}>Settings</Text>
 			</View>

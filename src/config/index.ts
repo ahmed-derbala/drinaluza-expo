@@ -81,7 +81,7 @@ export const defaultLocalServers = [
 	{
 		id: '1',
 		name: 'ellouza-wifi',
-		url: '192.168.1.10',
+		url: '192.168.1.11',
 		port: DEFAULT_LOCAL_PORT,
 		lastUsed: Date.now()
 	},
