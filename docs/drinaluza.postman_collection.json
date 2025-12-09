@@ -1,0 +1,737 @@
+{
+	"info": {
+		"_postman_id": "4d820403-14d4-4960-b178-308a0abdf0e9",
+		"name": "drinaluza",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32889223"
+	},
+	"item": [
+		{
+			"name": "auth",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/auth/signup",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"slug\":\"ahmed\",\n    \"password\":\"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/auth/signup",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signup"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/auth/signin",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    //\"email\":\"derbala.ahmed531992@gmail.com\",\n    \"slug\": \"ahmed\",\n    \"password\": \"123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/auth/signin",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signin"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/auth/signout",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/auth/signout",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"signout"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "users",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/users/ahmed",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY4MjVmYWMzZTY1MGNjMDY5ODY5OGQ4NSIsInVzZXJuYW1lIjoiYWhtZWQifSwicmVxIjp7ImlwIjoiOjpmZmZmOjEyNy4wLjAuMSIsImhlYWRlcnMiOnsidXNlci1hZ2VudCI6IlBvc3RtYW5SdW50aW1lLzcuNDMuNCJ9fSwiaWF0IjoxNzQ3MzIxNDc1LCJleHAiOjE3NTUwOTc0NzV9.PcRmmO7VoLoGZ6ykwUwPT-zkiU17i3IxLz5qrjCfW9I",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/users/ahmed",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"ahmed"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/default-products?page=",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/default-products?page=",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"default-products"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": ""
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "products",
+			"item": [
+				{
+					"name": "my-products",
+					"item": [
+						{
+							"name": "{{drinaluza_url}}/api/products/my-products",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "token",
+										"value": "{{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{drinaluza_url}}/api/products/my-products",
+									"host": [
+										"{{drinaluza_url}}"
+									],
+									"path": [
+										"api",
+										"products",
+										"my-products"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "{{drinaluza_url}}/api/products?page=1",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/products",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"shop\":{\n        \"slug\":\"s1\"\n        \n    },\n    \"name\":\"p1\",\n    \"price\":{\n        \"value\":{\n            \"tnd\":5\n        },\n        \"unit\":{\n            \"name\":\"KG\"\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/products/",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"products",
+								""
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "sales",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/orders/sales",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							},
+							{
+								"key": "token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7Il9pZCI6IjY4YmQ2MzY3YjMyYThmM2MzMDE4MjZlNSIsInNsdWciOiJhaG1lZCIsIm5hbWUiOiJhaG1lZCIsInNldHRpbmdzIjp7ImxhbmciOiJlbiIsImN1cnJlbmN5IjoidG5kIn0sInJvbGUiOiJzaG9wX293bmVyIn0sInJlcSI6eyJpcCI6Ijo6ZmZmZjoxOTIuMTY4LjEuMTUiLCJoZWFkZXJzIjp7InVzZXItYWdlbnQiOiJQb3N0bWFuUnVudGltZS83LjQ1LjAifX0sImlhdCI6MTc1NzI3MTc0MCwiZXhwIjoxNzY1MDQ3NzQwfQ.XSY0kqLFpkoPpRifY8e2BzbW5vUbONGVAO9vUpZr0iY",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/sales",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"sales"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "default-products",
+			"item": []
+		},
+		{
+			"name": "purchases",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/purchases",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/purchases",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"purchases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/orders",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"products\": [\n        {\n            \"product\": {\n                \"slug\": \"whole-octopus\"\n            },\n            \"quantity\":3\n            \n        }\n    ],\n    \"shop\":{\n        \"slug\":\"the-seafood-shack\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/purchases",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"purchases"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "shops",
+			"item": [
+				{
+					"name": "my-shops",
+					"item": [
+						{
+							"name": "{{drinaluza_url}}/api/shops/my-shops/68bc90c8c7021fb548d0c3e8/orders/",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{drinaluza_url}}/api/shops/my-shops/68bc90c8c7021fb548d0c3e8/orders/",
+									"host": [
+										"{{drinaluza_url}}"
+									],
+									"path": [
+										"api",
+										"shops",
+										"my-shops",
+										"68bc90c8c7021fb548d0c3e8",
+										"orders",
+										""
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "{{drinaluza_url}}/api/shops/my-shops",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "token",
+										"value": "{{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{drinaluza_url}}/api/shops/my-shops",
+									"host": [
+										"{{drinaluza_url}}"
+									],
+									"path": [
+										"api",
+										"shops",
+										"my-shops"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "{{drinaluza_url}}/api/shops/my-shops/68be1718f9ae59d0a910bc8c/products",
+							"request": {
+								"auth": {
+									"type": "noauth"
+								},
+								"method": "GET",
+								"header": [
+									{
+										"key": "token",
+										"value": "{{token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{drinaluza_url}}/api/shops/my-shops/68be1718f9ae59d0a910bc8c/products",
+									"host": [
+										"{{drinaluza_url}}"
+									],
+									"path": [
+										"api",
+										"shops",
+										"my-shops",
+										"68be1718f9ae59d0a910bc8c",
+										"products"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/shops/my-shops",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"shops",
+								"my-shops"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/shops/create",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \n    \"name\":\"s1\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/shops/",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"shops",
+								""
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/shops/6925c300293cef0f8f44fc02/products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/shops/6925c300293cef0f8f44fc02/products",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"shops",
+								"6925c300293cef0f8f44fc02",
+								"products"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "feed",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/feed",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/feed?components=[products,shops]&x=y",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"feed"
+							],
+							"query": [
+								{
+									"key": "components",
+									"value": "[products,shops]"
+								},
+								{
+									"key": "x",
+									"value": "y"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "search",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/search",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"text\":\"\",\n    \"lang\":\"en\",\n    \"components\":[\"products\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/search",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "New Request",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/purchases?status=cancelled_by_shop",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"purchases"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "cancelled_by_shop"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "token",
+						"value": "{{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{drinaluza_url}}/api/shops/my-shops",
+					"host": [
+						"{{drinaluza_url}}"
+					],
+					"path": [
+						"api",
+						"shops",
+						"my-shops"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{drinaluza_url}}/api/search?q=seafood",
+					"host": [
+						"{{drinaluza_url}}"
+					],
+					"path": [
+						"api",
+						"search"
+					],
+					"query": [
+						{
+							"key": "q",
+							"value": "seafood"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

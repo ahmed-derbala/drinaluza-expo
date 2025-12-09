@@ -1,48 +1,45 @@
-import React, { useState, useCallback, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Dimensions, Alert, ActivityIndicator, useWindowDimensions } from 'react-native'
+import React, { useState, useCallback, useEffect, useMemo } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, RefreshControl, Alert, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useTheme } from '../../contexts/ThemeContext'
 import { LineChart } from 'react-native-chart-kit'
 import { MaterialIcons, Ionicons, AntDesign } from '@expo/vector-icons'
 import { getMyProducts } from '../products/products.api'
 import { getMyShops } from '../shops/shops.api'
+import ScreenHeader from '../common/ScreenHeader'
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window')
-
-type DashboardCardProps = {
+type StatCardProps = {
 	title: string
 	value: string | number
 	icon: React.ReactNode
-	color: string
-	onPress?: () => void
-	trend?: 'up' | 'down' | 'neutral'
+	accent: string
+	trend?: 'up' | 'down'
 	trendValue?: string
+	onPress?: () => void
 }
 
-const DashboardCard = ({ title, value, icon, color, onPress, trend, trendValue }: DashboardCardProps) => {
+const StatCard = ({ title, value, icon, accent, trend, trendValue, onPress }: StatCardProps) => {
 	const { colors } = useTheme()
-	const styles = createStyles(colors, false)
-
-	const getTrendIcon = () => {
-		if (trend === 'up') {
-			return <AntDesign name="arrow-up" size={14} color={colors.success} style={styles.trendIcon} />
-		} else if (trend === 'down') {
-			return <AntDesign name="arrow-down" size={14} color={colors.error} style={styles.trendIcon} />
-		}
-		return null
-	}
 
 	return (
-		<TouchableOpacity style={[styles.card, { backgroundColor: color }]} onPress={onPress} activeOpacity={0.9}>
-			<View style={styles.cardIconContainer}>
-				<View style={[styles.cardIcon, { backgroundColor: `${color}30` }]}>{icon}</View>
-			</View>
-			<View style={styles.cardContent}>
-				<Text style={styles.cardValue}>{value}</Text>
-				<Text style={styles.cardTitle}>{title}</Text>
+		<TouchableOpacity
+			activeOpacity={0.9}
+			onPress={onPress}
+			style={[
+				styles.card,
+				{
+					backgroundColor: colors.card,
+					borderColor: `${accent}40`
+				}
+			]}
+		>
+			<View style={[styles.cardIcon, { backgroundColor: `${accent}15` }]}>{icon}</View>
+			<View style={styles.cardBody}>
+				<Text style={[styles.cardTitle, { color: colors.textSecondary }]}>{title}</Text>
+				<Text style={[styles.cardValue, { color: colors.text }]}>{value}</Text>
 				{trend && trendValue && (
-					<View style={styles.trendContainer}>
-						{getTrendIcon()}
+					<View style={styles.trendRow}>
+						<AntDesign name={trend === 'up' ? 'arrowup' : 'arrowdown'} size={12} color={trend === 'up' ? colors.success : colors.error} style={{ marginRight: 4 }} />
 						<Text style={[styles.trendText, { color: trend === 'up' ? colors.success : colors.error }]}>{trendValue}</Text>
 					</View>
 				)}
@@ -51,60 +48,60 @@ const DashboardCard = ({ title, value, icon, color, onPress, trend, trendValue }
 	)
 }
 
+type ActionButtonProps = {
+	label: string
+	icon: React.ReactNode
+	onPress: () => void
+}
+
+const ActionButton = ({ label, icon, onPress }: ActionButtonProps) => {
+	const { colors } = useTheme()
+	return (
+		<TouchableOpacity onPress={onPress} style={[styles.actionCard, { borderColor: colors.border }]}>
+			<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}12` }]}>{icon}</View>
+			<Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
+		</TouchableOpacity>
+	)
+}
+
 const BusinessDashboard = () => {
-	const { colors, isDark } = useTheme()
-	const styles = createStyles(colors, isDark)
+	const { colors } = useTheme()
 	const router = useRouter()
 	const { width } = useWindowDimensions()
-	const isWide = width > 600
-	const contentWidth = Math.min(width, 800)
-	const chartWidth = contentWidth - 64
+	const isWide = width > 720
+	const contentWidth = Math.min(width, 960)
 
-	// Helper function to navigate with type safety and debug logging
-	const navigateTo = (path: string) => {
-		try {
-			// @ts-ignore - Workaround for Expo Router type issues
-			router.push(path)
-		} catch (error) {
-			console.error('Navigation error:', error)
-		}
-	}
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [stats, setStats] = useState({
-		totalSales: 0,
-		totalOrders: 0,
+		totalRevenue: 12800,
+		totalSalesCount: 86,
 		totalProducts: 0,
 		totalShops: 0,
-		avgOrderValue: 0,
-		orderCompletionRate: 0,
+		avgSaleValue: 68,
+		saleCompletionRate: 92,
 		salesData: {
 			labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
 			datasets: [
 				{
-					data: [2000, 4500, 2800, 8000, 9900, 4300],
-					color: (opacity = 1) => `rgba(134, 65, 244, ${opacity})`,
+					data: [8200, 9400, 7600, 11200, 12400, 13200],
+					color: (opacity = 1) => `rgba(76, 110, 245, ${opacity})`,
 					strokeWidth: 2
 				}
 			]
 		},
-		recentOrders: [
-			{ id: '1', customer: 'John Doe', amount: 120, status: 'completed', date: '2023-05-15' },
-			{ id: '2', customer: 'Jane Smith', amount: 85, status: 'pending', date: '2023-05-14' },
-			{ id: '3', customer: 'Bob Johnson', amount: 230, status: 'processing', date: '2023-05-13' },
-			{ id: '4', customer: 'Alice Brown', amount: 65, status: 'completed', date: '2023-05-12' },
-			{ id: '5', customer: 'Charlie Wilson', amount: 175, status: 'cancelled', date: '2023-05-11' }
+		recentSales: [
+			{ id: '1', customer: 'John Doe', amount: 120, status: 'completed', date: '2024-12-05' },
+			{ id: '2', customer: 'Jane Smith', amount: 85, status: 'pending', date: '2024-12-04' },
+			{ id: '3', customer: 'Bob Johnson', amount: 230, status: 'processing', date: '2024-12-03' },
+			{ id: '4', customer: 'Alice Brown', amount: 65, status: 'completed', date: '2024-12-02' }
 		]
 	})
 
 	const fetchDashboardData = useCallback(async () => {
 		try {
 			setLoading(true)
-
-			// Fetch products and shops data
 			const [productsResponse, shopsResponse] = await Promise.all([getMyProducts(), getMyShops()])
-
-			// Update stats with fetched data
 			setStats((prev) => ({
 				...prev,
 				totalProducts: productsResponse?.data?.pagination?.totalDocs || 0,
@@ -128,409 +125,365 @@ const BusinessDashboard = () => {
 		fetchDashboardData()
 	}, [fetchDashboardData])
 
-	const formatCurrency = (amount: number) => {
+	const formatCurrency = useCallback((amount: number) => {
 		return new Intl.NumberFormat('en-US', {
 			style: 'currency',
 			currency: 'USD',
 			minimumFractionDigits: 0,
 			maximumFractionDigits: 0
 		}).format(amount)
-	}
+	}, [])
 
-	const getStatusColor = (status: string) => {
-		switch (status.toLowerCase()) {
-			case 'completed':
-				return colors.success
-			case 'processing':
-				return colors.warning
-			case 'pending':
-				return colors.info
-			case 'cancelled':
-				return colors.error
-			default:
-				return colors.text
-		}
-	}
+	const getStatusColor = useCallback(
+		(status: string) => {
+			switch (status.toLowerCase()) {
+				case 'completed':
+					return colors.success
+				case 'processing':
+					return colors.warning
+				case 'pending':
+					return colors.info
+				case 'cancelled':
+					return colors.error
+				default:
+					return colors.text
+			}
+		},
+		[colors]
+	)
+
+	const sections = useMemo(
+		() => ({
+			overview: [
+				{
+					title: 'Revenue',
+					value: formatCurrency(stats.totalRevenue),
+					icon: <MaterialIcons name="attach-money" size={22} color={colors.primary} />,
+					accent: colors.primary,
+					trend: 'up' as const,
+					trendValue: '+8% vs last month'
+				},
+				{
+					title: 'Sales',
+					value: stats.totalSalesCount,
+					icon: <MaterialIcons name="shopping-cart" size={22} color={colors.info} />,
+					accent: colors.info,
+					trend: 'up' as const,
+					trendValue: '+5% vs last week'
+				},
+				{
+					title: 'Products',
+					value: stats.totalProducts,
+					icon: <MaterialIcons name="inventory" size={22} color={colors.success} />,
+					accent: colors.success,
+					onPress: () => router.push('/home/business/my-products' as any)
+				},
+				{
+					title: 'Shops',
+					value: stats.totalShops,
+					icon: <MaterialIcons name="store" size={22} color={colors.warning} />,
+					accent: colors.warning,
+					onPress: () => router.push('/home/business/my-shops' as any)
+				}
+			],
+			actions: [
+				{
+					label: 'Create product',
+					icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.primary} />,
+					onPress: () => router.push('/home/business/my-products' as any)
+				},
+				{
+					label: 'Create shop',
+					icon: <MaterialIcons name="storefront" size={22} color={colors.success} />,
+					onPress: () => router.push('/home/business/my-shops' as any)
+				},
+				{
+					label: 'View sales',
+					icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
+					onPress: () => router.push('/home/business/sales' as any)
+				},
+				{
+					label: 'Sales analytics',
+					icon: <MaterialIcons name="insights" size={22} color={colors.warning} />,
+					onPress: () => router.push('/home/business/sales' as any)
+				}
+			]
+		}),
+		[colors.info, colors.primary, colors.success, colors.warning, formatCurrency, router, stats.totalProducts, stats.totalRevenue, stats.totalSalesCount, stats.totalShops]
+	)
 
 	if (loading) {
 		return (
-			<View style={styles.loadingContainer}>
+			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
 			</View>
 		)
 	}
 
 	return (
-		<ScrollView
-			style={styles.container}
-			contentContainerStyle={styles.scrollContainer}
-			refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-		>
-			<View style={styles.header}>
-				<Text style={[styles.headerTitle, { color: colors.text }]}>Business Dashboard</Text>
-				<TouchableOpacity>
-					<Ionicons name="notifications-outline" size={24} color={colors.text} />
-				</TouchableOpacity>
-			</View>
-
-			<View style={styles.statsRow}>
-				<DashboardCard
-					title="Total Sales"
-					value={formatCurrency(stats.totalSales)}
-					icon={<MaterialIcons name="attach-money" size={24} color="#fff" />}
-					color={colors.primary}
-					trend="up"
-					trendValue="12% from last month"
-				/>
-				<DashboardCard
-					title="Total Orders"
-					value={stats.totalOrders}
-					icon={<MaterialIcons name="shopping-cart" size={24} color="#fff" />}
-					color={colors.secondary}
-					trend="up"
-					trendValue="5% from last month"
-				/>
-			</View>
-
-			<View style={styles.statsRow}>
-				<DashboardCard
-					title="Products"
-					value={stats.totalProducts}
-					icon={<MaterialIcons name="inventory" size={24} color="#fff" />}
-					color={colors.success}
-					onPress={() => navigateTo('/home/business/my-products')}
-				/>
-				<DashboardCard
-					title="Shops"
-					value={stats.totalShops}
-					icon={<MaterialIcons name="store" size={24} color="#fff" />}
-					color={colors.warning}
-					onPress={() => router.push('/home/business/my-shops' as any)}
-				/>
-			</View>
-
-			<View style={[styles.chartContainer, { backgroundColor: colors.card }]}>
-				<Text style={[styles.sectionTitle, { color: colors.text }]}>Sales Overview</Text>
-				<LineChart
-					data={stats.salesData}
-					width={contentWidth - 64}
-					height={220}
-					chartConfig={{
-						backgroundColor: colors.card,
-						backgroundGradientFrom: colors.card,
-						backgroundGradientTo: colors.card,
-						decimalPlaces: 0,
-						color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-						labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-						style: {
-							borderRadius: 16
-						},
-						propsForDots: {
-							r: '4',
-							strokeWidth: '2',
-							stroke: colors.primary
-						}
-					}}
-					bezier
-					style={styles.chart}
-				/>
-			</View>
-
-			<View style={[styles.recentOrdersContainer, { backgroundColor: colors.card }]}>
-				<View style={styles.sectionHeader}>
-					<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Orders</Text>
-					<TouchableOpacity onPress={() => router.push('/home/orders')}>
-						<Text style={{ color: colors.primary }}>View All</Text>
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<ScreenHeader
+				title="Business"
+				subtitle="Stay on top of sales and operations"
+				showBack={false}
+				rightActions={
+					<TouchableOpacity onPress={() => router.push('/home/settings' as any)} accessibilityLabel="Notifications and settings">
+						<Ionicons name="notifications-outline" size={22} color={colors.text} />
 					</TouchableOpacity>
+				}
+			/>
+
+			<ScrollView
+				contentContainerStyle={[styles.scrollContainer, { width: contentWidth }]}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				showsVerticalScrollIndicator={false}
+			>
+				<View style={[styles.section, isWide && styles.sectionRow]}>
+					{sections.overview.map((item) => (
+						<View key={item.title} style={[styles.cardWrapper, isWide && { flex: 1 }]}>
+							<StatCard {...item} />
+						</View>
+					))}
 				</View>
 
-				{stats.recentOrders.map((order) => (
-					<TouchableOpacity
-						key={order.id}
-						style={styles.orderItem}
-						onPress={() =>
-							router.push({
-								pathname: '/home/orders',
-								params: { id: order.id }
-							})
-						}
-					>
-						<View style={styles.orderInfo}>
-							<Text style={[styles.orderCustomer, { color: colors.text }]}>{order.customer}</Text>
-							<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{new Date(order.date).toLocaleDateString()}</Text>
-						</View>
-						<View style={styles.orderAmountContainer}>
-							<Text style={[styles.orderAmount, { color: colors.text }]}>{formatCurrency(order.amount)}</Text>
-							<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(order.status)}20` }]}>
-								<Text style={[styles.statusText, { color: getStatusColor(order.status) }]}>{order.status}</Text>
-							</View>
-						</View>
-					</TouchableOpacity>
-				))}
-			</View>
-
-			<View style={[styles.quickActionsContainer, { backgroundColor: colors.card }]}>
-				<Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Quick Actions</Text>
-				<View style={styles.quickActionsGrid}>
-					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
-						<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}20` }]}>
-							<MaterialIcons name="add-circle" size={24} color={colors.primary} />
-						</View>
-						<Text style={[styles.actionText, { color: colors.text }]}>Add Product</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
-						<View style={[styles.actionIcon, { backgroundColor: `${colors.success}20` }]}>
-							<MaterialIcons name="add-shopping-cart" size={24} color={colors.success} />
-						</View>
-						<Text style={[styles.actionText, { color: colors.text }]}>New Order</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
-						<View style={[styles.actionIcon, { backgroundColor: `${colors.info}20` }]}>
-							<MaterialIcons name="insights" size={24} color={colors.info} />
-						</View>
-						<Text style={[styles.actionText, { color: colors.text }]}>Analytics</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={[styles.quickAction, isWide && { width: '25%' }]} onPress={() => navigateTo('/home')}>
-						<View style={[styles.actionIcon, { backgroundColor: `${colors.warning}20` }]}>
-							<Ionicons name="settings-outline" size={24} color={colors.warning} />
-						</View>
-						<Text style={[styles.actionText, { color: colors.text }]}>Settings</Text>
-					</TouchableOpacity>
-				</View>
-			</View>
-
-			<View style={[styles.metricsContainer, { backgroundColor: colors.card }]}>
-				<Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 16 }]}>Performance Metrics</Text>
-				<View style={styles.metricsGrid}>
-					<View style={styles.metricItem}>
-						<Text style={[styles.metricValue, { color: colors.primary }]}>{stats.avgOrderValue.toFixed(2)}</Text>
-						<Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Avg. Order Value</Text>
+				<View style={styles.section}>
+					<View style={styles.sectionHeader}>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>Sales overview</Text>
+						<Text style={[styles.sectionHint, { color: colors.textSecondary }]}>Last 6 months</Text>
 					</View>
-					<View style={styles.metricItem}>
-						<Text style={[styles.metricValue, { color: colors.success }]}>{stats.orderCompletionRate}%</Text>
-						<Text style={[styles.metricLabel, { color: colors.textSecondary }]}>Completion Rate</Text>
+					<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						<LineChart
+							data={stats.salesData}
+							width={contentWidth - 48}
+							height={220}
+							yAxisLabel="$"
+							withVerticalLines={false}
+							chartConfig={{
+								backgroundColor: colors.card,
+								backgroundGradientFrom: colors.card,
+								backgroundGradientTo: colors.card,
+								decimalPlaces: 0,
+								color: (opacity = 1) => `rgba(76,110,245,${opacity})`,
+								labelColor: (opacity = 1) => `rgba(100,110,130,${opacity})`,
+								propsForDots: {
+									r: '4',
+									strokeWidth: '2',
+									stroke: colors.primary
+								}
+							}}
+							bezier
+							style={styles.chart}
+						/>
+						<View style={styles.chartFooter}>
+							<Text style={[styles.sectionHint, { color: colors.textSecondary }]}>Avg. sale value</Text>
+							<Text style={[styles.chartStat, { color: colors.text }]}>{formatCurrency(stats.avgSaleValue)}</Text>
+							<Text style={[styles.sectionHint, { color: colors.textSecondary }]}>Completion rate {stats.saleCompletionRate}%</Text>
+						</View>
 					</View>
 				</View>
-			</View>
-		</ScrollView>
+
+				<View style={styles.section}>
+					<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick actions</Text>
+					<View style={[styles.actionsGrid, isWide && styles.actionsGridWide]}>
+						{sections.actions.map((action) => (
+							<ActionButton key={action.label} {...action} />
+						))}
+					</View>
+				</View>
+
+				<View style={styles.section}>
+					<View style={styles.sectionHeader}>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent sales</Text>
+						<TouchableOpacity onPress={() => router.push('/home/business/sales' as any)}>
+							<Text style={[styles.link, { color: colors.primary }]}>View all</Text>
+						</TouchableOpacity>
+					</View>
+					<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						{stats.recentSales.map((sale) => (
+							<TouchableOpacity key={sale.id} onPress={() => router.push('/home/business/sales' as any)} style={[styles.saleRow, { borderColor: colors.border }]}>
+								<View style={styles.saleMeta}>
+									<Text style={[styles.saleCustomer, { color: colors.text }]}>{sale.customer}</Text>
+									<Text style={[styles.saleDate, { color: colors.textSecondary }]}>{new Date(sale.date).toLocaleDateString()}</Text>
+								</View>
+								<View style={styles.saleStats}>
+									<Text style={[styles.saleAmount, { color: colors.text }]}>{formatCurrency(sale.amount)}</Text>
+									<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(sale.status)}15` }]}>
+										<Text style={[styles.statusText, { color: getStatusColor(sale.status) }]}>{sale.status}</Text>
+									</View>
+								</View>
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+			</ScrollView>
+		</View>
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
-	StyleSheet.create({
-		container: {
-			flex: 1,
-			backgroundColor: colors.background
-		},
-		scrollContainer: {
-			padding: 16,
-			paddingBottom: 32,
-			maxWidth: 800,
-			width: '100%',
-			alignSelf: 'center'
-		},
-		loadingContainer: {
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-			backgroundColor: colors.background
-		},
-		header: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 24
-		},
-		headerTitle: {
-			fontSize: 24,
-			fontWeight: 'bold'
-		},
-		statsRow: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			marginBottom: 16
-		},
-		card: {
-			flex: 1,
-			borderRadius: 12,
-			padding: 16,
-			marginHorizontal: 4,
-			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4
-		},
-		cardIconContainer: {
-			marginBottom: 12
-		},
-		cardIcon: {
-			width: 40,
-			height: 40,
-			borderRadius: 20,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		cardContent: {
-			flex: 1
-		},
-		cardValue: {
-			fontSize: 22,
-			fontWeight: 'bold',
-			color: '#fff',
-			marginBottom: 4
-		},
-		cardTitle: {
-			fontSize: 14,
-			color: 'rgba(255, 255, 255, 0.8)',
-			marginBottom: 8
-		},
-		trendContainer: {
-			flexDirection: 'row',
-			alignItems: 'center'
-		},
-		trendIcon: {
-			marginRight: 4
-		},
-		trendText: {
-			fontSize: 12,
-			fontWeight: '500'
-		},
-		chartContainer: {
-			borderRadius: 12,
-			padding: 16,
-			marginBottom: 16,
-			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4
-		},
-		chart: {
-			marginVertical: 8,
-			borderRadius: 12
-		},
-		sectionHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 16
-		},
-		sectionTitle: {
-			fontSize: 18,
-			fontWeight: '600'
-		},
-		recentOrdersContainer: {
-			borderRadius: 12,
-			padding: 16,
-			marginBottom: 16,
-			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4
-		},
-		orderItem: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			paddingVertical: 12,
-			borderBottomWidth: 1,
-			borderBottomColor: colors.border
-		},
-		orderInfo: {
-			flex: 1
-		},
-		orderCustomer: {
-			fontSize: 15,
-			fontWeight: '500',
-			marginBottom: 4
-		},
-		orderDate: {
-			fontSize: 12
-		},
-		orderAmountContainer: {
-			alignItems: 'flex-end'
-		},
-		orderAmount: {
-			fontSize: 15,
-			fontWeight: '600',
-			marginBottom: 4
-		},
-		statusBadge: {
-			paddingHorizontal: 8,
-			paddingVertical: 2,
-			borderRadius: 10,
-			alignSelf: 'flex-end'
-		},
-		statusText: {
-			fontSize: 12,
-			fontWeight: '500',
-			textTransform: 'capitalize'
-		},
-		quickActionsContainer: {
-			borderRadius: 12,
-			padding: 16,
-			marginBottom: 16,
-			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4
-		},
-		quickActionsGrid: {
-			flexDirection: 'row',
-			flexWrap: 'wrap',
-			marginHorizontal: -8
-		},
-		quickAction: {
-			width: '50%',
-			padding: 8,
-			alignItems: 'center',
-			marginBottom: 16
-		},
-		actionIcon: {
-			width: 56,
-			height: 56,
-			borderRadius: 16,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 8
-		},
-		actionText: {
-			fontSize: 13,
-			textAlign: 'center',
-			paddingHorizontal: 4
-		},
-		metricsContainer: {
-			borderRadius: 12,
-			padding: 16,
-			elevation: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4
-		},
-		metricsGrid: {
-			flexDirection: 'row',
-			justifyContent: 'space-between'
-		},
-		metricItem: {
-			alignItems: 'center',
-			flex: 1
-		},
-		metricValue: {
-			fontSize: 22,
-			fontWeight: 'bold',
-			marginBottom: 4
-		},
-		metricLabel: {
-			fontSize: 13,
-			textAlign: 'center'
-		}
-	})
+const styles = StyleSheet.create({
+	container: {
+		flex: 1
+	},
+	scrollContainer: {
+		paddingHorizontal: 16,
+		paddingBottom: 32,
+		alignSelf: 'center'
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	section: {
+		marginBottom: 20
+	},
+	sectionRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 12
+	},
+	cardWrapper: {
+		marginBottom: 12
+	},
+	card: {
+		borderRadius: 14,
+		padding: 14,
+		borderWidth: 1,
+		gap: 10,
+		minWidth: 150,
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
+	cardIcon: {
+		width: 44,
+		height: 44,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	cardBody: {
+		flex: 1
+	},
+	cardTitle: {
+		fontSize: 13,
+		fontWeight: '500'
+	},
+	cardValue: {
+		fontSize: 20,
+		fontWeight: '700'
+	},
+	trendRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginTop: 4
+	},
+	trendText: {
+		fontSize: 12,
+		fontWeight: '600'
+	},
+	sectionHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 8
+	},
+	sectionTitle: {
+		fontSize: 18,
+		fontWeight: '700'
+	},
+	sectionHint: {
+		fontSize: 13,
+		fontWeight: '500'
+	},
+	panel: {
+		borderRadius: 14,
+		borderWidth: 1,
+		padding: 14
+	},
+	chart: {
+		marginTop: 4,
+		borderRadius: 12
+	},
+	chartFooter: {
+		marginTop: 12,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between'
+	},
+	chartStat: {
+		fontSize: 16,
+		fontWeight: '700'
+	},
+	actionsGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 12
+	},
+	actionsGridWide: {
+		justifyContent: 'flex-start'
+	},
+	actionCard: {
+		borderRadius: 12,
+		padding: 14,
+		minWidth: 150,
+		flex: 1,
+		borderWidth: 1,
+		alignItems: 'flex-start'
+	},
+	actionIcon: {
+		width: 40,
+		height: 40,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 8
+	},
+	actionLabel: {
+		fontSize: 15,
+		fontWeight: '600'
+	},
+	link: {
+		fontSize: 14,
+		fontWeight: '600'
+	},
+	saleRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 12,
+		borderBottomWidth: 1
+	},
+	saleMeta: {
+		flex: 1
+	},
+	saleStats: {
+		alignItems: 'flex-end',
+		minWidth: 120
+	},
+	saleCustomer: {
+		fontSize: 15,
+		fontWeight: '600'
+	},
+	saleDate: {
+		fontSize: 12,
+		marginTop: 2
+	},
+	saleAmount: {
+		fontSize: 16,
+		fontWeight: '700'
+	},
+	statusBadge: {
+		marginTop: 6,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 10,
+		alignSelf: 'flex-start'
+	},
+	statusText: {
+		fontSize: 12,
+		fontWeight: '600',
+		textTransform: 'capitalize'
+	}
+})
 
 export default BusinessDashboard

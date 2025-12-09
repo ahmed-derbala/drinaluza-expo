@@ -7,6 +7,7 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { checkAuth } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
+import ScreenHeader from '../../components/common/ScreenHeader'
 
 import { UserData } from '../../components/profile/profile.interface'
 
@@ -175,191 +176,195 @@ export default function ProfileScreen() {
 	)
 
 	return (
-		<ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-			<View style={styles.header}>
-				<Text style={styles.title}>Profile</Text>
-				<View style={styles.headerButtons}>
-					<TouchableOpacity style={styles.iconButton} onPress={() => router.push('/home/settings')}>
-						<Ionicons name="settings-outline" size={24} color={colors.text} />
-					</TouchableOpacity>
-					<TouchableOpacity style={styles.editButton} onPress={() => (isEditing ? saveUserData() : setIsEditing(true))}>
-						<Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
-					</TouchableOpacity>
-				</View>
-			</View>
-
-			{/* Profile Header Card */}
-			<View style={styles.profileCard}>
-				<View style={styles.photoContainer}>
-					{userData.profile?.photo?.url ? (
-						<Image source={{ uri: userData.profile?.photo?.url }} style={styles.profilePhoto} />
-					) : (
-						<View style={styles.placeholderPhoto}>
-							<Text style={styles.placeholderText}>
-								{userData.profile?.firstName?.charAt(0) || userData.name?.charAt(0) || ''}
-								{userData.profile?.lastName?.charAt(0) || ''}
-							</Text>
-						</View>
-					)}
-					{isEditing && (
-						<TouchableOpacity style={styles.changePhotoButton}>
-							<Ionicons name="camera" size={20} color="#fff" />
+		<View style={styles.container}>
+			<ScreenHeader
+				title="Profile"
+				showBack={false}
+				rightActions={
+					<>
+						<TouchableOpacity style={styles.iconButton} onPress={() => router.push('/home/settings')}>
+							<Ionicons name="settings-outline" size={24} color={colors.text} />
 						</TouchableOpacity>
-					)}
-				</View>
-				<Text style={styles.profileName}>{userData.name || 'User'}</Text>
-				<Text style={styles.profileEmail}>{userData.email || 'No email set'}</Text>
-				<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
-					<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
-				</View>
-			</View>
-
-			{isEditing ? (
-				// Edit Mode
-				<>
-					<Section title="Basic Information">
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>Display Name</Text>
-							<TextInput style={styles.input} value={userData.name} onChangeText={(value) => updateField('name', value)} placeholder="Display Name" placeholderTextColor={colors.textTertiary} />
-						</View>
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>Email</Text>
-							<TextInput
-								style={styles.input}
-								value={userData.email}
-								onChangeText={(value) => updateField('email', value)}
-								placeholder="Email"
-								placeholderTextColor={colors.textTertiary}
-								keyboardType="email-address"
-								autoCapitalize="none"
-							/>
-						</View>
-					</Section>
-
-					<Section title="Personal Details">
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>First Name</Text>
-							<TextInput
-								style={styles.input}
-								value={userData.profile?.firstName}
-								onChangeText={(value) => updateField('firstName', value, 'profile')}
-								placeholder="First Name"
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>Last Name</Text>
-							<TextInput
-								style={styles.input}
-								value={userData.profile?.lastName}
-								onChangeText={(value) => updateField('lastName', value, 'profile')}
-								placeholder="Last Name"
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>Birth Date</Text>
-							<TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
-								<Text style={styles.dateInputText}>{formatDate(userData.profile?.birthDate)}</Text>
-								<Ionicons name="calendar" size={20} color={colors.textSecondary} />
+						<TouchableOpacity style={styles.editButton} onPress={() => (isEditing ? saveUserData() : setIsEditing(true))}>
+							<Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
+						</TouchableOpacity>
+					</>
+				}
+			/>
+			<ScrollView contentContainerStyle={styles.contentContainer}>
+				{/* Profile Header Card */}
+				<View style={styles.profileCard}>
+					<View style={styles.photoContainer}>
+						{userData.profile?.photo?.url ? (
+							<Image source={{ uri: userData.profile?.photo?.url }} style={styles.profilePhoto} />
+						) : (
+							<View style={styles.placeholderPhoto}>
+								<Text style={styles.placeholderText}>
+									{userData.profile?.firstName?.charAt(0) || userData.name?.charAt(0) || ''}
+									{userData.profile?.lastName?.charAt(0) || ''}
+								</Text>
+							</View>
+						)}
+						{isEditing && (
+							<TouchableOpacity style={styles.changePhotoButton}>
+								<Ionicons name="camera" size={20} color="#fff" />
 							</TouchableOpacity>
-						</View>
-					</Section>
+						)}
+					</View>
+					<Text style={styles.profileName}>{userData.name || 'User'}</Text>
+					<Text style={styles.profileEmail}>{userData.email || 'No email set'}</Text>
+					<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+						<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+					</View>
+				</View>
 
-					<Section title="Contact Info">
-						<View style={styles.phoneInputContainer}>
-							<View style={{ flex: 1 }}>
-								<Text style={styles.inputLabel}>Code</Text>
+				{isEditing ? (
+					// Edit Mode
+					<>
+						<Section title="Basic Information">
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Display Name</Text>
+								<TextInput style={styles.input} value={userData.name} onChangeText={(value) => updateField('name', value)} placeholder="Display Name" placeholderTextColor={colors.textTertiary} />
+							</View>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Email</Text>
 								<TextInput
 									style={styles.input}
-									value={userData.phone.countryCode}
-									onChangeText={(value) => updateField('countryCode', value, 'phone')}
-									placeholder="+216"
+									value={userData.email}
+									onChangeText={(value) => updateField('email', value)}
+									placeholder="Email"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="email-address"
+									autoCapitalize="none"
+								/>
+							</View>
+						</Section>
+
+						<Section title="Personal Details">
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>First Name</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.profile?.firstName}
+									onChangeText={(value) => updateField('firstName', value, 'profile')}
+									placeholder="First Name"
 									placeholderTextColor={colors.textTertiary}
 								/>
 							</View>
-							<View style={{ flex: 3 }}>
-								<Text style={styles.inputLabel}>Phone Number</Text>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Last Name</Text>
 								<TextInput
 									style={styles.input}
-									value={userData.phone.shortNumber}
-									onChangeText={(value) => updateField('shortNumber', value, 'phone')}
-									placeholder="Phone Number"
+									value={userData.profile?.lastName}
+									onChangeText={(value) => updateField('lastName', value, 'profile')}
+									placeholder="Last Name"
 									placeholderTextColor={colors.textTertiary}
-									keyboardType="phone-pad"
 								/>
 							</View>
-						</View>
-					</Section>
-
-					<Section title="Address">
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>Country</Text>
-							<View style={styles.pickerContainer}>
-								<Picker selectedValue={userData.address.country} onValueChange={(value) => updateField('country', value, 'address')} style={{ color: colors.text }} dropdownIconColor={colors.text}>
-									<Picker.Item label="Tunisia" value="Tunisia" />
-									<Picker.Item label="France" value="France" />
-									<Picker.Item label="Germany" value="Germany" />
-									<Picker.Item label="Other" value="Other" />
-								</Picker>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Birth Date</Text>
+								<TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
+									<Text style={styles.dateInputText}>{formatDate(userData.profile?.birthDate)}</Text>
+									<Ionicons name="calendar" size={20} color={colors.textSecondary} />
+								</TouchableOpacity>
 							</View>
-						</View>
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>City</Text>
-							<TextInput
-								style={styles.input}
-								value={userData.address.city}
-								onChangeText={(value) => updateField('city', value, 'address')}
-								placeholder="City"
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>Full Address</Text>
-							<TextInput
-								style={[styles.input, styles.textArea]}
-								value={userData.address.text}
-								onChangeText={(value) => updateField('text', value, 'address')}
-								placeholder="Full Address"
-								placeholderTextColor={colors.textTertiary}
-								multiline
-								numberOfLines={3}
-							/>
-						</View>
-					</Section>
+						</Section>
 
-					<TouchableOpacity
-						style={styles.cancelButton}
-						onPress={() => {
-							setIsEditing(false)
-							loadUserData()
-						}}
-					>
-						<Text style={styles.cancelButtonText}>Cancel Changes</Text>
-					</TouchableOpacity>
-				</>
-			) : (
-				// View Mode
-				<>
-					<Section title="Personal Information">
-						<InfoItem label="Full Name" value={`${userData.profile?.firstName || ''} ${userData.profile?.middleName || ''} ${userData.profile?.lastName || ''}`.trim() || 'Not set'} icon="person" />
-						<InfoItem label="Birth Date" value={formatDate(userData.profile?.birthDate)} icon="calendar" />
-					</Section>
+						<Section title="Contact Info">
+							<View style={styles.phoneInputContainer}>
+								<View style={{ flex: 1 }}>
+									<Text style={styles.inputLabel}>Code</Text>
+									<TextInput
+										style={styles.input}
+										value={userData.phone.countryCode}
+										onChangeText={(value) => updateField('countryCode', value, 'phone')}
+										placeholder="+216"
+										placeholderTextColor={colors.textTertiary}
+									/>
+								</View>
+								<View style={{ flex: 3 }}>
+									<Text style={styles.inputLabel}>Phone Number</Text>
+									<TextInput
+										style={styles.input}
+										value={userData.phone.shortNumber}
+										onChangeText={(value) => updateField('shortNumber', value, 'phone')}
+										placeholder="Phone Number"
+										placeholderTextColor={colors.textTertiary}
+										keyboardType="phone-pad"
+									/>
+								</View>
+							</View>
+						</Section>
 
-					<Section title="Contact Details">
-						<InfoItem label="Phone" value={`${userData.phone.countryCode} ${userData.phone.shortNumber}`.trim() || 'Not set'} icon="call" />
-						<InfoItem label="Address" value={userData.address.text || `${userData.address.city || ''}, ${userData.address.country || ''}`.trim() || 'Not set'} icon="location" />
-					</Section>
+						<Section title="Address">
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Country</Text>
+								<View style={styles.pickerContainer}>
+									<Picker selectedValue={userData.address.country} onValueChange={(value) => updateField('country', value, 'address')} style={{ color: colors.text }} dropdownIconColor={colors.text}>
+										<Picker.Item label="Tunisia" value="Tunisia" />
+										<Picker.Item label="France" value="France" />
+										<Picker.Item label="Germany" value="Germany" />
+										<Picker.Item label="Other" value="Other" />
+									</Picker>
+								</View>
+							</View>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>City</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.address.city}
+									onChangeText={(value) => updateField('city', value, 'address')}
+									placeholder="City"
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Full Address</Text>
+								<TextInput
+									style={[styles.input, styles.textArea]}
+									value={userData.address.text}
+									onChangeText={(value) => updateField('text', value, 'address')}
+									placeholder="Full Address"
+									placeholderTextColor={colors.textTertiary}
+									multiline
+									numberOfLines={3}
+								/>
+							</View>
+						</Section>
 
-					<Section title="Preferences">
-						<InfoItem label="Language" value={userData.settings.lang === 'en' ? 'English' : userData.settings.lang === 'tn' ? 'Tunisian' : 'Tunisian Arabic'} icon="language" />
-						<InfoItem label="Currency" value={userData.settings.currency.toUpperCase()} icon="cash" />
-					</Section>
-				</>
-			)}
+						<TouchableOpacity
+							style={styles.cancelButton}
+							onPress={() => {
+								setIsEditing(false)
+								loadUserData()
+							}}
+						>
+							<Text style={styles.cancelButtonText}>Cancel Changes</Text>
+						</TouchableOpacity>
+					</>
+				) : (
+					// View Mode
+					<>
+						<Section title="Personal Information">
+							<InfoItem label="Full Name" value={`${userData.profile?.firstName || ''} ${userData.profile?.middleName || ''} ${userData.profile?.lastName || ''}`.trim() || 'Not set'} icon="person" />
+							<InfoItem label="Birth Date" value={formatDate(userData.profile?.birthDate)} icon="calendar" />
+						</Section>
 
-			{showDatePicker && <DateTimePicker value={userData.profile?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />}
-		</ScrollView>
+						<Section title="Contact Details">
+							<InfoItem label="Phone" value={`${userData.phone.countryCode} ${userData.phone.shortNumber}`.trim() || 'Not set'} icon="call" />
+							<InfoItem label="Address" value={userData.address.text || `${userData.address.city || ''}, ${userData.address.country || ''}`.trim() || 'Not set'} icon="location" />
+						</Section>
+
+						<Section title="Preferences">
+							<InfoItem label="Language" value={userData.settings.lang === 'en' ? 'English' : userData.settings.lang === 'tn' ? 'Tunisian' : 'Tunisian Arabic'} icon="language" />
+							<InfoItem label="Currency" value={userData.settings.currency.toUpperCase()} icon="cash" />
+						</Section>
+					</>
+				)}
+
+				{showDatePicker && <DateTimePicker value={userData.profile?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />}
+			</ScrollView>
+		</View>
 	)
 }
 
@@ -375,18 +380,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			maxWidth: isWideScreen ? 800 : undefined,
 			alignSelf: isWideScreen ? 'center' : undefined,
 			width: '100%'
-		},
-		header: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 24
-		},
-		title: {
-			fontSize: 32,
-			fontWeight: 'bold',
-			color: colors.text,
-			letterSpacing: -0.5
 		},
 		editButton: {
 			backgroundColor: colors.primary + '20',

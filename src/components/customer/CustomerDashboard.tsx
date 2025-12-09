@@ -1,523 +1,411 @@
-import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, Animated } from 'react-native'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
 import { useRouter } from 'expo-router'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
-import { LinearGradient } from 'expo-linear-gradient'
+import ScreenHeader from '../common/ScreenHeader'
 
-const { width } = Dimensions.get('window')
-const CARD_WIDTH = width * 0.9
-
-const createStyles = (colors: any, isDark: boolean) =>
-	StyleSheet.create({
-		container: {
-			flex: 1,
-			backgroundColor: colors.background
-		},
-		scrollContent: {
-			padding: 20,
-			paddingBottom: 40
-		},
-		header: {
-			marginBottom: 32
-		},
-		greeting: {
-			fontSize: 16,
-			color: colors.textSecondary,
-			marginBottom: 4,
-			fontWeight: '500'
-		},
-		title: {
-			fontSize: 32,
-			fontWeight: 'bold',
-			color: colors.text,
-			marginBottom: 8,
-			letterSpacing: -0.5
-		},
-		subtitle: {
-			fontSize: 15,
-			color: colors.textTertiary,
-			lineHeight: 22
-		},
-		// Stat Card Styles with Gradients
-		statsContainer: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			marginBottom: 20,
-			gap: 12
-		},
-		statCard: {
-			flex: 1,
-			borderRadius: 20,
-			overflow: 'hidden',
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 8 },
-			shadowOpacity: 0.15,
-			shadowRadius: 12,
-			elevation: 8
-		},
-		statCardGradient: {
-			padding: 20,
-			minHeight: 140,
-			justifyContent: 'space-between'
-		},
-		statCardHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'flex-start',
-			marginBottom: 16
-		},
-		iconContainer: {
-			width: 48,
-			height: 48,
-			borderRadius: 16,
-			justifyContent: 'center',
-			alignItems: 'center',
-			backgroundColor: 'rgba(255, 255, 255, 0.25)'
-		},
-		trendBadge: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			backgroundColor: 'rgba(255, 255, 255, 0.2)',
-			paddingHorizontal: 8,
-			paddingVertical: 4,
-			borderRadius: 12
-		},
-		trendText: {
-			color: '#fff',
-			fontSize: 11,
-			fontWeight: '600',
-			marginLeft: 2
-		},
-		statValue: {
-			fontSize: 28,
-			fontWeight: 'bold',
-			color: '#fff',
-			marginBottom: 4,
-			letterSpacing: -0.5
-		},
-		statTitle: {
-			fontSize: 13,
-			color: 'rgba(255, 255, 255, 0.9)',
-			fontWeight: '600',
-			textTransform: 'uppercase',
-			letterSpacing: 0.5
-		},
-		// Section Styles
-		section: {
-			backgroundColor: colors.card,
-			borderRadius: 20,
-			padding: 20,
-			marginBottom: 20,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: isDark ? 0.3 : 0.08,
-			shadowRadius: 8,
-			elevation: 4,
-			borderWidth: 1,
-			borderColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-		},
-		sectionHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 20
-		},
-		sectionTitle: {
-			fontSize: 20,
-			fontWeight: '700',
-			color: colors.text,
-			letterSpacing: -0.3
-		},
-		seeAll: {
-			fontSize: 14,
-			color: colors.primary,
-			fontWeight: '600'
-		},
-		// Action Buttons
-		actionsGrid: {
-			flexDirection: 'row',
-			flexWrap: 'wrap',
-			marginHorizontal: -6
-		},
-		actionButton: {
-			width: '50%',
-			padding: 6
-		},
-		actionButtonInner: {
-			flexDirection: 'column',
-			alignItems: 'center',
-			justifyContent: 'center',
-			padding: 20,
-			borderRadius: 16,
-			borderWidth: 1.5,
-			borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)'
-		},
-		actionIconContainer: {
-			width: 56,
-			height: 56,
-			borderRadius: 16,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 12
-		},
-		actionText: {
-			fontSize: 14,
-			fontWeight: '600',
-			textAlign: 'center',
-			color: colors.text
-		},
-		actionSubtext: {
-			fontSize: 11,
-			color: colors.textTertiary,
-			marginTop: 2,
-			textAlign: 'center'
-		},
-		// Recent Orders
-		orderItem: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			paddingVertical: 16,
-			borderBottomWidth: 1,
-			borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
-		},
-		orderItemLast: {
-			borderBottomWidth: 0
-		},
-		orderIconContainer: {
-			width: 48,
-			height: 48,
-			borderRadius: 14,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginRight: 14
-		},
-		orderInfo: {
-			flex: 1
-		},
-		orderTitle: {
-			fontSize: 15,
-			fontWeight: '600',
-			color: colors.text,
-			marginBottom: 4
-		},
-		orderDate: {
-			fontSize: 13,
-			color: colors.textTertiary
-		},
-		orderAmount: {
-			fontSize: 16,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 4
-		},
-		orderStatus: {
-			fontSize: 11,
-			fontWeight: '600',
-			textTransform: 'uppercase',
-			letterSpacing: 0.5
-		},
-		emptyState: {
-			alignItems: 'center',
-			justifyContent: 'center',
-			paddingVertical: 40
-		},
-		emptyStateIcon: {
-			width: 80,
-			height: 80,
-			borderRadius: 40,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 16,
-			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
-		},
-		emptyStateText: {
-			fontSize: 15,
-			color: colors.textSecondary,
-			fontWeight: '500',
-			marginBottom: 4
-		},
-		emptyStateSubtext: {
-			fontSize: 13,
-			color: colors.textTertiary,
-			textAlign: 'center'
-		}
-	})
-
-interface StatCardProps {
-	title: string
-	value: string | number
-	icon: string
-	gradient: string[]
-	trend?: string
-	onPress?: () => void
-}
-
-const StatCard: React.FC<StatCardProps> = ({ title, value, icon, gradient, trend, onPress }) => {
-	const { colors, isDark } = useTheme()
-	const styles = createStyles(colors, isDark)
-	const scaleAnim = new Animated.Value(1)
-
-	const handlePressIn = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 0.96,
-			useNativeDriver: true
-		}).start()
-	}
-
-	const handlePressOut = () => {
-		Animated.spring(scaleAnim, {
-			toValue: 1,
-			friction: 3,
-			tension: 40,
-			useNativeDriver: true
-		}).start()
-	}
-
-	return (
-		<Animated.View style={[styles.statCard, { transform: [{ scale: scaleAnim }] }]}>
-			<TouchableOpacity onPress={onPress} onPressIn={handlePressIn} onPressOut={handlePressOut} activeOpacity={0.9}>
-				<LinearGradient colors={gradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.statCardGradient}>
-					<View style={styles.statCardHeader}>
-						<View style={styles.iconContainer}>
-							<MaterialIcons name={icon as any} size={24} color="#fff" />
-						</View>
-						{trend && (
-							<View style={styles.trendBadge}>
-								<Ionicons name="trending-up" size={12} color="#fff" />
-								<Text style={styles.trendText}>{trend}</Text>
-							</View>
-						)}
-					</View>
-					<View>
-						<Text style={styles.statValue}>{value}</Text>
-						<Text style={styles.statTitle}>{title}</Text>
-					</View>
-				</LinearGradient>
-			</TouchableOpacity>
-		</Animated.View>
-	)
-}
-
-interface Order {
+type Order = {
 	id: string
 	shopName: string
 	amount: number
-	status: 'pending' | 'completed' | 'cancelled'
+	status: 'pending' | 'completed' | 'cancelled' | 'processing'
 	date: string
 }
 
-const CustomerDashboard = () => {
-	const { colors, isDark } = useTheme()
-	const router = useRouter()
-	const [refreshing, setRefreshing] = useState(false)
-	const [stats, setStats] = useState({
-		totalOrders: 0,
-		pendingOrders: 0,
-		completedOrders: 0,
-		totalSpent: 0
-	})
-	const [recentOrders, setRecentOrders] = useState<Order[]>([])
+type StatCardProps = {
+	title: string
+	value: string | number
+	icon: React.ReactNode
+	accent: string
+	onPress?: () => void
+}
 
-	const styles = createStyles(colors, isDark)
+type ActionCardProps = {
+	label: string
+	subtext: string
+	icon: React.ReactNode
+	onPress: () => void
+}
 
-	const loadDashboardData = async () => {
-		try {
-			// Mock data for now
-			setStats({
-				totalOrders: 24,
-				pendingOrders: 3,
-				completedOrders: 19,
-				totalSpent: 2847.5
-			})
-
-			// Mock recent orders
-			setRecentOrders([
-				{
-					id: '1',
-					shopName: 'Fresh Market',
-					amount: 125.5,
-					status: 'completed',
-					date: '2 hours ago'
-				},
-				{
-					id: '2',
-					shopName: 'Tech Store',
-					amount: 450.0,
-					status: 'pending',
-					date: '1 day ago'
-				},
-				{
-					id: '3',
-					shopName: 'Fashion Boutique',
-					amount: 89.99,
-					status: 'completed',
-					date: '3 days ago'
-				}
-			])
-		} catch (error) {
-			console.error('Error loading dashboard data:', error)
-		} finally {
-			setRefreshing(false)
-		}
-	}
-
-	const onRefresh = () => {
-		setRefreshing(true)
-		loadDashboardData()
-	}
-
-	useEffect(() => {
-		loadDashboardData()
-	}, [])
-
-	const getStatusColor = (status: string) => {
-		switch (status) {
-			case 'completed':
-				return colors.success
-			case 'pending':
-				return colors.warning
-			case 'cancelled':
-				return colors.error
-			default:
-				return colors.textSecondary
-		}
-	}
-
-	const getOrderIcon = (status: string) => {
-		switch (status) {
-			case 'completed':
-				return 'checkmark-circle'
-			case 'pending':
-				return 'time'
-			case 'cancelled':
-				return 'close-circle'
-			default:
-				return 'receipt'
-		}
-	}
+const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
+	const { colors } = useTheme()
 
 	return (
-		<ScrollView
-			style={styles.container}
-			contentContainerStyle={styles.scrollContent}
-			refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-			showsVerticalScrollIndicator={false}
+		<TouchableOpacity
+			activeOpacity={0.9}
+			onPress={onPress}
+			style={[
+				styles.statCard,
+				{
+					borderColor: `${accent}35`,
+					backgroundColor: colors.card
+				}
+			]}
 		>
-			<View style={styles.header}>
-				<Text style={styles.greeting}>Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'}!</Text>
-				<Text style={styles.title}>Dashboard</Text>
-				<Text style={styles.subtitle}>Track your orders and explore new products</Text>
+			<View style={[styles.statIcon, { backgroundColor: `${accent}18` }]}>{icon}</View>
+			<View style={styles.statBody}>
+				<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
+				<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
 			</View>
-
-			<View style={styles.statsContainer}>
-				<StatCard title="Total Orders" value={stats.totalOrders} icon="shopping-bag" gradient={['#667eea', '#764ba2']} trend="+12%" onPress={() => router.push('/home/orders' as any)} />
-				<StatCard
-					title="Pending"
-					value={stats.pendingOrders}
-					icon="hourglass-empty"
-					gradient={['#f093fb', '#f5576c']}
-					onPress={() => router.push({ pathname: '/home/orders', params: { filter: 'pending' } } as any)}
-				/>
-			</View>
-
-			<View style={styles.statsContainer}>
-				<StatCard
-					title="Completed"
-					value={stats.completedOrders}
-					icon="check-circle"
-					gradient={['#4facfe', '#00f2fe']}
-					trend="+8%"
-					onPress={() => router.push({ pathname: '/home/orders', params: { filter: 'completed' } } as any)}
-				/>
-				<StatCard title="Total Spent" value={`${stats.totalSpent.toFixed(0)} TND`} icon="payments" gradient={['#43e97b', '#38f9d7']} trend="+15%" />
-			</View>
-
-			<View style={styles.section}>
-				<View style={styles.sectionHeader}>
-					<Text style={styles.sectionTitle}>Quick Actions</Text>
-				</View>
-				<View style={styles.actionsGrid}>
-					<View style={styles.actionButton}>
-						<TouchableOpacity style={styles.actionButtonInner} onPress={() => router.push('/home/shops' as any)} activeOpacity={0.7}>
-							<View style={[styles.actionIconContainer, { backgroundColor: colors.primary + '15' }]}>
-								<MaterialIcons name="store" size={28} color={colors.primary} />
-							</View>
-							<Text style={styles.actionText}>Browse Shops</Text>
-							<Text style={styles.actionSubtext}>Discover stores</Text>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.actionButton}>
-						<TouchableOpacity style={styles.actionButtonInner} onPress={() => router.push('/home/orders' as any)} activeOpacity={0.7}>
-							<View style={[styles.actionIconContainer, { backgroundColor: colors.secondary + '15' }]}>
-								<MaterialIcons name="receipt-long" size={28} color={colors.secondary} />
-							</View>
-							<Text style={styles.actionText}>My Orders</Text>
-							<Text style={styles.actionSubtext}>Track orders</Text>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.actionButton}>
-						<TouchableOpacity style={styles.actionButtonInner} onPress={() => router.push('/home' as any)} activeOpacity={0.7}>
-							<View style={[styles.actionIconContainer, { backgroundColor: colors.success + '15' }]}>
-								<MaterialIcons name="local-offer" size={28} color={colors.success} />
-							</View>
-							<Text style={styles.actionText}>Deals</Text>
-							<Text style={styles.actionSubtext}>Special offers</Text>
-						</TouchableOpacity>
-					</View>
-					<View style={styles.actionButton}>
-						<TouchableOpacity style={styles.actionButtonInner} onPress={() => router.push('/home' as any)} activeOpacity={0.7}>
-							<View style={[styles.actionIconContainer, { backgroundColor: colors.warning + '15' }]}>
-								<MaterialIcons name="favorite" size={28} color={colors.warning} />
-							</View>
-							<Text style={styles.actionText}>Favorites</Text>
-							<Text style={styles.actionSubtext}>Saved items</Text>
-						</TouchableOpacity>
-					</View>
-				</View>
-			</View>
-
-			<View style={styles.section}>
-				<View style={styles.sectionHeader}>
-					<Text style={styles.sectionTitle}>Recent Orders</Text>
-					<TouchableOpacity onPress={() => router.push('/home/orders' as any)}>
-						<Text style={styles.seeAll}>See All</Text>
-					</TouchableOpacity>
-				</View>
-				{recentOrders.length > 0 ? (
-					recentOrders.map((order, index) => (
-						<TouchableOpacity
-							key={order.id}
-							style={[styles.orderItem, index === recentOrders.length - 1 && styles.orderItemLast]}
-							onPress={() => router.push(`/home/orders/${order.id}` as any)}
-							activeOpacity={0.7}
-						>
-							<View style={[styles.orderIconContainer, { backgroundColor: getStatusColor(order.status) + '15' }]}>
-								<Ionicons name={getOrderIcon(order.status) as any} size={24} color={getStatusColor(order.status)} />
-							</View>
-							<View style={styles.orderInfo}>
-								<Text style={styles.orderTitle}>{order.shopName}</Text>
-								<Text style={styles.orderDate}>{order.date}</Text>
-							</View>
-							<View style={{ alignItems: 'flex-end' }}>
-								<Text style={styles.orderAmount}>{order.amount.toFixed(2)} TND</Text>
-								<Text style={[styles.orderStatus, { color: getStatusColor(order.status) }]}>{order.status}</Text>
-							</View>
-						</TouchableOpacity>
-					))
-				) : (
-					<View style={styles.emptyState}>
-						<View style={styles.emptyStateIcon}>
-							<MaterialIcons name="shopping-bag" size={40} color={colors.textTertiary} />
-						</View>
-						<Text style={styles.emptyStateText}>No recent orders</Text>
-						<Text style={styles.emptyStateSubtext}>Start shopping to see your orders here</Text>
-					</View>
-				)}
-			</View>
-		</ScrollView>
+		</TouchableOpacity>
 	)
 }
+
+const ActionCard = ({ label, subtext, icon, onPress }: ActionCardProps) => {
+	const { colors } = useTheme()
+	return (
+		<TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[styles.actionCard, { borderColor: colors.border }]}>
+			<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}12` }]}>{icon}</View>
+			<Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
+			<Text style={[styles.actionSubtext, { color: colors.textSecondary }]}>{subtext}</Text>
+		</TouchableOpacity>
+	)
+}
+
+const CustomerDashboard = () => {
+	const { colors } = useTheme()
+	const router = useRouter()
+	const [refreshing, setRefreshing] = useState(false)
+	const [loading, setLoading] = useState(true)
+	const [stats, setStats] = useState({
+		totalPurchases: 0,
+		pendingPurchases: 0,
+		completedPurchases: 0,
+		totalSpent: 0
+	})
+	const [recentPurchases, setRecentPurchases] = useState<Order[]>([])
+
+	const loadDashboard = useCallback(async () => {
+		try {
+			setLoading(true)
+			// Placeholder data; replace with API calls when ready
+			setStats({
+				totalPurchases: 47,
+				pendingPurchases: 5,
+				completedPurchases: 38,
+				totalSpent: 4892.75
+			})
+			setRecentPurchases([
+				{ id: '1', shopName: 'Fresh Market', amount: 125.5, status: 'completed', date: '2 hours ago' },
+				{ id: '2', shopName: 'Tech Store', amount: 450, status: 'processing', date: '1 day ago' },
+				{ id: '3', shopName: 'Fashion Boutique', amount: 89.99, status: 'completed', date: '3 days ago' },
+				{ id: '4', shopName: 'Home Essentials', amount: 234.5, status: 'pending', date: '5 days ago' }
+			])
+		} catch (error) {
+			console.error('Failed to load customer dashboard', error)
+		} finally {
+			setLoading(false)
+			setRefreshing(false)
+		}
+	}, [])
+
+	useEffect(() => {
+		loadDashboard()
+	}, [loadDashboard])
+
+	const onRefresh = useCallback(() => {
+		setRefreshing(true)
+		loadDashboard()
+	}, [loadDashboard])
+
+	const getStatusColor = useCallback(
+		(status: Order['status']) => {
+			switch (status) {
+				case 'completed':
+					return colors.success
+				case 'processing':
+					return colors.info
+				case 'pending':
+					return colors.warning
+				case 'cancelled':
+					return colors.error
+				default:
+					return colors.textSecondary
+			}
+		},
+		[colors]
+	)
+
+	const statCards = useMemo(
+		() => [
+			{
+				title: 'Purchases',
+				value: stats.totalPurchases,
+				icon: <MaterialIcons name="shopping-bag" size={20} color={colors.primary} />,
+				accent: colors.primary,
+				onPress: () => router.push('/home/orders' as any)
+			},
+			{
+				title: 'Pending',
+				value: stats.pendingPurchases,
+				icon: <MaterialIcons name="schedule" size={20} color={colors.warning} />,
+				accent: colors.warning,
+				onPress: () => router.push({ pathname: '/home/orders', params: { filter: 'pending' } } as any)
+			},
+			{
+				title: 'Completed',
+				value: stats.completedPurchases,
+				icon: <MaterialIcons name="check-circle" size={20} color={colors.success} />,
+				accent: colors.success,
+				onPress: () => router.push({ pathname: '/home/orders', params: { filter: 'completed' } } as any)
+			},
+			{
+				title: 'Total spent',
+				value: `${Math.round(stats.totalSpent)} TND`,
+				icon: <MaterialIcons name="account-balance-wallet" size={20} color={colors.info} />,
+				accent: colors.info
+			}
+		],
+		[colors.info, colors.primary, colors.success, colors.warning, router, stats.completedPurchases, stats.pendingPurchases, stats.totalPurchases, stats.totalSpent]
+	)
+
+	const actions = useMemo(
+		() => [
+			{
+				label: 'Browse shops',
+				subtext: 'Discover stores nearby',
+				icon: <MaterialIcons name="storefront" size={22} color={colors.primary} />,
+				onPress: () => router.push('/home/shops' as any)
+			},
+			{
+				label: 'My purchases',
+				subtext: 'Track your purchases',
+				icon: <Feather name="package" size={22} color={colors.info} />,
+				onPress: () => router.push('/home/orders' as any)
+			},
+			{
+				label: 'Deals',
+				subtext: 'Latest offers',
+				icon: <Feather name="tag" size={22} color={colors.success} />,
+				onPress: () => router.push('/home/feed' as any)
+			},
+			{
+				label: 'Profile',
+				subtext: 'Manage account',
+				icon: <Feather name="user" size={22} color={colors.warning} />,
+				onPress: () => router.push('/home/profile' as any)
+			}
+		],
+		[colors.info, colors.primary, colors.success, colors.warning, router]
+	)
+
+	return (
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<ScreenHeader
+				title="Customer"
+				subtitle="Stay on top of your shopping"
+				showBack={false}
+				rightActions={
+					<TouchableOpacity onPress={onRefresh} accessibilityLabel="Refresh dashboard">
+						<Ionicons name={refreshing ? 'refresh' : 'notifications-outline'} size={22} color={colors.text} />
+					</TouchableOpacity>
+				}
+			/>
+
+			<ScrollView
+				contentContainerStyle={styles.scrollContent}
+				refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				showsVerticalScrollIndicator={false}
+			>
+				<View style={styles.section}>
+					<Text style={[styles.sectionTitle, { color: colors.text }]}>Overview</Text>
+					<View style={styles.grid}>
+						{statCards.map((card) => (
+							<StatCard key={card.title} {...card} />
+						))}
+					</View>
+				</View>
+
+				<View style={styles.section}>
+					<View style={styles.sectionHeader}>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick actions</Text>
+					</View>
+					<View style={styles.grid}>
+						{actions.map((action) => (
+							<ActionCard key={action.label} {...action} />
+						))}
+					</View>
+				</View>
+
+				<View style={styles.section}>
+					<View style={styles.sectionHeader}>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent purchases</Text>
+						<TouchableOpacity onPress={() => router.push('/home/orders' as any)}>
+							<Text style={[styles.link, { color: colors.primary }]}>View all</Text>
+						</TouchableOpacity>
+					</View>
+					<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						{recentPurchases.length === 0 ? (
+							<View style={styles.emptyState}>
+								<Feather name="shopping-bag" size={32} color={colors.textSecondary} />
+								<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No purchases yet</Text>
+								<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>Browse shops to place your first purchase</Text>
+							</View>
+						) : (
+							recentPurchases.map((purchase, index) => (
+								<TouchableOpacity
+									key={purchase.id}
+									style={[styles.purchaseRow, { borderColor: colors.border }, index === recentPurchases.length - 1 && { borderBottomWidth: 0 }]}
+									onPress={() => router.push('/home/orders' as any)}
+									activeOpacity={0.8}
+								>
+									<View style={styles.purchaseMeta}>
+										<Text style={[styles.purchaseTitle, { color: colors.text }]}>{purchase.shopName}</Text>
+										<Text style={[styles.purchaseDate, { color: colors.textSecondary }]}>{purchase.date}</Text>
+									</View>
+									<View style={styles.purchaseRight}>
+										<Text style={[styles.purchaseAmount, { color: colors.text }]}>{purchase.amount.toFixed(2)} TND</Text>
+										<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(purchase.status)}15` }]}>
+											<Text style={[styles.statusText, { color: getStatusColor(purchase.status) }]}>{purchase.status}</Text>
+										</View>
+									</View>
+								</TouchableOpacity>
+							))
+						)}
+					</View>
+				</View>
+			</ScrollView>
+		</View>
+	)
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1
+	},
+	scrollContent: {
+		paddingHorizontal: 16,
+		paddingBottom: 28
+	},
+	section: {
+		marginBottom: 20
+	},
+	sectionHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 8
+	},
+	sectionTitle: {
+		fontSize: 18,
+		fontWeight: '700'
+	},
+	grid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 12
+	},
+	statCard: {
+		flexBasis: '48%',
+		borderRadius: 14,
+		padding: 14,
+		borderWidth: 1,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 12,
+		minHeight: 80
+	},
+	statIcon: {
+		width: 42,
+		height: 42,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	statBody: {
+		flex: 1
+	},
+	statLabel: {
+		fontSize: 13,
+		fontWeight: '600'
+	},
+	statValue: {
+		fontSize: 20,
+		fontWeight: '700'
+	},
+	actionCard: {
+		flexBasis: '48%',
+		borderRadius: 14,
+		padding: 14,
+		borderWidth: 1,
+		gap: 8
+	},
+	actionIcon: {
+		width: 44,
+		height: 44,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	actionLabel: {
+		fontSize: 15,
+		fontWeight: '700'
+	},
+	actionSubtext: {
+		fontSize: 13
+	},
+	panel: {
+		borderRadius: 14,
+		borderWidth: 1,
+		paddingHorizontal: 12,
+		paddingVertical: 8
+	},
+	purchaseRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 12,
+		borderBottomWidth: 1
+	},
+	purchaseMeta: {
+		flex: 1
+	},
+	purchaseTitle: {
+		fontSize: 15,
+		fontWeight: '700'
+	},
+	purchaseDate: {
+		fontSize: 12,
+		marginTop: 2
+	},
+	purchaseRight: {
+		alignItems: 'flex-end',
+		minWidth: 110
+	},
+	purchaseAmount: {
+		fontSize: 15,
+		fontWeight: '700'
+	},
+	statusBadge: {
+		marginTop: 6,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 10,
+		alignSelf: 'flex-start'
+	},
+	statusText: {
+		fontSize: 12,
+		fontWeight: '600',
+		textTransform: 'capitalize'
+	},
+	link: {
+		fontSize: 14,
+		fontWeight: '600'
+	},
+	emptyState: {
+		alignItems: 'center',
+		paddingVertical: 20,
+		gap: 6
+	},
+	emptyText: {
+		fontSize: 15,
+		fontWeight: '700'
+	},
+	emptySubtext: {
+		fontSize: 13,
+		textAlign: 'center'
+	}
+})
 
 export default CustomerDashboard

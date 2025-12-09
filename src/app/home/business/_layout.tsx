@@ -5,6 +5,7 @@ import { useFocusEffect, useRouter } from 'expo-router'
 import { Stack } from 'expo-router'
 import { useTheme } from '../../../contexts/ThemeContext'
 import BusinessDashboard from '../../../components/business/BusinessDashboard'
+import { getPlatformStackOptions, withThemedHeader } from '../../../config/navigation'
 
 const styles = StyleSheet.create({
 	container: {
@@ -28,6 +29,13 @@ export default function BusinessLayout() {
 	const router = useRouter()
 	const [userRole, setUserRole] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
+	const stackOptions = getPlatformStackOptions(
+		withThemedHeader(colors, {
+			contentStyle: {
+				backgroundColor: colors.background
+			}
+		})
+	)
 
 	// Check user role on screen focus
 	useFocusEffect(
@@ -70,20 +78,7 @@ export default function BusinessLayout() {
 	}
 
 	return (
-		<Stack
-			screenOptions={{
-				headerStyle: {
-					backgroundColor: colors.background
-				},
-				headerTintColor: colors.text,
-				headerTitleStyle: {
-					fontWeight: 'bold'
-				},
-				contentStyle: {
-					backgroundColor: colors.background
-				}
-			}}
-		>
+		<Stack screenOptions={stackOptions}>
 			<Stack.Screen
 				name="index"
 				options={{

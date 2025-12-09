@@ -23,6 +23,7 @@
     "build:clean": "npm run clean && npm i -g eas-cli && npm run build",
     "start": "expo start",
     "start:local": "rm -rf .expo && expo start -c",
+    "dev":"npm run start:local",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",

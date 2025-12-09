@@ -1,32 +1,18 @@
 import { Stack } from 'expo-router'
 import React from 'react'
-import { Platform } from 'react-native'
 import { ThemeProvider } from '../contexts/ThemeContext'
+import AuthRequiredModal from '../components/common/AuthRequiredModal'
+import { getPlatformStackOptions } from '../config/navigation'
 
 export default function RootLayout() {
+	const stackOptions = getPlatformStackOptions({
+		headerShown: false
+	})
+
 	return (
 		<ThemeProvider>
-			<Stack
-				screenOptions={{
-					headerShown: false,
-					// Platform-specific navigation animations
-					animation: Platform.select({
-						ios: 'slide_from_right',
-						android: 'slide_from_right',
-						web: 'fade'
-					}),
-					// Native-like presentation style
-					presentation: Platform.select({
-						ios: 'card',
-						android: 'card',
-						web: 'card'
-					}),
-					// Gesture handling for native platforms
-					gestureEnabled: Platform.OS !== 'web',
-					// Full screen gesture on iOS
-					fullScreenGestureEnabled: Platform.OS === 'ios'
-				}}
-			/>
+			<Stack screenOptions={stackOptions} />
+			<AuthRequiredModal />
 		</ThemeProvider>
 	)
 }

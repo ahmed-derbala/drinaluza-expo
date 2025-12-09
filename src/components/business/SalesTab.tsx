@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, ScrollView } from 'react-native'
-import { getSales, updateSaleOrderStatus } from '../orders/orders.api'
-import { OrderItem } from '../orders/orders.interface'
+import { getSales, updateSaleStatus } from '../orders/orders.api'
+import { OrderItem as SaleItem } from '../orders/orders.interface'
 import { useFocusEffect } from '@react-navigation/native'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels, getNextValidStatuses } from '../../constants/orderStatus'
 
 export default function SalesTab() {
-	const [sales, setSales] = useState<OrderItem[]>([])
+	const [sales, setSales] = useState<SaleItem[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [page, setPage] = useState(1)
@@ -51,22 +51,22 @@ export default function SalesTab() {
 		}
 	}
 
-	const handleStatusUpdate = async (orderId: string, newStatus: string) => {
+	const handleStatusUpdate = async (saleId: string, newStatus: string) => {
 		try {
 			setLoading(true)
-			await updateSaleOrderStatus({ orderId, status: newStatus })
-			Alert.alert('Success', 'Order status updated successfully')
+			await updateSaleStatus({ saleId, status: newStatus })
+			Alert.alert('Success', 'Sale status updated successfully')
 			// Refresh the sales list
 			loadSales(1, true)
 		} catch (error) {
-			console.error('Failed to update order status:', error)
-			Alert.alert('Error', 'Failed to update order status')
+			console.error('Failed to update sale status:', error)
+			Alert.alert('Error', 'Failed to update sale status')
 		} finally {
 			setLoading(false)
 		}
 	}
 
-	const renderStatusButtons = (item: OrderItem) => {
+	const renderStatusButtons = (item: SaleItem) => {
 		const nextStatuses = getNextValidStatuses(item.status)
 		const canCancel =
 			item.status !== orderStatusEnum.CANCELLED_BY_USER &&
@@ -80,7 +80,7 @@ export default function SalesTab() {
 
 		return (
 			<View style={styles.statusButtonsContainer}>
-				<Text style={styles.statusButtonsTitle}>Update Status:</Text>
+				<Text style={styles.statusButtonsTitle}>Update Sale Status:</Text>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false}>
 					{nextStatuses.map((status) => (
 						<TouchableOpacity key={status} style={[styles.statusButton, { backgroundColor: orderStatusColors[status] }]} onPress={() => handleStatusUpdate(item._id, status)} disabled={loading}>
@@ -94,7 +94,7 @@ export default function SalesTab() {
 							onPress={() => handleStatusUpdate(item._id, orderStatusEnum.CANCELLED_BY_SHOP)}
 							disabled={loading}
 						>
-							<Text style={styles.statusButtonText}>Cancel Order</Text>
+							<Text style={styles.statusButtonText}>Cancel Sale</Text>
 						</TouchableOpacity>
 					)}
 				</ScrollView>
@@ -102,7 +102,7 @@ export default function SalesTab() {
 		)
 	}
 
-	const renderSaleItem = ({ item }: { item: OrderItem }) => (
+	const renderSaleItem = ({ item }: { item: SaleItem }) => (
 		<View style={styles.card}>
 			<Text style={styles.cardTitle}>{item.name}</Text>
 			<Text style={styles.cardText}>Customer: {item.customer?.slug || 'Unknown'}</Text>

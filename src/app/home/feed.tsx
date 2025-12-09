@@ -38,6 +38,21 @@ const createStyles = (colors: any, isDark: boolean) =>
 			fontWeight: 'bold',
 			color: colors.text
 		},
+		headerActions: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 12
+		},
+		refreshButton: {
+			width: 44,
+			height: 44,
+			borderRadius: 22,
+			backgroundColor: colors.card,
+			justifyContent: 'center',
+			alignItems: 'center',
+			borderWidth: 1,
+			borderColor: colors.border
+		},
 		notificationButton: {
 			width: 44,
 			height: 44,
@@ -284,16 +299,21 @@ export default function FeedScreen() {
 						<Text style={styles.greeting}>Find your</Text>
 						<Text style={styles.title}>Daily Goods</Text>
 					</View>
-					<TouchableOpacity style={styles.notificationButton}>
-						<Ionicons name="notifications-outline" size={24} color={colors.text} />
-						<View style={styles.badge} />
-					</TouchableOpacity>
+					<View style={styles.headerActions}>
+						<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
+							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={refreshing ? colors.textSecondary : colors.text} />
+						</TouchableOpacity>
+						<TouchableOpacity style={styles.notificationButton}>
+							<Ionicons name="notifications-outline" size={24} color={colors.text} />
+							<View style={styles.badge} />
+						</TouchableOpacity>
+					</View>
 				</View>
 
 				{/* SearchBar moved out of here */}
 			</View>
 		),
-		[selectedCategory, styles, colors.text, colors.textSecondary]
+		[selectedCategory, styles, colors.text, colors.textSecondary, refreshData, refreshing]
 	)
 
 	const renderFooter = () => {

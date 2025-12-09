@@ -28,9 +28,26 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 	// Add response interceptor for better error handling
 	client.interceptors.response.use(
 		(response: AxiosResponse) => response,
-		(error: AxiosError) => {
+		async (error: AxiosError) => {
 			// Log error details in development mode
 			logError(error, 'API Request')
+
+			// Handle 401 Unauthorized errors globally
+			if (error.response?.status === 401) {
+				try {
+					// Import the auth state manager dynamically to avoid circular dependencies
+					const { authStateManager } = await import('../../stores/authStore')
+
+					// Show the auth required modal
+					authStateManager.showAuthModal('Your session has expired. Please sign in again to continue.')
+
+					// Clear auth token from storage
+					await AsyncStorage.removeItem('authToken')
+				} catch (err) {
+					console.error('Error handling 401:', err)
+				}
+			}
+
 			return Promise.reject(error)
 		}
 	)

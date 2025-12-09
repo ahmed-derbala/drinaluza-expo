@@ -1,29 +1,33 @@
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
 import { useTheme } from '../../../contexts/ThemeContext'
+import { getPlatformStackOptions, withThemedHeader } from '../../../config/navigation'
 
 export default function ShopsLayout() {
 	const { colors } = useTheme()
+	const stackOptions = getPlatformStackOptions(
+		withThemedHeader(colors, {
+			headerShown: true,
+			headerTitleStyle: {
+				fontWeight: '600'
+			},
+			headerBackTitle: Platform.select({
+				ios: 'Back',
+				android: undefined,
+				web: 'Back'
+			})
+		})
+	)
 
 	return (
-		<Stack
-			screenOptions={{
-				headerShown: true,
-				headerStyle: {
-					backgroundColor: colors.card
-				},
-				headerTintColor: colors.text,
-				headerTitleStyle: {
-					fontWeight: '600'
-				},
-				headerBackTitle: 'Back',
-				animation: Platform.select({
-					ios: 'slide_from_right',
-					android: 'slide_from_right',
-					web: 'fade'
-				}) as any
-			}}
-		>
+		<Stack screenOptions={stackOptions}>
+			<Stack.Screen
+				name="index"
+				options={{
+					headerTitle: 'Browse Shops',
+					headerShown: false
+				}}
+			/>
 			<Stack.Screen
 				name="[shopId]/index"
 				options={{
