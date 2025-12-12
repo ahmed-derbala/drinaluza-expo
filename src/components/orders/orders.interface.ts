@@ -15,6 +15,13 @@ export interface Product {
 		updatedAt: string
 	}
 	updatedAt: string
+	DefaultProduct?: {
+		images: {
+			thumbnail: {
+				url: string
+			}
+		}
+	}
 }
 
 export interface ProductItem {

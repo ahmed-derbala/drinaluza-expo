@@ -13,7 +13,7 @@ export const getMyShops = async (): Promise<ShopsResponse> => {
 
 export const createShop = async (shopData: CreateShopRequest): Promise<CreateShopResponse> => {
 	try {
-		const response = await getApiClient().post('/shops/create', shopData)
+		const response = await getApiClient().post('/shops', shopData)
 		return response.data
 	} catch (error: any) {
 		console.error('Error creating shop:', error)

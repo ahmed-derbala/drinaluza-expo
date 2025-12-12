@@ -107,72 +107,143 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(({ visible, loading, shopName, deliveryRadius, onShopNameChange, onDeliveryRadiusChange, onSubmit, onDismiss, theme }) => {
 	const deliveryRadiusInputRef = useRef<RNTextInput>(null)
 	const isFormValid = shopName.trim().length >= MIN_SHOP_NAME_LENGTH && shopName.trim().length <= MAX_SHOP_NAME_LENGTH
+	const deliveryRadiusNum = parseFloat(deliveryRadius) || 0
+	const isDeliveryValid = deliveryRadiusNum > 0 && deliveryRadiusNum <= 100
 
 	return (
-		<Modal visible={visible} transparent animationType="fade" onRequestClose={onDismiss}>
+		<Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+				<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onDismiss} />
 				<View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-					<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Shop</Text>
+					{/* Header */}
+					<View style={styles.modalHeader}>
+						<View style={[styles.modalIconContainer, { backgroundColor: theme.primary + '15' }]}>
+							<Text style={styles.modalIcon}>🏪</Text>
+						</View>
+						<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Shop</Text>
+						<Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Set up your shop to start selling</Text>
+					</View>
 
-					<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name</Text>
-					<TextInput
-						style={[
-							styles.input,
-							{
-								borderColor: theme.border,
-								color: theme.text,
-								backgroundColor: theme.background
-							}
-						]}
-						value={shopName}
-						onChangeText={onShopNameChange}
-						placeholder="Enter shop name"
-						placeholderTextColor={theme.textSecondary}
-						maxLength={MAX_SHOP_NAME_LENGTH}
-						autoFocus
-						returnKeyType="next"
-						onSubmitEditing={() => deliveryRadiusInputRef.current?.focus()}
-					/>
-					<Text style={[styles.characterCount, { color: theme.textSecondary }]}>
-						{shopName.length}/{MAX_SHOP_NAME_LENGTH}
-					</Text>
+					<ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+						{/* Shop Name Input */}
+						<View style={styles.inputContainer}>
+							<View style={styles.inputLabelRow}>
+								<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name</Text>
+								<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+							</View>
+							<View
+								style={[
+									styles.inputWrapper,
+									{
+										borderColor: shopName.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.border,
+										backgroundColor: theme.background
+									}
+								]}
+							>
+								<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
+									<Text style={{ fontSize: 18 }}>🏪</Text>
+								</View>
+								<TextInput
+									style={[styles.textInput, { color: theme.text, flex: 1 }]}
+									value={shopName}
+									onChangeText={onShopNameChange}
+									placeholder="e.g., Fresh Seafood Market"
+									placeholderTextColor={theme.textSecondary}
+									maxLength={MAX_SHOP_NAME_LENGTH}
+									autoFocus
+									returnKeyType="next"
+									onSubmitEditing={() => deliveryRadiusInputRef.current?.focus()}
+								/>
+							</View>
+							<View style={styles.inputFooter}>
+								<Text style={[styles.inputHint, { color: shopName.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
+									{shopName.length < MIN_SHOP_NAME_LENGTH && shopName.length > 0
+										? `At least ${MIN_SHOP_NAME_LENGTH} characters required`
+										: shopName.length > 0 && isFormValid
+											? '✓ Looks good!'
+											: 'Choose a unique name for your shop'}
+								</Text>
+								<Text style={[styles.characterCount, { color: theme.textSecondary }]}>
+									{shopName.length}/{MAX_SHOP_NAME_LENGTH}
+								</Text>
+							</View>
+						</View>
 
-					<Text style={[styles.inputLabel, { color: theme.text }]}>Delivery Radius (km)</Text>
-					<TextInput
-						ref={deliveryRadiusInputRef}
-						style={[
-							styles.input,
-							{
-								borderColor: theme.border,
-								color: theme.text,
-								backgroundColor: theme.background
-							}
-						]}
-						value={deliveryRadius}
-						onChangeText={onDeliveryRadiusChange}
-						placeholder="Enter delivery radius in kilometers"
-						placeholderTextColor={theme.textSecondary}
-						keyboardType="numeric"
-						returnKeyType="done"
-						onSubmitEditing={onSubmit}
-					/>
+						{/* Delivery Radius Input */}
+						<View style={styles.inputContainer}>
+							<View style={styles.inputLabelRow}>
+								<Text style={[styles.inputLabel, { color: theme.text }]}>Delivery Radius</Text>
+								<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+							</View>
+							<View
+								style={[
+									styles.inputWrapper,
+									{
+										borderColor: deliveryRadius.length > 0 ? (isDeliveryValid ? '#10B981' : '#EF4444') : theme.border,
+										backgroundColor: theme.background
+									}
+								]}
+							>
+								<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
+									<Text style={{ fontSize: 18 }}>📍</Text>
+								</View>
+								<TextInput
+									ref={deliveryRadiusInputRef}
+									style={[styles.textInput, { color: theme.text, flex: 1 }]}
+									value={deliveryRadius}
+									onChangeText={onDeliveryRadiusChange}
+									placeholder="5"
+									placeholderTextColor={theme.textSecondary}
+									keyboardType="decimal-pad"
+									returnKeyType="done"
+									onSubmitEditing={isFormValid && isDeliveryValid ? onSubmit : undefined}
+								/>
+								<Text style={[styles.unitLabel, { color: theme.textSecondary }]}>km</Text>
+							</View>
+							<Text style={[styles.inputHint, { color: deliveryRadius.length > 0 ? (isDeliveryValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
+								{deliveryRadius.length > 0 && !isDeliveryValid
+									? 'Please enter a valid radius (1-100 km)'
+									: deliveryRadius.length > 0 && isDeliveryValid
+										? `✓ Delivery area: ~${(Math.PI * Math.pow(deliveryRadiusNum, 2)).toFixed(1)} km²`
+										: 'How far will you deliver? (in kilometers)'}
+							</Text>
+						</View>
 
-					<View style={styles.modalButtons}>
-						<TouchableOpacity style={[styles.modalButton, { borderWidth: 1, borderColor: theme.border }]} onPress={onDismiss} disabled={loading}>
-							<Text style={[styles.modalButtonText, { color: theme.text }]}>Cancel</Text>
+						{/* Info Card */}
+						<View style={[styles.infoCard, { backgroundColor: theme.primary + '08', borderColor: theme.primary + '20' }]}>
+							<Text style={[styles.infoIcon, { color: theme.primary }]}>💡</Text>
+							<View style={{ flex: 1 }}>
+								<Text style={[styles.infoTitle, { color: theme.text }]}>Quick Tip</Text>
+								<Text style={[styles.infoText, { color: theme.textSecondary }]}>You can always update your shop details later from the shop settings.</Text>
+							</View>
+						</View>
+					</ScrollView>
+
+					{/* Action Buttons */}
+					<View style={[styles.modalActions, { borderTopColor: theme.border }]}>
+						<TouchableOpacity style={[styles.actionButton, styles.cancelButton, { borderColor: theme.border }]} onPress={onDismiss} disabled={loading}>
+							<Text style={[styles.actionButtonText, { color: theme.text }]}>Cancel</Text>
 						</TouchableOpacity>
 						<TouchableOpacity
 							style={[
-								styles.modalButton,
+								styles.actionButton,
+								styles.createButton,
 								{
-									backgroundColor: isFormValid ? theme.primary : '#999',
-									opacity: isFormValid ? 1 : 0.6
+									backgroundColor: isFormValid && isDeliveryValid ? theme.primary : theme.border,
+									opacity: isFormValid && isDeliveryValid ? 1 : 0.5
 								}
 							]}
 							onPress={onSubmit}
-							disabled={!isFormValid || loading}
+							disabled={!isFormValid || !isDeliveryValid || loading}
 						>
-							{loading ? <ActivityIndicator color="#fff" /> : <Text style={[styles.modalButtonText, { color: '#fff' }]}>Create Shop</Text>}
+							{loading ? (
+								<ActivityIndicator color="#fff" size="small" />
+							) : (
+								<>
+									<Text style={styles.createButtonText}>Create Shop</Text>
+									<Text style={{ fontSize: 16 }}>→</Text>
+								</>
+							)}
 						</TouchableOpacity>
 					</View>
 				</View>
@@ -250,6 +321,16 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 
 			const newShop: CreateShopRequest = {
 				name: shopName.trim(),
+				address: {
+					street: 'To be updated',
+					city: 'To be updated',
+					state: 'To be updated',
+					postalCode: '0000',
+					country: 'Tunisia'
+				},
+				location: {
+					coordinates: [10.1815, 36.8065] // Default to Tunisia coordinates
+				},
 				deliveryRadiusKm: parseFloat(deliveryRadius) || 5
 			}
 
@@ -261,11 +342,14 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				deliveryRadius: '5',
 				creating: false
 			})
+			Alert.alert('Success', 'Shop created successfully! You can update the address and location from shop settings.')
 		} catch (err) {
 			console.error('Failed to create shop:', err)
 			updateState({
+				creating: false,
 				error: 'Failed to create shop. Please try again.'
 			})
+			Alert.alert('Error', 'Failed to create shop. Please try again.')
 		}
 	}, [shopName, deliveryRadius, updateState, loadShops])
 
@@ -440,21 +524,174 @@ const styles = StyleSheet.create({
 	},
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0, 0, 0, 0.5)',
-		justifyContent: 'center',
-		padding: 20
+		backgroundColor: 'rgba(0, 0, 0, 0.6)',
+		justifyContent: 'flex-end'
+	},
+	modalBackdrop: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0
 	},
 	modalContent: {
 		backgroundColor: '#fff',
-		borderRadius: 8,
-		padding: 20,
-		maxHeight: '80%'
+		borderTopLeftRadius: 24,
+		borderTopRightRadius: 24,
+		maxHeight: '90%',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: -4 },
+		shadowOpacity: 0.15,
+		shadowRadius: 12,
+		elevation: 8
+	},
+	modalHeader: {
+		alignItems: 'center',
+		paddingTop: 24,
+		paddingHorizontal: 24,
+		paddingBottom: 16,
+		borderBottomWidth: 1,
+		borderBottomColor: 'rgba(0,0,0,0.05)'
+	},
+	modalIconContainer: {
+		width: 64,
+		height: 64,
+		borderRadius: 32,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginBottom: 16
+	},
+	modalIcon: {
+		fontSize: 32
 	},
 	modalTitle: {
-		fontSize: 20,
-		fontWeight: '600',
-		marginBottom: 20,
+		fontSize: 24,
+		fontWeight: '700',
+		marginBottom: 8,
 		textAlign: 'center'
+	},
+	modalSubtitle: {
+		fontSize: 14,
+		textAlign: 'center',
+		lineHeight: 20
+	},
+	modalForm: {
+		paddingHorizontal: 24,
+		paddingVertical: 20
+	},
+	inputContainer: {
+		marginBottom: 24
+	},
+	inputLabelRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 8
+	},
+	inputLabel: {
+		fontSize: 15,
+		fontWeight: '600'
+	},
+	required: {
+		marginLeft: 4,
+		fontSize: 15,
+		fontWeight: '600'
+	},
+	inputWrapper: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		borderWidth: 2,
+		borderRadius: 12,
+		paddingHorizontal: 12,
+		paddingVertical: 4
+	},
+	inputIcon: {
+		width: 40,
+		height: 40,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: 12
+	},
+	textInput: {
+		fontSize: 16,
+		paddingVertical: 12
+	},
+	unitLabel: {
+		fontSize: 15,
+		fontWeight: '600',
+		marginLeft: 8
+	},
+	inputFooter: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginTop: 6,
+		paddingHorizontal: 4
+	},
+	inputHint: {
+		fontSize: 12,
+		flex: 1,
+		marginRight: 8
+	},
+	characterCount: {
+		fontSize: 12,
+		fontWeight: '500'
+	},
+	infoCard: {
+		flexDirection: 'row',
+		padding: 16,
+		borderRadius: 12,
+		borderWidth: 1,
+		gap: 12,
+		marginTop: 8
+	},
+	infoIcon: {
+		fontSize: 20
+	},
+	infoTitle: {
+		fontSize: 14,
+		fontWeight: '600',
+		marginBottom: 4
+	},
+	infoText: {
+		fontSize: 13,
+		lineHeight: 18
+	},
+	modalActions: {
+		flexDirection: 'row',
+		gap: 12,
+		padding: 20,
+		borderTopWidth: 1,
+		backgroundColor: 'rgba(0,0,0,0.02)'
+	},
+	actionButton: {
+		flex: 1,
+		paddingVertical: 16,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
+		flexDirection: 'row',
+		gap: 8
+	},
+	cancelButton: {
+		borderWidth: 2,
+		backgroundColor: 'transparent'
+	},
+	createButton: {
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.2,
+		shadowRadius: 8,
+		elevation: 4
+	},
+	actionButtonText: {
+		fontSize: 16,
+		fontWeight: '600'
+	},
+	createButtonText: {
+		color: '#fff',
+		fontSize: 16,
+		fontWeight: '700'
 	},
 	input: {
 		borderWidth: 1,
@@ -462,10 +699,6 @@ const styles = StyleSheet.create({
 		borderRadius: 4,
 		padding: 10,
 		marginBottom: 16
-	},
-	inputLabel: {
-		marginBottom: 8,
-		fontWeight: '500'
 	},
 	modalButtons: {
 		flexDirection: 'row',
@@ -485,13 +718,6 @@ const styles = StyleSheet.create({
 	errorText: {
 		color: '#f44336',
 		marginBottom: 16
-	},
-	characterCount: {
-		textAlign: 'right',
-		fontSize: 12,
-		color: '#666',
-		marginTop: -12,
-		marginBottom: 8
 	},
 	emptyContainer: {
 		flex: 1,

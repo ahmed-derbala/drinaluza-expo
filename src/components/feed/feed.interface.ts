@@ -68,6 +68,13 @@ export interface FeedItem {
 	updatedAt: string
 	__v: number
 	card?: CardInfo
+	DefaultProduct?: {
+		images: {
+			thumbnail: {
+				url: string
+			}
+		}
+	}
 }
 
 export interface FeedResponse {

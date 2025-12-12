@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, ScrollView, Animated } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, ScrollView, Animated, Image } from 'react-native'
 import { getSales, updateSaleStatus } from '../orders/orders.api'
 import { OrderItem as SaleItem } from '../orders/orders.interface'
 import { useFocusEffect } from '@react-navigation/native'
@@ -181,11 +181,24 @@ export default function SalesTab() {
 					</View>
 
 					<View style={styles.productsList}>
-						{item.products.map((p, index) => (
-							<Text key={index} style={[styles.productText, { color: colors.textSecondary }]} numberOfLines={1}>
-								{p.finalPrice?.quantity}Tx {p.product?.name}
-							</Text>
-						))}
+						{item.products.slice(0, 3).map((p, index) => {
+							const imageUrl = p.product?.DefaultProduct?.images?.thumbnail?.url
+							return (
+								<View key={index} style={styles.productItem}>
+									{imageUrl ? (
+										<Image source={{ uri: imageUrl }} style={styles.productImage} resizeMode="cover" />
+									) : (
+										<View style={[styles.productImage, styles.productImagePlaceholder]}>
+											<Ionicons name="image-outline" size={16} color={colors.textTertiary} />
+										</View>
+									)}
+									<Text style={[styles.productText, { color: colors.textSecondary }]} numberOfLines={1}>
+										{p.finalPrice?.quantity}x {p.product?.name}
+									</Text>
+								</View>
+							)
+						})}
+						{item.products.length > 3 && <Text style={[styles.productText, { color: colors.textTertiary, fontStyle: 'italic', marginTop: 4 }]}>+ {item.products.length - 3} more items</Text>}
 					</View>
 
 					<View style={styles.totalRow}>
@@ -342,11 +355,28 @@ const styles = StyleSheet.create({
 		marginTop: 8,
 		padding: 10,
 		backgroundColor: 'rgba(150,150,150,0.05)',
+		borderRadius: 8,
+		gap: 8
+	},
+	productItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8
+	},
+	productImage: {
+		width: 40,
+		height: 40,
 		borderRadius: 8
+	},
+	productImagePlaceholder: {
+		backgroundColor: 'rgba(150,150,150,0.1)',
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
 	productText: {
 		fontSize: 13,
-		lineHeight: 20
+		lineHeight: 20,
+		flex: 1
 	},
 	totalRow: {
 		flexDirection: 'row',

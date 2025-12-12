@@ -110,6 +110,17 @@ const PurchasesScreen = () => {
 		])
 	}
 
+	const handleStatusUpdate = async (purchaseId: string, newStatus: string) => {
+		try {
+			await updatePurchaseStatus({ purchaseId, status: newStatus })
+			loadPurchases()
+			Alert.alert('Success', 'Order status updated successfully')
+		} catch (error) {
+			console.error('Error updating order status:', error)
+			Alert.alert('Error', 'Failed to update order status. Please try again.')
+		}
+	}
+
 	// Filter purchases based on selected filter
 	const filteredPurchases = useMemo(() => {
 		switch (filter) {
@@ -269,6 +280,19 @@ const PurchasesScreen = () => {
 						</View>
 					</View>
 
+					{/* Status Action Buttons */}
+					{item.status === orderStatusEnum.DELIVERED_TO_CUSTOMER && (
+						<View style={styles.actionButtonsContainer}>
+							<TouchableOpacity
+								style={[styles.actionButton, { backgroundColor: orderStatusColors[orderStatusEnum.RECEIVED_BY_CUSTOMER] }]}
+								onPress={() => handleStatusUpdate(item._id, orderStatusEnum.RECEIVED_BY_CUSTOMER)}
+							>
+								<Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
+								<Text style={styles.actionButtonText}>Mark as Received</Text>
+							</TouchableOpacity>
+						</View>
+					)}
+
 					{/* Cancel Button (if applicable) */}
 					{canCancelOrder(item.status) && (
 						<View style={styles.cancelButtonContainer}>
@@ -404,7 +428,7 @@ const PurchasesScreen = () => {
 								const price = item.price?.value?.tnd || 0
 								const quantity = item.quantity || 1
 								const itemWidth = '100%'
-								const imageUrl = item.photos && item.photos.length > 0 ? item.photos[0] : null
+								const imageUrl = item.DefaultProduct?.images?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
 
 								return (
 									<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
@@ -936,6 +960,30 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			color: '#fff',
 			fontSize: 15,
 			fontWeight: '700'
+		},
+		actionButtonsContainer: {
+			marginTop: 12,
+			flexDirection: 'row',
+			gap: 8,
+			justifyContent: 'flex-end'
+		},
+		actionButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			paddingHorizontal: 16,
+			paddingVertical: 10,
+			borderRadius: 10,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4,
+			elevation: 2
+		},
+		actionButtonText: {
+			color: '#fff',
+			fontSize: 13,
+			fontWeight: '600'
 		}
 	})
 }

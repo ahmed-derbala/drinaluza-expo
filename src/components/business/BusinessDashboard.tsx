@@ -188,23 +188,18 @@ const BusinessDashboard = () => {
 			],
 			actions: [
 				{
-					label: 'Create product',
-					icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.primary} />,
-					onPress: () => router.push('/home/business/my-products' as any)
-				},
-				{
-					label: 'Create shop',
-					icon: <MaterialIcons name="storefront" size={22} color={colors.success} />,
+					label: 'Shops',
+					icon: <MaterialIcons name="store" size={22} color={colors.primary} />,
 					onPress: () => router.push('/home/business/my-shops' as any)
 				},
 				{
-					label: 'View sales',
-					icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
-					onPress: () => router.push('/home/business/sales' as any)
+					label: 'Products',
+					icon: <MaterialIcons name="inventory" size={22} color={colors.success} />,
+					onPress: () => router.push('/home/business/my-products' as any)
 				},
 				{
-					label: 'Sales analytics',
-					icon: <MaterialIcons name="insights" size={22} color={colors.warning} />,
+					label: 'Sales',
+					icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
 					onPress: () => router.push('/home/business/sales' as any)
 				}
 			]

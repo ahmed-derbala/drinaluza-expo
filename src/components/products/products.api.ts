@@ -2,21 +2,24 @@ import { getApiClient } from '../../core/api'
 import { ProductType } from './products.type'
 
 export interface CreateProductRequest {
+	shop: {
+		slug: string
+		_id: string
+	}
+	DefaultProduct: {
+		slug: string
+		_id: string
+	}
 	name: string
-	shopId: string
-	defaultProductId?: string
 	price: {
 		value: {
 			tnd: number
-			eur?: number
-			usd?: number
 		}
 		unit: {
 			name: string
-			min: number
+			min?: number
 		}
 	}
-	photos?: any[]
 	searchTerms?: string[]
 	stock?: {
 		quantity: number
@@ -55,11 +58,15 @@ export interface DefaultProduct {
 	_id: string
 	name: {
 		en: string
-		tn: string
-		tn_ar: string
 	}
 	searchKeywords: string[]
+	images: {
+		thumbnail: {
+			url: string
+		}
+	}
 	isActive: boolean
+	slug: string
 	createdAt: string
 	updatedAt: string
 }
@@ -93,8 +100,7 @@ export const getShopProducts = async (shopId: string, page: number = 1, limit: n
 }
 
 export const createProduct = async (productData: CreateProductRequest): Promise<{ status: number; data: ProductType }> => {
-	const { shopId, ...productPayload } = productData
-	const response = await getApiClient().post(`/shops/my-shops/${shopId}/products/create`, productPayload)
+	const response = await getApiClient().post('/products', productData)
 	return response.data
 }
 

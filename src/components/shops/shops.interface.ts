@@ -13,9 +13,16 @@ export type Owner = {
 export type Shop = {
 	_id: string
 	name: string
+	slug: string
 	owner: Owner
 	location?: GeoPoint
-	address?: unknown
+	address?: {
+		street: string
+		city: string
+		state: string
+		postalCode: string
+		country: string
+	}
 	operatingHours?: Record<string, unknown>
 	deliveryRadiusKm?: number
 	isActive: boolean
@@ -114,11 +121,17 @@ export interface ShopsResponse {
 
 export type CreateShopRequest = {
 	name: string
-	location?: {
-		type: 'Point'
-		coordinates?: [number, number]
+	address: {
+		street: string
+		city: string
+		state: string
+		postalCode: string
+		country: string
 	}
-	deliveryRadiusKm?: number
+	location: {
+		coordinates: [number, number]
+	}
+	deliveryRadiusKm: number
 }
 
 export type CreateShopResponse = {
