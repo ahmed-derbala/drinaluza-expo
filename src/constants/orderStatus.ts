@@ -36,5 +36,16 @@ export const orderStatusLabels = {
 
 // Get next valid statuses for progression
 export const getNextValidStatuses = (currentStatus: string): string[] => {
-	return []
+	switch (currentStatus) {
+		case orderStatusEnum.PENDING_SHOP_CONFIRMATION:
+			return [orderStatusEnum.CONFIRMED_BY_SHOP]
+		case orderStatusEnum.CONFIRMED_BY_SHOP:
+			return [orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER, orderStatusEnum.DELIVERING_TO_CUSTOMER]
+		case orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER:
+			return [orderStatusEnum.DELIVERED_TO_CUSTOMER]
+		case orderStatusEnum.DELIVERING_TO_CUSTOMER:
+			return [orderStatusEnum.DELIVERED_TO_CUSTOMER]
+		default:
+			return []
+	}
 }

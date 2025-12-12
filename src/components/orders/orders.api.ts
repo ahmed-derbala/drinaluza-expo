@@ -12,16 +12,19 @@ export const cancelPurchaseAPI = async ({ purchaseId }: { purchaseId: string }) 
 	return response.data
 }
 
-export const getSales = async (page: number = 1, limit: number = 10): Promise<OrderResponse> => {
-	const response = await getApiClient().get(`/sales?page=${page}&limit=${limit}`)
+export const getSales = async (page: number = 1, limit: number = 10, status?: string): Promise<OrderResponse> => {
+	let url = `/sales?page=${page}&limit=${limit}`
+	if (status) {
+		url += `&status=${status}`
+	}
+	const response = await getApiClient().get(url)
 	return response.data
 }
 
-export const createPurchase = async ({ products }: { products: any[] }) => {
-	let body: { products: any[] } = { products: [] }
-	body.products = products.map((product) => ({ product }))
-	for (let p of body.products) {
-		if (!p.quantity) p.quantity = 1
+export const createPurchase = async ({ products, shop }: { products: { product: any; quantity: number }[]; shop: any }) => {
+	const body = {
+		products,
+		shop
 	}
 	const response = await getApiClient().post('/purchases', body)
 	return response.data
@@ -35,6 +38,6 @@ export const updatePurchaseStatus = async ({ purchaseId, by }: { purchaseId: str
 }
 
 export const updateSaleStatus = async ({ saleId, status }: { saleId: string; status: string }) => {
-	const response = await getApiClient().patch(`/sales/${saleId}/${status}`)
+	const response = await getApiClient().patch(`/sales/${saleId}`, { status })
 	return response.data
 }

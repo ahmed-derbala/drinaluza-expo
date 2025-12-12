@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
-import { getPurchases, updatePurchaseStatus } from '../orders/orders.api'
+import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
 import { FeedItem } from '../feed/feed.interface'
@@ -315,6 +315,38 @@ const PurchasesScreen = () => {
 		}
 	}
 
+	const handleCheckout = async (group: ShopBasketGroup) => {
+		try {
+			// Find the shop object from the first item
+			const shop = group.items[0]?.shop
+
+			// Map products for API
+			const products = group.items.map((item) => ({
+				product: item,
+				quantity: item.quantity
+			}))
+
+			// Call createPurchase API
+			await createPurchase({ products, shop })
+
+			// On success, remove these items from basket
+			const purchasedItemIds = new Set(group.items.map((item) => item._id))
+			const newBasket = basket.filter((item) => !purchasedItemIds.has(item._id))
+
+			setBasket(newBasket)
+			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+
+			Alert.alert('Success', 'Order placed successfully!')
+
+			// Refresh purchases list and switch tab
+			onRefresh()
+			setFilter('active')
+		} catch (error) {
+			console.error('Checkout failed:', error)
+			Alert.alert('Error', 'Failed to place order')
+		}
+	}
+
 	const renderBasketGroup = ({ item: group }: { item: ShopBasketGroup }) => {
 		const scaleAnim = new Animated.Value(1)
 
@@ -455,7 +487,7 @@ const PurchasesScreen = () => {
 
 						{/* Checkout Button */}
 						<View style={styles.cancelButtonContainer}>
-							<TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.primary }]} onPress={() => Alert.alert('Checkout', `Checking out from ${group.shopName}`)}>
+							<TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.primary }]} onPress={() => handleCheckout(group)}>
 								<Ionicons name="card-outline" size={16} color="#fff" />
 								<Text style={[styles.cancelText, { color: '#fff' }]}>Checkout</Text>
 							</TouchableOpacity>
@@ -560,7 +592,7 @@ const PurchasesScreen = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader
-				title="My Purchases"
+				title="Purchases"
 				subtitle={`${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
 				showBack={true}
 				onBackPress={() => router.back()}

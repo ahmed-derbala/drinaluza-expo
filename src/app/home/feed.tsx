@@ -4,11 +4,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getFeed } from '../../components/feed/feed.api'
 import { FeedItem } from '../../components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
+import { useRouter } from 'expo-router'
 import ProductCard from '../../components/products/products.card'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from '../../components/common/Toast'
 import SearchBar from '../../components/search/SearchBar'
+import { getCurrentUser } from '../../core/auth/auth.api'
 import { parseError, logError } from '../../utils/errorHandler'
 
 const createStyles = (colors: any, isDark: boolean) =>
@@ -182,6 +184,15 @@ export default function FeedScreen() {
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
 	const [showToast, setShowToast] = useState(false)
 	const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('error')
+	const [user, setUser] = useState<{ slug: string; role: string } | null>(null)
+
+	useEffect(() => {
+		const loadUser = async () => {
+			const userData = await getCurrentUser()
+			setUser(userData)
+		}
+		loadUser()
+	}, [])
 
 	const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
 
@@ -305,15 +316,20 @@ export default function FeedScreen() {
 		setShowToast(true)
 	}, [])
 
+	const router = useRouter()
+
 	const renderHeader = useCallback(
 		() => (
 			<View style={styles.headerContainer}>
 				<View style={styles.headerTop}>
 					<View>
-						<Text style={styles.greeting}>Find your</Text>
-						<Text style={styles.title}>Daily Goods</Text>
+						<Text style={styles.greeting}>Hello, {user?.slug || 'User'}</Text>
+						<Text style={styles.title}>{user?.role || 'Welcome'}</Text>
 					</View>
 					<View style={styles.headerActions}>
+						<TouchableOpacity style={styles.refreshButton} onPress={() => router.push('/home/settings')}>
+							<Ionicons name="settings-outline" size={24} color={colors.text} />
+						</TouchableOpacity>
 						<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
 							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={refreshing ? colors.textSecondary : colors.text} />
 						</TouchableOpacity>
@@ -327,7 +343,7 @@ export default function FeedScreen() {
 				{/* SearchBar moved out of here */}
 			</View>
 		),
-		[selectedCategory, styles, colors.text, colors.textSecondary, refreshData, refreshing]
+		[selectedCategory, styles, colors.text, colors.textSecondary, refreshData, refreshing, router]
 	)
 
 	const renderFooter = () => {

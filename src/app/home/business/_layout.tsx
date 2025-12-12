@@ -103,7 +103,7 @@ export default function BusinessLayout() {
 			<Stack.Screen
 				name="sales"
 				options={{
-					title: 'Sales Analytics',
+					title: 'Sales',
 					headerShown: true
 				}}
 			/>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, useWindowDimensions, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { signOut } from '../../core/auth/auth.api'
@@ -19,25 +19,33 @@ export default function SettingsScreen() {
 	const styles = createStyles(colors, isDark)
 
 	const handleSignOut = async () => {
-		Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-			{
-				text: 'Cancel',
-				style: 'cancel'
-			},
-			{
-				text: 'Sign Out',
-				style: 'destructive',
-				onPress: async () => {
-					try {
-						await signOut()
-						router.replace('/auth')
-					} catch (error) {
-						console.error('Sign out failed:', error)
-						router.replace('/auth')
-					}
-				}
+		const performSignOut = async () => {
+			try {
+				await signOut()
+				router.replace('/auth')
+			} catch (error) {
+				console.error('Sign out failed:', error)
+				router.replace('/auth')
 			}
-		])
+		}
+
+		if (Platform.OS === 'web') {
+			if (window.confirm('Are you sure you want to sign out?')) {
+				await performSignOut()
+			}
+		} else {
+			Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+				{
+					text: 'Cancel',
+					style: 'cancel'
+				},
+				{
+					text: 'Sign Out',
+					style: 'destructive',
+					onPress: performSignOut
+				}
+			])
+		}
 	}
 
 	const toggleTheme = () => {

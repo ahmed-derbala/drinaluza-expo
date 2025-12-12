@@ -1,5 +1,6 @@
 // Configuration file for Drinaluza app
 // Edit server URLs and ports here for different environments
+import packagejson from '../../package.json' with { type: 'json' }
 
 export type Environment = 'local' | 'development' | 'production'
 
@@ -39,8 +40,8 @@ export const config: AppConfig = {
 		}
 	},
 	app: {
-		name: 'Drinaluza',
-		version: '1.0.0',
+		name: packagejson.name,
+		version: packagejson.version,
 		timeout: 10000, // 10 seconds
 		retryAttempts: 3
 	}

@@ -344,3 +344,18 @@ export const checkAuth = async (): Promise<boolean> => {
 	const token = await getToken()
 	return !!token
 }
+
+// Get current full profile from API
+export const getMyProfile = async () => {
+	const response = await getApiClient().get('/users/my-profile')
+	return response.data
+}
+
+// Update profile
+export const updateMyProfile = async (data: any) => {
+	const response = await getApiClient().patch('/users/my-profile', data)
+	if (response.data?.data) {
+		await setUserData(response.data.data)
+	}
+	return response.data
+}

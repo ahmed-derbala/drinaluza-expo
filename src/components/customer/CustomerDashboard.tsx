@@ -169,7 +169,7 @@ const CustomerDashboard = () => {
 				onPress: () => router.push('/home/shops' as any)
 			},
 			{
-				label: 'My purchases',
+				label: 'Purchases',
 				subtext: 'Track your purchases',
 				icon: <Feather name="package" size={22} color={colors.info} />,
 				onPress: () => router.push('/home/orders' as any)

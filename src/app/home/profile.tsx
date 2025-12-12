@@ -1,15 +1,35 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { checkAuth } from '../../core/auth/auth.api'
+import { checkAuth, getMyProfile, updateMyProfile } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
 
 import { UserData } from '../../components/profile/profile.interface'
+
+// Components moved outside to prevent re-creation on render
+const Section = ({ title, children, styles }: { title: string; children: React.ReactNode; styles: any }) => (
+	<View style={styles.section}>
+		<Text style={styles.sectionTitle}>{title}</Text>
+		<View style={styles.sectionContent}>{children}</View>
+	</View>
+)
+
+const InfoItem = ({ label, value, icon, styles, iconColor }: { label: string; value: string; icon: any; styles: any; iconColor: string }) => (
+	<View style={styles.infoItem}>
+		<View style={styles.infoIconContainer}>
+			<Ionicons name={icon} size={20} color={iconColor} />
+		</View>
+		<View style={styles.infoContent}>
+			<Text style={styles.infoLabel}>{label}</Text>
+			<Text style={styles.infoValue}>{value}</Text>
+		</View>
+	</View>
+)
 
 export default function ProfileScreen() {
 	const router = useRouter()
@@ -18,124 +38,78 @@ export default function ProfileScreen() {
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 	const styles = createStyles(colors, isDark, isWideScreen, width)
-	const [userData, setUserData] = useState<UserData>({
-		slug: '',
-		name: '',
-		email: '',
-		role: '',
-		phone: {
-			fullNumber: '',
-			countryCode: '+216',
-			shortNumber: ''
-		},
-		profile: {
-			firstName: '',
-			middleName: '',
-			lastName: '',
-			birthDate: null,
-			photo: {
-				url: ''
-			}
-		},
-		address: {
-			text: '',
-			country: 'Tunisia',
-			city: '',
-			street: ''
-		},
-		settings: {
-			lang: 'en',
-			currency: 'tnd'
-		}
-	})
 
+	const [loading, setLoading] = useState(true)
+	const [userData, setUserData] = useState<UserData | null>(null)
 	const [isEditing, setIsEditing] = useState(false)
 	const [showDatePicker, setShowDatePicker] = useState(false)
+	const [imageError, setImageError] = useState(false)
 
-	useFocusEffect(
-		useCallback(() => {
-			const checkUserAuth = async () => {
-				const isAuthenticated = await checkAuth()
-				if (!isAuthenticated) {
-					router.replace('/auth')
-				} else {
-					loadUserData()
-				}
-			}
-			checkUserAuth()
-		}, [])
-	)
-
-	const loadUserData = async () => {
+	const loadProfile = async () => {
 		try {
-			const storedUserData = await AsyncStorage.getItem('userData')
-			if (storedUserData) {
-				const parsed = JSON.parse(storedUserData)
-				if (parsed.profile?.birthDate) {
-					parsed.profile.birthDate = new Date(parsed.profile.birthDate)
-				}
-				// Merge with default structure to ensure all properties exist
-				setUserData((prev) => ({
-					...prev,
-					...parsed,
-					phone: {
-						fullNumber: '',
-						countryCode: '+216',
-						shortNumber: '',
-						...parsed.phone
-					},
-					profile: {
-						firstName: '',
-						middleName: '',
-						lastName: '',
-						birthDate: null,
-						photo: { url: '' },
-						...parsed.profile
-					},
-					address: {
-						text: '',
-						country: '',
-						city: '',
-						street: '',
-						...parsed.address
-					},
-					settings: {
-						lang: 'en',
-						currency: 'TND',
-						...parsed.settings
-					}
-				}))
-			} else {
-				// Fallback to old slug storage
-				const storedUsername = await AsyncStorage.getItem('user.slug')
-				if (storedUsername) {
-					setUserData((prev) => ({ ...prev, slug: storedUsername }))
-				}
+			setLoading(true)
+			const isAuthenticated = await checkAuth()
+			if (!isAuthenticated) {
+				router.replace('/auth')
+				return
 			}
-		} catch (e) {
-			console.error('Error loading user data:', e)
+
+			const response = await getMyProfile()
+			if (response && response.data) {
+				// Parse dates
+				const data = response.data
+				if (data.basicInfos?.birthDate) {
+					data.basicInfos.birthDate = new Date(data.basicInfos.birthDate)
+				}
+				setUserData(data)
+				setImageError(false)
+			}
+		} catch (error) {
+			console.error('Failed to load profile:', error)
+			Alert.alert('Error', 'Failed to load profile data')
+		} finally {
+			setLoading(false)
 		}
 	}
 
+	useFocusEffect(
+		useCallback(() => {
+			loadProfile()
+		}, [])
+	)
+
 	const saveUserData = async () => {
+		if (!userData) return
+
 		try {
-			await AsyncStorage.setItem('userData', JSON.stringify(userData))
+			// Prepare payload
+			const payload = {
+				basicInfos: userData.basicInfos,
+				address: userData.address,
+				settings: userData.settings
+			}
+
+			await updateMyProfile(payload)
 			setIsEditing(false)
 			Alert.alert('Success', 'Profile updated successfully!')
+			loadProfile() // Reload to ensure consistency
 		} catch (e) {
 			console.error('Error saving user data:', e)
 			Alert.alert('Error', 'Failed to save profile changes')
 		}
 	}
 
-	const updateField = (field: string, value: any, nested?: string) => {
+	const updateField = (field: string, value: any, section?: keyof UserData) => {
+		if (!userData) return
+
 		setUserData((prev) => {
-			if (nested) {
-				const nestedObj = prev[nested as keyof UserData] as any
+			if (!prev) return null
+
+			if (section) {
 				return {
 					...prev,
-					[nested]: {
-						...nestedObj,
+					[section]: {
+						...(prev[section] as any),
 						[field]: value
 					}
 				}
@@ -147,33 +121,24 @@ export default function ProfileScreen() {
 	const onDateChange = (event: any, selectedDate?: Date) => {
 		setShowDatePicker(Platform.OS === 'ios')
 		if (selectedDate) {
-			updateField('birthDate', selectedDate, 'profile')
+			updateField('birthDate', selectedDate, 'basicInfos')
 		}
 	}
 
-	const formatDate = (date: Date | null) => {
+	const formatDate = (date: Date | string | null | undefined) => {
 		if (!date) return 'Not set'
-		return date.toLocaleDateString()
+		return new Date(date).toLocaleDateString()
 	}
 
-	const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-		<View style={styles.section}>
-			<Text style={styles.sectionTitle}>{title}</Text>
-			<View style={styles.sectionContent}>{children}</View>
-		</View>
-	)
+	if (loading && !userData) {
+		return (
+			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
+	}
 
-	const InfoItem = ({ label, value, icon }: { label: string; value: string; icon: any }) => (
-		<View style={styles.infoItem}>
-			<View style={styles.infoIconContainer}>
-				<Ionicons name={icon} size={20} color={colors.primary} />
-			</View>
-			<View style={styles.infoContent}>
-				<Text style={styles.infoLabel}>{label}</Text>
-				<Text style={styles.infoValue}>{value}</Text>
-			</View>
-		</View>
-	)
+	if (!userData) return null
 
 	return (
 		<View style={styles.container}>
@@ -195,13 +160,13 @@ export default function ProfileScreen() {
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
 					<View style={styles.photoContainer}>
-						{userData.profile?.photo?.url ? (
-							<Image source={{ uri: userData.profile?.photo?.url }} style={styles.profilePhoto} />
+						{userData.basicInfos?.photo?.url && !imageError ? (
+							<Image source={{ uri: userData.basicInfos.photo.url }} style={styles.profilePhoto} onError={() => setImageError(true)} />
 						) : (
 							<View style={styles.placeholderPhoto}>
 								<Text style={styles.placeholderText}>
-									{userData.profile?.firstName?.charAt(0) || userData.name?.charAt(0) || ''}
-									{userData.profile?.lastName?.charAt(0) || ''}
+									{userData.basicInfos?.firstName?.charAt(0) || userData.name?.charAt(0) || ''}
+									{userData.basicInfos?.lastName?.charAt(0) || ''}
 								</Text>
 							</View>
 						)}
@@ -211,8 +176,13 @@ export default function ProfileScreen() {
 							</TouchableOpacity>
 						)}
 					</View>
-					<Text style={styles.profileName}>{userData.name || 'User'}</Text>
-					<Text style={styles.profileEmail}>{userData.email || 'No email set'}</Text>
+					<Text style={styles.profileName}>
+						{userData.basicInfos?.firstName} {userData.basicInfos?.lastName}
+					</Text>
+					<Text style={styles.profileMeta}>@{userData.slug}</Text>
+
+					{userData.basicInfos?.biography && <Text style={styles.biography}>{userData.basicInfos.biography}</Text>}
+
 					<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
 						<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
 					</View>
@@ -221,32 +191,13 @@ export default function ProfileScreen() {
 				{isEditing ? (
 					// Edit Mode
 					<>
-						<Section title="Basic Information">
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Display Name</Text>
-								<TextInput style={styles.input} value={userData.name} onChangeText={(value) => updateField('name', value)} placeholder="Display Name" placeholderTextColor={colors.textTertiary} />
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Email</Text>
-								<TextInput
-									style={styles.input}
-									value={userData.email}
-									onChangeText={(value) => updateField('email', value)}
-									placeholder="Email"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="email-address"
-									autoCapitalize="none"
-								/>
-							</View>
-						</Section>
-
-						<Section title="Personal Details">
+						<Section title="Basic Information" styles={styles}>
 							<View style={styles.inputGroup}>
 								<Text style={styles.inputLabel}>First Name</Text>
 								<TextInput
 									style={styles.input}
-									value={userData.profile?.firstName}
-									onChangeText={(value) => updateField('firstName', value, 'profile')}
+									value={userData.basicInfos?.firstName}
+									onChangeText={(value) => updateField('firstName', value, 'basicInfos')}
 									placeholder="First Name"
 									placeholderTextColor={colors.textTertiary}
 								/>
@@ -255,80 +206,132 @@ export default function ProfileScreen() {
 								<Text style={styles.inputLabel}>Last Name</Text>
 								<TextInput
 									style={styles.input}
-									value={userData.profile?.lastName}
-									onChangeText={(value) => updateField('lastName', value, 'profile')}
+									value={userData.basicInfos?.lastName}
+									onChangeText={(value) => updateField('lastName', value, 'basicInfos')}
 									placeholder="Last Name"
 									placeholderTextColor={colors.textTertiary}
 								/>
 							</View>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Birth Date</Text>
-								<TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
-									<Text style={styles.dateInputText}>{formatDate(userData.profile?.birthDate)}</Text>
-									<Ionicons name="calendar" size={20} color={colors.textSecondary} />
-								</TouchableOpacity>
+								<Text style={styles.inputLabel}>Biography</Text>
+								<TextInput
+									style={[styles.input, styles.textArea]}
+									value={userData.basicInfos?.biography}
+									onChangeText={(value) => updateField('biography', value, 'basicInfos')}
+									placeholder="Tell us about yourself"
+									placeholderTextColor={colors.textTertiary}
+									multiline
+								/>
 							</View>
-						</Section>
-
-						<Section title="Contact Info">
-							<View style={styles.phoneInputContainer}>
-								<View style={{ flex: 1 }}>
-									<Text style={styles.inputLabel}>Code</Text>
-									<TextInput
-										style={styles.input}
-										value={userData.phone.countryCode}
-										onChangeText={(value) => updateField('countryCode', value, 'phone')}
-										placeholder="+216"
-										placeholderTextColor={colors.textTertiary}
-									/>
-								</View>
-								<View style={{ flex: 3 }}>
-									<Text style={styles.inputLabel}>Phone Number</Text>
-									<TextInput
-										style={styles.input}
-										value={userData.phone.shortNumber}
-										onChangeText={(value) => updateField('shortNumber', value, 'phone')}
-										placeholder="Phone Number"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="phone-pad"
-									/>
-								</View>
-							</View>
-						</Section>
-
-						<Section title="Address">
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Country</Text>
+								<Text style={styles.inputLabel}>Birth Date</Text>
+								{Platform.OS === 'web' ? (
+									<View style={styles.dateInput}>
+										<DateTimePicker
+											value={userData.basicInfos?.birthDate || new Date()}
+											mode="date"
+											display="default"
+											onChange={onDateChange}
+											maximumDate={new Date()}
+											style={{ width: '100%', opacity: 1 }}
+										/>
+									</View>
+								) : (
+									<TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
+										<Text style={styles.dateInputText}>{formatDate(userData.basicInfos?.birthDate)}</Text>
+										<Ionicons name="calendar" size={20} color={colors.textSecondary} />
+									</TouchableOpacity>
+								)}
+							</View>
+						</Section>
+
+						<Section title="Address" styles={styles}>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Street</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.address?.street}
+									onChangeText={(value) => updateField('street', value, 'address')}
+									placeholder="Street Address"
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+							<View style={styles.row}>
+								<View style={[styles.inputGroup, { flex: 1 }]}>
+									<Text style={styles.inputLabel}>City</Text>
+									<TextInput
+										style={styles.input}
+										value={userData.address?.city}
+										onChangeText={(value) => updateField('city', value, 'address')}
+										placeholder="City"
+										placeholderTextColor={colors.textTertiary}
+									/>
+								</View>
+								<View style={[styles.inputGroup, { flex: 1 }]}>
+									<Text style={styles.inputLabel}>State</Text>
+									<TextInput
+										style={styles.input}
+										value={userData.address?.state}
+										onChangeText={(value) => updateField('state', value, 'address')}
+										placeholder="State"
+										placeholderTextColor={colors.textTertiary}
+									/>
+								</View>
+							</View>
+							<View style={styles.row}>
+								<View style={[styles.inputGroup, { flex: 1 }]}>
+									<Text style={styles.inputLabel}>Postal Code</Text>
+									<TextInput
+										style={styles.input}
+										value={userData.address?.postalCode}
+										onChangeText={(value) => updateField('postalCode', value, 'address')}
+										placeholder="ZIP Code"
+										placeholderTextColor={colors.textTertiary}
+									/>
+								</View>
+								<View style={[styles.inputGroup, { flex: 1 }]}>
+									<Text style={styles.inputLabel}>Country</Text>
+									<View style={styles.pickerContainer}>
+										<Picker
+											selectedValue={userData.address?.country}
+											onValueChange={(value) => updateField('country', value, 'address')}
+											style={{ color: colors.text }}
+											dropdownIconColor={colors.text}
+										>
+											<Picker.Item label="Tunisia" value="Tunisia" />
+											<Picker.Item label="France" value="France" />
+											<Picker.Item label="Other" value="Other" />
+										</Picker>
+									</View>
+								</View>
+							</View>
+						</Section>
+
+						<Section title="Settings" styles={styles}>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Language</Text>
 								<View style={styles.pickerContainer}>
-									<Picker selectedValue={userData.address.country} onValueChange={(value) => updateField('country', value, 'address')} style={{ color: colors.text }} dropdownIconColor={colors.text}>
-										<Picker.Item label="Tunisia" value="Tunisia" />
-										<Picker.Item label="France" value="France" />
-										<Picker.Item label="Germany" value="Germany" />
-										<Picker.Item label="Other" value="Other" />
+									<Picker selectedValue={userData.settings?.lang} onValueChange={(value) => updateField('lang', value, 'settings')} style={{ color: colors.text }} dropdownIconColor={colors.text}>
+										<Picker.Item label="English" value="en" />
+										<Picker.Item label="Tunisian" value="tn" />
+										<Picker.Item label="French" value="fr" />
 									</Picker>
 								</View>
 							</View>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>City</Text>
-								<TextInput
-									style={styles.input}
-									value={userData.address.city}
-									onChangeText={(value) => updateField('city', value, 'address')}
-									placeholder="City"
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Full Address</Text>
-								<TextInput
-									style={[styles.input, styles.textArea]}
-									value={userData.address.text}
-									onChangeText={(value) => updateField('text', value, 'address')}
-									placeholder="Full Address"
-									placeholderTextColor={colors.textTertiary}
-									multiline
-									numberOfLines={3}
-								/>
+								<Text style={styles.inputLabel}>Currency</Text>
+								<View style={styles.pickerContainer}>
+									<Picker
+										selectedValue={userData.settings?.currency}
+										onValueChange={(value) => updateField('currency', value, 'settings')}
+										style={{ color: colors.text }}
+										dropdownIconColor={colors.text}
+									>
+										<Picker.Item label="TND" value="tnd" />
+										<Picker.Item label="EUR" value="eur" />
+										<Picker.Item label="USD" value="usd" />
+									</Picker>
+								</View>
 							</View>
 						</Section>
 
@@ -336,7 +339,7 @@ export default function ProfileScreen() {
 							style={styles.cancelButton}
 							onPress={() => {
 								setIsEditing(false)
-								loadUserData()
+								loadProfile()
 							}}
 						>
 							<Text style={styles.cancelButtonText}>Cancel Changes</Text>
@@ -345,24 +348,44 @@ export default function ProfileScreen() {
 				) : (
 					// View Mode
 					<>
-						<Section title="Personal Information">
-							<InfoItem label="Full Name" value={`${userData.profile?.firstName || ''} ${userData.profile?.middleName || ''} ${userData.profile?.lastName || ''}`.trim() || 'Not set'} icon="person" />
-							<InfoItem label="Birth Date" value={formatDate(userData.profile?.birthDate)} icon="calendar" />
+						<Section title="Personal Information" styles={styles}>
+							<InfoItem
+								label="Full Name"
+								value={`${userData?.basicInfos?.firstName || ''} ${userData?.basicInfos?.lastName || ''}`.trim() || 'Not set'}
+								icon="person"
+								styles={styles}
+								iconColor={colors.primary}
+							/>
+							<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" styles={styles} iconColor={colors.primary} />
+							<InfoItem label="Email" value={userData?.email || 'Not set'} icon="mail" styles={styles} iconColor={colors.primary} />
 						</Section>
 
-						<Section title="Contact Details">
-							<InfoItem label="Phone" value={`${userData.phone.countryCode} ${userData.phone.shortNumber}`.trim() || 'Not set'} icon="call" />
-							<InfoItem label="Address" value={userData.address.text || `${userData.address.city || ''}, ${userData.address.country || ''}`.trim() || 'Not set'} icon="location" />
+						<Section title="Address" styles={styles}>
+							<InfoItem
+								label="Full Address"
+								value={[userData?.address?.street, userData?.address?.city, userData?.address?.state, userData?.address?.country].filter(Boolean).join(', ') || 'Not set'}
+								icon="location"
+								styles={styles}
+								iconColor={colors.primary}
+							/>
 						</Section>
 
-						<Section title="Preferences">
-							<InfoItem label="Language" value={userData.settings.lang === 'en' ? 'English' : userData.settings.lang === 'tn' ? 'Tunisian' : 'Tunisian Arabic'} icon="language" />
-							<InfoItem label="Currency" value={userData.settings.currency.toUpperCase()} icon="cash" />
+						<Section title="Preferences" styles={styles}>
+							<InfoItem
+								label="Language"
+								value={userData?.settings?.lang === 'en' ? 'English' : userData?.settings?.lang === 'tn' ? 'Tunisian' : userData?.settings?.lang}
+								icon="language"
+								styles={styles}
+								iconColor={colors.primary}
+							/>
+							<InfoItem label="Currency" value={userData?.settings?.currency?.toUpperCase()} icon="cash" styles={styles} iconColor={colors.primary} />
 						</Section>
 					</>
 				)}
 
-				{showDatePicker && <DateTimePicker value={userData.profile?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />}
+				{Platform.OS !== 'web' && showDatePicker && (
+					<DateTimePicker value={userData.basicInfos?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />
+				)}
 			</ScrollView>
 		</View>
 	)
@@ -391,11 +414,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			color: colors.primary,
 			fontWeight: '600',
 			fontSize: 14
-		},
-		headerButtons: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 12
 		},
 		iconButton: {
 			padding: 8,
@@ -458,10 +476,18 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			color: colors.text,
 			marginBottom: 4
 		},
-		profileEmail: {
+		profileMeta: {
 			fontSize: 14,
 			color: colors.textSecondary,
-			marginBottom: 16
+			marginBottom: 12
+		},
+		biography: {
+			fontSize: 14,
+			color: colors.text,
+			textAlign: 'center',
+			marginBottom: 16,
+			paddingHorizontal: 10,
+			fontStyle: 'italic'
 		},
 		roleBadge: {
 			paddingHorizontal: 12,
@@ -529,6 +555,10 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			color: colors.text,
 			fontWeight: '500'
 		},
+		row: {
+			flexDirection: 'row',
+			gap: 12
+		},
 		inputGroup: {
 			marginBottom: 16,
 			paddingHorizontal: 8
@@ -567,11 +597,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		dateInputText: {
 			fontSize: 16,
 			color: colors.text
-		},
-		phoneInputContainer: {
-			flexDirection: 'row',
-			gap: 12,
-			paddingHorizontal: 8
 		},
 		pickerContainer: {
 			backgroundColor: colors.background,

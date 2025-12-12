@@ -4,8 +4,10 @@ import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
 
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+
 interface ScreenHeaderProps {
-	title: string
+	title?: string
 	showBack?: boolean
 	onBackPress?: () => void
 	rightActions?: React.ReactNode
@@ -16,6 +18,7 @@ interface ScreenHeaderProps {
 export default function ScreenHeader({ title, showBack = true, onBackPress, rightActions, subtitle, transparent = false }: ScreenHeaderProps) {
 	const { colors } = useTheme()
 	const router = useRouter()
+	const insets = useSafeAreaInsets()
 
 	const handleBackPress = () => {
 		if (onBackPress) {
@@ -28,23 +31,25 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 	}
 
 	return (
-		<View style={[styles.container, { backgroundColor: transparent ? 'transparent' : colors.background, borderBottomColor: colors.border }]}>
+		<View style={[styles.container, { backgroundColor: transparent ? 'transparent' : colors.background, borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
 			<View style={styles.leftSection}>
 				{showBack && (
 					<TouchableOpacity style={styles.backButton} onPress={handleBackPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
 						<MaterialIcons name="arrow-back" size={24} color={colors.text} />
 					</TouchableOpacity>
 				)}
-				<View style={styles.titleContainer}>
-					<Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
-						{title}
-					</Text>
-					{subtitle && (
-						<Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-							{subtitle}
+				{title && (
+					<View style={styles.titleContainer}>
+						<Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+							{title}
 						</Text>
-					)}
-				</View>
+						{subtitle && (
+							<Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+								{subtitle}
+							</Text>
+						)}
+					</View>
+				)}
 			</View>
 			{rightActions && <View style={styles.rightSection}>{rightActions}</View>}
 		</View>
@@ -57,11 +62,6 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		paddingHorizontal: 16,
-		paddingTop: Platform.select({
-			ios: 60,
-			android: 16,
-			web: 16
-		}),
 		paddingBottom: 16,
 		borderBottomWidth: 1,
 		...Platform.select({

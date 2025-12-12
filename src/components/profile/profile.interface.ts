@@ -1,32 +1,34 @@
-export interface UserProfile {
+export interface BasicInfos {
 	firstName: string
-	middleName: string
 	lastName: string
 	birthDate: Date | null
-	photo: {
+	biography?: string
+	photo?: {
 		url: string
-	}
+	} | null
+}
+
+export interface Address {
+	street: string
+	city: string
+	state: string
+	postalCode: string
+	country: string
 }
 
 export interface UserData {
+	_id: string
 	slug: string
 	name: string
-	email: string
-	role?: string
-	phone: {
-		fullNumber: string
-		countryCode: string
-		shortNumber: string
-	}
-	profile: UserProfile
-	address: {
-		text: string
-		country: string
-		city: string
-		street: string
-	}
+	email?: string
+	role: string
+	isActive: boolean
+	basicInfos: BasicInfos
+	address: Address
 	settings: {
 		lang: string
 		currency: string
 	}
+	createdAt: string
+	updatedAt: string
 }
