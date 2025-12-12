@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Animated, Dimensions, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Animated, Dimensions, useWindowDimensions, Image } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -33,11 +33,11 @@ const PurchasesScreen = () => {
 	const { width } = useWindowDimensions()
 
 	const numColumns = useMemo(() => {
-		if (filter === 'cart') return 1
-		if (width > 1200) return 3
-		if (width > 768) return 2
+		if (width > 1400) return 4
+		if (width > 1100) return 3
+		if (width > 700) return 2
 		return 1
-	}, [width, filter])
+	}, [width])
 
 	const styles = useMemo(() => createStyles(colors, isDark, width, numColumns, filter), [colors, isDark, width, numColumns, filter])
 
@@ -215,8 +215,10 @@ const PurchasesScreen = () => {
 			}).start()
 		}
 
+		const containerWidth = (width - 24) / numColumns
+
 		return (
-			<Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+			<Animated.View style={{ transform: [{ scale: scaleAnim }], width: containerWidth }}>
 				<TouchableOpacity
 					style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
 					onPressIn={handlePressIn}
@@ -340,8 +342,10 @@ const PurchasesScreen = () => {
 			}).start()
 		}
 
+		const containerWidth = (width - 24) / numColumns
+
 		return (
-			<Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+			<Animated.View style={{ transform: [{ scale: scaleAnim }], width: containerWidth }}>
 				<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
 					<TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut} style={{ flex: 1 }}>
 						{/* Header */}
@@ -367,47 +371,66 @@ const PurchasesScreen = () => {
 							{group.items.map((item: BasketItem, index: number) => {
 								const price = item.price?.value?.tnd || 0
 								const quantity = item.quantity || 1
-								const itemWidth = width > 1200 ? '33.33%' : width > 768 ? '50%' : '100%'
+								const itemWidth = '100%'
+								const imageUrl = item.photos && item.photos.length > 0 ? item.photos[0] : null
 
 								return (
-									<View key={item._id} style={{ width: itemWidth, padding: 6 }}>
+									<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
 										<View
-											style={{
-												backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f9f9f9',
-												borderRadius: 12,
-												padding: 12,
-												height: '100%',
-												borderWidth: 1,
-												borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)'
-											}}
+											style={[
+												styles.basketItemCard,
+												{
+													backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+													borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+												}
+											]}
 										>
-											{/* Item Header with Delete */}
-											<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-												<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-													{item.name}
-												</Text>
-												<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={{ padding: 4 }}>
-													<Ionicons name="trash-outline" size={16} color={colors.error} />
-												</TouchableOpacity>
+											{/* Image Area */}
+											<View style={styles.basketItemImageContainer}>
+												{imageUrl ? (
+													<Image source={{ uri: imageUrl }} style={styles.basketItemImage} resizeMode="cover" />
+												) : (
+													<View style={[styles.basketItemImage, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5', justifyContent: 'center', alignItems: 'center' }]}>
+														<Ionicons name="image-outline" size={24} color={colors.textTertiary} />
+													</View>
+												)}
 											</View>
 
-											<View style={styles.productInfo}>
-												<View style={styles.quantityRow}>
-													<View style={styles.priceInfo}>
-														<Text style={[styles.productUnit, { color: colors.textSecondary }]}>
-															{price.toFixed(2)} TND / {item.price?.unit?.name}
-														</Text>
-													</View>
+											{/* Content Area */}
+											<View style={styles.basketItemContent}>
+												<View style={styles.itemTopRow}>
+													<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
+														{item.name}
+													</Text>
+													<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+														<Ionicons name="trash-outline" size={18} color={colors.error} />
+													</TouchableOpacity>
+												</View>
 
-													<View style={[styles.quantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : colors.background }]}>
-														<TouchableOpacity onPress={() => updateBasketQuantity(item._id, quantity - 1)} style={[styles.qButton, { backgroundColor: colors.card }]}>
+												<View style={styles.itemBottomRow}>
+													<Text style={[styles.basketItemPrice, { color: colors.primary }]}>
+														{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
+													</Text>
+
+													<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
+														<TouchableOpacity
+															onPress={() => updateBasketQuantity(item._id, quantity - 1)}
+															style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
+															hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
+														>
 															<Ionicons name="remove" size={16} color={colors.text} />
 														</TouchableOpacity>
 
-														<Text style={[styles.qText, { color: colors.text }]}>{quantity}</Text>
+														<Text style={[styles.compactQText, { color: colors.text }]}>
+															{quantity} {item.price.unit.name}
+														</Text>
 
-														<TouchableOpacity onPress={() => updateBasketQuantity(item._id, quantity + 1)} style={[styles.qButton, { backgroundColor: colors.card }]}>
-															<Ionicons name="add" size={16} color={colors.text} />
+														<TouchableOpacity
+															onPress={() => updateBasketQuantity(item._id, quantity + 1)}
+															style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
+															hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
+														>
+															<Ionicons name="add" size={16} color="#fff" />
 														</TouchableOpacity>
 													</View>
 												</View>
@@ -576,7 +599,7 @@ const PurchasesScreen = () => {
 }
 
 const createStyles = (colors: any, isDark: boolean, width: number, numColumns: number, filter: string) => {
-	const isTablet = width > 768
+	const isTablet = width > 700
 
 	return StyleSheet.create({
 		container: {
@@ -707,13 +730,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			fontWeight: '600',
 			flex: 1
 		},
-		productDetails: {
-			marginLeft: 24
-		},
-		productUnit: {
-			fontSize: 13,
-			fontWeight: '500'
-		},
+
 		productQuantity: {
 			fontSize: 13,
 			fontWeight: '600',
@@ -725,48 +742,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			marginTop: 4,
 			marginLeft: 24
 		},
-		removeButton: {
-			width: 32,
-			height: 32,
-			borderRadius: 16,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginLeft: 12
-		},
-		quantityRow: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginTop: 8
-		},
-		priceInfo: {
-			flex: 1
-		},
-		quantityControl: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			borderRadius: 8,
-			padding: 4,
-			gap: 12
-		},
-		qButton: {
-			width: 28,
-			height: 28,
-			borderRadius: 6,
-			justifyContent: 'center',
-			alignItems: 'center',
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 1 },
-			shadowOpacity: 0.1,
-			shadowRadius: 2,
-			elevation: 1
-		},
-		qText: {
-			fontSize: 14,
-			fontWeight: '700',
-			minWidth: 16,
-			textAlign: 'center'
-		},
+
 		cardFooter: {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
@@ -824,9 +800,88 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			marginBottom: 24
 		},
 		emptyTitle: {
-			fontSize: 20,
-			fontWeight: '700',
-			marginBottom: 8,
+			fontSize: 18,
+			fontWeight: '600',
+			marginBottom: 8
+		},
+		basketItemCard: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			borderRadius: 16,
+			padding: 12,
+			gap: 12,
+			// Keep subtle borders or shadows if desired, or make it flat
+			borderBottomWidth: 1,
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+			backgroundColor: 'transparent' // Override card bg if we want a clean list look
+		},
+		basketItemImageContainer: {
+			width: 80,
+			height: 80,
+			borderRadius: 12,
+			overflow: 'hidden',
+			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5'
+		},
+		basketItemImage: {
+			width: '100%',
+			height: '100%'
+		},
+		basketItemContent: {
+			flex: 1,
+			justifyContent: 'center',
+			gap: 4
+		},
+		itemTopRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'flex-start',
+			gap: 8,
+			marginBottom: 4
+		},
+		itemBottomRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginTop: 4
+		},
+		basketItemName: {
+			fontSize: 15,
+			fontWeight: '600',
+			flex: 1,
+			lineHeight: 20
+		},
+		deleteButton: {
+			padding: 4,
+			opacity: 0.8
+		},
+		basketItemPrice: {
+			fontSize: 16,
+			fontWeight: '700'
+		},
+		compactQuantityControl: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			borderRadius: 20,
+			padding: 3,
+			height: 36,
+			gap: 8
+		},
+		compactQBtn: {
+			width: 28,
+			height: 28,
+			justifyContent: 'center',
+			alignItems: 'center',
+			borderRadius: 14,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 1 },
+			shadowRadius: 2,
+			elevation: 1
+		},
+		compactQText: {
+			fontSize: 14,
+			fontWeight: '600',
+			minWidth: 20,
 			textAlign: 'center'
 		},
 		emptySubtitle: {

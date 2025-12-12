@@ -144,11 +144,13 @@ const CATEGORIES = [
 	{ id: 'bakery', name: 'Bakery', icon: 'restaurant-outline' }
 ]
 
+type BasketItem = FeedItem & { quantity: number }
+
 export default function FeedScreen() {
 	const { colors, isDark } = useTheme()
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
-	const [basket, setBasket] = useState<FeedItem[]>([])
+	const [basket, setBasket] = useState<BasketItem[]>([])
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [selectedCategory, setSelectedCategory] = useState('all')
@@ -258,7 +260,19 @@ export default function FeedScreen() {
 
 	const addToBasket = async (item: FeedItem, quantity: number) => {
 		try {
-			const newBasket = [...basket, { ...item, quantity }]
+			const existingItemIndex = basket.findIndex((basketItem) => basketItem._id === item._id)
+			let newBasket: BasketItem[]
+
+			if (existingItemIndex > -1) {
+				newBasket = [...basket]
+				newBasket[existingItemIndex] = {
+					...newBasket[existingItemIndex],
+					quantity: (newBasket[existingItemIndex].quantity || 0) + quantity
+				}
+			} else {
+				newBasket = [...basket, { ...item, quantity }]
+			}
+
 			setBasket(newBasket)
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 			setError({ message: `${item.name} added to basket`, retry: undefined })
