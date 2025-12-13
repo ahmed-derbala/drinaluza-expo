@@ -238,7 +238,7 @@ export default function ShopsListScreen() {
 		try {
 			// TODO: Replace with actual API call when available
 			// const response = await getAllShops()
-			// setShops(response.data.data)
+			// setShops(response.data.docs)
 
 			// Using mock data for now
 			await new Promise((resolve) => setTimeout(resolve, 500))

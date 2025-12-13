@@ -68,7 +68,7 @@ export interface FeedItem {
 	updatedAt: string
 	__v: number
 	card?: CardInfo
-	DefaultProduct?: {
+	defaultProduct?: {
 		images: {
 			thumbnail: {
 				url: string
@@ -91,6 +91,6 @@ export interface FeedResponse {
 			prevPage: number | null
 			returnedDocsCount: number
 		}
-		data: FeedItem[]
+		docs: FeedItem[]
 	}
 }

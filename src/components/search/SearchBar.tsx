@@ -28,7 +28,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 		async (text: string) => {
 			try {
 				const response = await searchFeed(text, 'en', selectedTypes)
-				onSearchResults(response.data.data)
+				onSearchResults(response.data.docs)
 			} catch (err) {
 				logError(err, 'SearchBar')
 				const errorInfo = parseError(err)

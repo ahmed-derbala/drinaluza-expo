@@ -19,7 +19,7 @@ export default function MyProductsTab() {
 	const loadProducts = async (pageNum: number = 1, isRefresh: boolean = false) => {
 		try {
 			const response = await getMyProducts(pageNum, 10)
-			const newProducts = response.data.data || []
+			const newProducts = response.data.docs || []
 
 			if (isRefresh || pageNum === 1) {
 				setProducts(newProducts)

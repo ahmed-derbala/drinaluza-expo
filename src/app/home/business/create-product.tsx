@@ -44,7 +44,7 @@ export default function CreateProductScreen() {
 		try {
 			setLoadingShops(true)
 			const response = await getMyShops()
-			setShops(response.data.data || [])
+			setShops(response.data.docs || [])
 		} catch (error) {
 			console.error('Failed to load shops:', error)
 		} finally {
@@ -56,7 +56,7 @@ export default function CreateProductScreen() {
 		try {
 			setLoadingDefaults(true)
 			const response = await getDefaultProducts(1, 100)
-			setDefaultProducts(response.data.data || [])
+			setDefaultProducts(response.data.docs || [])
 		} catch (error) {
 			console.error('Failed to load default products:', error)
 		} finally {
@@ -114,7 +114,7 @@ export default function CreateProductScreen() {
 					slug: selectedShop.slug,
 					_id: selectedShop._id
 				},
-				DefaultProduct: {
+				defaultProduct: {
 					slug: selectedDefaultProduct.slug,
 					_id: selectedDefaultProduct._id
 				},

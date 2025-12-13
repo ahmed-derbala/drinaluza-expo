@@ -55,7 +55,7 @@ const PurchasesScreen = () => {
 	const loadPurchases = async () => {
 		try {
 			const response = await getPurchases()
-			setPurchases(response.data.data || [])
+			setPurchases(response.data.docs || [])
 			setLoading(false)
 			setRefreshing(false)
 
@@ -428,7 +428,7 @@ const PurchasesScreen = () => {
 								const price = item.price?.value?.tnd || 0
 								const quantity = item.quantity || 1
 								const itemWidth = '100%'
-								const imageUrl = item.DefaultProduct?.images?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+								const imageUrl = item.defaultProduct?.images?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
 
 								return (
 									<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>

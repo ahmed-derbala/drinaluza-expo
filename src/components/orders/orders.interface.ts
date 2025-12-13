@@ -15,7 +15,7 @@ export interface Product {
 		updatedAt: string
 	}
 	updatedAt: string
-	DefaultProduct?: {
+	defaultProduct?: {
 		images: {
 			thumbnail: {
 				url: string
@@ -84,7 +84,7 @@ export interface OrderResponse {
 			prevPage: number | null
 			returnedDocsCount: number
 		}
-		data: OrderItem[]
+		docs: OrderItem[]
 	}
 	req?: {
 		headers: {

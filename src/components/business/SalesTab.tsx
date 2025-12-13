@@ -33,7 +33,7 @@ export default function SalesTab() {
 			if (pageNum === 1 && !isRefresh) setLoading(true)
 
 			const response = await getSales(pageNum, 10, status)
-			const newSales = response.data.data || []
+			const newSales = response.data.docs || []
 
 			if (isRefresh || pageNum === 1) {
 				setSales(newSales)
@@ -182,7 +182,7 @@ export default function SalesTab() {
 
 					<View style={styles.productsList}>
 						{item.products.slice(0, 3).map((p, index) => {
-							const imageUrl = p.product?.DefaultProduct?.images?.thumbnail?.url
+							const imageUrl = p.product?.defaultProduct?.images?.thumbnail?.url
 							return (
 								<View key={index} style={styles.productItem}>
 									{imageUrl ? (

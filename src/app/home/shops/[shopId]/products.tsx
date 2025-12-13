@@ -26,7 +26,7 @@ export default function ShopProductsScreen() {
 			setRefreshing(true)
 			setError(null)
 			const response = await getShopProducts(shopId)
-			setProducts(response.data.data || [])
+			setProducts(response.data.docs || [])
 		} catch (err) {
 			console.error('Failed to load products:', err)
 			setError('Failed to load products. Please try again.')

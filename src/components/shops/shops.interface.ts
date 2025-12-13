@@ -44,14 +44,14 @@ export type Pagination = {
 
 export type ShopsData = {
 	pagination: Pagination
-	data: Shop[]
+	docs: Shop[]
 }
 
 export type ShopProductsResponse = {
 	status: number
 	data: {
 		pagination: Pagination
-		data: Product[]
+		docs: Product[]
 	}
 	req: {
 		headers: {
@@ -105,7 +105,7 @@ export type ShopResponse = {
 export interface ShopsResponse {
 	status: number
 	data: {
-		data: Shop[]
+		docs: Shop[]
 		pagination: Pagination
 	}
 	req: {

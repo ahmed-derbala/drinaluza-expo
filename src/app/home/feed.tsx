@@ -212,7 +212,7 @@ export default function FeedScreen() {
 			if (pageNum === 1) setLoading(true)
 
 			const response = await getFeed(pageNum, 10)
-			const newItems = response.data.data
+			const newItems = response.data.docs
 
 			if (newItems.length < 10) {
 				setHasMore(false)

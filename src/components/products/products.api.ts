@@ -6,7 +6,7 @@ export interface CreateProductRequest {
 		slug: string
 		_id: string
 	}
-	DefaultProduct: {
+	defaultProduct: {
 		slug: string
 		_id: string
 	}
@@ -45,7 +45,7 @@ export interface ProductsResponse {
 			prevPage: number | null
 			returnedDocsCount: number
 		}
-		data: ProductType[]
+		docs: ProductType[]
 	}
 	req: {
 		headers: {
@@ -85,7 +85,7 @@ export interface DefaultProductsResponse {
 			prevPage: number | null
 			returnedDocsCount: number
 		}
-		data: DefaultProduct[]
+		docs: DefaultProduct[]
 	}
 	req: {
 		headers: {

@@ -35,8 +35,8 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 			{/* Product Photo */}
 			<View style={styles.imageContainer}>
-				{item.DefaultProduct?.images?.thumbnail?.url || item.photos?.[0] ? (
-					<Image source={{ uri: item.DefaultProduct?.images?.thumbnail?.url || item.photos[0] }} style={styles.productImage} resizeMode="cover" />
+				{item.defaultProduct?.images?.thumbnail?.url || item.photos?.[0] ? (
+					<Image source={{ uri: item.defaultProduct?.images?.thumbnail?.url || item.photos[0] }} style={styles.productImage} resizeMode="cover" />
 				) : (
 					<View style={styles.imagePlaceholder}>
 						<MaterialIcons name="image-not-supported" size={40} color={isDark ? colors.textTertiary : '#ccc'} />

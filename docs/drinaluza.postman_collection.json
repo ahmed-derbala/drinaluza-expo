@@ -19,7 +19,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"slug\":\"ahmed\",\n    \"password\":\"123\"\n}",
+							"raw": "{\n    \"slug\":\"customer1\",\n    \"password\":\"123\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -158,6 +158,109 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/users/customer1/profile",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token_customer1}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/users/customer1/profile",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"customer1",
+								"profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/users/my-profile",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token_customer1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/users/my-profile",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"my-profile"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/users/my-profile",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token_customer1}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"basicInfos\": {\n        \"firstName\": \"ahmed\",\n        \"lastName\": \"derbala\",\n        \"birthDate\": \"2025-12-20\",\n        \"photo\": {\n            \"url\": \"http://127.0.0.1:5001/photo1\"\n        },\n        \"biography\": \"hello im ahmed\"\n    },\n    \"address\": {\n        \"street\": \"street 1\",\n        \"city\": \"ellouza\",\n        \"state\": \"sfax\",\n        \"postalCode\": \"3016\",\n        \"country\": \"Tunisia\"\n    },\n    \"settings\": {\n        \"lang\": \"en\",\n        \"currency\":\"tnd\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/users/my-profile",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"my-profile"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -228,13 +331,13 @@
 						"header": [
 							{
 								"key": "token",
-								"value": "{{token}}",
+								"value": "{{token_so1}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"shop\":{\n        \"slug\":\"s1\"\n        \n    },\n    \"name\":\"p1\",\n    \"price\":{\n        \"value\":{\n            \"tnd\":5\n        },\n        \"unit\":{\n            \"name\":\"KG\"\n        }\n    }\n}",
+							"raw": "{\n    \"shop\":{\n        \"slug\":\"shop1\"\n    },\n    \"DefaultProduct\":{\n        \"slug\":\"shrimp\"\n    },\n    \"name\":\"shrimp\",\n    \"price\":{\n        \"value\":{\n            \"tnd\":5\n        },\n        \"unit\":{\n            \"name\":\"KG\"\n        }\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -270,7 +373,7 @@
 						"header": [
 							{
 								"key": "token",
-								"value": "{{token}}",
+								"value": "{{token_so1}}",
 								"type": "text"
 							},
 							{
@@ -292,12 +395,107 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/sales/69384cfe14909206d4788a2c",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\":\"cancelled_by_shop\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/sales/69384cfe14909206d4788a2c",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"sales",
+								"69384cfe14909206d4788a2c"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
 		{
 			"name": "default-products",
-			"item": []
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/default-products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token_so1}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\":{\n        \"en\":\"shrimp\"\n    },\n    \"searchKeywords\":[\"shrimp\",\"crevet\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/default-products",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"default-products"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/default-products",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/default-products",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"default-products"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		},
 		{
 			"name": "purchases",
@@ -312,7 +510,7 @@
 						"header": [
 							{
 								"key": "token",
-								"value": "{{token}}",
+								"value": "{{token_customer1}}",
 								"type": "text"
 							}
 						],
@@ -339,13 +537,13 @@
 						"header": [
 							{
 								"key": "token",
-								"value": "{{token}}",
+								"value": "{{token_customer1}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"products\": [\n        {\n            \"product\": {\n                \"slug\": \"whole-octopus\"\n            },\n            \"quantity\":3\n            \n        }\n    ],\n    \"shop\":{\n        \"slug\":\"the-seafood-shack\"\n    }\n}",
+							"raw": "{\n    \"products\": [\n        {\n            \"product\": {\n                \"slug\": \"whole-octopus\"\n            },\n            \"quantity\":3\n            \n        }\n    ],\n    \"shop\":{\n        \"slug\":\"the-seafood-shack\",\n        \"_id\":\"456\"\n    }\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -360,6 +558,43 @@
 							"path": [
 								"api",
 								"purchases"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/purchases/69384cfe14909206d4788a2c",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"status\":\"cancelled_by_shop\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/purchases/69384cfe14909206d4788a2c",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"purchases",
+								"69384cfe14909206d4788a2c"
 							]
 						}
 					},
@@ -496,13 +731,13 @@
 						"header": [
 							{
 								"key": "token",
-								"value": "{{token}}",
+								"value": "{{token_so1}}",
 								"type": "text"
 							}
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{ \n    \"name\":\"s1\"\n}",
+							"raw": "{\n    \"name\": \"shop1\",\n    \"address\": {\n        \"street\": \"street 1\",\n        \"city\": \"ellouza\",\n        \"state\": \"sfax\",\n        \"postalCode\": \"3016\",\n        \"country\": \"Tunisia\"\n    },\n    \"location\": {\n        \"coordinates\": [\n            2.2945, \n            48.8584 \n        ]\n    },\n    \"deliveryRadiusKm\":5\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -661,6 +896,110 @@
 									"key": "status",
 									"value": "cancelled_by_shop"
 								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "businesses",
+			"item": [
+				{
+					"name": "{{drinaluza_url}}/api/businesses/requests",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token_customer1}}",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "token",
+								"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyIjp7InNsdWciOiJjMiIsIm5hbWUiOiJjMiIsInJvbGUiOiJjdXN0b21lciIsImlzQWN0aXZlIjp0cnVlLCJzZXR0aW5ncyI6eyJsYW5nIjoiZW4iLCJjdXJyZW5jeSI6InRuZCIsInVwZGF0ZWRBdCI6IjIwMjUtMTItMTNUMTQ6MTE6MTguNzg1WiJ9LCJfaWQiOiI2OTNkNzQwNjIyMWJiOTI3YzcwZGI0MGUiLCJzaG9wcyI6W10sImNyZWF0ZWRBdCI6IjIwMjUtMTItMTNUMTQ6MTE6MTguNzg1WiIsInVwZGF0ZWRBdCI6IjIwMjUtMTItMTNUMTQ6MTE6MTguNzg1WiIsIl9fdiI6MH0sInJlcSI6eyJpcCI6Ijo6ZmZmZjoxOTIuMTY4LjEuMTEiLCJoZWFkZXJzIjp7InVzZXItYWdlbnQiOiJQb3N0bWFuUnVudGltZS83LjQ5LjEifX0sImlhdCI6MTc2NTYzNTA3OCwiZXhwIjoxNzczNDExMDc4fQ.7jd9quss5-fMXEyNZN5S7-Z6dS2UkGN0QUYbYVlbJAc",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{drinaluza_url}}/api/businesses/requests",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"businesses",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/businesses/requests",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{super_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/businesses/requests",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"businesses",
+								"requests"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "{{drinaluza_url}}/api/businesses/my-business",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "token",
+								"value": "{{token_so1}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{drinaluza_url}}/api/businesses/my-business",
+							"host": [
+								"{{drinaluza_url}}"
+							],
+							"path": [
+								"api",
+								"businesses",
+								"my-business"
 							]
 						}
 					},
