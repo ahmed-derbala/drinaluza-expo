@@ -3,6 +3,7 @@ import React from 'react'
 import { ThemeProvider } from '../contexts/ThemeContext'
 import AuthRequiredModal from '../components/common/AuthRequiredModal'
 import { getPlatformStackOptions } from '../config/navigation'
+import { NotificationProvider } from '../contexts/NotificationContext'
 
 export default function RootLayout() {
 	const stackOptions = getPlatformStackOptions({
@@ -11,8 +12,10 @@ export default function RootLayout() {
 
 	return (
 		<ThemeProvider>
-			<Stack screenOptions={stackOptions} />
-			<AuthRequiredModal />
+			<NotificationProvider>
+				<Stack screenOptions={stackOptions} />
+				<AuthRequiredModal />
+			</NotificationProvider>
 		</ThemeProvider>
 	)
 }

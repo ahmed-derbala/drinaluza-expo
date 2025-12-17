@@ -104,7 +104,13 @@ export default function BusinessLayout() {
 				name="sales"
 				options={{
 					title: 'Sales',
-					headerShown: true
+					headerShown: false
+				}}
+			/>
+			<Stack.Screen
+				name="create-product"
+				options={{
+					headerShown: false
 				}}
 			/>
 		</Stack>

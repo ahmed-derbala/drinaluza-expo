@@ -1,19 +1,19 @@
-import React from 'react'
-import { Tabs } from 'expo-router'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState, useCallback } from 'react'
+import { Tabs, useFocusEffect } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useTheme } from '../../contexts/ThemeContext'
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { useNotification } from '../../contexts/NotificationContext'
 
 export default function HomeLayout() {
 	const { colors, isDark } = useTheme()
 	const router = useRouter()
-	// Removed ordersCount state as it's no longer needed
 	const [userRole, setUserRole] = useState<string | null>(null)
+	const { notificationCount } = useNotification()
 
 	// Load auth token
 	useEffect(() => {
@@ -26,13 +26,10 @@ export default function HomeLayout() {
 		checkAuth()
 	}, [])
 
-	// Load ordersCount and userRole from AsyncStorage
+	// Load user data
 	useEffect(() => {
 		const loadData = async () => {
 			try {
-				// Removed orders count loading logic as it's no longer needed
-
-				// Load user role
 				const storedUserData = await AsyncStorage.getItem('userData')
 				if (storedUserData) {
 					const userData = JSON.parse(storedUserData)
@@ -53,7 +50,6 @@ export default function HomeLayout() {
 				<Tabs
 					screenOptions={{
 						headerShown: false,
-						// Platform-specific tab bar styling
 						tabBarStyle: {
 							backgroundColor: colors.background,
 							borderTopColor: colors.border,
@@ -67,7 +63,6 @@ export default function HomeLayout() {
 								android: 60,
 								web: 60
 							}),
-							// Native-like shadows and borders
 							...Platform.select({
 								ios: {
 									boxShadow: '0 -1px 4px rgba(0,0,0,0.1)'
@@ -84,7 +79,6 @@ export default function HomeLayout() {
 						},
 						tabBarActiveTintColor: colors.primary,
 						tabBarInactiveTintColor: colors.textSecondary,
-						// Platform-specific tab bar behavior
 						tabBarHideOnKeyboard: Platform.OS === 'android',
 						tabBarShowLabel: true,
 						tabBarLabelStyle: {
@@ -121,8 +115,19 @@ export default function HomeLayout() {
 						name="business"
 						options={{
 							title: 'Business',
+							href: userRole === 'shop_owner' ? '/home/business' : null,
 							tabBarActiveTintColor: colors.primary,
 							tabBarIcon: ({ color, size }) => <MaterialIcons name="business-center" size={size} color={color} />
+						}}
+					/>
+					<Tabs.Screen
+						name="notifications"
+						options={{
+							title: 'Notifications',
+							tabBarActiveTintColor: colors.primary,
+							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
+							tabBarBadgeStyle: { backgroundColor: colors.error, color: '#fff', fontSize: 10, minWidth: 16, height: 16, borderRadius: 8, lineHeight: 16 },
+							tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen
@@ -146,7 +151,7 @@ export default function HomeLayout() {
 						}}
 					/>
 					<Tabs.Screen
-						name="orders"
+						name="purchases"
 						options={{
 							href: null
 						}}

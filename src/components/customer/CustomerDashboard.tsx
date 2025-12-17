@@ -134,21 +134,21 @@ const CustomerDashboard = () => {
 				value: stats.totalPurchases,
 				icon: <MaterialIcons name="shopping-bag" size={20} color={colors.primary} />,
 				accent: colors.primary,
-				onPress: () => router.push('/home/orders' as any)
+				onPress: () => router.push('/home/purchases' as any)
 			},
 			{
 				title: 'Pending',
 				value: stats.pendingPurchases,
 				icon: <MaterialIcons name="schedule" size={20} color={colors.warning} />,
 				accent: colors.warning,
-				onPress: () => router.push({ pathname: '/home/orders', params: { filter: 'pending' } } as any)
+				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'pending' } } as any)
 			},
 			{
 				title: 'Completed',
 				value: stats.completedPurchases,
 				icon: <MaterialIcons name="check-circle" size={20} color={colors.success} />,
 				accent: colors.success,
-				onPress: () => router.push({ pathname: '/home/orders', params: { filter: 'completed' } } as any)
+				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'completed' } } as any)
 			},
 			{
 				title: 'Total spent',
@@ -172,7 +172,7 @@ const CustomerDashboard = () => {
 				label: 'Purchases',
 				subtext: 'Track your purchases',
 				icon: <Feather name="package" size={22} color={colors.info} />,
-				onPress: () => router.push('/home/orders' as any)
+				onPress: () => router.push('/home/purchases' as any)
 			},
 			{
 				label: 'Deals',
@@ -231,7 +231,7 @@ const CustomerDashboard = () => {
 				<View style={styles.section}>
 					<View style={styles.sectionHeader}>
 						<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent purchases</Text>
-						<TouchableOpacity onPress={() => router.push('/home/orders' as any)}>
+						<TouchableOpacity onPress={() => router.push('/home/purchases' as any)}>
 							<Text style={[styles.link, { color: colors.primary }]}>View all</Text>
 						</TouchableOpacity>
 					</View>
@@ -247,7 +247,7 @@ const CustomerDashboard = () => {
 								<TouchableOpacity
 									key={purchase.id}
 									style={[styles.purchaseRow, { borderColor: colors.border }, index === recentPurchases.length - 1 && { borderBottomWidth: 0 }]}
-									onPress={() => router.push('/home/orders' as any)}
+									onPress={() => router.push('/home/purchases' as any)}
 									activeOpacity={0.8}
 								>
 									<View style={styles.purchaseMeta}>

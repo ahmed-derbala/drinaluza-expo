@@ -22,6 +22,12 @@ export interface Product {
 			}
 		}
 	}
+	images?: {
+		thumbnail: {
+			url: string
+		}
+	}
+	photos?: string[]
 }
 
 export interface ProductItem {

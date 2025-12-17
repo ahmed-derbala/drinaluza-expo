@@ -159,7 +159,7 @@ export default function CreateProductScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title="Create Product" showBack={false} />
+			<ScreenHeader title="Create Product" showBack={true} />
 
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
 				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
