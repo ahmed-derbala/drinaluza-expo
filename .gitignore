@@ -6,6 +6,7 @@ backups/
 builds/
 
 #env
+.env
 .env.prod
 .env.dev
 .env.local
