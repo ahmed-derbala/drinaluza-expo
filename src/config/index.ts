@@ -2,7 +2,7 @@
 // Edit server URLs and ports here for different environments
 import packagejson from '../../package.json' with { type: 'json' }
 
-export type Environment = 'local' | 'development' | 'production'
+export type Environment = 'production' | 'local' | 'development'
 
 export interface ServerEnvironment {
 	url: string
@@ -11,9 +11,9 @@ export interface ServerEnvironment {
 
 export interface AppConfig {
 	servers: {
+		production: ServerEnvironment
 		local: ServerEnvironment
 		development: ServerEnvironment
-		production: ServerEnvironment
 	}
 	app: {
 		name: string
@@ -26,6 +26,9 @@ export interface AppConfig {
 // Main configuration - edit these values as needed
 export const config: AppConfig = {
 	servers: {
+		production: {
+			url: process.env.EXPO_PUBLIC_BACKEND_URL
+		},
 		local: {
 			url: '192.168.1.11',
 			port: 5001
@@ -33,9 +36,6 @@ export const config: AppConfig = {
 		development: {
 			url: '10.173.243.181',
 			port: 5001
-		},
-		production: {
-			url: 'https://drinaluza-expressjs.onrender.com/'
 		}
 	},
 	app: {

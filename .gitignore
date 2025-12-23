@@ -5,6 +5,11 @@ backups/
 
 builds/
 
+#env
+.env.prod
+.env.dev
+.env.local
+
 #config files
 src/config/production.config.js
 src/config/development.config.js
