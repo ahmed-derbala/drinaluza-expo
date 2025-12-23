@@ -29,6 +29,8 @@ export default function AuthScreen() {
 	const [newServerUrl, setNewServerUrl] = useState('')
 	const [newServerPort, setNewServerPort] = useState('5001')
 	const [editingServer, setEditingServer] = useState<LocalServer | null>(null)
+	const [statusState, setStatusState] = useState<'initial' | '404' | '409'>('initial')
+	const [errorMessage, setErrorMessage] = useState('')
 	const router = useRouter()
 
 	const styles = createThemedStyles((colors) => ({
@@ -227,16 +229,7 @@ export default function AuthScreen() {
 		}
 	}))(colors)
 
-	// 🔒 Check if already authenticated
-	useEffect(() => {
-		const checkIfAuthenticated = async () => {
-			const token = await AsyncStorage.getItem('authToken')
-			if (token) {
-				router.push('/home' as any)
-			}
-		}
-		checkIfAuthenticated()
-	}, [])
+	// 🔒 Removed automatic authentication check as requested
 
 	// Load server configuration
 	useEffect(() => {
@@ -266,14 +259,36 @@ export default function AuthScreen() {
 				Alert.alert('Error', 'Sign in failed. Please try again.')
 			}
 		} catch (error: any) {
-			console.error('Sign in error details:', {
-				message: error.message,
-				response: error.response?.data,
-				status: error.response?.status,
-				stack: error.stack
-			})
-			Alert.alert('Error', error.response?.data?.message || 'Sign in failed. Please check your credentials and try again.')
+			console.log('Sign in catch block reached')
+			const responseData = error.response?.data
+			// Check status from both HTTP response and response body (some APIs return it there)
+			const status = error.response?.status || responseData?.status || responseData?.statusCode
+			const message = responseData?.message || error.message
+
+			console.log('Detected status:', status)
+			console.log('Detected message:', message)
+
+			if (status === 404 || status === '404') {
+				setStatusState('404')
+				setErrorMessage(message)
+			} else if (status === 409 || status === '409') {
+				console.log('Detected incorrect password (409)')
+				setPassword('') // Base clearing
+				setStatusState('409')
+				setErrorMessage('Try again')
+			} else if (status === 401 || status === '401') {
+				// Also handle 401 as it's common for unauthorized/wrong password
+				Alert.alert('Unauthorized', message || 'Invalid credentials. Please check your username and password.')
+			} else {
+				console.log('Showing generic error alert')
+				Alert.alert('Error', message || 'Sign in failed. Please check your credentials and try again.')
+			}
 		}
+	}
+
+	const handleGo = async () => {
+		console.log('Go pressed, calling handleSignIn')
+		await handleSignIn()
 	}
 
 	const handleSignUp = async () => {
@@ -528,11 +543,48 @@ export default function AuthScreen() {
 
 					<View style={styles.innerContainer}>
 						<Text style={styles.title}>Drinaluza</Text>
-						<TextInput style={styles.input} placeholder="Username" value={slug} onChangeText={setUsername} />
-						<TextInput style={styles.input} placeholder="Password" value={password} onChangeText={setPassword} secureTextEntry />
-						<View style={styles.buttonContainer}>
-							<Button title="Sign In" onPress={handleSignIn} />
-							<Button title="Sign Up" onPress={handleSignUp} />
+						<TextInput
+							style={styles.input}
+							placeholder="Username"
+							value={slug}
+							onChangeText={(text) => {
+								setUsername(text)
+								setStatusState('initial')
+							}}
+						/>
+						<TextInput
+							style={styles.input}
+							placeholder="Password"
+							value={password}
+							onChangeText={(text) => {
+								setPassword(text)
+								setStatusState('initial')
+							}}
+							secureTextEntry
+						/>
+
+						{(statusState === '404' || statusState === '409') && (
+							<Text
+								style={{
+									color: statusState === '404' ? colors.error : colors.accent,
+									marginBottom: 10,
+									textAlign: 'center',
+									fontWeight: statusState === '409' ? 'bold' : 'normal'
+								}}
+							>
+								{statusState === '404' ? `${errorMessage}\n` : 'Try again'}
+							</Text>
+						)}
+
+						<View style={statusState === '404' ? styles.buttonContainer : {}}>
+							{statusState === '404' ? (
+								<>
+									<Button title="Sign In" onPress={handleSignIn} />
+									<Button title="Sign Up" onPress={handleSignUp} />
+								</>
+							) : (
+								<Button title="Go" onPress={handleGo} />
+							)}
 						</View>
 
 						{/* Server Settings Modal */}

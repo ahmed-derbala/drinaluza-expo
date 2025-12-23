@@ -28,7 +28,8 @@
         "backgroundColor": "#1C2526"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.ahmedderbala.drinaluza"
+      "package": "com.ahmedderbala.drinaluza",
+      "versionCode": 1
     },
     "web": {
       "bundler": "metro",
@@ -41,7 +42,18 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true
+            "usesCleartextTraffic": true,
+            "ndk": {
+              "abiFilters": [
+                "arm64-v8a"
+              ]
+            },
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libhermes.so",
+                "**/libc++_shared.so"
+              ]
+            }
           }
         }
       ]
@@ -62,6 +74,7 @@
     },
     "updates": {
       "url": "https://u.expo.dev/cf16d9ec-c8c7-457f-b2a2-6d5eacf535d1"
-    }
+    },
+    "buildCacheProvider": "eas"
   }
 }

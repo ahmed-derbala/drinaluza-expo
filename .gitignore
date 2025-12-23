@@ -3,6 +3,8 @@
 # backups
 backups/
 
+builds/
+
 #config files
 src/config/production.config.js
 src/config/development.config.js

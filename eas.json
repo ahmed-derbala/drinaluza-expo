@@ -10,10 +10,17 @@
       "channel": "development"
     },
     "preview": {
-      "channel": "preview"
+      "distribution": "internal",
+      "channel": "preview",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "simulator": true
+      }
     },
     "production": {
-      "autoIncrement": true,
+      "autoIncrement": false,
       "channel": "production",
       "android": {
         "buildType": "apk"

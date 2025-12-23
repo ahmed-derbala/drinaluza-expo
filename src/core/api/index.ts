@@ -34,6 +34,21 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 
 			// Handle 401 Unauthorized errors globally
 			if (error.response?.status === 401) {
+				// Don't show modal for auth-related requests or if we are already on the auth page (important for Web)
+				const url = error.config?.url || ''
+				const isAuthRequest = url.includes('/auth/') || url.includes('signin') || url.includes('signup')
+
+				let isOnAuthPage = false
+				// @ts-ignore - Check window for Web environment
+				if (typeof window !== 'undefined' && window.location) {
+					const path = window.location.pathname + window.location.hash
+					isOnAuthPage = path.includes('/auth') || path === '/' || path === '/#' || path === '#/'
+				}
+
+				if (isAuthRequest || isOnAuthPage) {
+					return Promise.reject(error)
+				}
+
 				try {
 					// Import the auth state manager dynamically to avoid circular dependencies
 					const { authStateManager } = await import('../../stores/authStore')
