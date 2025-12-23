@@ -3,6 +3,7 @@
     "name": "Drinaluza",
     "slug": "Drinaluza",
     "version": "1.0.0",
+    "platforms": ["ios", "android", "web"],
     "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "drinaluza",

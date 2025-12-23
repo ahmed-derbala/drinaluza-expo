@@ -175,18 +175,15 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 
 		return response.data
 	} catch (error: any) {
-		console.error('Sign in error details:', {
-			message: error.message,
-			response: error.response?.data,
-			status: error.response?.status,
-			code: error.code,
-			config: {
-				url: error.config?.url,
-				method: error.config?.method,
-				data: error.config?.data,
-				headers: error.config?.headers
-			}
-		})
+		const status = error.response?.status
+		if (status !== 401 && status !== 404 && status !== 409) {
+			console.error('Sign in error details:', {
+				message: error.message,
+				response: error.response?.data,
+				status,
+				code: error.code
+			})
+		}
 		throw error
 	}
 }

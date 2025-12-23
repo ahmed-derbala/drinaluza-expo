@@ -6,7 +6,7 @@ export interface LocalServer {
 	id: string
 	name: string
 	url: string
-	port: number
+	port?: number
 	lastUsed: number
 }
 

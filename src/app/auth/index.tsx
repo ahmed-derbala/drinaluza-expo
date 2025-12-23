@@ -23,6 +23,7 @@ export default function AuthScreen() {
 	const [password, setPassword] = useState('123')
 	const [showServerSettings, setShowServerSettings] = useState(false)
 	const [serverConfig, setServerConfigState] = useState<ServerConfig>({ mode: 'local', customUrl: DEFAULT_LOCAL_URL, localServers: [] })
+	const [pendingMode, setPendingMode] = useState<ServerMode>('local')
 	const [customUrl, setCustomUrl] = useState(DEFAULT_LOCAL_URL)
 	const [showAddServer, setShowAddServer] = useState(false)
 	const [newServerName, setNewServerName] = useState('')
@@ -231,16 +232,6 @@ export default function AuthScreen() {
 
 	// 🔒 Removed automatic authentication check as requested
 
-	// Load server configuration
-	useEffect(() => {
-		const loadServerConfig = async () => {
-			const savedServerConfig = await getServerConfig()
-			setServerConfigState(savedServerConfig)
-			setCustomUrl(savedServerConfig.customUrl || '10.173.243.181')
-		}
-		loadServerConfig()
-	}, [])
-
 	const handleSignIn = async () => {
 		try {
 			console.log('Attempting to sign in...')
@@ -300,15 +291,20 @@ export default function AuthScreen() {
 		}
 	}
 
-	const handleServerModeChange = async (mode: ServerMode) => {
+	const handleServerModeChange = (mode: ServerMode) => {
+		setPendingMode(mode)
+	}
+
+	const applyServerMode = async () => {
 		const newConfig: ServerConfig = {
-			mode,
-			customUrl: mode === 'local' ? customUrl : undefined,
-			localServers: serverConfig.localServers
+			...serverConfig,
+			mode: pendingMode,
+			customUrl: pendingMode === 'local' ? customUrl : undefined
 		}
 		setServerConfigState(newConfig)
 		await setServerConfig(newConfig)
 		await updateApiBaseUrl()
+		Alert.alert('Success', `Switched to ${pendingMode} mode`)
 	}
 
 	const handleCustomUrlChange = async (url: string) => {
@@ -363,6 +359,7 @@ export default function AuthScreen() {
 				customUrl: customUrl.trim(),
 				localServers: serverConfig.localServers || []
 			}
+			setPendingMode('local')
 
 			// Persist and apply the new configuration
 			setServerConfigState(newConfig)
@@ -448,7 +445,7 @@ export default function AuthScreen() {
 		setEditingServer(server)
 		setNewServerName(server.name)
 		setNewServerUrl(server.url)
-		setNewServerPort(server.port.toString())
+		setNewServerPort(server.port?.toString() || '5001')
 		setShowAddServer(true)
 	}
 
@@ -481,7 +478,8 @@ export default function AuthScreen() {
 			<View style={styles.serverInfo}>
 				<Text style={styles.serverName}>{item.name}</Text>
 				<Text style={styles.serverUrl}>
-					{item.url}:{item.port}
+					{item.url}
+					{item.port ? `:${item.port}` : ''}
 				</Text>
 			</View>
 			<View style={styles.serverActions}>
@@ -517,6 +515,7 @@ export default function AuthScreen() {
 						setPassword('123')
 						setCustomUrl(DEFAULT_LOCAL_URL)
 						setServerConfigState({ mode: 'local', customUrl: DEFAULT_LOCAL_URL, localServers: [] })
+						setPendingMode('local')
 
 						// Close the modal
 						setShowServerSettings(false)
@@ -594,13 +593,19 @@ export default function AuthScreen() {
 									<Text style={styles.modalTitle}>Server Settings</Text>
 
 									<Text style={styles.modalLabel}>Server Mode</Text>
-									<Picker selectedValue={serverConfig.mode} style={styles.modalPicker} onValueChange={(value: ServerMode) => handleServerModeChange(value)}>
+									<Picker selectedValue={pendingMode} style={styles.modalPicker} onValueChange={(value: ServerMode) => handleServerModeChange(value)}>
 										<Picker.Item label="Local" value="local" />
 										<Picker.Item label="Development" value="development" />
 										<Picker.Item label="Production" value="production" />
 									</Picker>
 
-									{serverConfig.mode === 'local' && (
+									{pendingMode !== serverConfig.mode && (
+										<TouchableOpacity style={[styles.addButton, { backgroundColor: colors.accent, marginBottom: 20 }]} onPress={applyServerMode}>
+											<Text style={styles.addButtonText}>Apply {pendingMode} Mode</Text>
+										</TouchableOpacity>
+									)}
+
+									{pendingMode === 'local' && (
 										<>
 											{/* Servers List */}
 											<View style={styles.savedServersContainer}>

@@ -30,22 +30,32 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 		(response: AxiosResponse) => response,
 		async (error: AxiosError) => {
 			// Log error details in development mode
-			logError(error, 'API Request')
+			const status = error.response?.status
+			if (status !== 401 && status !== 404 && status !== 409) {
+				logError(error, 'API Request')
+			}
 
 			// Handle 401 Unauthorized errors globally
 			if (error.response?.status === 401) {
-				// Don't show modal for auth-related requests or if we are already on the auth page (important for Web)
+				const token = await AsyncStorage.getItem('authToken')
+
+				// Don't show modal if:
+				// 1. We don't have a token (never logged in or manually cleared)
+				// 2. We ARE the auth request itself
+				// 3. We are already on the auth page
 				const url = error.config?.url || ''
 				const isAuthRequest = url.includes('/auth/') || url.includes('signin') || url.includes('signup')
 
 				let isOnAuthPage = false
 				// @ts-ignore - Check window for Web environment
 				if (typeof window !== 'undefined' && window.location) {
-					const path = window.location.pathname + window.location.hash
+					const path = (window.location.pathname + window.location.hash).toLowerCase()
 					isOnAuthPage = path.includes('/auth') || path === '/' || path === '/#' || path === '#/'
 				}
 
-				if (isAuthRequest || isOnAuthPage) {
+				if (!token || isAuthRequest || isOnAuthPage) {
+					// If no token, just clear and reject without showing modal
+					if (!token) await AsyncStorage.removeItem('authToken')
 					return Promise.reject(error)
 				}
 

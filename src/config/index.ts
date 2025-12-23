@@ -6,7 +6,7 @@ export type Environment = 'local' | 'development' | 'production'
 
 export interface ServerEnvironment {
 	url: string
-	port: number
+	port?: number
 }
 
 export interface AppConfig {
@@ -35,8 +35,7 @@ export const config: AppConfig = {
 			port: 5001
 		},
 		production: {
-			url: '10.173.243.181',
-			port: 5001
+			url: 'https://drinaluza-expressjs.onrender.com/'
 		}
 	},
 	app: {
@@ -50,9 +49,15 @@ export const config: AppConfig = {
 // Helper functions to get server URLs
 export const getServerUrl = (environment: Environment): string => {
 	const server = config.servers[environment]
-	//const protocol = environment === 'local' ? 'http' : 'http'
+
+	// If the URL already contains the protocol, use it as is
+	if (server.url.startsWith('http')) {
+		// Only append port if it exists
+		return server.port ? `${server.url}:${server.port}/api` : `${server.url}api`
+	}
+
 	const protocol = 'http'
-	return `${protocol}://${server.url}:${server.port}/api`
+	return server.port ? `${protocol}://${server.url}:${server.port}/api` : `${protocol}://${server.url}/api`
 }
 
 export const getLocalServerUrl = (url: string, port: number): string => {
@@ -64,6 +69,7 @@ export const getServerConfig = (environment: Environment): ServerEnvironment => 
 	return config.servers[environment]
 }
 
+// Update server configuration at runtime
 // Update server configuration at runtime
 export const updateServerConfig = (environment: Environment, url: string, port: number): void => {
 	config.servers[environment] = { url, port }
