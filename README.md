@@ -2,6 +2,15 @@
 
 Drinaluza is a mobile-first application designed to empower small businesses by providing comprehensive management tools alongside a seamless shopping experience for customers. Built with Expo and React Native, it bridges the gap between local businesses and their community.
 
+# download android app
+```
+https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm?usp=drive_link
+```
+
+# web app
+```
+https://drinaluza.netlify.app/
+```
 ## 🚀 Features
 
 ### For Customers

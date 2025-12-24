@@ -1,20 +1,7 @@
 // Configuration file for Drinaluza app
-// Edit server URLs and ports here for different environments
 import packagejson from '../../package.json' with { type: 'json' }
 
-export type Environment = 'production' | 'local' | 'development'
-
-export interface ServerEnvironment {
-	url: string
-	port?: number
-}
-
 export interface AppConfig {
-	servers: {
-		production: ServerEnvironment
-		local: ServerEnvironment
-		development: ServerEnvironment
-	}
 	app: {
 		name: string
 		version: string
@@ -25,19 +12,6 @@ export interface AppConfig {
 
 // Main configuration - edit these values as needed
 export const config: AppConfig = {
-	servers: {
-		production: {
-			url: process.env.EXPO_PUBLIC_BACKEND_URL
-		},
-		local: {
-			url: '192.168.1.11',
-			port: 5001
-		},
-		development: {
-			url: '10.173.243.181',
-			port: 5001
-		}
-	},
 	app: {
 		name: packagejson.name,
 		version: packagejson.version,
@@ -46,70 +20,14 @@ export const config: AppConfig = {
 	}
 }
 
-// Helper functions to get server URLs
-export const getServerUrl = (environment: Environment): string => {
-	const server = config.servers[environment]
-
-	// If the URL already contains the protocol, use it as is
-	if (server.url.startsWith('http')) {
-		// Only append port if it exists
-		return server.port ? `${server.url}:${server.port}/api` : `${server.url}api`
-	}
-
-	const protocol = 'http'
-	return server.port ? `${protocol}://${server.url}:${server.port}/api` : `${protocol}://${server.url}/api`
-}
-
-export const getLocalServerUrl = (url: string, port: number): string => {
-	return `http://${url}:${port}/api`
-}
-
-// Get server configuration for a specific environment
-export const getServerConfig = (environment: Environment): ServerEnvironment => {
-	return config.servers[environment]
-}
-
-// Update server configuration at runtime
-// Update server configuration at runtime
-export const updateServerConfig = (environment: Environment, url: string, port: number): void => {
-	config.servers[environment] = { url, port }
-}
-
-// Default values for easy access
-export const DEFAULT_LOCAL_URL = config.servers.local.url
-export const DEFAULT_LOCAL_PORT = config.servers.local.port
-export const DEFAULT_DEV_URL = config.servers.development.url
-export const DEFAULT_DEV_PORT = config.servers.development.port
-export const DEFAULT_PROD_URL = config.servers.production.url
-export const DEFAULT_PROD_PORT = config.servers.production.port
-
-// Default local servers array
-export const defaultLocalServers = [
-	{
-		id: '1',
-		name: 'ellouza-wifi',
-		url: '192.168.1.11',
-		port: DEFAULT_LOCAL_PORT,
-		lastUsed: Date.now()
-	},
-	{
-		id: '2',
-		name: '4G',
-		url: '10.130.232.120',
-		port: DEFAULT_LOCAL_PORT,
-		lastUsed: Date.now()
-	},
-	{
-		id: '3',
-		name: 'aroma',
-		url: '192.168.1.149',
-		port: DEFAULT_LOCAL_PORT,
-		lastUsed: Date.now()
-	}
-]
-
 // App configuration
 export const APP_NAME = config.app.name
 export const APP_VERSION = config.app.version
 export const API_TIMEOUT = config.app.timeout
 export const RETRY_ATTEMPTS = config.app.retryAttempts
+
+// API URL from environment variables
+// API URL from environment variables
+export const API_PREFIX = '/api'
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL
+export const API_URL = BACKEND_URL ? `${BACKEND_URL.replace(/\/$/, '')}${API_PREFIX}` : undefined

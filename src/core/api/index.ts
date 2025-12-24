@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { getBaseUrl } from '../../components/settings/settings.api'
-import { getServerUrl, API_TIMEOUT } from '../../config'
+import { API_TIMEOUT, API_URL, API_PREFIX } from '../../config'
 import { logError } from '../../utils/errorHandler'
 
 // Create an API client with the given base URL
@@ -80,37 +79,14 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 	return client
 }
 
-// Default API client instance with a default URL
-let apiClient = createApiClient('http://localhost:5001/api')
+// Default API client instance
+// If EXPO_PUBLIC_BACKEND_URL is not set, this might fail or default to undefined which axios handles strictly?
+// Axios defaults to current origin if baseURL is undefined. That might be okay for web, but not for mobile.
+// For now, allow undefined, but user said "use EXPO_PUBLIC_BACKEND_URL".
+const apiClient = createApiClient(API_URL || `http://localhost:5001${API_PREFIX}`)
 
 // Function to get the current API client
 export const getApiClient = (): AxiosInstance => apiClient
-
-// Function to update the API client with the latest configuration
-export const updateApiBaseUrl = async (): Promise<AxiosInstance> => {
-	try {
-		const baseURL = await getBaseUrl()
-		apiClient = createApiClient(baseURL)
-		return apiClient
-	} catch (error) {
-		console.error('Failed to update API base URL:', error)
-		// Fallback to default URL if there's an error
-		apiClient = createApiClient('http://localhost:5001/api')
-		return apiClient
-	}
-}
-
-// Initialize with the stored configuration
-const initializeApiClient = async () => {
-	try {
-		await updateApiBaseUrl()
-	} catch (error) {
-		console.error('Failed to initialize API client:', error)
-	}
-}
-
-// Initialize the API client when the module loads
-initializeApiClient()
 
 // Export the API client instance getter
 export default getApiClient
