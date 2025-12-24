@@ -11,6 +11,7 @@ envs/
 .env.prod
 .env.dev
 .env.local
+.env.sample
 
 #config files
 src/config/production.config.js
