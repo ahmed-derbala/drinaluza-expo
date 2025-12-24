@@ -279,7 +279,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				updateState(showRefreshing ? { refreshing: true } : { loading: true, error: null })
 				const response = await getMyShops()
 				// Access the shops array from the nested data property
-				const shops = response?.data?.data || []
+				const shops = response?.data?.docs || []
 				updateState({
 					shops: shops.sort((a: Shop, b: Shop) => a.name.localeCompare(b.name)),
 					loading: false,

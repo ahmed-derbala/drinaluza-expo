@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, useWindowDimensions, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { signOut } from '../../core/auth/auth.api'
+
 import { useTheme } from '../../contexts/ThemeContext'
 import { Theme } from '../../components/settings/settings.interface'
 import { APP_VERSION } from '../../config'
@@ -17,36 +17,6 @@ export default function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 
 	const styles = createStyles(colors, isDark)
-
-	const handleSignOut = async () => {
-		const performSignOut = async () => {
-			try {
-				await signOut()
-				router.replace('/auth')
-			} catch (error) {
-				console.error('Sign out failed:', error)
-				router.replace('/auth')
-			}
-		}
-
-		if (Platform.OS === 'web') {
-			if (window.confirm('Are you sure you want to sign out?')) {
-				await performSignOut()
-			}
-		} else {
-			Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-				{
-					text: 'Cancel',
-					style: 'cancel'
-				},
-				{
-					text: 'Sign Out',
-					style: 'destructive',
-					onPress: performSignOut
-				}
-			])
-		}
-	}
 
 	const toggleTheme = () => {
 		const newTheme = isDark ? 'light' : 'dark'
@@ -117,10 +87,6 @@ export default function SettingsScreen() {
 				<SettingItem icon="help-circle" title="Help Center" onPress={() => {}} color="#6366F1" />
 				<SettingItem icon="document-text" title="Terms of Service" onPress={() => {}} color="#8B5CF6" />
 				<SettingItem icon="shield-checkmark" title="Privacy Policy" onPress={() => {}} color="#8B5CF6" />
-			</SettingSection>
-
-			<SettingSection title="Account">
-				<SettingItem icon="log-out" title="Sign Out" onPress={handleSignOut} color="#EF4444" />
 			</SettingSection>
 
 			<View style={styles.footer}>

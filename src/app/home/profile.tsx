@@ -5,7 +5,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { checkAuth, getMyProfile, updateMyProfile } from '../../core/auth/auth.api'
+import { checkAuth, getMyProfile, updateMyProfile, signOut } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
 
@@ -128,6 +128,36 @@ export default function ProfileScreen() {
 	const formatDate = (date: Date | string | null | undefined) => {
 		if (!date) return 'Not set'
 		return new Date(date).toLocaleDateString()
+	}
+
+	const handleSignOut = async () => {
+		const performSignOut = async () => {
+			try {
+				await signOut()
+				router.replace('/auth')
+			} catch (error) {
+				console.error('Sign out failed:', error)
+				router.replace('/auth')
+			}
+		}
+
+		if (Platform.OS === 'web') {
+			if (window.confirm('Are you sure you want to sign out?')) {
+				await performSignOut()
+			}
+		} else {
+			Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+				{
+					text: 'Cancel',
+					style: 'cancel'
+				},
+				{
+					text: 'Sign Out',
+					style: 'destructive',
+					onPress: performSignOut
+				}
+			])
+		}
 	}
 
 	if (loading && !userData) {
@@ -383,6 +413,11 @@ export default function ProfileScreen() {
 					</>
 				)}
 
+				<TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
+					<Ionicons name="log-out-outline" size={20} color={colors.error} style={{ marginRight: 8 }} />
+					<Text style={styles.logoutButtonText}>Log Out</Text>
+				</TouchableOpacity>
+
 				{Platform.OS !== 'web' && showDatePicker && (
 					<DateTimePicker value={userData.basicInfos?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />
 				)}
@@ -616,6 +651,23 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderColor: colors.error + '20'
 		},
 		cancelButtonText: {
+			color: colors.error,
+			fontSize: 16,
+			fontWeight: '600'
+		},
+		logoutButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			padding: 16,
+			marginTop: 24,
+			marginBottom: 40,
+			borderRadius: 16,
+			backgroundColor: colors.error + '10',
+			borderWidth: 1,
+			borderColor: colors.error + '20'
+		},
+		logoutButtonText: {
 			color: colors.error,
 			fontSize: 16,
 			fontWeight: '600'
