@@ -4,7 +4,7 @@ Drinaluza is a mobile-first application designed to empower small businesses by 
 
 # download android app
 ```
-https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm?usp=drive_link
+(https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm?usp=drive_link)
 ```
 
 # web app
