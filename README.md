@@ -7,7 +7,6 @@ Drinaluza is a mobile-first application designed to empower small businesses by 
 CTRL+click to open in new tab
 
 # web app
-
 [netlify](https://drinaluza.netlify.app/)
 CTRL+click to open in new tab
 
