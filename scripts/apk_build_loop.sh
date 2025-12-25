@@ -8,7 +8,7 @@ while true; do
 
     # Check if directory exists before entering
     if cd "$TARGET_DIR"; then
-        npm run build
+        npm run build:apk
     else
         echo "Error: Directory $TARGET_DIR not found."
         exit 1

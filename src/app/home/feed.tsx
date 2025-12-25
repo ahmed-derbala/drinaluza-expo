@@ -324,7 +324,7 @@ export default function FeedScreen() {
 				<View style={styles.headerTop}>
 					<View>
 						<Text style={styles.greeting}>Hello, {user?.slug || 'User'}</Text>
-						<Text style={styles.title}>{user?.role || 'Welcome'}</Text>
+						<Text style={styles.title}>Welcome</Text>
 					</View>
 					<View style={styles.headerActions}>
 						<TouchableOpacity style={styles.refreshButton} onPress={() => router.push('/home/settings')}>

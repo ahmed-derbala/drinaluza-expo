@@ -104,13 +104,14 @@ export default function HomeLayout() {
 						}}
 					/>
 					<Tabs.Screen
-						name="customer-dashboard"
+						name="dashboard"
 						options={{
 							title: 'Dashboard',
 							tabBarActiveTintColor: colors.primary,
 							tabBarIcon: ({ color, size }) => <MaterialIcons name="dashboard" size={size} color={color} />
 						}}
 					/>
+
 					<Tabs.Screen
 						name="business"
 						options={{

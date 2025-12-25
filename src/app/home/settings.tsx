@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, useWindowDimensions, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 
 import { useTheme } from '../../contexts/ThemeContext'
@@ -21,6 +22,43 @@ export default function SettingsScreen() {
 	const toggleTheme = () => {
 		const newTheme = isDark ? 'light' : 'dark'
 		setTheme(newTheme)
+	}
+
+	const handleClearStorage = async () => {
+		const performClear = async () => {
+			try {
+				await AsyncStorage.clear()
+				// Force reload or navigate to auth
+				if (Platform.OS === 'web') {
+					router.replace('/auth' as any)
+					// Optional: window.location.reload() to fully clear state
+				} else {
+					Alert.alert('Success', 'Local storage cleared. You will be signed out.', [{ text: 'OK', onPress: () => router.replace('/auth' as any) }])
+				}
+			} catch (error) {
+				console.error('Failed to clear storage:', error)
+				if (Platform.OS !== 'web') {
+					Alert.alert('Error', 'Failed to clear local storage.')
+				} else {
+					alert('Failed to clear local storage')
+				}
+			}
+		}
+
+		if (Platform.OS === 'web') {
+			if (window.confirm('Are you sure you want to clear all local storage? This will sign you out and reset app preferences.')) {
+				await performClear()
+			}
+		} else {
+			Alert.alert('Clear Local Storage', 'Are you sure you want to clear all local storage? This will sign you out and reset app preferences.', [
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: 'Clear',
+					style: 'destructive',
+					onPress: performClear
+				}
+			])
+		}
 	}
 
 	const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
@@ -87,6 +125,10 @@ export default function SettingsScreen() {
 				<SettingItem icon="help-circle" title="Help Center" onPress={() => {}} color="#6366F1" />
 				<SettingItem icon="document-text" title="Terms of Service" onPress={() => {}} color="#8B5CF6" />
 				<SettingItem icon="shield-checkmark" title="Privacy Policy" onPress={() => {}} color="#8B5CF6" />
+			</SettingSection>
+
+			<SettingSection title="Advanced">
+				<SettingItem icon="trash-bin" title="Clear Local Storage" subtitle="Reset app data and cache" onPress={handleClearStorage} color="#EF4444" />
 			</SettingSection>
 
 			<View style={styles.footer}>

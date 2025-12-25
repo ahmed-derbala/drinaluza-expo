@@ -1,9 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
+import { LinearGradient } from 'expo-linear-gradient'
+import { LineChart } from 'react-native-chart-kit'
+
+const { width } = Dimensions.get('window')
 
 type Order = {
 	id: string
@@ -19,6 +23,7 @@ type StatCardProps = {
 	icon: React.ReactNode
 	accent: string
 	onPress?: () => void
+	variant?: 'default' | 'hero'
 }
 
 type ActionCardProps = {
@@ -28,8 +33,25 @@ type ActionCardProps = {
 	onPress: () => void
 }
 
-const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
+const StatCard = ({ title, value, icon, accent, onPress, variant = 'default' }: StatCardProps) => {
 	const { colors } = useTheme()
+
+	if (variant === 'hero') {
+		return (
+			<TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.heroCardContainer}>
+				<LinearGradient colors={[colors.primary, accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+					<View style={styles.heroHeader}>
+						<View style={styles.heroIcon}>{icon}</View>
+						<Text style={styles.heroTitle}>{title}</Text>
+					</View>
+					<Text style={styles.heroValue}>{value}</Text>
+					<View style={styles.heroFooter}>
+						<Text style={styles.heroSubtitle}>+12.5% from last month</Text>
+					</View>
+				</LinearGradient>
+			</TouchableOpacity>
+		)
+	}
 
 	return (
 		<TouchableOpacity
@@ -38,15 +60,15 @@ const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
 			style={[
 				styles.statCard,
 				{
-					borderColor: `${accent}35`,
+					borderColor: colors.border,
 					backgroundColor: colors.card
 				}
 			]}
 		>
-			<View style={[styles.statIcon, { backgroundColor: `${accent}18` }]}>{icon}</View>
+			<View style={[styles.statIcon, { backgroundColor: `${accent}15` }]}>{icon}</View>
 			<View style={styles.statBody}>
-				<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
 				<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+				<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
 			</View>
 		</TouchableOpacity>
 	)
@@ -55,16 +77,18 @@ const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
 const ActionCard = ({ label, subtext, icon, onPress }: ActionCardProps) => {
 	const { colors } = useTheme()
 	return (
-		<TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[styles.actionCard, { borderColor: colors.border }]}>
+		<TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[styles.actionCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
 			<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}12` }]}>{icon}</View>
-			<Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
-			<Text style={[styles.actionSubtext, { color: colors.textSecondary }]}>{subtext}</Text>
+			<View>
+				<Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
+				<Text style={[styles.actionSubtext, { color: colors.textSecondary }]}>{subtext}</Text>
+			</View>
 		</TouchableOpacity>
 	)
 }
 
-const CustomerDashboard = () => {
-	const { colors } = useTheme()
+const Dashboard = () => {
+	const { colors, isDark } = useTheme()
 	const router = useRouter()
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
@@ -75,6 +99,7 @@ const CustomerDashboard = () => {
 		totalSpent: 0
 	})
 	const [recentPurchases, setRecentPurchases] = useState<Order[]>([])
+	const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0])
 
 	const loadDashboard = useCallback(async () => {
 		try {
@@ -92,6 +117,8 @@ const CustomerDashboard = () => {
 				{ id: '3', shopName: 'Fashion Boutique', amount: 89.99, status: 'completed', date: '3 days ago' },
 				{ id: '4', shopName: 'Home Essentials', amount: 234.5, status: 'pending', date: '5 days ago' }
 			])
+			// Mock chart data
+			setChartData([500, 1200, 900, 1500, 2000, 4892])
 		} catch (error) {
 			console.error('Failed to load customer dashboard', error)
 		} finally {
@@ -149,15 +176,9 @@ const CustomerDashboard = () => {
 				icon: <MaterialIcons name="check-circle" size={20} color={colors.success} />,
 				accent: colors.success,
 				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'completed' } } as any)
-			},
-			{
-				title: 'Total spent',
-				value: `${Math.round(stats.totalSpent)} TND`,
-				icon: <MaterialIcons name="account-balance-wallet" size={20} color={colors.info} />,
-				accent: colors.info
 			}
 		],
-		[colors.info, colors.primary, colors.success, colors.warning, router, stats.completedPurchases, stats.pendingPurchases, stats.totalPurchases, stats.totalSpent]
+		[colors.primary, colors.success, colors.warning, router, stats.completedPurchases, stats.pendingPurchases, stats.totalPurchases]
 	)
 
 	const actions = useMemo(
@@ -193,12 +214,12 @@ const CustomerDashboard = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader
-				title="Customer"
-				subtitle="Stay on top of your shopping"
+				title="Overview"
+				subtitle="Welcome back"
 				showBack={false}
 				rightActions={
 					<TouchableOpacity onPress={onRefresh} accessibilityLabel="Refresh dashboard">
-						<Ionicons name={refreshing ? 'refresh' : 'notifications-outline'} size={22} color={colors.text} />
+						<Ionicons name={refreshing ? 'refresh' : 'notifications-outline'} size={24} color={colors.text} />
 					</TouchableOpacity>
 				}
 			/>
@@ -208,29 +229,91 @@ const CustomerDashboard = () => {
 				refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}
 			>
+				{/* Overview Section */}
 				<View style={styles.section}>
-					<Text style={[styles.sectionTitle, { color: colors.text }]}>Overview</Text>
-					<View style={styles.grid}>
+					{/* Hero Card for Total Spent */}
+					<StatCard
+						title="Total Spent"
+						value={`${Math.round(stats.totalSpent)} TND`}
+						icon={<MaterialIcons name="account-balance-wallet" size={24} color="#fff" />}
+						accent={colors.primary}
+						variant="hero"
+					/>
+
+					{/* Smaller Stats Row */}
+					<View style={styles.statsRow}>
 						{statCards.map((card) => (
 							<StatCard key={card.title} {...card} />
 						))}
 					</View>
+
+					{/* Spending Chart */}
+					<View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						<View style={styles.chartHeader}>
+							<Text style={[styles.chartTitle, { color: colors.text }]}>Spending Trend</Text>
+							<Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>Last 6 months</Text>
+						</View>
+						<LineChart
+							data={{
+								labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+								datasets: [
+									{
+										data: chartData
+									}
+								]
+							}}
+							width={width - 64} // container padding + card padding
+							height={180}
+							yAxisLabel=""
+							yAxisSuffix=""
+							yAxisInterval={1}
+							chartConfig={{
+								backgroundColor: colors.card,
+								backgroundGradientFrom: colors.card,
+								backgroundGradientTo: colors.card,
+								decimalPlaces: 0,
+								color: (opacity = 1) => colors.primary,
+								labelColor: (opacity = 1) => colors.textSecondary,
+								style: {
+									borderRadius: 16
+								},
+								propsForDots: {
+									r: '4',
+									strokeWidth: '2',
+									stroke: colors.primary
+								},
+								propsForBackgroundLines: {
+									strokeDasharray: '', // solid lines
+									stroke: colors.border,
+									strokeOpacity: 0.2
+								}
+							}}
+							bezier
+							style={styles.chart}
+							withDots={true}
+							withInnerLines={true}
+							withOuterLines={false}
+							withVerticalLines={false}
+						/>
+					</View>
 				</View>
 
+				{/* Quick Actions */}
 				<View style={styles.section}>
 					<View style={styles.sectionHeader}>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick actions</Text>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
 					</View>
-					<View style={styles.grid}>
+					<View style={styles.actionsGrid}>
 						{actions.map((action) => (
 							<ActionCard key={action.label} {...action} />
 						))}
 					</View>
 				</View>
 
+				{/* Recent Purchases */}
 				<View style={styles.section}>
 					<View style={styles.sectionHeader}>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent purchases</Text>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Purchases</Text>
 						<TouchableOpacity onPress={() => router.push('/home/purchases' as any)}>
 							<Text style={[styles.link, { color: colors.primary }]}>View all</Text>
 						</TouchableOpacity>
@@ -276,86 +359,187 @@ const styles = StyleSheet.create({
 	},
 	scrollContent: {
 		paddingHorizontal: 16,
-		paddingBottom: 28
+		paddingBottom: 28,
+		paddingTop: 8
 	},
 	section: {
-		marginBottom: 20
+		marginBottom: 24
 	},
 	sectionHeader: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		marginBottom: 8
+		marginBottom: 12
 	},
 	sectionTitle: {
 		fontSize: 18,
 		fontWeight: '700'
 	},
-	grid: {
+	statsRow: {
+		flexDirection: 'row',
+		gap: 12,
+		marginBottom: 16
+	},
+	statCard: {
+		flex: 1,
+		borderRadius: 16,
+		padding: 12,
+		borderWidth: 1,
+		alignItems: 'center',
+		justifyContent: 'center',
+		minHeight: 100,
+		gap: 8,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.05,
+				shadowRadius: 4
+			},
+			android: {
+				elevation: 2
+			}
+		})
+	},
+	heroCardContainer: {
+		marginBottom: 16,
+		borderRadius: 20,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.15,
+				shadowRadius: 12
+			},
+			android: {
+				elevation: 6
+			}
+		})
+	},
+	heroCard: {
+		padding: 20,
+		borderRadius: 20,
+		minHeight: 140,
+		justifyContent: 'space-between'
+	},
+	heroHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		marginBottom: 8
+	},
+	heroIcon: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: 'rgba(255,255,255,0.2)',
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	heroTitle: {
+		color: '#fff',
+		fontSize: 16,
+		fontWeight: '600',
+		opacity: 0.9
+	},
+	heroValue: {
+		color: '#fff',
+		fontSize: 32,
+		fontWeight: '800',
+		marginVertical: 4
+	},
+	heroFooter: {
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
+	heroSubtitle: {
+		color: '#fff',
+		fontSize: 13,
+		fontWeight: '500',
+		opacity: 0.8
+	},
+	statIcon: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		alignItems: 'center',
+		justifyContent: 'center',
+		marginBottom: 4
+	},
+	statBody: {
+		alignItems: 'center'
+	},
+	statLabel: {
+		fontSize: 12,
+		fontWeight: '500',
+		textAlign: 'center'
+	},
+	statValue: {
+		fontSize: 18,
+		fontWeight: '700',
+		marginBottom: 2
+	},
+	chartCard: {
+		borderRadius: 20,
+		borderWidth: 1,
+		padding: 16,
+		overflow: 'hidden'
+	},
+	chartHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 16
+	},
+	chartTitle: {
+		fontSize: 16,
+		fontWeight: '600'
+	},
+	chartSubtitle: {
+		fontSize: 12
+	},
+	chart: {
+		marginVertical: 8,
+		borderRadius: 16
+	},
+	actionsGrid: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 12
 	},
-	statCard: {
-		flexBasis: '48%',
-		borderRadius: 14,
-		padding: 14,
-		borderWidth: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-		minHeight: 80
-	},
-	statIcon: {
-		width: 42,
-		height: 42,
-		borderRadius: 12,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	statBody: {
-		flex: 1
-	},
-	statLabel: {
-		fontSize: 13,
-		fontWeight: '600'
-	},
-	statValue: {
-		fontSize: 20,
-		fontWeight: '700'
-	},
 	actionCard: {
 		flexBasis: '48%',
-		borderRadius: 14,
-		padding: 14,
+		borderRadius: 16,
+		padding: 16,
 		borderWidth: 1,
-		gap: 8
+		gap: 12
 	},
 	actionIcon: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
+		width: 48,
+		height: 48,
+		borderRadius: 14,
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
 	actionLabel: {
 		fontSize: 15,
-		fontWeight: '700'
+		fontWeight: '600',
+		marginBottom: 2
 	},
 	actionSubtext: {
-		fontSize: 13
+		fontSize: 12
 	},
 	panel: {
-		borderRadius: 14,
+		borderRadius: 20,
 		borderWidth: 1,
-		paddingHorizontal: 12,
+		paddingHorizontal: 16,
 		paddingVertical: 8
 	},
 	purchaseRow: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		paddingVertical: 12,
+		paddingVertical: 14,
 		borderBottomWidth: 1
 	},
 	purchaseMeta: {
@@ -363,29 +547,29 @@ const styles = StyleSheet.create({
 	},
 	purchaseTitle: {
 		fontSize: 15,
-		fontWeight: '700'
+		fontWeight: '600'
 	},
 	purchaseDate: {
 		fontSize: 12,
-		marginTop: 2
+		marginTop: 4
 	},
 	purchaseRight: {
 		alignItems: 'flex-end',
 		minWidth: 110
 	},
 	purchaseAmount: {
-		fontSize: 15,
+		fontSize: 16,
 		fontWeight: '700'
 	},
 	statusBadge: {
 		marginTop: 6,
-		paddingHorizontal: 8,
+		paddingHorizontal: 10,
 		paddingVertical: 4,
-		borderRadius: 10,
+		borderRadius: 12,
 		alignSelf: 'flex-start'
 	},
 	statusText: {
-		fontSize: 12,
+		fontSize: 11,
 		fontWeight: '600',
 		textTransform: 'capitalize'
 	},
@@ -395,17 +579,18 @@ const styles = StyleSheet.create({
 	},
 	emptyState: {
 		alignItems: 'center',
-		paddingVertical: 20,
-		gap: 6
+		paddingVertical: 32,
+		gap: 8
 	},
 	emptyText: {
-		fontSize: 15,
-		fontWeight: '700'
+		fontSize: 16,
+		fontWeight: '600'
 	},
 	emptySubtext: {
 		fontSize: 13,
-		textAlign: 'center'
+		textAlign: 'center',
+		maxWidth: 200
 	}
 })
 
-export default CustomerDashboard
+export default Dashboard
