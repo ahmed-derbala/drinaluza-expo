@@ -5,9 +5,10 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { Picker } from '@react-native-picker/picker'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { checkAuth, getMyProfile, updateMyProfile, signOut } from '../../core/auth/auth.api'
+import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
+import { showPopup, showAlert, showConfirm } from '../../utils/popup'
 
 import { UserData } from '../../components/profile/profile.interface'
 
@@ -66,7 +67,7 @@ export default function ProfileScreen() {
 			}
 		} catch (error) {
 			console.error('Failed to load profile:', error)
-			Alert.alert('Error', 'Failed to load profile data')
+			showAlert('Error', 'Failed to load profile data')
 		} finally {
 			setLoading(false)
 		}
@@ -95,7 +96,7 @@ export default function ProfileScreen() {
 			loadProfile() // Reload to ensure consistency
 		} catch (e) {
 			console.error('Error saving user data:', e)
-			Alert.alert('Error', 'Failed to save profile changes')
+			showAlert('Error', 'Failed to save profile changes')
 		}
 	}
 
@@ -131,7 +132,7 @@ export default function ProfileScreen() {
 	}
 
 	const handleSignOut = async () => {
-		const performSignOut = async () => {
+		showConfirm('Sign Out', 'Are you sure you want to sign out?', async () => {
 			try {
 				await signOut()
 				router.replace('/auth')
@@ -139,25 +140,18 @@ export default function ProfileScreen() {
 				console.error('Sign out failed:', error)
 				router.replace('/auth')
 			}
-		}
-
-		if (Platform.OS === 'web') {
-			if (window.confirm('Are you sure you want to sign out?')) {
-				await performSignOut()
+		})
+	}
+	const handleSwitchUser = async () => {
+		showConfirm('Switch User', 'This will clear your current session but keep your saved accounts.', async () => {
+			try {
+				await switchUser()
+				router.replace('/auth')
+			} catch (error) {
+				console.error('Switch user failed:', error)
+				router.replace('/auth')
 			}
-		} else {
-			Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
-				{
-					text: 'Cancel',
-					style: 'cancel'
-				},
-				{
-					text: 'Sign Out',
-					style: 'destructive',
-					onPress: performSignOut
-				}
-			])
-		}
+		})
 	}
 
 	if (loading && !userData) {
@@ -176,14 +170,17 @@ export default function ProfileScreen() {
 				title="Profile"
 				showBack={false}
 				rightActions={
-					<>
-						<TouchableOpacity style={styles.iconButton} onPress={() => router.push('/home/settings')}>
-							<Ionicons name="settings-outline" size={24} color={colors.text} />
+					<View style={styles.headerActions}>
+						<TouchableOpacity style={styles.headerIconButton} onPress={handleSwitchUser}>
+							<Ionicons name="people-outline" size={22} color={colors.text} />
+						</TouchableOpacity>
+						<TouchableOpacity style={[styles.headerIconButton, { borderColor: colors.error + '40' }]} onPress={handleSignOut}>
+							<Ionicons name="log-out-outline" size={22} color={colors.error} />
 						</TouchableOpacity>
 						<TouchableOpacity style={styles.editButton} onPress={() => (isEditing ? saveUserData() : setIsEditing(true))}>
 							<Text style={styles.editButtonText}>{isEditing ? 'Save' : 'Edit'}</Text>
 						</TouchableOpacity>
-					</>
+					</View>
 				}
 			/>
 			<ScrollView contentContainerStyle={styles.contentContainer}>
@@ -337,34 +334,6 @@ export default function ProfileScreen() {
 							</View>
 						</Section>
 
-						<Section title="Settings" styles={styles}>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Language</Text>
-								<View style={styles.pickerContainer}>
-									<Picker selectedValue={userData.settings?.lang} onValueChange={(value) => updateField('lang', value, 'settings')} style={{ color: colors.text }} dropdownIconColor={colors.text}>
-										<Picker.Item label="English" value="en" />
-										<Picker.Item label="Tunisian" value="tn" />
-										<Picker.Item label="French" value="fr" />
-									</Picker>
-								</View>
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Currency</Text>
-								<View style={styles.pickerContainer}>
-									<Picker
-										selectedValue={userData.settings?.currency}
-										onValueChange={(value) => updateField('currency', value, 'settings')}
-										style={{ color: colors.text }}
-										dropdownIconColor={colors.text}
-									>
-										<Picker.Item label="TND" value="tnd" />
-										<Picker.Item label="EUR" value="eur" />
-										<Picker.Item label="USD" value="usd" />
-									</Picker>
-								</View>
-							</View>
-						</Section>
-
 						<TouchableOpacity
 							style={styles.cancelButton}
 							onPress={() => {
@@ -399,24 +368,8 @@ export default function ProfileScreen() {
 								iconColor={colors.primary}
 							/>
 						</Section>
-
-						<Section title="Preferences" styles={styles}>
-							<InfoItem
-								label="Language"
-								value={userData?.settings?.lang === 'en' ? 'English' : userData?.settings?.lang === 'tn' ? 'Tunisian' : userData?.settings?.lang}
-								icon="language"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
-							<InfoItem label="Currency" value={userData?.settings?.currency?.toUpperCase()} icon="cash" styles={styles} iconColor={colors.primary} />
-						</Section>
 					</>
 				)}
-
-				<TouchableOpacity style={styles.logoutButton} onPress={handleSignOut}>
-					<Ionicons name="log-out-outline" size={20} color={colors.error} style={{ marginRight: 8 }} />
-					<Text style={styles.logoutButtonText}>Log Out</Text>
-				</TouchableOpacity>
 
 				{Platform.OS !== 'web' && showDatePicker && (
 					<DateTimePicker value={userData.basicInfos?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />
@@ -450,10 +403,18 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			fontWeight: '600',
 			fontSize: 14
 		},
-		iconButton: {
-			padding: 8,
+		headerActions: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8
+		},
+		headerIconButton: {
+			width: 40,
+			height: 40,
 			borderRadius: 20,
 			backgroundColor: colors.card,
+			justifyContent: 'center',
+			alignItems: 'center',
 			borderWidth: 1,
 			borderColor: colors.border
 		},

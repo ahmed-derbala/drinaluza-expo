@@ -1,5 +1,5 @@
 import { AxiosError } from 'axios'
-import { Alert } from 'react-native'
+import { showPopup } from './popup'
 
 export interface ErrorInfo {
 	title: string
@@ -125,7 +125,7 @@ export const showErrorAlert = (error: any, onRetry?: () => void) => {
 				]
 			: [{ text: 'OK' }]
 
-	Alert.alert(errorInfo.title, errorInfo.message, buttons)
+	showPopup(errorInfo.title, errorInfo.message, buttons)
 }
 
 /**
@@ -133,6 +133,9 @@ export const showErrorAlert = (error: any, onRetry?: () => void) => {
  */
 export const logError = (error: any, context?: string) => {
 	if (__DEV__) {
+		const url = error.config?.url || 'unknown-url'
+		const method = error.config?.method?.toUpperCase() || 'UNKNOWN'
+		const fullUrl = error.config?.baseURL ? `${error.config.baseURL}${url}` : url
 		console.group(`🔴 Error${context ? ` in ${context}` : ''}`)
 		console.error('Error object:', error)
 

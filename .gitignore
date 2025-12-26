@@ -5,6 +5,8 @@ backups/
 
 builds/
 
+logs/
+
 #env
 envs/
 .env

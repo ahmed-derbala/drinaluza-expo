@@ -13,10 +13,19 @@ const defaultAuthSettings = {
 	refreshTokenEndpoint: '/auth/refresh'
 }
 
-// Secure storage functions - using only AsyncStorage for now
-const secureSetItem = async (key: string, value: string): Promise<boolean> => {
+// Secure storage functions
+export const secureSetItem = async (key: string, value: string): Promise<boolean> => {
 	try {
-		await AsyncStorage.setItem(key, value)
+		if (Platform.OS === 'web') {
+			await AsyncStorage.setItem(key, value)
+		} else {
+			try {
+				await SecureStore.setItemAsync(key, value)
+			} catch (e) {
+				// Fallback to AsyncStorage if SecureStore fails
+				await AsyncStorage.setItem(key, value)
+			}
+		}
 		return true
 	} catch (error) {
 		console.error('Error storing item:', error)
@@ -24,18 +33,37 @@ const secureSetItem = async (key: string, value: string): Promise<boolean> => {
 	}
 }
 
-const secureGetItem = async (key: string): Promise<string | null> => {
+export const secureGetItem = async (key: string): Promise<string | null> => {
 	try {
-		return await AsyncStorage.getItem(key)
+		if (Platform.OS === 'web') {
+			return await AsyncStorage.getItem(key)
+		} else {
+			try {
+				const value = await SecureStore.getItemAsync(key)
+				if (value !== null) return value
+				return await AsyncStorage.getItem(key)
+			} catch (e) {
+				return await AsyncStorage.getItem(key)
+			}
+		}
 	} catch (error) {
 		console.error('Error getting item:', error)
 		return null
 	}
 }
 
-const secureRemoveItem = async (key: string): Promise<boolean> => {
+export const secureRemoveItem = async (key: string): Promise<boolean> => {
 	try {
-		await AsyncStorage.removeItem(key)
+		if (Platform.OS === 'web') {
+			await AsyncStorage.removeItem(key)
+		} else {
+			try {
+				await SecureStore.deleteItemAsync(key)
+				await AsyncStorage.removeItem(key)
+			} catch (e) {
+				await AsyncStorage.removeItem(key)
+			}
+		}
 		return true
 	} catch (error) {
 		console.error('Error removing item:', error)
@@ -75,6 +103,40 @@ const removeToken = async (): Promise<boolean> => {
 // Session timer functions
 type Timer = ReturnType<typeof setTimeout>
 let sessionTimer: Timer | null = null
+
+// Saved authentications management
+const SAVED_AUTHS_KEY = 'saved_authentications'
+
+export interface SavedAuth {
+	slug: string
+	token: string
+	lastSignIn: string
+}
+
+export const getSavedAuthentications = async (): Promise<SavedAuth[]> => {
+	const saved = await secureGetItem(SAVED_AUTHS_KEY)
+	return saved ? JSON.parse(saved) : []
+}
+
+export const saveAuthentication = async (slug: string, token: string) => {
+	const saved = await getSavedAuthentications()
+	const filtered = saved.filter((a) => a.slug !== slug)
+	const updated = [
+		{
+			slug,
+			token,
+			lastSignIn: new Date().toISOString()
+		},
+		...filtered
+	]
+	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
+}
+
+export const deleteSavedAuthentication = async (slug: string) => {
+	const saved = await getSavedAuthentications()
+	const updated = saved.filter((a) => a.slug !== slug)
+	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
+}
 
 const startSessionTimer = (callback: () => void, timeout: number): Timer => {
 	if (sessionTimer) clearTimeout(sessionTimer)
@@ -155,7 +217,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 		const { token, user } = response.data.data
 
 		// Store token and user data
-		await Promise.all([setToken(token), setUserData(user)])
+		await Promise.all([setToken(token), setUserData(user), saveAuthentication(user.slug, token)])
 
 		console.log('Authentication data stored successfully')
 
@@ -227,6 +289,23 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 	}
 }
 
+export const signInWithToken = async (token: string): Promise<boolean> => {
+	try {
+		await setToken(token)
+		const profileResponse = await getMyProfile()
+
+		if (profileResponse && profileResponse.data) {
+			await setUserData(profileResponse.data)
+			return true
+		}
+		return false
+	} catch (error) {
+		console.error('Sign in with token failed:', error)
+		await removeToken()
+		return false
+	}
+}
+
 export const signOut = async (): Promise<boolean> => {
 	try {
 		// Clear session timer
@@ -259,12 +338,43 @@ export const signOut = async (): Promise<boolean> => {
 			secureRemoveItem('user._id'),
 			secureRemoveItem('user.slug'),
 			// Clear any other auth-related data
-			AsyncStorage.multiRemove(['authToken', 'userData', 'user._id', 'user.slug', 'lastActiveTime'])
+			AsyncStorage.multiRemove(['authToken', 'userData', 'user._id', 'user.slug', 'lastActiveTime']),
+			secureRemoveItem('authToken'),
+			secureRemoveItem('userData'),
+			secureRemoveItem('user._id'),
+			secureRemoveItem('user.slug')
 		])
 
 		return true
 	} catch (error) {
 		console.error('Error during sign out:', error)
+		return false
+	}
+}
+
+export const switchUser = async (): Promise<boolean> => {
+	try {
+		if (sessionTimer) {
+			clearTimeout(sessionTimer)
+			sessionTimer = null
+		}
+
+		if (Platform.OS === 'web') {
+			// On web, SecureStorage is actually AsyncStorage.
+			// We must be surgical to keep the saved_authentications.
+			const allKeys = await AsyncStorage.getAllKeys()
+			const keysToRemove = allKeys.filter((key) => key !== SAVED_AUTHS_KEY)
+			await AsyncStorage.multiRemove(keysToRemove)
+		} else {
+			// On mobile, they are separate. We can clear AsyncStorage completely.
+			await AsyncStorage.clear()
+			// And remove specific session keys from SecureStore
+			await Promise.all([removeToken(), secureRemoveItem('refreshToken'), secureRemoveItem('userData'), secureRemoveItem('user._id'), secureRemoveItem('user.slug')])
+		}
+
+		return true
+	} catch (error) {
+		console.error('Error during switch user:', error)
 		return false
 	}
 }

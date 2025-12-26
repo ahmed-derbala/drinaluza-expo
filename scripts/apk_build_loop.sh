@@ -14,8 +14,8 @@ while true; do
         exit 1
     fi
 
-    echo "Build complete. Waiting 3 hours..."
+    echo "Build complete. Waiting 1 hour..."
 
-    # 10800 seconds = 3 hours
-    sleep 10800
+    # 3600 seconds = 1 hour
+    sleep 3600
 done

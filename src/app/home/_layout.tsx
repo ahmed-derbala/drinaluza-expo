@@ -8,6 +8,8 @@ import { StatusBar } from 'expo-status-bar'
 import { useTheme } from '../../contexts/ThemeContext'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useNotification } from '../../contexts/NotificationContext'
+import { APP_VERSION } from '../../config'
+import { secureGetItem } from '../../core/auth/auth.api'
 
 export default function HomeLayout() {
 	const { colors, isDark } = useTheme()
@@ -17,20 +19,20 @@ export default function HomeLayout() {
 
 	// Load auth token
 	useEffect(() => {
-		const checkAuth = async () => {
-			const token = await AsyncStorage.getItem('authToken')
+		const checkAuthStatus = async () => {
+			const token = await secureGetItem('authToken')
 			if (!token) {
 				// router.replace('/auth')
 			}
 		}
-		checkAuth()
+		checkAuthStatus()
 	}, [])
 
 	// Load user data
 	useEffect(() => {
 		const loadData = async () => {
 			try {
-				const storedUserData = await AsyncStorage.getItem('userData')
+				const storedUserData = await secureGetItem('userData')
 				if (storedUserData) {
 					const userData = JSON.parse(storedUserData)
 					setUserRole(userData.role || null)

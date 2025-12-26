@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { secureGetItem, secureRemoveItem } from '../auth/auth.api'
 import { API_TIMEOUT, API_URL, API_PREFIX } from '../../config'
 import { logError } from '../../utils/errorHandler'
 
@@ -14,7 +15,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 	})
 
 	client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
-		const token = await AsyncStorage.getItem('authToken')
+		const token = await secureGetItem('authToken')
 		if (token && config.headers) {
 			// Set both Authorization and token headers for compatibility
 			config.headers.Authorization = `Bearer ${token}`
@@ -54,7 +55,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 
 				if (!token || isAuthRequest || isOnAuthPage) {
 					// If no token, just clear and reject without showing modal
-					if (!token) await AsyncStorage.removeItem('authToken')
+					if (!token) await secureRemoveItem('authToken')
 					return Promise.reject(error)
 				}
 
@@ -66,7 +67,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 					authStateManager.showAuthModal('Your session has expired. Please sign in again to continue.')
 
 					// Clear auth token from storage
-					await AsyncStorage.removeItem('authToken')
+					await secureRemoveItem('authToken')
 				} catch (err) {
 					console.error('Error handling 401:', err)
 				}

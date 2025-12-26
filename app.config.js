@@ -1,0 +1,96 @@
+import 'dotenv/config';
+import packagejson from './package.json' with { type: 'json' }
+
+export default {
+    expo: {
+        name: packagejson.name,
+        slug: packagejson.name.toLowerCase(),
+        version: packagejson.version,
+        platforms: [
+            "ios",
+            "android",
+            "web"
+        ],
+        orientation: "default",
+        icon: "./assets/images/icon.png",
+        scheme: "drinaluza",
+        userInterfaceStyle: "automatic",
+        newArchEnabled: true,
+        splash: {
+            image: "./assets/images/splash-icon.png",
+            resizeMode: "contain",
+            backgroundColor: "#1C2526"
+        },
+        ios: {
+            supportsTablet: true,
+            infoPlist: {
+                NSAppTransportSecurity: {
+                    NSAllowsArbitraryLoads: true
+                }
+            },
+            bundleIdentifier: "com.ahmedderbala.drinaluza"
+        },
+        android: {
+            adaptiveIcon: {
+                foregroundImage: "./assets/images/adaptive-icon.png",
+                backgroundColor: "#1C2526"
+            },
+            edgeToEdgeEnabled: true,
+            package: "com.ahmedderbala.drinaluza",
+            versionCode: 1
+        },
+        web: {
+            bundler: "metro",
+            output: "static",
+            favicon: "./assets/images/favicon.png"
+        },
+        plugins: [
+            "expo-router",
+            [
+                "expo-build-properties",
+                {
+                    android: {
+                        usesCleartextTraffic: true,
+                        ndk: {
+                            abiFilters: [
+                                "arm64-v8a"
+                            ]
+                        },
+                        packagingOptions: {
+                            pickFirst: [
+                                "**/libhermes.so",
+                                "**/libc++_shared.so"
+                            ]
+                        }
+                    }
+                }
+            ],
+            "@react-native-community/datetimepicker"
+        ],
+        experiments: {
+            typedRoutes: true
+        },
+        extra: {
+            routerRoot: "src",
+            router: {},
+            eas: {
+                projectId: "cf16d9ec-c8c7-457f-b2a2-6d5eacf535d1"
+            },
+            // Automatically inject all EXPO_PUBLIC_* environment variables
+            ...Object.keys(process.env)
+                .filter(key => key.startsWith('EXPO_PUBLIC_'))
+                .reduce((acc, key) => {
+                    acc[key] = process.env[key];
+                    return acc;
+                }, {})
+        },
+        jsEngine: "hermes",
+        runtimeVersion: {
+            policy: "appVersion"
+        },
+        updates: {
+            url: "https://u.expo.dev/cf16d9ec-c8c7-457f-b2a2-6d5eacf535d1"
+        },
+        buildCacheProvider: "eas"
+    }
+};

@@ -1,12 +1,16 @@
 import React, { useState } from 'react'
 import { View, TextInput, Button, Text, TouchableOpacity, Alert, useWindowDimensions } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
-import { signIn, signUp } from '../../core/auth/auth.api'
+import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth, secureGetItem } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
 import { createThemedStyles, commonThemedStyles } from '../../core/theme/createThemedStyles'
+import { useFocusEffect } from 'expo-router'
+import { useCallback } from 'react'
+import { showPopup, showAlert } from '../../utils/popup'
 
 export default function AuthScreen() {
 	const { colors, isDark } = useTheme()
@@ -17,6 +21,8 @@ export default function AuthScreen() {
 	const [password, setPassword] = useState('123')
 	const [statusState, setStatusState] = useState<'initial' | '404' | '409'>('initial')
 	const [errorMessage, setErrorMessage] = useState('')
+	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
+	const [isLoading, setIsLoading] = useState(false)
 	const router = useRouter()
 
 	const styles = createThemedStyles((colors) => ({
@@ -52,8 +58,74 @@ export default function AuthScreen() {
 		buttonContainer: {
 			flexDirection: 'row',
 			justifyContent: 'space-between'
+		},
+		savedAuthsContainer: {
+			width: '100%',
+			marginBottom: 24
+		},
+		savedAuthItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			backgroundColor: colors.card,
+			padding: 12,
+			borderRadius: 12,
+			marginBottom: 8,
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		savedAuthInfo: {
+			flex: 1
+		},
+		savedAuthSlug: {
+			fontSize: 16,
+			fontWeight: '600',
+			color: colors.text
+		},
+		savedAuthDate: {
+			fontSize: 12,
+			color: colors.textTertiary,
+			marginTop: 2
+		},
+		deleteIcon: {
+			padding: 8
 		}
 	}))(colors)
+
+	const loadSavedAuths = async () => {
+		const auths = await getSavedAuthentications()
+		setSavedAuths(auths)
+	}
+
+	useFocusEffect(
+		useCallback(() => {
+			loadSavedAuths()
+		}, [])
+	)
+
+	const handleQuickSignIn = async (auth: SavedAuth) => {
+		try {
+			setIsLoading(true)
+			const success = await signInWithToken(auth.token)
+			if (success) {
+				router.replace('/home' as any)
+			} else {
+				setUsername(auth.slug)
+				setPassword('')
+				showAlert('Error', 'Session expired. Please sign in again with your password.')
+				await deleteSavedAuthentication(auth.slug)
+				loadSavedAuths()
+			}
+		} catch (error) {
+			showAlert('Error', 'Quick sign in failed.')
+		} finally {
+			setIsLoading(false)
+		}
+	}
+
+	const handleDeleteSavedAuth = async (slug: string) => {
+		await deleteSavedAuthentication(slug)
+		loadSavedAuths()
+	}
 
 	const handleSignIn = async () => {
 		try {
@@ -62,7 +134,7 @@ export default function AuthScreen() {
 			console.log('Sign in response:', response)
 
 			// Verify token was stored
-			const token = await AsyncStorage.getItem('authToken')
+			const token = await secureGetItem('authToken')
 			console.log('Token stored after sign in:', token ? 'Yes' : 'No')
 
 			if (token) {
@@ -70,7 +142,7 @@ export default function AuthScreen() {
 				router.replace('/home' as any)
 			} else {
 				console.error('No token received after sign in')
-				Alert.alert('Error', 'Sign in failed. Please try again.')
+				showAlert('Error', 'Sign in failed. Please try again.')
 			}
 		} catch (error: any) {
 			console.log('Sign in catch block reached')
@@ -92,10 +164,10 @@ export default function AuthScreen() {
 				setErrorMessage('Try again')
 			} else if (status === 401 || status === '401') {
 				// Also handle 401 as it's common for unauthorized/wrong password
-				Alert.alert('Unauthorized', message || 'Invalid credentials. Please check your username and password.')
+				showAlert('Unauthorized', message || 'Invalid credentials. Please check your username and password.')
 			} else {
 				console.log('Showing generic error alert')
-				Alert.alert('Error', message || 'Sign in failed. Please check your credentials and try again.')
+				showAlert('Error', message || 'Sign in failed. Please check your credentials and try again.')
 			}
 		}
 	}
@@ -121,6 +193,24 @@ export default function AuthScreen() {
 				<View style={styles.container}>
 					<View style={styles.innerContainer}>
 						<Text style={styles.title}>Drinaluza</Text>
+
+						{savedAuths.length > 0 && (
+							<View style={styles.savedAuthsContainer}>
+								<Text style={[styles.title, { fontSize: 18, marginTop: 10, marginBottom: 16 }]}>Saved Accounts</Text>
+								{savedAuths.map((auth) => (
+									<TouchableOpacity key={auth.slug} style={styles.savedAuthItem} onPress={() => handleQuickSignIn(auth)}>
+										<View style={styles.savedAuthInfo}>
+											<Text style={styles.savedAuthSlug}>{auth.slug}</Text>
+											<Text style={styles.savedAuthDate}>Last sign in: {new Date(auth.lastSignIn).toLocaleDateString()}</Text>
+										</View>
+										<TouchableOpacity style={styles.deleteIcon} onPress={() => handleDeleteSavedAuth(auth.slug)}>
+											<Ionicons name="trash-outline" size={20} color={colors.error} />
+										</TouchableOpacity>
+									</TouchableOpacity>
+								))}
+							</View>
+						)}
+
 						<TextInput
 							style={styles.input}
 							placeholder="Username"
@@ -163,6 +253,28 @@ export default function AuthScreen() {
 							) : (
 								<Button title="Go" onPress={handleGo} />
 							)}
+						</View>
+						<View style={{ marginTop: 30, alignItems: 'center' }}>
+							<TouchableOpacity
+								onPress={() => router.replace('/home/feed' as any)}
+								style={{
+									width: 50,
+									height: 50,
+									borderRadius: 25,
+									backgroundColor: colors.card,
+									justifyContent: 'center',
+									alignItems: 'center',
+									borderWidth: 1,
+									borderColor: colors.border,
+									shadowColor: '#000',
+									shadowOffset: { width: 0, height: 2 },
+									shadowOpacity: 0.1,
+									shadowRadius: 4,
+									elevation: 3
+								}}
+							>
+								<Ionicons name="home" size={24} color={colors.primary} />
+							</TouchableOpacity>
 						</View>
 					</View>
 				</View>

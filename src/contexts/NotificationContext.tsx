@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { secureGetItem } from '../core/auth/auth.api'
 import { getNotifications } from '../components/notifications/notifications.api'
 
 interface NotificationContextType {
@@ -16,7 +16,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	const refreshNotificationCount = useCallback(async () => {
 		try {
 			// Don't fetch if we don't have a token
-			const token = await AsyncStorage.getItem('authToken')
+			const token = await secureGetItem('authToken')
 			if (!token) return
 
 			const response = await getNotifications(1, 20)
