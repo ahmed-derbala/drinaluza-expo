@@ -11,9 +11,11 @@ import { createThemedStyles, commonThemedStyles } from '../../core/theme/createT
 import { useFocusEffect } from 'expo-router'
 import { useCallback } from 'react'
 import { showPopup, showAlert } from '../../utils/popup'
+import { useBackButton } from '../../hooks/useBackButton'
 
 export default function AuthScreen() {
 	const { colors, isDark } = useTheme()
+	useBackButton()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth

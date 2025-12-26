@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
+import { router } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { secureGetItem, secureRemoveItem } from '../auth/auth.api'
 import { API_TIMEOUT, API_URL, API_PREFIX } from '../../config'
@@ -37,12 +38,6 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 
 			// Handle 401 Unauthorized errors globally
 			if (error.response?.status === 401) {
-				const token = await AsyncStorage.getItem('authToken')
-
-				// Don't show modal if:
-				// 1. We don't have a token (never logged in or manually cleared)
-				// 2. We ARE the auth request itself
-				// 3. We are already on the auth page
 				const url = error.config?.url || ''
 				const isAuthRequest = url.includes('/auth/') || url.includes('signin') || url.includes('signup')
 
@@ -53,21 +48,14 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 					isOnAuthPage = path.includes('/auth') || path === '/' || path === '/#' || path === '#/'
 				}
 
-				if (!token || isAuthRequest || isOnAuthPage) {
-					// If no token, just clear and reject without showing modal
-					if (!token) await secureRemoveItem('authToken')
-					return Promise.reject(error)
-				}
-
 				try {
-					// Import the auth state manager dynamically to avoid circular dependencies
-					const { authStateManager } = await import('../../stores/authStore')
-
-					// Show the auth required modal
-					authStateManager.showAuthModal('Your session has expired. Please sign in again to continue.')
-
 					// Clear auth token from storage
 					await secureRemoveItem('authToken')
+
+					// Navigate to auth page if not already there
+					if (!isOnAuthPage && !isAuthRequest) {
+						router.replace('/auth' as any)
+					}
 				} catch (err) {
 					console.error('Error handling 401:', err)
 				}

@@ -10,39 +10,37 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useNotification } from '../../contexts/NotificationContext'
 import { APP_VERSION } from '../../config'
 import { secureGetItem } from '../../core/auth/auth.api'
+import { useBackButton } from '../../hooks/useBackButton'
 
 export default function HomeLayout() {
 	const { colors, isDark } = useTheme()
 	const router = useRouter()
+	useBackButton()
 	const [userRole, setUserRole] = useState<string | null>(null)
+	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 	const { notificationCount } = useNotification()
 
-	// Load auth token
+	// Load auth status and user data
 	useEffect(() => {
-		const checkAuthStatus = async () => {
-			const token = await secureGetItem('authToken')
-			if (!token) {
-				// router.replace('/auth')
-			}
-		}
-		checkAuthStatus()
-	}, [])
-
-	// Load user data
-	useEffect(() => {
-		const loadData = async () => {
+		const loadAuthData = async () => {
 			try {
+				const token = await secureGetItem('authToken')
+				setIsAuthenticated(!!token)
+
 				const storedUserData = await secureGetItem('userData')
 				if (storedUserData) {
 					const userData = JSON.parse(storedUserData)
 					setUserRole(userData.role || null)
+				} else {
+					setUserRole(null)
 				}
 			} catch (error) {
-				console.error('Failed to load user data:', error)
+				console.error('Failed to load auth data:', error)
+				setIsAuthenticated(false)
 				setUserRole(null)
 			}
 		}
-		loadData()
+		loadAuthData()
 	}, [])
 
 	return (
@@ -127,6 +125,7 @@ export default function HomeLayout() {
 						name="notifications"
 						options={{
 							title: 'Notifications',
+							href: isAuthenticated ? '/home/notifications' : null,
 							tabBarActiveTintColor: colors.primary,
 							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
 							tabBarBadgeStyle: { backgroundColor: colors.error, color: '#fff', fontSize: 10, minWidth: 16, height: 16, borderRadius: 8, lineHeight: 16 },

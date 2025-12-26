@@ -9,6 +9,7 @@ import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/or
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
 import { FeedItem } from '../feed/feed.interface'
+import { useBackButton } from '../../hooks/useBackButton'
 
 type FilterStatus = 'cart' | 'active' | 'completed' | 'cancelled'
 
@@ -29,6 +30,8 @@ const PurchasesScreen = () => {
 	const [basket, setBasket] = useState<BasketItem[]>([])
 	const [filter, setFilter] = useState<FilterStatus>('cart')
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
+
+	useBackButton(undefined, '/home/dashboard')
 
 	const { width } = useWindowDimensions()
 
@@ -619,7 +622,7 @@ const PurchasesScreen = () => {
 				title="Purchases"
 				subtitle={`${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
 				showBack={true}
-				onBackPress={() => router.back()}
+				onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))}
 				rightActions={
 					<TouchableOpacity onPress={onRefresh}>
 						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />

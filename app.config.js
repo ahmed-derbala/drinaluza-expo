@@ -4,7 +4,7 @@ import packagejson from './package.json' with { type: 'json' }
 export default {
     expo: {
         name: packagejson.name,
-        slug: packagejson.name.toLowerCase(),
+        slug: packagejson.name,
         version: packagejson.version,
         platforms: [
             "ios",
@@ -74,15 +74,9 @@ export default {
             routerRoot: "src",
             router: {},
             eas: {
-                projectId: "cf16d9ec-c8c7-457f-b2a2-6d5eacf535d1"
-            },
-            // Automatically inject all EXPO_PUBLIC_* environment variables
-            ...Object.keys(process.env)
-                .filter(key => key.startsWith('EXPO_PUBLIC_'))
-                .reduce((acc, key) => {
-                    acc[key] = process.env[key];
-                    return acc;
-                }, {})
+        projectId: "663c7ecc-f495-4630-9913-c923ef3f8bb2"
+      }
+
         },
         jsEngine: "hermes",
         runtimeVersion: {
