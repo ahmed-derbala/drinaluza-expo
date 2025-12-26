@@ -37,7 +37,7 @@
     "rmallexceptpackagelock":"rm -rf builds/* logs/* dist android ios .expo node_modules",
     "clean:only": "npm run rmallexceptpackagelock && rm -rf package-lock.json",
     "clean:prod": "npm run rmallexceptpackagelock && npm run i:prod",
-    "clean": "npm run clean:only && npm run i && npm run start:local",
+    "clean": "npm run clean:only && npm run i",
     "update": "npm run check-updates && npm run fix && npm run clean",
     "check-updates": "npm i -D npm-check-updates && ncu -u",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
