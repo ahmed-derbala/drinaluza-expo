@@ -100,15 +100,16 @@ export default function HomeLayout() {
 						options={{
 							title: 'Feed',
 							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }) => <MaterialIcons name="home" size={size} color={color} />
+							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="home" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen
 						name="dashboard"
 						options={{
 							title: 'Dashboard',
+							href: isAuthenticated ? '/home/dashboard' : null,
 							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }) => <MaterialIcons name="dashboard" size={size} color={color} />
+							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="dashboard" size={size} color={color} />
 						}}
 					/>
 
@@ -118,7 +119,7 @@ export default function HomeLayout() {
 							title: 'Business',
 							href: userRole === 'shop_owner' ? '/home/business' : null,
 							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }) => <MaterialIcons name="business-center" size={size} color={color} />
+							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="business-center" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen
@@ -129,7 +130,7 @@ export default function HomeLayout() {
 							tabBarActiveTintColor: colors.primary,
 							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
 							tabBarBadgeStyle: { backgroundColor: colors.error, color: '#fff', fontSize: 10, minWidth: 16, height: 16, borderRadius: 8, lineHeight: 16 },
-							tabBarIcon: ({ color, size }) => <Ionicons name="notifications" size={size} color={color} />
+							tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="notifications" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen
@@ -137,7 +138,7 @@ export default function HomeLayout() {
 						options={{
 							title: 'Profile',
 							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }) => <MaterialIcons name="person" size={size} color={color} />
+							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="person" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen

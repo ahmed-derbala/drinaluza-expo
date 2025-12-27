@@ -69,6 +69,7 @@ export default function BusinessLayout() {
 	}
 
 	// Show access denied if not a shop owner
+	console.log(userRole, 'userRole')
 	if (userRole !== 'shop_owner') {
 		return (
 			<View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>
