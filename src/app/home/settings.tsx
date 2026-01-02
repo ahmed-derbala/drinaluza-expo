@@ -1,14 +1,15 @@
-import React, { useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Linking, useWindowDimensions, Platform } from 'react-native'
+import React, { useState, useEffect } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Linking, useWindowDimensions } from 'react-native'
 import { useRouter } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '../../contexts/ThemeContext'
 import { Theme } from '../../components/settings/settings.interface'
-import { APP_VERSION } from '../../config'
+import { APP_VERSION, BACKEND_URL } from '../../config'
 import Toast from '../../components/common/Toast'
+import { getApiClient } from '../../core/api'
+import { log } from '../../core/log'
 
 export default function SettingsScreen() {
 	const { theme, colors, isDark, setTheme } = useTheme()
@@ -23,6 +24,36 @@ export default function SettingsScreen() {
 		message: '',
 		type: 'success'
 	})
+	const [serverInfo, setServerInfo] = useState<any>(null)
+
+	useEffect(() => {
+		if (!BACKEND_URL) return
+
+		fetch(BACKEND_URL)
+			.then(async (res) => {
+				const text = await res.text()
+				try {
+					const json = JSON.parse(text)
+					// Handle new response format: wrapped in 'data' property
+					setServerInfo(json.data || json)
+				} catch (e) {
+					log({
+						level: 'warn',
+						label: 'settings',
+						message: 'Failed to parse server info',
+						error: e,
+						data: {
+							responseText: text.substring(0, 200),
+							status: res.status,
+							url: res.url
+						}
+					})
+				}
+			})
+			.catch((err) => {
+				log({ level: 'warn', label: 'settings', message: 'Failed to fetch server info', error: err })
+			})
+	}, [])
 
 	const toggleTheme = () => {
 		const newTheme = isDark ? 'light' : 'dark'
@@ -146,9 +177,17 @@ export default function SettingsScreen() {
 				/>
 			</SettingSection>
 
+			{serverInfo && (
+				<SettingSection title="Server Info">
+					<SettingItem icon="server" title="Environment" value={serverInfo.NODE_ENV} type="value" onPress={() => {}} color={colors.textSecondary} />
+					<SettingItem icon="information-circle" title="App Name" value={serverInfo.app?.name} type="value" onPress={() => {}} color={colors.textSecondary} />
+					<SettingItem icon="git-network" title="Version" value={serverInfo.app?.version} type="value" onPress={() => {}} color={colors.textSecondary} />
+				</SettingSection>
+			)}
+
 			<View style={styles.footer}>
 				<Text style={styles.version}>Version {APP_VERSION}</Text>
-				<Text style={styles.copyright}>© 2025 Drinaluza</Text>
+				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 			</View>
 
 			<Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast((prev) => ({ ...prev, visible: false }))} />

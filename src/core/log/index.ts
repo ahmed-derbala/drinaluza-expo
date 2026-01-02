@@ -7,9 +7,14 @@ export interface LogEntry {
 	message: string
 	req?: any
 	data?: any
+	user?: {
+		_id: string
+		slug: string
+		role: string
+	}
 }
 
-export const log = ({ level = 'info', label, error, message, req, data }: LogEntry) => {
+export const log = ({ level = 'info', label, error, message, req, data, user }: LogEntry) => {
 	const timestamp = new Date().toISOString()
 	const logObject: any = {
 		timestamp,
@@ -18,6 +23,7 @@ export const log = ({ level = 'info', label, error, message, req, data }: LogEnt
 	}
 
 	if (label) logObject.label = label
+	if (user) logObject.user = user
 	if (error) {
 		logObject.error = {
 			message: error.message || error,

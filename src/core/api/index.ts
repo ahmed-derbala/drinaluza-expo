@@ -77,7 +77,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 // If EXPO_PUBLIC_BACKEND_URL is not set, this might fail or default to undefined which axios handles strictly?
 // Axios defaults to current origin if baseURL is undefined. That might be okay for web, but not for mobile.
 // For now, allow undefined, but user said "use EXPO_PUBLIC_BACKEND_URL".
-const apiClient = createApiClient(API_URL || `http://localhost:5001${API_PREFIX}`)
+const apiClient = createApiClient(API_URL || `http://192.168.1.11:5001${API_PREFIX}`)
 
 // Function to get the current API client
 export const getApiClient = (): AxiosInstance => apiClient
