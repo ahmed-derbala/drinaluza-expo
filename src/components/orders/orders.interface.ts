@@ -1,6 +1,8 @@
+import { LocalizedName } from '../shops/shops.interface'
+
 export interface Product {
 	_id: string
-	name: string
+	name: LocalizedName
 	price: {
 		value: {
 			tnd: number
@@ -43,7 +45,7 @@ export interface OrderItem {
 	_id: string
 	shop: {
 		_id: string
-		name: string
+		name: LocalizedName
 		slug?: string
 		owner?: {
 			_id: string

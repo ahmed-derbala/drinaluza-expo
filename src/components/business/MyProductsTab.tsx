@@ -57,8 +57,8 @@ export default function MyProductsTab() {
 
 	const renderProductItem = ({ item }: { item: ProductType }) => (
 		<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-			<Text style={[styles.cardTitle, { color: colors.text }]}>{item.name}</Text>
-			<Text style={[styles.cardText, { color: colors.textSecondary }]}>Shop: {item.shop?.name || 'Unknown Shop'}</Text>
+			<Text style={[styles.cardTitle, { color: colors.text }]}>{item.name?.en}</Text>
+			<Text style={[styles.cardText, { color: colors.textSecondary }]}>Shop: {item.shop?.name?.en || 'Unknown Shop'}</Text>
 			<Text style={[styles.cardText, { color: colors.textSecondary }]}>Price: {item.price?.value?.tnd ? `${item.price.value.tnd} TND` : 'Price not set'}</Text>
 			<Text style={[styles.cardText, { color: colors.textSecondary }]}>
 				Unit: {item.price?.unit?.name || 'N/A'} (Min: {item.price?.unit?.min || 0})

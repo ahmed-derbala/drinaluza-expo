@@ -1,3 +1,9 @@
+export type LocalizedName = {
+	en: string
+	tn_latn?: string
+	tn_arab?: string
+}
+
 export type GeoPoint = {
 	type: 'Point'
 	coordinates: [number, number]
@@ -12,7 +18,7 @@ export type Owner = {
 
 export type Shop = {
 	_id: string
-	name: string
+	name: LocalizedName
 	slug: string
 	owner: Owner
 	location?: GeoPoint
@@ -63,7 +69,7 @@ export type ShopProductsResponse = {
 export interface Product {
 	_id: string
 	shop: Shop
-	name: string
+	name: LocalizedName
 	price: {
 		value: {
 			tnd: number
@@ -120,16 +126,16 @@ export interface ShopsResponse {
 }
 
 export type CreateShopRequest = {
-	name: string
-	address: {
+	name: LocalizedName
+	address?: {
 		street: string
 		city: string
 		state: string
 		postalCode: string
 		country: string
 	}
-	location: {
-		coordinates: [number, number]
+	location?: {
+		coordinates?: [number, number]
 	}
 	deliveryRadiusKm: number
 }

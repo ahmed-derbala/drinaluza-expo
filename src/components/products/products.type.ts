@@ -1,3 +1,5 @@
+import { LocalizedName } from '../shops/shops.interface'
+
 export type ProductType = {
 	_id: string
 	owner: {
@@ -8,11 +10,11 @@ export type ProductType = {
 	}
 	shop: {
 		_id: string
-		name: string
+		name: LocalizedName
 		createdAt: string
 		updatedAt: string
 	}
-	name: string
+	name: LocalizedName
 	photos?: Array<{
 		url: string
 		alt?: string

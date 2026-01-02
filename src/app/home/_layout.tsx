@@ -9,7 +9,7 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useNotification } from '../../contexts/NotificationContext'
 import { APP_VERSION } from '../../config'
-import { secureGetItem } from '../../core/auth/auth.api'
+import { secureGetItem } from '../../core/auth/storage'
 import { useBackButton } from '../../hooks/useBackButton'
 
 export default function HomeLayout() {

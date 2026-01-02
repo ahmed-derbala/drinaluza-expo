@@ -55,9 +55,13 @@ interface ShopItemProps {
 interface CreateShopFormProps {
 	visible: boolean
 	loading: boolean
-	shopName: string
+	shopNameEn: string
+	shopNameTnLatn: string
+	shopNameTnArab: string
 	deliveryRadius: string
-	onShopNameChange: (text: string) => void
+	onShopNameEnChange: (text: string) => void
+	onShopNameTnLatnChange: (text: string) => void
+	onShopNameTnArabChange: (text: string) => void
 	onDeliveryRadiusChange: (text: string) => void
 	onSubmit: () => void
 	onDismiss: () => void
@@ -69,7 +73,9 @@ interface ShopState {
 	loading: boolean
 	refreshing: boolean
 	modalVisible: boolean
-	shopName: string
+	shopNameEn: string
+	shopNameTnLatn: string
+	shopNameTnArab: string
 	deliveryRadius: string
 	creating: boolean
 	navigatingShopId: string | null
@@ -84,7 +90,7 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 	<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating}>
 		<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
 			<View style={styles.shopHeader}>
-				<Text style={[styles.shopName, { color: theme.text }]}>{shop.name || 'Unnamed Shop'}</Text>
+				<Text style={[styles.shopName, { color: theme.text }]}>{shop.name?.en || 'Unnamed Shop'}</Text>
 				{isNavigating && <ActivityIndicator size="small" color={theme.primary} style={styles.loadingIndicator} />}
 			</View>
 			{shop.owner && (
@@ -104,153 +110,246 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 	</TouchableOpacity>
 ))
 
-const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(({ visible, loading, shopName, deliveryRadius, onShopNameChange, onDeliveryRadiusChange, onSubmit, onDismiss, theme }) => {
-	const deliveryRadiusInputRef = useRef<RNTextInput>(null)
-	const isFormValid = shopName.trim().length >= MIN_SHOP_NAME_LENGTH && shopName.trim().length <= MAX_SHOP_NAME_LENGTH
-	const deliveryRadiusNum = parseFloat(deliveryRadius) || 0
-	const isDeliveryValid = deliveryRadiusNum > 0 && deliveryRadiusNum <= 100
+const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
+	({
+		visible,
+		loading,
+		shopNameEn,
+		shopNameTnLatn,
+		shopNameTnArab,
+		deliveryRadius,
+		onShopNameEnChange,
+		onShopNameTnLatnChange,
+		onShopNameTnArabChange,
+		onDeliveryRadiusChange,
+		onSubmit,
+		onDismiss,
+		theme
+	}) => {
+		const tnLatnInputRef = useRef<RNTextInput>(null)
+		const tnArabInputRef = useRef<RNTextInput>(null)
+		const deliveryRadiusInputRef = useRef<RNTextInput>(null)
 
-	return (
-		<Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
-				<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onDismiss} />
-				<View style={[styles.modalContent, { backgroundColor: theme.card }]}>
-					{/* Header */}
-					<View style={styles.modalHeader}>
-						<View style={[styles.modalIconContainer, { backgroundColor: theme.primary + '15' }]}>
-							<Text style={styles.modalIcon}>🏪</Text>
-						</View>
-						<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Shop</Text>
-						<Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Set up your shop to start selling</Text>
-					</View>
+		const isFormValid = shopNameEn.trim().length >= MIN_SHOP_NAME_LENGTH && shopNameEn.trim().length <= MAX_SHOP_NAME_LENGTH
+		const deliveryRadiusNum = parseFloat(deliveryRadius) || 0
+		const isDeliveryValid = deliveryRadiusNum > 0 && deliveryRadiusNum <= 100
 
-					<ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
-						{/* Shop Name Input */}
-						<View style={styles.inputContainer}>
-							<View style={styles.inputLabelRow}>
-								<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name</Text>
-								<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+		return (
+			<Modal visible={visible} transparent animationType="slide" onRequestClose={onDismiss}>
+				<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+					<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={onDismiss} />
+					<View style={[styles.modalContent, { backgroundColor: theme.card }]}>
+						{/* Header */}
+						<View style={styles.modalHeader}>
+							<View style={[styles.modalIconContainer, { backgroundColor: theme.primary + '15' }]}>
+								<Text style={styles.modalIcon}>🏪</Text>
 							</View>
-							<View
+							<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Shop</Text>
+							<Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Set up your shop in multiple languages</Text>
+						</View>
+
+						<ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+							{/* English Name Input (Required) */}
+							<View style={styles.inputContainer}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name (English)</Text>
+									<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+								</View>
+								<View
+									style={[
+										styles.inputWrapper,
+										{
+											borderColor: shopNameEn.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.border,
+											backgroundColor: theme.background
+										}
+									]}
+								>
+									<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
+										<Text style={{ fontSize: 18 }}>🇺🇸</Text>
+									</View>
+									<TextInput
+										style={[styles.textInput, { color: theme.text, flex: 1 }]}
+										value={shopNameEn}
+										onChangeText={onShopNameEnChange}
+										placeholder="e.g., Fresh Seafood Market"
+										placeholderTextColor={theme.textSecondary}
+										maxLength={MAX_SHOP_NAME_LENGTH}
+										autoFocus
+										returnKeyType="next"
+										onSubmitEditing={() => tnLatnInputRef.current?.focus()}
+									/>
+								</View>
+								<View style={styles.inputFooter}>
+									<Text style={[styles.inputHint, { color: shopNameEn.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
+										{shopNameEn.length < MIN_SHOP_NAME_LENGTH && shopNameEn.length > 0
+											? `At least ${MIN_SHOP_NAME_LENGTH} characters required`
+											: shopNameEn.length > 0 && isFormValid
+												? '✓ Looks good!'
+												: 'English name is required'}
+									</Text>
+									<Text style={[styles.characterCount, { color: theme.textSecondary }]}>
+										{shopNameEn.length}/{MAX_SHOP_NAME_LENGTH}
+									</Text>
+								</View>
+							</View>
+
+							{/* Tunisian Latin Name Input (Optional) */}
+							<View style={styles.inputContainer}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name (Tunisian - Latin)</Text>
+									<Text style={[styles.optional, { color: theme.textSecondary }]}>Optional</Text>
+								</View>
+								<View
+									style={[
+										styles.inputWrapper,
+										{
+											borderColor: theme.border,
+											backgroundColor: theme.background
+										}
+									]}
+								>
+									<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
+										<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+											<Text style={{ fontSize: 14 }}>🇹🇳</Text>
+											<Text style={{ fontSize: 12, marginLeft: 2, fontWeight: '600' }}>A</Text>
+										</View>
+									</View>
+									<TextInput
+										ref={tnLatnInputRef}
+										style={[styles.textInput, { color: theme.text, flex: 1 }]}
+										value={shopNameTnLatn}
+										onChangeText={onShopNameTnLatnChange}
+										placeholder="e.g., Souk el 7out"
+										placeholderTextColor={theme.textSecondary}
+										maxLength={MAX_SHOP_NAME_LENGTH}
+										returnKeyType="next"
+										onSubmitEditing={() => tnArabInputRef.current?.focus()}
+									/>
+								</View>
+								<Text style={[styles.inputHint, { color: theme.textSecondary }]}>Tunisian name in Latin letters</Text>
+							</View>
+
+							{/* Tunisian Arabic Name Input (Optional) */}
+							<View style={styles.inputContainer}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name (Tunisian - Arabic)</Text>
+									<Text style={[styles.optional, { color: theme.textSecondary }]}>Optional</Text>
+								</View>
+								<View
+									style={[
+										styles.inputWrapper,
+										{
+											borderColor: theme.border,
+											backgroundColor: theme.background
+										}
+									]}
+								>
+									<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
+										<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+											<Text style={{ fontSize: 14 }}>🇹🇳</Text>
+											<Text style={{ fontSize: 12, marginLeft: 2, fontWeight: '600' }}>ع</Text>
+										</View>
+									</View>
+									<TextInput
+										ref={tnArabInputRef}
+										style={[styles.textInput, { color: theme.text, flex: 1, textAlign: 'right' }]}
+										value={shopNameTnArab}
+										onChangeText={onShopNameTnArabChange}
+										placeholder="مثال: سوق الحوت"
+										placeholderTextColor={theme.textSecondary}
+										maxLength={MAX_SHOP_NAME_LENGTH}
+										returnKeyType="next"
+										onSubmitEditing={() => deliveryRadiusInputRef.current?.focus()}
+									/>
+								</View>
+								<Text style={[styles.inputHint, { color: theme.textSecondary }]}>Tunisian name in Arabic letters</Text>
+							</View>
+
+							{/* Delivery Radius Input */}
+							<View style={styles.inputContainer}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Delivery Radius</Text>
+									<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+								</View>
+								<View
+									style={[
+										styles.inputWrapper,
+										{
+											borderColor: deliveryRadius.length > 0 ? (isDeliveryValid ? '#10B981' : '#EF4444') : theme.border,
+											backgroundColor: theme.background
+										}
+									]}
+								>
+									<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
+										<Text style={{ fontSize: 18 }}>📍</Text>
+									</View>
+									<TextInput
+										ref={deliveryRadiusInputRef}
+										style={[styles.textInput, { color: theme.text, flex: 1 }]}
+										value={deliveryRadius}
+										onChangeText={onDeliveryRadiusChange}
+										placeholder="5"
+										placeholderTextColor={theme.textSecondary}
+										keyboardType="decimal-pad"
+										returnKeyType="done"
+										onSubmitEditing={isFormValid && isDeliveryValid ? onSubmit : undefined}
+									/>
+									<Text style={[styles.unitLabel, { color: theme.textSecondary }]}>km</Text>
+								</View>
+								<Text style={[styles.inputHint, { color: deliveryRadius.length > 0 ? (isDeliveryValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
+									{deliveryRadius.length > 0 && !isDeliveryValid
+										? 'Please enter a valid radius (1-100 km)'
+										: deliveryRadius.length > 0 && isDeliveryValid
+											? `✓ Delivery area: ~${(Math.PI * Math.pow(deliveryRadiusNum, 2)).toFixed(1)} km²`
+											: 'How far will you deliver? (in kilometers)'}
+								</Text>
+							</View>
+
+							{/* Info Card */}
+							<View style={[styles.infoCard, { backgroundColor: theme.primary + '08', borderColor: theme.primary + '20' }]}>
+								<Text style={[styles.infoIcon, { color: theme.primary }]}>💡</Text>
+								<View style={{ flex: 1 }}>
+									<Text style={[styles.infoTitle, { color: theme.text }]}>Multi-language Support</Text>
+									<Text style={[styles.infoText, { color: theme.textSecondary }]}>
+										Providing names in multiple languages helps customers find your shop more easily. You can update these later from shop settings.
+									</Text>
+								</View>
+							</View>
+						</ScrollView>
+
+						{/* Action Buttons */}
+						<View style={[styles.modalActions, { borderTopColor: theme.border }]}>
+							<TouchableOpacity style={[styles.actionButton, styles.cancelButton, { borderColor: theme.border }]} onPress={onDismiss} disabled={loading}>
+								<Text style={[styles.actionButtonText, { color: theme.text }]}>Cancel</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
 								style={[
-									styles.inputWrapper,
+									styles.actionButton,
+									styles.createButton,
 									{
-										borderColor: shopName.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.border,
-										backgroundColor: theme.background
+										backgroundColor: isFormValid && isDeliveryValid ? theme.primary : theme.border,
+										opacity: isFormValid && isDeliveryValid ? 1 : 0.5
 									}
 								]}
+								onPress={onSubmit}
+								disabled={!isFormValid || !isDeliveryValid || loading}
 							>
-								<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
-									<Text style={{ fontSize: 18 }}>🏪</Text>
-								</View>
-								<TextInput
-									style={[styles.textInput, { color: theme.text, flex: 1 }]}
-									value={shopName}
-									onChangeText={onShopNameChange}
-									placeholder="e.g., Fresh Seafood Market"
-									placeholderTextColor={theme.textSecondary}
-									maxLength={MAX_SHOP_NAME_LENGTH}
-									autoFocus
-									returnKeyType="next"
-									onSubmitEditing={() => deliveryRadiusInputRef.current?.focus()}
-								/>
-							</View>
-							<View style={styles.inputFooter}>
-								<Text style={[styles.inputHint, { color: shopName.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
-									{shopName.length < MIN_SHOP_NAME_LENGTH && shopName.length > 0
-										? `At least ${MIN_SHOP_NAME_LENGTH} characters required`
-										: shopName.length > 0 && isFormValid
-											? '✓ Looks good!'
-											: 'Choose a unique name for your shop'}
-								</Text>
-								<Text style={[styles.characterCount, { color: theme.textSecondary }]}>
-									{shopName.length}/{MAX_SHOP_NAME_LENGTH}
-								</Text>
-							</View>
+								{loading ? (
+									<ActivityIndicator color="#fff" size="small" />
+								) : (
+									<>
+										<Text style={styles.createButtonText}>Create Shop</Text>
+										<Text style={{ fontSize: 16 }}>→</Text>
+									</>
+								)}
+							</TouchableOpacity>
 						</View>
-
-						{/* Delivery Radius Input */}
-						<View style={styles.inputContainer}>
-							<View style={styles.inputLabelRow}>
-								<Text style={[styles.inputLabel, { color: theme.text }]}>Delivery Radius</Text>
-								<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
-							</View>
-							<View
-								style={[
-									styles.inputWrapper,
-									{
-										borderColor: deliveryRadius.length > 0 ? (isDeliveryValid ? '#10B981' : '#EF4444') : theme.border,
-										backgroundColor: theme.background
-									}
-								]}
-							>
-								<View style={[styles.inputIcon, { backgroundColor: theme.primary + '10' }]}>
-									<Text style={{ fontSize: 18 }}>📍</Text>
-								</View>
-								<TextInput
-									ref={deliveryRadiusInputRef}
-									style={[styles.textInput, { color: theme.text, flex: 1 }]}
-									value={deliveryRadius}
-									onChangeText={onDeliveryRadiusChange}
-									placeholder="5"
-									placeholderTextColor={theme.textSecondary}
-									keyboardType="decimal-pad"
-									returnKeyType="done"
-									onSubmitEditing={isFormValid && isDeliveryValid ? onSubmit : undefined}
-								/>
-								<Text style={[styles.unitLabel, { color: theme.textSecondary }]}>km</Text>
-							</View>
-							<Text style={[styles.inputHint, { color: deliveryRadius.length > 0 ? (isDeliveryValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
-								{deliveryRadius.length > 0 && !isDeliveryValid
-									? 'Please enter a valid radius (1-100 km)'
-									: deliveryRadius.length > 0 && isDeliveryValid
-										? `✓ Delivery area: ~${(Math.PI * Math.pow(deliveryRadiusNum, 2)).toFixed(1)} km²`
-										: 'How far will you deliver? (in kilometers)'}
-							</Text>
-						</View>
-
-						{/* Info Card */}
-						<View style={[styles.infoCard, { backgroundColor: theme.primary + '08', borderColor: theme.primary + '20' }]}>
-							<Text style={[styles.infoIcon, { color: theme.primary }]}>💡</Text>
-							<View style={{ flex: 1 }}>
-								<Text style={[styles.infoTitle, { color: theme.text }]}>Quick Tip</Text>
-								<Text style={[styles.infoText, { color: theme.textSecondary }]}>You can always update your shop details later from the shop settings.</Text>
-							</View>
-						</View>
-					</ScrollView>
-
-					{/* Action Buttons */}
-					<View style={[styles.modalActions, { borderTopColor: theme.border }]}>
-						<TouchableOpacity style={[styles.actionButton, styles.cancelButton, { borderColor: theme.border }]} onPress={onDismiss} disabled={loading}>
-							<Text style={[styles.actionButtonText, { color: theme.text }]}>Cancel</Text>
-						</TouchableOpacity>
-						<TouchableOpacity
-							style={[
-								styles.actionButton,
-								styles.createButton,
-								{
-									backgroundColor: isFormValid && isDeliveryValid ? theme.primary : theme.border,
-									opacity: isFormValid && isDeliveryValid ? 1 : 0.5
-								}
-							]}
-							onPress={onSubmit}
-							disabled={!isFormValid || !isDeliveryValid || loading}
-						>
-							{loading ? (
-								<ActivityIndicator color="#fff" size="small" />
-							) : (
-								<>
-									<Text style={styles.createButtonText}>Create Shop</Text>
-									<Text style={{ fontSize: 16 }}>→</Text>
-								</>
-							)}
-						</TouchableOpacity>
 					</View>
-				</View>
-			</KeyboardAvoidingView>
-		</Modal>
-	)
-})
+				</KeyboardAvoidingView>
+			</Modal>
+		)
+	}
+)
 
 const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 	const router = useRouter()
@@ -260,14 +359,16 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		loading: true,
 		refreshing: false,
 		modalVisible: false,
-		shopName: '',
+		shopNameEn: '',
+		shopNameTnLatn: '',
+		shopNameTnArab: '',
 		deliveryRadius: '5',
 		creating: false,
 		navigatingShopId: null,
 		error: null
 	})
 
-	const { shops, loading, refreshing, modalVisible, shopName, deliveryRadius, creating, navigatingShopId, error } = state
+	const { shops, loading, refreshing, modalVisible, shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, creating, navigatingShopId, error } = state
 
 	const updateState = useCallback((updates: Partial<ShopState>) => {
 		setState((prev) => ({ ...prev, ...updates }))
@@ -281,7 +382,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				// Access the shops array from the nested data property
 				const shops = response?.data?.docs || []
 				updateState({
-					shops: shops.sort((a: Shop, b: Shop) => a.name.localeCompare(b.name)),
+					shops: shops.sort((a: Shop, b: Shop) => (a.name?.en || '').localeCompare(b.name?.en || '')),
 					loading: false,
 					refreshing: false,
 					error: null
@@ -312,7 +413,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 	}, [debouncedLoadShops])
 
 	const handleCreateShop = useCallback(async () => {
-		if (shopName.trim().length < MIN_SHOP_NAME_LENGTH || shopName.trim().length > MAX_SHOP_NAME_LENGTH) {
+		if (shopNameEn.trim().length < MIN_SHOP_NAME_LENGTH || shopNameEn.trim().length > MAX_SHOP_NAME_LENGTH) {
 			return
 		}
 
@@ -320,25 +421,42 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			updateState({ creating: true, error: null })
 
 			const newShop: CreateShopRequest = {
-				name: shopName.trim(),
+				name: {
+					en: shopNameEn.trim(),
+					...(shopNameTnLatn.trim() && { tn_latn: shopNameTnLatn.trim() }),
+					...(shopNameTnArab.trim() && { tn_arab: shopNameTnArab.trim() })
+				},
 				address: {
-					street: 'To be updated',
-					city: 'To be updated',
-					state: 'To be updated',
-					postalCode: '0000',
+					street: '',
+					city: '',
+					state: '',
+					postalCode: '',
 					country: 'Tunisia'
 				},
 				location: {
-					coordinates: [10.1815, 36.8065] // Default to Tunisia coordinates
+					coordinates: undefined
 				},
 				deliveryRadiusKm: parseFloat(deliveryRadius) || 5
 			}
+
+			console.log('=== CREATE SHOP DEBUG ===')
+			console.log('shopNameEn:', shopNameEn)
+			console.log('shopNameTnLatn:', shopNameTnLatn)
+			console.log('shopNameTnArab:', shopNameTnArab)
+			console.log('newShop object:', newShop)
+			console.log('newShop.name:', newShop.name)
+			console.log('newShop.name type:', typeof newShop.name)
+			console.log('newShop.name.en:', newShop.name.en)
+			console.log('newShop stringified:', JSON.stringify(newShop, null, 2))
+			console.log('========================')
 
 			await createShop(newShop)
 			await loadShops()
 			updateState({
 				modalVisible: false,
-				shopName: '',
+				shopNameEn: '',
+				shopNameTnLatn: '',
+				shopNameTnArab: '',
 				deliveryRadius: '5',
 				creating: false
 			})
@@ -351,7 +469,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			})
 			Alert.alert('Error', 'Failed to create shop. Please try again.')
 		}
-	}, [shopName, deliveryRadius, updateState, loadShops])
+	}, [shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, updateState, loadShops])
 
 	const handleShopPress = useCallback(
 		(shop: Shop) => {
@@ -387,7 +505,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			if (a.isActive !== b.isActive) {
 				return a.isActive ? -1 : 1
 			}
-			return a.name.localeCompare(b.name)
+			return (a.name?.en || '').localeCompare(b.name?.en || '')
 		})
 	}, [shops])
 
@@ -434,15 +552,21 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			<CreateShopForm
 				visible={modalVisible}
 				loading={creating}
-				shopName={shopName}
+				shopNameEn={shopNameEn}
+				shopNameTnLatn={shopNameTnLatn}
+				shopNameTnArab={shopNameTnArab}
 				deliveryRadius={deliveryRadius}
-				onShopNameChange={(text) => updateState({ shopName: text })}
+				onShopNameEnChange={(text: string) => updateState({ shopNameEn: text })}
+				onShopNameTnLatnChange={(text: string) => updateState({ shopNameTnLatn: text })}
+				onShopNameTnArabChange={(text: string) => updateState({ shopNameTnArab: text })}
 				onDeliveryRadiusChange={(text) => updateState({ deliveryRadius: text })}
 				onSubmit={handleCreateShop}
 				onDismiss={() =>
 					updateState({
 						modalVisible: false,
-						shopName: '',
+						shopNameEn: '',
+						shopNameTnLatn: '',
+						shopNameTnArab: '',
 						deliveryRadius: '5',
 						error: null
 					})
@@ -595,6 +719,11 @@ const styles = StyleSheet.create({
 		marginLeft: 4,
 		fontSize: 15,
 		fontWeight: '600'
+	},
+	optional: {
+		marginLeft: 4,
+		fontSize: 13,
+		fontWeight: '500'
 	},
 	inputWrapper: {
 		flexDirection: 'row',

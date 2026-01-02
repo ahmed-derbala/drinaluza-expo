@@ -151,7 +151,7 @@ const PurchasesScreen = () => {
 			if (!groups[shopId]) {
 				groups[shopId] = {
 					shopId,
-					shopName: item.shop?.name || 'Unknown Shop',
+					shopName: item.shop?.name?.en || 'Unknown Shop',
 					items: []
 				}
 			}
@@ -246,7 +246,7 @@ const PurchasesScreen = () => {
 								<Ionicons name={getStatusIcon(item.status) as any} size={24} color={statusColor} />
 							</View>
 							<View style={styles.headerInfo}>
-								<Text style={[styles.shopName, { color: colors.text }]}>{item.shop.name}</Text>
+								<Text style={[styles.shopName, { color: colors.text }]}>{item.shop.name?.en}</Text>
 								<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
 							</View>
 						</View>
@@ -264,7 +264,7 @@ const PurchasesScreen = () => {
 							<View key={index} style={styles.productRow}>
 								<Ionicons name="cube-outline" size={16} color={colors.textTertiary} />
 								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
-									{productItem.product.name}
+									{productItem.product.name?.en}
 								</Text>
 								<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.finalPrice.quantity}</Text>
 							</View>
@@ -459,7 +459,7 @@ const PurchasesScreen = () => {
 											<View style={styles.basketItemContent}>
 												<View style={styles.itemTopRow}>
 													<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
-														{item.name}
+														{item.name?.en}
 													</Text>
 													<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
 														<Ionicons name="trash-outline" size={18} color={colors.error} />

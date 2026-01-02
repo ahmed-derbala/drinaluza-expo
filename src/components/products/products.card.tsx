@@ -27,7 +27,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			{/* Shop Header */}
 			<View style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
-					<Text style={styles.shopName}>{item.shop.name}</Text>
+					<Text style={styles.shopName}>{item.shop.name?.en}</Text>
 					<Text style={styles.shopLocation}>{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}</Text>
 				</View>
 				<MaterialIcons name="store" size={20} color={isDark ? colors.textSecondary : '#666'} />
@@ -46,7 +46,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 			{/* Product Info */}
 			<View style={styles.productInfo}>
-				<Text style={styles.productName}>{item.name}</Text>
+				<Text style={styles.productName}>{item.name?.en}</Text>
 
 				{/* Price and Unit */}
 				<View style={styles.priceContainer}>

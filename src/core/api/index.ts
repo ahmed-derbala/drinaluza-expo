@@ -1,9 +1,9 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
+import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { router } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { secureGetItem, secureRemoveItem } from '../auth/auth.api'
+import { secureGetItem, secureRemoveItem } from '../auth/storage'
 import { API_TIMEOUT, API_URL, API_PREFIX } from '../../config'
 import { logError } from '../../utils/errorHandler'
+import { log } from '../log'
 
 // Create an API client with the given base URL
 const createApiClient = (baseURL: string): AxiosInstance => {
@@ -45,7 +45,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 				// @ts-ignore - Check window for Web environment
 				if (typeof window !== 'undefined' && window.location) {
 					const path = (window.location.pathname + window.location.hash).toLowerCase()
-					isOnAuthPage = path.includes('/auth') || path === '/' || path === '/#' || path === '#/'
+					isOnAuthPage = path.includes('/auth') || path === '/' || path === '/' || path === '#/'
 				}
 
 				try {
@@ -56,8 +56,13 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 					if (!isOnAuthPage && !isAuthRequest) {
 						router.replace('/auth' as any)
 					}
-				} catch (err) {
-					console.error('Error handling 401:', err)
+				} catch (err: any) {
+					log({
+						level: 'error',
+						label: 'api',
+						message: 'Error handling 401',
+						error: err
+					})
 				}
 			}
 

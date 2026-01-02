@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { secureGetItem } from '../core/auth/auth.api'
+import { secureGetItem } from '../core/auth/storage'
 import { getNotifications } from '../components/notifications/notifications.api'
 
 interface NotificationContextType {

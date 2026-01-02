@@ -55,27 +55,7 @@ const createStyles = (colors: any, isDark: boolean) =>
 			borderWidth: 1,
 			borderColor: colors.border
 		},
-		notificationButton: {
-			width: 44,
-			height: 44,
-			borderRadius: 22,
-			backgroundColor: colors.card,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		badge: {
-			position: 'absolute',
-			top: 10,
-			right: 12,
-			width: 8,
-			height: 8,
-			borderRadius: 4,
-			backgroundColor: colors.error,
-			borderWidth: 1,
-			borderColor: colors.card
-		},
+
 		categoriesContainer: {
 			paddingRight: 20
 		},
@@ -286,7 +266,7 @@ export default function FeedScreen() {
 
 			setBasket(newBasket)
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			setError({ message: `${item.name} added to basket`, retry: undefined })
+			setError({ message: `${item.name?.en} added to basket`, retry: undefined })
 			setToastType('success')
 			setShowToast(true)
 		} catch (error) {
@@ -332,10 +312,6 @@ export default function FeedScreen() {
 						</TouchableOpacity>
 						<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
 							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={refreshing ? colors.textSecondary : colors.text} />
-						</TouchableOpacity>
-						<TouchableOpacity style={styles.notificationButton}>
-							<Ionicons name="notifications-outline" size={24} color={colors.text} />
-							<View style={styles.badge} />
 						</TouchableOpacity>
 					</View>
 				</View>

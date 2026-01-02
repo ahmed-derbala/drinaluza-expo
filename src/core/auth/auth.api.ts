@@ -1,8 +1,8 @@
 import { getApiClient } from '../api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as SecureStore from 'expo-secure-store'
-import * as Keychain from 'react-native-keychain'
 import { Platform } from 'react-native'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken } from './storage'
+import { log } from '../log'
 
 // Default settings
 const defaultAuthSettings = {
@@ -14,62 +14,6 @@ const defaultAuthSettings = {
 }
 
 // Secure storage functions
-export const secureSetItem = async (key: string, value: string): Promise<boolean> => {
-	try {
-		if (Platform.OS === 'web') {
-			await AsyncStorage.setItem(key, value)
-		} else {
-			try {
-				await SecureStore.setItemAsync(key, value)
-			} catch (e) {
-				// Fallback to AsyncStorage if SecureStore fails
-				await AsyncStorage.setItem(key, value)
-			}
-		}
-		return true
-	} catch (error) {
-		console.error('Error storing item:', error)
-		return false
-	}
-}
-
-export const secureGetItem = async (key: string): Promise<string | null> => {
-	try {
-		if (Platform.OS === 'web') {
-			return await AsyncStorage.getItem(key)
-		} else {
-			try {
-				const value = await SecureStore.getItemAsync(key)
-				if (value !== null) return value
-				return await AsyncStorage.getItem(key)
-			} catch (e) {
-				return await AsyncStorage.getItem(key)
-			}
-		}
-	} catch (error) {
-		console.error('Error getting item:', error)
-		return null
-	}
-}
-
-export const secureRemoveItem = async (key: string): Promise<boolean> => {
-	try {
-		if (Platform.OS === 'web') {
-			await AsyncStorage.removeItem(key)
-		} else {
-			try {
-				await SecureStore.deleteItemAsync(key)
-				await AsyncStorage.removeItem(key)
-			} catch (e) {
-				await AsyncStorage.removeItem(key)
-			}
-		}
-		return true
-	} catch (error) {
-		console.error('Error removing item:', error)
-		return false
-	}
-}
 
 // Helper to set user data
 const setUserData = async (user: any): Promise<boolean> => {
@@ -82,22 +26,14 @@ const setUserData = async (user: any): Promise<boolean> => {
 		])
 		return true
 	} catch (error) {
-		console.error('Error storing user data:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Error storing user data',
+			error
+		})
 		return false
 	}
-}
-
-// Token management
-const getToken = async (): Promise<string | null> => {
-	return await secureGetItem('authToken')
-}
-
-const setToken = async (token: string): Promise<boolean> => {
-	return await secureSetItem('authToken', token)
-}
-
-const removeToken = async (): Promise<boolean> => {
-	return await secureRemoveItem('authToken')
 }
 
 // Session timer functions
@@ -156,7 +92,12 @@ const isTokenExpired = (token: string): boolean => {
 		const payload = JSON.parse(atob(token.split('.')[1]))
 		return payload.exp * 1000 < Date.now()
 	} catch (error) {
-		console.error('Error checking token expiration:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Error checking token expiration',
+			error
+		})
 		return true
 	}
 }
@@ -198,19 +139,34 @@ interface SignInResponse {
 
 export const signIn = async (slug: string, password: string): Promise<SignInResponse> => {
 	try {
-		console.log('Calling signin API with:', { slug })
+		log({
+			level: 'info',
+			label: 'auth.api',
+			message: 'Calling signin API',
+			data: { slug }
+		})
 
 		const apiClient = getApiClient()
 		const response = await apiClient.post<SignInResponse>('/auth/signin', { slug, password })
 
-		console.log('Signin API response:', {
-			status: response.status,
-			hasToken: !!response.data?.data?.token,
-			hasUser: !!response.data?.data?.user
+		log({
+			level: 'debug',
+			label: 'auth.api',
+			message: 'Signin API response',
+			data: {
+				status: response.status,
+				hasToken: !!response.data?.data?.token,
+				hasUser: !!response.data?.data?.user
+			}
 		})
 
 		if (!response.data?.data?.token) {
-			console.error('No token in response:', response.data)
+			log({
+				level: 'error',
+				label: 'auth.api',
+				message: 'No token in response',
+				data: response.data
+			})
 			throw new Error('No authentication token received from server')
 		}
 
@@ -219,18 +175,34 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 		// Store token and user data
 		await Promise.all([setToken(token), setUserData(user), saveAuthentication(user.slug, token)])
 
-		console.log('Authentication data stored successfully')
+		log({
+			level: 'info',
+			label: 'auth.api',
+			message: 'Authentication data stored successfully'
+		})
 
 		// Start session timer if auto-signout is enabled
 		if (defaultAuthSettings.enableAutoSignOut) {
 			if (sessionTimer) {
 				clearTimeout(sessionTimer)
-				console.log('Cleared existing session timer')
+				log({
+					level: 'debug',
+					label: 'auth.api',
+					message: 'Cleared existing session timer'
+				})
 			}
 
-			console.log('Starting new session timer')
+			log({
+				level: 'debug',
+				label: 'auth.api',
+				message: 'Starting new session timer'
+			})
 			sessionTimer = startSessionTimer(() => {
-				console.log('Session timeout - signing out')
+				log({
+					level: 'info',
+					label: 'auth.api',
+					message: 'Session timeout - signing out'
+				})
 				signOut()
 			}, defaultAuthSettings.sessionTimeout)
 		}
@@ -239,11 +211,17 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 	} catch (error: any) {
 		const status = error.response?.status
 		if (status !== 401 && status !== 404 && status !== 409) {
-			console.error('Sign in error details:', {
-				message: error.message,
-				response: error.response?.data,
-				status,
-				code: error.code
+			log({
+				level: 'error',
+				label: 'auth.api',
+				message: 'Sign in error details',
+				error,
+				data: {
+					message: error.message,
+					response: error.response?.data,
+					status,
+					code: error.code
+				}
 			})
 		}
 		throw error
@@ -284,7 +262,12 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 
 		return response.data
 	} catch (error) {
-		console.error('Sign up error:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Sign up error',
+			error
+		})
 		throw error
 	}
 }
@@ -300,7 +283,12 @@ export const signInWithToken = async (token: string): Promise<boolean> => {
 		}
 		return false
 	} catch (error) {
-		console.error('Sign in with token failed:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Sign in with token failed',
+			error
+		})
 		await removeToken()
 		return false
 	}
@@ -327,7 +315,12 @@ export const signOut = async (): Promise<boolean> => {
 				)
 			}
 		} catch (error) {
-			console.log('Server signout failed (offline mode):', error)
+			log({
+				level: 'warn',
+				label: 'auth.api',
+				message: 'Server signout failed (offline mode)',
+				error
+			})
 		}
 
 		// Clear all auth-related data
@@ -347,7 +340,12 @@ export const signOut = async (): Promise<boolean> => {
 
 		return true
 	} catch (error) {
-		console.error('Error during sign out:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Error during sign out',
+			error
+		})
 		return false
 	}
 }
@@ -374,7 +372,12 @@ export const switchUser = async (): Promise<boolean> => {
 
 		return true
 	} catch (error) {
-		console.error('Error during switch user:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Error during switch user',
+			error
+		})
 		return false
 	}
 }
@@ -385,11 +388,19 @@ export const refreshAuthToken = async (): Promise<string | null> => {
 		const storedRefreshToken = await secureGetItem(defaultAuthSettings.refreshTokenStorageKey)
 
 		if (!storedRefreshToken) {
-			console.log('No refresh token found')
+			log({
+				level: 'debug',
+				label: 'auth.api',
+				message: 'No refresh token found during refresh'
+			})
 			return null
 		}
 
-		console.log('Refreshing auth token...')
+		log({
+			level: 'debug',
+			label: 'auth.api',
+			message: 'Refreshing auth token...'
+		})
 
 		const apiClient = getApiClient()
 		const response = await apiClient.post<{ token: string; refreshToken?: string }>(defaultAuthSettings.refreshTokenEndpoint, { refreshToken: storedRefreshToken })
@@ -408,7 +419,12 @@ export const refreshAuthToken = async (): Promise<string | null> => {
 
 		return null
 	} catch (error) {
-		console.error('Error refreshing token:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Error refreshing token',
+			error
+		})
 		// If refresh fails, sign out the user
 		await signOut()
 		return null
@@ -430,7 +446,12 @@ export const isAuthenticated = async (): Promise<boolean> => {
 
 		return true
 	} catch (error) {
-		console.error('Authentication check failed:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Authentication check failed',
+			error
+		})
 		return false
 	}
 }
@@ -441,7 +462,12 @@ export const getCurrentUser = async (): Promise<any> => {
 		const userData = await secureGetItem('userData')
 		return userData ? JSON.parse(userData) : null
 	} catch (error) {
-		console.error('Error getting user data:', error)
+		log({
+			level: 'error',
+			label: 'auth.api',
+			message: 'Error getting user data',
+			error
+		})
 		return null
 	}
 }

@@ -131,33 +131,42 @@ export const showErrorAlert = (error: any, onRetry?: () => void) => {
 /**
  * Log error details for debugging (only in development)
  */
+import { log } from '../core/log'
+
+/**
+ * Log error details for debugging (only in development)
+ */
 export const logError = (error: any, context?: string) => {
 	if (__DEV__) {
-		const url = error.config?.url || 'unknown-url'
-		const method = error.config?.method?.toUpperCase() || 'UNKNOWN'
-		const fullUrl = error.config?.baseURL ? `${error.config.baseURL}${url}` : url
-		console.group(`🔴 Error${context ? ` in ${context}` : ''}`)
-		console.error('Error object:', error)
+		const requestConfig = error.config
+			? {
+					url: error.config.url,
+					method: error.config.method,
+					baseURL: error.config.baseURL,
+					timeout: error.config.timeout
+				}
+			: undefined
 
-		if (error.config) {
-			console.log('Request config:', {
-				url: error.config.url,
-				method: error.config.method,
-				baseURL: error.config.baseURL,
-				timeout: error.config.timeout
-			})
-		}
-
-		if (error.response) {
-			console.log('Response:', {
-				status: error.response.status,
-				data: error.response.data,
-				headers: error.response.headers
-			})
-		}
+		const responseInfo = error.response
+			? {
+					status: error.response.status,
+					data: error.response.data,
+					headers: error.response.headers
+				}
+			: undefined
 
 		const errorInfo = parseError(error)
-		console.log('Parsed error info:', errorInfo)
-		console.groupEnd()
+
+		log({
+			level: 'error',
+			label: context || 'errorHandler',
+			message: error.message || 'Error occurred',
+			error,
+			data: {
+				requestConfig,
+				responseInfo,
+				parsedInfo: errorInfo
+			}
+		})
 	}
 }

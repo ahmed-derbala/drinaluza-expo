@@ -1,4 +1,5 @@
 import { getApiClient } from '../../core/api'
+import { LocalizedName } from '../shops/shops.interface'
 import { ProductType } from './products.type'
 
 export interface CreateProductRequest {
@@ -10,7 +11,7 @@ export interface CreateProductRequest {
 		slug: string
 		_id: string
 	}
-	name: string
+	name: LocalizedName
 	price: {
 		value: {
 			tnd: number

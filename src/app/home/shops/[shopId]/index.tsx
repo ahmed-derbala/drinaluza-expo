@@ -39,7 +39,7 @@ export default function ShopDetailsScreen() {
 		if (!shopId) return
 		router.push({
 			pathname: '/home/shops/[shopId]/products',
-			params: { shopId, shopName: shop?.name || 'Shop' }
+			params: { shopId, shopName: shop?.name?.en || 'Shop' }
 		})
 	}
 
@@ -62,7 +62,7 @@ export default function ShopDetailsScreen() {
 	return (
 		<ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={[isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 			<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-				<Text style={[styles.shopName, { color: colors.text }]}>{shop.name}</Text>
+				<Text style={[styles.shopName, { color: colors.text }]}>{shop.name?.en}</Text>
 
 				{shop.owner && (
 					<Text style={[styles.detail, { color: colors.textSecondary }]}>

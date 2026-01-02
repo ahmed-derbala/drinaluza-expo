@@ -29,43 +29,6 @@ export default function SettingsScreen() {
 		setTheme(newTheme)
 	}
 
-	const handleResetApp = async () => {
-		const performReset = async () => {
-			try {
-				await AsyncStorage.clear()
-				// Force reload or navigate to auth
-				if (Platform.OS === 'web') {
-					router.replace('/auth' as any)
-					// Optional: window.location.reload() to fully clear state
-				} else {
-					Alert.alert('Success', 'App reset successfully. You will be signed out.', [{ text: 'OK', onPress: () => router.replace('/auth' as any) }])
-				}
-			} catch (error) {
-				console.error('Failed to reset app:', error)
-				if (Platform.OS !== 'web') {
-					Alert.alert('Error', 'Failed to reset app.')
-				} else {
-					alert('Failed to reset app')
-				}
-			}
-		}
-
-		if (Platform.OS === 'web') {
-			if (window.confirm('Are you sure you want to reset the app? This will clear all data, logs, and sign you out.')) {
-				await performReset()
-			}
-		} else {
-			Alert.alert('Reset App', 'Are you sure you want to reset the app? This will clear all data, logs, and sign you out.', [
-				{ text: 'Cancel', style: 'cancel' },
-				{
-					text: 'Reset',
-					style: 'destructive',
-					onPress: performReset
-				}
-			])
-		}
-	}
-
 	const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
 		<View style={styles.section}>
 			<Text style={styles.sectionTitle}>{title}</Text>
@@ -181,10 +144,6 @@ export default function SettingsScreen() {
 					copyValue="https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm"
 					color="#4285F4"
 				/>
-			</SettingSection>
-
-			<SettingSection title="Advanced">
-				<SettingItem icon="trash-bin" title="Reset App" subtitle="Clear all data" onPress={handleResetApp} color="#EF4444" />
 			</SettingSection>
 
 			<View style={styles.footer}>

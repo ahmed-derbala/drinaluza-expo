@@ -118,7 +118,7 @@ export default function CreateProductScreen() {
 					slug: selectedDefaultProduct.slug,
 					_id: selectedDefaultProduct._id
 				},
-				name: productName.trim(),
+				name: { en: productName.trim() },
 				price: {
 					value: {
 						tnd: parseFloat(priceTND)
@@ -174,7 +174,7 @@ export default function CreateProductScreen() {
 								<Text style={{ fontSize: 20 }}>{selectedShop ? '✓' : '🏪'}</Text>
 							</View>
 							<View style={{ flex: 1 }}>
-								<Text style={[styles.selectLabel, selectedShop && { color: colors.text }]}>{selectedShop ? selectedShop.name : 'Select shop'}</Text>
+								<Text style={[styles.selectLabel, selectedShop && { color: colors.text }]}>{selectedShop ? selectedShop.name.en : 'Select shop'}</Text>
 								{selectedShop && <Text style={styles.selectSubtext}>{selectedShop.address?.city || 'No address'}</Text>}
 							</View>
 							<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
@@ -361,7 +361,7 @@ export default function CreateProductScreen() {
 								renderItem={({ item }) => (
 									<TouchableOpacity style={[styles.categoryItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectShop(item)}>
 										<View style={{ flex: 1 }}>
-											<Text style={[styles.categoryName, { color: colors.text }]}>{item.name}</Text>
+											<Text style={[styles.categoryName, { color: colors.text }]}>{item.name.en}</Text>
 											<Text style={[styles.categoryNameAlt, { color: colors.textSecondary }]}>{item.address?.city || 'No address'}</Text>
 										</View>
 										{selectedShop?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}

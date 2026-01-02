@@ -1,11 +1,10 @@
 import React, { useState, useCallback } from 'react'
 import { View, ActivityIndicator, StyleSheet, Alert, Text } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useFocusEffect, useRouter } from 'expo-router'
-import { Stack } from 'expo-router'
+import { secureGetItem } from '../../../core/auth/storage'
+import { useFocusEffect, useRouter, Stack } from 'expo-router'
 import { useTheme } from '../../../contexts/ThemeContext'
-import BusinessDashboard from '../../../components/business/BusinessDashboard'
 import { getPlatformStackOptions, withThemedHeader } from '../../../config/navigation'
+import { log } from '../../../core/log'
 
 const styles = StyleSheet.create({
 	container: {
@@ -42,14 +41,19 @@ export default function BusinessLayout() {
 		useCallback(() => {
 			const checkUserRole = async () => {
 				try {
-					const userData = await AsyncStorage.getItem('userData')
+					const userData = await secureGetItem('userData')
 
 					if (userData) {
 						const user = JSON.parse(userData)
 						setUserRole(user.role)
 					}
 				} catch (error) {
-					console.error('Failed to check user role:', error)
+					log({
+						level: 'error',
+						label: 'business.layout',
+						message: 'Failed to check user role',
+						error
+					})
 					Alert.alert('Error', 'Failed to verify user permissions. Please try again.', [{ text: 'OK' }])
 				} finally {
 					setLoading(false)
@@ -69,7 +73,13 @@ export default function BusinessLayout() {
 	}
 
 	// Show access denied if not a shop owner
-	console.log(userRole, 'userRole')
+	log({
+		level: 'debug',
+		label: 'business.layout',
+		message: 'Checking user role access',
+		data: { userRole }
+	})
+
 	if (userRole !== 'shop_owner') {
 		return (
 			<View style={[styles.container, styles.loadingContainer, { backgroundColor: colors.background }]}>

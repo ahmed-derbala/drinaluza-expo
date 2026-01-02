@@ -1,17 +1,19 @@
 import React, { useState } from 'react'
-import { View, TextInput, Button, Text, TouchableOpacity, Alert, useWindowDimensions } from 'react-native'
+import { View, TextInput, Button, Text, TouchableOpacity, Alert, useWindowDimensions, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
-import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth, secureGetItem } from '../../core/auth/auth.api'
+import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth } from '../../core/auth/auth.api'
+import { secureGetItem } from '../../core/auth/storage'
 import { useTheme } from '../../contexts/ThemeContext'
 import { createThemedStyles, commonThemedStyles } from '../../core/theme/createThemedStyles'
 import { useFocusEffect } from 'expo-router'
 import { useCallback } from 'react'
 import { showPopup, showAlert } from '../../utils/popup'
 import { useBackButton } from '../../hooks/useBackButton'
+import { log } from '../../core/log'
 
 export default function AuthScreen() {
 	const { colors, isDark } = useTheme()
@@ -129,38 +131,109 @@ export default function AuthScreen() {
 		loadSavedAuths()
 	}
 
+	const handleResetApp = async () => {
+		const performReset = async () => {
+			try {
+				await AsyncStorage.clear()
+				setSavedAuths([])
+
+				log({ level: 'info', label: 'auth', message: 'App reset performed' })
+
+				if (Platform.OS === 'web') {
+					window.location.reload()
+				} else {
+					Alert.alert('Success', 'App reset successfully.', [{ text: 'OK' }])
+				}
+			} catch (error) {
+				log({ level: 'error', label: 'auth', message: 'Failed to reset app', error })
+				Alert.alert('Error', 'Failed to reset app.')
+			}
+		}
+
+		if (Platform.OS === 'web') {
+			if (window.confirm('Are you sure you want to reset the app? This will clear all data.')) {
+				await performReset()
+			}
+		} else {
+			Alert.alert('Reset App', 'Are you sure you want to reset the app? This will clear all data.', [
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: 'Reset',
+					style: 'destructive',
+					onPress: performReset
+				}
+			])
+		}
+	}
+
 	const handleSignIn = async () => {
 		try {
-			console.log('Attempting to sign in...')
+			log({
+				level: 'info',
+				label: 'auth',
+				message: 'Attempting to sign in',
+				data: { slug }
+			})
 			const response = await signIn(slug, password)
-			console.log('Sign in response:', response)
+			log({
+				level: 'debug',
+				label: 'auth',
+				message: 'Sign in response received',
+				data: { status: response.status }
+			})
 
 			// Verify token was stored
 			const token = await secureGetItem('authToken')
-			console.log('Token stored after sign in:', token ? 'Yes' : 'No')
+			log({
+				level: 'debug',
+				label: 'auth',
+				message: 'Token verification',
+				data: { hasToken: !!token }
+			})
 
 			if (token) {
-				console.log('Navigating to /home')
+				log({
+					level: 'info',
+					label: 'auth',
+					message: 'Navigating to /home'
+				})
 				router.replace('/home' as any)
 			} else {
-				console.error('No token received after sign in')
+				log({
+					level: 'error',
+					label: 'auth',
+					message: 'No token received after sign in'
+				})
 				showAlert('Error', 'Sign in failed. Please try again.')
 			}
 		} catch (error: any) {
-			console.log('Sign in catch block reached')
+			log({
+				level: 'error',
+				label: 'auth',
+				message: 'Sign in failed',
+				error
+			})
 			const responseData = error.response?.data
 			// Check status from both HTTP response and response body (some APIs return it there)
 			const status = error.response?.status || responseData?.status || responseData?.statusCode
 			const message = responseData?.message || error.message
 
-			console.log('Detected status:', status)
-			console.log('Detected message:', message)
+			log({
+				level: 'debug',
+				label: 'auth',
+				message: 'Error details',
+				data: { status, message }
+			})
 
 			if (status === 404 || status === '404') {
 				setStatusState('404')
 				setErrorMessage(message)
 			} else if (status === 409 || status === '409') {
-				console.log('Detected incorrect password (409)')
+				log({
+					level: 'warn',
+					label: 'auth',
+					message: 'Incorrect password attempt'
+				})
 				setPassword('') // Base clearing
 				setStatusState('409')
 				setErrorMessage('Try again')
@@ -168,14 +241,23 @@ export default function AuthScreen() {
 				// Also handle 401 as it's common for unauthorized/wrong password
 				showAlert('Unauthorized', message || 'Invalid credentials. Please check your username and password.')
 			} else {
-				console.log('Showing generic error alert')
+				log({
+					level: 'error',
+					label: 'auth',
+					message: 'Generic login error',
+					error
+				})
 				showAlert('Error', message || 'Sign in failed. Please check your credentials and try again.')
 			}
 		}
 	}
 
 	const handleGo = async () => {
-		console.log('Go pressed, calling handleSignIn')
+		log({
+			level: 'debug',
+			label: 'auth',
+			message: 'Go pressed'
+		})
 		await handleSignIn()
 	}
 
@@ -184,7 +266,12 @@ export default function AuthScreen() {
 			await signUp(slug, password)
 			router.push('/home' as any)
 		} catch (error) {
-			console.error('Sign up failed:', error)
+			log({
+				level: 'error',
+				label: 'auth',
+				message: 'Sign up failed',
+				error
+			})
 		}
 	}
 
@@ -276,6 +363,16 @@ export default function AuthScreen() {
 								}}
 							>
 								<Ionicons name="home" size={24} color={colors.primary} />
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								onPress={handleResetApp}
+								style={{
+									marginTop: 20,
+									padding: 10
+								}}
+							>
+								<Text style={{ color: colors.error, fontSize: 12 }}>Reset App</Text>
 							</TouchableOpacity>
 						</View>
 					</View>

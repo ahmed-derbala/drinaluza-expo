@@ -1,3 +1,5 @@
+import { LocalizedName } from '../shops/shops.interface'
+
 export interface ShopOwner {
 	_id: string
 	slug: string
@@ -20,7 +22,7 @@ export interface ShopLocation {
 
 export interface Shop {
 	_id: string
-	name: string
+	name: LocalizedName
 	slug: string
 	owner: ShopOwner
 	address: ShopAddress
@@ -53,7 +55,7 @@ export interface CardInfo {
 export interface FeedItem {
 	_id: string
 	shop: Shop
-	name: string
+	name: LocalizedName
 	price: Price
 	searchTerms: string[]
 	isActive: boolean
