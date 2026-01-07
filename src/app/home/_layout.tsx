@@ -144,7 +144,9 @@ export default function HomeLayout() {
 					<Tabs.Screen
 						name="settings"
 						options={{
-							href: null
+							title: 'Settings',
+							tabBarActiveTintColor: colors.primary,
+							tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="settings-outline" size={size} color={color} />
 						}}
 					/>
 					<Tabs.Screen

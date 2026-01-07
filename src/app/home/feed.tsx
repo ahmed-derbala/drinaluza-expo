@@ -307,9 +307,6 @@ export default function FeedScreen() {
 						<Text style={styles.title}>Welcome back</Text>
 					</View>
 					<View style={styles.headerActions}>
-						<TouchableOpacity style={styles.refreshButton} onPress={() => router.push('/home/settings')}>
-							<Ionicons name="settings-outline" size={24} color={colors.text} />
-						</TouchableOpacity>
 						<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
 							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={refreshing ? colors.textSecondary : colors.text} />
 						</TouchableOpacity>

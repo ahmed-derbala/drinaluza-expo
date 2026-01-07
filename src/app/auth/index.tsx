@@ -21,8 +21,8 @@ export default function AuthScreen() {
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
-	const [slug, setUsername] = useState('ahmed')
-	const [password, setPassword] = useState('123')
+	const [slug, setUsername] = useState()
+	const [password, setPassword] = useState()
 	const [statusState, setStatusState] = useState<'initial' | '404' | '409'>('initial')
 	const [errorMessage, setErrorMessage] = useState('')
 	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])

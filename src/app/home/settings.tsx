@@ -141,7 +141,7 @@ export default function SettingsScreen() {
 				<SettingItem icon="cash" title="Currency" value="TND" type="value" onPress={() => {}} color="#10B981" />
 			</SettingSection>
 
-			<SettingSection title="Contact">
+			<SettingSection title="Social Media">
 				<SettingItem
 					icon="logo-facebook"
 					title="Facebook"
@@ -166,14 +166,55 @@ export default function SettingsScreen() {
 					copyValue="https://www.tiktok.com/@drinaluza"
 					color="#000000"
 				/>
+			</SettingSection>
+
+			<SettingSection title="Contact">
 				<SettingItem icon="mail" title="Email" subtitle="drinaluza@gmail.com" onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')} copyValue="drinaluza@gmail.com" color="#EA4335" />
+			</SettingSection>
+
+			<SettingSection title="Downloads">
+				<SettingItem
+					icon="logo-google-playstore"
+					title="Google Play"
+					subtitle="Download for Android"
+					onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.ahmedderbala.drinaluza')}
+					copyValue="https://play.google.com/store/apps/details?id=com.ahmedderbala.drinaluza"
+					color="#34A853"
+				/>
+				<SettingItem
+					icon="globe-outline"
+					title="Web App"
+					subtitle="Access via Browser"
+					onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
+					copyValue="https://drinaluza.netlify.app/"
+					color="#6366F1"
+				/>
 				<SettingItem
 					icon="logo-google"
-					title="Download App"
-					subtitle="Google Drive"
+					title="Google Drive"
+					subtitle="Download APK"
 					onPress={() => Linking.openURL('https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm')}
 					copyValue="https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm"
 					color="#4285F4"
+				/>
+			</SettingSection>
+
+			<SettingSection title="Developer">
+				<SettingItem
+					icon="logo-linkedin"
+					title="Ahmed Derbala"
+					subtitle="Connect on LinkedIn"
+					onPress={() => Linking.openURL('https://www.linkedin.com/in/ahmed-derbala/')}
+					copyValue="https://www.linkedin.com/in/ahmed-derbala/"
+					color="#0077B5"
+				/>
+				<SettingItem
+					icon="logo-github"
+					title="Source Code"
+					subtitle="View on GitHub"
+					onPress={() => Linking.openURL('https://github.com/ahmed-derbala/drinaluza-expo')}
+					copyValue="https://github.com/ahmed-derbala/drinaluza-expo"
+					color="#000000"
 				/>
 			</SettingSection>
 
