@@ -9,6 +9,7 @@ import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '.
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
 import { showPopup, showAlert, showConfirm } from '../../utils/popup'
+import { requestBusiness } from '../../components/business/business.api'
 
 import { UserData } from '../../components/profile/profile.interface'
 
@@ -65,9 +66,10 @@ export default function ProfileScreen() {
 				setUserData(data)
 				setImageError(false)
 			}
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Failed to load profile:', error)
-			showAlert('Error', 'Failed to load profile data')
+			const errorMessage = error.response?.data?.message || 'Failed to load profile data'
+			showAlert('Error', errorMessage)
 		} finally {
 			setLoading(false)
 		}
@@ -92,11 +94,12 @@ export default function ProfileScreen() {
 
 			await updateMyProfile(payload)
 			setIsEditing(false)
-			Alert.alert('Success', 'Profile updated successfully!')
+			showAlert('Success', 'Profile updated successfully!')
 			loadProfile() // Reload to ensure consistency
-		} catch (e) {
-			console.error('Error saving user data:', e)
-			showAlert('Error', 'Failed to save profile changes')
+		} catch (error: any) {
+			console.error('Error saving user data:', error)
+			const errorMessage = error.response?.data?.message || 'Failed to save profile changes'
+			showAlert('Error', errorMessage)
 		}
 	}
 
@@ -154,6 +157,19 @@ export default function ProfileScreen() {
 		})
 	}
 
+	const handleRequestBusiness = async () => {
+		showConfirm('Request Business', 'Do you want to request to become a business owner?', async () => {
+			try {
+				await requestBusiness()
+				showAlert('Success', 'Your request has been sent successfully!')
+			} catch (error: any) {
+				console.error('Request business failed:', error)
+				const errorMessage = error.response?.data?.message || 'Failed to send business request'
+				showAlert('Error', errorMessage)
+			}
+		})
+	}
+
 	if (loading && !userData) {
 		return (
 			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
@@ -171,6 +187,11 @@ export default function ProfileScreen() {
 				showBack={false}
 				rightActions={
 					<View style={styles.headerActions}>
+						{userData.role === 'customer' && (
+							<TouchableOpacity style={[styles.headerIconButton, { borderColor: colors.primary + '40' }]} onPress={handleRequestBusiness}>
+								<Ionicons name="briefcase-outline" size={22} color={colors.primary} />
+							</TouchableOpacity>
+						)}
 						<TouchableOpacity style={styles.headerIconButton} onPress={handleSwitchUser}>
 							<Ionicons name="people-outline" size={22} color={colors.text} />
 						</TouchableOpacity>
@@ -192,8 +213,12 @@ export default function ProfileScreen() {
 						) : (
 							<View style={styles.placeholderPhoto}>
 								<Text style={styles.placeholderText}>
-									{userData.basicInfos?.firstName?.charAt(0) || userData.name?.charAt(0) || ''}
-									{userData.basicInfos?.lastName?.charAt(0) || ''}
+									{String(userData.basicInfos?.firstName || userData.name || '')
+										.charAt(0)
+										.toUpperCase()}
+									{String(userData.basicInfos?.lastName || '')
+										.charAt(0)
+										.toUpperCase()}
 								</Text>
 							</View>
 						)}

@@ -95,7 +95,7 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 			</View>
 			{shop.owner && (
 				<Text style={[styles.meta, { color: theme.textSecondary }]}>
-					Owner: {shop.owner.name} (@{shop.owner.slug})
+					Owner: {typeof shop.owner.name === 'object' ? (shop.owner.name as any).en : shop.owner.name} (@{shop.owner.slug})
 				</Text>
 			)}
 			{shop.location?.coordinates?.length === 2 && (

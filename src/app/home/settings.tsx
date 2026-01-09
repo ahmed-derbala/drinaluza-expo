@@ -5,14 +5,14 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '../../contexts/ThemeContext'
-import { Theme } from '../../components/settings/settings.interface'
+
 import { APP_VERSION, BACKEND_URL } from '../../config'
 import Toast from '../../components/common/Toast'
 import { getApiClient } from '../../core/api'
 import { log } from '../../core/log'
 
 export default function SettingsScreen() {
-	const { theme, colors, isDark, setTheme } = useTheme()
+	const { colors, isDark } = useTheme()
 	const router = useRouter()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
@@ -54,11 +54,6 @@ export default function SettingsScreen() {
 				log({ level: 'warn', label: 'settings', message: 'Failed to fetch server info', error: err })
 			})
 	}, [])
-
-	const toggleTheme = () => {
-		const newTheme = isDark ? 'light' : 'dark'
-		setTheme(newTheme)
-	}
 
 	const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
 		<View style={styles.section}>
@@ -131,10 +126,6 @@ export default function SettingsScreen() {
 			<View style={styles.header}>
 				<Text style={styles.title}>Settings</Text>
 			</View>
-
-			<SettingSection title="Appearance">
-				<SettingItem icon={isDark ? 'moon' : 'sunny'} title="Dark Mode" subtitle="Toggle app theme" type="switch" value={isDark} onPress={toggleTheme} color={isDark ? '#A855F7' : '#F59E0B'} />
-			</SettingSection>
 
 			<SettingSection title="General">
 				<SettingItem icon="language" title="Language" value="English" type="value" onPress={() => {}} color="#10B981" />

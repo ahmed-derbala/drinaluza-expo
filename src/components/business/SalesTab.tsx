@@ -8,8 +8,10 @@ import { orderStatusEnum, orderStatusColors, orderStatusLabels, getNextValidStat
 import { useTheme } from '../../contexts/ThemeContext'
 import { MaterialIcons, Ionicons, FontAwesome5 } from '@expo/vector-icons'
 import ScreenHeader from '../common/ScreenHeader'
+import { showAlert } from '../../utils/popup'
 
 const FILTERS = [
+	{ id: 'all', label: 'All' },
 	{ id: orderStatusEnum.PENDING_SHOP_CONFIRMATION, label: 'Pending' },
 	{ id: orderStatusEnum.CONFIRMED_BY_SHOP, label: 'Confirmed' },
 	{ id: orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER, label: 'Ready' },
@@ -26,7 +28,7 @@ export default function SalesTab() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
-	const [activeFilter, setActiveFilter] = useState(orderStatusEnum.PENDING_SHOP_CONFIRMATION)
+	const [activeFilter, setActiveFilter] = useState('all')
 	const [actionLoading, setActionLoading] = useState<string | null>(null)
 
 	const fadeAnim = useRef(new Animated.Value(0)).current
@@ -45,7 +47,7 @@ export default function SalesTab() {
 		try {
 			if (pageNum === 1 && !isRefresh) setLoading(true)
 
-			const response = await getSales(pageNum, 10, status)
+			const response = await getSales(pageNum, 10, status === 'all' ? undefined : status)
 			const newSales = response.data.docs || []
 
 			if (isRefresh || pageNum === 1) {
@@ -61,9 +63,10 @@ export default function SalesTab() {
 
 			setHasMore(response.data.pagination.hasNextPage)
 			setPage(pageNum)
-		} catch (error) {
+		} catch (error: any) {
 			console.error('Failed to load sales:', error)
-			Alert.alert('Error', 'Failed to load sales data')
+			const errorMessage = error.response?.data?.message || 'Failed to load sales data'
+			showAlert('Error', errorMessage)
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
@@ -100,10 +103,11 @@ export default function SalesTab() {
 			setActionLoading(saleId)
 			await updateSaleStatus({ saleId, status: newStatus })
 			onRefresh()
-			Alert.alert('Success', 'Order status updated')
-		} catch (error) {
+			showAlert('Success', 'Order status updated')
+		} catch (error: any) {
 			console.error('Failed to update sale status:', error)
-			Alert.alert('Error', 'Failed to update sale status')
+			const errorMessage = error.response?.data?.message || 'Failed to update sale status'
+			showAlert('Error', errorMessage)
 		} finally {
 			setActionLoading(null)
 		}
@@ -235,7 +239,9 @@ export default function SalesTab() {
 								<Ionicons name={getStatusIcon(item.status) as any} size={24} color={statusColor} />
 							</View>
 							<View style={styles.headerInfo}>
-								<Text style={[styles.customerName, { color: colors.text }]}>{item.customer?.slug || item.customer?.name || 'Unknown Customer'}</Text>
+								<Text style={[styles.customerName, { color: colors.text }]}>
+									{item.customer?.slug || (typeof item.customer?.name === 'object' ? (item.customer.name as any).en : item.customer?.name) || 'Unknown Customer'}
+								</Text>
 								<Text style={[styles.orderDate, { color: colors.textSecondary }]}>
 									{formatDate(item.createdAt)} • #{item._id.slice(-6).toUpperCase()}
 								</Text>
@@ -263,7 +269,7 @@ export default function SalesTab() {
 										)}
 										<View style={{ flex: 1, justifyContent: 'center' }}>
 											<Text style={[styles.productText, { color: colors.text }]} numberOfLines={1}>
-												{p.product?.name}
+												{p.product?.name?.en}
 											</Text>
 											<Text style={{ fontSize: 12, color: colors.textSecondary }}>Qty: {p.finalPrice?.quantity}</Text>
 										</View>
@@ -326,7 +332,7 @@ export default function SalesTab() {
 								<FontAwesome5 name="clipboard-list" size={48} color={colors.primary} />
 							</View>
 							<Text style={[styles.emptyTitle, { color: colors.text }]}>No orders found</Text>
-							<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>There are no orders with this status yet.</Text>
+							<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{activeFilter === 'all' ? 'You have no sales yet.' : 'There are no orders with this status yet.'}</Text>
 						</View>
 					) : null
 				}

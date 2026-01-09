@@ -19,3 +19,8 @@ export const getMyBusinessStats = async (): Promise<BusinessStatsResponse> => {
 	const response = await getApiClient().get('/businesses/my-business')
 	return response.data
 }
+
+export const requestBusiness = async () => {
+	const response = await getApiClient().post('/businesses/requests')
+	return response.data
+}

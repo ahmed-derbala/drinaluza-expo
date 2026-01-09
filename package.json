@@ -2,7 +2,7 @@
   "name": "drinaluza",
   "version": "1.0.28",
   "main": "expo-router/entry",
-  "description": "Frontend of drinaluza. A mobile first app to manage small businesses",
+  "description": "Drinaluza, seafood business manager",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
   "private": true,
   "engines": {
