@@ -66,7 +66,7 @@ export default function ShopDetailsScreen() {
 
 				{shop.owner && (
 					<Text style={[styles.detail, { color: colors.textSecondary }]}>
-						Owner: {shop.owner.name} (@{shop.owner.slug})
+						Owner: {shop.owner.name.en} (@{shop.owner.slug})
 					</Text>
 				)}
 
