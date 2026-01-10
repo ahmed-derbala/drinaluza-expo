@@ -13,9 +13,9 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const { colors, isDark } = useTheme()
 	const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
 
-	const minQuantity = item.price?.unit?.min || 1
+	const minQuantity = item.unit?.min || 1
 	const [quantity, setQuantity] = useState(minQuantity)
-	const pricePerUnit = item.price.value.tnd / item.price.unit.min
+	const pricePerUnit = item.price.total.tnd / (item.unit?.min || 1)
 
 	const increment = () => setQuantity((prev) => prev + 1)
 	const decrement = () => setQuantity((prev) => (prev > minQuantity ? prev - 1 : minQuantity))
@@ -51,7 +51,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				{/* Price and Unit */}
 				<View style={styles.priceContainer}>
 					<Text style={styles.priceText}>
-						{pricePerUnit.toFixed(2)} TND / {item.price.unit.name}
+						{pricePerUnit.toFixed(2)} TND / {item.unit?.measure || ''}
 					</Text>
 					{item.stock.quantity <= 0 && <Text style={styles.outOfStock}>Out of Stock</Text>}
 				</View>
@@ -64,7 +64,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 							<Text style={styles.quantityButtonText}>-</Text>
 						</TouchableOpacity>
 						<Text style={styles.quantityText}>
-							{quantity} {item.price.unit.name}
+							{quantity} {item.unit?.measure || ''}
 						</Text>
 						<TouchableOpacity onPress={increment} style={styles.quantityButton}>
 							<Text style={styles.quantityButtonText}>+</Text>

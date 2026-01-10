@@ -4,17 +4,17 @@ export interface Product {
 	_id: string
 	name: LocalizedName
 	price: {
-		value: {
+		total: {
 			tnd: number
 			eur?: number
 			usd?: number
 		}
-		unit: {
-			name: string
-			min: number
-		}
-		createdAt: string
 		updatedAt: string
+	}
+	unit?: {
+		measure: string
+		min: number
+		updatedAt?: string
 	}
 	updatedAt: string
 	defaultProduct?: {
@@ -34,11 +34,13 @@ export interface Product {
 
 export interface ProductItem {
 	product: Product
-	finalPrice: {
-		quantity: number
-		createdAt: string
+	lineTotal: {
+		tnd: number
+		eur?: number
+		usd?: number
 		updatedAt: string
 	}
+	quantity: number
 }
 
 export interface OrderItem {
@@ -50,8 +52,17 @@ export interface OrderItem {
 		owner?: {
 			_id: string
 			slug: string
-			name: string
+			name: LocalizedName
 			updatedAt: string
+			business?: {
+				_id: string
+				slug: string
+				name: LocalizedName
+				state: {
+					code: string
+					updatedAt: string
+				}
+			}
 		}
 		address?: {
 			street: string
@@ -68,11 +79,20 @@ export interface OrderItem {
 	customer: {
 		_id: string
 		slug: string
-		name: string
+		name: string | LocalizedName
 		updatedAt: string
 	}
 	products: ProductItem[]
 	status: string
+	price?: {
+		total: {
+			tnd: number
+			eur?: number
+			usd?: number
+			updatedAt: string
+		}
+		updatedAt: string
+	}
 	createdAt: string
 	updatedAt: string
 	__v?: number

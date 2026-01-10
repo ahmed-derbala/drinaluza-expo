@@ -202,11 +202,13 @@ const PurchasesScreen = () => {
 		const statusColor = orderStatusColors[item.status] || colors.textSecondary
 
 		// Calculate total price and get product info
-		const totalPrice = item.products.reduce((sum, productItem) => {
-			const price = productItem.product.price.value.tnd || 0
-			const quantity = productItem.finalPrice.quantity || 0
-			return sum + price * quantity
-		}, 0)
+		const totalPrice =
+			item.price?.total?.tnd ||
+			item.products.reduce((sum, productItem) => {
+				const price = productItem.product.price.total.tnd || 0
+				const quantity = productItem.quantity || 0
+				return sum + price * quantity
+			}, 0)
 
 		const productCount = item.products.length
 		const firstProduct = item.products[0]?.product
@@ -266,7 +268,7 @@ const PurchasesScreen = () => {
 								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
 									{productItem.product.name?.en}
 								</Text>
-								<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.finalPrice.quantity}</Text>
+								<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.quantity}</Text>
 							</View>
 						))}
 						{item.products.length > 2 && <Text style={[styles.productCount, { color: colors.textTertiary }]}>+ {item.products.length - 2} more items</Text>}
@@ -344,17 +346,26 @@ const PurchasesScreen = () => {
 
 	const handleCheckout = async (group: ShopBasketGroup) => {
 		try {
-			// Find the shop object from the first item
 			const shop = group.items[0]?.shop
+			if (!shop) throw new Error('Shop not found')
 
 			// Map products for API
 			const products = group.items.map((item) => ({
-				product: item,
+				product: {
+					slug: item.slug,
+					_id: item._id
+				},
 				quantity: item.quantity
 			}))
 
 			// Call createPurchase API
-			await createPurchase({ products, shop })
+			await createPurchase({
+				products,
+				shop: {
+					slug: shop.slug,
+					_id: shop._id
+				}
+			})
 
 			// On success, remove these items from basket
 			const purchasedItemIds = new Set(group.items.map((item) => item._id))
@@ -378,7 +389,7 @@ const PurchasesScreen = () => {
 		const scaleAnim = new Animated.Value(1)
 
 		const groupTotal = group.items.reduce((sum: number, item: BasketItem) => {
-			const price = item.price?.value?.tnd || 0
+			const price = item.price?.total?.tnd || 0
 			const quantity = item.quantity || 1
 			return sum + price * quantity
 		}, 0)
@@ -428,7 +439,7 @@ const PurchasesScreen = () => {
 						{/* Items List */}
 						<View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
 							{group.items.map((item: BasketItem, index: number) => {
-								const price = item.price?.value?.tnd || 0
+								const price = item.price?.total?.tnd || 0
 								const quantity = item.quantity || 1
 								const itemWidth = '100%'
 								const imageUrl = item.defaultProduct?.images?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
@@ -481,7 +492,7 @@ const PurchasesScreen = () => {
 														</TouchableOpacity>
 
 														<Text style={[styles.compactQText, { color: colors.text }]}>
-															{quantity} {item.price.unit.name}
+															{quantity} {item.unit?.measure || ''}
 														</Text>
 
 														<TouchableOpacity

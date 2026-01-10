@@ -8,7 +8,6 @@ import { useTheme } from '../../contexts/ThemeContext'
 
 import { APP_VERSION, BACKEND_URL } from '../../config'
 import Toast from '../../components/common/Toast'
-import { getApiClient } from '../../core/api'
 import { log } from '../../core/log'
 
 export default function SettingsScreen() {

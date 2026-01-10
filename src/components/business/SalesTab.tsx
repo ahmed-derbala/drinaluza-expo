@@ -201,7 +201,7 @@ export default function SalesTab() {
 	}
 
 	const renderSaleItem = ({ item }: { item: SaleItem }) => {
-		const totalPrice = item.products.reduce((sum, p) => sum + (p.finalPrice?.quantity || 1) * (p.product?.price?.value?.tnd || 0), 0)
+		const totalPrice = item.price?.total?.tnd || item.products.reduce((sum, p) => sum + (p.quantity || 0) * (p.product?.price?.total?.tnd || 0), 0)
 		const statusColor = orderStatusColors[item.status] || colors.textSecondary
 
 		const scaleAnim = new Animated.Value(1)
@@ -271,7 +271,7 @@ export default function SalesTab() {
 											<Text style={[styles.productText, { color: colors.text }]} numberOfLines={1}>
 												{p.product?.name?.en}
 											</Text>
-											<Text style={{ fontSize: 12, color: colors.textSecondary }}>Qty: {p.finalPrice?.quantity}</Text>
+											<Text style={{ fontSize: 12, color: colors.textSecondary }}>Qty: {p.quantity}</Text>
 										</View>
 									</View>
 								)

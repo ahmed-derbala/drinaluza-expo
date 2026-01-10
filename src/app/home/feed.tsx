@@ -118,14 +118,6 @@ const createStyles = (colors: any, isDark: boolean) =>
 		}
 	})
 
-const CATEGORIES = [
-	{ id: 'all', name: 'All', icon: 'grid-outline' },
-	{ id: 'vegetables', name: 'Vegetables', icon: 'nutrition-outline' },
-	{ id: 'fruits', name: 'Fruits', icon: 'leaf-outline' },
-	{ id: 'dairy', name: 'Dairy', icon: 'water-outline' },
-	{ id: 'bakery', name: 'Bakery', icon: 'restaurant-outline' }
-]
-
 type BasketItem = FeedItem & { quantity: number }
 
 export default function FeedScreen() {
@@ -135,7 +127,6 @@ export default function FeedScreen() {
 	const [basket, setBasket] = useState<BasketItem[]>([])
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
-	const [selectedCategory, setSelectedCategory] = useState('all')
 	const [isSearchActive, setIsSearchActive] = useState(false)
 
 	const { width } = useWindowDimensions()
@@ -316,7 +307,7 @@ export default function FeedScreen() {
 				{/* SearchBar moved out of here */}
 			</View>
 		),
-		[selectedCategory, styles, colors.text, colors.textSecondary, refreshData, refreshing, router]
+		[styles, colors.text, colors.textSecondary, refreshData, refreshing, router]
 	)
 
 	const renderFooter = () => {

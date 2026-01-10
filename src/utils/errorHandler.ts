@@ -1,4 +1,3 @@
-import { AxiosError } from 'axios'
 import { showPopup } from './popup'
 
 export interface ErrorInfo {

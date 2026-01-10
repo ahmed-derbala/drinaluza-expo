@@ -2,37 +2,58 @@ import { LocalizedName } from '../shops/shops.interface'
 
 export type ProductType = {
 	_id: string
-	owner: {
-		_id: string
-		slug: string
-		createdAt: string
-		updatedAt: string
-	}
 	shop: {
 		_id: string
 		name: LocalizedName
+		slug: string
+		owner: {
+			_id: string
+			slug: string
+			name: LocalizedName
+			updatedAt: string
+			business?: {
+				_id: string
+				slug: string
+				name: LocalizedName
+				state: {
+					code: string
+					updatedAt: string
+				}
+			}
+		}
+		address: {
+			street: string
+			city: string
+			country: string
+		}
+		location: {
+			type: string
+			coordinates: number[]
+		}
 		createdAt: string
 		updatedAt: string
 	}
+	defaultProduct?: {
+		_id: string
+		slug: string
+		name: LocalizedName
+		updatedAt: string
+	}
 	name: LocalizedName
-	photos?: Array<{
-		url: string
-		alt?: string
-	}>
-	price?: {
-		value?: {
-			tnd?: number
-			eur?: number
-			usd?: number
+	photos?: string[]
+	price: {
+		total: {
+			tnd: number
+			eur?: number | null
+			usd?: number | null
+			updatedAt: string
 		}
-		unit?: {
-			name: string
-			min: number
-		}
+		updatedAt: string
 	}
 	unit: {
-		name: string
+		measure: string
 		min: number
+		updatedAt: string
 	}
 	searchTerms: string[]
 	isActive: boolean
@@ -40,6 +61,11 @@ export type ProductType = {
 		endDate: string | null
 		startDate: string
 	}
+	stock: {
+		quantity: number
+		minThreshold: number
+	}
+	slug: string
 	createdAt: string
 	updatedAt: string
 }

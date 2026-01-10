@@ -3,8 +3,17 @@ import { LocalizedName } from '../shops/shops.interface'
 export interface ShopOwner {
 	_id: string
 	slug: string
-	name: string
+	name: LocalizedName
 	updatedAt: string
+	business?: {
+		_id: string
+		slug: string
+		name: LocalizedName
+		state: {
+			code: string
+			updatedAt: string
+		}
+	}
 }
 
 export interface ShopAddress {
@@ -25,24 +34,31 @@ export interface Shop {
 	name: LocalizedName
 	slug: string
 	owner: ShopOwner
-	address: ShopAddress
+	address: {
+		street: string
+		city: string
+		country: string
+	}
 	location: ShopLocation
 	createdAt: string
 	updatedAt: string
 }
 
 export interface Price {
-	value: {
+	total: {
 		tnd: number
+		eur?: number | null
+		usd?: number | null
+		updatedAt: string
 	}
-	unit: {
-		name: string
-		min: number
-	}
-	createdAt: string
 	updatedAt: string
 }
 
+export interface Unit {
+	measure: string
+	min: number
+	updatedAt?: string
+}
 export interface Stock {
 	quantity: number
 	minThreshold: number
@@ -57,6 +73,7 @@ export interface FeedItem {
 	shop: Shop
 	name: LocalizedName
 	price: Price
+	unit: Unit
 	searchTerms: string[]
 	isActive: boolean
 	availability: {
@@ -71,7 +88,11 @@ export interface FeedItem {
 	__v: number
 	card?: CardInfo
 	defaultProduct?: {
-		images: {
+		_id: string
+		slug: string
+		name: LocalizedName
+		updatedAt: string
+		images?: {
 			thumbnail: {
 				url: string
 			}
