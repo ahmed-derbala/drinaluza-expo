@@ -8,8 +8,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
+import ErrorState from '../../components/common/ErrorState'
 import { showPopup, showAlert, showConfirm } from '../../utils/popup'
 import { requestBusiness } from '../../components/business/business.api'
+import { parseError, logError } from '../../utils/errorHandler'
 
 import { UserData } from '../../components/profile/profile.interface'
 
@@ -46,10 +48,12 @@ export default function ProfileScreen() {
 	const [isEditing, setIsEditing] = useState(false)
 	const [showDatePicker, setShowDatePicker] = useState(false)
 	const [imageError, setImageError] = useState(false)
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
 	const loadProfile = async () => {
 		try {
 			setLoading(true)
+			setError(null)
 			const isAuthenticated = await checkAuth()
 			if (!isAuthenticated) {
 				router.replace('/auth')
@@ -65,11 +69,21 @@ export default function ProfileScreen() {
 				}
 				setUserData(data)
 				setImageError(false)
+			} else {
+				throw new Error('No profile data received')
 			}
-		} catch (error: any) {
-			console.error('Failed to load profile:', error)
-			const errorMessage = error.response?.data?.message || 'Failed to load profile data'
-			showAlert('Error', errorMessage)
+		} catch (err: any) {
+			logError(err, 'loadProfile')
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
+			if (userData) {
+				// Only show alert if we already have data (e.g. refresh failed)
+				showAlert(errorInfo.title, errorInfo.message)
+			}
 		} finally {
 			setLoading(false)
 		}
@@ -174,6 +188,15 @@ export default function ProfileScreen() {
 		return (
 			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
+	}
+
+	if (error && !userData) {
+		return (
+			<View style={styles.container}>
+				<ScreenHeader title="Profile" showBack={false} />
+				<ErrorState title={error.title} message={error.message} onRetry={loadProfile} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
 			</View>
 		)
 	}

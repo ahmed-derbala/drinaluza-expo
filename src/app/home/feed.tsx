@@ -8,6 +8,8 @@ import { useRouter } from 'expo-router'
 import ProductCard from '../../components/products/products.card'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
+import ScreenHeader from '../../components/common/ScreenHeader'
+import ErrorState from '../../components/common/ErrorState'
 import Toast from '../../components/common/Toast'
 import SearchBar from '../../components/search/SearchBar'
 import { getCurrentUser } from '../../core/auth/auth.api'
@@ -319,13 +321,22 @@ export default function FeedScreen() {
 		)
 	}
 
-	const renderEmpty = () => (
-		<View style={styles.emptyContainer}>
-			<Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076432.png' }} style={styles.emptyImage} />
-			<Text style={styles.emptyTitle}>No products found</Text>
-			<Text style={styles.emptyText}>Try adjusting your search or filters</Text>
-		</View>
-	)
+	const renderEmpty = () => {
+		if (error) {
+			return (
+				<View style={{ paddingTop: 60 }}>
+					<ErrorState title={error.message} onRetry={refreshData} icon="cloud-offline-outline" />
+				</View>
+			)
+		}
+		return (
+			<View style={styles.emptyContainer}>
+				<Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076432.png' }} style={styles.emptyImage} />
+				<Text style={styles.emptyTitle}>No products found</Text>
+				<Text style={styles.emptyText}>Try adjusting your search or filters</Text>
+			</View>
+		)
+	}
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
 		<View style={[styles.cardWrapper, { width: numColumns > 1 ? itemWidth : '100%' }]}>

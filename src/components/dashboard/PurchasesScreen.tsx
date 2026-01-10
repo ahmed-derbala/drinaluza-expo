@@ -5,11 +5,13 @@ import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
+import ErrorState from '../common/ErrorState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
 import { FeedItem } from '../feed/feed.interface'
 import { useBackButton } from '../../hooks/useBackButton'
+import { parseError, logError } from '../../utils/errorHandler'
 
 type FilterStatus = 'cart' | 'active' | 'completed' | 'cancelled'
 
@@ -29,6 +31,7 @@ const PurchasesScreen = () => {
 	const [purchases, setPurchases] = useState<OrderItem[]>([])
 	const [basket, setBasket] = useState<BasketItem[]>([])
 	const [filter, setFilter] = useState<FilterStatus>('cart')
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
 
 	useBackButton(undefined, '/home/dashboard')
@@ -57,6 +60,7 @@ const PurchasesScreen = () => {
 
 	const loadPurchases = async () => {
 		try {
+			setError(null)
 			const response = await getPurchases()
 			setPurchases(response.data.docs || [])
 			setLoading(false)
@@ -68,8 +72,14 @@ const PurchasesScreen = () => {
 				duration: 400,
 				useNativeDriver: true
 			}).start()
-		} catch (error) {
-			console.error('Error loading purchases:', error)
+		} catch (err: any) {
+			logError(err, 'loadPurchases')
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
 			setLoading(false)
 			setRefreshing(false)
 		}
@@ -620,6 +630,20 @@ const PurchasesScreen = () => {
 			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
 				<Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading purchases...</Text>
+			</View>
+		)
+	}
+
+	if (error && purchases.length === 0 && filter !== 'cart') {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<ScreenHeader title="Purchases" showBack={true} onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))} />
+				<ErrorState
+					title={error.title}
+					message={error.message}
+					onRetry={loadPurchases}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+				/>
 			</View>
 		)
 	}

@@ -4,10 +4,12 @@ import { useRouter } from 'expo-router'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useNotification } from '../../contexts/NotificationContext'
 import ScreenHeader from '../common/ScreenHeader'
+import ErrorState from '../common/ErrorState'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
+import { parseError, logError } from '../../utils/errorHandler'
 
 export default function NotificationsScreen() {
 	const { colors, isDark } = useTheme()
@@ -17,10 +19,12 @@ export default function NotificationsScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
 	const loadNotifications = async (pageNum: number = 1, isRefresh: boolean = false) => {
 		try {
 			if (pageNum === 1 && !isRefresh) setLoading(true)
+			setError(null)
 
 			const response = await getNotifications(pageNum, 10)
 			const newItems = response.data.docs || []
@@ -33,8 +37,14 @@ export default function NotificationsScreen() {
 
 			setHasMore(response.data.pagination.hasNextPage)
 			setPage(pageNum)
-		} catch (error) {
-			console.error('Failed to load notifications:', error)
+		} catch (err: any) {
+			logError(err, 'loadNotifications')
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
@@ -116,6 +126,20 @@ export default function NotificationsScreen() {
 					{item.content}
 				</Text>
 			</TouchableOpacity>
+		)
+	}
+
+	if (error && notifications.length === 0) {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<ScreenHeader title="Notifications" showBack={false} />
+				<ErrorState
+					title={error.title}
+					message={error.message}
+					onRetry={() => loadNotifications(1, true)}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+				/>
+			</View>
 		)
 	}
 
