@@ -13,13 +13,16 @@ export interface CreateProductRequest {
 	}
 	name: LocalizedName
 	price: {
-		value: {
+		total: {
 			tnd: number
+			eur?: number | null
+			usd?: number | null
 		}
-		unit: {
-			name: string
-			min?: number
-		}
+	}
+	unit: {
+		measure: string
+		min: number
+		max: number
 	}
 	searchTerms?: string[]
 	stock?: {
@@ -28,7 +31,7 @@ export interface CreateProductRequest {
 	}
 	availability?: {
 		startDate: string
-		endDate?: string
+		endDate?: string | null
 	}
 }
 

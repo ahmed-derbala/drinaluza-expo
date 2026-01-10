@@ -14,11 +14,23 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
 
 	const minQuantity = item.unit?.min || 1
+	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
 	const pricePerUnit = item.price.total.tnd / (item.unit?.min || 1)
 
-	const increment = () => setQuantity((prev) => prev + 1)
-	const decrement = () => setQuantity((prev) => (prev > minQuantity ? prev - 1 : minQuantity))
+	const isDecimal = ['kg', 'l', 'kilogram', 'liter'].includes(item.unit?.measure?.toLowerCase() || '')
+	const step = isDecimal ? 0.1 : 1
+
+	const increment = () =>
+		setQuantity((prev) => {
+			const next = Math.round((prev + step) * 100) / 100
+			return next <= maxQuantity ? next : prev
+		})
+	const decrement = () =>
+		setQuantity((prev) => {
+			const next = Math.round((prev - step) * 100) / 100
+			return next >= minQuantity ? next : minQuantity
+		})
 
 	const calculateTotal = () => (pricePerUnit * quantity).toFixed(2)
 

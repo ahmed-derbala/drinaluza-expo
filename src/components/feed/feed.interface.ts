@@ -57,6 +57,7 @@ export interface Price {
 export interface Unit {
 	measure: string
 	min: number
+	max: number
 	updatedAt?: string
 }
 export interface Stock {

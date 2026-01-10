@@ -53,6 +53,7 @@ export type ProductType = {
 	unit: {
 		measure: string
 		min: number
+		max: number
 		updatedAt: string
 	}
 	searchTerms: string[]

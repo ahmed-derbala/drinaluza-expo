@@ -14,6 +14,7 @@ export interface Product {
 	unit?: {
 		measure: string
 		min: number
+		max: number
 		updatedAt?: string
 	}
 	updatedAt: string

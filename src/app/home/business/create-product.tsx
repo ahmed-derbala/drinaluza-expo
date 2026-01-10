@@ -17,8 +17,9 @@ export default function CreateProductScreen() {
 	const [productName, setProductName] = useState('')
 	const [selectedDefaultProduct, setSelectedDefaultProduct] = useState<DefaultProduct | null>(null)
 	const [priceTND, setPriceTND] = useState('')
-	const [unit, setUnit] = useState('KG')
-	const [minUnit, setMinUnit] = useState('1')
+	const [unit, setUnit] = useState('kg')
+	const [minUnit, setMinUnit] = useState('0.01')
+	const [maxUnit, setMaxUnit] = useState('10')
 	const [stockQuantity, setStockQuantity] = useState('')
 	const [minThreshold, setMinThreshold] = useState('5')
 
@@ -31,9 +32,23 @@ export default function CreateProductScreen() {
 	const [loadingShops, setLoadingShops] = useState(false)
 	const [loadingDefaults, setLoadingDefaults] = useState(false)
 	const [searchQuery, setSearchQuery] = useState('')
+	const [showUnitPicker, setShowUnitPicker] = useState(false)
 
 	// Refs
 	const priceInputRef = useRef<TextInput>(null)
+
+	const COMMON_UNITS = ['kg', 'l', 'piece', 'tara']
+	const UNIT_LABELS: { [key: string]: string } = {
+		KG: 'Kilogram',
+		Gram: 'Gram',
+		L: 'Liter',
+		ML: 'Milliliter',
+		Piece: 'Individual Item',
+		Pack: 'Package',
+		Bottle: 'Bottle',
+		Box: 'Box',
+		Dozen: '12 Items'
+	}
 
 	useEffect(() => {
 		loadShops()
@@ -77,6 +92,28 @@ export default function CreateProductScreen() {
 		setShowDefaultProducts(false)
 	}
 
+	const handleUnitSelect = (selectedMeasure: string) => {
+		setUnit(selectedMeasure)
+		setShowUnitPicker(false)
+
+		// Set default min/max values based on measure
+		switch (selectedMeasure.toLowerCase()) {
+			case 'kg':
+			case 'l':
+				setMinUnit('0.01')
+				setMaxUnit('10')
+				break
+			case 'piece':
+			case 'tara':
+				setMinUnit('1')
+				setMaxUnit('10')
+				break
+			default:
+				// Keep current values or set base defaults
+				break
+		}
+	}
+
 	const validateForm = () => {
 		if (!selectedShop) {
 			Alert.alert('Validation Error', 'Please select a shop')
@@ -95,9 +132,18 @@ export default function CreateProductScreen() {
 			Alert.alert('Validation Error', 'Please enter a valid price')
 			return false
 		}
-		const minUnitNum = parseInt(minUnit)
-		if (isNaN(minUnitNum) || minUnitNum < 1) {
-			Alert.alert('Validation Error', 'Minimum unit must be at least 1')
+		const minUnitNum = parseFloat(minUnit)
+		if (isNaN(minUnitNum) || minUnitNum <= 0) {
+			Alert.alert('Validation Error', 'Minimum unit must be greater than 0')
+			return false
+		}
+		const maxUnitNum = parseFloat(maxUnit)
+		if (isNaN(maxUnitNum) || maxUnitNum <= 0) {
+			Alert.alert('Validation Error', 'Maximum unit must be greater than 0')
+			return false
+		}
+		if (maxUnitNum < minUnitNum) {
+			Alert.alert('Validation Error', 'Maximum unit cannot be less than minimum unit')
 			return false
 		}
 		return true
@@ -120,13 +166,16 @@ export default function CreateProductScreen() {
 				},
 				name: { en: productName.trim() },
 				price: {
-					value: {
-						tnd: parseFloat(priceTND)
-					},
-					unit: {
-						name: unit,
-						min: parseInt(minUnit)
+					total: {
+						tnd: parseFloat(priceTND),
+						eur: null,
+						usd: null
 					}
+				},
+				unit: {
+					measure: unit,
+					min: parseFloat(minUnit),
+					max: parseFloat(maxUnit)
 				},
 				searchTerms: selectedDefaultProduct.searchKeywords,
 				stock: stockQuantity
@@ -136,7 +185,8 @@ export default function CreateProductScreen() {
 						}
 					: undefined,
 				availability: {
-					startDate: new Date().toISOString()
+					startDate: new Date().toISOString(),
+					endDate: null
 				}
 			}
 
@@ -240,16 +290,10 @@ export default function CreateProductScreen() {
 							<View style={{ width: 16 }} />
 							<View style={{ flex: 1 }}>
 								<Text style={styles.inputLabel}>Unit *</Text>
-								<View style={[styles.inputWrapper, { borderColor: colors.border }]}>
-									<TextInput
-										style={[styles.input, { color: colors.text, textAlign: 'center' }]}
-										value={unit}
-										onChangeText={setUnit}
-										placeholder="KG"
-										placeholderTextColor={colors.textSecondary}
-										autoCapitalize="characters"
-									/>
-								</View>
+								<TouchableOpacity style={[styles.inputWrapper, { borderColor: colors.border }]} onPress={() => setShowUnitPicker(true)}>
+									<Text style={{ color: colors.text, flex: 1, fontSize: 16 }}>{unit || 'Select unit'}</Text>
+									<Ionicons name="caret-down" size={16} color={colors.textSecondary} />
+								</TouchableOpacity>
 							</View>
 							<View style={{ width: 16 }} />
 							<View style={{ flex: 1 }}>
@@ -259,15 +303,29 @@ export default function CreateProductScreen() {
 										style={[styles.input, { color: colors.text, textAlign: 'center' }]}
 										value={minUnit}
 										onChangeText={setMinUnit}
-										placeholder="1"
+										placeholder="0.01"
 										placeholderTextColor={colors.textSecondary}
-										keyboardType="number-pad"
+										keyboardType="decimal-pad"
+									/>
+								</View>
+							</View>
+							<View style={{ width: 16 }} />
+							<View style={{ flex: 1 }}>
+								<Text style={styles.inputLabel}>Max Qty *</Text>
+								<View style={[styles.inputWrapper, { borderColor: colors.border }]}>
+									<TextInput
+										style={[styles.input, { color: colors.text, textAlign: 'center' }]}
+										value={maxUnit}
+										onChangeText={setMaxUnit}
+										placeholder="10"
+										placeholderTextColor={colors.textSecondary}
+										keyboardType="decimal-pad"
 									/>
 								</View>
 							</View>
 						</View>
 						<Text style={styles.hint}>
-							Price per {unit || 'unit'}, minimum order: {minUnit || '1'} {unit || 'unit'}(s)
+							Price per {unit || 'unit'}, range: {minUnit || '0'} - {maxUnit || '0'} {unit || 'unit'}(s)
 						</Text>
 					</View>
 
@@ -413,6 +471,50 @@ export default function CreateProductScreen() {
 								ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No categories found</Text>}
 							/>
 						)}
+					</View>
+				</View>
+			</Modal>
+
+			{/* Unit Picker Modal */}
+			<Modal visible={showUnitPicker} animationType="slide" transparent onRequestClose={() => setShowUnitPicker(false)}>
+				<View style={styles.modalOverlay}>
+					<View style={[styles.modalContent, { backgroundColor: colors.card, maxHeight: '60%' }]}>
+						<View style={styles.modalHeader}>
+							<Text style={[styles.modalTitle, { color: colors.text }]}>Select Unit</Text>
+							<TouchableOpacity onPress={() => setShowUnitPicker(false)}>
+								<Ionicons name="close" size={24} color={colors.text} />
+							</TouchableOpacity>
+						</View>
+						<FlatList
+							data={COMMON_UNITS}
+							keyExtractor={(item) => item}
+							renderItem={({ item }) => (
+								<TouchableOpacity style={[styles.categoryItem, { borderBottomColor: colors.border }]} onPress={() => handleUnitSelect(item)}>
+									<View style={{ flex: 1 }}>
+										<Text style={[styles.categoryName, { color: colors.text }]}>{item}</Text>
+										<Text style={[styles.categoryNameAlt, { color: colors.textSecondary }]}>{UNIT_LABELS[item]}</Text>
+									</View>
+									{unit === item && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
+								</TouchableOpacity>
+							)}
+						/>
+						{/* Custom unit option */}
+						<View style={{ padding: 20 }}>
+							<Text style={[styles.inputLabel, { marginBottom: 12 }]}>Or enter custom unit:</Text>
+							<View style={[styles.inputWrapper, { borderColor: colors.border }]}>
+								<TextInput
+									style={[styles.input, { color: colors.text }]}
+									placeholder="e.g., Bag, Tray"
+									placeholderTextColor={colors.textSecondary}
+									onChangeText={setUnit}
+									value={COMMON_UNITS.includes(unit) ? '' : unit}
+									autoCapitalize="words"
+								/>
+								<TouchableOpacity onPress={() => setShowUnitPicker(false)} style={{ backgroundColor: colors.primary, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, marginLeft: 8 }}>
+									<Text style={{ color: '#fff', fontWeight: '700' }}>Apply</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
 					</View>
 				</View>
 			</Modal>
