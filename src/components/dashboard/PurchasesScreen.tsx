@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Animated, Dimensions, useWindowDimensions, Image } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Animated, Dimensions, useWindowDimensions } from 'react-native'
+import SmartImage from '../common/SmartImage'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -452,7 +453,7 @@ const PurchasesScreen = () => {
 								const price = item.price?.total?.tnd || 0
 								const quantity = item.quantity || 1
 								const itemWidth = '100%'
-								const imageUrl = item.defaultProduct?.images?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+								const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
 
 								return (
 									<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
@@ -467,13 +468,7 @@ const PurchasesScreen = () => {
 										>
 											{/* Image Area */}
 											<View style={styles.basketItemImageContainer}>
-												{imageUrl ? (
-													<Image source={{ uri: imageUrl }} style={styles.basketItemImage} resizeMode="cover" />
-												) : (
-													<View style={[styles.basketItemImage, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5', justifyContent: 'center', alignItems: 'center' }]}>
-														<Ionicons name="image-outline" size={24} color={colors.textTertiary} />
-													</View>
-												)}
+												<SmartImage source={{ uri: imageUrl || '' }} style={styles.basketItemImage} resizeMode="cover" fallbackIcon="image" />
 											</View>
 
 											{/* Content Area */}

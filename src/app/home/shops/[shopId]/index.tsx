@@ -1,12 +1,14 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { getShopDetails } from '../../../../components/shops/shops.api'
+import { getShopBySlug } from '../../../../components/shops/shops.api'
 import { Shop } from '../../../../components/shops/shops.interface'
 import { useTheme } from '../../../../contexts/ThemeContext'
+import { parseError } from '../../../../utils/errorHandler'
+import ErrorState from '../../../../components/common/ErrorState'
 
 export default function ShopDetailsScreen() {
-	const { shopId } = useLocalSearchParams<{ shopId: string }>()
+	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
@@ -14,32 +16,38 @@ export default function ShopDetailsScreen() {
 	const isWideScreen = width > maxWidth
 	const [shop, setShop] = useState<Shop | null>(null)
 	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState<string | null>(null)
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+
+	const loadShopDetails = async () => {
+		if (!shopSlug) return
+
+		try {
+			setLoading(true)
+			setError(null)
+			const response = await getShopBySlug(shopSlug)
+			setShop(response.data)
+		} catch (err: any) {
+			console.error('Failed to load shop details:', err)
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
+		} finally {
+			setLoading(false)
+		}
+	}
 
 	useEffect(() => {
-		const loadShopDetails = async () => {
-			if (!shopId) return
-
-			try {
-				setLoading(true)
-				const response = await getShopDetails(shopId)
-				setShop(response.data)
-			} catch (err) {
-				console.error('Failed to load shop details:', err)
-				setError('Failed to load shop details. Please try again.')
-			} finally {
-				setLoading(false)
-			}
-		}
-
 		loadShopDetails()
-	}, [shopId])
+	}, [shopSlug])
 
 	const handleViewProducts = () => {
-		if (!shopId) return
+		if (!shop) return
 		router.push({
 			pathname: '/home/shops/[shopId]/products',
-			params: { shopId, shopName: shop?.name?.en || 'Shop' }
+			params: { shopId: shop.slug }
 		})
 	}
 
@@ -51,10 +59,23 @@ export default function ShopDetailsScreen() {
 		)
 	}
 
-	if (error || !shop) {
+	if (error) {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<ErrorState
+					title={error.title}
+					message={error.message}
+					onRetry={loadShopDetails}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+				/>
+			</View>
+		)
+	}
+
+	if (!shop) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-				<Text style={[styles.errorText, { color: colors.text }]}>{error || 'Shop not found'}</Text>
+				<Text style={[styles.errorText, { color: colors.text }]}>Shop not found</Text>
 			</View>
 		)
 	}

@@ -38,6 +38,16 @@ export type ProductType = {
 		slug: string
 		name: LocalizedName
 		updatedAt: string
+		media?: {
+			thumbnail: {
+				url: string
+			}
+		}
+	}
+	media?: {
+		thumbnail?: {
+			url: string
+		}
 	}
 	name: LocalizedName
 	photos?: string[]
@@ -57,7 +67,6 @@ export type ProductType = {
 		updatedAt: string
 	}
 	searchTerms: string[]
-	isActive: boolean
 	availability: {
 		endDate: string | null
 		startDate: string

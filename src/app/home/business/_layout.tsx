@@ -124,6 +124,12 @@ export default function BusinessLayout() {
 					headerShown: false
 				}}
 			/>
+			<Stack.Screen
+				name="shops/[shopSlug]"
+				options={{
+					headerShown: false
+				}}
+			/>
 		</Stack>
 	)
 }

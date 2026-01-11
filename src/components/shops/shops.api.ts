@@ -17,6 +17,21 @@ export const getMyShops = async (): Promise<ShopsResponse> => {
 	}
 }
 
+export const getShops = async (page: number = 1, limit: number = 100): Promise<ShopsResponse> => {
+	try {
+		const response = await getApiClient().get(`/shops?page=${page}&limit=${limit}`)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'shops.api',
+			message: 'Error fetching shops',
+			error
+		})
+		throw error
+	}
+}
+
 export const createShop = async (shopData: CreateShopRequest): Promise<CreateShopResponse> => {
 	try {
 		log({
@@ -55,6 +70,38 @@ export const getShopDetails = async (shopId: string): Promise<ShopResponse> => {
 	}
 }
 
+export const getMyShopBySlug = async (slug: string): Promise<ShopResponse> => {
+	try {
+		const response = await getApiClient().get(`/shops/my-shops/${slug}`)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'shops.api',
+			message: 'Error fetching my shop by slug',
+			error,
+			data: { slug }
+		})
+		throw error
+	}
+}
+
+export const getShopBySlug = async (slug: string): Promise<ShopResponse> => {
+	try {
+		const response = await getApiClient().get(`/shops/${slug}`)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'shops.api',
+			message: 'Error fetching shop by slug',
+			error,
+			data: { slug }
+		})
+		throw error
+	}
+}
+
 export const getShopProducts = async (shopId: string): Promise<ShopProductsResponse> => {
 	try {
 		const response = await getApiClient().get(`/shops/my-shops/${shopId}/products`)
@@ -66,6 +113,22 @@ export const getShopProducts = async (shopId: string): Promise<ShopProductsRespo
 			message: 'Error fetching shop products',
 			error,
 			data: { shopId }
+		})
+		throw error
+	}
+}
+
+export const getShopProductsBySlug = async (slug: string): Promise<ShopProductsResponse> => {
+	try {
+		const response = await getApiClient().get(`/shops/${slug}/products`)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'shops.api',
+			message: 'Error fetching shop products by slug',
+			error,
+			data: { slug }
 		})
 		throw error
 	}

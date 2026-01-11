@@ -5,72 +5,14 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../../contexts/ThemeContext'
 import { LinearGradient } from 'expo-linear-gradient'
 import ScreenHeader from '../../../components/common/ScreenHeader'
+import { getShops } from '../../../components/shops/shops.api'
+import { Shop } from '../../../components/shops/shops.interface'
+import { parseError } from '../../../utils/errorHandler'
+import ErrorState from '../../../components/common/ErrorState'
 
 const { width } = Dimensions.get('window')
 
-// Mock data - replace with actual API call when available
-const MOCK_SHOPS = [
-	{
-		_id: '1',
-		name: 'Fresh Market',
-		owner: { _id: '1', slug: 'fresh-market', name: 'John Doe' },
-		isActive: true,
-		deliveryRadiusKm: 5,
-		address: 'Downtown Area',
-		productsCount: 45,
-		rating: 4.5
-	},
-	{
-		_id: '2',
-		name: 'Tech Store',
-		owner: { _id: '2', slug: 'tech-store', name: 'Jane Smith' },
-		isActive: true,
-		deliveryRadiusKm: 10,
-		address: 'Tech District',
-		productsCount: 120,
-		rating: 4.8
-	},
-	{
-		_id: '3',
-		name: 'Fashion Boutique',
-		owner: { _id: '3', slug: 'fashion-boutique', name: 'Alice Johnson' },
-		isActive: true,
-		deliveryRadiusKm: 8,
-		address: 'Shopping Mall',
-		productsCount: 89,
-		rating: 4.6
-	},
-	{
-		_id: '4',
-		name: 'Home Essentials',
-		owner: { _id: '4', slug: 'home-essentials', name: 'Bob Williams' },
-		isActive: true,
-		deliveryRadiusKm: 12,
-		address: 'Residential Area',
-		productsCount: 67,
-		rating: 4.3
-	},
-	{
-		_id: '5',
-		name: 'Organic Foods',
-		owner: { _id: '5', slug: 'organic-foods', name: 'Emma Davis' },
-		isActive: true,
-		deliveryRadiusKm: 6,
-		address: 'Green Valley',
-		productsCount: 78,
-		rating: 4.9
-	},
-	{
-		_id: '6',
-		name: 'Sports Corner',
-		owner: { _id: '6', slug: 'sports-corner', name: 'Mike Brown' },
-		isActive: true,
-		deliveryRadiusKm: 15,
-		address: 'Sports Complex',
-		productsCount: 134,
-		rating: 4.4
-	}
-]
+// Mock data removed in favor of real API
 
 const createStyles = (colors: any, isDark: boolean) =>
 	StyleSheet.create({
@@ -228,23 +170,27 @@ const SHOP_GRADIENTS = [
 export default function ShopsListScreen() {
 	const { colors, isDark } = useTheme()
 	const router = useRouter()
-	const [shops, setShops] = useState<any[]>([])
+	const [shops, setShops] = useState<Shop[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
 	const styles = createStyles(colors, isDark)
 
 	const loadShops = async () => {
 		try {
-			// TODO: Replace with actual API call when available
-			// const response = await getAllShops()
-			// setShops(response.data.docs)
-
-			// Using mock data for now
-			await new Promise((resolve) => setTimeout(resolve, 500))
-			setShops(MOCK_SHOPS)
-		} catch (error) {
-			console.error('Error loading shops:', error)
+			if (!refreshing) setLoading(true)
+			setError(null)
+			const response = await getShops()
+			setShops(response.data.docs || [])
+		} catch (err: any) {
+			console.error('Error loading shops:', err)
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
@@ -260,25 +206,28 @@ export default function ShopsListScreen() {
 		loadShops()
 	}, [])
 
-	const handleShopPress = (shopId: string) => {
-		// Navigate to shop details
-		router.push(`/home/shops/${shopId}` as any)
+	const handleShopPress = (slug: string) => {
+		// Navigate to shop details using slug
+		router.push(`/home/shops/${slug}` as any)
 	}
 
-	const renderShopCard = ({ item, index }: { item: any; index: number }) => {
+	const renderShopCard = ({ item, index }: { item: Shop; index: number }) => {
 		const gradient = SHOP_GRADIENTS[index % SHOP_GRADIENTS.length]
 
 		return (
-			<TouchableOpacity style={styles.shopCard} onPress={() => handleShopPress(item._id)} activeOpacity={0.7}>
+			<TouchableOpacity style={styles.shopCard} onPress={() => handleShopPress(item.slug)} activeOpacity={0.7}>
 				<View style={styles.shopCardContent}>
 					<View style={styles.shopHeader}>
 						<View style={styles.shopInfo}>
-							<Text style={styles.shopName}>{item.name}</Text>
-							<Text style={styles.shopOwner}>by {item.owner.name}</Text>
+							<Text style={styles.shopName}>{item.name.en}</Text>
+							<Text style={styles.shopOwner}>by {item.owner.name.en}</Text>
 							{item.address && (
 								<View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
 									<Ionicons name="location-outline" size={14} color={colors.textTertiary} />
-									<Text style={[styles.shopAddress, { marginLeft: 4 }]}>{item.address}</Text>
+									<Text style={[styles.shopAddress, { marginLeft: 4 }]}>
+										{item.address.city ? `${item.address.city}, ` : ''}
+										{item.address.country}
+									</Text>
 								</View>
 							)}
 						</View>
@@ -288,20 +237,10 @@ export default function ShopsListScreen() {
 					</View>
 
 					<View style={styles.shopStats}>
-						<View style={styles.statItem}>
-							<Ionicons name="cube-outline" size={18} color={colors.primary} style={styles.statIcon} />
-							<Text style={styles.statText}>{item.productsCount} products</Text>
-						</View>
 						{item.deliveryRadiusKm && (
 							<View style={styles.statItem}>
 								<Ionicons name="navigate-outline" size={18} color={colors.secondary} style={styles.statIcon} />
 								<Text style={styles.statText}>{item.deliveryRadiusKm} km</Text>
-							</View>
-						)}
-						{item.rating && (
-							<View style={styles.ratingContainer}>
-								<Ionicons name="star" size={18} color="#F59E0B" />
-								<Text style={styles.ratingText}>{item.rating.toFixed(1)}</Text>
 							</View>
 						)}
 					</View>
@@ -310,15 +249,22 @@ export default function ShopsListScreen() {
 		)
 	}
 
-	const renderEmpty = () => (
-		<View style={styles.emptyContainer}>
-			<View style={styles.emptyIcon}>
-				<MaterialIcons name="store" size={40} color={colors.textTertiary} />
+	const renderEmpty = () => {
+		if (error) {
+			return (
+				<ErrorState title={error.title} message={error.message} onRetry={loadShops} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
+			)
+		}
+		return (
+			<View style={styles.emptyContainer}>
+				<View style={styles.emptyIcon}>
+					<MaterialIcons name="store" size={40} color={colors.textTertiary} />
+				</View>
+				<Text style={styles.emptyTitle}>No shops available</Text>
+				<Text style={styles.emptyText}>Check back later for new shops</Text>
 			</View>
-			<Text style={styles.emptyTitle}>No shops available</Text>
-			<Text style={styles.emptyText}>Check back later for new shops</Text>
-		</View>
-	)
+		)
+	}
 
 	if (loading) {
 		return (
@@ -334,12 +280,14 @@ export default function ShopsListScreen() {
 	return (
 		<View style={styles.container}>
 			<ScreenHeader title="Browse Shops" showBack={true} />
-			<View style={styles.headerSection}>
-				<Text style={styles.headerTitle}>Discover Shops</Text>
-				<Text style={styles.headerSubtitle}>
-					{shops.length} {shops.length === 1 ? 'shop' : 'shops'} available near you
-				</Text>
-			</View>
+			{!error && (
+				<View style={styles.headerSection}>
+					<Text style={styles.headerTitle}>Discover Shops</Text>
+					<Text style={styles.headerSubtitle}>
+						{shops.length} {shops.length === 1 ? 'shop' : 'shops'} available near you
+					</Text>
+				</View>
+			)}
 			<FlatList
 				data={shops}
 				renderItem={renderShopCard}

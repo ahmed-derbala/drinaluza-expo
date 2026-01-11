@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../../contexts/ThemeContext'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '../../../components/products/products.api'
 import { getMyShops } from '../../../components/shops/shops.api'
 import { Shop } from '../../../components/shops/shops.interface'
 import ScreenHeader from '../../../components/common/ScreenHeader'
+import SmartImage from '../../../components/common/SmartImage'
 
 export default function CreateProductScreen() {
 	const router = useRouter()
@@ -14,11 +15,13 @@ export default function CreateProductScreen() {
 
 	// Form state
 	const [selectedShop, setSelectedShop] = useState<Shop | null>(null)
-	const [productName, setProductName] = useState('')
+	const [productNameEn, setProductNameEn] = useState('')
+	const [productNameTnLatn, setProductNameTnLatn] = useState('')
+	const [productNameTnArab, setProductNameTnArab] = useState('')
 	const [selectedDefaultProduct, setSelectedDefaultProduct] = useState<DefaultProduct | null>(null)
-	const [priceTND, setPriceTND] = useState('')
+	const [priceTND, setPriceTND] = useState('10')
 	const [unit, setUnit] = useState('kg')
-	const [minUnit, setMinUnit] = useState('0.01')
+	const [minUnit, setMinUnit] = useState('1')
 	const [maxUnit, setMaxUnit] = useState('10')
 	const [stockQuantity, setStockQuantity] = useState('')
 	const [minThreshold, setMinThreshold] = useState('5')
@@ -88,7 +91,9 @@ export default function CreateProductScreen() {
 
 	const handleSelectDefaultProduct = (product: DefaultProduct) => {
 		setSelectedDefaultProduct(product)
-		setProductName(product.name.en)
+		setProductNameEn(product.name.en)
+		setProductNameTnLatn(product.name.tn_latn || '')
+		setProductNameTnArab(product.name.tn_arab || '')
 		setShowDefaultProducts(false)
 	}
 
@@ -119,12 +124,12 @@ export default function CreateProductScreen() {
 			Alert.alert('Validation Error', 'Please select a shop')
 			return false
 		}
-		if (!productName.trim()) {
-			Alert.alert('Validation Error', 'Please enter a product name')
+		if (!productNameEn.trim()) {
+			Alert.alert('Validation Error', 'Please enter a product name (English)')
 			return false
 		}
 		if (!selectedDefaultProduct) {
-			Alert.alert('Validation Error', 'Please select a product category')
+			Alert.alert('Validation Error', 'Please select a default product')
 			return false
 		}
 		const price = parseFloat(priceTND)
@@ -164,7 +169,11 @@ export default function CreateProductScreen() {
 					slug: selectedDefaultProduct.slug,
 					_id: selectedDefaultProduct._id
 				},
-				name: { en: productName.trim() },
+				name: {
+					en: productNameEn.trim(),
+					tn_latn: productNameTnLatn.trim() || undefined,
+					tn_arab: productNameTnArab.trim() || undefined
+				},
 				price: {
 					total: {
 						tnd: parseFloat(priceTND),
@@ -234,36 +243,87 @@ export default function CreateProductScreen() {
 					{/* Default Product Selection */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
-							<Text style={styles.sectionTitle}>Product Category</Text>
+							<Text style={styles.sectionTitle}>Default Product</Text>
 							<Text style={styles.required}>*</Text>
 						</View>
 						<TouchableOpacity style={[styles.selectButton, selectedDefaultProduct && styles.selectButtonActive]} onPress={() => setShowDefaultProducts(true)}>
-							<View style={[styles.selectIcon, { backgroundColor: colors.primary + '15' }]}>
-								<Text style={{ fontSize: 20 }}>{selectedDefaultProduct ? '✓' : '📦'}</Text>
+							<View style={[styles.selectIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
+								<SmartImage source={{ uri: selectedDefaultProduct?.media?.thumbnail?.url || '' }} style={{ width: '100%', height: '100%' }} resizeMode="cover" fallbackIcon="inventory" />
 							</View>
 							<View style={{ flex: 1 }}>
-								<Text style={[styles.selectLabel, selectedDefaultProduct && { color: colors.text }]}>{selectedDefaultProduct ? selectedDefaultProduct.name.en : 'Select product category'}</Text>
+								<Text style={[styles.selectLabel, selectedDefaultProduct && { color: colors.text }]}>{selectedDefaultProduct ? selectedDefaultProduct.name.en : 'Select default product'}</Text>
 							</View>
 							<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
 						</TouchableOpacity>
 					</View>
 
-					{/* Product Name */}
+					{/* Product Names */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
-							<Text style={styles.sectionTitle}>Product Name</Text>
+							<Text style={styles.sectionTitle}>Product Names</Text>
 							<Text style={styles.required}>*</Text>
 						</View>
-						<View style={[styles.inputWrapper, { borderColor: productName ? colors.primary : colors.border }]}>
-							<Ionicons name="pricetag" size={20} color={colors.textSecondary} style={{ marginRight: 12 }} />
+
+						{/* EN Name */}
+						<View style={styles.inputLabelRow}>
+							<Text style={[styles.inputLabel, { color: colors.text }]}>English Name</Text>
+							<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+						</View>
+						<View style={[styles.inputWrapper, { borderColor: productNameEn ? colors.primary : colors.border, marginBottom: 16 }]}>
+							<View style={[styles.inputIcon, { backgroundColor: colors.primary + '10' }]}>
+								<Text style={{ fontSize: 16 }}>🇺🇸</Text>
+							</View>
 							<TextInput
 								style={[styles.input, { color: colors.text }]}
-								value={productName}
-								onChangeText={setProductName}
+								value={productNameEn}
+								onChangeText={setProductNameEn}
 								placeholder="e.g., Fresh Atlantic Salmon"
 								placeholderTextColor={colors.textSecondary}
 								returnKeyType="next"
-								onSubmitEditing={() => priceInputRef.current?.focus()}
+							/>
+						</View>
+
+						{/* TN Latin Name */}
+						<View style={styles.inputLabelRow}>
+							<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian Name (Latin)</Text>
+							<Text style={[styles.optional, { color: colors.textSecondary }]}>Optional</Text>
+						</View>
+						<View style={[styles.inputWrapper, { borderColor: productNameTnLatn ? colors.primary : colors.border, marginBottom: 16 }]}>
+							<View style={[styles.inputIcon, { backgroundColor: colors.primary + '10' }]}>
+								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<Text style={{ fontSize: 14 }}>🇹🇳</Text>
+									<Text style={{ fontSize: 10, marginLeft: 2, fontWeight: '700' }}>A</Text>
+								</View>
+							</View>
+							<TextInput
+								style={[styles.input, { color: colors.text }]}
+								value={productNameTnLatn}
+								onChangeText={setProductNameTnLatn}
+								placeholder="e.g., Salmon Fresh"
+								placeholderTextColor={colors.textSecondary}
+								returnKeyType="next"
+							/>
+						</View>
+
+						{/* TN Arabic Name */}
+						<View style={styles.inputLabelRow}>
+							<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian Name (Arabic)</Text>
+							<Text style={[styles.optional, { color: colors.textSecondary }]}>Optional</Text>
+						</View>
+						<View style={[styles.inputWrapper, { borderColor: productNameTnArab ? colors.primary : colors.border }]}>
+							<View style={[styles.inputIcon, { backgroundColor: colors.primary + '10' }]}>
+								<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+									<Text style={{ fontSize: 14 }}>🇹🇳</Text>
+									<Text style={{ fontSize: 10, marginLeft: 2, fontWeight: '700' }}>ع</Text>
+								</View>
+							</View>
+							<TextInput
+								style={[styles.input, { color: colors.text, textAlign: 'right' }]}
+								value={productNameTnArab}
+								onChangeText={setProductNameTnArab}
+								placeholder="مثلا: سالمون طازج"
+								placeholderTextColor={colors.textSecondary}
+								returnKeyType="next"
 							/>
 						</View>
 					</View>
@@ -303,7 +363,7 @@ export default function CreateProductScreen() {
 										style={[styles.input, { color: colors.text, textAlign: 'center' }]}
 										value={minUnit}
 										onChangeText={setMinUnit}
-										placeholder="0.01"
+										placeholder="1"
 										placeholderTextColor={colors.textSecondary}
 										keyboardType="decimal-pad"
 									/>
@@ -369,7 +429,7 @@ export default function CreateProductScreen() {
 						<Text style={{ fontSize: 20, marginRight: 12 }}>💡</Text>
 						<View style={{ flex: 1 }}>
 							<Text style={[styles.infoTitle, { color: colors.text }]}>Quick Tip</Text>
-							<Text style={[styles.infoText, { color: colors.textSecondary }]}>Select a product category to ensure your product appears in the right searches.</Text>
+							<Text style={[styles.infoText, { color: colors.textSecondary }]}>Select a default product to ensure your product appears in the right searches.</Text>
 						</View>
 					</View>
 				</ScrollView>
@@ -380,12 +440,12 @@ export default function CreateProductScreen() {
 						style={[
 							styles.createButton,
 							{
-								backgroundColor: selectedShop && productName && selectedDefaultProduct && priceTND ? colors.primary : colors.border,
-								opacity: selectedShop && productName && selectedDefaultProduct && priceTND ? 1 : 0.5
+								backgroundColor: selectedShop && productNameEn && selectedDefaultProduct && priceTND ? colors.primary : colors.border,
+								opacity: selectedShop && productNameEn && selectedDefaultProduct && priceTND ? 1 : 0.5
 							}
 						]}
 						onPress={handleCreateProduct}
-						disabled={!selectedShop || !productName || !selectedDefaultProduct || !priceTND || creating}
+						disabled={!selectedShop || !productNameEn || !selectedDefaultProduct || !priceTND || creating}
 					>
 						{creating ? (
 							<ActivityIndicator color="#fff" size="small" />
@@ -437,7 +497,7 @@ export default function CreateProductScreen() {
 				<View style={styles.modalOverlay}>
 					<View style={[styles.modalContent, { backgroundColor: colors.card }]}>
 						<View style={styles.modalHeader}>
-							<Text style={[styles.modalTitle, { color: colors.text }]}>Select Category</Text>
+							<Text style={[styles.modalTitle, { color: colors.text }]}>Select Default Product</Text>
 							<TouchableOpacity onPress={() => setShowDefaultProducts(false)}>
 								<Ionicons name="close" size={24} color={colors.text} />
 							</TouchableOpacity>
@@ -449,7 +509,7 @@ export default function CreateProductScreen() {
 								style={[styles.searchInput, { color: colors.text }]}
 								value={searchQuery}
 								onChangeText={setSearchQuery}
-								placeholder="Search categories..."
+								placeholder="Search products..."
 								placeholderTextColor={colors.textSecondary}
 							/>
 						</View>
@@ -462,13 +522,21 @@ export default function CreateProductScreen() {
 								keyExtractor={(item) => item._id}
 								renderItem={({ item }) => (
 									<TouchableOpacity style={[styles.categoryItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectDefaultProduct(item)}>
+										<View style={styles.categoryImageContainer}>
+											<SmartImage source={{ uri: item.media?.thumbnail?.url || '' }} style={styles.categoryThumbnail} resizeMode="cover" fallbackIcon="image" />
+										</View>
 										<View style={{ flex: 1 }}>
 											<Text style={[styles.categoryName, { color: colors.text }]}>{item.name.en}</Text>
+											{item.searchKeywords && item.searchKeywords.length > 0 && (
+												<Text style={[styles.categoryKeywords, { color: colors.textSecondary }]} numberOfLines={1}>
+													{item.searchKeywords.join(', ')}
+												</Text>
+											)}
 										</View>
 										{selectedDefaultProduct?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
 									</TouchableOpacity>
 								)}
-								ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No categories found</Text>}
+								ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products found</Text>}
 							/>
 						)}
 					</View>
@@ -709,6 +777,36 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		categoryNameAlt: {
 			fontSize: 14
+		},
+		categoryImageContainer: {
+			marginRight: 16
+		},
+		categoryThumbnail: {
+			width: 50,
+			height: 50,
+			borderRadius: 8
+		},
+		categoryKeywords: {
+			fontSize: 12,
+			marginTop: 2
+		},
+		inputLabelRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginBottom: 8
+		},
+		inputIcon: {
+			width: 32,
+			height: 32,
+			borderRadius: 8,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: 10
+		},
+		optional: {
+			marginLeft: 4,
+			fontSize: 12,
+			fontWeight: '500'
 		},
 		emptyText: {
 			textAlign: 'center',

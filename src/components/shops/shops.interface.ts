@@ -12,7 +12,7 @@ export type GeoPoint = {
 export type Owner = {
 	_id: string
 	slug: string
-	name: string
+	name: LocalizedName
 	updatedAt?: string
 }
 
@@ -71,17 +71,21 @@ export interface Product {
 	shop: Shop
 	name: LocalizedName
 	price: {
-		value: {
+		total: {
 			tnd: number
+			eur?: number | null
+			usd?: number | null
+			updatedAt?: string
 		}
-		unit: {
-			name: string
-			min: number
-		}
-		createdAt: string
-		updatedAt: string
+		updatedAt?: string
 	}
-	searchTerms: string[]
+	unit?: {
+		measure: string
+		min: number
+		max: number
+		updatedAt?: string
+	}
+	searchTerms?: string[]
 	isActive: boolean
 	availability: {
 		endDate: string | null
@@ -91,11 +95,27 @@ export interface Product {
 		quantity: number
 		minThreshold: number
 	}
-	photos: string[]
+	photos?: string[]
+	media?: {
+		thumbnail?: {
+			url: string
+		}
+	}
+	defaultProduct?: {
+		_id: string
+		slug: string
+		name: LocalizedName
+		updatedAt: string
+		media?: {
+			thumbnail?: {
+				url: string
+			}
+		}
+	}
 	slug: string
 	createdAt: string
 	updatedAt: string
-	__v: number
+	__v?: number
 }
 
 export type ShopResponse = {

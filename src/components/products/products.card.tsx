@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import SmartImage from '../common/SmartImage'
 import { MaterialIcons } from '@expo/vector-icons'
 import { FeedItem } from '../feed/feed.interface'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -39,7 +40,10 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			{/* Shop Header */}
 			<View style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
-					<Text style={styles.shopName}>{item.shop.name?.en}</Text>
+					<View style={styles.shopNameRow}>
+						<Text style={styles.shopName}>{item.shop.name?.en}</Text>
+						{item.shop.owner?.business?.name?.en && item.shop.owner.business.name.en !== item.shop.name?.en && <Text style={styles.businessName}> • {item.shop.owner.business.name.en}</Text>}
+					</View>
 					<Text style={styles.shopLocation}>{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}</Text>
 				</View>
 				<MaterialIcons name="store" size={20} color={isDark ? colors.textSecondary : '#666'} />
@@ -47,25 +51,31 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 			{/* Product Photo */}
 			<View style={styles.imageContainer}>
-				{item.defaultProduct?.images?.thumbnail?.url || item.photos?.[0] ? (
-					<Image source={{ uri: item.defaultProduct?.images?.thumbnail?.url || item.photos[0] }} style={styles.productImage} resizeMode="cover" />
-				) : (
-					<View style={styles.imagePlaceholder}>
-						<MaterialIcons name="image-not-supported" size={40} color={isDark ? colors.textTertiary : '#ccc'} />
-					</View>
-				)}
+				<SmartImage
+					source={{ uri: item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0] }}
+					style={styles.productImage}
+					resizeMode="cover"
+					fallbackIcon="image-not-supported"
+				/>
 			</View>
 
 			{/* Product Info */}
 			<View style={styles.productInfo}>
-				<Text style={styles.productName}>{item.name?.en}</Text>
+				<View style={styles.productNameContainer}>
+					<Text style={styles.productName}>{item.name?.en}</Text>
+					{(item.name?.tn_latn || item.name?.tn_arab) && (
+						<Text style={styles.productNameSecondary}>
+							{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
+						</Text>
+					)}
+				</View>
 
 				{/* Price and Unit */}
 				<View style={styles.priceContainer}>
 					<Text style={styles.priceText}>
 						{pricePerUnit.toFixed(2)} TND / {item.unit?.measure || ''}
 					</Text>
-					{item.stock.quantity <= 0 && <Text style={styles.outOfStock}>Out of Stock</Text>}
+					{(item.stock.quantity <= 0 || item.state.code !== 'active') && <Text style={styles.outOfStock}>{item.state.code !== 'active' ? 'Unavailable' : 'Out of Stock'}</Text>}
 				</View>
 
 				{/* Quantity Controls */}
@@ -92,11 +102,11 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 				{/* Add to Cart Button */}
 				<TouchableOpacity
-					style={[styles.addToCartButton, item.stock.quantity <= 0 && styles.disabledButton]}
-					onPress={() => item.stock.quantity > 0 && addToBasket(item, quantity)}
-					disabled={item.stock.quantity <= 0}
+					style={[styles.addToCartButton, (item.stock.quantity <= 0 || item.state.code !== 'active') && styles.disabledButton]}
+					onPress={() => item.stock.quantity > 0 && item.state.code === 'active' && addToBasket(item, quantity)}
+					disabled={item.stock.quantity <= 0 || item.state.code !== 'active'}
 				>
-					<Text style={styles.addToCartText}>{item.stock.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}</Text>
+					<Text style={styles.addToCartText}>{item.state.code !== 'active' ? 'Unavailable' : item.stock.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}</Text>
 				</TouchableOpacity>
 			</View>
 		</View>
@@ -138,6 +148,17 @@ const createStyles = (colors: any, isDark: boolean) =>
 			color: isDark ? colors.textSecondary : '#0277BD', // Secondary Text vs Light Blue 800
 			marginTop: 2
 		},
+		shopNameRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			flexWrap: 'wrap'
+		},
+		businessName: {
+			fontSize: 13,
+			fontWeight: '500',
+			color: isDark ? colors.textSecondary : '#0288D1',
+			marginLeft: 4
+		},
 		imageContainer: {
 			width: '100%',
 			aspectRatio: 1.6,
@@ -163,8 +184,16 @@ const createStyles = (colors: any, isDark: boolean) =>
 		productName: {
 			fontSize: 20,
 			fontWeight: '700',
-			color: isDark ? colors.text : '#01579B',
+			color: isDark ? colors.text : '#01579B'
+		},
+		productNameContainer: {
 			marginBottom: 8
+		},
+		productNameSecondary: {
+			fontSize: 14,
+			color: isDark ? colors.textSecondary : '#0288D1',
+			marginTop: 2,
+			fontWeight: '500'
 		},
 		priceContainer: {
 			flexDirection: 'row',

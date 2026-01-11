@@ -12,26 +12,7 @@ export interface ErrorInfo {
  * Parse an error and return user-friendly error information
  */
 export const parseError = (error: any): ErrorInfo => {
-	// Network errors
-	if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
-		return {
-			title: 'Connection Timeout',
-			message: 'The request took too long. Please check your internet connection and try again.',
-			type: 'timeout',
-			canRetry: true
-		}
-	}
-
-	if (error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
-		return {
-			title: 'Network Error',
-			message: 'Unable to connect to the server. Please check your internet connection or server settings.',
-			type: 'network',
-			canRetry: true
-		}
-	}
-
-	// Axios errors with response
+	// 1. Axios errors with response (Server was reached)
 	if (error.response) {
 		const status = error.response.status
 		const data = error.response.data
@@ -75,33 +56,43 @@ export const parseError = (error: any): ErrorInfo => {
 			case 504:
 				return {
 					title: 'Server Error',
-					message: 'The server encountered an error. Please try again later.',
+					message: data?.message || 'The server encountered an error. Please try again later.',
 					type: 'server',
 					statusCode: status,
 					canRetry: true
 				}
 			default:
 				return {
-					title: 'Error',
-					message: data?.message || 'An unexpected error occurred.',
-					type: 'unknown',
+					title: status >= 500 ? 'Server Error' : 'Request Error',
+					message: data?.message || 'An unexpected response was received.',
+					type: status >= 500 ? 'server' : 'client',
 					statusCode: status,
-					canRetry: true
+					canRetry: status >= 500
 				}
 		}
 	}
 
-	// Request was made but no response
-	if (error.request) {
+	// 2. Connection Timeout
+	if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
 		return {
-			title: 'No Response',
-			message: 'The server is not responding. Please check if the server is running.',
+			title: 'Connection Timeout',
+			message: 'The request took too long. Please check your internet connection and try again.',
+			type: 'timeout',
+			canRetry: true
+		}
+	}
+
+	// 3. Network Errors (No response received - server unreachable)
+	if (error.request || error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
+		return {
+			title: 'Network Error',
+			message: 'Unable to connect to the server. Please check your internet connection or server settings.',
 			type: 'network',
 			canRetry: true
 		}
 	}
 
-	// Something else happened
+	// 4. Something else happened
 	return {
 		title: 'Error',
 		message: error.message || 'An unexpected error occurred.',

@@ -6,16 +6,15 @@ import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
 import { LinearGradient } from 'expo-linear-gradient'
 import { LineChart } from 'react-native-chart-kit'
+import { getPurchases } from '../orders/orders.api'
+import { OrderItem } from '../orders/orders.interface'
+import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
+import { logError, parseError } from '../../utils/errorHandler'
+import ErrorState from '../common/ErrorState'
 
 const { width } = Dimensions.get('window')
 
-type Order = {
-	id: string
-	shopName: string
-	amount: number
-	status: 'pending' | 'completed' | 'cancelled' | 'processing'
-	date: string
-}
+type Order = OrderItem
 
 type StatCardProps = {
 	title: string
@@ -100,27 +99,41 @@ const Dashboard = () => {
 	})
 	const [recentPurchases, setRecentPurchases] = useState<Order[]>([])
 	const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0])
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
 	const loadDashboard = useCallback(async () => {
 		try {
 			setLoading(true)
-			// Placeholder data; replace with API calls when ready
+			setError(null)
+			const response = await getPurchases()
+			const docs = response.data.docs || []
+
+			// Calculate stats from data
+			const totalSpent = docs.reduce((acc, order) => acc + (order.price?.total?.tnd || 0), 0)
+			const pendingCount = docs.filter((o) => o.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION).length
+			const completedCount = docs.filter((o) => [orderStatusEnum.DELIVERED_TO_CUSTOMER, orderStatusEnum.RECEIVED_BY_CUSTOMER].includes(o.status)).length
+
 			setStats({
-				totalPurchases: 47,
-				pendingPurchases: 5,
-				completedPurchases: 38,
-				totalSpent: 4892.75
+				totalPurchases: docs.length,
+				pendingPurchases: pendingCount,
+				completedPurchases: completedCount,
+				totalSpent: totalSpent
 			})
-			setRecentPurchases([
-				{ id: '1', shopName: 'Fresh Market', amount: 125.5, status: 'completed', date: '2 hours ago' },
-				{ id: '2', shopName: 'Tech Store', amount: 450, status: 'processing', date: '1 day ago' },
-				{ id: '3', shopName: 'Fashion Boutique', amount: 89.99, status: 'completed', date: '3 days ago' },
-				{ id: '4', shopName: 'Home Essentials', amount: 234.5, status: 'pending', date: '5 days ago' }
-			])
-			// Mock chart data
-			setChartData([500, 1200, 900, 1500, 2000, 4892])
-		} catch (error) {
-			console.error('Failed to load customer dashboard', error)
+
+			setRecentPurchases(docs.slice(0, 5))
+
+			if (docs.length > 0) {
+				const last6Months = [0, 0, 0, 0, 0, totalSpent]
+				setChartData(last6Months)
+			}
+		} catch (err: any) {
+			logError(err, 'loadDashboard')
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
@@ -137,22 +150,25 @@ const Dashboard = () => {
 	}, [loadDashboard])
 
 	const getStatusColor = useCallback(
-		(status: Order['status']) => {
-			switch (status) {
-				case 'completed':
-					return colors.success
-				case 'processing':
-					return colors.info
-				case 'pending':
-					return colors.warning
-				case 'cancelled':
-					return colors.error
-				default:
-					return colors.textSecondary
-			}
+		(status: string) => {
+			return orderStatusColors[status] || colors.textSecondary
 		},
 		[colors]
 	)
+
+	const formatDate = (dateString: string) => {
+		const date = new Date(dateString)
+		const now = new Date()
+		const diffTime = Math.abs(now.getTime() - date.getTime())
+		const diffMinutes = Math.floor(diffTime / (1000 * 60))
+		const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
+		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
+
+		if (diffMinutes < 60) return `${diffMinutes}m ago`
+		if (diffHours < 24) return `${diffHours}h ago`
+		if (diffDays < 7) return `${diffDays}d ago`
+		return date.toLocaleDateString()
+	}
 
 	const statCards = useMemo(
 		() => [
@@ -200,12 +216,6 @@ const Dashboard = () => {
 				subtext: 'Latest offers',
 				icon: <Feather name="tag" size={22} color={colors.success} />,
 				onPress: () => router.push('/home/feed' as any)
-			},
-			{
-				label: 'Profile',
-				subtext: 'Manage account',
-				icon: <Feather name="user" size={22} color={colors.warning} />,
-				onPress: () => router.push('/home/profile' as any)
 			}
 		],
 		[colors.info, colors.primary, colors.success, colors.warning, router]
@@ -214,141 +224,91 @@ const Dashboard = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader
-				title="Overview"
+				title="Dashboard"
 				subtitle="Welcome back"
 				showBack={false}
 				rightActions={
 					<TouchableOpacity onPress={onRefresh} accessibilityLabel="Refresh dashboard">
-						<Ionicons name={refreshing ? 'refresh' : 'notifications-outline'} size={24} color={colors.text} />
+						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
 					</TouchableOpacity>
 				}
 			/>
 
-			<ScrollView
-				contentContainerStyle={styles.scrollContent}
-				refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-				showsVerticalScrollIndicator={false}
-			>
-				{/* Overview Section */}
-				<View style={styles.section}>
-					{/* Hero Card for Total Spent */}
-					<StatCard
-						title="Total Spent"
-						value={`${Math.round(stats.totalSpent)} TND`}
-						icon={<MaterialIcons name="account-balance-wallet" size={24} color="#fff" />}
-						accent={colors.primary}
-						variant="hero"
-					/>
-
-					{/* Smaller Stats Row */}
-					<View style={styles.statsRow}>
-						{statCards.map((card) => (
-							<StatCard key={card.title} {...card} />
-						))}
-					</View>
-
-					{/* Spending Chart */}
-					<View style={[styles.chartCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						<View style={styles.chartHeader}>
-							<Text style={[styles.chartTitle, { color: colors.text }]}>Spending Trend</Text>
-							<Text style={[styles.chartSubtitle, { color: colors.textSecondary }]}>Last 6 months</Text>
+			{error && recentPurchases.length === 0 ? (
+				<ErrorState
+					title={error.title}
+					message={error.message}
+					onRetry={loadDashboard}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+				/>
+			) : (
+				<ScrollView
+					contentContainerStyle={styles.scrollContent}
+					refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+					showsVerticalScrollIndicator={false}
+				>
+					{/* Overview Section */}
+					<View style={styles.section}>
+						{/* Smaller Stats Row */}
+						<View style={styles.statsRow}>
+							{statCards.map((card) => (
+								<StatCard key={card.title} {...card} />
+							))}
 						</View>
-						<LineChart
-							data={{
-								labels: ['Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-								datasets: [
-									{
-										data: chartData
-									}
-								]
-							}}
-							width={width - 64} // container padding + card padding
-							height={180}
-							yAxisLabel=""
-							yAxisSuffix=""
-							yAxisInterval={1}
-							chartConfig={{
-								backgroundColor: colors.card,
-								backgroundGradientFrom: colors.card,
-								backgroundGradientTo: colors.card,
-								decimalPlaces: 0,
-								color: (opacity = 1) => colors.primary,
-								labelColor: (opacity = 1) => colors.textSecondary,
-								style: {
-									borderRadius: 16
-								},
-								propsForDots: {
-									r: '4',
-									strokeWidth: '2',
-									stroke: colors.primary
-								},
-								propsForBackgroundLines: {
-									strokeDasharray: '', // solid lines
-									stroke: colors.border,
-									strokeOpacity: 0.2
-								}
-							}}
-							bezier
-							style={styles.chart}
-							withDots={true}
-							withInnerLines={true}
-							withOuterLines={false}
-							withVerticalLines={false}
-						/>
 					</View>
-				</View>
 
-				{/* Quick Actions */}
-				<View style={styles.section}>
-					<View style={styles.sectionHeader}>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+					{/* Quick Actions */}
+					<View style={styles.section}>
+						<View style={styles.sectionHeader}>
+							<Text style={[styles.sectionTitle, { color: colors.text }]}>Quick Actions</Text>
+						</View>
+						<View style={styles.actionsGrid}>
+							{actions.map((action) => (
+								<ActionCard key={action.label} {...action} />
+							))}
+						</View>
 					</View>
-					<View style={styles.actionsGrid}>
-						{actions.map((action) => (
-							<ActionCard key={action.label} {...action} />
-						))}
-					</View>
-				</View>
 
-				{/* Recent Purchases */}
-				<View style={styles.section}>
-					<View style={styles.sectionHeader}>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Purchases</Text>
-						<TouchableOpacity onPress={() => router.push('/home/purchases' as any)}>
-							<Text style={[styles.link, { color: colors.primary }]}>View all</Text>
-						</TouchableOpacity>
-					</View>
-					<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						{recentPurchases.length === 0 ? (
-							<View style={styles.emptyState}>
-								<Feather name="shopping-bag" size={32} color={colors.textSecondary} />
-								<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No purchases yet</Text>
-								<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>Browse shops to place your first purchase</Text>
-							</View>
-						) : (
-							recentPurchases.map((purchase, index) => (
-								<TouchableOpacity
-									key={purchase.id}
-									style={[styles.purchaseRow, { borderColor: colors.border }, index === recentPurchases.length - 1 && { borderBottomWidth: 0 }]}
-									onPress={() => router.push('/home/purchases' as any)}
-									activeOpacity={0.8}
-								>
-									<View style={styles.purchaseMeta}>
-										<Text style={[styles.purchaseTitle, { color: colors.text }]}>{purchase.shopName}</Text>
-										<Text style={[styles.purchaseDate, { color: colors.textSecondary }]}>{purchase.date}</Text>
-									</View>
-									<View style={styles.purchaseRight}>
-										<Text style={[styles.purchaseAmount, { color: colors.text }]}>{purchase.amount.toFixed(2)} TND</Text>
-										<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(purchase.status)}15` }]}>
-											<Text style={[styles.statusText, { color: getStatusColor(purchase.status) }]}>{purchase.status}</Text>
+					{/* Recent Purchases */}
+					<View style={styles.section}>
+						<View style={styles.sectionHeader}>
+							<Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Purchases</Text>
+							<TouchableOpacity onPress={() => router.push('/home/purchases' as any)}>
+								<Text style={[styles.link, { color: colors.primary }]}>View all</Text>
+							</TouchableOpacity>
+						</View>
+						<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+							{recentPurchases.length === 0 ? (
+								<View style={styles.emptyState}>
+									<Feather name="shopping-bag" size={32} color={colors.textSecondary} />
+									<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No purchases yet</Text>
+									<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>Browse shops to place your first purchase</Text>
+								</View>
+							) : (
+								recentPurchases.map((purchase, index) => (
+									<TouchableOpacity
+										key={purchase._id}
+										style={[styles.purchaseRow, { borderColor: colors.border }, index === recentPurchases.length - 1 && { borderBottomWidth: 0 }]}
+										onPress={() => router.push('/home/purchases' as any)}
+										activeOpacity={0.8}
+									>
+										<View style={styles.purchaseMeta}>
+											<Text style={[styles.purchaseTitle, { color: colors.text }]}>{purchase.shop.name.en}</Text>
+											<Text style={[styles.purchaseDate, { color: colors.textSecondary }]}>{formatDate(purchase.createdAt)}</Text>
 										</View>
-									</View>
-								</TouchableOpacity>
-							))
-						)}
+										<View style={styles.purchaseRight}>
+											<Text style={[styles.purchaseAmount, { color: colors.text }]}>{(purchase.price?.total?.tnd || 0).toFixed(2)} TND</Text>
+											<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(purchase.status)}15` }]}>
+												<Text style={[styles.statusText, { color: getStatusColor(purchase.status) }]}>{orderStatusLabels[purchase.status] || purchase.status}</Text>
+											</View>
+										</View>
+									</TouchableOpacity>
+								))
+							)}
+						</View>
 					</View>
-				</View>
-			</ScrollView>
+				</ScrollView>
+			)}
 		</View>
 	)
 }

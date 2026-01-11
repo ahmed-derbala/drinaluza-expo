@@ -37,6 +37,8 @@ export interface Shop {
 	address: {
 		street: string
 		city: string
+		state?: string
+		postalCode?: string
 		country: string
 	}
 	location: ShopLocation
@@ -76,13 +78,21 @@ export interface FeedItem {
 	price: Price
 	unit: Unit
 	searchTerms: string[]
-	isActive: boolean
+	state: {
+		code: string
+		updatedAt: string
+	}
 	availability: {
 		endDate: string | null
 		startDate: string
 	}
 	stock: Stock
 	photos: string[]
+	media?: {
+		thumbnail?: {
+			url: string
+		}
+	}
 	slug: string
 	createdAt: string
 	updatedAt: string
@@ -93,7 +103,7 @@ export interface FeedItem {
 		slug: string
 		name: LocalizedName
 		updatedAt: string
-		images?: {
+		media?: {
 			thumbnail: {
 				url: string
 			}

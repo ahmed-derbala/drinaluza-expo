@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity } from 'react-native'
+import SmartImage from '../common/SmartImage'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { getMyProducts } from '../products/products.api'
@@ -55,24 +56,36 @@ export default function MyProductsTab() {
 		}
 	}
 
-	const renderProductItem = ({ item }: { item: ProductType }) => (
-		<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-			<Text style={[styles.cardTitle, { color: colors.text }]}>{item.name?.en}</Text>
-			<Text style={[styles.cardText, { color: colors.textSecondary }]}>Shop: {item.shop?.name?.en || 'Unknown Shop'}</Text>
-			<Text style={[styles.cardText, { color: colors.textSecondary }]}>Price: {item.price?.value?.tnd ? `${item.price.total.tnd} TND` : 'Price not set'}</Text>
-			<Text style={[styles.cardText, { color: colors.textSecondary }]}>
-				Unit: {item.price?.unit?.name || 'N/A'} (Min: {item.price?.unit?.min || 0})
-			</Text>
-			<Text style={[styles.cardText, { color: item.isActive ? '#4CAF50' : '#F44336' }]}>Status: {item.isActive ? 'Active' : 'Inactive'}</Text>
-			{item.availability && (
-				<Text style={[styles.cardText, { color: colors.textSecondary }]}>
-					Available: {new Date(item.availability.startDate).toLocaleDateString()}
-					{item.availability.endDate && ` - ${new Date(item.availability.endDate).toLocaleDateString()}`}
-				</Text>
-			)}
-			<Text style={[styles.cardText, { color: colors.textTertiary }]}>Created: {new Date(item.createdAt).toLocaleDateString()}</Text>
-		</View>
-	)
+	const renderProductItem = ({ item }: { item: ProductType }) => {
+		const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+
+		return (
+			<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.7} onPress={() => {}}>
+				<View style={styles.cardContent}>
+					<View style={styles.imageContainer}>
+						<SmartImage source={{ uri: imageUrl || '' }} style={styles.productImage} resizeMode="cover" fallbackIcon="inventory" />
+					</View>
+					<View style={styles.infoContainer}>
+						<Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+							{item.name?.en}
+						</Text>
+						<Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+							{item.shop?.name?.en || 'Unknown Shop'}
+						</Text>
+						<View style={styles.priceRow}>
+							<Text style={[styles.priceText, { color: colors.primary }]}>{item.price?.total?.tnd?.toFixed(2) || '0.00'} TND</Text>
+							<Text style={[styles.unitText, { color: colors.textTertiary }]}>/ {item.unit?.measure || 'unit'}</Text>
+						</View>
+						<View style={styles.stockRow}>
+							<Ionicons name="cube-outline" size={14} color={colors.textTertiary} />
+							<Text style={[styles.stockText, { color: colors.textTertiary }]}>Stock: {item.stock?.quantity || 0}</Text>
+						</View>
+					</View>
+					<Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+				</View>
+			</TouchableOpacity>
+		)
+	}
 
 	if (loading && products.length === 0) {
 		return (
@@ -124,20 +137,68 @@ const styles = StyleSheet.create({
 		paddingBottom: 20
 	},
 	card: {
-		padding: 15,
-		marginHorizontal: 10,
-		marginBottom: 10,
-		borderRadius: 8,
-		borderWidth: 1
+		padding: 12,
+		marginHorizontal: 16,
+		marginBottom: 12,
+		borderRadius: 16,
+		borderWidth: 1,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.05,
+		shadowRadius: 4,
+		elevation: 2
+	},
+	cardContent: {
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
+	imageContainer: {
+		width: 64,
+		height: 64,
+		borderRadius: 12,
+		overflow: 'hidden',
+		backgroundColor: 'rgba(0,0,0,0.05)'
+	},
+	productImage: {
+		width: '100%',
+		height: '100%'
+	},
+	infoContainer: {
+		flex: 1,
+		marginLeft: 16,
+		marginRight: 8
 	},
 	cardTitle: {
 		fontSize: 16,
-		fontWeight: 'bold',
-		marginBottom: 5
+		fontWeight: '700',
+		marginBottom: 2
 	},
-	cardText: {
-		fontSize: 14,
-		marginBottom: 3
+	cardSubtitle: {
+		fontSize: 13,
+		marginBottom: 4
+	},
+	priceRow: {
+		flexDirection: 'row',
+		alignItems: 'baseline',
+		marginBottom: 2
+	},
+	priceText: {
+		fontSize: 15,
+		fontWeight: '800'
+	},
+	unitText: {
+		fontSize: 12,
+		marginLeft: 4,
+		fontWeight: '600'
+	},
+	stockRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4
+	},
+	stockText: {
+		fontSize: 12,
+		fontWeight: '500'
 	},
 	emptyText: {
 		fontSize: 16,

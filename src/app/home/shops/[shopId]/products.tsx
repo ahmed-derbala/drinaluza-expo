@@ -1,35 +1,71 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
-import { getShopProducts } from '../../../../components/shops/shops.api'
+import { getShopProductsBySlug } from '../../../../components/shops/shops.api'
 import { Product } from '../../../../components/shops/shops.interface'
 import { useTheme } from '../../../../contexts/ThemeContext'
+import { parseError } from '../../../../utils/errorHandler'
+import ErrorState from '../../../../components/common/ErrorState'
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
+import Toast from '../../../../components/common/Toast'
+import { TextInput } from 'react-native'
+import ProductCard from '../../../../components/products/products.card'
+import { FeedItem } from '../../../../components/feed/feed.interface'
 
 export default function ShopProductsScreen() {
-	const { shopId, shopName } = useLocalSearchParams<{ shopId: string; shopName?: string }>()
+	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
+	const [headerTitle, setHeaderTitle] = useState('Products')
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
 	const maxWidth = 900
 	const isWideScreen = width > maxWidth
 	const numColumns = isWideScreen ? Math.max(2, Math.floor(width / 400)) : 1
 	const [products, setProducts] = useState<Product[]>([])
+	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
+	const [basket, setBasket] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<string | null>(null)
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const [searchText, setSearchText] = useState('')
+	const [showToast, setShowToast] = useState(false)
+	const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success')
+	const [toastMessage, setToastMessage] = useState('')
 
 	// Header is now handled by Stack.Screen options below
 
+	const loadBasket = async () => {
+		try {
+			const savedBasket = await AsyncStorage.getItem('basket')
+			if (savedBasket) setBasket(JSON.parse(savedBasket))
+		} catch (err) {
+			console.error('Failed to load basket:', err)
+		}
+	}
+
 	const loadProducts = async () => {
-		if (!shopId) return
+		if (!shopSlug) return
 
 		try {
-			setRefreshing(true)
+			if (!refreshing) setLoading(true)
 			setError(null)
-			const response = await getShopProducts(shopId)
-			setProducts(response.data.docs || [])
-		} catch (err) {
+			const response = await getShopProductsBySlug(shopSlug)
+			const fetchedProducts = response.data.docs || []
+			setProducts(fetchedProducts)
+			setFilteredProducts(fetchedProducts)
+
+			// Update header title if shop info is available in products
+			if (fetchedProducts.length > 0 && fetchedProducts[0].shop?.name?.en) {
+				setHeaderTitle(fetchedProducts[0].shop.name.en)
+			}
+		} catch (err: any) {
 			console.error('Failed to load products:', err)
-			setError('Failed to load products. Please try again.')
+			const errorInfo = parseError(err)
+			setError({
+				title: errorInfo.title,
+				message: errorInfo.message,
+				type: errorInfo.type
+			})
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
@@ -37,18 +73,52 @@ export default function ShopProductsScreen() {
 	}
 
 	useEffect(() => {
+		loadBasket()
 		loadProducts()
-	}, [shopId])
+	}, [shopSlug])
+
+	useEffect(() => {
+		if (!searchText.trim()) {
+			setFilteredProducts(products)
+			return
+		}
+		const searchLower = searchText.toLowerCase()
+		const filtered = products.filter((p) => p.name.en.toLowerCase().includes(searchLower))
+		setFilteredProducts(filtered)
+	}, [searchText, products])
+
+	const addToBasket = async (item: FeedItem, quantity: number) => {
+		try {
+			const existingItemIndex = basket.findIndex((basketItem) => basketItem._id === item._id)
+			let newBasket: any[]
+
+			if (existingItemIndex > -1) {
+				newBasket = basket.map((basketItem, index) => (index === existingItemIndex ? { ...basketItem, quantity: basketItem.quantity + quantity } : basketItem))
+			} else {
+				newBasket = [...basket, { ...item, quantity }]
+			}
+
+			setBasket(newBasket)
+			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+
+			setToastType('success')
+			setToastMessage(`${item.name.en} added to basket`)
+			setShowToast(true)
+		} catch (err) {
+			console.error('Failed to add to basket:', err)
+			setToastType('error')
+			setToastMessage('Failed to add to basket')
+			setShowToast(true)
+		}
+	}
 
 	const handleRefresh = () => {
 		loadProducts()
 	}
 
 	const renderProductItem = ({ item }: { item: Product }) => (
-		<View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-			<Text style={[styles.productName, { color: colors.text }]}>{item.name}</Text>
-			<Text style={[styles.productPrice, { color: colors.primary }]}>{item.price?.value?.tnd?.toFixed(2) || 'N/A'} TND</Text>
-			<Text style={[styles.productStock, { color: colors.textSecondary }]}>{item.stock?.quantity || 0} in stock</Text>
+		<View style={[styles.cardWrapper, { width: numColumns > 1 ? '48%' : '100%' }]}>
+			<ProductCard item={item as unknown as FeedItem} addToBasket={addToBasket} />
 		</View>
 	)
 
@@ -64,25 +134,60 @@ export default function ShopProductsScreen() {
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
 				options={{
-					headerTitle: shopName || 'Products',
+					headerTitle: headerTitle,
 					headerBackTitle: 'Back'
 				}}
 			/>
+
+			{/* Local Search Component */}
+			{!error && (
+				<View style={styles.searchContainer}>
+					<View style={[styles.searchInputWrapper, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
+						<Ionicons name="search-outline" size={20} color={colors.textSecondary} style={styles.searchIcon} />
+						<TextInput
+							style={[styles.searchInput, { color: colors.text }]}
+							placeholder="Search in this shop..."
+							placeholderTextColor={colors.textTertiary}
+							value={searchText}
+							onChangeText={setSearchText}
+							autoCorrect={false}
+							autoCapitalize="none"
+						/>
+						{searchText.length > 0 && (
+							<TouchableOpacity onPress={() => setSearchText('')}>
+								<Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+							</TouchableOpacity>
+						)}
+					</View>
+				</View>
+			)}
+
 			<FlatList
-				data={products}
+				data={filteredProducts}
 				renderItem={renderProductItem}
 				keyExtractor={(item) => item._id}
 				numColumns={numColumns}
 				contentContainerStyle={[styles.listContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
 				ListEmptyComponent={
-					!loading && !refreshing ? (
+					error ? (
+						<ErrorState
+							title={error.title}
+							message={error.message}
+							onRetry={loadProducts}
+							icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+						/>
+					) : !loading && !refreshing ? (
 						<View style={styles.emptyContainer}>
-							<Text style={[styles.emptyText, { color: colors.text }]}>{error || 'No products found for this shop.'}</Text>
+							<Ionicons name="search-outline" size={48} color={colors.textTertiary} style={{ marginBottom: 12 }} />
+							<Text style={[styles.emptyText, { color: colors.text }]}>{searchText ? 'No products match your search' : 'No products found for this shop.'}</Text>
 						</View>
 					) : null
 				}
 			/>
+
+			<Toast visible={showToast} message={toastMessage} type={toastType} onHide={() => setShowToast(false)} />
 		</View>
 	)
 }
@@ -93,40 +198,45 @@ const styles = StyleSheet.create({
 	},
 	listContent: {
 		padding: 16,
+		paddingTop: 8,
 		flexGrow: 1
 	},
-	productCard: {
-		borderRadius: 8,
+	columnWrapper: {
+		justifyContent: 'space-between'
+	},
+	cardWrapper: {
+		marginBottom: 16
+	},
+	searchContainer: {
 		padding: 16,
-		marginBottom: 12,
-		borderWidth: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 1 },
-		shadowOpacity: 0.1,
-		shadowRadius: 2,
-		elevation: 2
+		paddingBottom: 8
 	},
-	productName: {
+	searchInputWrapper: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		borderRadius: 12,
+		paddingHorizontal: 12,
+		height: 48,
+		borderWidth: 1
+	},
+	searchIcon: {
+		marginRight: 8
+	},
+	searchInput: {
+		flex: 1,
 		fontSize: 16,
-		fontWeight: '600',
-		marginBottom: 4
-	},
-	productPrice: {
-		fontSize: 16,
-		fontWeight: 'bold',
-		marginBottom: 4
-	},
-	productStock: {
-		fontSize: 14
+		padding: 0
 	},
 	emptyContainer: {
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		padding: 20
+		padding: 40,
+		marginTop: 40
 	},
 	emptyText: {
 		fontSize: 16,
+		fontWeight: '600',
 		textAlign: 'center'
 	}
 })

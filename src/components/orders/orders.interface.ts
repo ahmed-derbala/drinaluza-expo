@@ -19,13 +19,13 @@ export interface Product {
 	}
 	updatedAt: string
 	defaultProduct?: {
-		images: {
+		media: {
 			thumbnail: {
 				url: string
 			}
 		}
 	}
-	images?: {
+	media?: {
 		thumbnail: {
 			url: string
 		}

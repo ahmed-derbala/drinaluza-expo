@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, ScrollView, Animated, Image, useWindowDimensions } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, ScrollView, Animated, useWindowDimensions } from 'react-native'
+import SmartImage from '../common/SmartImage'
 import { getSales, updateSaleStatus } from '../orders/orders.api'
 import { OrderItem as SaleItem } from '../orders/orders.interface'
 import { useFocusEffect } from '@react-navigation/native'
@@ -257,16 +258,10 @@ export default function SalesTab() {
 					<View style={styles.cardBody}>
 						<View style={styles.productsList}>
 							{item.products.slice(0, 3).map((p, index) => {
-								const imageUrl = p.product?.images?.thumbnail?.url || p.product?.photos?.[0] || p.product?.defaultProduct?.images?.thumbnail?.url
+								const imageUrl = p.product?.media?.thumbnail?.url || p.product?.defaultProduct?.media?.thumbnail?.url || p.product?.photos?.[0]
 								return (
 									<View key={index} style={styles.productItem}>
-										{imageUrl ? (
-											<Image source={{ uri: imageUrl }} style={styles.productImage} resizeMode="cover" />
-										) : (
-											<View style={[styles.productImage, styles.productImagePlaceholder, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
-												<Ionicons name="image-outline" size={16} color={colors.textTertiary} />
-											</View>
-										)}
+										<SmartImage source={{ uri: imageUrl || '' }} style={styles.productImage} resizeMode="cover" fallbackIcon="image" />
 										<View style={{ flex: 1, justifyContent: 'center' }}>
 											<Text style={[styles.productText, { color: colors.text }]} numberOfLines={1}>
 												{p.product?.name?.en}

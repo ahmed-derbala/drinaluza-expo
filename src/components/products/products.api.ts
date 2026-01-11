@@ -62,9 +62,11 @@ export interface DefaultProduct {
 	_id: string
 	name: {
 		en: string
+		tn_latn?: string
+		tn_arab?: string
 	}
 	searchKeywords: string[]
-	images: {
+	media: {
 		thumbnail: {
 			url: string
 		}

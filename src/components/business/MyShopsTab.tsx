@@ -477,11 +477,11 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 
 			updateState({ navigatingShopId: shop._id })
 
-			// Navigate to the shop details using expo-router
+			// Navigate to the business shop details using expo-router
 			if (router) {
 				router.push({
-					pathname: '/home/shops/[shopId]',
-					params: { shopId: shop._id }
+					pathname: '/home/business/shops/[shopSlug]',
+					params: { shopSlug: shop.slug }
 				} as any)
 			}
 
