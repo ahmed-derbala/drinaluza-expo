@@ -73,21 +73,21 @@ export interface CardInfo {
 
 export interface FeedItem {
 	_id: string
-	shop: Shop
-	name: LocalizedName
-	price: Price
-	unit: Unit
-	searchTerms: string[]
-	state: {
+	shop?: Shop
+	name?: LocalizedName
+	price?: Price
+	unit?: Unit
+	searchTerms?: string[]
+	state?: {
 		code: string
 		updatedAt: string
 	}
-	availability: {
+	availability?: {
 		endDate: string | null
 		startDate: string
 	}
-	stock: Stock
-	photos: string[]
+	stock?: Stock
+	photos?: string[]
 	media?: {
 		thumbnail?: {
 			url: string
@@ -109,6 +109,18 @@ export interface FeedItem {
 			}
 		}
 	}
+}
+
+export interface ProductFeedItem extends FeedItem {
+	shop: Shop
+	name: LocalizedName
+	price: Price
+	unit: Unit
+	state: {
+		code: string
+		updatedAt: string
+	}
+	stock: Stock
 }
 
 export interface FeedResponse {

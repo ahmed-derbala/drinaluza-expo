@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { Picker } from '@react-native-picker/picker'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '../../core/auth/auth.api'
@@ -366,18 +365,13 @@ export default function ProfileScreen() {
 								</View>
 								<View style={[styles.inputGroup, { flex: 1 }]}>
 									<Text style={styles.inputLabel}>Country</Text>
-									<View style={styles.pickerContainer}>
-										<Picker
-											selectedValue={userData.address?.country}
-											onValueChange={(value) => updateField('country', value, 'address')}
-											style={{ color: colors.text }}
-											dropdownIconColor={colors.text}
-										>
-											<Picker.Item label="Tunisia" value="Tunisia" />
-											<Picker.Item label="France" value="France" />
-											<Picker.Item label="Other" value="Other" />
-										</Picker>
-									</View>
+									<TextInput
+										style={styles.input}
+										value={userData.address?.country}
+										onChangeText={(value) => updateField('country', value, 'address')}
+										placeholder="Country"
+										placeholderTextColor={colors.textTertiary}
+									/>
 								</View>
 							</View>
 						</Section>
@@ -641,13 +635,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		dateInputText: {
 			fontSize: 16,
 			color: colors.text
-		},
-		pickerContainer: {
-			backgroundColor: colors.background,
-			borderRadius: 12,
-			borderWidth: 1,
-			borderColor: colors.border,
-			overflow: 'hidden'
 		},
 		cancelButton: {
 			backgroundColor: colors.error + '10',

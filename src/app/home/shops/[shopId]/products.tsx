@@ -10,8 +10,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from '../../../../components/common/Toast'
 import { TextInput } from 'react-native'
-import ProductCard from '../../../../components/products/products.card'
-import { FeedItem } from '../../../../components/feed/feed.interface'
+import FeedCard from '../../../../components/feed/feed.card'
+import { FeedItem, ProductFeedItem } from '../../../../components/feed/feed.interface'
 
 export default function ShopProductsScreen() {
 	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
@@ -102,7 +102,7 @@ export default function ShopProductsScreen() {
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 
 			setToastType('success')
-			setToastMessage(`${item.name.en} added to basket`)
+			setToastMessage(`${item.name?.en || 'Product'} added to basket`)
 			setShowToast(true)
 		} catch (err) {
 			console.error('Failed to add to basket:', err)
@@ -118,7 +118,7 @@ export default function ShopProductsScreen() {
 
 	const renderProductItem = ({ item }: { item: Product }) => (
 		<View style={[styles.cardWrapper, { width: numColumns > 1 ? '48%' : '100%' }]}>
-			<ProductCard item={item as unknown as FeedItem} addToBasket={addToBasket} />
+			<FeedCard item={item as unknown as FeedItem} addToBasket={addToBasket} />
 		</View>
 	)
 

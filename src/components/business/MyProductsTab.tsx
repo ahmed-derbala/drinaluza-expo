@@ -73,8 +73,10 @@ export default function MyProductsTab() {
 							{item.shop?.name?.en || 'Unknown Shop'}
 						</Text>
 						<View style={styles.priceRow}>
-							<Text style={[styles.priceText, { color: colors.primary }]}>{item.price?.total?.tnd?.toFixed(2) || '0.00'} TND</Text>
-							<Text style={[styles.unitText, { color: colors.textTertiary }]}>/ {item.unit?.measure || 'unit'}</Text>
+							<Text style={[styles.priceText, { color: colors.primary }]} numberOfLines={1}>
+								{item.price?.total?.tnd?.toFixed(2) || '0.00'} TND
+								<Text style={[styles.unitText, { color: colors.textTertiary }]}> / {item.unit?.measure || 'unit'}</Text>
+							</Text>
 						</View>
 						<View style={styles.stockRow}>
 							<Ionicons name="cube-outline" size={14} color={colors.textTertiary} />

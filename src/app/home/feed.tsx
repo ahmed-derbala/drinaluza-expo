@@ -5,7 +5,7 @@ import { getFeed } from '../../components/feed/feed.api'
 import { FeedItem } from '../../components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
-import ProductCard from '../../components/products/products.card'
+import FeedCard from '../../components/feed/feed.card'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
 import ScreenHeader from '../../components/common/ScreenHeader'
@@ -19,7 +19,7 @@ const createStyles = (colors: any, isDark: boolean) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
-			backgroundColor: colors.background
+			backgroundColor: isDark ? colors.background : '#F8F9FA'
 		},
 		headerContainer: {
 			padding: 20,
@@ -134,8 +134,8 @@ export default function FeedScreen() {
 	const { width } = useWindowDimensions()
 	const minColumnWidth = 300
 	const numColumns = Math.max(1, Math.floor(width / minColumnWidth))
-	const gap = 16
-	const padding = 16
+	const gap = 20
+	const padding = 20
 	const itemWidth = (width - padding * 2 - gap * (numColumns - 1)) / numColumns
 
 	// Pagination state
@@ -340,7 +340,7 @@ export default function FeedScreen() {
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
 		<View style={[styles.cardWrapper, { width: numColumns > 1 ? itemWidth : '100%' }]}>
-			<ProductCard item={item} addToBasket={addToBasket} />
+			<FeedCard item={item} addToBasket={addToBasket} />
 		</View>
 	)
 
@@ -368,7 +368,7 @@ export default function FeedScreen() {
 				data={displayedItems}
 				renderItem={renderItem}
 				numColumns={numColumns}
-				columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding } : undefined}
+				columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding, alignItems: 'stretch' } : undefined}
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={[styles.list, { paddingTop: searchBarHeight + 20 }, numColumns === 1 && { paddingHorizontal: padding }]}
 				ListHeaderComponent={renderHeader}

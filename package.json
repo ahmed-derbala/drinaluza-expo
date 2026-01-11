@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.0.32",
+  "version": "1.0.38",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -18,12 +18,15 @@
   "scripts": {
     "first-time:local": "npm run i && npm run fix:start",
     "cpapk2gdrive": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm",
-    "build:apk": "export $(grep -v '^#' .env | xargs) && NODE_ENV=production npx eas build --platform android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive",
-    "build:web": "npm run clean:prod && NODE_ENV=production npx expo export --platform web",
+    "env:prod": "cp envs/.env.prod .env",
+    "env:local": "cp envs/.env.local .env",
+    "ver": "npm version patch --no-git-tag-version",
+    "build:apk": "npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production npx eas build --platform android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive && npm run ver",
+    "build:web": "npm run env:prod && npm run clean:prod && NODE_ENV=production npx expo export --platform web && npm run ver",
     "build:apk-loop": "./scripts/apk_build_loop.sh",
     "build:clean": "npm run clean && npm run build",
     "start": "expo start",
-    "start:local": "rm -rf .expo && expo start -c",
+    "start:local": "rm -rf .expo && npm run env:local && expo start -c",
     "dev": "npm run start:local",
     "android": "expo run:android",
     "ios": "expo run:ios",
@@ -42,7 +45,7 @@
     "check-updates": "npm i -D npm-check-updates && ncu -u",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "push": "npm run format && git add . && git commit -m",
-    "postpush": "git push",
+    "postpush": "git push && npm run ver",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {

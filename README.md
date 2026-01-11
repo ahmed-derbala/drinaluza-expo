@@ -40,8 +40,8 @@ CTRL+click to open in new tab
 
 ### Prerequisites
 
-*   Node.js (v22 recommended as per engines)
-*   npm or yarn
+*   Node.js (v24 recommended as per engines)
+*   npm
 *   Expo CLI (or use `npx expo`)
 
 ### Installation

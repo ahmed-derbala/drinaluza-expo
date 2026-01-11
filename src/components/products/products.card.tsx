@@ -2,12 +2,12 @@ import React, { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { MaterialIcons } from '@expo/vector-icons'
-import { FeedItem } from '../feed/feed.interface'
+import { ProductFeedItem } from '../feed/feed.interface'
 import { useTheme } from '../../contexts/ThemeContext'
 
 type ProductCardProps = {
-	item: FeedItem
-	addToBasket: (item: FeedItem, quantity: number) => void
+	item: ProductFeedItem
+	addToBasket: (item: ProductFeedItem, quantity: number) => void
 }
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
@@ -40,11 +40,12 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			{/* Shop Header */}
 			<View style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
-					<View style={styles.shopNameRow}>
-						<Text style={styles.shopName}>{item.shop.name?.en}</Text>
-						{item.shop.owner?.business?.name?.en && item.shop.owner.business.name.en !== item.shop.name?.en && <Text style={styles.businessName}> • {item.shop.owner.business.name.en}</Text>}
-					</View>
-					<Text style={styles.shopLocation}>{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}</Text>
+					<Text style={styles.shopName} numberOfLines={1}>
+						{item.shop.name?.en}
+					</Text>
+					<Text style={styles.shopLocation} numberOfLines={1}>
+						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}
+					</Text>
 				</View>
 				<MaterialIcons name="store" size={20} color={isDark ? colors.textSecondary : '#666'} />
 			</View>
@@ -61,53 +62,59 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 			{/* Product Info */}
 			<View style={styles.productInfo}>
-				<View style={styles.productNameContainer}>
-					<Text style={styles.productName}>{item.name?.en}</Text>
-					{(item.name?.tn_latn || item.name?.tn_arab) && (
-						<Text style={styles.productNameSecondary}>
-							{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
+				<View>
+					<View style={styles.productNameContainer}>
+						<Text style={styles.productName} numberOfLines={2}>
+							{item.name?.en}
 						</Text>
-					)}
-				</View>
+						{(item.name?.tn_latn || item.name?.tn_arab) && (
+							<Text style={styles.productNameSecondary} numberOfLines={1}>
+								{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
+							</Text>
+						)}
+					</View>
 
-				{/* Price and Unit */}
-				<View style={styles.priceContainer}>
-					<Text style={styles.priceText}>
-						{pricePerUnit.toFixed(2)} TND / {item.unit?.measure || ''}
-					</Text>
-					{(item.stock.quantity <= 0 || item.state.code !== 'active') && <Text style={styles.outOfStock}>{item.state.code !== 'active' ? 'Unavailable' : 'Out of Stock'}</Text>}
-				</View>
-
-				{/* Quantity Controls */}
-				<View style={styles.quantityContainer}>
-					<Text style={styles.quantityLabel}>Quantity:</Text>
-					<View style={styles.quantityControls}>
-						<TouchableOpacity onPress={decrement} style={styles.quantityButton}>
-							<Text style={styles.quantityButtonText}>-</Text>
-						</TouchableOpacity>
-						<Text style={styles.quantityText}>
-							{quantity} {item.unit?.measure || ''}
+					{/* Price and Unit */}
+					<View style={styles.priceContainer}>
+						<Text style={styles.priceText} numberOfLines={1} adjustsFontSizeToFit>
+							{pricePerUnit.toFixed(2)} TND / {item.unit?.measure || ''}
 						</Text>
-						<TouchableOpacity onPress={increment} style={styles.quantityButton}>
-							<Text style={styles.quantityButtonText}>+</Text>
-						</TouchableOpacity>
+						{(item.stock.quantity <= 0 || item.state.code !== 'active') && <Text style={styles.outOfStock}>{item.state.code !== 'active' ? 'Unavailable' : 'Out of Stock'}</Text>}
+					</View>
+
+					{/* Quantity Controls */}
+					<View style={styles.quantityContainer}>
+						<Text style={styles.quantityLabel}>Quantity:</Text>
+						<View style={styles.quantityControls}>
+							<TouchableOpacity onPress={decrement} style={styles.quantityButton}>
+								<Text style={styles.quantityButtonText}>-</Text>
+							</TouchableOpacity>
+							<Text style={styles.quantityText}>
+								{quantity} {item.unit?.measure || ''}
+							</Text>
+							<TouchableOpacity onPress={increment} style={styles.quantityButton}>
+								<Text style={styles.quantityButtonText}>+</Text>
+							</TouchableOpacity>
+						</View>
 					</View>
 				</View>
 
-				{/* Total Price */}
-				<View style={styles.totalContainer}>
-					<Text style={styles.totalLabel}>Total:</Text>
-					<Text style={styles.totalPrice}>{calculateTotal()} TND</Text>
-				</View>
+				<View>
+					{/* Total Price */}
+					<View style={styles.totalContainer}>
+						<Text style={styles.totalLabel}>Total:</Text>
+						<Text style={styles.totalPrice}>{calculateTotal()} TND</Text>
+					</View>
 
-				{/* Add to Cart Button */}
-				<TouchableOpacity
-					style={[styles.addToCartButton, (item.stock.quantity <= 0 || item.state.code !== 'active') && styles.disabledButton]}
-					onPress={() => item.stock.quantity > 0 && item.state.code === 'active' && addToBasket(item, quantity)}
-					disabled={item.stock.quantity <= 0 || item.state.code !== 'active'}
-				>
-					<Text style={styles.addToCartText}>{item.state.code !== 'active' ? 'Unavailable' : item.stock.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}</Text>
-				</TouchableOpacity>
+					{/* Add to Cart Button */}
+					<TouchableOpacity
+						style={[styles.addToCartButton, (item.stock.quantity <= 0 || item.state.code !== 'active') && styles.disabledButton]}
+						onPress={() => item.stock.quantity > 0 && item.state.code === 'active' && addToBasket(item, quantity)}
+						disabled={item.stock.quantity <= 0 || item.state.code !== 'active'}
+					>
+						<Text style={styles.addToCartText}>{item.state.code !== 'active' ? 'Unavailable' : item.stock.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}</Text>
+					</TouchableOpacity>
+				</View>
 			</View>
 		</View>
 	)
@@ -116,24 +123,29 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 const createStyles = (colors: any, isDark: boolean) =>
 	StyleSheet.create({
 		card: {
-			backgroundColor: isDark ? colors.card : '#E3F2FD', // Dark Theme Card vs Sky Blue 50
-			borderRadius: 16,
-			shadowColor: isDark ? '#000' : '#0288D1',
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: isDark ? 0.3 : 0.15,
-			shadowRadius: 8,
-			elevation: 5,
+			backgroundColor: isDark ? colors.card : '#FFFFFF',
+			borderRadius: 20,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 10 },
+			shadowOpacity: isDark ? 0.4 : 0.1,
+			shadowRadius: 20,
+			elevation: 8,
 			width: '100%',
-			borderWidth: 1,
-			borderColor: isDark ? colors.border : '#B3E5FC'
+			borderWidth: 2,
+			borderColor: colors.primary, // Blue outline
+			height: 590, // Balanced height for stability and space
+			flex: 1,
+			overflow: 'hidden'
 		},
 		shopHeader: {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			padding: 12,
+			paddingHorizontal: 16,
+			paddingVertical: 12,
 			borderBottomWidth: 1,
-			borderBottomColor: isDark ? colors.border : '#B3E5FC'
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primary + '15', // Subtle blue divider
+			height: 56 // More compact header
 		},
 		shopInfo: {
 			flex: 1
@@ -147,17 +159,6 @@ const createStyles = (colors: any, isDark: boolean) =>
 			fontSize: 12,
 			color: isDark ? colors.textSecondary : '#0277BD', // Secondary Text vs Light Blue 800
 			marginTop: 2
-		},
-		shopNameRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			flexWrap: 'wrap'
-		},
-		businessName: {
-			fontSize: 13,
-			fontWeight: '500',
-			color: isDark ? colors.textSecondary : '#0288D1',
-			marginLeft: 4
 		},
 		imageContainer: {
 			width: '100%',
@@ -179,15 +180,22 @@ const createStyles = (colors: any, isDark: boolean) =>
 			backgroundColor: isDark ? '#2a2a2a' : '#E1F5FE'
 		},
 		productInfo: {
-			padding: 16
+			paddingHorizontal: 16,
+			paddingTop: 12,
+			paddingBottom: 16,
+			flex: 1,
+			justifyContent: 'space-between'
 		},
 		productName: {
-			fontSize: 20,
-			fontWeight: '700',
-			color: isDark ? colors.text : '#01579B'
+			fontSize: 22,
+			fontWeight: '800',
+			color: isDark ? colors.text : '#01579B',
+			lineHeight: 28
 		},
 		productNameContainer: {
-			marginBottom: 8
+			marginBottom: 8,
+			height: 60, // Optimized height
+			justifyContent: 'center'
 		},
 		productNameSecondary: {
 			fontSize: 14,
@@ -199,12 +207,14 @@ const createStyles = (colors: any, isDark: boolean) =>
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginBottom: 16
+			marginBottom: 10
 		},
 		priceText: {
-			fontSize: 22,
-			fontWeight: '800',
-			color: isDark ? colors.primary : '#0288D1' // Primary vs Light Blue 700
+			fontSize: 24,
+			fontWeight: '900',
+			color: colors.primary,
+			flex: 1,
+			marginRight: 8
 		},
 		outOfStock: {
 			color: colors.error || '#D32F2F',
@@ -212,7 +222,7 @@ const createStyles = (colors: any, isDark: boolean) =>
 			fontSize: 14
 		},
 		quantityContainer: {
-			marginBottom: 16
+			marginBottom: 12
 		},
 		quantityLabel: {
 			fontSize: 14,
@@ -256,10 +266,10 @@ const createStyles = (colors: any, isDark: boolean) =>
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginBottom: 16,
+			marginBottom: 12,
 			paddingTop: 12,
 			borderTopWidth: 1,
-			borderTopColor: isDark ? colors.border : '#B3E5FC'
+			borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primary + '15' // Subtle blue divider
 		},
 		totalLabel: {
 			fontSize: 16,
@@ -273,7 +283,7 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		addToCartButton: {
 			backgroundColor: isDark ? colors.primary : '#039BE5', // Primary vs Light Blue 600
-			paddingVertical: 16,
+			paddingVertical: 14, // Slightly balanced standard size
 			borderRadius: 12,
 			alignItems: 'center',
 			justifyContent: 'center',
@@ -288,7 +298,7 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		addToCartText: {
 			color: '#fff',
-			fontSize: 18,
+			fontSize: 17, // Standard readable size
 			fontWeight: '700',
 			letterSpacing: 0.5
 		}

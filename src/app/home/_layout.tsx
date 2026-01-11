@@ -52,7 +52,8 @@ export default function HomeLayout() {
 						headerShown: false,
 						tabBarStyle: {
 							backgroundColor: colors.background,
-							borderTopColor: colors.border,
+							borderTopColor: colors.primary, // Blue outline/top border
+							borderTopWidth: 2, // Make it more visible
 							paddingBottom: Platform.select({
 								ios: 0,
 								android: 0,
@@ -60,20 +61,21 @@ export default function HomeLayout() {
 							}),
 							height: Platform.select({
 								ios: 50,
-								android: 60,
+								android: 65, // Slightly taller for android
 								web: 60
 							}),
 							...Platform.select({
 								ios: {
-									boxShadow: '0 -1px 4px rgba(0,0,0,0.1)'
+									shadowColor: colors.primary,
+									shadowOffset: { width: 0, height: -4 },
+									shadowOpacity: 0.15,
+									shadowRadius: 8
 								},
 								android: {
-									elevation: 8,
-									borderTopWidth: 0
+									elevation: 10
 								},
 								web: {
-									borderTopWidth: 1,
-									boxShadow: '0 -2px 8px rgba(0,0,0,0.1)'
+									boxShadow: `0 -4px 12px ${colors.primary}20`
 								}
 							})
 						},
@@ -83,14 +85,22 @@ export default function HomeLayout() {
 						tabBarShowLabel: true,
 						tabBarLabelStyle: {
 							fontSize: Platform.select({
-								ios: 10,
-								android: 12,
-								web: 12
+								ios: 11,
+								android: 13,
+								web: 13
 							}),
-							fontWeight: Platform.select({
-								ios: '600',
-								android: '500',
-								web: '500'
+							fontWeight: '600',
+							marginBottom: Platform.select({
+								ios: 0,
+								android: 8,
+								web: 5
+							})
+						},
+						tabBarIconStyle: {
+							marginTop: Platform.select({
+								ios: 0,
+								android: 5,
+								web: 0
 							})
 						}
 					}}

@@ -202,8 +202,8 @@ export default function SettingsScreen() {
 					icon="logo-github"
 					title="Source Code"
 					subtitle="View on GitHub"
-					onPress={() => Linking.openURL('https://github.com/ahmed-derbala/drinaluza-expo')}
-					copyValue="https://github.com/ahmed-derbala/drinaluza-expo"
+					onPress={() => Linking.openURL('https://github.com/ahmed-derbala/')}
+					copyValue="https://github.com/ahmed-derbala/"
 					color="#000000"
 				/>
 			</SettingSection>
