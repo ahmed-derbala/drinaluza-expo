@@ -100,9 +100,12 @@ export default function ProfileScreen() {
 		try {
 			// Prepare payload
 			const payload = {
+				name: userData.name,
+				phone: userData.phone,
 				basicInfos: userData.basicInfos,
 				address: userData.address,
-				settings: userData.settings
+				settings: userData.settings,
+				socialMedia: userData.socialMedia
 			}
 
 			await updateMyProfile(payload)
@@ -230,18 +233,11 @@ export default function ProfileScreen() {
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
 					<View style={styles.photoContainer}>
-						{userData.basicInfos?.photo?.url && !imageError ? (
-							<Image source={{ uri: userData.basicInfos.photo.url }} style={styles.profilePhoto} onError={() => setImageError(true)} />
+						{userData.media?.thumbnail?.url && !imageError ? (
+							<Image source={{ uri: userData.media.thumbnail.url }} style={styles.profilePhoto} onError={() => setImageError(true)} />
 						) : (
 							<View style={styles.placeholderPhoto}>
-								<Text style={styles.placeholderText}>
-									{String(userData.basicInfos?.firstName || userData.name || '')
-										.charAt(0)
-										.toUpperCase()}
-									{String(userData.basicInfos?.lastName || '')
-										.charAt(0)
-										.toUpperCase()}
-								</Text>
+								<Text style={styles.placeholderText}>{(userData.name?.en || userData.slug || '').charAt(0).toUpperCase()}</Text>
 							</View>
 						)}
 						{isEditing && (
@@ -250,9 +246,8 @@ export default function ProfileScreen() {
 							</TouchableOpacity>
 						)}
 					</View>
-					<Text style={styles.profileName}>
-						{userData.basicInfos?.firstName} {userData.basicInfos?.lastName}
-					</Text>
+					<Text style={styles.profileName}>{userData.name?.en}</Text>
+					{userData.name?.tn_latn && <Text style={styles.profileMeta}>{userData.name.tn_latn}</Text>}
 					<Text style={styles.profileMeta}>@{userData.slug}</Text>
 
 					{userData.basicInfos?.biography && <Text style={styles.biography}>{userData.basicInfos.biography}</Text>}
@@ -267,23 +262,34 @@ export default function ProfileScreen() {
 					<>
 						<Section title="Basic Information" styles={styles}>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>First Name</Text>
+								<Text style={styles.inputLabel}>Name (English)</Text>
 								<TextInput
 									style={styles.input}
-									value={userData.basicInfos?.firstName}
-									onChangeText={(value) => updateField('firstName', value, 'basicInfos')}
-									placeholder="First Name"
+									value={userData.name?.en}
+									onChangeText={(value) => updateField('en', value, 'name')}
+									placeholder="Name in English"
 									placeholderTextColor={colors.textTertiary}
 								/>
 							</View>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Last Name</Text>
+								<Text style={styles.inputLabel}>Name (Tunisian Latin)</Text>
 								<TextInput
 									style={styles.input}
-									value={userData.basicInfos?.lastName}
-									onChangeText={(value) => updateField('lastName', value, 'basicInfos')}
-									placeholder="Last Name"
+									value={userData.name?.tn_latn}
+									onChangeText={(value) => updateField('tn_latn', value, 'name')}
+									placeholder="Name in Tunisian (Latin)"
 									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Phone Number</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.phone?.fullNumber}
+									onChangeText={(value) => updateField('fullNumber', value, 'phone')}
+									placeholder="e.g. +216 12 345 678"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="phone-pad"
 								/>
 							</View>
 							<View style={styles.inputGroup}>
@@ -302,7 +308,7 @@ export default function ProfileScreen() {
 								{Platform.OS === 'web' ? (
 									<View style={styles.dateInput}>
 										<DateTimePicker
-											value={userData.basicInfos?.birthDate || new Date()}
+											value={userData.basicInfos?.birthDate instanceof Date ? userData.basicInfos.birthDate : new Date()}
 											mode="date"
 											display="default"
 											onChange={onDateChange}
@@ -376,6 +382,49 @@ export default function ProfileScreen() {
 							</View>
 						</Section>
 
+						<Section title="Social Media" styles={styles}>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Facebook Username</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.socialMedia?.facebook?.username}
+									onChangeText={(value) => {
+										const prevSocial = userData.socialMedia || {}
+										updateField('socialMedia', { ...prevSocial, facebook: { ...prevSocial.facebook, username: value } })
+									}}
+									placeholder="Facebook Username"
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Instagram Username</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.socialMedia?.instagram?.username}
+									onChangeText={(value) => {
+										const prevSocial = userData.socialMedia || {}
+										updateField('socialMedia', { ...prevSocial, instagram: { ...prevSocial.instagram, username: value } })
+									}}
+									placeholder="Instagram Username"
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>WhatsApp Number</Text>
+								<TextInput
+									style={styles.input}
+									value={userData.socialMedia?.whatsapp?.username}
+									onChangeText={(value) => {
+										const prevSocial = userData.socialMedia || {}
+										updateField('socialMedia', { ...prevSocial, whatsapp: { ...prevSocial.whatsapp, username: value } })
+									}}
+									placeholder="WhatsApp Number"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="phone-pad"
+								/>
+							</View>
+						</Section>
+
 						<TouchableOpacity
 							style={styles.cancelButton}
 							onPress={() => {
@@ -390,16 +439,19 @@ export default function ProfileScreen() {
 					// View Mode
 					<>
 						<Section title="Personal Information" styles={styles}>
-							<InfoItem
-								label="Full Name"
-								value={`${userData?.basicInfos?.firstName || ''} ${userData?.basicInfos?.lastName || ''}`.trim() || 'Not set'}
-								icon="person"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
+							<InfoItem label="Full Name" value={userData?.name?.en || 'Not set'} icon="person" styles={styles} iconColor={colors.primary} />
 							<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" styles={styles} iconColor={colors.primary} />
 							<InfoItem label="Email" value={userData?.email || 'Not set'} icon="mail" styles={styles} iconColor={colors.primary} />
+							<InfoItem label="Phone" value={userData?.phone?.fullNumber || 'Not set'} icon="call" styles={styles} iconColor={colors.primary} />
 						</Section>
+
+						{userData.socialMedia && (
+							<Section title="Social Media" styles={styles}>
+								{userData.socialMedia.facebook?.username && <InfoItem label="Facebook" value={userData.socialMedia.facebook.username} icon="logo-facebook" styles={styles} iconColor="#1877F2" />}
+								{userData.socialMedia.instagram?.username && <InfoItem label="Instagram" value={userData.socialMedia.instagram.username} icon="logo-instagram" styles={styles} iconColor="#E4405F" />}
+								{userData.socialMedia.whatsapp?.username && <InfoItem label="WhatsApp" value={userData.socialMedia.whatsapp.username} icon="logo-whatsapp" styles={styles} iconColor="#25D366" />}
+							</Section>
+						)}
 
 						<Section title="Address" styles={styles}>
 							<InfoItem
@@ -414,7 +466,7 @@ export default function ProfileScreen() {
 				)}
 
 				{Platform.OS !== 'web' && showDatePicker && (
-					<DateTimePicker value={userData.basicInfos?.birthDate || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />
+					<DateTimePicker value={(userData.basicInfos?.birthDate as Date) || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />
 				)}
 			</ScrollView>
 		</View>
