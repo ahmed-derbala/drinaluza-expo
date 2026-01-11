@@ -45,6 +45,11 @@ export interface UserSettings {
 	currency: string
 }
 
+export interface UserState {
+	code: string
+	updatedAt: string
+}
+
 export interface UserData {
 	_id: string
 	slug: string
@@ -52,6 +57,7 @@ export interface UserData {
 	email?: string
 	role: string
 	isActive?: boolean
+	state?: UserState
 	phone?: Phone
 	backupPhones?: Phone[]
 	basicInfos: BasicInfos

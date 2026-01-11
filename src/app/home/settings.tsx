@@ -126,11 +126,6 @@ export default function SettingsScreen() {
 				<Text style={styles.title}>Settings</Text>
 			</View>
 
-			<SettingSection title="General">
-				<SettingItem icon="language" title="Language" value="English" type="value" onPress={() => {}} color="#10B981" />
-				<SettingItem icon="cash" title="Currency" value="TND" type="value" onPress={() => {}} color="#10B981" />
-			</SettingSection>
-
 			<SettingSection title="Social Media">
 				<SettingItem
 					icon="logo-facebook"
