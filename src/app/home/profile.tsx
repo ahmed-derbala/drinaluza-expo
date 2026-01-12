@@ -29,8 +29,7 @@ const CURRENCIES = [
 
 const SOCIAL_PLATFORMS = [
 	{ id: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877F2', prefix: 'facebook.com/' },
-	{ id: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F', prefix: 'instagram.com/' },
-	{ id: 'whatsapp', label: 'WhatsApp', icon: 'logo-whatsapp', color: '#25D366', prefix: '+' }
+	{ id: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F', prefix: 'instagram.com/' }
 ]
 
 // Components moved outside to prevent re-creation on render
@@ -129,9 +128,75 @@ export default function ProfileScreen() {
 	const isWideScreen = width > maxWidth
 	const styles = createStyles(colors, isDark, isWideScreen, width)
 
-	const [loading, setLoading] = useState(true)
-	const [userData, setUserData] = useState<UserData | null>(null)
+	const [loading, setLoading] = useState(false)
+	const [userData, setUserData] = useState<UserData | null>({
+		_id: '6964f6381d9b566c103122c0',
+		slug: 'c28',
+		name: { en: 'c28' },
+		role: 'customer',
+		address: {
+			street: 'street 1',
+			city: 'ellouza',
+			state: 'sfax',
+			postalCode: '3016',
+			country: 'Tunisia'
+		},
+		settings: {
+			lang: {
+				app: 'en',
+				content: 'tn_arab'
+			},
+			currency: 'tnd'
+		},
+		state: {
+			code: 'active',
+			updatedAt: '2026-01-12T13:25:12.938Z'
+		},
+		createdAt: '2026-01-12T13:25:12.938Z',
+		updatedAt: '2026-01-12T13:31:40.264Z',
+		basicInfos: {
+			birthDate: '2025-12-20T00:00:00.000Z',
+			biography: 'hello im ahmed'
+		},
+		contact: {
+			phone: {
+				fullNumber: '+21699112619',
+				countryCode: '+216',
+				shortNumber: '99112619',
+				createdAt: '2026-01-12T13:31:40.264Z',
+				updatedAt: '2026-01-12T13:31:40.264Z'
+			},
+			backupPhones: [
+				{
+					fullNumber: '+21699112645',
+					countryCode: '+216',
+					shortNumber: '99112645',
+					createdAt: '2026-01-12T13:31:40.264Z',
+					updatedAt: '2026-01-12T13:31:40.264Z'
+				}
+			],
+			whatsapp: '+21699112618',
+			email: 'derbala.ahmed53@gmail.com'
+		},
+		media: {
+			thumbnail: {
+				url: 'https://scontent.ftun15-1.fna.fbcdn.net/v/t39.30808-6/480797900_9563147623771985_8782635803627400360_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=2-gC3oPiHS4Q7kNvwFY3O0G&_nc_oc=AdmlH6InV5Si-4qeF4tOdXPqDRv6f_GrylbaxqQ2BIWnM-nefUUvYmboLWW4yXXO8fO9OfHYQMtXrijmgv4CCldc&_nc_zt=23&_nc_ht=scontent.ftun15-1.fna&_nc_gid=hQZOtp4ueA685l1wgw6vsg&oh=00_AfqjHnRQKmgGRP9fMFwy4UPgBhMurmGTS8_afENErKefgQ&oe=6969E901'
+			},
+			updatedAt: '2026-01-12T13:31:40.264Z'
+		},
+		socialMedia: {
+			facebook: {
+				url: 'https://www.facebook.com/derbala.ahmed92',
+				username: 'derbala.ahmed92'
+			},
+			instagram: {
+				url: 'https://www.instagram.com/derbala.ahmed92',
+				username: 'derbala.ahmed92'
+			}
+		}
+	})
 	const [editMode, setEditMode] = useState({
+		name: false,
 		basic: false,
 		address: false,
 		social: false,
@@ -195,8 +260,12 @@ export default function ProfileScreen() {
 			// Prepare payload
 			const payload = {
 				name: userData.name,
-				phone: userData.phone,
-				backupPhones: userData.backupPhones,
+				contact: {
+					phone: userData.contact?.phone || userData.phone,
+					backupPhones: userData.contact?.backupPhones || userData.backupPhones,
+					email: userData.contact?.email || userData.email,
+					whatsapp: userData.contact?.whatsapp
+				},
 				basicInfos: userData.basicInfos,
 				address: userData.address,
 				settings: userData.settings,
@@ -269,6 +338,11 @@ export default function ProfileScreen() {
 		})
 	}
 
+	// Helper functions to get phone/email with backward compatibility
+	const getPhone = (userData: any) => userData?.contact?.phone || userData?.phone
+	const getBackupPhones = (userData: any) => userData?.contact?.backupPhones || userData?.backupPhones || []
+	const getEmail = (userData: any) => userData?.contact?.email || userData?.email
+
 	const updatePhone = (type: 'primary' | 'backup', field: 'countryCode' | 'shortNumber', value: string, index?: number) => {
 		if (!userData) return
 
@@ -287,18 +361,38 @@ export default function ProfileScreen() {
 		}
 
 		if (type === 'primary') {
-			const currentPhone = userData.phone || { countryCode: '+216', shortNumber: '' }
+			const currentPhone = getPhone(userData) || { countryCode: '+216', shortNumber: '' }
 			const newPhone = { ...currentPhone, [field]: cleanValue }
 			newPhone.fullNumber = `${newPhone.countryCode || ''}${newPhone.shortNumber || ''}`
-			updateField('phone', newPhone)
+
+			setUserData((prev) => {
+				if (!prev) return null
+				return {
+					...prev,
+					contact: {
+						...prev.contact,
+						phone: newPhone
+					}
+				}
+			})
 		} else {
-			const currentBackups = [...(userData.backupPhones || [])]
+			const currentBackups = [...getBackupPhones(userData)]
 			if (index === undefined) return
 			const currentPhone = currentBackups[index] || { countryCode: '+216', shortNumber: '' }
 			const newPhone = { ...currentPhone, [field]: cleanValue }
 			newPhone.fullNumber = `${newPhone.countryCode || ''}${newPhone.shortNumber || ''}`
 			currentBackups[index] = newPhone
-			updateField('backupPhones', currentBackups)
+
+			setUserData((prev) => {
+				if (!prev) return null
+				return {
+					...prev,
+					contact: {
+						...prev.contact,
+						backupPhones: currentBackups
+					}
+				}
+			})
 		}
 	}
 
@@ -371,25 +465,7 @@ export default function ProfileScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader
-				title="Profile"
-				showBack={false}
-				rightActions={
-					<View style={styles.headerActions}>
-						{userData.role === 'customer' && (
-							<TouchableOpacity style={[styles.headerIconButton, { borderColor: colors.primary + '40' }]} onPress={handleRequestBusiness}>
-								<Ionicons name="briefcase-outline" size={22} color={colors.primary} />
-							</TouchableOpacity>
-						)}
-						<TouchableOpacity style={styles.headerIconButton} onPress={handleSwitchUser}>
-							<Ionicons name="people-outline" size={22} color={colors.text} />
-						</TouchableOpacity>
-						<TouchableOpacity style={[styles.headerIconButton, { borderColor: colors.error + '40' }]} onPress={handleSignOut}>
-							<Ionicons name="log-out-outline" size={22} color={colors.error} />
-						</TouchableOpacity>
-					</View>
-				}
-			/>
+			<ScreenHeader title="Profile" showBack={false} />
 			<ScrollView contentContainerStyle={styles.contentContainer}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
@@ -398,7 +474,7 @@ export default function ProfileScreen() {
 							<Image source={{ uri: userData.media.thumbnail.url }} style={styles.profilePhoto} onError={() => setImageError(true)} />
 						) : (
 							<View style={styles.placeholderPhoto}>
-								<Text style={styles.placeholderText}>{(userData.name?.en || userData.slug || '').charAt(0).toUpperCase()}</Text>
+								<Text style={styles.placeholderText}>{(userData.slug || '').charAt(0).toUpperCase()}</Text>
 							</View>
 						)}
 						<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
@@ -437,58 +513,29 @@ export default function ProfileScreen() {
 						</View>
 					)}
 
-					<Text style={styles.profileName}>{userData.name?.en}</Text>
-					{userData.name?.tn_latn && (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-							<View style={{ width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}>
-								<View style={[styles.langIconBadge, { width: 22, height: 22, backgroundColor: colors.card, borderColor: colors.border, position: 'relative' }]}>
-									<Text style={[styles.langIconText, { fontSize: 12, color: colors.text }]}>A</Text>
-								</View>
-							</View>
-							<Text style={[styles.profileMeta, { marginBottom: 0 }]}>{userData.name.tn_latn}</Text>
-						</View>
-					)}
-					{userData.name?.tn_arab && (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 4 }}>
-							<View style={{ width: 22, height: 22, justifyContent: 'center', alignItems: 'center' }}>
-								<View style={[styles.langIconBadge, { width: 22, height: 22, backgroundColor: colors.card, borderColor: colors.border, position: 'relative' }]}>
-									<Text style={[styles.langIconText, { fontSize: 12, color: colors.text }]}>ع</Text>
-								</View>
-							</View>
-							<Text style={[styles.profileMetaArabic, { marginBottom: 0 }]}>{userData.name.tn_arab}</Text>
-						</View>
-					)}
-					<Text style={[styles.profileMeta, { marginTop: 4 }]}>@{userData.slug}</Text>
+					<Text style={styles.profileName}>@{userData.slug}</Text>
 
-					{userData.basicInfos?.biography && <Text style={styles.biography}>{userData.basicInfos.biography}</Text>}
-
-					<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
-						<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+					<View style={styles.roleStateContainer}>
+						<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+							<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+						</View>
+						{userData.state?.code && (
+							<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>
+								<View style={[styles.stateDot, { backgroundColor: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]} />
+								<Text style={[styles.stateText, { color: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]}>{userData.state.code.toUpperCase()}</Text>
+							</View>
+						)}
 					</View>
-
-					{userData.state?.code && (
-						<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>
-							<View style={[styles.stateDot, { backgroundColor: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]} />
-							<Text style={[styles.stateText, { color: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]}>{userData.state.code.toUpperCase()}</Text>
-						</View>
-					)}
 				</View>
 
-				<Section
-					title="👤 Basic Information"
-					styles={styles}
-					isEditing={editMode.basic}
-					onEdit={() => toggleEdit('basic', true)}
-					onSave={() => saveUserData('basic')}
-					onCancel={() => toggleEdit('basic', false)}
-				>
-					{editMode.basic ? (
+				<Section title="✏️ Name" styles={styles} isEditing={editMode.name} onEdit={() => toggleEdit('name', true)} onSave={() => saveUserData('name')} onCancel={() => toggleEdit('name', false)}>
+					{editMode.name ? (
 						<>
 							<View style={styles.inputGroup}>
 								<Text style={styles.inputLabel}>Name (English)</Text>
 								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
 									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 48 }]}>
-										<Ionicons name="language-outline" size={20} color={colors.textSecondary} />
+										<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'en')?.flag}</Text>
 									</View>
 									<TextInput
 										style={[styles.socialInput, { color: colors.text }]}
@@ -504,8 +551,11 @@ export default function ProfileScreen() {
 								<Text style={styles.inputLabel}>Name (Tunisian Arabic)</Text>
 								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
 									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 48 }]}>
-										<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border, position: 'relative' }]}>
-											<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
+										<View style={styles.flagContainer}>
+											<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
+											<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+												<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
+											</View>
 										</View>
 									</View>
 									<TextInput
@@ -523,8 +573,11 @@ export default function ProfileScreen() {
 								<Text style={styles.inputLabel}>Name (Tunisian Latin)</Text>
 								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
 									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 48 }]}>
-										<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border, position: 'relative' }]}>
-											<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
+										<View style={styles.flagContainer}>
+											<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
+											<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+												<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
+											</View>
 										</View>
 									</View>
 									<TextInput
@@ -537,7 +590,78 @@ export default function ProfileScreen() {
 									/>
 								</View>
 							</View>
+						</>
+					) : (
+						<>
+							{userData?.name?.en && (
+								<InfoItem
+									label="Name (English)"
+									value={
+										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+											<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'en')?.flag}</Text>
+											<Text style={styles.infoValue}>{userData.name.en}</Text>
+										</View>
+									}
+									icon="person"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+							)}
+							{userData?.name?.tn_arab && (
+								<InfoItem
+									label="Name (Tunisian Arabic)"
+									value={
+										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+											<View style={styles.flagContainer}>
+												<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
+												<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+													<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
+												</View>
+											</View>
+											<Text style={[styles.infoValue, { textAlign: 'right', flex: 1 }]}>{userData.name.tn_arab}</Text>
+										</View>
+									}
+									icon="person"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+							)}
+							{userData?.name?.tn_latn && (
+								<InfoItem
+									label="Name (Tunisian Latin)"
+									value={
+										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+											<View style={styles.flagContainer}>
+												<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
+												<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+													<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
+												</View>
+											</View>
+											<Text style={styles.infoValue}>{userData.name.tn_latn}</Text>
+										</View>
+									}
+									icon="person"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+							)}
+							{!userData?.name?.en && !userData?.name?.tn_arab && !userData?.name?.tn_latn && (
+								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No name information set.</Text>
+							)}
+						</>
+					)}
+				</Section>
 
+				<Section
+					title="👤 Basic Information"
+					styles={styles}
+					isEditing={editMode.basic}
+					onEdit={() => toggleEdit('basic', true)}
+					onSave={() => saveUserData('basic')}
+					onCancel={() => toggleEdit('basic', false)}
+				>
+					{editMode.basic ? (
+						<>
 							<View style={styles.inputGroup}>
 								<Text style={styles.inputLabel}>Biography</Text>
 								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
@@ -578,8 +702,18 @@ export default function ProfileScreen() {
 						</>
 					) : (
 						<>
-							<InfoItem label="Full Name" value={userData?.name?.en || 'Not set'} icon="person" styles={styles} iconColor={colors.primary} />
 							<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" styles={styles} iconColor={colors.primary} />
+							{userData?.basicInfos?.biography && (
+								<View style={styles.infoItem}>
+									<View style={styles.infoIconContainer}>
+										<Ionicons name="document-text" size={20} color={colors.primary} />
+									</View>
+									<View style={styles.infoContent}>
+										<Text style={styles.infoLabel}>Biography</Text>
+										<Text style={[styles.infoValue, { fontStyle: 'italic' }]}>{userData.basicInfos.biography}</Text>
+									</View>
+								</View>
+							)}
 						</>
 					)}
 				</Section>
@@ -691,13 +825,22 @@ export default function ProfileScreen() {
 							</View>
 						</View>
 					) : (
-						<InfoItem
-							label="Full Address"
-							value={[userData?.address?.street, userData?.address?.city, userData?.address?.state, userData?.address?.country].filter(Boolean).join(', ') || 'Not set'}
-							icon="location"
-							styles={styles}
-							iconColor={colors.primary}
-						/>
+						<>
+							{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" styles={styles} iconColor={colors.primary} />}
+							{(userData?.address?.city || userData?.address?.state || userData?.address?.postalCode) && (
+								<InfoItem
+									label="City/State/Postal Code"
+									value={[userData?.address?.city, userData?.address?.state, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
+									icon="business"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+							)}
+							{userData?.address?.country && <InfoItem label="Country" value={userData.address.country} icon="earth" styles={styles} iconColor={colors.primary} />}
+							{!userData?.address?.street && !userData?.address?.city && !userData?.address?.state && !userData?.address?.country && (
+								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No address information set.</Text>
+							)}
+						</>
 					)}
 				</Section>
 
@@ -719,17 +862,17 @@ export default function ProfileScreen() {
 									</View>
 									<TextInput
 										style={[styles.socialInput, { color: colors.text }]}
-										value={userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]?.url}
+										value={userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]?.username || ''}
 										underlineColorAndroid="transparent"
 										onChangeText={(value) => {
 											const prevSocial = userData.socialMedia || {}
 											const prevPlatform = prevSocial[platform.id as keyof typeof prevSocial] || {}
-											updateField('socialMedia', { ...prevSocial, [platform.id]: { ...prevPlatform, url: value } })
+											updateField('socialMedia', { ...prevSocial, [platform.id]: { ...prevPlatform, username: value } })
 										}}
 										placeholder={platform.prefix}
 										placeholderTextColor={colors.textTertiary}
 										autoCapitalize="none"
-										keyboardType={platform.id === 'whatsapp' ? 'phone-pad' : 'default'}
+										keyboardType="default"
 									/>
 								</View>
 							</View>
@@ -738,45 +881,276 @@ export default function ProfileScreen() {
 						<>
 							{SOCIAL_PLATFORMS.map((platform) => {
 								const data = userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]
-								const rawUrl = data?.url || data?.username || ''
-								if (!rawUrl) return null
+								const username = data?.username || ''
+								if (!username) return null
+
+								// Construct URL from username for opening links
+								const constructUrl = (platformId: string, username: string) => {
+									if (platformId === 'facebook') {
+										return `https://www.facebook.com/${username}`
+									} else if (platformId === 'instagram') {
+										return `https://www.instagram.com/${username}`
+									}
+									return username
+								}
+
+								const url = constructUrl(platform.id, username)
 
 								return (
 									<InfoItem
 										key={platform.id}
 										label={platform.label}
-										value={rawUrl}
+										value={username}
 										icon={platform.icon}
 										styles={styles}
 										iconColor={platform.color}
 										onPress={() => {
-											let url = rawUrl.trim()
-											if (!url.startsWith('http')) {
-												url = 'https://' + url
-											}
 											Linking.openURL(url).catch((err) => showAlert('Error', 'Could not open URL: ' + err.message))
 										}}
 										onLongPress={async () => {
-											let url = rawUrl.trim()
-											if (!url.startsWith('http')) {
-												url = 'https://' + url
-											}
 											await Clipboard.setStringAsync(url)
 											showAlert('Copied', 'Link copied to clipboard')
 										}}
 										onCopy={async () => {
-											let url = rawUrl.trim()
-											if (!url.startsWith('http')) {
-												url = 'https://' + url
-											}
 											await Clipboard.setStringAsync(url)
 											showAlert('Copied', 'Link copied to clipboard')
 										}}
 									/>
 								)
 							})}
-							{(!userData.socialMedia || Object.values(userData.socialMedia).every((v: any) => !v?.url && !v?.username)) && (
+							{(!userData.socialMedia || Object.values(userData.socialMedia).every((v: any) => !v?.username)) && (
 								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No social media links set.</Text>
+							)}
+						</>
+					)}
+				</Section>
+
+				<Section
+					title="📞 Contact Information"
+					styles={styles}
+					isEditing={editMode.phone}
+					onEdit={() => toggleEdit('phone', true)}
+					onSave={() => saveUserData('phone')}
+					onCancel={() => toggleEdit('phone', false)}
+				>
+					{editMode.phone ? (
+						<>
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Primary Phone</Text>
+								<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
+										<TextInput
+											style={[styles.phoneCodeInput, { color: colors.text }]}
+											value={getPhone(userData)?.countryCode || '+216'}
+											onChangeText={(value) => updatePhone('primary', 'countryCode', value)}
+											placeholder="+216"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="phone-pad"
+											maxLength={5}
+										/>
+									</View>
+									<TextInput
+										style={[styles.phoneNumberInput, { color: colors.text }]}
+										value={getPhone(userData)?.shortNumber || ''}
+										onChangeText={(value) => updatePhone('primary', 'shortNumber', value)}
+										placeholder="99112619"
+										placeholderTextColor={colors.textTertiary}
+										keyboardType="phone-pad"
+										maxLength={15}
+									/>
+								</View>
+								{getPhone(userData)?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {getPhone(userData)?.fullNumber}</Text>}
+							</View>
+
+							{getBackupPhones(userData).map((backupPhone, index) => (
+								<View key={index} style={styles.inputGroup}>
+									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+										<Text style={styles.inputLabel}>Backup Phone {index + 1}</Text>
+										<TouchableOpacity
+											onPress={() => {
+												const backups = [...getBackupPhones(userData)]
+												backups.splice(index, 1)
+												setUserData((prev) => {
+													if (!prev) return null
+													return {
+														...prev,
+														contact: {
+															...prev.contact,
+															backupPhones: backups
+														}
+													}
+												})
+											}}
+											style={{ padding: 4 }}
+										>
+											<Ionicons name="trash-outline" size={18} color={colors.error} />
+										</TouchableOpacity>
+									</View>
+									<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
+											<TextInput
+												style={[styles.phoneCodeInput, { color: colors.text }]}
+												value={backupPhone?.countryCode || '+216'}
+												onChangeText={(value) => updatePhone('backup', 'countryCode', value, index)}
+												placeholder="+216"
+												placeholderTextColor={colors.textTertiary}
+												keyboardType="phone-pad"
+												maxLength={5}
+											/>
+										</View>
+										<TextInput
+											style={[styles.phoneNumberInput, { color: colors.text }]}
+											value={backupPhone?.shortNumber || ''}
+											onChangeText={(value) => updatePhone('backup', 'shortNumber', value, index)}
+											placeholder="99112645"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="phone-pad"
+											maxLength={15}
+										/>
+									</View>
+									{backupPhone?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {backupPhone.fullNumber}</Text>}
+								</View>
+							))}
+
+							<TouchableOpacity
+								onPress={() => {
+									const backups = [...getBackupPhones(userData)]
+									backups.push({ countryCode: '+216', shortNumber: '', fullNumber: '+216' })
+									setUserData((prev) => {
+										if (!prev) return null
+										return {
+											...prev,
+											contact: {
+												...prev.contact,
+												backupPhones: backups
+											}
+										}
+									})
+								}}
+								style={[styles.addButton, { borderColor: colors.primary }]}
+							>
+								<Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+								<Text style={[styles.addButtonText, { color: colors.primary }]}>Add Backup Phone</Text>
+							</TouchableOpacity>
+
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>Email</Text>
+								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+										<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
+									</View>
+									<TextInput
+										style={[styles.socialInput, { color: colors.text }]}
+										value={getEmail(userData) || ''}
+										onChangeText={(value) => {
+											setUserData((prev) => {
+												if (!prev) return null
+												return {
+													...prev,
+													contact: {
+														...prev.contact,
+														email: value
+													}
+												}
+											})
+										}}
+										placeholder="email@example.com"
+										placeholderTextColor={colors.textTertiary}
+										keyboardType="email-address"
+										autoCapitalize="none"
+									/>
+								</View>
+							</View>
+
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>WhatsApp</Text>
+								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialIconBadge, { backgroundColor: '#25D36615' }]}>
+										<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+									</View>
+									<TextInput
+										style={[styles.socialInput, { color: colors.text }]}
+										value={userData.contact?.whatsapp || ''}
+										onChangeText={(value) => {
+											setUserData((prev) => {
+												if (!prev) return null
+												return {
+													...prev,
+													contact: {
+														...prev.contact,
+														whatsapp: value
+													}
+												}
+											})
+										}}
+										placeholder="+21699112618"
+										placeholderTextColor={colors.textTertiary}
+										keyboardType="phone-pad"
+									/>
+								</View>
+							</View>
+						</>
+					) : (
+						<>
+							{getPhone(userData)?.fullNumber && (
+								<InfoItem
+									label="Primary Phone"
+									value={getPhone(userData)?.fullNumber || 'Not set'}
+									icon="call"
+									styles={styles}
+									iconColor={colors.primary}
+									onPress={() => Linking.openURL(`tel:${getPhone(userData)?.fullNumber}`).catch(() => {})}
+									onCopy={async () => {
+										await Clipboard.setStringAsync(getPhone(userData)?.fullNumber || '')
+										showAlert('Copied', 'Phone number copied to clipboard')
+									}}
+								/>
+							)}
+							{getBackupPhones(userData).map((backupPhone, index) => (
+								<InfoItem
+									key={index}
+									label={`Backup Phone ${index + 1}`}
+									value={backupPhone?.fullNumber || 'Not set'}
+									icon="call-outline"
+									styles={styles}
+									iconColor={colors.info}
+									onPress={() => Linking.openURL(`tel:${backupPhone?.fullNumber}`).catch(() => {})}
+									onCopy={async () => {
+										await Clipboard.setStringAsync(backupPhone?.fullNumber || '')
+										showAlert('Copied', 'Phone number copied to clipboard')
+									}}
+								/>
+							))}
+							{getEmail(userData) && (
+								<InfoItem
+									label="Email"
+									value={getEmail(userData) || 'Not set'}
+									icon="mail"
+									styles={styles}
+									iconColor={colors.primary}
+									onPress={() => Linking.openURL(`mailto:${getEmail(userData)}`).catch(() => {})}
+									onCopy={async () => {
+										await Clipboard.setStringAsync(getEmail(userData) || '')
+										showAlert('Copied', 'Email copied to clipboard')
+									}}
+								/>
+							)}
+							{userData.contact?.whatsapp && (
+								<InfoItem
+									label="WhatsApp"
+									value={userData.contact.whatsapp}
+									icon="logo-whatsapp"
+									styles={styles}
+									iconColor="#25D366"
+									onPress={() => Linking.openURL(`https://wa.me/${userData.contact?.whatsapp?.replace(/[^0-9]/g, '')}`).catch(() => {})}
+									onCopy={async () => {
+										await Clipboard.setStringAsync(userData.contact?.whatsapp || '')
+										showAlert('Copied', 'WhatsApp number copied to clipboard')
+									}}
+								/>
+							)}
+							{!getPhone(userData)?.fullNumber && !getEmail(userData) && !userData.contact?.whatsapp && getBackupPhones(userData).length === 0 && (
+								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No contact information set.</Text>
 							)}
 						</>
 					)}
@@ -866,10 +1240,10 @@ export default function ProfileScreen() {
 												updateField('settings', { ...prevSettings, currency: currency.code })
 											}}
 										>
-											<View style={[styles.currencyBadge, { backgroundColor: colors.primary + '10' }]}>
-												<Text style={[styles.currencySymbol, { color: colors.primary }]}>{currency.symbol}</Text>
+											<View style={styles.flagContainer}>
+												<Text style={styles.flagText}>{currency.symbol}</Text>
 											</View>
-											<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.currency === currency.code && { color: colors.primary, fontWeight: '700' }]}>{currency.label}</Text>
+											<Text style={styles.langLabel}>{currency.label}</Text>
 										</TouchableOpacity>
 									))}
 								</ScrollView>
@@ -877,189 +1251,35 @@ export default function ProfileScreen() {
 						</>
 					) : (
 						<>
+							<InfoItem label="App Language" value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || 'Not set'} icon="globe" styles={styles} iconColor={colors.primary} />
 							<InfoItem
-								label="App Language (UI)"
-								value={(() => {
-									const langCode = userData?.settings?.lang?.app || 'en'
-									const lang = LANGUAGES.find((l) => l.code === langCode)
-									return (
-										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-											<View style={{ position: 'relative', width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}>
-												<Text style={{ fontSize: 20 }}>{lang?.flag}</Text>
-												{lang?.icon && (
-													<View style={[styles.langIconBadge, { width: 12, height: 12, bottom: -2, right: -2, backgroundColor: colors.card, borderColor: colors.border }]}>
-														<Text style={[styles.langIconText, { fontSize: 8, color: colors.text }]}>{lang.icon}</Text>
-													</View>
-												)}
-											</View>
-											<Text style={[styles.infoValue, { color: colors.text }]}>{lang?.label}</Text>
-										</View>
-									)
-								})()}
+								label="Content Language"
+								value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || 'Not set'}
 								icon="language"
 								styles={styles}
 								iconColor={colors.primary}
 							/>
-							<InfoItem
-								label="Content Language"
-								value={(() => {
-									const langCode = userData?.settings?.lang?.content || 'en'
-									const lang = LANGUAGES.find((l) => l.code === langCode)
-									return (
-										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-											<View style={{ position: 'relative', width: 24, height: 24, justifyContent: 'center', alignItems: 'center' }}>
-												<Text style={{ fontSize: 20 }}>{lang?.flag}</Text>
-												{lang?.icon && (
-													<View style={[styles.langIconBadge, { width: 12, height: 12, bottom: -2, right: -2, backgroundColor: colors.card, borderColor: colors.border }]}>
-														<Text style={[styles.langIconText, { fontSize: 8, color: colors.text }]}>{lang.icon}</Text>
-													</View>
-												)}
-											</View>
-											<Text style={[styles.infoValue, { color: colors.text }]}>{lang?.label}</Text>
-										</View>
-									)
-								})()}
-								icon="globe"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
-							<InfoItem
-								label="Currency"
-								value={(() => {
-									const currencyCode = userData?.settings?.currency || 'tnd'
-									const currency = CURRENCIES.find((c) => c.code === currencyCode)
-									return (
-										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-											<View style={[styles.currencyBadge, { width: 24, height: 24, backgroundColor: colors.primary + '10' }]}>
-												<Text style={[styles.currencySymbol, { fontSize: 10, color: colors.primary }]}>{currency?.symbol}</Text>
-											</View>
-											<Text style={[styles.infoValue, { color: colors.text }]}>{currency?.label}</Text>
-										</View>
-									)
-								})()}
-								icon="cash"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
+							<InfoItem label="Currency" value={CURRENCIES.find((c) => c.code === userData.settings?.currency)?.label || 'Not set'} icon="cash" styles={styles} iconColor={colors.primary} />
 						</>
 					)}
 				</Section>
 
-				<Section
-					title="📞 Phone Numbers"
-					styles={styles}
-					isEditing={editMode.phone}
-					onEdit={() => toggleEdit('phone', true)}
-					onSave={() => saveUserData('phone')}
-					onCancel={() => toggleEdit('phone', false)}
-				>
-					{editMode.phone ? (
-						<>
-							<Text style={[styles.inputLabel, { marginBottom: 6, marginTop: 4 }]}>Primary Phone</Text>
-							<View style={styles.inputGroup}>
-								<View style={{ flexDirection: 'row', gap: 8 }}>
-									<View style={[styles.socialInputContainer, { width: 90, borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 32 }]}>
-											<Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
-										</View>
-										<TextInput
-											style={[styles.socialInput, { textAlign: 'center', paddingHorizontal: 4 }]}
-											value={userData.phone?.countryCode || '+216'}
-											underlineColorAndroid="transparent"
-											onChangeText={(val) => updatePhone('primary', 'countryCode', val)}
-											placeholder="+216"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="phone-pad"
-										/>
-									</View>
-									<View style={[styles.socialInputContainer, { flex: 1, borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 36 }]}>
-											<Ionicons name="call-outline" size={18} color={colors.textSecondary} />
-										</View>
-										<TextInput
-											style={styles.socialInput}
-											value={userData.phone?.shortNumber || ''}
-											underlineColorAndroid="transparent"
-											onChangeText={(val) => updatePhone('primary', 'shortNumber', val)}
-											placeholder="99112619"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="phone-pad"
-										/>
-									</View>
-								</View>
-							</View>
-
-							<Text style={[styles.inputLabel, { marginBottom: 6, marginTop: 12 }]}>Backup Phones</Text>
-							{(userData.backupPhones || []).map((phone, index) => (
-								<View key={index} style={[styles.inputGroup, { marginBottom: 10 }]}>
-									<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-										<View style={[styles.socialInputContainer, { width: 90, borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 32 }]}>
-												<Ionicons name="globe-outline" size={16} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { textAlign: 'center', paddingHorizontal: 4 }]}
-												value={phone.countryCode || '+216'}
-												underlineColorAndroid="transparent"
-												onChangeText={(val) => updatePhone('backup', 'countryCode', val, index)}
-												placeholder="+216"
-												placeholderTextColor={colors.textTertiary}
-												keyboardType="phone-pad"
-											/>
-										</View>
-										<View style={[styles.socialInputContainer, { flex: 1, borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 36 }]}>
-												<Ionicons name="call-outline" size={18} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={styles.socialInput}
-												value={phone.shortNumber || ''}
-												underlineColorAndroid="transparent"
-												onChangeText={(val) => updatePhone('backup', 'shortNumber', val, index)}
-												placeholder="99112645"
-												placeholderTextColor={colors.textTertiary}
-												keyboardType="phone-pad"
-											/>
-										</View>
-										<TouchableOpacity
-											onPress={() => {
-												const newBackups = (userData.backupPhones || []).filter((_, i) => i !== index)
-												updateField('backupPhones', newBackups)
-											}}
-											style={{ padding: 4 }}
-										>
-											<Ionicons name="trash-outline" size={22} color={colors.error} />
-										</TouchableOpacity>
-									</View>
-								</View>
-							))}
-							<TouchableOpacity
-								style={styles.addButton}
-								onPress={() => {
-									const newBackups = [...(userData.backupPhones || []), { countryCode: '+216', shortNumber: '', fullNumber: '+216' }]
-									updateField('backupPhones', newBackups)
-								}}
-							>
-								<Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-								<Text style={styles.addButtonText}>Add Backup Phone</Text>
-							</TouchableOpacity>
-						</>
-					) : (
-						<>
-							<InfoItem label="Primary Phone" value={userData?.phone?.fullNumber || 'Not set'} icon="call" styles={styles} iconColor={colors.primary} />
-							{(userData.backupPhones || []).length > 0 ? (
-								userData.backupPhones!.map((phone, index) => (
-									<InfoItem key={index} label={`Backup Phone ${index + 1}`} value={phone.fullNumber || 'Not set'} icon="call-outline" styles={styles} iconColor={colors.primary} />
-								))
-							) : (
-								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No backup phones set.</Text>
-							)}
-						</>
+				<Section title="🔐 Account Actions" styles={styles}>
+					{userData.role === 'customer' && (
+						<TouchableOpacity style={[styles.actionButton, { borderColor: colors.primary + '40', backgroundColor: colors.primary + '10' }]} onPress={handleRequestBusiness}>
+							<Ionicons name="briefcase-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
+							<Text style={[styles.actionButtonText, { color: colors.primary }]}>Request Business Account</Text>
+						</TouchableOpacity>
 					)}
+					<TouchableOpacity style={[styles.actionButton, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={handleSwitchUser}>
+						<Ionicons name="people-outline" size={20} color={colors.text} style={{ marginRight: 8 }} />
+						<Text style={[styles.actionButtonText, { color: colors.text }]}>Switch Account</Text>
+					</TouchableOpacity>
+					<TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleSignOut}>
+						<Ionicons name="log-out-outline" size={20} color={colors.error} style={{ marginRight: 8 }} />
+						<Text style={styles.logoutButtonText}>Sign Out</Text>
+					</TouchableOpacity>
 				</Section>
-				{Platform.OS !== 'web' && showDatePicker && (
-					<DateTimePicker value={(userData.basicInfos?.birthDate as Date) || new Date()} mode="date" display="default" onChange={onDateChange} maximumDate={new Date()} />
-				)}
 			</ScrollView>
 		</View>
 	)
@@ -1071,10 +1291,13 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			flex: 1,
 			backgroundColor: colors.background
 		},
+		scrollView: {
+			flex: 1
+		},
 		contentContainer: {
 			padding: 20,
-			paddingBottom: 120,
-			maxWidth: isWideScreen ? 800 : undefined,
+			paddingBottom: 40,
+			maxWidth: isWideScreen ? 800 : '100%',
 			alignSelf: isWideScreen ? 'center' : undefined,
 			width: '100%'
 		},
@@ -1106,16 +1329,17 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		},
 		profileCard: {
 			alignItems: 'center',
-			marginBottom: 32,
-			padding: 24,
+			marginBottom: 24,
+			padding: 20,
+			paddingBottom: 16,
 			backgroundColor: colors.card,
-			borderRadius: 24,
+			borderRadius: 20,
 			borderWidth: 1,
 			borderColor: colors.border
 		},
 		photoContainer: {
 			position: 'relative',
-			marginBottom: 16
+			marginBottom: 12
 		},
 		profilePhoto: {
 			width: 100,
@@ -1153,10 +1377,10 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderColor: colors.background
 		},
 		profileName: {
-			fontSize: 24,
-			fontWeight: 'bold',
+			fontSize: 22,
+			fontWeight: '700',
 			color: colors.text,
-			marginBottom: 4
+			marginBottom: 8
 		},
 		profileMeta: {
 			fontSize: 14,
@@ -1171,17 +1395,25 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			writingDirection: 'rtl'
 		},
 		biography: {
-			fontSize: 14,
+			fontSize: 13,
 			color: colors.text,
 			textAlign: 'center',
-			marginBottom: 16,
+			marginBottom: 12,
 			paddingHorizontal: 10,
-			fontStyle: 'italic'
+			fontStyle: 'italic',
+			lineHeight: 18
+		},
+		roleStateContainer: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: 8,
+			marginTop: 4
 		},
 		roleBadge: {
-			paddingHorizontal: 12,
-			paddingVertical: 6,
-			borderRadius: 12
+			paddingHorizontal: 10,
+			paddingVertical: 5,
+			borderRadius: 10
 		},
 		shopOwnerBadge: {
 			backgroundColor: '#3B82F6' + '20'
@@ -1193,17 +1425,16 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			backgroundColor: '#10B981' + '20'
 		},
 		roleBadgeText: {
-			fontSize: 12,
+			fontSize: 11,
 			fontWeight: '600',
 			color: colors.text
 		},
 		stateBadge: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			paddingHorizontal: 10,
-			paddingVertical: 4,
-			borderRadius: 10,
-			marginTop: 12
+			paddingHorizontal: 8,
+			paddingVertical: 5,
+			borderRadius: 10
 		},
 		stateDot: {
 			width: 6,
@@ -1217,45 +1448,36 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			letterSpacing: 0.5
 		},
 		section: {
-			marginBottom: 24
-		},
-		sectionTitle: {
-			fontSize: 14,
-			fontWeight: '600',
-			color: colors.textSecondary,
-			marginBottom: 12,
-			textTransform: 'uppercase',
-			letterSpacing: 0.5,
-			marginLeft: 4
-		},
-		sectionContent: {
+			marginBottom: 32,
 			backgroundColor: colors.card,
 			borderRadius: 16,
-			overflow: 'hidden',
+			padding: 20,
 			borderWidth: 1,
-			borderColor: colors.border,
-			padding: 8
+			borderColor: colors.border
+		},
+		sectionTitle: {
+			fontSize: 18,
+			fontWeight: '600',
+			color: colors.text,
+			marginBottom: 16
 		},
 		infoItem: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			padding: 12
+			marginBottom: 16
 		},
-		infoIconContainer: {
+		infoIcon: {
 			width: 40,
 			height: 40,
-			borderRadius: 12,
-			backgroundColor: colors.primary + '10',
+			borderRadius: 20,
+			backgroundColor: colors.background,
 			justifyContent: 'center',
 			alignItems: 'center',
 			marginRight: 16
 		},
-		infoContent: {
-			flex: 1
-		},
 		infoLabel: {
-			fontSize: 12,
-			color: colors.textTertiary,
+			fontSize: 14,
+			color: colors.textSecondary,
 			marginBottom: 2
 		},
 		infoValue: {
@@ -1263,9 +1485,90 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			color: colors.text,
 			fontWeight: '500'
 		},
-		row: {
-			flexDirection: width && width < 600 ? 'column' : 'row',
-			gap: 12
+		editField: {
+			marginBottom: 16
+		},
+		editInput: {
+			padding: 12,
+			borderRadius: 8,
+			borderWidth: 1,
+			borderColor: colors.border,
+			color: colors.text,
+			fontSize: 16
+		},
+		socialButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			padding: 12,
+			borderRadius: 8,
+			marginBottom: 8,
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		socialIcon: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: 12
+		},
+		socialText: {
+			fontSize: 16,
+			color: colors.text,
+			flex: 1
+		},
+		addButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			padding: 12,
+			borderRadius: 8,
+			borderWidth: 1,
+			borderStyle: 'dashed',
+			borderColor: colors.primary,
+			marginTop: 8
+		},
+		addButtonText: {
+			color: colors.primary,
+			marginLeft: 8,
+			fontWeight: '600'
+		},
+		languageOption: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			padding: 12,
+			borderRadius: 8,
+			marginBottom: 8,
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		languageText: {
+			flex: 1,
+			fontSize: 16,
+			color: colors.text,
+			marginLeft: 12
+		},
+		radioButton: {
+			width: 20,
+			height: 20,
+			borderRadius: 10,
+			borderWidth: 2,
+			borderColor: colors.primary,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		radioButtonSelected: {
+			width: 12,
+			height: 12,
+			borderRadius: 6,
+			backgroundColor: colors.primary
+		},
+		loadingContainer: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+			padding: 20
 		},
 		inputGroup: {
 			marginBottom: 10,
@@ -1330,13 +1633,26 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			fontSize: 16,
 			fontWeight: '600'
 		},
+		actionButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			padding: 16,
+			marginBottom: 12,
+			borderRadius: 16,
+			borderWidth: 1
+		},
+		actionButtonText: {
+			fontSize: 16,
+			fontWeight: '600'
+		},
 		logoutButton: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
 			padding: 16,
-			marginTop: 24,
-			marginBottom: 40,
+			marginTop: 0,
+			marginBottom: 0,
 			borderRadius: 16,
 			backgroundColor: colors.error + '10',
 			borderWidth: 1,
@@ -1346,79 +1662,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			color: colors.error,
 			fontSize: 16,
 			fontWeight: '600'
-		},
-		addButton: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			padding: 12,
-			gap: 8
-		},
-		addButtonText: {
-			color: colors.primary,
-			fontWeight: '600',
-			fontSize: 14
-		},
-		editModeHeader: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 12,
-			paddingHorizontal: 20,
-			paddingVertical: 16,
-			backgroundColor: colors.primary + '10',
-			borderRadius: 16,
-			marginBottom: 24,
-			borderWidth: 1,
-			borderColor: colors.primary + '20'
-		},
-		editModeTitle: {
-			fontSize: 18,
-			fontWeight: '700',
-			color: colors.primary
-		},
-		actionBar: {
-			flexDirection: 'row',
-			gap: 12,
-			paddingTop: 24,
-			paddingBottom: 16,
-			marginTop: 8
-		},
-		cancelButtonNew: {
-			flex: 1,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 8,
-			paddingVertical: 16,
-			borderRadius: 14,
-			backgroundColor: colors.error + '10',
-			borderWidth: 2,
-			borderColor: colors.error + '30'
-		},
-		cancelButtonTextNew: {
-			color: colors.error,
-			fontSize: 16,
-			fontWeight: '700'
-		},
-		saveButton: {
-			flex: 1,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 8,
-			paddingVertical: 16,
-			borderRadius: 14,
-			backgroundColor: colors.primary,
-			shadowColor: colors.primary,
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: 0.3,
-			shadowRadius: 8,
-			elevation: 6
-		},
-		saveButtonText: {
-			color: '#fff',
-			fontSize: 16,
-			fontWeight: '700'
 		},
 		langOption: {
 			flexDirection: 'row',
@@ -1514,5 +1757,48 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		addressCol12: {
 			paddingHorizontal: 4,
 			width: '100%'
+		},
+		phoneInputContainer: {
+			flexDirection: 'row',
+			alignItems: 'stretch',
+			borderRadius: 10,
+			borderWidth: 1.5,
+			overflow: 'hidden',
+			minHeight: 40
+		},
+		phoneCodeInput: {
+			width: '100%',
+			paddingHorizontal: 8,
+			paddingVertical: 10,
+			fontSize: 16,
+			textAlign: 'center',
+			textAlignVertical: 'center'
+		},
+		phoneNumberInput: {
+			flex: 1,
+			paddingHorizontal: 12,
+			paddingVertical: 10,
+			fontSize: 16,
+			textAlignVertical: 'center'
+		},
+		inputHint: {
+			fontSize: 12,
+			marginTop: 4,
+			marginLeft: 4
+		},
+		infoIconContainer: {
+			width: 40,
+			height: 40,
+			borderRadius: 20,
+			backgroundColor: colors.background,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: 16
+		},
+		infoContent: {
+			flex: 1
+		},
+		sectionContent: {
+			gap: 0
 		}
 	})

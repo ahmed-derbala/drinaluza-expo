@@ -21,7 +21,6 @@ const ShopDetailsScreen = () => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Text style={[styles.title, { color: colors.text }]}>Shop Details</Text>
 			<Text style={[styles.shopId, { color: colors.text }]}>Shop ID: {shopId}</Text>
 			{/* Add more shop details here */}
 		</View>

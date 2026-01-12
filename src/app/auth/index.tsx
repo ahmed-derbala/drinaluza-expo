@@ -21,8 +21,8 @@ export default function AuthScreen() {
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
-	const [slug, setUsername] = useState()
-	const [password, setPassword] = useState()
+	const [slug, setSlug] = useState<string>('')
+	const [password, setPassword] = useState<string>('')
 	const [statusState, setStatusState] = useState<'initial' | '404' | '409'>('initial')
 	const [errorMessage, setErrorMessage] = useState('')
 	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
@@ -111,9 +111,9 @@ export default function AuthScreen() {
 			setIsLoading(true)
 			const success = await signInWithToken(auth.token)
 			if (success) {
-				router.replace('/home' as any)
+				router.replace('/home/feed')
 			} else {
-				setUsername(auth.slug)
+				setSlug(auth.slug)
 				setPassword('')
 				showAlert('Error', 'Session expired. Please sign in again with your password.')
 				await deleteSavedAuthentication(auth.slug)
@@ -197,7 +197,7 @@ export default function AuthScreen() {
 					label: 'auth',
 					message: 'Navigating to /home'
 				})
-				router.replace('/home' as any)
+				router.replace('/home/feed')
 			} else {
 				log({
 					level: 'error',
@@ -264,7 +264,7 @@ export default function AuthScreen() {
 	const handleSignUp = async () => {
 		try {
 			await signUp(slug, password)
-			router.push('/home' as any)
+			router.replace('/home/feed')
 		} catch (error) {
 			log({
 				level: 'error',
@@ -305,7 +305,7 @@ export default function AuthScreen() {
 							placeholder="Username"
 							value={slug}
 							onChangeText={(text) => {
-								setUsername(text)
+								setSlug(text)
 								setStatusState('initial')
 							}}
 						/>

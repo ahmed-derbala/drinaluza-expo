@@ -16,24 +16,69 @@ export type Owner = {
 	updatedAt?: string
 }
 
+export type Contact = {
+	phone: {
+		fullNumber: string
+		countryCode: string
+		localNumber: string
+		createdAt: string
+		updatedAt: string
+	}
+	backupPhones?: Array<{
+		fullNumber: string
+		countryCode: string
+		localNumber: string
+		createdAt: string
+		updatedAt: string
+	}>
+	whatsapp?: string
+	email?: string
+	createdAt: string
+	updatedAt: string
+}
+
 export type Shop = {
 	_id: string
 	name: LocalizedName
 	slug: string
-	owner: Owner
+	owner: Owner & {
+		_id: string
+		slug: string
+		name: LocalizedName
+		business?: {
+			_id: string
+			slug: string
+			name: LocalizedName
+			state?: {
+				code: string
+				updatedAt?: string
+			}
+			updatedAt?: string
+		}
+	}
 	location?: GeoPoint
 	address?: {
 		street: string
 		city: string
 		state: string
-		postalCode: string
+		postalCode?: string
 		country: string
 	}
-	operatingHours?: Record<string, unknown>
+	media?: {
+		thumbnail?: {
+			url: string
+		}
+	}
 	deliveryRadiusKm?: number
-	isActive: boolean
+	isActive?: boolean
 	createdAt?: string
 	updatedAt?: string
+	operatingHours?: Record<string, unknown>
+	description?: string
+	rating?: number
+	reviewCount?: number
+	categories?: string[]
+	contact?: Contact
 }
 
 export type Pagination = {

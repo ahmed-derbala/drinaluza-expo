@@ -50,16 +50,24 @@ export interface UserState {
 	updatedAt: string
 }
 
+export interface Contact {
+	phone?: Phone
+	backupPhones?: Phone[]
+	whatsapp?: string
+	email?: string
+}
+
 export interface UserData {
 	_id: string
 	slug: string
 	name: LocalizedName
-	email?: string
+	email?: string // Deprecated - use contact.email
 	role: string
 	isActive?: boolean
 	state?: UserState
-	phone?: Phone
-	backupPhones?: Phone[]
+	phone?: Phone // Deprecated - use contact.phone
+	backupPhones?: Phone[] // Deprecated - use contact.backupPhones
+	contact?: Contact
 	basicInfos: BasicInfos
 	address: Address
 	settings: UserSettings

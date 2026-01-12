@@ -1,18 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Dimensions, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
-import { LinearGradient } from 'expo-linear-gradient'
-import { LineChart } from 'react-native-chart-kit'
 import { getPurchases } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
 import { logError, parseError } from '../../utils/errorHandler'
 import ErrorState from '../common/ErrorState'
-
-const { width } = Dimensions.get('window')
 
 type Order = OrderItem
 
@@ -98,7 +94,6 @@ const Dashboard = () => {
 		totalSpent: 0
 	})
 	const [recentPurchases, setRecentPurchases] = useState<Order[]>([])
-	const [chartData, setChartData] = useState<number[]>([0, 0, 0, 0, 0, 0])
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
 	const loadDashboard = useCallback(async () => {
@@ -121,11 +116,6 @@ const Dashboard = () => {
 			})
 
 			setRecentPurchases(docs.slice(0, 5))
-
-			if (docs.length > 0) {
-				const last6Months = [0, 0, 0, 0, 0, totalSpent]
-				setChartData(last6Months)
-			}
 		} catch (err: any) {
 			logError(err, 'loadDashboard')
 			const errorInfo = parseError(err)
@@ -361,63 +351,6 @@ const styles = StyleSheet.create({
 			}
 		})
 	},
-	heroCardContainer: {
-		marginBottom: 16,
-		borderRadius: 20,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.15,
-				shadowRadius: 12
-			},
-			android: {
-				elevation: 6
-			}
-		})
-	},
-	heroCard: {
-		padding: 20,
-		borderRadius: 20,
-		minHeight: 140,
-		justifyContent: 'space-between'
-	},
-	heroHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-		marginBottom: 8
-	},
-	heroIcon: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		backgroundColor: 'rgba(255,255,255,0.2)',
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	heroTitle: {
-		color: '#fff',
-		fontSize: 16,
-		fontWeight: '600',
-		opacity: 0.9
-	},
-	heroValue: {
-		color: '#fff',
-		fontSize: 32,
-		fontWeight: '800',
-		marginVertical: 4
-	},
-	heroFooter: {
-		flexDirection: 'row',
-		alignItems: 'center'
-	},
-	heroSubtitle: {
-		color: '#fff',
-		fontSize: 13,
-		fontWeight: '500',
-		opacity: 0.8
-	},
 	statIcon: {
 		width: 36,
 		height: 36,
@@ -438,29 +371,6 @@ const styles = StyleSheet.create({
 		fontSize: 18,
 		fontWeight: '700',
 		marginBottom: 2
-	},
-	chartCard: {
-		borderRadius: 20,
-		borderWidth: 1,
-		padding: 16,
-		overflow: 'hidden'
-	},
-	chartHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginBottom: 16
-	},
-	chartTitle: {
-		fontSize: 16,
-		fontWeight: '600'
-	},
-	chartSubtitle: {
-		fontSize: 12
-	},
-	chart: {
-		marginVertical: 8,
-		borderRadius: 16
 	},
 	actionsGrid: {
 		flexDirection: 'row',

@@ -112,7 +112,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 						onPress={() => item.stock.quantity > 0 && item.state.code === 'active' && addToBasket(item, quantity)}
 						disabled={item.stock.quantity <= 0 || item.state.code !== 'active'}
 					>
-						<Text style={styles.addToCartText}>{item.state.code !== 'active' ? 'Unavailable' : item.stock.quantity > 0 ? 'Add to Cart' : 'Out of Stock'}</Text>
+						<MaterialIcons name={item.stock.quantity <= 0 || item.state.code !== 'active' ? 'remove-shopping-cart' : 'add-shopping-cart'} size={24} color="#fff" />
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -291,15 +291,11 @@ const createStyles = (colors: any, isDark: boolean) =>
 			shadowOffset: { width: 0, height: 4 },
 			shadowOpacity: 0.3,
 			shadowRadius: 8,
-			elevation: 6
+			elevation: 6,
+			minHeight: 48,
+			minWidth: 48
 		},
 		disabledButton: {
 			backgroundColor: isDark ? '#444' : '#B0BEC5'
-		},
-		addToCartText: {
-			color: '#fff',
-			fontSize: 17, // Standard readable size
-			fontWeight: '700',
-			letterSpacing: 0.5
 		}
 	})
