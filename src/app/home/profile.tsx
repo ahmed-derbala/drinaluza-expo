@@ -234,6 +234,14 @@ export default function ProfileScreen() {
 			}
 		} catch (err: any) {
 			logError(err, 'loadProfile')
+
+			// Handle 401 Unauthorized - redirect to auth screen
+			if (err.response?.status === 401) {
+				showAlert('Session Expired', 'Please log in again to continue.')
+				router.replace('/auth')
+				return
+			}
+
 			const errorInfo = parseError(err)
 			setError({
 				title: errorInfo.title,

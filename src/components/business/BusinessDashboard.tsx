@@ -8,6 +8,7 @@ import { getMyBusiness, MyBusiness } from './business.api'
 import { parseError } from '../../utils/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { LinearGradient } from 'expo-linear-gradient'
+import { showAlert } from '../../utils/popup'
 
 type ActionButtonProps = {
 	label: string
@@ -52,6 +53,14 @@ const BusinessDashboard = () => {
 			setBusiness(response.data)
 		} catch (err: any) {
 			console.error('Failed to load business:', err)
+
+			// Handle 401 Unauthorized - redirect to auth screen
+			if (err.response?.status === 401) {
+				showAlert('Session Expired', 'Please log in again to continue.')
+				router.replace('/auth')
+				return
+			}
+
 			const errorInfo = parseError(err)
 			setError({
 				title: errorInfo.title,

@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ScrollView, Animated, useWindowDimensions, Linking } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { getSales } from '../orders/orders.api'
-import { OrderItem as SaleItem } from '../orders/orders.interface'
+import { OrderItem as SaleItem, OrderResponse } from '../orders/orders.interface'
 import { useFocusEffect } from '@react-navigation/native'
 import { useRouter } from 'expo-router'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
@@ -33,6 +33,8 @@ export default function SalesTab() {
 
 	const fadeAnim = useRef(new Animated.Value(0)).current
 	const scaleAnimRefs = useRef<Record<string, Animated.Value>>({}).current
+	const [totalDocs, setTotalDocs] = useState<number | null>(null)
+	const [totalPages, setTotalPages] = useState<number | null>(null)
 	const { width } = useWindowDimensions()
 
 	const getResponsiveConfig = (width: number) => {
@@ -155,7 +157,15 @@ export default function SalesTab() {
 			if (pageNum === 1 && !isRefresh) setLoading(true)
 
 			const response = await getSales(pageNum, 10, status === 'all' ? undefined : status)
-			const newSales = response.data.docs || []
+
+			// Normalize API response shapes so this UI works with different backends:
+			// - { data: { docs: [...], pagination: {...} }, ... }
+			// - { docs: [...], pagination: {...} }
+			// - direct array of sales
+			const apiWrapper = response ?? {}
+			const levelObj = apiWrapper.data ? apiWrapper : apiWrapper
+			const body = apiWrapper.data ? apiWrapper.data : apiWrapper
+			const newSales = body?.docs || (Array.isArray(body) ? body : [])
 
 			if (isRefresh || pageNum === 1) {
 				setSales(newSales)
@@ -168,10 +178,22 @@ export default function SalesTab() {
 				setSales((prev) => [...prev, ...newSales])
 			}
 
-			setHasMore(response.data.pagination.hasNextPage)
+			setHasMore(body?.pagination?.hasNextPage)
+			if (body?.pagination) {
+				setTotalDocs(body.pagination.totalDocs ?? null)
+				setTotalPages(body.pagination.totalPages ?? null)
+			}
 			setPage(pageNum)
 		} catch (error: any) {
 			console.error('Failed to load sales:', error)
+
+			// Handle 401 Unauthorized - redirect to auth screen
+			if (error.response?.status === 401) {
+				showAlert('Session Expired', 'Please log in again to continue.')
+				router.replace('/auth')
+				return
+			}
+
 			const errorMessage = error.response?.data?.message || 'Failed to load sales data'
 			showAlert('Error', errorMessage)
 		} finally {
@@ -217,6 +239,18 @@ export default function SalesTab() {
 		else return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: date.getFullYear() !== now.getFullYear() ? 'numeric' : undefined })
 	}
 
+	// Format money objects returned by the API
+	const formatMoney = (moneyObj: any) => {
+		if (!moneyObj) return ''
+		const amount = moneyObj.tnd ?? moneyObj.eur ?? moneyObj.usd ?? 0
+		const currency = moneyObj.tnd !== undefined ? 'TND' : moneyObj.eur !== undefined ? 'EUR' : moneyObj.usd !== undefined ? 'USD' : 'TND'
+		try {
+			return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: 3 }).format(amount)
+		} catch (e) {
+			return `${amount.toFixed(3)} ${currency}`
+		}
+	}
+
 	const getStatusIcon = (status: string) => {
 		switch (status) {
 			case orderStatusEnum.PENDING_SHOP_CONFIRMATION:
@@ -238,7 +272,8 @@ export default function SalesTab() {
 
 	const renderSaleItem = useCallback(
 		({ item }: { item: SaleItem }) => {
-			const totalPrice = item.price?.total?.tnd || item.products.reduce((sum, p) => sum + (p.quantity || 0) * (p.product?.price?.total?.tnd || 0), 0)
+			// Use the total price from the API response, or calculate from lineTotals as fallback
+			const totalPrice = item.price?.total?.tnd || item.products.reduce((sum, p) => sum + (p.lineTotal?.tnd || 0), 0)
 			const statusColor = orderStatusColors[item.status] || colors.textSecondary
 			const statusLabel = orderStatusLabels[item.status] || item.status
 
@@ -270,17 +305,21 @@ export default function SalesTab() {
 				return item.customer?.slug || 'Unknown Customer'
 			}
 
-			const formatPrice = (amount: number) => {
-				return new Intl.NumberFormat('en-US', {
-					style: 'currency',
-					currency: 'TND',
-					minimumFractionDigits: 3
-				}).format(amount)
-			}
-
 			const isGrid = responsiveConfig.numColumns > 1
 			const layoutStyle = isGrid ? styles.cardHorizontal : styles.cardVertical
 			const productImageUrl = item.products?.[0]?.product?.media?.thumbnail?.url || item.products?.[0]?.product?.photos?.[0] || ''
+
+			// Money objects
+			const computedSum = item.products?.reduce((sum, p) => sum + (p.lineTotal?.tnd ?? 0), 0)
+			const totalMoney = item.price?.total ?? { tnd: computedSum }
+
+			const getProductName = (p: any) => {
+				// Handle LocalizedName object or string
+				if (typeof p?.product?.name === 'object') {
+					return p.product.name.en || p.product.name.tn_latn || p.product.name.tn_arab || 'Unknown Product'
+				}
+				return p?.product?.defaultProduct?.name?.en || p?.product?.name?.en || typeof p?.product?.name === 'string' ? p.product.name : 'Unknown Product'
+			}
 
 			return (
 				<Animated.View
@@ -320,12 +359,19 @@ export default function SalesTab() {
 													<Text style={styles.orderDate}>{formatDate(item.createdAt)}</Text>
 													<Text style={[styles.orderDate, { opacity: 0.6 }]}>• #{item._id.slice(-6).toUpperCase()}</Text>
 												</View>
-												{item.shop?.address && (
+												{item.shop && (
 													<View style={styles.shopLocation}>
-														<Ionicons name="location-outline" size={responsiveConfig.iconSizes.sm} color={colors.textTertiary} />
-														<Text style={{ fontSize: responsiveConfig.fontSize.customerDetails, color: colors.textTertiary }} numberOfLines={1} ellipsizeMode="tail">
-															{[item.shop.address.city, item.shop.address.country].filter(Boolean).join(', ')}
-														</Text>
+														<Ionicons name="storefront-outline" size={responsiveConfig.iconSizes.sm} color={colors.textTertiary} />
+														<View style={{ marginLeft: 8, flexShrink: 1 }}>
+															<Text style={{ fontSize: responsiveConfig.fontSize.customerDetails, color: colors.text, fontWeight: '600' }} numberOfLines={1} ellipsizeMode="tail">
+																{typeof item.shop.name === 'object' ? (item.shop.name as any).en || item.shop.slug : item.shop.name || item.shop.slug}
+															</Text>
+															{item.shop?.address && (
+																<Text style={{ fontSize: responsiveConfig.fontSize.customerDetails - 1, color: colors.textTertiary }} numberOfLines={1} ellipsizeMode="tail">
+																	{[item.shop.address.city, item.shop.address.country].filter(Boolean).join(', ')}
+																</Text>
+															)}
+														</View>
 													</View>
 												)}
 											</View>
@@ -390,6 +436,16 @@ export default function SalesTab() {
 															<Ionicons name="mail" size={16} color={colors.info} />
 														</TouchableOpacity>
 													)}
+													{/* Backup phones */}
+													{item.customer?.contact?.backupPhones?.slice(0, 1).map((backupPhone, index) => (
+														<TouchableOpacity
+															key={index}
+															style={[styles.contactButton, { backgroundColor: colors.warning + '15' }]}
+															onPress={() => Linking.openURL(`tel:${backupPhone?.fullNumber || ''}`)}
+														>
+															<Ionicons name="call-outline" size={16} color={colors.warning} />
+														</TouchableOpacity>
+													))}
 												</View>
 											</View>
 										)}
@@ -414,11 +470,11 @@ export default function SalesTab() {
 														)}
 														<View style={styles.productInfo}>
 															<Text style={[styles.productName, { color: colors.text }]} numberOfLines={isGrid ? 1 : 2}>
-																{typeof product.product?.name === 'string' ? product.product.name : 'Unknown Product'}
+																{getProductName(product)}
 															</Text>
 															<View style={styles.productMeta}>
 																<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>Qty: {product.quantity || 1}</Text>
-																<Text style={[styles.productPrice, { color: colors.primary }]}>{formatPrice(product.product?.price?.total?.tnd || 0)}</Text>
+																<Text style={[styles.productPrice, { color: colors.primary }]}>{formatMoney(product.lineTotal)}</Text>
 															</View>
 														</View>
 													</View>
@@ -438,7 +494,7 @@ export default function SalesTab() {
 									<View style={styles.cardRight}>
 										<View style={styles.totalPriceContainer}>
 											<Text style={[styles.totalPriceLabel, { color: colors.textSecondary }]}>Total</Text>
-											<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(totalPrice)}</Text>
+											<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatMoney(totalMoney)}</Text>
 										</View>
 									</View>
 								)}
@@ -448,7 +504,7 @@ export default function SalesTab() {
 				</Animated.View>
 			)
 		},
-		[colors, isDark, responsiveConfig, styles, scaleAnimRefs, getStatusIcon, formatDate, orderStatusColors, orderStatusLabels]
+		[colors, isDark, responsiveConfig, styles, scaleAnimRefs, getStatusIcon, formatDate, formatMoney, orderStatusColors, orderStatusLabels]
 	)
 
 	return (
@@ -460,6 +516,11 @@ export default function SalesTab() {
 				}}
 			>
 				<ScreenHeader title="Sales" showBack={false} />
+				{totalDocs !== null && (
+					<View style={{ marginTop: 6 }}>
+						<Text style={{ color: colors.textTertiary, fontSize: responsiveConfig.fontSize.customerDetails }}>{`Showing ${sales.length} of ${totalDocs} sales`}</Text>
+					</View>
+				)}
 			</View>
 
 			{/* Filter Section */}
