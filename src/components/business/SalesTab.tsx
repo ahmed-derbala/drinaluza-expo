@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ScrollView, Animated, useWindowDimensions, Linking } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ScrollView, Animated, useWindowDimensions, Linking, Dimensions } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { getSales } from '../orders/orders.api'
 import { OrderItem as SaleItem, OrderResponse } from '../orders/orders.interface'
@@ -20,6 +20,204 @@ const FILTERS = [
 	{ id: orderStatusEnum.DELIVERED_TO_CUSTOMER, label: 'Completed' },
 	{ id: orderStatusEnum.CANCELLED_BY_SHOP, label: 'Cancelled' }
 ]
+
+// Simple format functions
+const formatMoney = (money: any) => {
+	if (!money) return '0 TND'
+	const amount = money.tnd || money || 0
+	return `${amount.toFixed(2)} TND`
+}
+
+// Custom Product Swiper Component
+const ProductSwiper = ({ products, responsiveConfig, colors, styles, getProductName }: any) => {
+	const [currentIndex, setCurrentIndex] = useState(0)
+	const scrollViewRef = useRef<ScrollView>(null)
+
+	const handleScroll = (event: any) => {
+		const contentOffset = event.nativeEvent.contentOffset
+		const index = Math.round(contentOffset.x / responsiveConfig.productItemWidth)
+		setCurrentIndex(index)
+	}
+
+	const scrollToIndex = (index: number) => {
+		if (scrollViewRef.current) {
+			scrollViewRef.current.scrollTo({
+				x: index * responsiveConfig.productItemWidth,
+				animated: true
+			})
+		}
+	}
+
+	const renderItem = (product: any, index: number) => (
+		<View key={index} style={[styles.productSwiperItem, { width: responsiveConfig.productItemWidth }]}>
+			{/* Product Header */}
+			<View style={styles.productSwiperHeader}>
+				{product.product?.media?.thumbnail?.url || product.product?.photos?.[0] ? (
+					<SmartImage source={{ uri: product.product?.media?.thumbnail?.url || product.product?.photos?.[0] }} style={styles.productSwiperImage} resizeMode="cover" fallbackIcon="image" />
+				) : (
+					<View style={[styles.productSwiperImagePlaceholder, { backgroundColor: colors.background + '80' }]}>
+						<Ionicons name="cube-outline" size={responsiveConfig.iconSizes.md} color={colors.textTertiary} />
+					</View>
+				)}
+				<View style={styles.productSwiperBadge}>
+					<Text style={[styles.productSwiperBadgeText, { color: colors.card }]}>
+						{index + 1}/{products.length}
+					</Text>
+				</View>
+			</View>
+
+			{/* Product Details - Vertical Scroll */}
+			<View style={styles.productSwiperDetailsContainer}>
+				{/* Scroll Hint */}
+				<View style={styles.scrollHint}>
+					<Ionicons name="chevron-down" size={12} color={colors.textTertiary} />
+					<Text style={[styles.scrollHintText, { color: colors.textTertiary }]}>Scroll for more details</Text>
+					<Ionicons name="chevron-down" size={12} color={colors.textTertiary} />
+				</View>
+
+				<ScrollView showsVerticalScrollIndicator={true} indicatorStyle="default" style={styles.productSwiperDetailsScroll} contentContainerStyle={styles.productSwiperDetailsContent}>
+					{/* Product Name */}
+					<Text style={[styles.productSwiperName, { color: colors.text }]} numberOfLines={2}>
+						{getProductName(product)}
+					</Text>
+
+					{/* Product ID and Type */}
+					<View style={styles.productSwiperMetaInfo}>
+						<Text style={[styles.productSwiperMetaText, { color: colors.textTertiary }]}>ID: {product.product?._id?.slice(-8) || 'N/A'}</Text>
+						{product.product?.defaultProduct && <Text style={[styles.productSwiperMetaText, { color: colors.textTertiary }]}>Type: Default Product</Text>}
+					</View>
+
+					{/* Product Specifications */}
+					<View style={styles.productSwiperSpecs}>
+						<View style={styles.productSwiperSpecRow}>
+							<Ionicons name="pricetag" size={12} color={colors.textSecondary} />
+							<Text style={[styles.productSwiperSpecText, { color: colors.textSecondary }]}>{product.product?.unit?.measure ? `Sold per ${product.product.unit.measure}` : 'Sold per item'}</Text>
+						</View>
+						<View style={styles.productSwiperSpecRow}>
+							<Ionicons name="scale" size={12} color={colors.textSecondary} />
+							<Text style={[styles.productSwiperSpecText, { color: colors.textSecondary }]}>
+								{product.quantity || 1} {product.product?.unit?.measure || 'units'}
+							</Text>
+						</View>
+						{product.product?.unit?.min && product.product?.unit?.max && (
+							<View style={styles.productSwiperSpecRow}>
+								<Ionicons name="options" size={12} color={colors.textSecondary} />
+								<Text style={[styles.productSwiperSpecText, { color: colors.textSecondary }]}>
+									Min: {product.product.unit.min} - Max: {product.product.unit.max}
+								</Text>
+							</View>
+						)}
+						{product.product?.defaultProduct?.slug && (
+							<View style={styles.productSwiperSpecRow}>
+								<Ionicons name="link" size={12} color={colors.textSecondary} />
+								<Text style={[styles.productSwiperSpecText, { color: colors.textSecondary }]}>Slug: {product.product.defaultProduct.slug}</Text>
+							</View>
+						)}
+					</View>
+
+					{/* Pricing Section */}
+					<View style={styles.productSwiperPricing}>
+						<View style={styles.productSwiperPriceCard}>
+							<Text style={[styles.productSwiperPriceLabel, { color: colors.textSecondary }]}>Unit Price</Text>
+							<Text style={[styles.productSwiperUnitPrice, { color: colors.text }]}>{formatMoney(product.product?.price?.total)}</Text>
+							{product.product?.price?.total?.eur && <Text style={[styles.productSwiperSubPrice, { color: colors.textTertiary }]}>€{product.product.price.total.eur.toFixed(2)}</Text>}
+							{product.product?.price?.total?.usd && <Text style={[styles.productSwiperSubPrice, { color: colors.textTertiary }]}>${product.product.price.total.usd.toFixed(2)}</Text>}
+						</View>
+						<View style={[styles.productSwiperPriceCard, styles.productSwiperTotalCard]}>
+							<Text style={[styles.productSwiperPriceLabel, { color: colors.card }]}>Total Price</Text>
+							<Text style={[styles.productSwiperTotalPrice, { color: colors.card }]}>{formatMoney(product.lineTotal)}</Text>
+							{product.lineTotal?.eur && <Text style={[styles.productSwiperSubPrice, { color: colors.card }]}>€{product.lineTotal.eur.toFixed(2)}</Text>}
+							{product.lineTotal?.usd && <Text style={[styles.productSwiperSubPrice, { color: colors.card }]}>${product.lineTotal.usd.toFixed(2)}</Text>}
+						</View>
+					</View>
+
+					{/* Additional Details */}
+					<View style={styles.productSwiperAdditionalInfo}>
+						{product.product?.updatedAt && (
+							<View style={styles.productSwiperInfoRow}>
+								<Ionicons name="time" size={10} color={colors.textTertiary} />
+								<Text style={[styles.productSwiperInfoText, { color: colors.textTertiary }]}>Updated: {new Date(product.product.updatedAt).toLocaleDateString()}</Text>
+							</View>
+						)}
+						{product.lineTotal?.updatedAt && (
+							<View style={styles.productSwiperInfoRow}>
+								<Ionicons name="calculator" size={10} color={colors.textTertiary} />
+								<Text style={[styles.productSwiperInfoText, { color: colors.textTertiary }]}>Price calculated: {new Date(product.lineTotal.updatedAt).toLocaleDateString()}</Text>
+							</View>
+						)}
+					</View>
+
+					{/* Product Footer */}
+					<View style={styles.productSwiperFooter}>
+						<Text style={[styles.productSwiperId, { color: colors.textTertiary }]}>{product.product?.defaultProduct?.slug || product.product?._id?.slice(-8) || 'N/A'}</Text>
+						<View style={styles.productSwiperStatus}>
+							<View style={[styles.productSwiperStatusDot, { backgroundColor: colors.success }]} />
+							<Text style={[styles.productSwiperStatusText, { color: colors.success }]}>Available</Text>
+						</View>
+					</View>
+				</ScrollView>
+			</View>
+		</View>
+	)
+
+	return (
+		<View style={styles.productSwiper}>
+			{/* Swiper Header */}
+			<View style={styles.productSwiperHeaderBar}>
+				<Text style={[styles.productSwiperTitle, { color: colors.text }]}>Products ({products.length})</Text>
+				<View style={styles.productSwiperNavButtons}>
+					<TouchableOpacity
+						style={[styles.productSwiperNavButton, { opacity: currentIndex === 0 ? 0.5 : 1 }]}
+						onPress={() => scrollToIndex(Math.max(0, currentIndex - 1))}
+						disabled={currentIndex === 0}
+					>
+						<Ionicons name="chevron-back" size={16} color={colors.text} />
+					</TouchableOpacity>
+					<TouchableOpacity
+						style={[styles.productSwiperNavButton, { opacity: currentIndex === products.length - 1 ? 0.5 : 1 }]}
+						onPress={() => scrollToIndex(Math.min(products.length - 1, currentIndex + 1))}
+						disabled={currentIndex === products.length - 1}
+					>
+						<Ionicons name="chevron-forward" size={16} color={colors.text} />
+					</TouchableOpacity>
+				</View>
+			</View>
+
+			{/* Swiper Content */}
+			<ScrollView
+				ref={scrollViewRef}
+				horizontal
+				showsHorizontalScrollIndicator={false}
+				pagingEnabled={true}
+				onScroll={handleScroll}
+				scrollEventThrottle={16}
+				style={[styles.productSwiperScroll, { height: responsiveConfig.productSliderHeight + 20 }]}
+				contentContainerStyle={styles.productSwiperContainer}
+			>
+				{products.map((product: any, index: number) => renderItem(product, index))}
+			</ScrollView>
+
+			{/* Swiper Indicators */}
+			{products.length > 1 && (
+				<View style={styles.swiperIndicators}>
+					{products.map((_: any, index: number) => (
+						<TouchableOpacity
+							key={index}
+							style={[
+								styles.swiperIndicator,
+								{
+									backgroundColor: index === currentIndex ? colors.primary : colors.textTertiary,
+									width: index === currentIndex ? 24 : 8
+								}
+							]}
+							onPress={() => scrollToIndex(index)}
+						/>
+					))}
+				</View>
+			)}
+		</View>
+	)
+}
 
 export default function SalesTab() {
 	const { colors, isDark } = useTheme()
@@ -46,7 +244,7 @@ export default function SalesTab() {
 
 		// Calculate responsive values
 		const baseSpacing = isSmallMobile ? 4 : isMobile ? 6 : isTablet ? 8 : isDesktop ? 10 : 12
-		const baseFontSize = isSmallMobile ? 11 : isMobile ? 12 : isTablet ? 13 : isDesktop ? 14 : 15
+		const baseFontSize = isSmallMobile ? 12 : isMobile ? 13 : isTablet ? 14 : isDesktop ? 15 : 16
 
 		// Determine number of columns based on width thresholds
 		const numColumns = isLargeDesktop ? 4 : isDesktop ? 3 : isTablet ? 2 : 1
@@ -58,11 +256,31 @@ export default function SalesTab() {
 		const availableWidth = Math.max(300, width - horizontalPadding - (numColumns - 1) * columnGap)
 		const cardWidth = Math.min(maxCardWidth, Math.floor(availableWidth / numColumns))
 
+		// Calculate responsive card heights
+		const cardMinHeight = isSmallMobile ? 320 : isMobile ? 360 : isTablet ? 400 : isDesktop ? 440 : isLargeDesktop ? 480 : 520
+		const cardRightWidth = isSmallMobile
+			? 70
+			: isMobile
+				? 80
+				: isTablet
+					? Math.max(85, Math.floor(cardWidth * 0.22))
+					: isDesktop
+						? Math.max(100, Math.floor(cardWidth * 0.25))
+						: Math.max(90, Math.floor(cardWidth * 0.23))
+
+		// Product slider dimensions - increased to show all details
+		const productItemWidth = isSmallMobile ? 160 : isMobile ? 180 : isTablet ? 200 : isDesktop ? 220 : 240
+		const productSliderHeight = isSmallMobile ? 240 : isMobile ? 260 : isTablet ? 280 : isDesktop ? 300 : 320
+
 		return {
 			// Layout
 			numColumns,
 			cardWidth,
+			cardMinHeight,
+			cardRightWidth,
 			maxCardWidth,
+			productItemWidth,
+			productSliderHeight,
 
 			// Typography
 			fontSize: {
@@ -453,37 +671,7 @@ export default function SalesTab() {
 										{/* Products Section */}
 										{item.products && item.products.length > 0 && (
 											<View style={styles.productsSection}>
-												<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Products ({item.products.length})</Text>
-												{item.products.slice(0, isGrid ? 1 : 2).map((product, index) => (
-													<View key={index} style={styles.productRow}>
-														{product.product?.media?.thumbnail?.url || product.product?.photos?.[0] ? (
-															<SmartImage
-																source={{ uri: product.product?.media?.thumbnail?.url || product.product?.photos?.[0] }}
-																style={styles.productImage}
-																resizeMode="cover"
-																fallbackIcon="image"
-															/>
-														) : (
-															<View style={[styles.productImagePlaceholder, { backgroundColor: colors.background + '50' }]}>
-																<Ionicons name="cube-outline" size={responsiveConfig.iconSizes.sm} color={colors.textTertiary} />
-															</View>
-														)}
-														<View style={styles.productInfo}>
-															<Text style={[styles.productName, { color: colors.text }]} numberOfLines={isGrid ? 1 : 2}>
-																{getProductName(product)}
-															</Text>
-															<View style={styles.productMeta}>
-																<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>Qty: {product.quantity || 1}</Text>
-																<Text style={[styles.productPrice, { color: colors.primary }]}>{formatMoney(product.lineTotal)}</Text>
-															</View>
-														</View>
-													</View>
-												))}
-												{!isGrid && item.products.length > 2 && (
-													<Text style={[styles.moreProductsText, { color: colors.textTertiary }]}>
-														+{item.products.length - 2} more product{item.products.length - 2 > 1 ? 's' : ''}
-													</Text>
-												)}
+												<ProductSwiper products={item.products} responsiveConfig={responsiveConfig} colors={colors} styles={styles} getProductName={getProductName} />
 											</View>
 										)}
 									</View>
@@ -757,7 +945,8 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			alignItems: 'flex-start',
 			paddingVertical: isSmallMobile ? spacing.sm : spacing.md,
 			paddingHorizontal: isSmallMobile ? spacing.sm : spacing.md,
-			minHeight: cardMinHeight
+			minHeight: cardMinHeight,
+			gap: isSmallMobile ? spacing.sm : spacing.md
 		},
 
 		// Vertical card layout for single-column list
@@ -773,15 +962,17 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			maxWidth: Math.max(cardRightWidth, 120),
 			justifyContent: 'space-between',
 			alignItems: 'flex-start',
-			paddingLeft: spacing.sm
+			paddingLeft: spacing.sm,
+			...(isTablet && { flexDirection: 'column', alignItems: 'flex-start' })
 		},
 
 		actionsPanel: {
-			marginTop: 12,
+			marginTop: isSmallMobile ? spacing.sm : spacing.md,
 			justifyContent: 'flex-start',
 			alignItems: 'center',
 			flexDirection: isDesktop ? 'row' : 'column',
-			gap: spacing.contact
+			gap: spacing.contact,
+			...(isTablet && { flexDirection: 'row', flexWrap: 'wrap' })
 		},
 
 		// Card Header
@@ -1150,7 +1341,10 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			width: iconSizes.customerPhoto,
 			height: iconSizes.customerPhoto,
 			borderRadius: iconSizes.customerPhoto / 2,
-			marginRight: spacing.sm
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: spacing.sm,
+			...(isTablet && { marginRight: 0, marginBottom: spacing.sm })
 		},
 		customerPhotoPlaceholder: {
 			width: iconSizes.customerPhoto,
@@ -1158,7 +1352,8 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			borderRadius: iconSizes.customerPhoto / 2,
 			justifyContent: 'center',
 			alignItems: 'center',
-			marginRight: spacing.sm
+			marginRight: spacing.sm,
+			...(isTablet && { marginRight: 0, marginBottom: spacing.sm })
 		},
 		customerContactInfo: {
 			flex: 1,
@@ -1168,7 +1363,8 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			flexDirection: 'row',
 			gap: spacing.xs,
 			marginTop: spacing.sm,
-			justifyContent: 'flex-start'
+			justifyContent: 'flex-start',
+			...(isTablet && { justifyContent: 'center', marginTop: spacing.md })
 		},
 		cardOutline: {
 			borderWidth: 1.5,
@@ -1188,6 +1384,242 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			fontSize: 13,
 			fontWeight: '700',
 			color: colors.text
+		},
+
+		// Product Swiper Styles
+		productSwiper: {
+			marginBottom: spacing.sm,
+			borderRadius: borderRadius.md,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+			backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+			overflow: 'hidden'
+		},
+		productSwiperHeaderBar: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			paddingHorizontal: spacing.sm,
+			paddingVertical: spacing.xs,
+			borderBottomWidth: StyleSheet.hairlineWidth,
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+		},
+		productSwiperTitle: {
+			fontSize: fontSize.productText,
+			fontWeight: '600',
+			color: colors.text
+		},
+		productSwiperNavButtons: {
+			flexDirection: 'row',
+			gap: spacing.xs
+		},
+		productSwiperNavButton: {
+			width: 28,
+			height: 28,
+			borderRadius: 14,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		productSwiperScroll: {
+			marginBottom: spacing.xs
+		},
+		productSwiperContainer: {
+			paddingHorizontal: spacing.sm,
+			paddingVertical: spacing.sm
+		},
+		productSwiperItem: {
+			flexDirection: 'column',
+			backgroundColor: colors.card,
+			borderRadius: borderRadius.md,
+			padding: spacing.sm,
+			marginHorizontal: spacing.xs,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.08)',
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.15,
+			shadowRadius: 4,
+			elevation: 3,
+			minHeight: config.productSliderHeight - 20
+		},
+		productSwiperHeader: {
+			position: 'relative',
+			marginBottom: spacing.sm
+		},
+		productSwiperImage: {
+			width: 70,
+			height: 70,
+			borderRadius: borderRadius.sm,
+			alignSelf: 'center'
+		},
+		productSwiperImagePlaceholder: {
+			width: 70,
+			height: 70,
+			borderRadius: borderRadius.sm,
+			alignSelf: 'center',
+			justifyContent: 'center',
+			alignItems: 'center',
+			backgroundColor: colors.background + '80'
+		},
+		productSwiperBadge: {
+			position: 'absolute',
+			top: spacing.xs,
+			right: spacing.xs,
+			backgroundColor: colors.primary,
+			borderRadius: borderRadius.pill,
+			paddingHorizontal: spacing.xs,
+			paddingVertical: 2
+		},
+		productSwiperBadgeText: {
+			fontSize: fontSize.productText - 3,
+			fontWeight: '600',
+			color: colors.card
+		},
+		productSwiperDetails: {
+			flex: 1
+		},
+		productSwiperDetailsScroll: {
+			flex: 1,
+			maxHeight: config.productSliderHeight - 120, // Fixed height to ensure scrolling
+			marginBottom: spacing.sm,
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+			borderRadius: borderRadius.sm
+		},
+		productSwiperDetailsContainer: {
+			paddingBottom: spacing.sm,
+			gap: spacing.sm
+		},
+		productSwiperDetailsContent: {
+			paddingBottom: spacing.sm,
+			gap: spacing.sm
+		},
+		productSwiperMetaInfo: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginBottom: spacing.xs,
+			paddingBottom: spacing.xs,
+			borderBottomWidth: StyleSheet.hairlineWidth,
+			borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+		},
+		productSwiperMetaText: {
+			fontSize: fontSize.productText - 3,
+			color: colors.textTertiary,
+			fontFamily: 'monospace'
+		},
+		productSwiperName: {
+			fontSize: fontSize.productText + 1,
+			fontWeight: '700',
+			color: colors.text,
+			textAlign: 'center',
+			marginBottom: spacing.xs,
+			lineHeight: 18
+		},
+		productSwiperSpecs: {
+			gap: spacing.xs
+		},
+		productSwiperSpecRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: spacing.xs
+		},
+		productSwiperSpecText: {
+			fontSize: fontSize.productText - 1,
+			color: colors.textSecondary,
+			fontWeight: '500',
+			flex: 1
+		},
+		productSwiperPricing: {
+			flexDirection: 'row',
+			gap: spacing.sm,
+			marginBottom: spacing.sm
+		},
+		productSwiperPriceCard: {
+			flex: 1,
+			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+			borderRadius: borderRadius.sm,
+			padding: spacing.sm,
+			alignItems: 'center'
+		},
+		productSwiperTotalCard: {
+			backgroundColor: colors.primary + '15'
+		},
+		productSwiperPriceLabel: {
+			fontSize: fontSize.productText - 2,
+			fontWeight: '500',
+			marginBottom: spacing.xs
+		},
+		productSwiperUnitPrice: {
+			fontSize: fontSize.productText,
+			fontWeight: '600',
+			color: colors.text
+		},
+		productSwiperSubPrice: {
+			fontSize: fontSize.productText - 3,
+			color: colors.textTertiary,
+			marginTop: 2
+		},
+		productSwiperTotalPrice: {
+			fontSize: fontSize.productText + 1,
+			fontWeight: '700',
+			color: colors.primary
+		},
+		productSwiperAdditionalInfo: {
+			marginBottom: spacing.sm,
+			gap: spacing.xs
+		},
+		productSwiperInfoRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: spacing.xs
+		},
+		productSwiperInfoText: {
+			fontSize: fontSize.productText - 3,
+			color: colors.textTertiary,
+			flex: 1
+		},
+		productSwiperFooter: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			paddingTop: spacing.xs,
+			borderTopWidth: StyleSheet.hairlineWidth,
+			borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+		},
+		productSwiperId: {
+			fontSize: fontSize.productText - 3,
+			color: colors.textTertiary,
+			fontFamily: 'monospace',
+			opacity: 0.7
+		},
+		productSwiperStatus: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: spacing.xs
+		},
+		productSwiperStatusDot: {
+			width: 6,
+			height: 6,
+			borderRadius: 3
+		},
+		productSwiperStatusText: {
+			fontSize: fontSize.productText - 2,
+			fontWeight: '500'
+		},
+		swiperIndicators: {
+			flexDirection: 'row',
+			justifyContent: 'center',
+			alignItems: 'center',
+			paddingVertical: spacing.xs,
+			gap: spacing.xs
+		},
+		swiperIndicator: {
+			height: 6,
+			borderRadius: 3,
+			marginHorizontal: 2,
+			transitionDuration: '200ms'
 		}
 	})
 }
