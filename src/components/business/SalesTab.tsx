@@ -594,12 +594,22 @@ export default function SalesTab() {
 												)}
 											</View>
 										</View>
-										{/* Status Badge in Header */}
+										{/* Status Badge, Total and Details in Header */}
 										<View style={styles.headerRight}>
-											<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+											<View style={[styles.statusBadge, { backgroundColor: statusColor + '18', borderColor: statusColor + '30' }]}>
 												<Ionicons name={getStatusIcon(item.status) as any} size={responsiveConfig.iconSizes.sm} color={statusColor} />
 												<Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
 											</View>
+
+											{/* Prominent total price */}
+											<View style={styles.totalPill}>
+												<Text style={styles.totalPillText}>{formatMoney(totalMoney)}</Text>
+											</View>
+
+											{/* Quick action - view details */}
+											<TouchableOpacity style={styles.detailButton} onPress={() => router.push(`/home/business/sales/${item._id}` as any)}>
+												<Text style={styles.detailButtonText}>Details</Text>
+											</TouchableOpacity>
 										</View>
 									</View>
 
@@ -1051,6 +1061,13 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			minWidth: 80,
 			alignItems: 'center',
 			justifyContent: 'center',
+			borderWidth: 1,
+			borderColor: 'transparent',
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 1 },
+			shadowOpacity: 0.06,
+			shadowRadius: 3,
+			elevation: 2,
 			...(isDesktop
 				? {
 						position: 'absolute',
@@ -1378,11 +1395,30 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 			paddingHorizontal: 10,
 			paddingVertical: 6,
 			borderRadius: 12,
-			backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.04)'
+			backgroundColor: colors.primary + '12',
+			borderWidth: 1,
+			borderColor: colors.primary + '28',
+			alignItems: 'center',
+			justifyContent: 'center',
+			marginTop: spacing.xs
 		},
 		totalPillText: {
 			fontSize: 13,
-			fontWeight: '700',
+			fontWeight: '800',
+			color: colors.primary
+		},
+		detailButton: {
+			marginTop: spacing.xs,
+			paddingHorizontal: spacing.md,
+			paddingVertical: spacing.xs,
+			borderRadius: borderRadius.md,
+			backgroundColor: 'transparent',
+			borderWidth: 1,
+			borderColor: 'rgba(0,0,0,0.06)'
+		},
+		detailButtonText: {
+			fontSize: fontSize.actionButton,
+			fontWeight: '600',
 			color: colors.text
 		},
 
@@ -1617,8 +1653,10 @@ const createStyles = (colors: any, isDark: boolean, width: number, config: any) 
 		},
 		swiperIndicator: {
 			height: 6,
+			width: 8,
 			borderRadius: 3,
-			marginHorizontal: 2,
+			marginHorizontal: 4,
+			backgroundColor: colors.textTertiary,
 			transitionDuration: '200ms'
 		}
 	})

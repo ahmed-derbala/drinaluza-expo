@@ -41,3 +41,8 @@ export const updateSaleStatus = async ({ saleId, status }: { saleId: string; sta
 	const response = await getApiClient().patch(`/sales/${saleId}`, { status })
 	return response.data
 }
+
+export const getSale = async (saleId: string) => {
+	const response = await getApiClient().get(`/sales/${saleId}`)
+	return response.data
+}
