@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import * as Location from 'expo-location'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '../../core/auth/auth.api'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
@@ -199,6 +200,7 @@ export default function ProfileScreen() {
 		name: false,
 		basic: false,
 		address: false,
+		location: false,
 		social: false,
 		settings: false,
 		phone: false,
@@ -268,6 +270,7 @@ export default function ProfileScreen() {
 				},
 				basicInfos: userData.basicInfos,
 				address: userData.address,
+				location: userData.location,
 				settings: userData.settings,
 				socialMedia: userData.socialMedia,
 				media: userData.media
@@ -442,6 +445,71 @@ export default function ProfileScreen() {
 				showAlert('Error', errorMessage)
 			}
 		})
+	}
+
+	const handleGetCurrentLocation = async () => {
+		try {
+			// Request location permission
+			const { status } = await Location.requestForegroundPermissionsAsync()
+			if (status !== 'granted') {
+				showAlert('Permission Denied', 'Location permission is required to get your current location.')
+				return
+			}
+
+			// Get current location
+			const location = await Location.getCurrentPositionAsync({
+				accuracy: Location.Accuracy.Balanced
+			})
+
+			const { longitude, latitude } = location.coords
+
+			// Update user data with new location and enable sharing
+			updateField('location', {
+				type: 'Point',
+				coordinates: [longitude, latitude],
+				sharingEnabled: true // Always enable sharing when getting current location
+			})
+
+			showAlert('Success', `Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
+		} catch (error: any) {
+			console.error('Error getting location:', error)
+			showAlert('Error', 'Failed to get current location. Please make sure location services are enabled.')
+		}
+	}
+
+	const handleToggleSharing = async () => {
+		if (!userData) return
+		const currentlyEnabled = userData.location?.sharingEnabled === true
+		if (currentlyEnabled) {
+			// Disable sharing: remove coordinates
+			updateField('location', {
+				type: userData.location?.type || 'Point',
+				sharingEnabled: false
+			})
+			return
+		}
+
+		// Enabling: request permission and fetch current location
+		try {
+			const { status } = await Location.requestForegroundPermissionsAsync()
+			if (status !== 'granted') {
+				showAlert('Permission Denied', 'Location permission is required to share your current location.')
+				return
+			}
+
+			const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
+			const { longitude, latitude } = location.coords
+
+			updateField('location', {
+				type: 'Point',
+				coordinates: [longitude, latitude],
+				sharingEnabled: true
+			})
+			showAlert('Success', `Location sharing enabled: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
+		} catch (error: any) {
+			console.error('Error enabling location sharing:', error)
+			showAlert('Error', 'Failed to enable location sharing.')
+		}
 	}
 
 	if (loading && !userData) {
@@ -840,6 +908,153 @@ export default function ProfileScreen() {
 							{!userData?.address?.street && !userData?.address?.city && !userData?.address?.state && !userData?.address?.country && (
 								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No address information set.</Text>
 							)}
+						</>
+					)}
+				</Section>
+
+				<Section
+					title="📍 Location"
+					styles={styles}
+					isEditing={editMode.location}
+					onEdit={() => toggleEdit('location', true)}
+					onSave={() => saveUserData('location')}
+					onCancel={() => toggleEdit('location', false)}
+				>
+					{editMode.location ? (
+						<View style={styles.inputGroup}>
+							<Text style={styles.inputLabel}>GPS Coordinates</Text>
+							<View style={styles.locationGrid}>
+								<View style={styles.locationCol}>
+									<Text style={styles.locationSubLabel}>Longitude</Text>
+									<View
+										style={[
+											styles.socialInputContainer,
+											{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC', opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }
+										]}
+									>
+										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+											<Ionicons name="location" size={20} color={colors.textSecondary} />
+										</View>
+										<TextInput
+											style={[styles.socialInput, { color: colors.text }]}
+											value={userData.location?.coordinates?.[0]?.toString() || ''}
+											onChangeText={(value) => {
+												if (userData.location?.sharingEnabled === false) return // Disable input when sharing is disabled
+												const coords = userData.location?.coordinates || [0, 0]
+												const newCoords: [number, number] = [parseFloat(value) || 0, coords[1]]
+												updateField('location', {
+													type: 'Point',
+													coordinates: newCoords,
+													sharingEnabled: userData.location?.sharingEnabled ?? true
+												})
+											}}
+											placeholder="10.8045"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="numeric"
+											editable={userData.location?.sharingEnabled !== false}
+										/>
+									</View>
+								</View>
+								<View style={styles.locationCol}>
+									<Text style={styles.locationSubLabel}>Latitude</Text>
+									<View
+										style={[
+											styles.socialInputContainer,
+											{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC', opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }
+										]}
+									>
+										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+											<Ionicons name="location" size={20} color={colors.textSecondary} />
+										</View>
+										<TextInput
+											style={[styles.socialInput, { color: colors.text }]}
+											value={userData.location?.coordinates?.[1]?.toString() || ''}
+											onChangeText={(value) => {
+												if (userData.location?.sharingEnabled === false) return // Disable input when sharing is disabled
+												const coords = userData.location?.coordinates || [0, 0]
+												const newCoords: [number, number] = [coords[0], parseFloat(value) || 0]
+												updateField('location', {
+													type: 'Point',
+													coordinates: newCoords,
+													sharingEnabled: userData.location?.sharingEnabled ?? true
+												})
+											}}
+											placeholder="35.7905"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="numeric"
+											editable={userData.location?.sharingEnabled !== false}
+										/>
+									</View>
+								</View>
+							</View>
+							<View style={styles.inputGroup}>
+								<View style={styles.switchContainer}>
+									<Text style={styles.switchLabel}>Share Location</Text>
+									<TouchableOpacity style={[styles.switch, userData.location?.sharingEnabled ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]} onPress={handleToggleSharing}>
+										<View style={[styles.switchThumb, userData.location?.sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }]} />
+									</TouchableOpacity>
+								</View>
+								<TouchableOpacity
+									style={[
+										styles.addButton,
+										{
+											borderColor: colors.primary,
+											marginTop: 12,
+											opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
+										}
+									]}
+									onPress={handleGetCurrentLocation}
+									disabled={userData.location?.sharingEnabled === false}
+								>
+									<Ionicons name="location" size={20} color={colors.primary} />
+									<Text style={[styles.addButtonText, { color: colors.primary }]}>Get Current Location</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
+					) : (
+						<>
+							{userData.location?.coordinates && (
+								<>
+									<InfoItem
+										label="GPS Coordinates"
+										value={`${userData.location.coordinates[1].toFixed(4)}, ${userData.location.coordinates[0].toFixed(4)}`}
+										icon="location"
+										styles={styles}
+										iconColor={colors.primary}
+										onPress={() => {
+											const [longitude, latitude] = userData.location.coordinates
+											const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+											Linking.openURL(mapUrl).catch(() => {})
+										}}
+										onCopy={async () => {
+											const [longitude, latitude] = userData.location.coordinates
+											await Clipboard.setStringAsync(`${latitude}, ${longitude}`)
+											showAlert('Copied', 'Location coordinates copied to clipboard')
+										}}
+									/>
+									<TouchableOpacity
+										style={[styles.addButton, { borderColor: colors.primary, marginTop: 8 }]}
+										onPress={() => {
+											const [longitude, latitude] = userData.location.coordinates
+											const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+											Linking.openURL(mapUrl).catch(() => {})
+										}}
+									>
+										<Ionicons name="map" size={20} color={colors.primary} />
+										<Text style={[styles.addButtonText, { color: colors.primary }]}>Open in Maps</Text>
+									</TouchableOpacity>
+								</>
+							)}
+							{userData.location?.sharingEnabled !== undefined && (
+								<InfoItem
+									label="Location Sharing"
+									value={userData.location.sharingEnabled ? 'Enabled' : 'Disabled'}
+									icon={userData.location.sharingEnabled ? 'share-social' : 'share-social-outline'}
+									styles={styles}
+									iconColor={userData.location.sharingEnabled ? colors.primary : colors.textSecondary}
+								/>
+							)}
+							{!userData.location?.coordinates && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
 						</>
 					)}
 				</Section>
@@ -1800,5 +2015,50 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		},
 		sectionContent: {
 			gap: 0
+		},
+		locationGrid: {
+			flexDirection: 'row',
+			gap: 12
+		},
+		locationCol: {
+			flex: 1
+		},
+		locationSubLabel: {
+			fontSize: 12,
+			fontWeight: '600',
+			color: colors.textTertiary,
+			marginBottom: 4
+		},
+		switchContainer: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			marginTop: 8
+		},
+		switchLabel: {
+			fontSize: 14,
+			fontWeight: '600',
+			color: colors.text
+		},
+		switch: {
+			width: 48,
+			height: 28,
+			borderRadius: 14,
+			backgroundColor: colors.border,
+			position: 'relative'
+		},
+		switchThumb: {
+			width: 24,
+			height: 24,
+			borderRadius: 12,
+			backgroundColor: '#fff',
+			position: 'absolute',
+			top: 2,
+			left: 2,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.2,
+			shadowRadius: 2,
+			elevation: 2
 		}
 	})

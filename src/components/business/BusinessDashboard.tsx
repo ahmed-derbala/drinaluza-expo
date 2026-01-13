@@ -110,7 +110,7 @@ const BusinessDashboard = () => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title="Business" subtitle={business?.name.en || 'Manage your business'} showBack={false} />
+			<ScreenHeader title="Business" subtitle={business?.name?.en || 'Manage your business'} showBack={false} />
 
 			<ScrollView contentContainerStyle={[styles.scrollContainer, { width: contentWidth }]} showsVerticalScrollIndicator={false}>
 				{/* Business Hero */}
@@ -119,13 +119,13 @@ const BusinessDashboard = () => {
 						<LinearGradient colors={isDark ? ['#1e3a8a', '#1e40af'] : ['#ebf8ff', '#bee3f8']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
 							<View style={styles.heroInfo}>
 								<View style={styles.badgeContainer}>
-									<View style={[styles.statusBadge, { backgroundColor: business.state.code === 'active' ? '#48bb7825' : '#ecc94b25' }]}>
-										<View style={[styles.statusDot, { backgroundColor: business.state.code === 'active' ? '#48bb78' : '#ecc94b' }]} />
-										<Text style={[styles.statusText, { color: business.state.code === 'active' ? '#48bb78' : '#ecc94b' }]}>{business.state.code.toUpperCase()}</Text>
+									<View style={[styles.statusBadge, { backgroundColor: business.state?.code === 'active' ? '#48bb7825' : '#ecc94b25' }]}>
+										<View style={[styles.statusDot, { backgroundColor: business.state?.code === 'active' ? '#48bb78' : '#ecc94b' }]} />
+										<Text style={[styles.statusText, { color: business.state?.code === 'active' ? '#48bb78' : '#ecc94b' }]}>{business.state?.code?.toUpperCase() || 'UNKNOWN'}</Text>
 									</View>
 								</View>
-								<Text style={[styles.businessName, { color: isDark ? '#fff' : '#2c5282' }]}>{business.name.en}</Text>
-								<Text style={[styles.businessSlug, { color: isDark ? '#a0aec0' : '#4a5568' }]}>@{business.slug}</Text>
+								<Text style={[styles.businessName, { color: isDark ? '#fff' : '#2c5282' }]}>{business.name?.en || 'Business Name'}</Text>
+								<Text style={[styles.businessSlug, { color: isDark ? '#a0aec0' : '#4a5568' }]}>@{business.slug || 'business'}</Text>
 							</View>
 							<View style={styles.heroIconContainer}>
 								<FontAwesome5 name="briefcase" size={40} color={isDark ? '#3b82f6' : '#4299e1'} opacity={0.3} />

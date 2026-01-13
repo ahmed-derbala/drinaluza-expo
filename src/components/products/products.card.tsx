@@ -4,6 +4,7 @@ import SmartImage from '../common/SmartImage'
 import { MaterialIcons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useRouter } from 'expo-router'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -12,6 +13,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const { colors, isDark } = useTheme()
+	const router = useRouter()
 	const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
 
 	const minQuantity = item.unit?.min || 1
@@ -35,14 +37,22 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 	const calculateTotal = () => (pricePerUnit * quantity).toFixed(2)
 
+	const handleShopPress = () => {
+		if (item.shop?.slug) {
+			router.push(`/home/shops/${item.shop.slug}` as any)
+		}
+	}
+
 	return (
 		<View style={styles.card}>
 			{/* Shop Header */}
 			<View style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
-					<Text style={styles.shopName} numberOfLines={1}>
-						{item.shop.name?.en}
-					</Text>
+					<TouchableOpacity onPress={handleShopPress}>
+						<Text style={styles.shopName} numberOfLines={1}>
+							{item.shop.name?.en}
+						</Text>
+					</TouchableOpacity>
 					<Text style={styles.shopLocation} numberOfLines={1}>
 						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}
 					</Text>

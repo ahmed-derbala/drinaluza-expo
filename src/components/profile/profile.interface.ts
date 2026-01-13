@@ -37,6 +37,14 @@ export interface Address {
 	country?: string
 }
 
+export interface Location {
+	type: string
+	coordinates: [number, number] // [longitude, latitude]
+	sharingEnabled?: boolean
+	createdAt?: string
+	updatedAt?: string
+}
+
 export interface UserSettings {
 	lang: {
 		app?: string
@@ -70,6 +78,7 @@ export interface UserData {
 	contact?: Contact
 	basicInfos: BasicInfos
 	address: Address
+	location?: Location
 	settings: UserSettings
 	socialMedia?: SocialMedia
 	media?: Media
