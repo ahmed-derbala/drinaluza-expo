@@ -1,19 +1,39 @@
 import { Stack } from 'expo-router'
 import React from 'react'
+
+// Polyfill for setImmediate which is missing in some web environments
+if (typeof setImmediate === 'undefined') {
+	// @ts-ignore
+	global.setImmediate = (callback: (...args: any[]) => void) => setTimeout(callback, 0)
+}
+
 import { ThemeProvider } from '../contexts/ThemeContext'
+import { NotificationProvider } from '../contexts/NotificationContext'
+import { useDeepLinking } from '../hooks/useDeepLinking'
+import { ErrorBoundary } from '../components/ErrorBoundary'
 
 import { getPlatformStackOptions } from '../config/navigation'
-import { NotificationProvider } from '../contexts/NotificationContext'
 
-export default function RootLayout() {
+function RootLayoutContent() {
+	// Initialize deep linking
+	useDeepLinking()
+
 	const stackOptions = getPlatformStackOptions({
 		headerShown: false
 	})
 
 	return (
+		<ErrorBoundary>
+			<Stack screenOptions={stackOptions} />
+		</ErrorBoundary>
+	)
+}
+
+export default function RootLayout() {
+	return (
 		<ThemeProvider>
 			<NotificationProvider>
-				<Stack screenOptions={stackOptions} />
+				<RootLayoutContent />
 			</NotificationProvider>
 		</ThemeProvider>
 	)

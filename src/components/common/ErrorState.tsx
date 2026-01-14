@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
 
@@ -12,7 +12,7 @@ interface ErrorStateProps {
 
 const ErrorState: React.FC<ErrorStateProps> = ({
 	title = 'Something went wrong',
-	message = 'We encountered an error while loading the data. please check your connection and try again.',
+	message = 'We encountered an error while loading the data. Please check your connection and try again.',
 	onRetry,
 	icon = 'cloud-offline-outline'
 }) => {
@@ -20,15 +20,14 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 
 	return (
 		<View style={styles.container}>
-			<View style={[styles.iconContainer, { backgroundColor: colors.error + '10' }]}>
-				<Ionicons name={icon} size={64} color={colors.error} />
+			<View style={[styles.iconContainer, { backgroundColor: colors.error + '15' }]}>
+				<Ionicons name={icon} size={56} color={colors.error} />
 			</View>
 			<Text style={[styles.title, { color: colors.text }]}>{title}</Text>
 			<Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
 			{onRetry && (
 				<TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={onRetry}>
-					<Ionicons name="refresh-outline" size={20} color="#fff" style={styles.retryIcon} />
-					<Text style={styles.retryText}>Try Again</Text>
+					<Ionicons name="refresh" size={24} color={colors.textOnPrimary} />
 				</TouchableOpacity>
 			)}
 		</View>
@@ -40,48 +39,46 @@ const styles = StyleSheet.create({
 		flex: 1,
 		justifyContent: 'center',
 		alignItems: 'center',
-		padding: 40,
-		textAlign: 'center'
+		padding: 40
 	},
 	iconContainer: {
-		width: 120,
-		height: 120,
-		borderRadius: 60,
+		width: 110,
+		height: 110,
+		borderRadius: 28,
 		justifyContent: 'center',
 		alignItems: 'center',
-		marginBottom: 24
+		marginBottom: 28
 	},
 	title: {
-		fontSize: 22,
-		fontWeight: 'bold',
-		marginBottom: 12,
+		fontSize: 20,
+		fontWeight: '700',
+		marginBottom: 10,
 		textAlign: 'center'
 	},
 	message: {
-		fontSize: 16,
+		fontSize: 15,
 		textAlign: 'center',
-		lineHeight: 24,
-		marginBottom: 32
+		lineHeight: 22,
+		marginBottom: 32,
+		maxWidth: 300
 	},
 	retryButton: {
-		flexDirection: 'row',
+		width: 56,
+		height: 56,
+		borderRadius: 16,
+		justifyContent: 'center',
 		alignItems: 'center',
-		paddingHorizontal: 24,
-		paddingVertical: 12,
-		borderRadius: 24,
-		elevation: 2,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 4
-	},
-	retryIcon: {
-		marginRight: 8
-	},
-	retryText: {
-		color: '#fff',
-		fontSize: 16,
-		fontWeight: '600'
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.2,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 6
+			}
+		})
 	}
 })
 

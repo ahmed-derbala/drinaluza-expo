@@ -9,7 +9,7 @@ interface SmartImageProps extends ImageProps {
 }
 
 const SmartImage: React.FC<SmartImageProps> = ({ source, style, fallbackIcon = 'image-not-supported', containerStyle, ...props }) => {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const [error, setError] = useState(false)
 	const [loading, setLoading] = useState(false)
 
@@ -23,10 +23,10 @@ const SmartImage: React.FC<SmartImageProps> = ({ source, style, fallbackIcon = '
 
 	if (error || !hasSource) {
 		const resolvedStyle = StyleSheet.flatten(style || {})
-		const iconSize = typeof resolvedStyle.width === 'number' ? resolvedStyle.width / 3 : 24
+		const iconSize = typeof resolvedStyle.width === 'number' ? resolvedStyle.width / 3 : 32
 
 		return (
-			<View style={[styles.placeholder, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }, style, containerStyle]}>
+			<View style={[styles.placeholder, { backgroundColor: colors.surface }, style, containerStyle]}>
 				<MaterialIcons name={fallbackIcon} size={iconSize} color={colors.textTertiary} />
 			</View>
 		)
@@ -48,7 +48,7 @@ const SmartImage: React.FC<SmartImageProps> = ({ source, style, fallbackIcon = '
 				}}
 			/>
 			{loading && (
-				<View style={[styles.loader]}>
+				<View style={styles.loader}>
 					<ActivityIndicator size="small" color={colors.primary} />
 				</View>
 			)}
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
 		bottom: 0,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: 'rgba(0,0,0,0.02)'
+		backgroundColor: 'rgba(0,0,0,0.05)'
 	}
 })
 

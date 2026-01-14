@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { MaterialIcons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
@@ -12,9 +12,10 @@ type ProductCardProps = {
 }
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const router = useRouter()
-	const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
+	const { width } = useWindowDimensions()
+	const styles = useMemo(() => createStyles(colors, width), [colors, width])
 
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
@@ -43,22 +44,24 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 		}
 	}
 
+	const isAvailable = item.stock.quantity > 0 && item.state.code === 'active'
+
 	return (
 		<View style={styles.card}>
 			{/* Shop Header */}
-			<View style={styles.shopHeader}>
+			<TouchableOpacity onPress={handleShopPress} style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
-					<TouchableOpacity onPress={handleShopPress}>
-						<Text style={styles.shopName} numberOfLines={1}>
-							{item.shop.name?.en}
-						</Text>
-					</TouchableOpacity>
+					<Text style={styles.shopName} numberOfLines={1}>
+						{item.shop.name?.en}
+					</Text>
 					<Text style={styles.shopLocation} numberOfLines={1}>
 						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}
 					</Text>
 				</View>
-				<MaterialIcons name="store" size={20} color={isDark ? colors.textSecondary : '#666'} />
-			</View>
+				<View style={styles.shopIconContainer}>
+					<MaterialIcons name="store" size={18} color={colors.primary} />
+				</View>
+			</TouchableOpacity>
 
 			{/* Product Photo */}
 			<View style={styles.imageContainer}>
@@ -68,61 +71,58 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 					resizeMode="cover"
 					fallbackIcon="image-not-supported"
 				/>
+				{!isAvailable && (
+					<View style={styles.unavailableOverlay}>
+						<Text style={styles.unavailableText}>{item.state.code !== 'active' ? 'Unavailable' : 'Out of Stock'}</Text>
+					</View>
+				)}
 			</View>
 
 			{/* Product Info */}
 			<View style={styles.productInfo}>
-				<View>
-					<View style={styles.productNameContainer}>
-						<Text style={styles.productName} numberOfLines={2}>
-							{item.name?.en}
+				{/* Product Name */}
+				<View style={styles.productNameContainer}>
+					<Text style={styles.productName} numberOfLines={2}>
+						{item.name?.en}
+					</Text>
+					{(item.name?.tn_latn || item.name?.tn_arab) && (
+						<Text style={styles.productNameSecondary} numberOfLines={1}>
+							{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
 						</Text>
-						{(item.name?.tn_latn || item.name?.tn_arab) && (
-							<Text style={styles.productNameSecondary} numberOfLines={1}>
-								{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
-							</Text>
-						)}
-					</View>
+					)}
+				</View>
 
-					{/* Price and Unit */}
-					<View style={styles.priceContainer}>
-						<Text style={styles.priceText} numberOfLines={1} adjustsFontSizeToFit>
-							{pricePerUnit.toFixed(2)} TND / {item.unit?.measure || ''}
+				{/* Price */}
+				<View style={styles.priceContainer}>
+					<Text style={styles.priceText} numberOfLines={1} adjustsFontSizeToFit>
+						{pricePerUnit.toFixed(2)} TND
+					</Text>
+					<Text style={styles.unitText}>/ {item.unit?.measure || 'unit'}</Text>
+				</View>
+
+				{/* Quantity Controls */}
+				<View style={styles.quantityRow}>
+					<View style={styles.quantityControls}>
+						<TouchableOpacity onPress={decrement} style={styles.quantityButton} disabled={!isAvailable}>
+							<MaterialIcons name="remove" size={20} color={isAvailable ? colors.text : colors.textDisabled} />
+						</TouchableOpacity>
+						<Text style={styles.quantityText}>
+							{quantity} {item.unit?.measure || ''}
 						</Text>
-						{(item.stock.quantity <= 0 || item.state.code !== 'active') && <Text style={styles.outOfStock}>{item.state.code !== 'active' ? 'Unavailable' : 'Out of Stock'}</Text>}
-					</View>
-
-					{/* Quantity Controls */}
-					<View style={styles.quantityContainer}>
-						<Text style={styles.quantityLabel}>Quantity:</Text>
-						<View style={styles.quantityControls}>
-							<TouchableOpacity onPress={decrement} style={styles.quantityButton}>
-								<Text style={styles.quantityButtonText}>-</Text>
-							</TouchableOpacity>
-							<Text style={styles.quantityText}>
-								{quantity} {item.unit?.measure || ''}
-							</Text>
-							<TouchableOpacity onPress={increment} style={styles.quantityButton}>
-								<Text style={styles.quantityButtonText}>+</Text>
-							</TouchableOpacity>
-						</View>
+						<TouchableOpacity onPress={increment} style={styles.quantityButton} disabled={!isAvailable}>
+							<MaterialIcons name="add" size={20} color={isAvailable ? colors.text : colors.textDisabled} />
+						</TouchableOpacity>
 					</View>
 				</View>
 
-				<View>
-					{/* Total Price */}
+				{/* Total & Add Button */}
+				<View style={styles.footer}>
 					<View style={styles.totalContainer}>
-						<Text style={styles.totalLabel}>Total:</Text>
+						<Text style={styles.totalLabel}>Total</Text>
 						<Text style={styles.totalPrice}>{calculateTotal()} TND</Text>
 					</View>
-
-					{/* Add to Cart Button */}
-					<TouchableOpacity
-						style={[styles.addToCartButton, (item.stock.quantity <= 0 || item.state.code !== 'active') && styles.disabledButton]}
-						onPress={() => item.stock.quantity > 0 && item.state.code === 'active' && addToBasket(item, quantity)}
-						disabled={item.stock.quantity <= 0 || item.state.code !== 'active'}
-					>
-						<MaterialIcons name={item.stock.quantity <= 0 || item.state.code !== 'active' ? 'remove-shopping-cart' : 'add-shopping-cart'} size={24} color="#fff" />
+					<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToBasket(item, quantity)} disabled={!isAvailable}>
+						<MaterialIcons name={isAvailable ? 'add-shopping-cart' : 'remove-shopping-cart'} size={24} color="#fff" />
 					</TouchableOpacity>
 				</View>
 			</View>
@@ -130,22 +130,32 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
-	StyleSheet.create({
+const createStyles = (colors: any, screenWidth: number) => {
+	const isSmallScreen = screenWidth < 400
+	const isMediumScreen = screenWidth >= 400 && screenWidth < 768
+	const isLargeScreen = screenWidth >= 768
+
+	return StyleSheet.create({
 		card: {
-			backgroundColor: isDark ? colors.card : '#FFFFFF',
-			borderRadius: 20,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 10 },
-			shadowOpacity: isDark ? 0.4 : 0.1,
-			shadowRadius: 20,
-			elevation: 8,
-			width: '100%',
-			borderWidth: 2,
-			borderColor: colors.primary, // Blue outline
-			height: 590, // Balanced height for stability and space
-			flex: 1,
-			overflow: 'hidden'
+			backgroundColor: colors.card,
+			borderRadius: 16,
+			overflow: 'hidden',
+			borderWidth: 1,
+			borderColor: colors.border,
+			...Platform.select({
+				ios: {
+					shadowColor: colors.primary,
+					shadowOffset: { width: 0, height: 4 },
+					shadowOpacity: 0.15,
+					shadowRadius: 12
+				},
+				android: {
+					elevation: 6
+				},
+				web: {
+					boxShadow: `0 4px 12px ${colors.primary}15`
+				}
+			})
 		},
 		shopHeader: {
 			flexDirection: 'row',
@@ -154,158 +164,156 @@ const createStyles = (colors: any, isDark: boolean) =>
 			paddingHorizontal: 16,
 			paddingVertical: 12,
 			borderBottomWidth: 1,
-			borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primary + '15', // Subtle blue divider
-			height: 56 // More compact header
+			borderBottomColor: colors.border
 		},
 		shopInfo: {
 			flex: 1
 		},
 		shopName: {
-			fontSize: 16,
-			fontWeight: '700',
-			color: isDark ? colors.text : '#01579B' // Text Color vs Light Blue 900
+			fontSize: isSmallScreen ? 14 : 15,
+			fontWeight: '600',
+			color: colors.text
 		},
 		shopLocation: {
-			fontSize: 12,
-			color: isDark ? colors.textSecondary : '#0277BD', // Secondary Text vs Light Blue 800
+			fontSize: isSmallScreen ? 11 : 12,
+			color: colors.textSecondary,
 			marginTop: 2
 		},
-		imageContainer: {
-			width: '100%',
-			aspectRatio: 1.6,
-			backgroundColor: isDark ? '#2a2a2a' : '#E1F5FE',
+		shopIconContainer: {
+			width: 36,
+			height: 36,
+			borderRadius: 10,
+			backgroundColor: colors.primaryContainer,
 			justifyContent: 'center',
 			alignItems: 'center'
 		},
+		imageContainer: {
+			width: '100%',
+			aspectRatio: isLargeScreen ? 1.8 : 1.5,
+			backgroundColor: colors.surface,
+			position: 'relative'
+		},
 		productImage: {
 			width: '100%',
-			height: '100%',
-			borderRadius: 0
+			height: '100%'
 		},
-		imagePlaceholder: {
-			width: '100%',
-			height: '100%',
+		unavailableOverlay: {
+			...StyleSheet.absoluteFillObject,
+			backgroundColor: 'rgba(0,0,0,0.6)',
 			justifyContent: 'center',
-			alignItems: 'center',
-			backgroundColor: isDark ? '#2a2a2a' : '#E1F5FE'
+			alignItems: 'center'
+		},
+		unavailableText: {
+			color: colors.error,
+			fontSize: 16,
+			fontWeight: '700',
+			textTransform: 'uppercase'
 		},
 		productInfo: {
-			paddingHorizontal: 16,
-			paddingTop: 12,
-			paddingBottom: 16,
-			flex: 1,
-			justifyContent: 'space-between'
-		},
-		productName: {
-			fontSize: 22,
-			fontWeight: '800',
-			color: isDark ? colors.text : '#01579B',
-			lineHeight: 28
+			padding: 16,
+			gap: 12
 		},
 		productNameContainer: {
-			marginBottom: 8,
-			height: 60, // Optimized height
-			justifyContent: 'center'
+			minHeight: isSmallScreen ? 48 : 56
+		},
+		productName: {
+			fontSize: isSmallScreen ? 18 : 20,
+			fontWeight: '700',
+			color: colors.text,
+			lineHeight: isSmallScreen ? 24 : 26
 		},
 		productNameSecondary: {
-			fontSize: 14,
-			color: isDark ? colors.textSecondary : '#0288D1',
-			marginTop: 2,
-			fontWeight: '500'
+			fontSize: isSmallScreen ? 12 : 13,
+			color: colors.textSecondary,
+			marginTop: 4
 		},
 		priceContainer: {
 			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 10
+			alignItems: 'baseline',
+			gap: 4
 		},
 		priceText: {
-			fontSize: 24,
-			fontWeight: '900',
-			color: colors.primary,
-			flex: 1,
-			marginRight: 8
+			fontSize: isSmallScreen ? 22 : 26,
+			fontWeight: '800',
+			color: colors.primary
 		},
-		outOfStock: {
-			color: colors.error || '#D32F2F',
-			fontWeight: '600',
-			fontSize: 14
+		unitText: {
+			fontSize: isSmallScreen ? 13 : 14,
+			color: colors.textSecondary,
+			fontWeight: '500'
 		},
-		quantityContainer: {
-			marginBottom: 12
-		},
-		quantityLabel: {
-			fontSize: 14,
-			color: isDark ? colors.textSecondary : '#0277BD',
-			marginBottom: 8,
-			fontWeight: '600'
+		quantityRow: {
+			paddingVertical: 8
 		},
 		quantityControls: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#B3E5FC',
+			backgroundColor: colors.surface,
 			borderRadius: 12,
 			padding: 4,
-			alignSelf: 'flex-start'
+			alignSelf: 'flex-start',
+			gap: 8
 		},
 		quantityButton: {
-			width: 36,
-			height: 36,
+			width: 40,
+			height: 40,
 			borderRadius: 10,
-			backgroundColor: isDark ? colors.card : '#fff',
+			backgroundColor: colors.surfaceVariant,
 			justifyContent: 'center',
-			alignItems: 'center',
-			shadowColor: isDark ? '#000' : '#0288D1',
-			shadowOffset: { width: 0, height: 1 },
-			shadowOpacity: 0.2,
-			shadowRadius: 2,
-			elevation: 2
-		},
-		quantityButtonText: {
-			fontSize: 20,
-			fontWeight: '600',
-			color: isDark ? colors.text : '#0277BD'
+			alignItems: 'center'
 		},
 		quantityText: {
-			marginHorizontal: 20,
 			fontSize: 16,
-			fontWeight: '700',
-			color: isDark ? colors.text : '#01579B'
+			fontWeight: '600',
+			color: colors.text,
+			minWidth: 70,
+			textAlign: 'center'
 		},
-		totalContainer: {
+		footer: {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginBottom: 12,
 			paddingTop: 12,
 			borderTopWidth: 1,
-			borderTopColor: isDark ? 'rgba(255,255,255,0.1)' : colors.primary + '15' // Subtle blue divider
+			borderTopColor: colors.border
+		},
+		totalContainer: {
+			flex: 1
 		},
 		totalLabel: {
-			fontSize: 16,
-			fontWeight: '600',
-			color: isDark ? colors.textSecondary : '#0277BD'
+			fontSize: 12,
+			color: colors.textSecondary,
+			fontWeight: '500'
 		},
 		totalPrice: {
-			fontSize: 20,
-			fontWeight: '800',
-			color: isDark ? colors.primary : '#01579B'
+			fontSize: isSmallScreen ? 18 : 20,
+			fontWeight: '700',
+			color: colors.text
 		},
-		addToCartButton: {
-			backgroundColor: isDark ? colors.primary : '#039BE5', // Primary vs Light Blue 600
-			paddingVertical: 14, // Slightly balanced standard size
-			borderRadius: 12,
-			alignItems: 'center',
+		addButton: {
+			width: 56,
+			height: 56,
+			borderRadius: 14,
+			backgroundColor: colors.primary,
 			justifyContent: 'center',
-			shadowColor: isDark ? colors.primary : '#039BE5',
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: 0.3,
-			shadowRadius: 8,
-			elevation: 6,
-			minHeight: 48,
-			minWidth: 48
+			alignItems: 'center',
+			...Platform.select({
+				ios: {
+					shadowColor: colors.primary,
+					shadowOffset: { width: 0, height: 4 },
+					shadowOpacity: 0.4,
+					shadowRadius: 8
+				},
+				android: {
+					elevation: 6
+				},
+				web: {
+					boxShadow: `0 4px 12px ${colors.primary}40`
+				}
+			})
 		},
-		disabledButton: {
-			backgroundColor: isDark ? '#444' : '#B0BEC5'
+		addButtonDisabled: {
+			backgroundColor: colors.surfaceVariant
 		}
 	})
+}

@@ -11,7 +11,7 @@ import SmartImage from '../../../components/common/SmartImage'
 
 export default function CreateProductScreen() {
 	const router = useRouter()
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 
 	// Form state
 	const [selectedShop, setSelectedShop] = useState<Shop | null>(null)
@@ -214,7 +214,7 @@ export default function CreateProductScreen() {
 		}
 	}
 
-	const styles = createStyles(colors, isDark)
+	const styles = createStyles(colors)
 
 	return (
 		<View style={styles.container}>
@@ -590,7 +590,7 @@ export default function CreateProductScreen() {
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
+const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,

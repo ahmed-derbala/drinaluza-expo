@@ -10,6 +10,9 @@ export const orderStatusEnum = {
 	CANCELLED_BY_SHOP: 'cancelled_by_shop' //cancelled
 }
 
+// Alias for external usage (matches requested naming)
+export const orderStatuses = orderStatusEnum
+
 export const orderStatusColors = {
 	[orderStatusEnum.PENDING_SHOP_CONFIRMATION]: '#FFA500', // Orange
 	[orderStatusEnum.CONFIRMED_BY_SHOP]: '#2196F3', // Blue

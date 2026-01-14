@@ -13,13 +13,13 @@ interface SearchBarProps {
 }
 
 const SEARCH_TYPES = [
-	{ id: 'products', label: 'Products' },
-	{ id: 'shops', label: 'Shops' },
-	{ id: 'users', label: 'Users' }
+	{ id: 'products', label: 'Products', icon: 'fish-outline' },
+	{ id: 'shops', label: 'Shops', icon: 'storefront-outline' },
+	{ id: 'users', label: 'Users', icon: 'person-outline' }
 ]
 
 export default function SearchBar({ onSearchResults, onSearchClear, onError }: SearchBarProps) {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const [searchText, setSearchText] = useState('')
 	const [selectedTypes, setSelectedTypes] = useState<string[]>(['products'])
 	const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
@@ -92,35 +92,38 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 
 	return (
 		<View>
-			<View style={[styles.container, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
-				<Ionicons name="search-outline" size={20} color={colors.textSecondary} style={styles.icon} />
+			<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+				<Ionicons name="search" size={20} color={colors.textSecondary} style={styles.icon} />
 				<TextInput
 					style={[styles.input, { color: colors.text }]}
-					placeholder="Search..."
+					placeholder="Search products, shops..."
 					placeholderTextColor={colors.textTertiary}
 					value={searchText}
 					onChangeText={handleTextChange}
 					returnKeyType="search"
 					autoCorrect={false}
 					autoCapitalize="none"
-					keyboardAppearance={isDark ? 'dark' : 'light'}
+					keyboardAppearance="dark"
 				/>
 				{searchText.length > 0 && (
-					<TouchableOpacity onPress={handleClear} style={styles.clearButton}>
-						<Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+					<TouchableOpacity onPress={handleClear} style={[styles.clearButton, { backgroundColor: colors.surfaceVariant }]}>
+						<Ionicons name="close" size={18} color={colors.text} />
 					</TouchableOpacity>
 				)}
 			</View>
 			<View style={styles.filtersContainer}>
-				{SEARCH_TYPES.map((type) => (
-					<TouchableOpacity
-						key={type.id}
-						style={[styles.filterPill, selectedTypes.includes(type.id) && { backgroundColor: colors.primary, borderColor: colors.primary }, { borderColor: colors.border }]}
-						onPress={() => toggleType(type.id)}
-					>
-						<Text style={[styles.filterText, selectedTypes.includes(type.id) ? { color: '#fff' } : { color: colors.textSecondary }]}>{type.label}</Text>
-					</TouchableOpacity>
-				))}
+				{SEARCH_TYPES.map((type) => {
+					const isSelected = selectedTypes.includes(type.id)
+					return (
+						<TouchableOpacity
+							key={type.id}
+							style={[styles.filterPill, { backgroundColor: isSelected ? colors.primary : colors.surface, borderColor: isSelected ? colors.primary : colors.border }]}
+							onPress={() => toggleType(type.id)}
+						>
+							<Ionicons name={type.icon as any} size={16} color={isSelected ? colors.textOnPrimary : colors.textSecondary} />
+						</TouchableOpacity>
+					)
+				})}
 			</View>
 		</View>
 	)
@@ -130,14 +133,13 @@ const styles = StyleSheet.create({
 	container: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		borderRadius: 12,
-		paddingHorizontal: 12,
+		borderRadius: 14,
+		paddingHorizontal: 14,
 		paddingVertical: 12,
-		marginBottom: 20,
 		borderWidth: 1
 	},
 	icon: {
-		marginRight: 8
+		marginRight: 10
 	},
 	input: {
 		flex: 1,
@@ -145,22 +147,23 @@ const styles = StyleSheet.create({
 		padding: 0
 	},
 	clearButton: {
-		padding: 4
+		width: 28,
+		height: 28,
+		borderRadius: 8,
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
 	filtersContainer: {
 		flexDirection: 'row',
-		marginTop: 8,
-		paddingHorizontal: 4
+		marginTop: 12,
+		gap: 8
 	},
 	filterPill: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 16,
+		width: 44,
+		height: 44,
+		borderRadius: 12,
 		borderWidth: 1,
-		marginRight: 8
-	},
-	filterText: {
-		fontSize: 12,
-		fontWeight: '500'
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })

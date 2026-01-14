@@ -1,25 +1,23 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ScrollView, ActivityIndicator, Image, Animated, useWindowDimensions } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getFeed } from '../../components/feed/feed.api'
 import { FeedItem } from '../../components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
-import { useRouter } from 'expo-router'
 import FeedCard from '../../components/feed/feed.card'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
-import ScreenHeader from '../../components/common/ScreenHeader'
 import ErrorState from '../../components/common/ErrorState'
 import Toast from '../../components/common/Toast'
 import SearchBar from '../../components/search/SearchBar'
 import { getCurrentUser } from '../../core/auth/auth.api'
 import { parseError, logError } from '../../utils/errorHandler'
 
-const createStyles = (colors: any, isDark: boolean) =>
+const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
-			backgroundColor: isDark ? colors.background : '#F8F9FA'
+			backgroundColor: colors.background
 		},
 		headerContainer: {
 			padding: 20,
@@ -30,73 +28,43 @@ const createStyles = (colors: any, isDark: boolean) =>
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginBottom: 20
+			marginBottom: 16
 		},
 		greeting: {
-			fontSize: 16,
+			fontSize: 14,
 			color: colors.textSecondary,
 			fontWeight: '500'
 		},
 		title: {
-			fontSize: 28,
-			fontWeight: 'bold',
-			color: colors.text
-		},
-		headerActions: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 12
+			fontSize: 26,
+			fontWeight: '700',
+			color: colors.text,
+			marginTop: 2
 		},
 		refreshButton: {
-			width: 44,
-			height: 44,
-			borderRadius: 22,
-			backgroundColor: colors.card,
+			width: 48,
+			height: 48,
+			borderRadius: 14,
+			backgroundColor: colors.surface,
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 1,
 			borderColor: colors.border
-		},
-
-		categoriesContainer: {
-			paddingRight: 20
-		},
-		categoryPill: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			paddingHorizontal: 16,
-			paddingVertical: 10,
-			borderRadius: 24,
-			backgroundColor: colors.card,
-			marginRight: 10,
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		categoryPillActive: {
-			backgroundColor: colors.primary,
-			borderColor: colors.primary
-		},
-		categoryText: {
-			fontSize: 14,
-			fontWeight: '600',
-			color: colors.textSecondary
-		},
-		categoryTextActive: {
-			color: '#fff'
-		},
-		cardWrapper: {
-			marginBottom: 16
 		},
 		emptyContainer: {
 			alignItems: 'center',
 			justifyContent: 'center',
-			paddingTop: 60
+			paddingTop: 60,
+			paddingHorizontal: 40
 		},
-		emptyImage: {
-			width: 120,
-			height: 120,
-			marginBottom: 20,
-			opacity: 0.7
+		emptyIcon: {
+			width: 80,
+			height: 80,
+			borderRadius: 20,
+			backgroundColor: colors.surface,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginBottom: 20
 		},
 		emptyTitle: {
 			fontSize: 18,
@@ -106,7 +74,8 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		emptyText: {
 			fontSize: 14,
-			color: colors.textSecondary
+			color: colors.textSecondary,
+			textAlign: 'center'
 		},
 		loadingOverlay: {
 			...StyleSheet.absoluteFillObject,
@@ -117,13 +86,16 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		list: {
 			paddingBottom: 20
+		},
+		cardWrapper: {
+			marginBottom: 16
 		}
 	})
 
 type BasketItem = FeedItem & { quantity: number }
 
 export default function FeedScreen() {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
 	const [basket, setBasket] = useState<BasketItem[]>([])
@@ -132,10 +104,10 @@ export default function FeedScreen() {
 	const [isSearchActive, setIsSearchActive] = useState(false)
 
 	const { width } = useWindowDimensions()
-	const minColumnWidth = 300
+	const minColumnWidth = 320
 	const numColumns = Math.max(1, Math.floor(width / minColumnWidth))
-	const gap = 20
-	const padding = 20
+	const gap = 16
+	const padding = 16
 	const itemWidth = (width - padding * 2 - gap * (numColumns - 1)) / numColumns
 
 	// Pagination state
@@ -143,15 +115,9 @@ export default function FeedScreen() {
 	const [hasMore, setHasMore] = useState(true)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-	// Animation state
+	// Animation state for search bar
 	const scrollY = useRef(new Animated.Value(0)).current
-	const searchBarHeight = 140 // Adjusted for SearchBar + Filters height
-	const diffClamp = Animated.diffClamp(scrollY, 0, searchBarHeight)
-	const translateY = diffClamp.interpolate({
-		inputRange: [0, searchBarHeight],
-		outputRange: [0, -searchBarHeight],
-		extrapolate: 'clamp'
-	})
+	const searchBarHeight = 80
 
 	// Error handling state
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
@@ -167,7 +133,7 @@ export default function FeedScreen() {
 		loadUser()
 	}, [])
 
-	const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark])
+	const styles = useMemo(() => createStyles(colors), [colors])
 
 	const loadBasket = async () => {
 		try {
@@ -183,6 +149,7 @@ export default function FeedScreen() {
 	const fetchFeed = async (pageNum: number = 1, shouldAppend: boolean = false) => {
 		try {
 			if (pageNum === 1) setLoading(true)
+			else setIsLoadingMore(true)
 
 			const response = await getFeed(pageNum, 10)
 			const newItems = response.data.docs
@@ -270,46 +237,37 @@ export default function FeedScreen() {
 		}
 	}
 
-	// Handle search results
 	const handleSearchResults = useCallback((results: FeedItem[]) => {
 		setIsSearchActive(true)
 		setDisplayedItems(results)
 	}, [])
 
-	// Handle search clear
 	const handleSearchClear = useCallback(() => {
 		setIsSearchActive(false)
 		setDisplayedItems(feedItems)
 	}, [feedItems])
 
-	// Handle search errors
 	const handleSearchError = useCallback((message: string, retry?: () => void) => {
 		setError({ message, retry })
 		setToastType('error')
 		setShowToast(true)
 	}, [])
 
-	const router = useRouter()
-
 	const renderHeader = useCallback(
 		() => (
 			<View style={styles.headerContainer}>
 				<View style={styles.headerTop}>
 					<View>
-						<Text style={styles.greeting}>Hello, {user?.slug || 'User'}</Text>
-						<Text style={styles.title}>Welcome back</Text>
+						<Text style={styles.greeting}>Hello, {user?.slug || 'Guest'}</Text>
+						<Text style={styles.title}>Welcome back 👋</Text>
 					</View>
-					<View style={styles.headerActions}>
-						<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
-							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={refreshing ? colors.textSecondary : colors.text} />
-						</TouchableOpacity>
-					</View>
+					<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
+						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh'} size={22} color={refreshing ? colors.textSecondary : colors.primary} />
+					</TouchableOpacity>
 				</View>
-
-				{/* SearchBar moved out of here */}
 			</View>
 		),
-		[styles, colors.text, colors.textSecondary, refreshData, refreshing, router]
+		[styles, colors, refreshData, refreshing, user]
 	)
 
 	const renderFooter = () => {
@@ -331,9 +289,11 @@ export default function FeedScreen() {
 		}
 		return (
 			<View style={styles.emptyContainer}>
-				<Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/4076/4076432.png' }} style={styles.emptyImage} />
+				<View style={styles.emptyIcon}>
+					<Ionicons name="fish-outline" size={40} color={colors.textSecondary} />
+				</View>
 				<Text style={styles.emptyTitle}>No products found</Text>
-				<Text style={styles.emptyText}>Try adjusting your search or filters</Text>
+				<Text style={styles.emptyText}>Try adjusting your search or check back later for fresh catches!</Text>
 			</View>
 		)
 	}
@@ -346,22 +306,18 @@ export default function FeedScreen() {
 
 	return (
 		<View style={styles.container}>
-			<Animated.View
+			{/* Search Bar */}
+			<View
 				style={{
-					position: 'absolute',
-					top: 0,
-					left: 0,
-					right: 0,
-					zIndex: 100,
-					transform: [{ translateY }],
+					paddingHorizontal: padding,
+					paddingVertical: 10,
 					backgroundColor: colors.background,
-					paddingHorizontal: 20,
-					paddingTop: 10, // Add some top padding for status bar area if needed, or rely on SafeAreaView
-					paddingBottom: 10
+					borderBottomWidth: 1,
+					borderBottomColor: colors.border
 				}}
 			>
 				<SearchBar onSearchResults={handleSearchResults} onSearchClear={handleSearchClear} onError={handleSearchError} />
-			</Animated.View>
+			</View>
 
 			<Animated.FlatList
 				key={numColumns}
@@ -370,31 +326,23 @@ export default function FeedScreen() {
 				numColumns={numColumns}
 				columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding, alignItems: 'stretch' } : undefined}
 				keyExtractor={(item) => item._id}
-				contentContainerStyle={[styles.list, { paddingTop: searchBarHeight + 20 }, numColumns === 1 && { paddingHorizontal: padding }]}
+				contentContainerStyle={[styles.list, numColumns === 1 && { paddingHorizontal: padding }]}
 				ListHeaderComponent={renderHeader}
 				ListEmptyComponent={!loading ? renderEmpty : null}
-				refreshControl={
-					<RefreshControl
-						refreshing={refreshing}
-						onRefresh={refreshData}
-						colors={[colors.primary]}
-						tintColor={colors.primary}
-						progressViewOffset={searchBarHeight} // Offset refresh indicator
-					/>
-				}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}
 				keyboardShouldPersistTaps="handled"
-				onScroll={Animated.event([{ nativeEvent: { contentOffset: { y: scrollY } } }], { useNativeDriver: true })}
-				scrollEventThrottle={16}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
 				ListFooterComponent={renderFooter}
 			/>
+
 			{loading && (
 				<View style={styles.loadingOverlay}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
 			)}
+
 			<Toast visible={showToast} message={error?.message || ''} type={toastType} onHide={() => setShowToast(false)} onRetry={error?.retry} />
 		</View>
 	)

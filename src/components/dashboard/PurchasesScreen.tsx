@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Alert, Animated, Dimensions, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, Dimensions, useWindowDimensions, ScrollView, Alert } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -209,7 +209,6 @@ const PurchasesScreen = () => {
 	}
 
 	const renderPurchaseItem = ({ item }: { item: OrderItem }) => {
-		const scaleAnim = new Animated.Value(1)
 		const statusColor = orderStatusColors[item.status] || colors.textSecondary
 
 		// Calculate total price and get product info
@@ -221,37 +220,11 @@ const PurchasesScreen = () => {
 				return sum + price * quantity
 			}, 0)
 
-		const productCount = item.products.length
-		const firstProduct = item.products[0]?.product
-
-		const handlePressIn = () => {
-			Animated.spring(scaleAnim, {
-				toValue: 0.97,
-				useNativeDriver: true,
-				friction: 8,
-				tension: 100
-			}).start()
-		}
-
-		const handlePressOut = () => {
-			Animated.spring(scaleAnim, {
-				toValue: 1,
-				useNativeDriver: true,
-				friction: 8,
-				tension: 100
-			}).start()
-		}
-
-		const containerWidth = (width - 24) / numColumns
+		const containerWidth = (width - 12) / numColumns
 
 		return (
-			<Animated.View style={{ transform: [{ scale: scaleAnim }], width: containerWidth }}>
-				<TouchableOpacity
-					style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}
-					onPressIn={handlePressIn}
-					onPressOut={handlePressOut}
-					activeOpacity={0.9}
-				>
+			<View style={{ width: containerWidth }}>
+				<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
 					{/* Header */}
 					<View style={styles.cardHeader}>
 						<View style={styles.headerLeft}>
@@ -272,8 +245,8 @@ const PurchasesScreen = () => {
 					<View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
 
 					{/* Products Info */}
-					<View style={styles.productInfo}>
-						{item.products.slice(0, 2).map((productItem, index) => (
+					<ScrollView style={styles.productInfo} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+						{item.products.map((productItem, index) => (
 							<View key={index} style={styles.productRow}>
 								<Ionicons name="cube-outline" size={16} color={colors.textTertiary} />
 								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
@@ -282,8 +255,7 @@ const PurchasesScreen = () => {
 								<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.quantity}</Text>
 							</View>
 						))}
-						{item.products.length > 2 && <Text style={[styles.productCount, { color: colors.textTertiary }]}>+ {item.products.length - 2} more items</Text>}
-					</View>
+					</ScrollView>
 
 					{/* Footer with Actions */}
 					<View style={styles.cardFooter}>
@@ -318,8 +290,8 @@ const PurchasesScreen = () => {
 							</TouchableOpacity>
 						</View>
 					)}
-				</TouchableOpacity>
-			</Animated.View>
+				</View>
+			</View>
 		)
 	}
 
@@ -397,38 +369,18 @@ const PurchasesScreen = () => {
 	}
 
 	const renderBasketGroup = ({ item: group }: { item: ShopBasketGroup }) => {
-		const scaleAnim = new Animated.Value(1)
-
 		const groupTotal = group.items.reduce((sum: number, item: BasketItem) => {
 			const price = item.price?.total?.tnd || 0
 			const quantity = item.quantity || 1
 			return sum + price * quantity
 		}, 0)
 
-		const handlePressIn = () => {
-			Animated.spring(scaleAnim, {
-				toValue: 0.97,
-				useNativeDriver: true,
-				friction: 8,
-				tension: 100
-			}).start()
-		}
-
-		const handlePressOut = () => {
-			Animated.spring(scaleAnim, {
-				toValue: 1,
-				useNativeDriver: true,
-				friction: 8,
-				tension: 100
-			}).start()
-		}
-
-		const containerWidth = (width - 24) / numColumns
+		const containerWidth = (width - 12) / numColumns
 
 		return (
-			<Animated.View style={{ transform: [{ scale: scaleAnim }], width: containerWidth }}>
-				<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)' }]}>
-					<TouchableOpacity activeOpacity={1} onPressIn={handlePressIn} onPressOut={handlePressOut} style={{ flex: 1 }}>
+			<View style={{ width: containerWidth }}>
+				<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+					<View style={{ flex: 1 }}>
 						{/* Header */}
 						<View style={styles.cardHeader}>
 							<View style={styles.headerLeft}>
@@ -448,73 +400,75 @@ const PurchasesScreen = () => {
 						</View>
 
 						{/* Items List */}
-						<View style={{ flexDirection: 'row', flexWrap: 'wrap', marginHorizontal: -6 }}>
-							{group.items.map((item: BasketItem, index: number) => {
-								const price = item.price?.total?.tnd || 0
-								const quantity = item.quantity || 1
-								const itemWidth = '100%'
-								const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+						<ScrollView style={{ flex: 1, marginHorizontal: -6 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+							<View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+								{group.items.map((item: BasketItem, index: number) => {
+									const price = item.price?.total?.tnd || 0
+									const quantity = item.quantity || 1
+									const itemWidth = '100%'
+									const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
 
-								return (
-									<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
-										<View
-											style={[
-												styles.basketItemCard,
-												{
-													backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
-													borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-												}
-											]}
-										>
-											{/* Image Area */}
-											<View style={styles.basketItemImageContainer}>
-												<SmartImage source={{ uri: imageUrl || '' }} style={styles.basketItemImage} resizeMode="cover" fallbackIcon="image" />
-											</View>
-
-											{/* Content Area */}
-											<View style={styles.basketItemContent}>
-												<View style={styles.itemTopRow}>
-													<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
-														{item.name?.en}
-													</Text>
-													<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-														<Ionicons name="trash-outline" size={18} color={colors.error} />
-													</TouchableOpacity>
+									return (
+										<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
+											<View
+												style={[
+													styles.basketItemCard,
+													{
+														backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+														borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+													}
+												]}
+											>
+												{/* Image Area */}
+												<View style={styles.basketItemImageContainer}>
+													<SmartImage source={{ uri: imageUrl || '' }} style={styles.basketItemImage} resizeMode="cover" fallbackIcon="image" />
 												</View>
 
-												<View style={styles.itemBottomRow}>
-													<Text style={[styles.basketItemPrice, { color: colors.primary }]}>
-														{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
-													</Text>
-
-													<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
-														<TouchableOpacity
-															onPress={() => updateBasketQuantity(item._id, quantity - 1)}
-															style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
-															hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
-														>
-															<Ionicons name="remove" size={16} color={colors.text} />
+												{/* Content Area */}
+												<View style={styles.basketItemContent}>
+													<View style={styles.itemTopRow}>
+														<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
+															{item.name?.en}
+														</Text>
+														<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+															<Ionicons name="trash-outline" size={18} color={colors.error} />
 														</TouchableOpacity>
+													</View>
 
-														<Text style={[styles.compactQText, { color: colors.text }]}>
-															{quantity} {item.unit?.measure || ''}
+													<View style={styles.itemBottomRow}>
+														<Text style={[styles.basketItemPrice, { color: colors.primary }]}>
+															{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
 														</Text>
 
-														<TouchableOpacity
-															onPress={() => updateBasketQuantity(item._id, quantity + 1)}
-															style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
-															hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
-														>
-															<Ionicons name="add" size={16} color="#fff" />
-														</TouchableOpacity>
+														<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
+															<TouchableOpacity
+																onPress={() => updateBasketQuantity(item._id, quantity - 1)}
+																style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
+																hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
+															>
+																<Ionicons name="remove" size={16} color={colors.text} />
+															</TouchableOpacity>
+
+															<Text style={[styles.compactQText, { color: colors.text }]}>
+																{quantity} {item.unit?.measure || ''}
+															</Text>
+
+															<TouchableOpacity
+																onPress={() => updateBasketQuantity(item._id, quantity + 1)}
+																style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
+																hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
+															>
+																<Ionicons name="add" size={16} color="#fff" />
+															</TouchableOpacity>
+														</View>
 													</View>
 												</View>
 											</View>
 										</View>
-									</View>
-								)
-							})}
-						</View>
+									)
+								})}
+							</View>
+						</ScrollView>
 
 						{/* Footer */}
 						<View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
@@ -524,20 +478,15 @@ const PurchasesScreen = () => {
 								<Text style={[styles.footerText, { color: colors.textTertiary }]}>Total Amount</Text>
 							</View>
 							<View style={styles.footerRight}>
-								<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
+								<Text style={[styles.totalPrice, { color: colors.text }]}>{groupTotal.toFixed(2)} TND</Text>
+								<TouchableOpacity style={[styles.checkoutButton, { backgroundColor: colors.primary }]} onPress={() => handleCheckout(group)} activeOpacity={0.8}>
+									<Ionicons name="card-outline" size={20} color="#fff" />
+								</TouchableOpacity>
 							</View>
 						</View>
-
-						{/* Checkout Button */}
-						<View style={styles.cancelButtonContainer}>
-							<TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.primary }]} onPress={() => handleCheckout(group)}>
-								<Ionicons name="card-outline" size={16} color="#fff" />
-								<Text style={[styles.cancelText, { color: '#fff' }]}>Checkout</Text>
-							</TouchableOpacity>
-						</View>
-					</TouchableOpacity>
+					</View>
 				</View>
-			</Animated.View>
+			</View>
 		)
 	}
 
@@ -740,11 +689,12 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			fontWeight: '700'
 		},
 		listContent: {
-			padding: 10,
+			padding: 6,
 			paddingTop: 8
 		},
 		purchaseCard: {
 			flex: 1,
+			height: 480,
 			borderRadius: 16,
 			padding: 16,
 			margin: 6,
@@ -806,6 +756,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			marginVertical: 12
 		},
 		productInfo: {
+			flex: 1,
 			marginBottom: 12
 		},
 		productRow: {
@@ -1017,6 +968,19 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			color: '#fff',
 			fontSize: 13,
 			fontWeight: '600'
+		},
+		checkoutButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginLeft: 12,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.15,
+			shadowRadius: 4,
+			elevation: 3
 		}
 	})
 }

@@ -1,20 +1,19 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { Tabs, useFocusEffect } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Tabs, useFocusEffect, usePathname } from 'expo-router'
 import { useRouter } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
-import { View, Platform } from 'react-native'
+import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useTheme } from '../../contexts/ThemeContext'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useNotification } from '../../contexts/NotificationContext'
-import { APP_VERSION } from '../../config'
 import { secureGetItem } from '../../core/auth/storage'
 import { useBackButton } from '../../hooks/useBackButton'
 
 export default function HomeLayout() {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const router = useRouter()
+	const pathname = usePathname()
 	useBackButton()
 	const [userRole, setUserRole] = useState<string | null>(null)
 	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
@@ -43,26 +42,28 @@ export default function HomeLayout() {
 		loadAuthData()
 	}, [])
 
+	const iconSize = Platform.select({ ios: 24, android: 26, web: 24 })
+
 	return (
 		<SafeAreaProvider>
-			<SafeAreaView style={{ flex: 1, backgroundColor: colors.background }} edges={['top', 'right', 'left']}>
-				<StatusBar style={isDark ? 'light' : 'dark'} />
+			<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
+				<StatusBar style="light" />
 				<Tabs
 					screenOptions={{
 						headerShown: false,
 						tabBarStyle: {
 							backgroundColor: colors.background,
-							borderTopColor: colors.primary, // Blue outline/top border
-							borderTopWidth: 2, // Make it more visible
-							paddingBottom: Platform.select({
-								ios: 0,
-								android: 0,
-								web: 10
+							borderTopColor: colors.primary,
+							borderTopWidth: 2,
+							paddingVertical: Platform.select({
+								ios: 8,
+								android: 10,
+								web: 12
 							}),
 							height: Platform.select({
-								ios: 50,
-								android: 65, // Slightly taller for android
-								web: 60
+								ios: 60,
+								android: 70,
+								web: 70
 							}),
 							...Platform.select({
 								ios: {
@@ -80,27 +81,15 @@ export default function HomeLayout() {
 							})
 						},
 						tabBarActiveTintColor: colors.primary,
-						tabBarInactiveTintColor: colors.textSecondary,
+						tabBarInactiveTintColor: colors.textTertiary,
 						tabBarHideOnKeyboard: Platform.OS === 'android',
-						tabBarShowLabel: true,
-						tabBarLabelStyle: {
-							fontSize: Platform.select({
-								ios: 11,
-								android: 13,
-								web: 13
-							}),
-							fontWeight: '600',
-							marginBottom: Platform.select({
-								ios: 0,
-								android: 8,
-								web: 5
-							})
-						},
+						// Icons only - no labels
+						tabBarShowLabel: false,
 						tabBarIconStyle: {
 							marginTop: Platform.select({
-								ios: 0,
-								android: 5,
-								web: 0
+								ios: 4,
+								android: 6,
+								web: 4
 							})
 						}
 					}}
@@ -108,57 +97,83 @@ export default function HomeLayout() {
 					<Tabs.Screen
 						name="feed"
 						options={{
-							title: 'Feed',
-							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="home" size={size} color={color} />
+							tabBarIcon: ({ color, focused }) => (
+								<View style={focused ? styles.activeIconContainer : undefined}>
+									<MaterialIcons name="home" size={iconSize} color={color} />
+								</View>
+							),
+							tabBarAccessibilityLabel: 'Feed'
 						}}
 					/>
 					<Tabs.Screen
 						name="dashboard"
 						options={{
-							title: 'Dashboard',
 							href: isAuthenticated ? '/home/dashboard' : null,
-							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="dashboard" size={size} color={color} />
+							tabBarIcon: ({ color, focused }) => (
+								<View style={focused ? styles.activeIconContainer : undefined}>
+									<MaterialIcons name="dashboard" size={iconSize} color={color} />
+								</View>
+							),
+							tabBarAccessibilityLabel: 'Dashboard'
 						}}
 					/>
-
 					<Tabs.Screen
 						name="business"
 						options={{
-							title: 'Business',
 							href: userRole === 'shop_owner' ? '/home/business' : null,
-							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="business-center" size={size} color={color} />
+							tabBarIcon: ({ color, focused }) => (
+								<View style={focused ? styles.activeIconContainer : undefined}>
+									<MaterialIcons name="business-center" size={iconSize} color={color} />
+								</View>
+							),
+							tabBarAccessibilityLabel: 'Business'
 						}}
 					/>
 					<Tabs.Screen
 						name="notifications"
 						options={{
-							title: 'Notifications',
 							href: isAuthenticated ? '/home/notifications' : null,
-							tabBarActiveTintColor: colors.primary,
 							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
-							tabBarBadgeStyle: { backgroundColor: colors.error, color: '#fff', fontSize: 10, minWidth: 16, height: 16, borderRadius: 8, lineHeight: 16 },
-							tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="notifications" size={size} color={color} />
+							tabBarBadgeStyle: {
+								backgroundColor: colors.error,
+								color: '#fff',
+								fontSize: 10,
+								minWidth: 18,
+								height: 18,
+								borderRadius: 9,
+								lineHeight: 18
+							},
+							tabBarIcon: ({ color, focused }) => (
+								<View style={focused ? styles.activeIconContainer : undefined}>
+									<Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={iconSize} color={color} />
+								</View>
+							),
+							tabBarAccessibilityLabel: 'Notifications'
 						}}
 					/>
 					<Tabs.Screen
 						name="profile"
 						options={{
-							title: 'Profile',
-							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }: { color: string; size: number }) => <MaterialIcons name="person" size={size} color={color} />
+							tabBarIcon: ({ color, focused }) => (
+								<View style={focused ? styles.activeIconContainer : undefined}>
+									<MaterialIcons name={focused ? 'person' : 'person-outline'} size={iconSize} color={color} />
+								</View>
+							),
+							tabBarAccessibilityLabel: 'Profile'
 						}}
 					/>
 					<Tabs.Screen
 						name="settings"
 						options={{
-							title: 'Settings',
-							tabBarActiveTintColor: colors.primary,
-							tabBarIcon: ({ color, size }: { color: string; size: number }) => <Ionicons name="settings-outline" size={size} color={color} />
+							tabBarIcon: ({ color, focused }) => (
+								<View style={focused ? styles.activeIconContainer : undefined}>
+									<Ionicons name={focused ? 'settings' : 'settings-outline'} size={iconSize} color={color} />
+								</View>
+							),
+							tabBarAccessibilityLabel: 'Settings'
 						}}
 					/>
+					{/* Hidden screens - not shown in tab bar */}
 					<Tabs.Screen
 						name="shops"
 						options={{
@@ -176,3 +191,14 @@ export default function HomeLayout() {
 		</SafeAreaProvider>
 	)
 }
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1
+	},
+	activeIconContainer: {
+		padding: 8,
+		borderRadius: 12,
+		backgroundColor: 'rgba(56, 189, 248, 0.15)' // primary with low opacity
+	}
+})

@@ -1,9 +1,8 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 interface ScreenHeaderProps {
@@ -31,11 +30,20 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 	}
 
 	return (
-		<View style={[styles.container, { backgroundColor: transparent ? 'transparent' : colors.background, borderBottomColor: colors.border, paddingTop: insets.top + 10 }]}>
+		<View
+			style={[
+				styles.container,
+				{
+					backgroundColor: transparent ? 'transparent' : colors.background,
+					borderBottomColor: transparent ? 'transparent' : colors.border,
+					paddingTop: insets.top + 8
+				}
+			]}
+		>
 			<View style={styles.leftSection}>
 				{showBack && (
-					<TouchableOpacity style={styles.backButton} onPress={handleBackPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-						<MaterialIcons name="arrow-back" size={24} color={colors.text} />
+					<TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface }]} onPress={handleBackPress} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+						<MaterialIcons name="arrow-back" size={22} color={colors.text} />
 					</TouchableOpacity>
 				)}
 				{title && (
@@ -82,15 +90,19 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	backButton: {
-		marginRight: 12,
-		padding: 4
+		width: 44,
+		height: 44,
+		borderRadius: 12,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: 12
 	},
 	titleContainer: {
 		flex: 1
 	},
 	title: {
 		fontSize: 20,
-		fontWeight: 'bold',
+		fontWeight: '700',
 		letterSpacing: -0.3
 	},
 	subtitle: {

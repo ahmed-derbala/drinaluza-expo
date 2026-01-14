@@ -12,7 +12,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import { parseError, logError } from '../../utils/errorHandler'
 
 export default function NotificationsScreen() {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const router = useRouter()
 	const [notifications, setNotifications] = useState<NotificationItem[]>([])
 	const [loading, setLoading] = useState(true)

@@ -1,23 +1,20 @@
-import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Linking, useWindowDimensions } from 'react-native'
-import { useRouter } from 'expo-router'
+import React, { useState, useEffect, useMemo } from 'react'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '../../contexts/ThemeContext'
-
 import { APP_VERSION, BACKEND_URL } from '../../config'
 import Toast from '../../components/common/Toast'
 import { log } from '../../core/log'
 
 export default function SettingsScreen() {
-	const { colors, isDark } = useTheme()
-	const router = useRouter()
+	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
 
-	const styles = createStyles(colors, isDark)
+	const styles = useMemo(() => createStyles(colors), [colors])
 	const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
 		visible: false,
 		message: '',
@@ -33,7 +30,6 @@ export default function SettingsScreen() {
 				const text = await res.text()
 				try {
 					const json = JSON.parse(text)
-					// Handle new response format: wrapped in 'data' property
 					setServerInfo(json.data || json)
 				} catch (e) {
 					log({
@@ -74,9 +70,9 @@ export default function SettingsScreen() {
 		icon: any
 		title: string
 		subtitle?: string
-		value?: string | boolean
+		value?: string
 		onPress?: () => void
-		type?: 'arrow' | 'switch' | 'value' | 'none'
+		type?: 'arrow' | 'value' | 'none'
 		color?: string
 		copyValue?: string
 	}) => {
@@ -92,8 +88,8 @@ export default function SettingsScreen() {
 		}
 
 		return (
-			<TouchableOpacity style={styles.item} onPress={type === 'switch' ? onPress : onPress} disabled={type === 'switch' && !onPress} activeOpacity={type === 'none' ? 1 : 0.7}>
-				<View style={[styles.iconContainer, { backgroundColor: color ? color + '20' : colors.primary + '20' }]}>
+			<TouchableOpacity style={styles.item} onPress={onPress} disabled={type === 'none'} activeOpacity={type === 'none' ? 1 : 0.7}>
+				<View style={[styles.iconContainer, { backgroundColor: (color || colors.primary) + '20' }]}>
 					<Ionicons name={icon} size={20} color={color || colors.primary} />
 				</View>
 				<View style={styles.itemContent}>
@@ -113,8 +109,7 @@ export default function SettingsScreen() {
 						</TouchableOpacity>
 					)}
 					{type === 'arrow' && <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
-					{type === 'switch' && <Switch value={value as boolean} onValueChange={onPress} trackColor={{ false: colors.border, true: colors.primary }} thumbColor={'#fff'} />}
-					{type === 'value' && <Text style={styles.itemValue}>{value as string}</Text>}
+					{type === 'value' && <Text style={styles.itemValue}>{value}</Text>}
 				</View>
 			</TouchableOpacity>
 		)
@@ -124,6 +119,7 @@ export default function SettingsScreen() {
 		<ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 			<View style={styles.header}>
 				<Text style={styles.title}>Settings</Text>
+				<Text style={styles.headerSubtitle}>Drinaluza - Seafood Business Manager</Text>
 			</View>
 
 			<SettingSection title="Social Media">
@@ -175,9 +171,9 @@ export default function SettingsScreen() {
 					color="#6366F1"
 				/>
 				<SettingItem
-					icon="logo-google"
-					title="Google Drive"
-					subtitle="Download APK"
+					icon="cloud-download-outline"
+					title="APK Download"
+					subtitle="Google Drive"
 					onPress={() => Linking.openURL('https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm')}
 					copyValue="https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm"
 					color="#4285F4"
@@ -199,21 +195,24 @@ export default function SettingsScreen() {
 					subtitle="View on GitHub"
 					onPress={() => Linking.openURL('https://github.com/ahmed-derbala/')}
 					copyValue="https://github.com/ahmed-derbala/"
-					color="#000000"
+					color={colors.text}
 				/>
 			</SettingSection>
 
 			{serverInfo && (
 				<SettingSection title="Server Info">
-					<SettingItem icon="server" title="Environment" value={serverInfo.NODE_ENV} type="value" onPress={() => {}} color={colors.textSecondary} />
-					<SettingItem icon="information-circle" title="App Name" value={serverInfo.app?.name} type="value" onPress={() => {}} color={colors.textSecondary} />
-					<SettingItem icon="git-network" title="Version" value={serverInfo.app?.version} type="value" onPress={() => {}} color={colors.textSecondary} />
+					<SettingItem icon="server-outline" title="Environment" value={serverInfo.NODE_ENV} type="value" color={colors.textSecondary} />
+					<SettingItem icon="information-circle-outline" title="App Name" value={serverInfo.app?.name} type="value" color={colors.textSecondary} />
+					<SettingItem icon="git-network-outline" title="Version" value={serverInfo.app?.version} type="value" color={colors.textSecondary} />
 				</SettingSection>
 			)}
 
 			<View style={styles.footer}>
-				<Text style={styles.version}>Version {APP_VERSION}</Text>
+				<View style={styles.versionBadge}>
+					<Text style={styles.versionText}>v{APP_VERSION}</Text>
+				</View>
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
+				<Text style={styles.madeWith}>Made with 💙 in Tunisia</Text>
 			</View>
 
 			<Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast((prev) => ({ ...prev, visible: false }))} />
@@ -221,7 +220,7 @@ export default function SettingsScreen() {
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean) =>
+const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
@@ -232,22 +231,27 @@ const createStyles = (colors: any, isDark: boolean) =>
 			paddingBottom: 40
 		},
 		header: {
-			marginBottom: 24
+			marginBottom: 28
 		},
 		title: {
 			fontSize: 32,
-			fontWeight: 'bold',
+			fontWeight: '700',
 			color: colors.text,
 			letterSpacing: -0.5
+		},
+		headerSubtitle: {
+			fontSize: 14,
+			color: colors.textSecondary,
+			marginTop: 4
 		},
 		section: {
 			marginBottom: 24
 		},
 		sectionTitle: {
-			fontSize: 14,
+			fontSize: 13,
 			fontWeight: '600',
 			color: colors.textSecondary,
-			marginBottom: 8,
+			marginBottom: 10,
 			textTransform: 'uppercase',
 			letterSpacing: 0.5,
 			marginLeft: 4
@@ -267,12 +271,12 @@ const createStyles = (colors: any, isDark: boolean) =>
 			borderBottomColor: colors.border
 		},
 		iconContainer: {
-			width: 36,
-			height: 36,
-			borderRadius: 10,
+			width: 40,
+			height: 40,
+			borderRadius: 12,
 			justifyContent: 'center',
 			alignItems: 'center',
-			marginRight: 12
+			marginRight: 14
 		},
 		itemContent: {
 			flex: 1
@@ -289,34 +293,42 @@ const createStyles = (colors: any, isDark: boolean) =>
 		},
 		itemRight: {
 			flexDirection: 'row',
-			alignItems: 'center'
+			alignItems: 'center',
+			gap: 8
 		},
 		copyButton: {
-			padding: 8,
-			marginRight: 4,
-			borderRadius: 8,
-			backgroundColor: colors.background,
-			borderWidth: 1,
-			borderColor: colors.border
+			padding: 10,
+			borderRadius: 10,
+			backgroundColor: colors.surface
 		},
 		itemValue: {
-			fontSize: 15,
+			fontSize: 14,
 			color: colors.textSecondary,
-			marginRight: 4
+			fontWeight: '500'
 		},
 		footer: {
 			alignItems: 'center',
-			marginTop: 20,
-			marginBottom: 20
+			marginTop: 32,
+			marginBottom: 20,
+			gap: 8
 		},
-		version: {
-			fontSize: 14,
-			color: colors.textTertiary,
-			fontWeight: '500'
+		versionBadge: {
+			paddingHorizontal: 12,
+			paddingVertical: 6,
+			borderRadius: 8,
+			backgroundColor: colors.primaryContainer
+		},
+		versionText: {
+			fontSize: 13,
+			color: colors.primary,
+			fontWeight: '600'
 		},
 		copyright: {
+			fontSize: 13,
+			color: colors.textTertiary
+		},
+		madeWith: {
 			fontSize: 12,
-			color: colors.textTertiary,
-			marginTop: 4
+			color: colors.textTertiary
 		}
 	})

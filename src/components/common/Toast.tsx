@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, Animated, TouchableOpacity, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
-
-const { width } = Dimensions.get('window')
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -17,7 +15,7 @@ interface ToastProps {
 }
 
 export default function Toast({ visible, message, type = 'info', duration = 4000, onHide, onRetry }: ToastProps) {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
 	const translateY = useRef(new Animated.Value(-100)).current
 	const opacity = useRef(new Animated.Value(0)).current
 
@@ -82,14 +80,14 @@ export default function Toast({ visible, message, type = 'info', duration = 4000
 	const getBackgroundColor = () => {
 		switch (type) {
 			case 'success':
-				return isDark ? '#10b981' : '#059669'
+				return colors.success
 			case 'error':
-				return isDark ? '#ef4444' : '#dc2626'
+				return colors.error
 			case 'warning':
-				return isDark ? '#f59e0b' : '#d97706'
+				return colors.warning
 			case 'info':
 			default:
-				return isDark ? '#3b82f6' : '#2563eb'
+				return colors.info
 		}
 	}
 
@@ -107,13 +105,13 @@ export default function Toast({ visible, message, type = 'info', duration = 4000
 			]}
 		>
 			<View style={styles.content}>
-				<Ionicons name={getIconName()} size={24} color="#fff" style={styles.icon} />
+				<Ionicons name={getIconName()} size={22} color="#fff" style={styles.icon} />
 				<Text style={styles.message} numberOfLines={2}>
 					{message}
 				</Text>
 				{onRetry && (
 					<TouchableOpacity onPress={onRetry} style={styles.retryButton}>
-						<Text style={styles.retryText}>Retry</Text>
+						<Ionicons name="refresh" size={18} color="#fff" />
 					</TouchableOpacity>
 				)}
 				<TouchableOpacity onPress={hideToast} style={styles.closeButton}>
@@ -130,22 +128,29 @@ const styles = StyleSheet.create({
 		top: 50,
 		left: 16,
 		right: 16,
-		borderRadius: 12,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.3,
-		shadowRadius: 8,
-		elevation: 8,
-		zIndex: 9999
+		borderRadius: 14,
+		zIndex: 9999,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.3,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 8
+			}
+		})
 	},
 	content: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		padding: 16,
-		paddingRight: 12
+		padding: 14,
+		paddingRight: 10,
+		gap: 10
 	},
 	icon: {
-		marginRight: 12
+		// Icon styling
 	},
 	message: {
 		flex: 1,
@@ -155,18 +160,18 @@ const styles = StyleSheet.create({
 		lineHeight: 20
 	},
 	retryButton: {
-		paddingHorizontal: 12,
-		paddingVertical: 6,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		backgroundColor: 'rgba(255, 255, 255, 0.2)',
-		borderRadius: 6,
-		marginRight: 8
-	},
-	retryText: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: '#fff'
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
 	closeButton: {
-		padding: 4
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })
