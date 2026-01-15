@@ -7,9 +7,11 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { APP_VERSION, BACKEND_URL } from '../../config'
 import Toast from '../../components/common/Toast'
 import { log } from '../../core/log'
+import { useUser } from '../../contexts/UserContext'
 
 export default function SettingsScreen() {
 	const { colors } = useTheme()
+	const { translate } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
@@ -81,7 +83,7 @@ export default function SettingsScreen() {
 				await Clipboard.setStringAsync(copyValue)
 				setToast({
 					visible: true,
-					message: 'Copied to clipboard!',
+					message: translate('copied_to_clipboard', 'Copied to clipboard!'),
 					type: 'success'
 				})
 			}
@@ -118,11 +120,11 @@ export default function SettingsScreen() {
 	return (
 		<ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 			<View style={styles.header}>
-				<Text style={styles.title}>Settings</Text>
+				<Text style={styles.title}>{translate('settings', 'Settings')}</Text>
 				<Text style={styles.headerSubtitle}>Drinaluza - Seafood Business Manager</Text>
 			</View>
 
-			<SettingSection title="Social Media">
+			<SettingSection title={translate('social_media', 'Social Media')}>
 				<SettingItem
 					icon="logo-facebook"
 					title="Facebook"
@@ -134,7 +136,7 @@ export default function SettingsScreen() {
 				<SettingItem
 					icon="logo-instagram"
 					title="Instagram"
-					subtitle="Follow us on Instagram"
+					subtitle={translate('follow_on_instagram', 'Follow us on Instagram')}
 					onPress={() => Linking.openURL('https://www.instagram.com/drinaluza/')}
 					copyValue="https://www.instagram.com/drinaluza/"
 					color="#E4405F"
@@ -149,11 +151,11 @@ export default function SettingsScreen() {
 				/>
 			</SettingSection>
 
-			<SettingSection title="Contact">
+			<SettingSection title={translate('contact', 'Contact')}>
 				<SettingItem icon="mail" title="Email" subtitle="drinaluza@gmail.com" onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')} copyValue="drinaluza@gmail.com" color="#EA4335" />
 			</SettingSection>
 
-			<SettingSection title="Downloads">
+			<SettingSection title={translate('downloads', 'Downloads')}>
 				<SettingItem
 					icon="logo-google-playstore"
 					title="Google Play"
@@ -180,7 +182,7 @@ export default function SettingsScreen() {
 				/>
 			</SettingSection>
 
-			<SettingSection title="Developer">
+			<SettingSection title={translate('developer', 'Developer')}>
 				<SettingItem
 					icon="logo-linkedin"
 					title="Ahmed Derbala"
@@ -200,10 +202,10 @@ export default function SettingsScreen() {
 			</SettingSection>
 
 			{serverInfo && (
-				<SettingSection title="Server Info">
-					<SettingItem icon="server-outline" title="Environment" value={serverInfo.NODE_ENV} type="value" color={colors.textSecondary} />
-					<SettingItem icon="information-circle-outline" title="App Name" value={serverInfo.app?.name} type="value" color={colors.textSecondary} />
-					<SettingItem icon="git-network-outline" title="Version" value={serverInfo.app?.version} type="value" color={colors.textSecondary} />
+				<SettingSection title={translate('server_info', 'Server Info')}>
+					<SettingItem icon="server-outline" title={translate('environment', 'Environment')} value={serverInfo.NODE_ENV} type="value" color={colors.textSecondary} />
+					<SettingItem icon="information-circle-outline" title={translate('app_name', 'App Name')} value={serverInfo.app?.name} type="value" color={colors.textSecondary} />
+					<SettingItem icon="git-network-outline" title={translate('version', 'Version')} value={serverInfo.app?.version} type="value" color={colors.textSecondary} />
 				</SettingSection>
 			)}
 
@@ -212,7 +214,7 @@ export default function SettingsScreen() {
 					<Text style={styles.versionText}>v{APP_VERSION}</Text>
 				</View>
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
-				<Text style={styles.madeWith}>Made with 💙 in Tunisia</Text>
+				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 			</View>
 
 			<Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast((prev) => ({ ...prev, visible: false }))} />

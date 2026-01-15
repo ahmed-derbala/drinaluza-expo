@@ -6,6 +6,7 @@ import { Sale } from './sales.api'
 import { format } from 'date-fns'
 import { orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
 import SmartImage from '../common/SmartImage'
+import { useUser } from '../../contexts/UserContext'
 
 interface SaleCardProps {
 	sale: Sale
@@ -13,12 +14,12 @@ interface SaleCardProps {
 
 const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 	const { colors } = useTheme()
+	const { localize, formatPrice } = useUser()
 
 	const getImageUrl = () => {
 		return product.product.media?.thumbnail?.url || product.product.defaultProduct?.media?.thumbnail?.url || null
 	}
 
-	const unitPrice = product.lineTotal.tnd / product.quantity
 	const unitMeasure = product.product.unit?.measure || 'unit'
 
 	return (
@@ -26,17 +27,17 @@ const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 			<SmartImage source={getImageUrl() ? { uri: getImageUrl()! } : undefined} style={styles.productImage} fallbackIcon="image-not-supported" />
 			<View style={styles.productDetails}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-					{product.product.name?.en || 'Unknown Product'}
+					{localize(product.product.name)}
 				</Text>
 				<View style={styles.productMeta}>
 					<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>
 						{product.quantity} {unitMeasure}
 					</Text>
 					<Text style={[styles.productUnitPrice, { color: colors.textTertiary }]}>
-						@ {unitPrice.toFixed(2)} TND/{unitMeasure}
+						@ {formatPrice(product.product.price)}/{unitMeasure}
 					</Text>
 				</View>
-				<Text style={[styles.productTotal, { color: colors.primary }]}>{product.lineTotal.tnd.toFixed(2)} TND</Text>
+				<Text style={[styles.productTotal, { color: colors.primary }]}>{formatPrice(product.lineTotal)}</Text>
 			</View>
 		</View>
 	)
@@ -44,6 +45,7 @@ const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 
 const SaleCard = ({ sale }: SaleCardProps) => {
 	const { colors } = useTheme()
+	const { localize, formatPrice, translate } = useUser()
 	const { width } = useWindowDimensions()
 	const isWeb = Platform.OS === 'web'
 	const isTablet = width >= 768
@@ -137,10 +139,10 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			]}
 		>
 			{/* Header Section */}
-			<View style={[styles.header, { borderBottomColor: colors.border }]}>
+			<View style={styles.header}>
 				<View style={styles.headerLeft}>
 					<Text style={[styles.shopName, { color: colors.text }]} numberOfLines={1}>
-						{sale.shop.name.en}
+						{localize(sale.shop.name)}
 					</Text>
 					<Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(sale.createdAt), 'MMM d, yyyy • h:mm a')}</Text>
 				</View>
@@ -163,7 +165,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 					/>
 					<View style={styles.customerDetails}>
 						<Text style={[styles.customerName, { color: colors.text }]} numberOfLines={1}>
-							{sale.customer.name.en}
+							{localize(sale.customer.name)}
 						</Text>
 						{sale.customer.address && (
 							<Text style={[styles.customerAddress, { color: colors.textSecondary }]} numberOfLines={2}>
@@ -200,7 +202,9 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 
 			{/* Products Section - Scrollable */}
 			<View style={styles.productsContainer}>
-				<Text style={[styles.productsTitle, { color: colors.textSecondary }]}>Products ({sale.products.length})</Text>
+				<Text style={[styles.productsTitle, { color: colors.textSecondary }]}>
+					{translate('sale.products', 'Products')} ({sale.products.length})
+				</Text>
 				<ScrollView horizontal showsHorizontalScrollIndicator={isWeb} contentContainerStyle={styles.productsScrollContent} style={styles.productsScroll}>
 					{sale.products.map((product, index) => (
 						<ProductItem key={`${product.product._id}_${index}`} product={product} />
@@ -210,8 +214,8 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 
 			{/* Footer - Total Price */}
 			<View style={[styles.footer, { borderTopColor: colors.border }]}>
-				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>Total</Text>
-				<Text style={[styles.totalPrice, { color: colors.primary }]}>{sale.price.total.tnd.toFixed(2)} TND</Text>
+				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('sale.total', 'Total')}</Text>
+				<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(sale.price)}</Text>
 			</View>
 		</View>
 	)

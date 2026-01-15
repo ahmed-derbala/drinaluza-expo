@@ -12,6 +12,7 @@ import Toast from '../../components/common/Toast'
 import SearchBar from '../../components/search/SearchBar'
 import { getCurrentUser } from '../../core/auth/auth.api'
 import { parseError, logError } from '../../utils/errorHandler'
+import { useUser } from '../../contexts/UserContext'
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
@@ -123,15 +124,8 @@ export default function FeedScreen() {
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
 	const [showToast, setShowToast] = useState(false)
 	const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('error')
-	const [user, setUser] = useState<{ slug: string; role: string } | null>(null)
 
-	useEffect(() => {
-		const loadUser = async () => {
-			const userData = await getCurrentUser()
-			setUser(userData)
-		}
-		loadUser()
-	}, [])
+	const { user, localize, translate } = useUser()
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 
@@ -225,8 +219,9 @@ export default function FeedScreen() {
 			}
 
 			setBasket(newBasket)
+
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			setError({ message: `${item.name?.en} added to basket`, retry: undefined })
+			setError({ message: `${localize(item.name)} added to basket`, retry: undefined })
 			setToastType('success')
 			setShowToast(true)
 		} catch (error) {
@@ -258,8 +253,10 @@ export default function FeedScreen() {
 			<View style={styles.headerContainer}>
 				<View style={styles.headerTop}>
 					<View>
-						<Text style={styles.greeting}>Hello, {user?.slug || 'Guest'}</Text>
-						<Text style={styles.title}>Welcome back 👋</Text>
+						<Text style={styles.greeting}>
+							{translate('hello', 'Hello')}, {user?.slug || 'Guest'}
+						</Text>
+						<Text style={styles.title}>{translate('welcome_back', 'Welcome back 👋')}</Text>
 					</View>
 					<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
 						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh'} size={22} color={refreshing ? colors.textSecondary : colors.primary} />
@@ -292,8 +289,8 @@ export default function FeedScreen() {
 				<View style={styles.emptyIcon}>
 					<Ionicons name="fish-outline" size={40} color={colors.textSecondary} />
 				</View>
-				<Text style={styles.emptyTitle}>No products found</Text>
-				<Text style={styles.emptyText}>Try adjusting your search or check back later for fresh catches!</Text>
+				<Text style={styles.emptyTitle}>{translate('no_products', 'No products found')}</Text>
+				<Text style={styles.emptyText}>{translate('try_adjusting', 'Try adjusting your search or check back later for fresh catches!')}</Text>
 			</View>
 		)
 	}

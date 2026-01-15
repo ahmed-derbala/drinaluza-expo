@@ -1,4 +1,5 @@
 import { showPopup } from './popup'
+import { translate } from '../constants/translations'
 
 export interface ErrorInfo {
 	title: string
@@ -20,32 +21,32 @@ export const parseError = (error: any): ErrorInfo => {
 		switch (status) {
 			case 400:
 				return {
-					title: 'Invalid Request',
-					message: data?.message || 'The request was invalid. Please try again.',
+					title: translate('invalid_request_title', 'Invalid Request'),
+					message: data?.message || translate('invalid_request_message', 'The request was invalid. Please try again.'),
 					type: 'client',
 					statusCode: status,
 					canRetry: false
 				}
 			case 401:
 				return {
-					title: 'Authentication Required',
-					message: 'Please log in to continue.',
+					title: translate('auth_required_title', 'Authentication Required'),
+					message: translate('auth_required_message', 'Please log in to continue.'),
 					type: 'client',
 					statusCode: status,
 					canRetry: false
 				}
 			case 403:
 				return {
-					title: 'Access Denied',
-					message: 'You do not have permission to access this resource.',
+					title: translate('access_denied_title', 'Access Denied'),
+					message: translate('access_denied_message', 'You do not have permission to access this resource.'),
 					type: 'client',
 					statusCode: status,
 					canRetry: false
 				}
 			case 404:
 				return {
-					title: 'Not Found',
-					message: 'The requested resource was not found.',
+					title: translate('not_found_title', 'Not Found'),
+					message: translate('not_found_message', 'The requested resource was not found.'),
 					type: 'client',
 					statusCode: status,
 					canRetry: false
@@ -55,16 +56,16 @@ export const parseError = (error: any): ErrorInfo => {
 			case 503:
 			case 504:
 				return {
-					title: 'Server Error',
-					message: data?.message || 'The server encountered an error. Please try again later.',
+					title: translate('server_error_title', 'Server Error'),
+					message: data?.message || translate('server_error_message', 'The server encountered an error. Please try again later.'),
 					type: 'server',
 					statusCode: status,
 					canRetry: true
 				}
 			default:
 				return {
-					title: status >= 500 ? 'Server Error' : 'Request Error',
-					message: data?.message || 'An unexpected response was received.',
+					title: status >= 500 ? translate('server_error_title', 'Server Error') : translate('error', 'Error'),
+					message: data?.message || translate('unknown_error_message', 'An unexpected response was received.'),
 					type: status >= 500 ? 'server' : 'client',
 					statusCode: status,
 					canRetry: status >= 500
@@ -75,8 +76,8 @@ export const parseError = (error: any): ErrorInfo => {
 	// 2. Connection Timeout
 	if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
 		return {
-			title: 'Connection Timeout',
-			message: 'The request took too long. Please check your internet connection and try again.',
+			title: translate('timeout_title', 'Connection Timeout'),
+			message: translate('timeout_message', 'The request took too long. Please check your internet connection and try again.'),
 			type: 'timeout',
 			canRetry: true
 		}
@@ -85,8 +86,8 @@ export const parseError = (error: any): ErrorInfo => {
 	// 3. Network Errors (No response received - server unreachable)
 	if (error.request || error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
 		return {
-			title: 'Network Error',
-			message: 'Unable to connect to the server. Please check your internet connection or server settings.',
+			title: translate('network_error_title', 'Network Error'),
+			message: translate('network_error_message', 'Unable to connect to the server. Please check your internet connection or server settings.'),
 			type: 'network',
 			canRetry: true
 		}
@@ -94,8 +95,8 @@ export const parseError = (error: any): ErrorInfo => {
 
 	// 4. Something else happened
 	return {
-		title: 'Error',
-		message: error.message || 'An unexpected error occurred.',
+		title: translate('unknown_error_title', 'Error'),
+		message: error.message || translate('unknown_error_message', 'An unexpected error occurred.'),
 		type: 'unknown',
 		canRetry: true
 	}
@@ -110,10 +111,10 @@ export const showErrorAlert = (error: any, onRetry?: () => void) => {
 	const buttons =
 		errorInfo.canRetry && onRetry
 			? [
-					{ text: 'Cancel', style: 'cancel' as const },
-					{ text: 'Retry', onPress: onRetry }
+					{ text: translate('cancel', 'Cancel'), style: 'cancel' as const },
+					{ text: translate('retry', 'Retry'), onPress: onRetry }
 				]
-			: [{ text: 'OK' }]
+			: [{ text: translate('ok', 'OK') }]
 
 	showPopup(errorInfo.title, errorInfo.message, buttons)
 }

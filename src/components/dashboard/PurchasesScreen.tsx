@@ -13,6 +13,7 @@ import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../con
 import { FeedItem } from '../feed/feed.interface'
 import { useBackButton } from '../../hooks/useBackButton'
 import { parseError, logError } from '../../utils/errorHandler'
+import { useUser } from '../../contexts/UserContext'
 
 type FilterStatus = 'cart' | 'active' | 'completed' | 'cancelled'
 
@@ -25,7 +26,8 @@ type ShopBasketGroup = {
 }
 
 const PurchasesScreen = () => {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
+	const isDark = true
 	const router = useRouter()
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
@@ -34,6 +36,7 @@ const PurchasesScreen = () => {
 	const [filter, setFilter] = useState<FilterStatus>('cart')
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
+	const { translate, localize } = useUser()
 
 	useBackButton(undefined, '/home/dashboard')
 
@@ -105,19 +108,19 @@ const PurchasesScreen = () => {
 	)
 
 	const handleCancelOrder = async (purchaseId: string) => {
-		Alert.alert('Cancel Order', 'Are you sure you want to cancel this order?', [
-			{ text: 'No', style: 'cancel' },
+		Alert.alert(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), [
+			{ text: translate('no', 'No'), style: 'cancel' },
 			{
-				text: 'Yes, Cancel',
+				text: translate('confirm', 'Confirm'),
 				style: 'destructive',
 				onPress: async () => {
 					try {
 						await updatePurchaseStatus({ purchaseId })
 						loadPurchases()
-						Alert.alert('Success', 'Order cancelled successfully')
+						Alert.alert(translate('success', 'Success'), translate('cancel_order_success', 'Order cancelled successfully'))
 					} catch (error) {
 						console.error('Error cancelling order:', error)
-						Alert.alert('Error', 'Failed to cancel order. Please try again.')
+						Alert.alert(translate('error', 'Error'), translate('cancel_order_failed', 'Failed to cancel order. Please try again.'))
 					}
 				}
 			}
@@ -128,10 +131,10 @@ const PurchasesScreen = () => {
 		try {
 			await updatePurchaseStatus({ purchaseId, status: newStatus })
 			loadPurchases()
-			Alert.alert('Success', 'Order status updated successfully')
+			Alert.alert(translate('success', 'Success'), translate('status_updated', 'Order status updated successfully'))
 		} catch (error) {
 			console.error('Error updating order status:', error)
-			Alert.alert('Error', 'Failed to update order status. Please try again.')
+			Alert.alert(translate('error', 'Error'), translate('status_update_failed', 'Failed to update order status. Please try again.'))
 		}
 	}
 
@@ -162,7 +165,7 @@ const PurchasesScreen = () => {
 			if (!groups[shopId]) {
 				groups[shopId] = {
 					shopId,
-					shopName: item.shop?.name?.en || 'Unknown Shop',
+					shopName: localize(item.shop?.name) || translate('unnamed_shop', 'Unnamed Shop'),
 					items: []
 				}
 			}
@@ -202,10 +205,10 @@ const PurchasesScreen = () => {
 		const diffTime = Math.abs(now.getTime() - date.getTime())
 		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-		if (diffDays === 0) return 'Today'
-		if (diffDays === 1) return 'Yesterday'
-		if (diffDays < 7) return `${diffDays} days ago`
-		return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+		if (diffDays === 0) return translate('today', 'Today')
+		if (diffDays === 1) return translate('yesterday', 'Yesterday')
+		if (diffDays < 7) return `${diffDays} ${translate('days_ago', 'days ago')}`
+		return date.toLocaleDateString()
 	}
 
 	const renderPurchaseItem = ({ item }: { item: OrderItem }) => {
@@ -232,12 +235,12 @@ const PurchasesScreen = () => {
 								<Ionicons name={getStatusIcon(item.status) as any} size={24} color={statusColor} />
 							</View>
 							<View style={styles.headerInfo}>
-								<Text style={[styles.shopName, { color: colors.text }]}>{item.shop.name?.en}</Text>
+								<Text style={[styles.shopName, { color: colors.text }]}>{localize(item.shop.name)}</Text>
 								<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
 							</View>
 						</View>
 						<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-							<Text style={[styles.statusText, { color: statusColor }]}>{orderStatusLabels[item.status] || item.status}</Text>
+							<Text style={[styles.statusText, { color: statusColor }]}>{translate(`status_${item.status.replace(/_/g, '_')}`, orderStatusLabels[item.status] || item.status)}</Text>
 						</View>
 					</View>
 
@@ -250,7 +253,7 @@ const PurchasesScreen = () => {
 							<View key={index} style={styles.productRow}>
 								<Ionicons name="cube-outline" size={16} color={colors.textTertiary} />
 								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
-									{productItem.product.name?.en}
+									{localize(productItem.product.name)}
 								</Text>
 								<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.quantity}</Text>
 							</View>
@@ -261,7 +264,9 @@ const PurchasesScreen = () => {
 					<View style={styles.cardFooter}>
 						<View style={styles.footerLeft}>
 							<Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
-							<Text style={[styles.footerText, { color: colors.textTertiary }]}>Order #{item._id.slice(-6)}</Text>
+							<Text style={[styles.footerText, { color: colors.textTertiary }]}>
+								{translate('order_number', 'Order')} #{item._id.slice(-6)}
+							</Text>
 						</View>
 						<View style={styles.footerRight}>
 							<Text style={[styles.totalPrice, { color: colors.text }]}>{totalPrice.toFixed(2)} TND</Text>
@@ -276,7 +281,7 @@ const PurchasesScreen = () => {
 								onPress={() => handleStatusUpdate(item._id, orderStatusEnum.RECEIVED_BY_CUSTOMER)}
 							>
 								<Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-								<Text style={styles.actionButtonText}>Mark as Received</Text>
+								<Text style={styles.actionButtonText}>{translate('mark_as_received', 'Mark as Received')}</Text>
 							</TouchableOpacity>
 						</View>
 					)}
@@ -286,7 +291,7 @@ const PurchasesScreen = () => {
 						<View style={styles.cancelButtonContainer}>
 							<TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.error + '15' }]} onPress={() => handleCancelOrder(item._id)}>
 								<Ionicons name="close-circle-outline" size={16} color={colors.error} />
-								<Text style={[styles.cancelText, { color: colors.error }]}>Cancel Order</Text>
+								<Text style={[styles.cancelText, { color: colors.error }]}>{translate('cancel_order', 'Cancel Order')}</Text>
 							</TouchableOpacity>
 						</View>
 					)}
@@ -298,10 +303,10 @@ const PurchasesScreen = () => {
 	const updateBasketQuantity = async (itemId: string, newQuantity: number) => {
 		try {
 			if (newQuantity < 1) {
-				Alert.alert('Remove Item', 'Do you want to remove this item from your cart?', [
-					{ text: 'Cancel', style: 'cancel' },
+				Alert.alert(translate('remove_item', 'Remove Item'), translate('remove_item_confirm', 'Do you want to remove this item from your cart?'), [
+					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
 					{
-						text: 'Remove',
+						text: translate('confirm', 'Confirm'),
 						style: 'destructive',
 						onPress: () => removeFromBasket(itemId)
 					}
@@ -357,14 +362,14 @@ const PurchasesScreen = () => {
 			setBasket(newBasket)
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 
-			Alert.alert('Success', 'Order placed successfully!')
+			Alert.alert(translate('success', 'Success'), translate('checkout_success', 'Order placed successfully!'))
 
 			// Refresh purchases list and switch tab
 			onRefresh()
 			setFilter('active')
 		} catch (error) {
 			console.error('Checkout failed:', error)
-			Alert.alert('Error', 'Failed to place order')
+			Alert.alert(translate('error', 'Error'), translate('checkout_failed', 'Failed to place order'))
 		}
 	}
 
@@ -390,12 +395,12 @@ const PurchasesScreen = () => {
 								<View style={styles.headerInfo}>
 									<Text style={[styles.shopName, { color: colors.text }]}>{group.shopName}</Text>
 									<Text style={[styles.orderDate, { color: colors.textSecondary }]}>
-										{group.items.length} {group.items.length === 1 ? 'item' : 'items'}
+										{group.items.length} {group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')}
 									</Text>
 								</View>
 							</View>
 							<View style={[styles.statusBadge, { backgroundColor: colors.primary + '15' }]}>
-								<Text style={[styles.statusText, { color: colors.primary }]}>DRAFT ORDER</Text>
+								<Text style={[styles.statusText, { color: colors.primary }]}>{translate('draft_order', 'DRAFT ORDER')}</Text>
 							</View>
 						</View>
 
@@ -428,7 +433,7 @@ const PurchasesScreen = () => {
 												<View style={styles.basketItemContent}>
 													<View style={styles.itemTopRow}>
 														<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
-															{item.name?.en}
+															{localize(item.name)}
 														</Text>
 														<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
 															<Ionicons name="trash-outline" size={18} color={colors.error} />
@@ -450,7 +455,7 @@ const PurchasesScreen = () => {
 															</TouchableOpacity>
 
 															<Text style={[styles.compactQText, { color: colors.text }]}>
-																{quantity} {item.unit?.measure || ''}
+																{quantity} {localize(item.unit?.measure as any) || ''}
 															</Text>
 
 															<TouchableOpacity
@@ -475,7 +480,7 @@ const PurchasesScreen = () => {
 						<View style={styles.cardFooter}>
 							<View style={styles.footerLeft}>
 								<Ionicons name="pricetag-outline" size={14} color={colors.textTertiary} />
-								<Text style={[styles.footerText, { color: colors.textTertiary }]}>Total Amount</Text>
+								<Text style={[styles.footerText, { color: colors.textTertiary }]}>{translate('total_amount', 'Total Amount')}</Text>
 							</View>
 							<View style={styles.footerRight}>
 								<Text style={[styles.totalPrice, { color: colors.text }]}>{groupTotal.toFixed(2)} TND</Text>
@@ -563,8 +568,8 @@ const PurchasesScreen = () => {
 				<View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '10' }]}>
 					<Ionicons name={config.icon as any} size={64} color={colors.primary} />
 				</View>
-				<Text style={[styles.emptyTitle, { color: colors.text }]}>{config.title}</Text>
-				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{config.subtitle}</Text>
+				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate(`empty_${filter}`, config.title)}</Text>
+				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{translate(`empty_${filter}_sub`, config.subtitle)}</Text>
 			</View>
 		)
 	}
@@ -573,7 +578,7 @@ const PurchasesScreen = () => {
 		return (
 			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
-				<Text style={[styles.loadingText, { color: colors.textSecondary }]}>Loading purchases...</Text>
+				<Text style={[styles.loadingText, { color: colors.textSecondary }]}>{translate('loading_purchases', 'Loading purchases...')}</Text>
 			</View>
 		)
 	}
@@ -581,7 +586,7 @@ const PurchasesScreen = () => {
 	if (error && purchases.length === 0 && filter !== 'cart') {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title="Purchases" showBack={true} onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))} />
+				<ScreenHeader title={translate('purchases_title', 'Purchases')} showBack={true} onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -598,8 +603,8 @@ const PurchasesScreen = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader
-				title="Purchases"
-				subtitle={`${itemCount} ${itemCount === 1 ? 'item' : 'items'}`}
+				title={translate('purchases_title', 'Purchases')}
+				subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`}
 				showBack={true}
 				onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))}
 				rightActions={
@@ -612,11 +617,11 @@ const PurchasesScreen = () => {
 			<Animated.View style={[styles.content, { opacity: fadeAnim }]}>
 				{/* Filter Tabs */}
 				<View style={styles.filterContainer}>
-					<FilterButton status="cart" label="Cart" icon="cart-outline" />
+					<FilterButton status="cart" label={translate('cart', 'Cart')} icon="cart-outline" />
 
-					<FilterButton status="active" label="Active" icon="time-outline" />
-					<FilterButton status="completed" label="Done" icon="checkmark-circle-outline" />
-					<FilterButton status="cancelled" label="Cancelled" icon="close-circle-outline" />
+					<FilterButton status="active" label={translate('active', 'Active')} icon="time-outline" />
+					<FilterButton status="completed" label={translate('done', 'Done')} icon="checkmark-circle-outline" />
+					<FilterButton status="cancelled" label={translate('cancelled', 'Cancelled')} icon="close-circle-outline" />
 				</View>
 
 				{/* Purchases List */}

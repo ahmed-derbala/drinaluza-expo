@@ -10,6 +10,7 @@ import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import { parseError, logError } from '../../utils/errorHandler'
+import { useUser } from '../../contexts/UserContext'
 
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
@@ -20,6 +21,7 @@ export default function NotificationsScreen() {
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { translate } = useUser()
 
 	const loadNotifications = async (pageNum: number = 1, isRefresh: boolean = false) => {
 		try {
@@ -76,9 +78,9 @@ export default function NotificationsScreen() {
 		const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
 		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
 
-		if (diffMinutes < 60) return `${diffMinutes}m ago`
-		if (diffHours < 24) return `${diffHours}h ago`
-		if (diffDays < 7) return `${diffDays}d ago`
+		if (diffMinutes < 60) return `${diffMinutes}m ${translate('ago', 'ago')}`
+		if (diffHours < 24) return `${diffHours}h ${translate('ago', 'ago')}`
+		if (diffDays < 7) return `${diffDays}d ${translate('ago', 'ago')}`
 		return date.toLocaleDateString()
 	}
 
@@ -132,7 +134,7 @@ export default function NotificationsScreen() {
 	if (error && notifications.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title="Notifications" showBack={false} />
+				<ScreenHeader title={translate('notifications_title', 'Notifications')} showBack={false} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -146,8 +148,8 @@ export default function NotificationsScreen() {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader
-				title="Notifications"
-				subtitle={`${notifications.length} ${notifications.length === 1 ? 'notification' : 'notifications'}`}
+				title={translate('notifications_title', 'Notifications')}
+				subtitle={`${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`}
 				showBack={false}
 				rightActions={
 					<TouchableOpacity onPress={onRefresh} disabled={refreshing}>
@@ -168,7 +170,7 @@ export default function NotificationsScreen() {
 					!loading ? (
 						<View style={styles.emptyContainer}>
 							<Ionicons name="notifications-off-outline" size={48} color={colors.textTertiary} />
-							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No notifications</Text>
+							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('no_notifications', 'No notifications')}</Text>
 						</View>
 					) : null
 				}

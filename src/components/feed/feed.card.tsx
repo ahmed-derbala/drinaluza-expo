@@ -4,6 +4,7 @@ import { FeedItem, ProductFeedItem } from './feed.interface'
 import ProductCard from '../products/products.card'
 import { useTheme } from '../../contexts/ThemeContext'
 import { MaterialIcons } from '@expo/vector-icons'
+import { useUser } from '../../contexts/UserContext'
 
 type FeedCardProps = {
 	item: FeedItem
@@ -11,6 +12,7 @@ type FeedCardProps = {
 }
 
 export default function FeedCard({ item, addToBasket }: FeedCardProps) {
+	const { localize } = useUser()
 	const { colors } = useTheme()
 	const cardType = item.card?.type || 'product'
 
@@ -23,7 +25,7 @@ export default function FeedCard({ item, addToBasket }: FeedCardProps) {
 					<View style={[styles.placeholderIcon, { backgroundColor: colors.primaryContainer }]}>
 						<MaterialIcons name="store" size={32} color={colors.primary} />
 					</View>
-					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{item.shop?.name?.en || 'Shop'}</Text>
+					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{localize(item.shop?.name) || 'Shop'}</Text>
 					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>Shop Card</Text>
 				</View>
 			)

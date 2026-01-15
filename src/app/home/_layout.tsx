@@ -9,9 +9,11 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useNotification } from '../../contexts/NotificationContext'
 import { secureGetItem } from '../../core/auth/storage'
 import { useBackButton } from '../../hooks/useBackButton'
+import { useUser } from '../../contexts/UserContext'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
+	const { translate } = useUser()
 	const router = useRouter()
 	const pathname = usePathname()
 	useBackButton()
@@ -102,7 +104,7 @@ export default function HomeLayout() {
 									<MaterialIcons name="home" size={iconSize} color={color} />
 								</View>
 							),
-							tabBarAccessibilityLabel: 'Feed'
+							tabBarAccessibilityLabel: translate('feed', 'Feed')
 						}}
 					/>
 					<Tabs.Screen
@@ -114,7 +116,7 @@ export default function HomeLayout() {
 									<MaterialIcons name="dashboard" size={iconSize} color={color} />
 								</View>
 							),
-							tabBarAccessibilityLabel: 'Dashboard'
+							tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
 						}}
 					/>
 					<Tabs.Screen
@@ -126,7 +128,7 @@ export default function HomeLayout() {
 									<MaterialIcons name="business-center" size={iconSize} color={color} />
 								</View>
 							),
-							tabBarAccessibilityLabel: 'Business'
+							tabBarAccessibilityLabel: translate('business', 'Business')
 						}}
 					/>
 					<Tabs.Screen
@@ -148,7 +150,7 @@ export default function HomeLayout() {
 									<Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={iconSize} color={color} />
 								</View>
 							),
-							tabBarAccessibilityLabel: 'Notifications'
+							tabBarAccessibilityLabel: translate('notifications', 'Notifications')
 						}}
 					/>
 					<Tabs.Screen
@@ -159,7 +161,7 @@ export default function HomeLayout() {
 									<MaterialIcons name={focused ? 'person' : 'person-outline'} size={iconSize} color={color} />
 								</View>
 							),
-							tabBarAccessibilityLabel: 'Profile'
+							tabBarAccessibilityLabel: translate('profile', 'Profile')
 						}}
 					/>
 					<Tabs.Screen
@@ -170,7 +172,7 @@ export default function HomeLayout() {
 									<Ionicons name={focused ? 'settings' : 'settings-outline'} size={iconSize} color={color} />
 								</View>
 							),
-							tabBarAccessibilityLabel: 'Settings'
+							tabBarAccessibilityLabel: translate('settings', 'Settings')
 						}}
 					/>
 					{/* Hidden screens - not shown in tab bar */}

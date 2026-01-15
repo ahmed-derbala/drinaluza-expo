@@ -13,6 +13,7 @@ import ErrorState from '../../components/common/ErrorState'
 import { showPopup, showAlert, showConfirm } from '../../utils/popup'
 import { requestBusiness } from '../../components/business/business.api'
 import { parseError, logError } from '../../utils/errorHandler'
+import { useUser } from '../../contexts/UserContext'
 
 import { UserData } from '../../components/profile/profile.interface'
 
@@ -124,6 +125,7 @@ const InfoItem = ({
 export default function ProfileScreen() {
 	const router = useRouter()
 	const { colors, isDark } = useTheme()
+	const { refreshUser, translate } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
@@ -288,7 +290,8 @@ export default function ProfileScreen() {
 			if (sectionKey) {
 				setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
 			}
-			showAlert('Success', 'Profile updated successfully!')
+			showAlert(translate('success', 'Success'), translate('profile_updated', 'Profile updated successfully!'))
+			await refreshUser() // Update global user state
 			loadProfile() // Reload to ensure consistency
 		} catch (error: any) {
 			console.error('Error saving user data:', error)
@@ -420,7 +423,7 @@ export default function ProfileScreen() {
 	}
 
 	const handleSignOut = async () => {
-		showConfirm('Sign Out', 'Are you sure you want to sign out?', async () => {
+		showConfirm(translate('sign_out', 'Sign Out'), 'Are you sure you want to sign out?', async () => {
 			try {
 				await signOut()
 				router.replace('/auth')
@@ -431,7 +434,7 @@ export default function ProfileScreen() {
 		})
 	}
 	const handleSwitchUser = async () => {
-		showConfirm('Switch User', 'This will clear your current session but keep your saved accounts.', async () => {
+		showConfirm(translate('switch_account', 'Switch User'), 'This will clear your current session but keep your saved accounts.', async () => {
 			try {
 				await switchUser()
 				router.replace('/auth')
@@ -443,14 +446,14 @@ export default function ProfileScreen() {
 	}
 
 	const handleRequestBusiness = async () => {
-		showConfirm('Request Business', 'Do you want to request to become a business owner?', async () => {
+		showConfirm(translate('request_business', 'Request Business'), 'Do you want to request to become a business owner?', async () => {
 			try {
 				await requestBusiness()
-				showAlert('Success', 'Your request has been sent successfully!')
+				showAlert(translate('success', 'Success'), 'Your request has been sent successfully!')
 			} catch (error: any) {
 				console.error('Request business failed:', error)
 				const errorMessage = error.response?.data?.message || 'Failed to send business request'
-				showAlert('Error', errorMessage)
+				showAlert(translate('error', 'Error'), errorMessage)
 			}
 		})
 	}
@@ -541,7 +544,7 @@ export default function ProfileScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title="Profile" showBack={false} />
+			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} />
 			<ScrollView contentContainerStyle={styles.contentContainer}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
@@ -604,7 +607,14 @@ export default function ProfileScreen() {
 					</View>
 				</View>
 
-				<Section title="✏️ Name" styles={styles} isEditing={editMode.name} onEdit={() => toggleEdit('name', true)} onSave={() => saveUserData('name')} onCancel={() => toggleEdit('name', false)}>
+				<Section
+					title={'✏️ ' + translate('name', 'Name')}
+					styles={styles}
+					isEditing={editMode.name}
+					onEdit={() => toggleEdit('name', true)}
+					onSave={() => saveUserData('name')}
+					onCancel={() => toggleEdit('name', false)}
+				>
 					{editMode.name ? (
 						<>
 							<View style={styles.inputGroup}>
@@ -1380,7 +1390,7 @@ export default function ProfileScreen() {
 				</Section>
 
 				<Section
-					title="⚙️ Account Settings"
+					title={'⚙️ ' + translate('settings', 'Account Settings')}
 					styles={styles}
 					isEditing={editMode.settings}
 					onEdit={() => toggleEdit('settings', true)}
@@ -1390,7 +1400,7 @@ export default function ProfileScreen() {
 					{editMode.settings ? (
 						<>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>App Language (UI)</Text>
+								<Text style={styles.inputLabel}>{translate('app_lang', 'App Language (UI)')}</Text>
 								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
 									{LANGUAGES.map((lang) => (
 										<TouchableOpacity
@@ -1419,7 +1429,7 @@ export default function ProfileScreen() {
 								</ScrollView>
 							</View>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Content Language (Products/Shops)</Text>
+								<Text style={styles.inputLabel}>{translate('content_lang', 'Content Language (Products/Shops)')}</Text>
 								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
 									{LANGUAGES.map((lang) => (
 										<TouchableOpacity
@@ -1448,7 +1458,7 @@ export default function ProfileScreen() {
 								</ScrollView>
 							</View>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Currency</Text>
+								<Text style={styles.inputLabel}>{translate('currency_label', 'Currency')}</Text>
 								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
 									{CURRENCIES.map((currency) => (
 										<TouchableOpacity
@@ -1474,15 +1484,27 @@ export default function ProfileScreen() {
 						</>
 					) : (
 						<>
-							<InfoItem label="App Language" value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || 'Not set'} icon="globe" styles={styles} iconColor={colors.primary} />
 							<InfoItem
-								label="Content Language"
-								value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || 'Not set'}
+								label={translate('app_lang', 'App Language')}
+								value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || translate('not_set', 'Not set')}
+								icon="globe"
+								styles={styles}
+								iconColor={colors.primary}
+							/>
+							<InfoItem
+								label={translate('content_lang', 'Content Language')}
+								value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || translate('not_set', 'Not set')}
 								icon="language"
 								styles={styles}
 								iconColor={colors.primary}
 							/>
-							<InfoItem label="Currency" value={CURRENCIES.find((c) => c.code === userData.settings?.currency)?.label || 'Not set'} icon="cash" styles={styles} iconColor={colors.primary} />
+							<InfoItem
+								label={translate('currency_label', 'Currency')}
+								value={CURRENCIES.find((c) => c.code === userData.settings?.currency)?.label || translate('not_set', 'Not set')}
+								icon="cash"
+								styles={styles}
+								iconColor={colors.primary}
+							/>
 						</>
 					)}
 				</Section>

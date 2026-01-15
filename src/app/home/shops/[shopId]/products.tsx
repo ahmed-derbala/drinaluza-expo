@@ -12,11 +12,13 @@ import Toast from '../../../../components/common/Toast'
 import { TextInput } from 'react-native'
 import FeedCard from '../../../../components/feed/feed.card'
 import { FeedItem, ProductFeedItem } from '../../../../components/feed/feed.interface'
+import { useUser } from '../../../../contexts/UserContext'
 
 export default function ShopProductsScreen() {
 	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
-	const [headerTitle, setHeaderTitle] = useState('Products')
 	const { colors } = useTheme()
+	const { localize, translate } = useUser()
+	const [headerTitle, setHeaderTitle] = useState(translate('shop_products', 'Products'))
 	const { width } = useWindowDimensions()
 	const maxWidth = 900
 	const isWideScreen = width > maxWidth
@@ -55,8 +57,8 @@ export default function ShopProductsScreen() {
 			setFilteredProducts(fetchedProducts)
 
 			// Update header title if shop info is available in products
-			if (fetchedProducts.length > 0 && fetchedProducts[0].shop?.name?.en) {
-				setHeaderTitle(fetchedProducts[0].shop.name.en)
+			if (fetchedProducts.length > 0 && fetchedProducts[0].shop?.name) {
+				setHeaderTitle(localize(fetchedProducts[0].shop.name))
 			}
 		} catch (err: any) {
 			console.error('Failed to load products:', err)
@@ -83,9 +85,9 @@ export default function ShopProductsScreen() {
 			return
 		}
 		const searchLower = searchText.toLowerCase()
-		const filtered = products.filter((p) => p.name.en.toLowerCase().includes(searchLower))
+		const filtered = products.filter((p) => localize(p.name).toLowerCase().includes(searchLower))
 		setFilteredProducts(filtered)
-	}, [searchText, products])
+	}, [searchText, products, localize])
 
 	const addToBasket = async (item: FeedItem, quantity: number) => {
 		try {
@@ -102,12 +104,12 @@ export default function ShopProductsScreen() {
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 
 			setToastType('success')
-			setToastMessage(`${item.name?.en || 'Product'} added to basket`)
+			setToastMessage(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`)
 			setShowToast(true)
 		} catch (err) {
 			console.error('Failed to add to basket:', err)
 			setToastType('error')
-			setToastMessage('Failed to add to basket')
+			setToastMessage(translate('basket_failed_to_add', 'Failed to add to basket'))
 			setShowToast(true)
 		}
 	}
@@ -135,7 +137,7 @@ export default function ShopProductsScreen() {
 			<Stack.Screen
 				options={{
 					headerTitle: headerTitle,
-					headerBackTitle: 'Back'
+					headerBackTitle: translate('cancel', 'Back')
 				}}
 			/>
 
@@ -146,7 +148,7 @@ export default function ShopProductsScreen() {
 						<Ionicons name="search-outline" size={20} color={colors.textSecondary} style={styles.searchIcon} />
 						<TextInput
 							style={[styles.searchInput, { color: colors.text }]}
-							placeholder="Search in this shop..."
+							placeholder={translate('shop_search_placeholder', 'Search in this shop...')}
 							placeholderTextColor={colors.textTertiary}
 							value={searchText}
 							onChangeText={setSearchText}
@@ -181,7 +183,9 @@ export default function ShopProductsScreen() {
 					) : !loading && !refreshing ? (
 						<View style={styles.emptyContainer}>
 							<Ionicons name="search-outline" size={48} color={colors.textTertiary} style={{ marginBottom: 12 }} />
-							<Text style={[styles.emptyText, { color: colors.text }]}>{searchText ? 'No products match your search' : 'No products found for this shop.'}</Text>
+							<Text style={[styles.emptyText, { color: colors.text }]}>
+								{searchText ? translate('shop_no_results', 'No products match your search') : translate('shop_no_products', 'No products found for this shop.')}
+							</Text>
 						</View>
 					) : null
 				}

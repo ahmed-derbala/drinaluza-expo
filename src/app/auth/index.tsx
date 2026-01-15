@@ -9,12 +9,13 @@ import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, sig
 import { secureGetItem } from '../../core/auth/storage'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useFocusEffect } from 'expo-router'
-import { showAlert } from '../../utils/popup'
 import { useBackButton } from '../../hooks/useBackButton'
 import { log } from '../../core/log'
+import { useUser } from '../../contexts/UserContext'
 
 export default function AuthScreen() {
 	const { colors } = useTheme()
+	const { translate } = useUser()
 	useBackButton()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
@@ -47,12 +48,12 @@ export default function AuthScreen() {
 			} else {
 				setSlug(auth.slug)
 				setPassword('')
-				showAlert('Error', 'Session expired. Please sign in again with your password.')
+				showAlert(translate('error', 'Error'), translate('session_expired', 'Session expired. Please sign in again with your password.'))
 				await deleteSavedAuthentication(auth.slug)
 				loadSavedAuths()
 			}
 		} catch (error) {
-			showAlert('Error', 'Quick sign in failed.')
+			showAlert(translate('error', 'Error'), translate('quick_signin_failed', 'Quick sign in failed.'))
 		} finally {
 			setIsLoading(false)
 		}
@@ -74,23 +75,23 @@ export default function AuthScreen() {
 				if (Platform.OS === 'web') {
 					window.location.reload()
 				} else {
-					Alert.alert('Success', 'App reset successfully.', [{ text: 'OK' }])
+					Alert.alert(translate('success', 'Success'), translate('reset_success', 'App reset successfully.'), [{ text: translate('ok', 'OK') }])
 				}
 			} catch (error) {
 				log({ level: 'error', label: 'auth', message: 'Failed to reset app', error })
-				Alert.alert('Error', 'Failed to reset app.')
+				Alert.alert(translate('error', 'Error'), translate('reset_failed', 'Failed to reset app.'))
 			}
 		}
 
 		if (Platform.OS === 'web') {
-			if (window.confirm('Are you sure you want to reset the app? This will clear all data.')) {
+			if (window.confirm(translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'))) {
 				await performReset()
 			}
 		} else {
-			Alert.alert('Reset App', 'Are you sure you want to reset the app? This will clear all data.', [
-				{ text: 'Cancel', style: 'cancel' },
+			Alert.alert(translate('reset_app', 'Reset App'), translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'), [
+				{ text: translate('cancel', 'Cancel'), style: 'cancel' },
 				{
-					text: 'Reset',
+					text: translate('reset', 'Reset'),
 					style: 'destructive',
 					onPress: performReset
 				}
@@ -135,7 +136,7 @@ export default function AuthScreen() {
 					label: 'auth',
 					message: 'No token received after sign in'
 				})
-				showAlert('Error', 'Sign in failed. Please try again.')
+				showAlert(translate('error', 'Error'), translate('signin_failed', 'Sign in failed. Please try again.'))
 			}
 		} catch (error: any) {
 			log({
@@ -166,9 +167,9 @@ export default function AuthScreen() {
 				})
 				setPassword('')
 				setStatusState('409')
-				setErrorMessage('Try again')
+				setErrorMessage(translate('incorrect_password', 'Incorrect password. Try again'))
 			} else if (status === 401 || status === '401') {
-				showAlert('Unauthorized', message || 'Invalid credentials. Please check your username and password.')
+				showAlert(translate('unauthorized', 'Unauthorized'), message || translate('invalid_credentials', 'Invalid credentials. Please check your username and password.'))
 			} else {
 				log({
 					level: 'error',
@@ -176,7 +177,7 @@ export default function AuthScreen() {
 					message: 'Generic login error',
 					error
 				})
-				showAlert('Error', message || 'Sign in failed. Please check your credentials and try again.')
+				showAlert(translate('error', 'Error'), message || translate('signin_failed', 'Sign in failed. Please check your credentials and try again.'))
 			}
 		}
 	}
@@ -210,12 +211,12 @@ export default function AuthScreen() {
 				<StatusBar style="light" />
 				<View style={[styles.container, { backgroundColor: colors.background }]}>
 					<View style={[styles.innerContainer, isWideScreen && { maxWidth }]}>
-						<Text style={[styles.title, { color: colors.text }]}>Drinaluza</Text>
-						<Text style={[styles.subtitle, { color: colors.textSecondary }]}>Seafood Business Manager</Text>
+						<Text style={[styles.title, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
+						<Text style={[styles.subtitle, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Seafood Business Manager')}</Text>
 
 						{savedAuths.length > 0 && (
 							<View style={styles.savedAuthsContainer}>
-								<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>SAVED ACCOUNTS</Text>
+								<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
 								{savedAuths.map((auth) => (
 									<TouchableOpacity key={auth.slug} style={[styles.savedAuthItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => handleQuickSignIn(auth)}>
 										<View style={[styles.authAvatar, { backgroundColor: colors.primaryContainer }]}>
@@ -223,7 +224,9 @@ export default function AuthScreen() {
 										</View>
 										<View style={styles.savedAuthInfo}>
 											<Text style={[styles.savedAuthSlug, { color: colors.text }]}>@{auth.slug}</Text>
-											<Text style={[styles.savedAuthDate, { color: colors.textTertiary }]}>Last: {new Date(auth.lastSignIn).toLocaleDateString()}</Text>
+											<Text style={[styles.savedAuthDate, { color: colors.textTertiary }]}>
+												{translate('last_signin', 'Last')}: {new Date(auth.lastSignIn).toLocaleDateString()}
+											</Text>
 										</View>
 										<TouchableOpacity style={styles.deleteIcon} onPress={() => handleDeleteSavedAuth(auth.slug)}>
 											<Ionicons name="trash-outline" size={20} color={colors.error} />
@@ -238,7 +241,7 @@ export default function AuthScreen() {
 								<Ionicons name="person-outline" size={20} color={colors.textSecondary} />
 								<TextInput
 									style={[styles.input, { color: colors.text }]}
-									placeholder="Username"
+									placeholder={translate('username', 'Username')}
 									placeholderTextColor={colors.textTertiary}
 									value={slug}
 									onChangeText={(text) => {
@@ -253,7 +256,7 @@ export default function AuthScreen() {
 								<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
 								<TextInput
 									style={[styles.input, { color: colors.text }]}
-									placeholder="Password"
+									placeholder={translate('password', 'Password')}
 									placeholderTextColor={colors.textTertiary}
 									value={password}
 									onChangeText={(text) => {
@@ -274,7 +277,7 @@ export default function AuthScreen() {
 									}
 								]}
 							>
-								{statusState === '404' ? errorMessage : 'Incorrect password. Try again'}
+								{statusState === '404' ? errorMessage : translate('incorrect_password', 'Incorrect password. Try again')}
 							</Text>
 						)}
 

@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useRouter } from 'expo-router'
+import { useUser } from '../../contexts/UserContext'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -13,6 +14,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const { colors } = useTheme()
+	const { localize, currency, formatPrice } = useUser()
 	const router = useRouter()
 	const { width } = useWindowDimensions()
 	const styles = useMemo(() => createStyles(colors, width), [colors, width])
@@ -20,7 +22,10 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
-	const pricePerUnit = item.price.total.tnd / (item.unit?.min || 1)
+
+	// @ts-ignore
+	const unitPrice = item.price.total[currency] || item.price.total.tnd || 0
+	const pricePerUnit = unitPrice / (item.unit?.min || 1)
 
 	const isDecimal = ['kg', 'l', 'kilogram', 'liter'].includes(item.unit?.measure?.toLowerCase() || '')
 	const step = isDecimal ? 0.1 : 1
@@ -52,7 +57,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			<TouchableOpacity onPress={handleShopPress} style={styles.shopHeader}>
 				<View style={styles.shopInfo}>
 					<Text style={styles.shopName} numberOfLines={1}>
-						{item.shop.name?.en}
+						{localize(item.shop.name)}
 					</Text>
 					<Text style={styles.shopLocation} numberOfLines={1}>
 						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}
@@ -83,7 +88,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				{/* Product Name */}
 				<View style={styles.productNameContainer}>
 					<Text style={styles.productName} numberOfLines={2}>
-						{item.name?.en}
+						{localize(item.name)}
 					</Text>
 					{(item.name?.tn_latn || item.name?.tn_arab) && (
 						<Text style={styles.productNameSecondary} numberOfLines={1}>
@@ -95,7 +100,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				{/* Price */}
 				<View style={styles.priceContainer}>
 					<Text style={styles.priceText} numberOfLines={1} adjustsFontSizeToFit>
-						{pricePerUnit.toFixed(2)} TND
+						{formatPrice({ total: { [currency]: pricePerUnit } })}
 					</Text>
 					<Text style={styles.unitText}>/ {item.unit?.measure || 'unit'}</Text>
 				</View>
@@ -119,7 +124,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				<View style={styles.footer}>
 					<View style={styles.totalContainer}>
 						<Text style={styles.totalLabel}>Total</Text>
-						<Text style={styles.totalPrice}>{calculateTotal()} TND</Text>
+						<Text style={styles.totalPrice}>{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}</Text>
 					</View>
 					<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToBasket(item, quantity)} disabled={!isAvailable}>
 						<MaterialIcons name={isAvailable ? 'add-shopping-cart' : 'remove-shopping-cart'} size={24} color="#fff" />

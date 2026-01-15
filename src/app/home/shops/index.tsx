@@ -11,6 +11,7 @@ import { getShops } from '../../../components/shops/shops.api'
 import { showPopup, showAlert } from '../../../utils/popup'
 import { parseError, logError } from '../../../utils/errorHandler'
 import { Shop } from '../../../components/shops/shops.interface'
+import { useUser } from '../../../contexts/UserContext'
 // Common themed styles removed as they're not needed
 
 // Responsive layout will be calculated inside the component
@@ -545,12 +546,14 @@ const getResponsiveConfig = (width: number): ResponsiveConfig => {
 }
 
 export default function ShopsListScreen() {
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
+	const isDark = true
 	const router = useRouter()
 	const [shops, setShops] = useState<Shop[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { translate, localize } = useUser()
 
 	const { width } = useWindowDimensions()
 	const responsiveConfig = getResponsiveConfig(width)
@@ -600,7 +603,7 @@ export default function ShopsListScreen() {
 
 			// Handle 401 Unauthorized - redirect to auth screen
 			if (err.response?.status === 401) {
-				showAlert('Session Expired', 'Please log in again to continue.')
+				showAlert(translate('session_expired_title', 'Session Expired'), translate('session_expired_message', 'Please log in again to continue.'))
 				router.replace('/auth')
 				return
 			}
@@ -647,10 +650,10 @@ export default function ShopsListScreen() {
 		const fullAddress = addressParts.join(', ')
 
 		// Get shop details from API response
-		const shopName = item.name?.en || 'Unnamed Shop'
-		const businessName = item.owner?.business?.name?.en || ''
+		const shopName = localize(item.name) || translate('unnamed_shop', 'Unnamed Shop')
+		const businessName = localize(item.owner?.business?.name) || ''
 		const ownerSlug = item.owner?.slug || 'owner'
-		const ownerName = item.owner?.name?.en || ''
+		const ownerName = localize(item.owner?.name) || ''
 
 		return (
 			<TouchableOpacity style={styles.shopCard as ViewStyle} onPress={() => handleShopPress(item.slug)}>
@@ -748,8 +751,8 @@ export default function ShopsListScreen() {
 				<View style={styles.emptyIcon as ViewStyle}>
 					<MaterialIcons name="store" size={isExtraSmall ? 32 : 40} color={colors.textTertiary} />
 				</View>
-				<Text style={styles.emptyTitle as TextStyle}>No shops available</Text>
-				<Text style={styles.emptyText as TextStyle}>Check back later for new shops</Text>
+				<Text style={styles.emptyTitle as TextStyle}>{translate('no_shops', 'No shops available')}</Text>
+				<Text style={styles.emptyText as TextStyle}>{translate('check_back_later_shops', 'Check back later for new shops')}</Text>
 			</View>
 		)
 	}
@@ -770,9 +773,9 @@ export default function ShopsListScreen() {
 		<View style={styles.container as ViewStyle}>
 			{!error && (
 				<View style={styles.headerSection as ViewStyle}>
-					<Text style={styles.headerTitle as TextStyle}>Discover Shops</Text>
+					<Text style={styles.headerTitle as TextStyle}>{translate('discover_shops', 'Discover Shops')}</Text>
 					<Text style={styles.headerSubtitle as TextStyle}>
-						{shops.length} {shops.length === 1 ? 'shop' : 'shops'} available near you
+						{shops.length} {shops.length === 1 ? translate('shop_product', 'shop') : translate('shop_products_plural', 'shops')} {translate('shops_available', 'available near you')}
 					</Text>
 				</View>
 			)}

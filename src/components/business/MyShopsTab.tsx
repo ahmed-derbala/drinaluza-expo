@@ -21,6 +21,7 @@ import { useRouter } from 'expo-router'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { getMyShops, createShop } from '../shops/shops.api'
 import { Shop, CreateShopRequest } from '../shops/shops.interface'
+import { useUser } from '../../contexts/UserContext'
 
 type ShopsStackParamList = {
 	ShopDetails: { shopId: string }
@@ -86,29 +87,32 @@ const DEBOUNCE_DELAY = 300
 const MIN_SHOP_NAME_LENGTH = 3
 const MAX_SHOP_NAME_LENGTH = 50
 
-const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPress, theme }) => (
-	<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating}>
-		<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-			<View style={styles.shopHeader}>
-				<Text style={[styles.shopName, { color: theme.text }]}>{shop.name?.en || 'Unnamed Shop'}</Text>
-				{isNavigating && <ActivityIndicator size="small" color={theme.primary} style={styles.loadingIndicator} />}
+const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPress, theme }) => {
+	const { localize } = useUser()
+	return (
+		<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating}>
+			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+				<View style={styles.shopHeader}>
+					<Text style={[styles.shopName, { color: theme.text }]}>{localize(shop.name) || 'Unnamed Shop'}</Text>
+					{isNavigating && <ActivityIndicator size="small" color={theme.primary} style={styles.loadingIndicator} />}
+				</View>
+				{shop.owner && (
+					<Text style={[styles.meta, { color: theme.textSecondary }]}>
+						Owner: {localize(shop.owner.name)} (@{shop.owner.slug})
+					</Text>
+				)}
+				{shop.location?.coordinates?.length === 2 && (
+					<Text style={[styles.meta, { color: theme.textSecondary }]}>
+						Location: ({shop.location.coordinates[1].toFixed(4)}, {shop.location.coordinates[0].toFixed(4)})
+					</Text>
+				)}
+				{typeof shop.deliveryRadiusKm === 'number' && <Text style={[styles.meta, { color: theme.textSecondary }]}>Delivery radius: {shop.deliveryRadiusKm} km</Text>}
+				<Text style={[styles.status, { color: shop.isActive ? '#4CAF50' : '#F44336' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
+				<Text style={[styles.tapHint, { color: theme.primary }]}>Tap to view details →</Text>
 			</View>
-			{shop.owner && (
-				<Text style={[styles.meta, { color: theme.textSecondary }]}>
-					Owner: {typeof shop.owner.name === 'object' ? (shop.owner.name as any).en : shop.owner.name} (@{shop.owner.slug})
-				</Text>
-			)}
-			{shop.location?.coordinates?.length === 2 && (
-				<Text style={[styles.meta, { color: theme.textSecondary }]}>
-					Location: ({shop.location.coordinates[1].toFixed(4)}, {shop.location.coordinates[0].toFixed(4)})
-				</Text>
-			)}
-			{typeof shop.deliveryRadiusKm === 'number' && <Text style={[styles.meta, { color: theme.textSecondary }]}>Delivery radius: {shop.deliveryRadiusKm} km</Text>}
-			<Text style={[styles.status, { color: shop.isActive ? '#4CAF50' : '#F44336' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
-			<Text style={[styles.tapHint, { color: theme.primary }]}>Tap to view details →</Text>
-		</View>
-	</TouchableOpacity>
-))
+		</TouchableOpacity>
+	)
+})
 
 const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 	({
@@ -354,6 +358,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
+	const { localize, translate } = useUser()
 	const [state, setState] = useState<ShopState>({
 		shops: [],
 		loading: true,
@@ -382,7 +387,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				// Access the shops array from the nested data property
 				const shops = response?.data?.docs || []
 				updateState({
-					shops: shops.sort((a: Shop, b: Shop) => (a.name?.en || '').localeCompare(b.name?.en || '')),
+					shops: shops.sort((a: Shop, b: Shop) => localize(a.name).localeCompare(localize(b.name))),
 					loading: false,
 					refreshing: false,
 					error: null
@@ -505,9 +510,9 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			if (a.isActive !== b.isActive) {
 				return a.isActive ? -1 : 1
 			}
-			return (a.name?.en || '').localeCompare(b.name?.en || '')
+			return localize(a.name).localeCompare(localize(b.name))
 		})
-	}, [shops])
+	}, [shops, localize])
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -517,12 +522,12 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				contentContainerStyle={styles.listContent}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				ListEmptyComponent={
-					!loading && !refreshing ? (
+					!refreshing ? (
 						<View style={styles.emptyContainer}>
-							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error || 'No shops found. Create your first shop to get started.'}</Text>
+							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error || translate('business.no_shops', 'No shops found. Create your first shop to get started.')}</Text>
 							{error && (
 								<TouchableOpacity onPress={() => loadShops()} style={[styles.retryButton, { borderColor: colors.primary }]}>
-									<Text style={[styles.retryButtonText, { color: colors.primary }]}>Retry</Text>
+									<Text style={[styles.retryButtonText, { color: colors.primary }]}>{translate('common.retry', 'Retry')}</Text>
 								</TouchableOpacity>
 							)}
 						</View>

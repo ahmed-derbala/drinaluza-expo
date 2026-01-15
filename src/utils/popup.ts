@@ -1,4 +1,5 @@
 import { Alert, Platform } from 'react-native'
+import { translate } from '../constants/translations'
 
 interface PopupAction {
 	text: string
@@ -41,7 +42,7 @@ export const showPopup = (title: string, message: string, actions?: PopupAction[
  * Shorthand for simple success/error notifications
  */
 export const showAlert = (title: string, message: string, onOk?: () => void) => {
-	showPopup(title, message, [{ text: 'OK', onPress: onOk }])
+	showPopup(title, message, [{ text: translate('ok', 'OK'), onPress: onOk }])
 }
 
 /**
@@ -49,7 +50,7 @@ export const showAlert = (title: string, message: string, onOk?: () => void) => 
  */
 export const showConfirm = (title: string, message: string, onConfirm: () => void, onCancel?: () => void) => {
 	showPopup(title, message, [
-		{ text: 'Cancel', style: 'cancel', onPress: onCancel },
-		{ text: 'Confirm', onPress: onConfirm }
+		{ text: translate('cancel', 'Cancel'), style: 'cancel', onPress: onCancel },
+		{ text: translate('confirm', 'Confirm'), onPress: onConfirm }
 	])
 }

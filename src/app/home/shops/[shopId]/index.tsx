@@ -9,15 +9,17 @@ import { parseError } from '../../../../utils/errorHandler'
 import ErrorState from '../../../../components/common/ErrorState'
 import ScreenHeader from '../../../../components/common/ScreenHeader'
 import SmartImage from '../../../../components/common/SmartImage'
+import { useUser } from '../../../../contexts/UserContext'
 
 export default function ShopDetailsScreen() {
 	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
+	const isDark = true
+	const { localize, translate } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
-	const { isDark } = useTheme()
 	const [shop, setShop] = useState<Shop | null>(null)
 	const [productsCount, setProductsCount] = useState<number | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -101,7 +103,7 @@ export default function ShopDetailsScreen() {
 			<View style={styles.container}>
 				<ScreenHeader showBack={false} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-					<Text style={[styles.errorText, { color: colors.text }]}>Shop not found</Text>
+					<Text style={[styles.errorText, { color: colors.text }]}>{translate('shop_not_found', 'Shop not found')}</Text>
 				</View>
 			</View>
 		)
@@ -125,21 +127,21 @@ export default function ShopDetailsScreen() {
 
 				{/* Shop Info Card */}
 				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-					<Text style={[styles.shopName, { color: colors.text }]}>{shop.name?.en}</Text>
+					<Text style={[styles.shopName, { color: colors.text }]}>{localize(shop.name)}</Text>
 
 					{/* Owner Info */}
 					{shop.owner && (
 						<View style={styles.infoRow}>
 							<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Owner</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_owner', 'Owner')}</Text>
 								<View style={styles.ownerRow}>
-									<Text style={[styles.infoValue, { color: colors.text }]}>{shop.owner.name.en}</Text>
+									<Text style={[styles.infoValue, { color: colors.text }]}>{localize(shop.owner.name)}</Text>
 									<Text style={[styles.slugText, { color: colors.textTertiary }]}>@{shop.owner.slug}</Text>
 									{shop.owner.business && (
 										<View style={[styles.businessBadge, { backgroundColor: colors.primary + '15' }]}>
 											<Text style={[styles.businessBadgeText, { color: colors.primary }]} numberOfLines={1}>
-												{shop.owner.business.name.en}
+												{localize(shop.owner.business.name)}
 											</Text>
 										</View>
 									)}
@@ -153,7 +155,7 @@ export default function ShopDetailsScreen() {
 						<View style={styles.infoRow}>
 							<Ionicons name="location-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Address</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_address', 'Address')}</Text>
 								<Text style={[styles.infoValue, { color: colors.text }]}>{fullAddress}</Text>
 							</View>
 						</View>
@@ -164,7 +166,7 @@ export default function ShopDetailsScreen() {
 						<TouchableOpacity style={styles.infoRow} onPress={handleOpenMap} activeOpacity={0.7}>
 							<Ionicons name="map-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Location</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_location', 'Location')}</Text>
 								<View style={styles.locationRow}>
 									<Text style={[styles.infoValue, { color: colors.text }]}>
 										{shop.location.coordinates[1].toFixed(4)}, {shop.location.coordinates[0].toFixed(4)}
@@ -180,7 +182,7 @@ export default function ShopDetailsScreen() {
 						<View style={styles.infoRow}>
 							<Ionicons name="navigate-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Delivery Radius</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_delivery_radius', 'Delivery Radius')}</Text>
 								<Text style={[styles.infoValue, { color: colors.text }]}>{shop.deliveryRadiusKm} km</Text>
 							</View>
 						</View>
@@ -191,9 +193,9 @@ export default function ShopDetailsScreen() {
 						<View style={styles.infoRow}>
 							<MaterialIcons name="inventory" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Products</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_products', 'Products')}</Text>
 								<Text style={[styles.infoValue, { color: colors.text }]}>
-									{productsCount} {productsCount === 1 ? 'product' : 'products'} available
+									{productsCount} {productsCount === 1 ? translate('shop_product', 'product') : translate('shop_products_plural', 'products')} {translate('shop_available', 'available')}
 								</Text>
 							</View>
 						</View>
@@ -203,7 +205,7 @@ export default function ShopDetailsScreen() {
 				{/* View Products Button */}
 				<TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleViewProducts} activeOpacity={0.8}>
 					<MaterialIcons name="shopping-bag" size={20} color="#fff" />
-					<Text style={styles.buttonText}>View Products</Text>
+					<Text style={styles.buttonText}>{translate('shop_view_products', 'View Products')}</Text>
 					<Ionicons name="chevron-forward" size={20} color="#fff" />
 				</TouchableOpacity>
 			</ScrollView>
