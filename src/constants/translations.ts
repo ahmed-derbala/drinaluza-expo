@@ -61,6 +61,24 @@ export const translations: Record<string, Record<string, string>> = {
 		reset_failed: 'Failed to reset app.',
 		session_expired: 'Session expired. Please sign in again with your password.',
 		quick_signin_failed: 'Quick sign in failed.',
+		sign_in: 'Sign In',
+		sign_up: 'Sign Up',
+		continue: 'Continue',
+
+		// Common UI
+		location_not_available: 'Location not available',
+		unavailable: 'Unavailable',
+		out_of_stock: 'Out of Stock',
+		total: 'Total',
+		unit: 'unit',
+		shop_card: 'Shop Card',
+		user_card: 'User Card',
+		unknown_card: 'Unknown Card',
+		coming_soon: 'Coming soon',
+		cannot_open_phone: 'Cannot open phone dialer',
+		cannot_open_whatsapp: 'Could not open WhatsApp',
+		cannot_open_email: 'Could not open email client',
+		cannot_open_maps: 'Could not open maps application',
 
 		// Error Messages
 		invalid_request_title: 'Invalid Request',
@@ -232,6 +250,24 @@ export const translations: Record<string, Record<string, string>> = {
 		reset_failed: 'Ma najemnach nfasskhou.',
 		session_expired: 'Wfa el waqt. Erja3 konnecti b kelmet el sir.',
 		quick_signin_failed: 'Ma najemnach nkonnectiw fissa3.',
+		sign_in: 'Konnecti',
+		sign_up: 'Hell Compte',
+		continue: 'Kamal',
+
+		// Common UI
+		location_not_available: 'El blasa mch mawjouda',
+		unavailable: 'Mch mawjoud',
+		out_of_stock: 'Wfa el stock',
+		total: 'El kol',
+		unit: 'ka3ba',
+		shop_card: 'Compte Shop',
+		user_card: 'Compte User',
+		unknown_card: 'Haja okhra',
+		coming_soon: 'Bech t-ji fissa3',
+		cannot_open_phone: 'Ma najamsh nhell el talifoun',
+		cannot_open_whatsapp: 'Ma najamsh nhell WhatsApp',
+		cannot_open_email: 'Ma najamsh nhell el email',
+		cannot_open_maps: 'Ma najamsh nhell el kharita',
 
 		// Dashboard & Feed
 		'dashboard.total_spent': 'Srafet el Kol',
@@ -383,6 +419,24 @@ export const translations: Record<string, Record<string, string>> = {
 		reset_failed: 'فشل في فرمتة التطبيق.',
 		session_expired: 'انتهت الجلسة. عاود ادخل بكلمة السر.',
 		quick_signin_failed: 'فشل في الدخول السريع.',
+		sign_in: 'دخول',
+		sign_up: 'فتح حساب',
+		continue: 'مواصلة',
+
+		// Common UI
+		location_not_available: 'الموقع غير متوفر',
+		unavailable: 'غير متوفر',
+		out_of_stock: 'نفذت الكمية',
+		total: 'المجموع',
+		unit: 'قطعة',
+		shop_card: 'بطاقة المتجر',
+		user_card: 'بطاقة المستخدم',
+		unknown_card: 'بطاقة غير معروفة',
+		coming_soon: 'قريباً',
+		cannot_open_phone: 'لا يمكن فتح تطبيق الهاتف',
+		cannot_open_whatsapp: 'لا يمكن فتح واتساب',
+		cannot_open_email: 'لا يمكن فتح البريد الإلكتروني',
+		cannot_open_maps: 'لا يمكن فتح تطبيق الخرائط',
 
 		// Dashboard & Feed
 		'dashboard.total_spent': 'صرفت الكل',

@@ -16,23 +16,7 @@ import { parseError, logError } from '../../utils/errorHandler'
 import { useUser } from '../../contexts/UserContext'
 
 import { UserData } from '../../components/profile/profile.interface'
-
-const LANGUAGES = [
-	{ code: 'en', label: 'English', flag: '🇺🇸' },
-	{ code: 'tn_latn', label: 'Tunisian (Latin)', flag: '🇹🇳', icon: 'A' },
-	{ code: 'tn_arab', label: 'Tunisian (Arabic)', flag: '🇹🇳', icon: 'ع' }
-]
-
-const CURRENCIES = [
-	{ code: 'tnd', label: 'Tunisian Dinar', symbol: 'DT' },
-	{ code: 'eur', label: 'Euro', symbol: '€' },
-	{ code: 'usd', label: 'US Dollar', symbol: '$' }
-]
-
-const SOCIAL_PLATFORMS = [
-	{ id: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877F2', prefix: 'facebook.com/' },
-	{ id: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F', prefix: 'instagram.com/' }
-]
+import { LANGUAGES, CURRENCIES, SOCIAL_PLATFORMS } from '../../constants/settings'
 
 // Components moved outside to prevent re-creation on render
 const Section = ({
@@ -124,7 +108,8 @@ const InfoItem = ({
 
 export default function ProfileScreen() {
 	const router = useRouter()
-	const { colors, isDark } = useTheme()
+	const { colors } = useTheme()
+	const isDark = true
 	const { refreshUser, translate } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 800
@@ -165,17 +150,13 @@ export default function ProfileScreen() {
 			phone: {
 				fullNumber: '+21699112619',
 				countryCode: '+216',
-				shortNumber: '99112619',
-				createdAt: '2026-01-12T13:31:40.264Z',
-				updatedAt: '2026-01-12T13:31:40.264Z'
+				shortNumber: '99112619'
 			},
 			backupPhones: [
 				{
 					fullNumber: '+21699112645',
 					countryCode: '+216',
-					shortNumber: '99112645',
-					createdAt: '2026-01-12T13:31:40.264Z',
-					updatedAt: '2026-01-12T13:31:40.264Z'
+					shortNumber: '99112645'
 				}
 			],
 			whatsapp: '+21699112618',
@@ -184,8 +165,7 @@ export default function ProfileScreen() {
 		media: {
 			thumbnail: {
 				url: 'https://scontent.ftun15-1.fna.fbcdn.net/v/t39.30808-6/480797900_9563147623771985_8782635803627400360_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=2-gC3oPiHS4Q7kNvwFY3O0G&_nc_oc=AdmlH6InV5Si-4qeF4tOdXPqDRv6f_GrylbaxqQ2BIWnM-nefUUvYmboLWW4yXXO8fO9OfHYQMtXrijmgv4CCldc&_nc_zt=23&_nc_ht=scontent.ftun15-1.fna&_nc_gid=hQZOtp4ueA685l1wgw6vsg&oh=00_AfqjHnRQKmgGRP9fMFwy4UPgBhMurmGTS8_afENErKefgQ&oe=6969E901'
-			},
-			updatedAt: '2026-01-12T13:31:40.264Z'
+			}
 		},
 		socialMedia: {
 			facebook: {
@@ -494,7 +474,7 @@ export default function ProfileScreen() {
 		if (currentlyEnabled) {
 			// Disable sharing: remove coordinates
 			updateField('location', {
-				type: userData.location?.type || 'Point',
+				type: userData?.location?.type || 'Point',
 				sharingEnabled: false
 			})
 			return
@@ -957,7 +937,7 @@ export default function ProfileScreen() {
 											style={[styles.socialInput, { color: colors.text }]}
 											value={userData.location?.coordinates?.[0]?.toString() || ''}
 											onChangeText={(value) => {
-												if (userData.location?.sharingEnabled === false) return // Disable input when sharing is disabled
+												if (userData.location?.sharingEnabled === false) return
 												const coords = userData.location?.coordinates || [0, 0]
 												const newCoords: [number, number] = [parseFloat(value) || 0, coords[1]]
 												updateField('location', {
@@ -978,7 +958,11 @@ export default function ProfileScreen() {
 									<View
 										style={[
 											styles.socialInputContainer,
-											{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC', opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }
+											{
+												borderColor: isDark ? colors.border : '#E1E8ED',
+												backgroundColor: isDark ? colors.card : '#FAFBFC',
+												opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
+											}
 										]}
 									>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
@@ -988,7 +972,7 @@ export default function ProfileScreen() {
 											style={[styles.socialInput, { color: colors.text }]}
 											value={userData.location?.coordinates?.[1]?.toString() || ''}
 											onChangeText={(value) => {
-												if (userData.location?.sharingEnabled === false) return // Disable input when sharing is disabled
+												if (userData.location?.sharingEnabled === false) return
 												const coords = userData.location?.coordinates || [0, 0]
 												const newCoords: [number, number] = [coords[0], parseFloat(value) || 0]
 												updateField('location', {
@@ -1195,7 +1179,7 @@ export default function ProfileScreen() {
 								{getPhone(userData)?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {getPhone(userData)?.fullNumber}</Text>}
 							</View>
 
-							{getBackupPhones(userData).map((backupPhone, index) => (
+							{getBackupPhones(userData).map((backupPhone: any, index: number) => (
 								<View key={index} style={styles.inputGroup}>
 									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
 										<Text style={styles.inputLabel}>Backup Phone {index + 1}</Text>
@@ -1339,7 +1323,7 @@ export default function ProfileScreen() {
 									}}
 								/>
 							)}
-							{getBackupPhones(userData).map((backupPhone, index) => (
+							{getBackupPhones(userData).map((backupPhone: any, index: number) => (
 								<InfoItem
 									key={index}
 									label={`Backup Phone ${index + 1}`}

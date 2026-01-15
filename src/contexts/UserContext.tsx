@@ -14,6 +14,9 @@ interface UserContextType {
 	localize: (name?: LocalizedName) => string
 	translate: (key: string, defaultText?: string) => string
 	formatPrice: (price: any) => string
+	setAppLang: (lang: string) => void
+	setContentLang: (lang: string) => void
+	setCurrency: (currency: string) => void
 }
 
 const DEFAULT_APP_LANG = 'en'
@@ -29,7 +32,10 @@ const UserContext = createContext<UserContextType>({
 	currency: DEFAULT_CURRENCY,
 	localize: () => '',
 	translate: (key: string, defaultText?: string) => defaultText || key,
-	formatPrice: () => ''
+	formatPrice: () => '',
+	setAppLang: () => {},
+	setContentLang: () => {},
+	setCurrency: () => {}
 })
 
 export const useUser = () => useContext(UserContext)
@@ -41,6 +47,51 @@ interface UserProviderProps {
 export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 	const [user, setUser] = useState<UserData | null>(null)
 	const [loading, setLoading] = useState(true)
+	const [guestSettings, setGuestSettings] = useState({
+		appLang: DEFAULT_APP_LANG,
+		contentLang: DEFAULT_CONTENT_LANG,
+		currency: DEFAULT_CURRENCY
+	})
+
+	// Load guest settings from storage
+	useEffect(() => {
+		const loadSettings = async () => {
+			try {
+				const [savedAppLang, savedContentLang, savedCurrency] = await Promise.all([
+					import('@react-native-async-storage/async-storage').then((m) => m.default.getItem('guest_appLang')),
+					import('@react-native-async-storage/async-storage').then((m) => m.default.getItem('guest_contentLang')),
+					import('@react-native-async-storage/async-storage').then((m) => m.default.getItem('guest_currency'))
+				])
+
+				setGuestSettings({
+					appLang: savedAppLang || DEFAULT_APP_LANG,
+					contentLang: savedContentLang || DEFAULT_CONTENT_LANG,
+					currency: savedCurrency || DEFAULT_CURRENCY
+				})
+			} catch (e) {
+				console.error('Failed to load guest settings', e)
+			}
+		}
+		loadSettings()
+	}, [])
+
+	const setAppLang = useCallback(async (lang: string) => {
+		setGuestSettings((prev) => ({ ...prev, appLang: lang }))
+		const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
+		await AsyncStorage.setItem('guest_appLang', lang)
+	}, [])
+
+	const setContentLang = useCallback(async (lang: string) => {
+		setGuestSettings((prev) => ({ ...prev, contentLang: lang }))
+		const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
+		await AsyncStorage.setItem('guest_contentLang', lang)
+	}, [])
+
+	const setCurrency = useCallback(async (currency: string) => {
+		setGuestSettings((prev) => ({ ...prev, currency: currency }))
+		const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
+		await AsyncStorage.setItem('guest_currency', currency)
+	}, [])
 
 	const loadUser = useCallback(async () => {
 		try {
@@ -61,10 +112,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 		await loadUser()
 	}
 
-	// Derived settings
-	const appLang = user?.settings?.lang?.app || DEFAULT_APP_LANG
-	const contentLang = user?.settings?.lang?.content || DEFAULT_CONTENT_LANG
-	const currency = user?.settings?.currency || DEFAULT_CURRENCY
+	// Derived settings - prioritize user profile, then guest settings, then defaults
+	const appLang = user?.settings?.lang?.app || guestSettings.appLang
+	const contentLang = user?.settings?.lang?.content || guestSettings.contentLang
+	const currency = user?.settings?.currency || guestSettings.currency
 
 	// Sync global language for non-React components
 	useEffect(() => {
@@ -122,7 +173,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 				currency,
 				localize,
 				translate,
-				formatPrice
+				formatPrice,
+				setAppLang,
+				setContentLang,
+				setCurrency
 			}}
 		>
 			{children}

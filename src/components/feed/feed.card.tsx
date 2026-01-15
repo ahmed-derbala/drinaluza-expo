@@ -12,7 +12,7 @@ type FeedCardProps = {
 }
 
 export default function FeedCard({ item, addToBasket }: FeedCardProps) {
-	const { localize } = useUser()
+	const { localize, translate } = useUser()
 	const { colors } = useTheme()
 	const cardType = item.card?.type || 'product'
 
@@ -25,8 +25,8 @@ export default function FeedCard({ item, addToBasket }: FeedCardProps) {
 					<View style={[styles.placeholderIcon, { backgroundColor: colors.primaryContainer }]}>
 						<MaterialIcons name="store" size={32} color={colors.primary} />
 					</View>
-					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{localize(item.shop?.name) || 'Shop'}</Text>
-					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>Shop Card</Text>
+					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{localize(item.shop?.name) || translate('shop', 'Shop')}</Text>
+					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>{translate('shop_card', 'Shop Card')}</Text>
 				</View>
 			)
 		case 'user':
@@ -35,8 +35,8 @@ export default function FeedCard({ item, addToBasket }: FeedCardProps) {
 					<View style={[styles.placeholderIcon, { backgroundColor: colors.primaryContainer }]}>
 						<MaterialIcons name="person" size={32} color={colors.primary} />
 					</View>
-					<Text style={[styles.placeholderTitle, { color: colors.text }]}>User Card</Text>
-					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>Coming soon</Text>
+					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{translate('user_card', 'User Card')}</Text>
+					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>{translate('coming_soon', 'Coming soon')}</Text>
 				</View>
 			)
 		default:
@@ -45,8 +45,10 @@ export default function FeedCard({ item, addToBasket }: FeedCardProps) {
 					<View style={[styles.placeholderIcon, { backgroundColor: colors.surfaceVariant }]}>
 						<MaterialIcons name="help-outline" size={32} color={colors.textSecondary} />
 					</View>
-					<Text style={[styles.placeholderTitle, { color: colors.text }]}>Unknown Card</Text>
-					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>Type: {cardType}</Text>
+					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{translate('unknown_card', 'Unknown Card')}</Text>
+					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>
+						{translate('type', 'Type')}: {cardType}
+					</Text>
 				</View>
 			)
 	}

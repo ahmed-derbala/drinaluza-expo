@@ -5,6 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext'
 import { searchFeed } from '../feed/feed.api'
 import { FeedItem } from '../feed/feed.interface'
 import { parseError, logError } from '../../utils/errorHandler'
+import { useUser } from '../../contexts/UserContext'
 
 interface SearchBarProps {
 	onSearchResults: (results: FeedItem[]) => void
@@ -12,32 +13,35 @@ interface SearchBarProps {
 	onError?: (message: string, retry?: () => void) => void
 }
 
-const SEARCH_TYPES = [
-	{ id: 'products', label: 'Products', icon: 'fish-outline' },
-	{ id: 'shops', label: 'Shops', icon: 'storefront-outline' },
-	{ id: 'users', label: 'Users', icon: 'person-outline' }
-]
-
 export default function SearchBar({ onSearchResults, onSearchClear, onError }: SearchBarProps) {
 	const { colors } = useTheme()
+	const { translate, appLang } = useUser()
 	const [searchText, setSearchText] = useState('')
+
+	const searchTypes = [
+		{ id: 'products', label: translate('products', 'Products'), icon: 'fish-outline' },
+		{ id: 'shops', label: translate('shops', 'Shops'), icon: 'storefront-outline' },
+		{ id: 'users', label: translate('users', 'Users'), icon: 'person-outline' }
+	]
+
 	const [selectedTypes, setSelectedTypes] = useState<string[]>(['products'])
 	const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
 
 	const performSearch = useCallback(
 		async (text: string) => {
 			try {
-				const response = await searchFeed(text, 'en', selectedTypes)
+				const apiLang = (appLang.startsWith('tn') ? 'tn' : 'en') as 'en' | 'tn'
+				const response = await searchFeed(text, apiLang, selectedTypes)
 				onSearchResults(response.data.docs)
 			} catch (err) {
 				logError(err, 'SearchBar')
 				const errorInfo = parseError(err)
 				if (onError) {
-					onError(`Search failed: ${errorInfo.message}`, errorInfo.canRetry ? () => performSearch(text) : undefined)
+					onError(`${translate('search_failed', 'Search failed')}: ${errorInfo.message}`, errorInfo.canRetry ? () => performSearch(text) : undefined)
 				}
 			}
 		},
-		[onSearchResults, onSearchClear, onError, selectedTypes]
+		[onSearchResults, onSearchClear, onError, selectedTypes, appLang, translate]
 	)
 
 	const toggleType = useCallback((typeId: string) => {
@@ -96,7 +100,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 				<Ionicons name="search" size={20} color={colors.textSecondary} style={styles.icon} />
 				<TextInput
 					style={[styles.input, { color: colors.text }]}
-					placeholder="Search products, shops..."
+					placeholder={translate('search_placeholder', 'Search products, shops...')}
 					placeholderTextColor={colors.textTertiary}
 					value={searchText}
 					onChangeText={handleTextChange}
@@ -112,7 +116,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 				)}
 			</View>
 			<View style={styles.filtersContainer}>
-				{SEARCH_TYPES.map((type) => {
+				{searchTypes.map((type) => {
 					const isSelected = selectedTypes.includes(type.id)
 					return (
 						<TouchableOpacity

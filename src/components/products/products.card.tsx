@@ -14,7 +14,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const { colors } = useTheme()
-	const { localize, currency, formatPrice } = useUser()
+	const { localize, currency, formatPrice, translate } = useUser()
 	const router = useRouter()
 	const { width } = useWindowDimensions()
 	const styles = useMemo(() => createStyles(colors, width), [colors, width])
@@ -60,7 +60,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 						{localize(item.shop.name)}
 					</Text>
 					<Text style={styles.shopLocation} numberOfLines={1}>
-						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : 'Location not available'}
+						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : translate('location_not_available', 'Location not available')}
 					</Text>
 				</View>
 				<View style={styles.shopIconContainer}>
@@ -78,7 +78,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				/>
 				{!isAvailable && (
 					<View style={styles.unavailableOverlay}>
-						<Text style={styles.unavailableText}>{item.state.code !== 'active' ? 'Unavailable' : 'Out of Stock'}</Text>
+						<Text style={styles.unavailableText}>{item.state.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
 					</View>
 				)}
 			</View>
@@ -102,7 +102,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 					<Text style={styles.priceText} numberOfLines={1} adjustsFontSizeToFit>
 						{formatPrice({ total: { [currency]: pricePerUnit } })}
 					</Text>
-					<Text style={styles.unitText}>/ {item.unit?.measure || 'unit'}</Text>
+					<Text style={styles.unitText}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
 				</View>
 
 				{/* Quantity Controls */}
@@ -123,7 +123,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				{/* Total & Add Button */}
 				<View style={styles.footer}>
 					<View style={styles.totalContainer}>
-						<Text style={styles.totalLabel}>Total</Text>
+						<Text style={styles.totalLabel}>{translate('total', 'Total')}</Text>
 						<Text style={styles.totalPrice}>{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}</Text>
 					</View>
 					<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToBasket(item, quantity)} disabled={!isAvailable}>

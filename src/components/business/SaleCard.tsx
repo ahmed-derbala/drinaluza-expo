@@ -20,7 +20,8 @@ const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 		return product.product.media?.thumbnail?.url || product.product.defaultProduct?.media?.thumbnail?.url || null
 	}
 
-	const unitMeasure = product.product.unit?.measure || 'unit'
+	const { translate } = useUser()
+	const unitMeasure = product.product.unit?.measure || translate('unit', 'unit')
 
 	return (
 		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -62,7 +63,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			if (supported) {
 				await Linking.openURL(url)
 			} else {
-				Alert.alert('Error', `Cannot open phone dialer for number: ${phoneNumber}`)
+				Alert.alert(translate('error', 'Error'), `${translate('cannot_open_phone', 'Cannot open phone dialer for number')}: ${phoneNumber}`)
 			}
 		}
 	}
@@ -75,7 +76,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			try {
 				await Linking.openURL(url)
 			} catch (err) {
-				Alert.alert('Error', 'Could not open WhatsApp')
+				Alert.alert(translate('error', 'Error'), translate('cannot_open_whatsapp', 'Could not open WhatsApp'))
 			}
 		}
 	}
@@ -87,7 +88,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			try {
 				await Linking.openURL(url)
 			} catch (err) {
-				Alert.alert('Error', 'Could not open email client')
+				Alert.alert(translate('error', 'Error'), translate('cannot_open_email', 'Could not open email client'))
 			}
 		}
 	}
@@ -107,7 +108,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 				try {
 					await Linking.openURL(url)
 				} catch (err) {
-					Alert.alert('Error', 'Could not open maps application')
+					Alert.alert(translate('error', 'Error'), translate('cannot_open_maps', 'Could not open maps application'))
 				}
 			}
 		} else if (address) {
@@ -122,7 +123,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 				try {
 					await Linking.openURL(url)
 				} catch (err) {
-					Alert.alert('Error', 'Could not open maps application')
+					Alert.alert(translate('error', 'Error'), translate('cannot_open_maps', 'Could not open maps application'))
 				}
 			}
 		}
@@ -203,7 +204,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			{/* Products Section - Scrollable */}
 			<View style={styles.productsContainer}>
 				<Text style={[styles.productsTitle, { color: colors.textSecondary }]}>
-					{translate('sale.products', 'Products')} ({sale.products.length})
+					{translate('products', 'Products')} ({sale.products.length})
 				</Text>
 				<ScrollView horizontal showsHorizontalScrollIndicator={isWeb} contentContainerStyle={styles.productsScrollContent} style={styles.productsScroll}>
 					{sale.products.map((product, index) => (
@@ -214,7 +215,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 
 			{/* Footer - Total Price */}
 			<View style={[styles.footer, { borderTopColor: colors.border }]}>
-				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('sale.total', 'Total')}</Text>
+				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 				<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(sale.price)}</Text>
 			</View>
 		</View>

@@ -1,3 +1,5 @@
+import { translate } from './translations'
+
 export const orderStatusEnum = {
 	PENDING_SHOP_CONFIRMATION: 'pending_shop_confirmation', //active
 	CONFIRMED_BY_SHOP: 'confirmed_by_shop', //active
@@ -26,15 +28,15 @@ export const orderStatusColors = {
 }
 
 export const orderStatusLabels = {
-	[orderStatusEnum.PENDING_SHOP_CONFIRMATION]: 'Pending Confirmation',
-	[orderStatusEnum.CONFIRMED_BY_SHOP]: 'Confirmed',
-	[orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER]: 'Ready for Pickup',
-	[orderStatusEnum.RESERVATION_EXPIRED]: 'Reservation Expired',
-	[orderStatusEnum.DELIVERING_TO_CUSTOMER]: 'Delivering',
-	[orderStatusEnum.DELIVERED_TO_CUSTOMER]: 'Delivered',
-	[orderStatusEnum.RECEIVED_BY_CUSTOMER]: 'Received',
-	[orderStatusEnum.CANCELLED_BY_CUSTOMER]: 'Cancelled',
-	[orderStatusEnum.CANCELLED_BY_SHOP]: 'Cancelled by Shop'
+	[orderStatusEnum.PENDING_SHOP_CONFIRMATION]: translate('pending_shop_confirmation', 'Pending Confirmation'),
+	[orderStatusEnum.CONFIRMED_BY_SHOP]: translate('confirmed_by_shop', 'Confirmed'),
+	[orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER]: translate('reserved_by_shop_for_pickup_by_customer', 'Ready for Pickup'),
+	[orderStatusEnum.RESERVATION_EXPIRED]: translate('reservation_expired', 'Reservation Expired'),
+	[orderStatusEnum.DELIVERING_TO_CUSTOMER]: translate('delivering_to_customer', 'Delivering'),
+	[orderStatusEnum.DELIVERED_TO_CUSTOMER]: translate('delivered_to_customer', 'Delivered'),
+	[orderStatusEnum.RECEIVED_BY_CUSTOMER]: translate('received_by_customer', 'Received'),
+	[orderStatusEnum.CANCELLED_BY_CUSTOMER]: translate('cancelled_by_customer', 'Cancelled'),
+	[orderStatusEnum.CANCELLED_BY_SHOP]: translate('cancelled_by_shop', 'Cancelled by Shop')
 }
 
 // Get next valid statuses for progression
