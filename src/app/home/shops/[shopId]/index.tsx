@@ -74,7 +74,7 @@ export default function ShopDetailsScreen() {
 	if (loading) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader showBack={false} />
+				<ScreenHeader title={translate('common.loading', 'Loading...')} showBack={true} />
 				<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
@@ -85,7 +85,7 @@ export default function ShopDetailsScreen() {
 	if (error) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader showBack={false} />
+				<ScreenHeader title={translate('common.error', 'Error')} showBack={true} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<ErrorState
 						title={error.title}
@@ -101,7 +101,7 @@ export default function ShopDetailsScreen() {
 	if (!shop) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader showBack={false} />
+				<ScreenHeader title={translate('shop_not_found', 'Shop not found')} showBack={true} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<Text style={[styles.errorText, { color: colors.text }]}>{translate('shop_not_found', 'Shop not found')}</Text>
 				</View>
@@ -118,7 +118,7 @@ export default function ShopDetailsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader showBack={false} />
+			<ScreenHeader title={localize(shop.name)} showBack={true} />
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 				{/* Shop Image */}
 				<View style={styles.imageContainer}>

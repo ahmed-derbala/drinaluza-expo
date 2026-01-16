@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
-import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
+import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
 import { getPurchases } from '../orders/orders.api'
@@ -14,46 +14,30 @@ import { useUser } from '../../contexts/UserContext'
 
 type Order = OrderItem
 
+const { width } = Dimensions.get('window')
+const COLUMN_WIDTH = (width - 44) / 2
+
 type StatCardProps = {
 	title: string
 	value: string | number
 	icon: React.ReactNode
 	accent: string
 	onPress?: () => void
-	variant?: 'default' | 'hero'
 }
 
-type ActionCardProps = {
-	label: string
-	subtext: string
+type ActionButtonProps = {
 	icon: React.ReactNode
 	onPress: () => void
+	color: string
 }
 
 const Dashboard = () => {
 	const { colors } = useTheme()
 	const styles = useMemo(() => createStyles(colors), [colors])
-	const { localize, formatPrice, translate, currency } = useUser()
+	const { localize, formatPrice, translate, currency, user } = useUser()
 	const router = useRouter()
 
-	const StatCard = ({ title, value, icon, accent, onPress, variant = 'default' }: StatCardProps) => {
-		if (variant === 'hero') {
-			return (
-				<TouchableOpacity activeOpacity={0.9} onPress={onPress} style={styles.heroCardContainer}>
-					<LinearGradient colors={[colors.primary, accent]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-						<View style={styles.heroHeader}>
-							<View style={styles.heroIcon}>{icon}</View>
-							<Text style={styles.heroTitle}>{title}</Text>
-						</View>
-						<Text style={styles.heroValue}>{value}</Text>
-						<View style={styles.heroFooter}>
-							<Text style={styles.heroSubtitle}>+12.5% from last month</Text>
-						</View>
-					</LinearGradient>
-				</TouchableOpacity>
-			)
-		}
-
+	const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
 		return (
 			<TouchableOpacity
 				activeOpacity={0.9}
@@ -66,7 +50,8 @@ const Dashboard = () => {
 					}
 				]}
 			>
-				<View style={[styles.statIcon, { backgroundColor: `${accent}15` }]}>{icon}</View>
+				<LinearGradient colors={[`${accent}15`, `${accent}05`]} style={styles.statGradient} />
+				<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
 				<View style={styles.statBody}>
 					<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
 					<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
@@ -75,17 +60,16 @@ const Dashboard = () => {
 		)
 	}
 
-	const ActionCard = ({ label, subtext, icon, onPress }: ActionCardProps) => {
+	const ActionButton = ({ icon, onPress, color }: ActionButtonProps) => {
 		return (
-			<TouchableOpacity onPress={onPress} activeOpacity={0.9} style={[styles.actionCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
-				<View style={[styles.actionIcon, { backgroundColor: `${colors.primary}12` }]}>{icon}</View>
-				<View>
-					<Text style={[styles.actionLabel, { color: colors.text }]}>{label}</Text>
-					<Text style={[styles.actionSubtext, { color: colors.textSecondary }]}>{subtext}</Text>
-				</View>
-			</TouchableOpacity>
+			<View style={styles.actionItem}>
+				<TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+					<View style={[styles.actionIconInner, { backgroundColor: `${color}15` }]}>{icon}</View>
+				</TouchableOpacity>
+			</View>
 		)
 	}
+
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [stats, setStats] = useState({
@@ -133,7 +117,7 @@ const Dashboard = () => {
 			setLoading(false)
 			setRefreshing(false)
 		}
-	}, [])
+	}, [currency])
 
 	useEffect(() => {
 		loadDashboard()
@@ -170,28 +154,28 @@ const Dashboard = () => {
 			{
 				title: translate('dashboard.total_spent', 'Total Spent'),
 				value: formatPrice({ total: { [currency]: stats.totalSpent } }),
-				icon: <MaterialIcons name="payments" size={20} color={colors.primary} />,
+				icon: <MaterialIcons name="payments" size={24} color={colors.primary} />,
 				accent: colors.primary,
 				onPress: () => router.push('/home/purchases' as any)
 			},
 			{
 				title: translate('dashboard.purchases', 'Purchases'),
 				value: stats.totalPurchases,
-				icon: <MaterialIcons name="shopping-bag" size={20} color={colors.info} />,
+				icon: <MaterialIcons name="shopping-bag" size={24} color={colors.info} />,
 				accent: colors.info,
 				onPress: () => router.push('/home/purchases' as any)
 			},
 			{
 				title: translate('dashboard.pending', 'Pending'),
 				value: stats.pendingPurchases,
-				icon: <MaterialIcons name="schedule" size={20} color={colors.warning} />,
+				icon: <MaterialIcons name="schedule" size={24} color={colors.warning} />,
 				accent: colors.warning,
 				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'pending' } } as any)
 			},
 			{
 				title: translate('dashboard.completed', 'Completed'),
 				value: stats.completedPurchases,
-				icon: <MaterialIcons name="check-circle" size={20} color={colors.success} />,
+				icon: <MaterialIcons name="check-circle" size={24} color={colors.success} />,
 				accent: colors.success,
 				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'completed' } } as any)
 			}
@@ -202,36 +186,38 @@ const Dashboard = () => {
 	const actions = useMemo(
 		() => [
 			{
-				label: translate('dashboard.browse_shops', 'Browse shops'),
-				subtext: translate('dashboard.discover_nearby', 'Discover stores nearby'),
-				icon: <MaterialIcons name="storefront" size={22} color={colors.primary} />,
+				icon: <MaterialIcons name="storefront" size={26} color={colors.primary} />,
+				color: colors.primary,
 				onPress: () => router.push('/home/shops' as any)
 			},
 			{
-				label: translate('dashboard.purchases', 'Purchases'),
-				subtext: translate('dashboard.track_purchases', 'Track your purchases'),
-				icon: <Feather name="package" size={22} color={colors.info} />,
+				icon: <Feather name="package" size={26} color={colors.info} />,
+				color: colors.info,
 				onPress: () => router.push('/home/purchases' as any)
 			},
 			{
-				label: translate('dashboard.deals', 'Deals'),
-				subtext: translate('dashboard.latest_offers', 'Latest offers'),
-				icon: <Feather name="tag" size={22} color={colors.success} />,
+				icon: <Feather name="tag" size={26} color={colors.success} />,
+				color: colors.success,
 				onPress: () => router.push('/home/feed' as any)
+			},
+			{
+				icon: <Feather name="settings" size={26} color={colors.textTertiary} />,
+				color: colors.textTertiary,
+				onPress: () => router.push('/home/settings' as any)
 			}
 		],
-		[colors.info, colors.primary, colors.success, colors.warning, router, translate]
+		[colors.info, colors.primary, colors.success, colors.textTertiary, router]
 	)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader
 				title={translate('dashboard', 'Dashboard')}
-				subtitle={translate('dashboard.welcome', 'Welcome back')}
+				subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
 				showBack={false}
 				rightActions={
-					<TouchableOpacity onPress={onRefresh} accessibilityLabel="Refresh dashboard">
-						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
+					<TouchableOpacity onPress={onRefresh} style={styles.headerIcon} accessibilityLabel="Refresh dashboard">
+						<Ionicons name={refreshing ? 'hourglass' : 'refresh'} size={22} color={colors.text} />
 					</TouchableOpacity>
 				}
 			/>
@@ -251,22 +237,21 @@ const Dashboard = () => {
 				>
 					{/* Overview Section */}
 					<View style={styles.section}>
-						{/* Smaller Stats Row */}
-						<View style={styles.statsRow}>
+						<View style={styles.statsGrid}>
 							{statCards.map((card) => (
 								<StatCard key={card.title} {...card} />
 							))}
 						</View>
 					</View>
 
-					{/* Quick Actions */}
+					{/* Quick Actions - Icon Centric */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.quick_actions', 'Quick Actions')}</Text>
 						</View>
-						<View style={styles.actionsGrid}>
-							{actions.map((action) => (
-								<ActionCard key={action.label} {...action} />
+						<View style={styles.actionsRow}>
+							{actions.map((action, index) => (
+								<ActionButton key={index} {...action} />
 							))}
 						</View>
 					</View>
@@ -275,14 +260,16 @@ const Dashboard = () => {
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.recent_purchases', 'Recent Purchases')}</Text>
-							<TouchableOpacity onPress={() => router.push('/home/purchases' as any)}>
-								<Text style={[styles.link, { color: colors.primary }]}>{translate('dashboard.view_all', 'View all')}</Text>
+							<TouchableOpacity onPress={() => router.push('/home/purchases' as any)} style={styles.iconButton}>
+								<Ionicons name="chevron-forward" size={20} color={colors.primary} />
 							</TouchableOpacity>
 						</View>
 						<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
 							{recentPurchases.length === 0 ? (
 								<View style={styles.emptyState}>
-									<Feather name="shopping-bag" size={32} color={colors.textSecondary} />
+									<View style={[styles.emptyIconContainer, { backgroundColor: colors.surface }]}>
+										<Feather name="shopping-bag" size={32} color={colors.textTertiary} />
+									</View>
 									<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('dashboard.no_purchases', 'No purchases yet')}</Text>
 									<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{translate('dashboard.browse_shops_sub', 'Browse shops to place your first purchase')}</Text>
 								</View>
@@ -294,8 +281,13 @@ const Dashboard = () => {
 										onPress={() => router.push('/home/purchases' as any)}
 										activeOpacity={0.8}
 									>
+										<View style={[styles.purchaseIcon, { backgroundColor: `${colors.primary}10` }]}>
+											<MaterialIcons name="store" size={20} color={colors.primary} />
+										</View>
 										<View style={styles.purchaseMeta}>
-											<Text style={[styles.purchaseTitle, { color: colors.text }]}>{localize(purchase.shop.name)}</Text>
+											<Text style={[styles.purchaseTitle, { color: colors.text }]} numberOfLines={1}>
+												{localize(purchase.shop.name)}
+											</Text>
 											<Text style={[styles.purchaseDate, { color: colors.textSecondary }]}>{formatDate(purchase.createdAt)}</Text>
 										</View>
 										<View style={styles.purchaseRight}>
@@ -322,46 +314,6 @@ const createStyles = (colors: any) =>
 		container: {
 			flex: 1
 		},
-		heroCardContainer: {
-			marginBottom: 16
-		},
-		heroCard: {
-			padding: 24,
-			borderRadius: 24
-		},
-		heroHeader: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			marginBottom: 8
-		},
-		heroIcon: {
-			width: 40,
-			height: 40,
-			borderRadius: 12,
-			backgroundColor: 'rgba(255,255,255,0.2)',
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginRight: 12
-		},
-		heroTitle: {
-			fontSize: 16,
-			fontWeight: '600',
-			color: '#fff'
-		},
-		heroValue: {
-			fontSize: 32,
-			fontWeight: '700',
-			color: '#fff',
-			marginBottom: 8
-		},
-		heroFooter: {
-			flexDirection: 'row',
-			alignItems: 'center'
-		},
-		heroSubtitle: {
-			fontSize: 14,
-			color: 'rgba(255,255,255,0.8)'
-		},
 		scrollContent: {
 			paddingHorizontal: 16,
 			paddingBottom: 28,
@@ -374,31 +326,80 @@ const createStyles = (colors: any) =>
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginBottom: 12
+			marginBottom: 16
 		},
 		sectionTitle: {
 			fontSize: 18,
-			fontWeight: '700'
+			fontWeight: '700',
+			letterSpacing: -0.5
 		},
-		statsRow: {
+		statsGrid: {
 			flexDirection: 'row',
-			gap: 12,
-			marginBottom: 16
+			flexWrap: 'wrap',
+			gap: 12
 		},
 		statCard: {
-			flex: 1,
-			borderRadius: 16,
-			padding: 12,
+			width: COLUMN_WIDTH,
+			borderRadius: 20,
+			padding: 16,
 			borderWidth: 1,
+			overflow: 'hidden',
+			...Platform.select({
+				ios: {
+					shadowColor: '#000',
+					shadowOffset: { width: 0, height: 4 },
+					shadowOpacity: 0.1,
+					shadowRadius: 8
+				},
+				android: {
+					elevation: 3
+				}
+			})
+		},
+		statGradient: {
+			...StyleSheet.absoluteFillObject
+		},
+		statIcon: {
+			width: 44,
+			height: 44,
+			borderRadius: 12,
 			alignItems: 'center',
 			justifyContent: 'center',
-			minHeight: 100,
-			gap: 8,
+			marginBottom: 12
+		},
+		statBody: {
+			gap: 2
+		},
+		statValue: {
+			fontSize: 20,
+			fontWeight: '700'
+		},
+		statLabel: {
+			fontSize: 12,
+			fontWeight: '500'
+		},
+		actionsRow: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center'
+		},
+		actionItem: {
+			alignItems: 'center',
+			width: (width - 32) / 4,
+			gap: 8
+		},
+		actionButton: {
+			width: 60,
+			height: 60,
+			borderRadius: 20,
+			borderWidth: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
 			...Platform.select({
 				ios: {
 					shadowColor: '#000',
 					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.05,
+					shadowOpacity: 0.1,
 					shadowRadius: 4
 				},
 				android: {
@@ -406,66 +407,35 @@ const createStyles = (colors: any) =>
 				}
 			})
 		},
-		statIcon: {
-			width: 36,
-			height: 36,
-			borderRadius: 10,
-			alignItems: 'center',
-			justifyContent: 'center',
-			marginBottom: 4
-		},
-		statBody: {
-			alignItems: 'center'
-		},
-		statLabel: {
-			fontSize: 12,
-			fontWeight: '500',
-			textAlign: 'center'
-		},
-		statValue: {
-			fontSize: 18,
-			fontWeight: '700',
-			marginBottom: 2
-		},
-		actionsGrid: {
-			flexDirection: 'row',
-			flexWrap: 'wrap',
-			gap: 12
-		},
-		actionCard: {
-			flexBasis: '48%',
-			borderRadius: 16,
-			padding: 16,
-			borderWidth: 1,
-			gap: 12
-		},
-		actionIcon: {
+		actionIconInner: {
 			width: 48,
 			height: 48,
-			borderRadius: 14,
-			alignItems: 'center',
-			justifyContent: 'center'
+			borderRadius: 16,
+			justifyContent: 'center',
+			alignItems: 'center'
 		},
-		actionLabel: {
-			fontSize: 15,
-			fontWeight: '600',
-			marginBottom: 2
-		},
-		actionSubtext: {
-			fontSize: 12
+		actionButtonLabel: {
+			fontSize: 12,
+			fontWeight: '600'
 		},
 		panel: {
-			borderRadius: 20,
+			borderRadius: 24,
 			borderWidth: 1,
-			paddingHorizontal: 16,
-			paddingVertical: 8
+			padding: 8
 		},
 		purchaseRow: {
 			flexDirection: 'row',
-			justifyContent: 'space-between',
 			alignItems: 'center',
-			paddingVertical: 14,
-			borderBottomWidth: 1
+			padding: 12,
+			borderBottomWidth: 1,
+			gap: 12
+		},
+		purchaseIcon: {
+			width: 40,
+			height: 40,
+			borderRadius: 12,
+			justifyContent: 'center',
+			alignItems: 'center'
 		},
 		purchaseMeta: {
 			flex: 1
@@ -476,45 +446,58 @@ const createStyles = (colors: any) =>
 		},
 		purchaseDate: {
 			fontSize: 12,
-			marginTop: 4
+			marginTop: 2
 		},
 		purchaseRight: {
-			alignItems: 'flex-end',
-			minWidth: 110
+			alignItems: 'flex-end'
 		},
 		purchaseAmount: {
-			fontSize: 16,
+			fontSize: 15,
 			fontWeight: '700'
 		},
 		statusBadge: {
-			marginTop: 6,
-			paddingHorizontal: 10,
-			paddingVertical: 4,
-			borderRadius: 12,
-			alignSelf: 'flex-start'
+			marginTop: 4,
+			paddingHorizontal: 8,
+			paddingVertical: 2,
+			borderRadius: 8
 		},
 		statusText: {
-			fontSize: 11,
-			fontWeight: '600',
-			textTransform: 'capitalize'
+			fontSize: 10,
+			fontWeight: '700',
+			textTransform: 'uppercase'
 		},
-		link: {
-			fontSize: 14,
-			fontWeight: '600'
+		headerIcon: {
+			width: 40,
+			height: 40,
+			borderRadius: 12,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		iconButton: {
+			padding: 4
 		},
 		emptyState: {
 			alignItems: 'center',
-			paddingVertical: 32,
-			gap: 8
+			paddingVertical: 40,
+			gap: 12
+		},
+		emptyIconContainer: {
+			width: 80,
+			height: 80,
+			borderRadius: 40,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginBottom: 8
 		},
 		emptyText: {
 			fontSize: 16,
-			fontWeight: '600'
+			fontWeight: '700'
 		},
 		emptySubtext: {
-			fontSize: 13,
+			fontSize: 14,
 			textAlign: 'center',
-			maxWidth: 200
+			maxWidth: '80%',
+			lineHeight: 20
 		}
 	})
 

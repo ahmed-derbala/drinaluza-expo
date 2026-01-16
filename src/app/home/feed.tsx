@@ -7,6 +7,7 @@ import { useFocusEffect } from '@react-navigation/native'
 import FeedCard from '../../components/feed/feed.card'
 import { useTheme } from '../../contexts/ThemeContext'
 import { Ionicons } from '@expo/vector-icons'
+import ScreenHeader from '../../components/common/ScreenHeader'
 import ErrorState from '../../components/common/ErrorState'
 import Toast from '../../components/common/Toast'
 import SearchBar from '../../components/search/SearchBar'
@@ -46,6 +47,16 @@ const createStyles = (colors: any) =>
 			width: 48,
 			height: 48,
 			borderRadius: 14,
+			backgroundColor: colors.surface,
+			justifyContent: 'center',
+			alignItems: 'center',
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		refreshButtonSmall: {
+			width: 40,
+			height: 40,
+			borderRadius: 10,
 			backgroundColor: colors.surface,
 			justifyContent: 'center',
 			alignItems: 'center',
@@ -248,25 +259,6 @@ export default function FeedScreen() {
 		setShowToast(true)
 	}, [])
 
-	const renderHeader = useCallback(
-		() => (
-			<View style={styles.headerContainer}>
-				<View style={styles.headerTop}>
-					<View>
-						<Text style={styles.greeting}>
-							{translate('hello', 'Hello')}, {user?.slug || 'Guest'}
-						</Text>
-						<Text style={styles.title}>{translate('welcome_back', 'Welcome back 👋')}</Text>
-					</View>
-					<TouchableOpacity style={styles.refreshButton} onPress={refreshData} disabled={refreshing}>
-						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh'} size={22} color={refreshing ? colors.textSecondary : colors.primary} />
-					</TouchableOpacity>
-				</View>
-			</View>
-		),
-		[styles, colors, refreshData, refreshing, user]
-	)
-
 	const renderFooter = () => {
 		if (!isLoadingMore) return null
 		return (
@@ -303,6 +295,17 @@ export default function FeedScreen() {
 
 	return (
 		<View style={styles.container}>
+			<ScreenHeader
+				title={translate('feed', 'Feed')}
+				subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`}
+				showBack={false}
+				rightActions={
+					<TouchableOpacity style={styles.refreshButtonSmall} onPress={refreshData} disabled={refreshing}>
+						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh'} size={20} color={colors.primary} />
+					</TouchableOpacity>
+				}
+			/>
+
 			{/* Search Bar */}
 			<View
 				style={{
@@ -324,7 +327,6 @@ export default function FeedScreen() {
 				columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding, alignItems: 'stretch' } : undefined}
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={[styles.list, numColumns === 1 && { paddingHorizontal: padding }]}
-				ListHeaderComponent={renderHeader}
 				ListEmptyComponent={!loading ? renderEmpty : null}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}

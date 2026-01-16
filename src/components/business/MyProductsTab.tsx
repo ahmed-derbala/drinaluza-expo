@@ -1,16 +1,21 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, Platform } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { useRouter } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons'
 import { getMyProducts } from '../products/products.api'
 import { ProductType } from '../products/products.type'
 import { useFocusEffect } from '@react-navigation/native'
 import { useTheme } from '../../contexts/ThemeContext'
 
+import ScreenHeader from '../common/ScreenHeader'
+import { useUser } from '../../contexts/UserContext'
+
 export default function MyProductsTab() {
 	const router = useRouter()
 	const { colors } = useTheme()
+	const { translate } = useUser()
 	const [products, setProducts] = useState<ProductType[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
@@ -58,32 +63,44 @@ export default function MyProductsTab() {
 
 	const renderProductItem = ({ item }: { item: ProductType }) => {
 		const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+		const { localize, translate } = useUser()
 
 		return (
-			<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.7} onPress={() => {}}>
+			<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.8} onPress={() => {}}>
+				<LinearGradient colors={[`${colors.primary}08`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
 				<View style={styles.cardContent}>
 					<View style={styles.imageContainer}>
 						<SmartImage source={{ uri: imageUrl || '' }} style={styles.productImage} resizeMode="cover" fallbackIcon="inventory" />
+						{item.stock?.quantity && item.stock.quantity <= (item.stock.minThreshold || 5) && (
+							<View style={styles.lowStockBadge}>
+								<Text style={styles.lowStockText}>Low</Text>
+							</View>
+						)}
 					</View>
 					<View style={styles.infoContainer}>
 						<Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-							{item.name?.en}
+							{localize(item.name) || item.name?.en}
 						</Text>
-						<Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-							{item.shop?.name?.en || 'Unknown Shop'}
-						</Text>
-						<View style={styles.priceRow}>
-							<Text style={[styles.priceText, { color: colors.primary }]} numberOfLines={1}>
-								{item.price?.total?.tnd?.toFixed(2) || '0.00'} TND
-								<Text style={[styles.unitText, { color: colors.textTertiary }]}> / {item.unit?.measure || 'unit'}</Text>
+						<View style={styles.shopRow}>
+							<Ionicons name="storefront-outline" size={12} color={colors.textSecondary} />
+							<Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+								{localize(item.shop?.name) || item.shop?.name?.en || 'Unknown Shop'}
 							</Text>
 						</View>
-						<View style={styles.stockRow}>
-							<Ionicons name="cube-outline" size={14} color={colors.textTertiary} />
-							<Text style={[styles.stockText, { color: colors.textTertiary }]}>Stock: {item.stock?.quantity || 0}</Text>
+						<View style={styles.footerRow}>
+							<Text style={[styles.priceText, { color: colors.primary }]}>
+								{item.price?.total?.tnd?.toFixed(2) || '0.00'} <Text style={styles.currencyText}>TND</Text>
+								<Text style={[styles.unitText, { color: colors.textTertiary }]}> / {item.unit?.measure || 'unit'}</Text>
+							</Text>
+							<View style={styles.stockBadge}>
+								<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
+								<Text style={[styles.stockText, { color: colors.textSecondary }]}>{item.stock?.quantity || 0}</Text>
+							</View>
 						</View>
 					</View>
-					<Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />
+					<View style={styles.arrowContainer}>
+						<Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+					</View>
 				</View>
 			</TouchableOpacity>
 		)
@@ -99,7 +116,7 @@ export default function MyProductsTab() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Text style={[styles.title, { color: colors.text }]}>My Products</Text>
+			<ScreenHeader title={translate('business.my_products', 'My Products')} showBack={true} />
 			<FlatList
 				data={products}
 				renderItem={renderProductItem}
@@ -108,12 +125,25 @@ export default function MyProductsTab() {
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.1}
-				ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No products found</Text>}
+				ListEmptyComponent={
+					<View style={styles.emptyContainer}>
+						<LinearGradient colors={[`${colors.primary}15`, `${colors.primary}05`]} style={styles.emptyIconContainer}>
+							<Ionicons name="fish-outline" size={48} color={colors.primary} />
+						</LinearGradient>
+						<Text style={[styles.emptyTitleText, { color: colors.text }]}>No Products Yet</Text>
+						<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your seafood products to your shops to start selling.</Text>
+						<TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/home/business/create-product')}>
+							<Ionicons name="add" size={32} color="#fff" />
+						</TouchableOpacity>
+					</View>
+				}
 			/>
 
 			{/* FAB to create product */}
-			<TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => router.push('/home/business/create-product')}>
-				<Ionicons name="add" size={28} color="#fff" />
+			<TouchableOpacity style={styles.fabContainer} onPress={() => router.push('/home/business/create-product')}>
+				<LinearGradient colors={[colors.primary, `${colors.primary}E6`]} style={styles.fab}>
+					<Ionicons name="add" size={30} color="#fff" />
+				</LinearGradient>
 			</TouchableOpacity>
 		</View>
 	)
@@ -121,14 +151,7 @@ export default function MyProductsTab() {
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1,
-		padding: 10
-	},
-	title: {
-		fontSize: 20,
-		fontWeight: 'bold',
-		marginBottom: 16,
-		paddingHorizontal: 10
+		flex: 1
 	},
 	loadingText: {
 		fontSize: 16,
@@ -136,34 +159,60 @@ const styles = StyleSheet.create({
 		marginTop: 50
 	},
 	list: {
-		paddingBottom: 20
+		padding: 20,
+		paddingBottom: 100
 	},
 	card: {
-		padding: 12,
-		marginHorizontal: 16,
-		marginBottom: 12,
-		borderRadius: 16,
+		padding: 16,
+		marginBottom: 16,
+		borderRadius: 20,
 		borderWidth: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.05,
-		shadowRadius: 4,
-		elevation: 2
+		overflow: 'hidden',
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 3
+			}
+		})
+	},
+	cardGradient: {
+		...StyleSheet.absoluteFillObject
 	},
 	cardContent: {
 		flexDirection: 'row',
 		alignItems: 'center'
 	},
 	imageContainer: {
-		width: 64,
-		height: 64,
-		borderRadius: 12,
+		width: 80,
+		height: 80,
+		borderRadius: 16,
 		overflow: 'hidden',
-		backgroundColor: 'rgba(0,0,0,0.05)'
+		backgroundColor: 'rgba(0,0,0,0.05)',
+		position: 'relative'
 	},
 	productImage: {
 		width: '100%',
 		height: '100%'
+	},
+	lowStockBadge: {
+		position: 'absolute',
+		bottom: 0,
+		left: 0,
+		right: 0,
+		backgroundColor: '#EF4444',
+		paddingVertical: 2,
+		alignItems: 'center'
+	},
+	lowStockText: {
+		color: '#fff',
+		fontSize: 9,
+		fontWeight: '800',
+		textTransform: 'uppercase'
 	},
 	infoContainer: {
 		flex: 1,
@@ -171,55 +220,128 @@ const styles = StyleSheet.create({
 		marginRight: 8
 	},
 	cardTitle: {
-		fontSize: 16,
+		fontSize: 17,
 		fontWeight: '700',
-		marginBottom: 2
+		marginBottom: 4,
+		letterSpacing: -0.3
+	},
+	shopRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		marginBottom: 8
 	},
 	cardSubtitle: {
 		fontSize: 13,
-		marginBottom: 4
+		fontWeight: '500'
 	},
-	priceRow: {
+	footerRow: {
 		flexDirection: 'row',
-		alignItems: 'baseline',
-		marginBottom: 2
+		alignItems: 'center',
+		justifyContent: 'space-between'
 	},
 	priceText: {
-		fontSize: 15,
+		fontSize: 16,
 		fontWeight: '800'
+	},
+	currencyText: {
+		fontSize: 12,
+		fontWeight: '600'
 	},
 	unitText: {
 		fontSize: 12,
-		marginLeft: 4,
-		fontWeight: '600'
+		fontWeight: '500'
 	},
-	stockRow: {
+	stockBadge: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 4
+		gap: 4,
+		backgroundColor: 'rgba(0,0,0,0.03)',
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 8
 	},
 	stockText: {
 		fontSize: 12,
-		fontWeight: '500'
+		fontWeight: '700'
 	},
-	emptyText: {
-		fontSize: 16,
-		textAlign: 'center',
-		marginTop: 50
+	arrowContainer: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: 'rgba(0,0,0,0.02)',
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
-	fab: {
-		position: 'absolute',
-		right: 20,
-		bottom: 20,
-		width: 56,
-		height: 56,
-		borderRadius: 28,
+	emptyContainer: {
+		flex: 1,
 		alignItems: 'center',
 		justifyContent: 'center',
-		elevation: 4,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.3,
-		shadowRadius: 4
+		padding: 40,
+		marginTop: 60
+	},
+	emptyIconContainer: {
+		width: 100,
+		height: 100,
+		borderRadius: 50,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginBottom: 24
+	},
+	emptyTitleText: {
+		fontSize: 22,
+		fontWeight: '800',
+		marginBottom: 12,
+		textAlign: 'center'
+	},
+	emptySubtext: {
+		fontSize: 15,
+		textAlign: 'center',
+		lineHeight: 22,
+		marginBottom: 32
+	},
+	emptyButton: {
+		paddingHorizontal: 28,
+		paddingVertical: 14,
+		borderRadius: 16,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.2,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 4
+			}
+		})
+	},
+	emptyButtonText: {
+		color: '#fff',
+		fontSize: 16,
+		fontWeight: '700'
+	},
+	fabContainer: {
+		position: 'absolute',
+		right: 24,
+		bottom: 24,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 8 },
+				shadowOpacity: 0.25,
+				shadowRadius: 12
+			},
+			android: {
+				elevation: 8
+			}
+		})
+	},
+	fab: {
+		width: 64,
+		height: 64,
+		borderRadius: 32,
+		alignItems: 'center',
+		justifyContent: 'center'
 	}
 })

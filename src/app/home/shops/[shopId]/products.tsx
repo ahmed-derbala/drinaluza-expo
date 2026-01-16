@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native'
-import { useLocalSearchParams, Stack } from 'expo-router'
+import { useLocalSearchParams } from 'expo-router'
 import { getShopProductsBySlug } from '../../../../components/shops/shops.api'
 import { Product } from '../../../../components/shops/shops.interface'
 import { useTheme } from '../../../../contexts/ThemeContext'
 import { parseError } from '../../../../utils/errorHandler'
 import ErrorState from '../../../../components/common/ErrorState'
+import ScreenHeader from '../../../../components/common/ScreenHeader'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import Toast from '../../../../components/common/Toast'
@@ -134,12 +135,7 @@ export default function ShopProductsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Stack.Screen
-				options={{
-					headerTitle: headerTitle,
-					headerBackTitle: translate('cancel', 'Back')
-				}}
-			/>
+			<ScreenHeader title={headerTitle} showBack={true} />
 
 			{/* Local Search Component */}
 			{!error && (

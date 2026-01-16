@@ -771,14 +771,11 @@ export default function ShopsListScreen() {
 	// Main render
 	return (
 		<View style={styles.container as ViewStyle}>
-			{!error && (
-				<View style={styles.headerSection as ViewStyle}>
-					<Text style={styles.headerTitle as TextStyle}>{translate('discover_shops', 'Discover Shops')}</Text>
-					<Text style={styles.headerSubtitle as TextStyle}>
-						{shops.length} {shops.length === 1 ? translate('shop_product', 'shop') : translate('shop_products_plural', 'shops')} {translate('shops_available', 'available near you')}
-					</Text>
-				</View>
-			)}
+			<ScreenHeader
+				title={translate('discover_shops', 'Discover Shops')}
+				subtitle={`${shops.length} ${shops.length === 1 ? translate('shop_product', 'shop') : translate('shop_products_plural', 'shops')} ${translate('shops_available', 'available near you')}`}
+				showBack={true}
+			/>
 			<FlatList
 				key={`cols-${numColumns}`}
 				data={shops}

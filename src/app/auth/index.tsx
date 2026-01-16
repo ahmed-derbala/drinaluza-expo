@@ -68,10 +68,31 @@ export default function AuthScreen() {
 	const handleResetApp = async () => {
 		const performReset = async () => {
 			try {
+				// Clear AsyncStorage (works on both Android and web)
 				await AsyncStorage.clear()
 				setSavedAuths([])
 
-				log({ level: 'info', label: 'auth', message: 'App reset performed' })
+				// Clear web-specific storage
+				if (Platform.OS === 'web') {
+					// Clear localStorage
+					if (typeof localStorage !== 'undefined') {
+						localStorage.clear()
+					}
+					// Clear sessionStorage
+					if (typeof sessionStorage !== 'undefined') {
+						sessionStorage.clear()
+					}
+					// Clear all cookies
+					if (typeof document !== 'undefined' && document.cookie) {
+						document.cookie.split(';').forEach((cookie) => {
+							const eqPos = cookie.indexOf('=')
+							const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim()
+							document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
+						})
+					}
+				}
+
+				log({ level: 'info', label: 'auth', message: 'App reset performed - all data cleared' })
 
 				if (Platform.OS === 'web') {
 					window.location.reload()

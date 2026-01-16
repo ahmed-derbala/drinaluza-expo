@@ -31,13 +31,13 @@ export default function ShopsLayout() {
 			<Stack.Screen
 				name="[shopId]/index"
 				options={{
-					headerTitle: 'Shop Details'
+					headerShown: false
 				}}
 			/>
 			<Stack.Screen
 				name="[shopId]/products"
 				options={{
-					headerTitle: 'Products'
+					headerShown: false
 				}}
 			/>
 		</Stack>

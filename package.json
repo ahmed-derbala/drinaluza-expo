@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.0.52",
+  "version": "1.0.56",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -42,8 +42,8 @@
     "update": "npm run check-updates && npm i -g eas-cli expo && npm run clean",
     "check-updates": "npm i -D npm-check-updates && ncu -u",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
-    "push": "npm run format && git add . && git commit -m",
-    "postpush": "git push && npm run ver",
+    "push": "npm run ver && npm run format && git add . && git commit -m",
+    "postpush": "git push",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {

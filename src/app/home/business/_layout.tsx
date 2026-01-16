@@ -34,15 +34,13 @@ export default function BusinessLayout() {
 				<Stack.Screen
 					name="my-shops"
 					options={{
-						title: 'My Shops',
-						headerShown: true
+						headerShown: false
 					}}
 				/>
 				<Stack.Screen
 					name="my-products"
 					options={{
-						title: 'My Products',
-						headerShown: true
+						headerShown: false
 					}}
 				/>
 				<Stack.Screen

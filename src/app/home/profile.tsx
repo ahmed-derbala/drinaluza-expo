@@ -1019,31 +1019,36 @@ export default function ProfileScreen() {
 								<>
 									<InfoItem
 										label="GPS Coordinates"
-										value={`${userData.location.coordinates[1].toFixed(4)}, ${userData.location.coordinates[0].toFixed(4)}`}
+										value={userData.location?.coordinates ? `${userData.location.coordinates[1].toFixed(4)}, ${userData.location.coordinates[0].toFixed(4)}` : translate('not_set', 'Not set')}
 										icon="location"
 										styles={styles}
 										iconColor={colors.primary}
 										onPress={() => {
-											const [longitude, latitude] = userData.location.coordinates
-											const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-											Linking.openURL(mapUrl).catch(() => {})
+											if (userData.location?.coordinates) {
+												const [longitude, latitude] = userData.location.coordinates
+												const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+												Linking.openURL(mapUrl).catch(() => {})
+											}
 										}}
 										onCopy={async () => {
-											const [longitude, latitude] = userData.location.coordinates
-											await Clipboard.setStringAsync(`${latitude}, ${longitude}`)
-											showAlert('Copied', 'Location coordinates copied to clipboard')
+											if (userData.location?.coordinates) {
+												const [longitude, latitude] = userData.location.coordinates
+												await Clipboard.setStringAsync(`${latitude}, ${longitude}`)
+												showAlert('Copied', 'Location coordinates copied to clipboard')
+											}
 										}}
 									/>
 									<TouchableOpacity
-										style={[styles.addButton, { borderColor: colors.primary, marginTop: 8 }]}
+										style={[styles.iconButton, { alignSelf: 'center', marginTop: 16 }]}
 										onPress={() => {
-											const [longitude, latitude] = userData.location.coordinates
-											const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-											Linking.openURL(mapUrl).catch(() => {})
+											if (userData.location?.coordinates) {
+												const [longitude, latitude] = userData.location.coordinates
+												const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+												Linking.openURL(mapUrl).catch(() => {})
+											}
 										}}
 									>
-										<Ionicons name="map" size={20} color={colors.primary} />
-										<Text style={[styles.addButtonText, { color: colors.primary }]}>Open in Maps</Text>
+										<Ionicons name="map" size={24} color={colors.primary} />
 									</TouchableOpacity>
 								</>
 							)}
@@ -1494,20 +1499,19 @@ export default function ProfileScreen() {
 				</Section>
 
 				<Section title="🔐 Account Actions" styles={styles}>
-					{userData.role === 'customer' && (
-						<TouchableOpacity style={[styles.actionButton, { borderColor: colors.primary + '40', backgroundColor: colors.primary + '10' }]} onPress={handleRequestBusiness}>
-							<Ionicons name="briefcase-outline" size={20} color={colors.primary} style={{ marginRight: 8 }} />
-							<Text style={[styles.actionButtonText, { color: colors.primary }]}>Request Business Account</Text>
+					<View style={styles.actionRow}>
+						{userData.role === 'customer' && (
+							<TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.primary + '15' }]} onPress={handleRequestBusiness}>
+								<Ionicons name="briefcase" size={24} color={colors.primary} />
+							</TouchableOpacity>
+						)}
+						<TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.text + '05' }]} onPress={handleSwitchUser}>
+							<Ionicons name="people" size={24} color={colors.text} />
 						</TouchableOpacity>
-					)}
-					<TouchableOpacity style={[styles.actionButton, { borderColor: colors.border, backgroundColor: colors.card }]} onPress={handleSwitchUser}>
-						<Ionicons name="people-outline" size={20} color={colors.text} style={{ marginRight: 8 }} />
-						<Text style={[styles.actionButtonText, { color: colors.text }]}>Switch Account</Text>
-					</TouchableOpacity>
-					<TouchableOpacity style={[styles.actionButton, styles.logoutButton]} onPress={handleSignOut}>
-						<Ionicons name="log-out-outline" size={20} color={colors.error} style={{ marginRight: 8 }} />
-						<Text style={styles.logoutButtonText}>Sign Out</Text>
-					</TouchableOpacity>
+						<TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.error + '10' }]} onPress={handleSignOut}>
+							<Ionicons name="log-out" size={24} color={colors.error} />
+						</TouchableOpacity>
+					</View>
 				</Section>
 			</ScrollView>
 		</View>
@@ -1862,35 +1866,20 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			fontSize: 16,
 			fontWeight: '600'
 		},
-		actionButton: {
+		actionRow: {
 			flexDirection: 'row',
-			alignItems: 'center',
 			justifyContent: 'center',
-			padding: 16,
-			marginBottom: 12,
-			borderRadius: 16,
-			borderWidth: 1
+			gap: 20,
+			marginTop: 8
 		},
-		actionButtonText: {
-			fontSize: 16,
-			fontWeight: '600'
-		},
-		logoutButton: {
-			flexDirection: 'row',
-			alignItems: 'center',
+		iconButton: {
+			width: 60,
+			height: 60,
+			borderRadius: 30,
 			justifyContent: 'center',
-			padding: 16,
-			marginTop: 0,
-			marginBottom: 0,
-			borderRadius: 16,
-			backgroundColor: colors.error + '10',
+			alignItems: 'center',
 			borderWidth: 1,
-			borderColor: colors.error + '20'
-		},
-		logoutButtonText: {
-			color: colors.error,
-			fontSize: 16,
-			fontWeight: '600'
+			borderColor: 'rgba(0,0,0,0.05)'
 		},
 		langOption: {
 			flexDirection: 'row',

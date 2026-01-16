@@ -71,10 +71,11 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			{/* Product Photo */}
 			<View style={styles.imageContainer}>
 				<SmartImage
-					source={{ uri: item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0] }}
+					source={{ uri: item.media?.thumbnail?.url }}
 					style={styles.productImage}
 					resizeMode="cover"
-					fallbackIcon="image-not-supported"
+					entityType="product"
+					fallbackSources={[item.defaultProduct?.media?.thumbnail?.url, item.photos?.[0]]}
 				/>
 				{!isAvailable && (
 					<View style={styles.unavailableOverlay}>

@@ -8,6 +8,7 @@ import { APP_VERSION, BACKEND_URL } from '../../config'
 import Toast from '../../components/common/Toast'
 import { log } from '../../core/log'
 import { useUser } from '../../contexts/UserContext'
+import ScreenHeader from '../../components/common/ScreenHeader'
 
 export default function SettingsScreen() {
 	const { colors } = useTheme()
@@ -119,10 +120,8 @@ export default function SettingsScreen() {
 
 	return (
 		<ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
-			<View style={styles.header}>
-				<Text style={styles.title}>{translate('settings', 'Settings')}</Text>
-				<Text style={styles.headerSubtitle}>Drinaluza - Seafood Business Manager</Text>
-			</View>
+			<ScreenHeader title={translate('settings', 'Settings')} subtitle="Drinaluza - Seafood Business Manager" showBack={false} />
+			<View style={{ height: 16 }} />
 
 			<SettingSection title={translate('social_media', 'Social Media')}>
 				<SettingItem

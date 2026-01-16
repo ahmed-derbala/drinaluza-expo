@@ -18,6 +18,8 @@ import {
 	TextStyle
 } from 'react-native'
 import { useRouter } from 'expo-router'
+import { LinearGradient } from 'expo-linear-gradient'
+import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { getMyShops, createShop } from '../shops/shops.api'
 import { Shop, CreateShopRequest } from '../shops/shops.interface'
@@ -88,27 +90,50 @@ const MIN_SHOP_NAME_LENGTH = 3
 const MAX_SHOP_NAME_LENGTH = 50
 
 const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPress, theme }) => {
-	const { localize } = useUser()
+	const { localize, translate } = useUser()
+
 	return (
-		<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating}>
+		<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating} activeOpacity={0.8}>
 			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
-				<View style={styles.shopHeader}>
-					<Text style={[styles.shopName, { color: theme.text }]}>{localize(shop.name) || 'Unnamed Shop'}</Text>
-					{isNavigating && <ActivityIndicator size="small" color={theme.primary} style={styles.loadingIndicator} />}
+				<LinearGradient colors={[`${theme.primary}10`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
+
+				<View style={styles.shopContent}>
+					<View style={styles.shopHeader}>
+						<View style={styles.shopIconContainer}>
+							<LinearGradient colors={[theme.primary, `${theme.primary}CC`]} style={styles.shopIconGradient}>
+								<Ionicons name="storefront" size={24} color="#fff" />
+							</LinearGradient>
+						</View>
+						<View style={styles.shopInfo}>
+							<Text style={[styles.shopName, { color: theme.text }]} numberOfLines={1}>
+								{localize(shop.name) || translate('unnamed_shop', 'Unnamed Shop')}
+							</Text>
+							<Text style={[styles.shopSlug, { color: theme.textSecondary }]}>@{shop.slug}</Text>
+						</View>
+						<View style={[styles.statusBadge, { backgroundColor: shop.isActive ? '#10B98115' : '#EF444415' }]}>
+							<View style={[styles.statusDot, { backgroundColor: shop.isActive ? '#10B981' : '#EF4444' }]} />
+							<Text style={[styles.statusText, { color: shop.isActive ? '#10B981' : '#EF4444' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
+						</View>
+					</View>
+
+					<View style={styles.shopMetaGrid}>
+						<View style={styles.metaItem}>
+							<Ionicons name="location-outline" size={16} color={theme.textSecondary} />
+							<Text style={[styles.metaText, { color: theme.textSecondary }]} numberOfLines={1}>
+								{shop.address?.city || 'No location set'}
+							</Text>
+						</View>
+						<View style={styles.metaItem}>
+							<Ionicons name="navigate-outline" size={16} color={theme.textSecondary} />
+							<Text style={[styles.metaText, { color: theme.textSecondary }]}>{shop.deliveryRadiusKm || 0} km radius</Text>
+						</View>
+					</View>
+
+					<View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
+						<Text style={[styles.tapHint, { color: theme.primary }]}>{isNavigating ? 'Opening...' : 'View Details'}</Text>
+						{isNavigating ? <ActivityIndicator size="small" color={theme.primary} /> : <Ionicons name="arrow-forward" size={16} color={theme.primary} />}
+					</View>
 				</View>
-				{shop.owner && (
-					<Text style={[styles.meta, { color: theme.textSecondary }]}>
-						Owner: {localize(shop.owner.name)} (@{shop.owner.slug})
-					</Text>
-				)}
-				{shop.location?.coordinates?.length === 2 && (
-					<Text style={[styles.meta, { color: theme.textSecondary }]}>
-						Location: ({shop.location.coordinates[1].toFixed(4)}, {shop.location.coordinates[0].toFixed(4)})
-					</Text>
-				)}
-				{typeof shop.deliveryRadiusKm === 'number' && <Text style={[styles.meta, { color: theme.textSecondary }]}>Delivery radius: {shop.deliveryRadiusKm} km</Text>}
-				<Text style={[styles.status, { color: shop.isActive ? '#4CAF50' : '#F44336' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
-				<Text style={[styles.tapHint, { color: theme.primary }]}>Tap to view details →</Text>
 			</View>
 		</TouchableOpacity>
 	)
@@ -355,6 +380,8 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 	}
 )
 
+import ScreenHeader from '../common/ScreenHeader'
+
 const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
@@ -516,6 +543,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<ScreenHeader title={translate('business.my_shops', 'My Shops')} showBack={true} />
 			<FlatList
 				data={sortedShops}
 				keyExtractor={(item) => item._id}
@@ -524,12 +552,16 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				ListEmptyComponent={
 					!refreshing ? (
 						<View style={styles.emptyContainer}>
-							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{error || translate('business.no_shops', 'No shops found. Create your first shop to get started.')}</Text>
-							{error && (
-								<TouchableOpacity onPress={() => loadShops()} style={[styles.retryButton, { borderColor: colors.primary }]}>
-									<Text style={[styles.retryButtonText, { color: colors.primary }]}>{translate('common.retry', 'Retry')}</Text>
-								</TouchableOpacity>
-							)}
+							<LinearGradient colors={[`${colors.primary}15`, `${colors.primary}05`]} style={styles.emptyIconContainer}>
+								<Ionicons name="storefront-outline" size={48} color={colors.primary} />
+							</LinearGradient>
+							<Text style={[styles.emptyTitleText, { color: colors.text }]}>{error || translate('business.no_shops', 'Manage Your Shops')}</Text>
+							<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
+								{error ? translate('error_occurred', 'Wait, something went wrong...') : translate('business.no_shops_desc', 'Create your first shop to start selling seafood and managing inventory.')}
+							</Text>
+							<TouchableOpacity onPress={() => (error ? loadShops() : updateState({ modalVisible: true }))} style={[styles.emptyButton, { backgroundColor: colors.primary }]}>
+								<Ionicons name={error ? 'refresh' : 'add'} size={32} color="#fff" />
+							</TouchableOpacity>
 						</View>
 					) : null
 				}
@@ -550,8 +582,10 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				)}
 			/>
 
-			<TouchableOpacity style={[styles.fab, { backgroundColor: colors.primary }]} onPress={() => updateState({ modalVisible: true })}>
-				<Text style={styles.fabText}>+</Text>
+			<TouchableOpacity style={styles.fabContainer} onPress={() => updateState({ modalVisible: true })}>
+				<LinearGradient colors={[colors.primary, `${colors.primary}E6`]} style={styles.fab}>
+					<Ionicons name="add" size={30} color="#fff" />
+				</LinearGradient>
 			</TouchableOpacity>
 
 			<CreateShopForm
@@ -594,13 +628,31 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	listContent: {
-		padding: 16
+		padding: 20,
+		paddingBottom: 100
 	},
 	card: {
-		borderRadius: 8,
-		padding: 16,
-		marginBottom: 12,
-		borderWidth: 1
+		borderRadius: 24,
+		marginBottom: 16,
+		borderWidth: 1,
+		overflow: 'hidden',
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.1,
+				shadowRadius: 12
+			},
+			android: {
+				elevation: 4
+			}
+		})
+	},
+	cardGradient: {
+		...StyleSheet.absoluteFillObject
+	},
+	shopContent: {
+		padding: 20
 	},
 	disabledCard: {
 		opacity: 0.7
@@ -608,43 +660,99 @@ const styles = StyleSheet.create({
 	shopHeader: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 8
+		marginBottom: 20
+	},
+	shopIconContainer: {
+		width: 52,
+		height: 52,
+		borderRadius: 16,
+		overflow: 'hidden'
+	},
+	shopIconGradient: {
+		width: '100%',
+		height: '100%',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	shopInfo: {
+		flex: 1,
+		marginLeft: 16
 	},
 	shopName: {
 		fontSize: 18,
-		fontWeight: '600'
+		fontWeight: '700',
+		letterSpacing: -0.5
 	},
-	meta: {
-		fontSize: 14,
-		marginBottom: 4
+	shopSlug: {
+		fontSize: 13,
+		marginTop: 2
 	},
-	status: {
+	statusBadge: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 12,
+		gap: 6
+	},
+	statusDot: {
+		width: 6,
+		height: 6,
+		borderRadius: 3
+	},
+	statusText: {
+		fontSize: 11,
+		fontWeight: '800',
+		textTransform: 'uppercase'
+	},
+	shopMetaGrid: {
+		flexDirection: 'row',
+		marginBottom: 20,
+		gap: 20
+	},
+	metaItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		flex: 1
+	},
+	metaText: {
 		fontSize: 14,
-		fontWeight: '500',
-		marginTop: 8
+		fontWeight: '500'
+	},
+	cardFooter: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingTop: 16,
+		borderTopWidth: 1
 	},
 	tapHint: {
 		fontSize: 14,
-		marginTop: 8,
-		fontWeight: '500'
+		fontWeight: '700'
 	},
-	loadingIndicator: {
-		marginLeft: 8
+	fabContainer: {
+		position: 'absolute',
+		right: 24,
+		bottom: 24,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 8 },
+				shadowOpacity: 0.25,
+				shadowRadius: 12
+			},
+			android: {
+				elevation: 8
+			}
+		})
 	},
 	fab: {
-		position: 'absolute',
-		right: 20,
-		bottom: 20,
-		width: 56,
-		height: 56,
-		borderRadius: 28,
+		width: 64,
+		height: 64,
+		borderRadius: 32,
 		alignItems: 'center',
-		justifyContent: 'center',
-		elevation: 4,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.3,
-		shadowRadius: 2
+		justifyContent: 'center'
 	},
 	fabText: {
 		color: '#fff',
@@ -676,9 +784,9 @@ const styles = StyleSheet.create({
 	},
 	modalHeader: {
 		alignItems: 'center',
-		paddingTop: 24,
+		paddingTop: 32,
 		paddingHorizontal: 24,
-		paddingBottom: 16,
+		paddingBottom: 24,
 		borderBottomWidth: 1,
 		borderBottomColor: 'rgba(0,0,0,0.05)'
 	},
@@ -734,9 +842,10 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		borderWidth: 2,
-		borderRadius: 12,
-		paddingHorizontal: 12,
-		paddingVertical: 4
+		borderRadius: 16,
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+		gap: 12
 	},
 	inputIcon: {
 		width: 40,
@@ -748,7 +857,7 @@ const styles = StyleSheet.create({
 	},
 	textInput: {
 		fontSize: 16,
-		paddingVertical: 12
+		fontWeight: '600'
 	},
 	unitLabel: {
 		fontSize: 15,
@@ -789,7 +898,7 @@ const styles = StyleSheet.create({
 	},
 	infoText: {
 		fontSize: 13,
-		lineHeight: 18
+		lineHeight: 20
 	},
 	modalActions: {
 		flexDirection: 'row',
@@ -855,22 +964,51 @@ const styles = StyleSheet.create({
 	},
 	emptyContainer: {
 		flex: 1,
+		alignItems: 'center',
+		justifyContent: 'center',
+		padding: 40,
+		marginTop: 60
+	},
+	emptyIconContainer: {
+		width: 100,
+		height: 100,
+		borderRadius: 50,
 		justifyContent: 'center',
 		alignItems: 'center',
-		padding: 20
+		marginBottom: 24
 	},
-	emptyText: {
+	emptyTitleText: {
+		fontSize: 22,
+		fontWeight: '800',
+		marginBottom: 12,
+		textAlign: 'center'
+	},
+	emptySubtext: {
+		fontSize: 15,
 		textAlign: 'center',
-		marginBottom: 16
+		lineHeight: 22,
+		marginBottom: 32
 	},
-	retryButton: {
-		borderWidth: 1,
-		borderRadius: 4,
-		paddingHorizontal: 16,
-		paddingVertical: 8
+	emptyButton: {
+		paddingHorizontal: 28,
+		paddingVertical: 14,
+		borderRadius: 16,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.2,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 4
+			}
+		})
 	},
-	retryButtonText: {
-		fontWeight: '500'
+	emptyButtonText: {
+		color: '#fff',
+		fontSize: 16,
+		fontWeight: '700'
 	}
 })
 

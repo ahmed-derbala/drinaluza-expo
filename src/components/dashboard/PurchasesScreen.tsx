@@ -38,7 +38,10 @@ const PurchasesScreen = () => {
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
 	const { translate, localize } = useUser()
 
-	useBackButton(undefined, '/home/dashboard')
+	useBackButton(() => {
+		router.replace('/home/dashboard')
+		return true
+	}, '/home/dashboard')
 
 	const { width } = useWindowDimensions()
 
@@ -248,17 +251,37 @@ const PurchasesScreen = () => {
 					<View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
 
 					{/* Products Info */}
-					<ScrollView style={styles.productInfo} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-						{item.products.map((productItem, index) => (
-							<View key={index} style={styles.productRow}>
-								<Ionicons name="cube-outline" size={16} color={colors.textTertiary} />
-								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
-									{localize(productItem.product.name)}
-								</Text>
-								<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.quantity}</Text>
-							</View>
-						))}
-					</ScrollView>
+					<View style={styles.scrollWithIndicator}>
+						<ScrollView
+							style={styles.productInfo}
+							nestedScrollEnabled
+							showsVerticalScrollIndicator={true}
+							persistentScrollbar={true}
+							contentContainerStyle={{ flexGrow: 1, paddingBottom: 8 }}
+							indicatorStyle={isDark ? 'white' : 'black'}
+						>
+							{item.products.map((productItem, index) => {
+								const imageUrl =
+									productItem.product.media?.thumbnail?.url ||
+									productItem.product.defaultProduct?.media?.thumbnail?.url ||
+									(productItem.product.photos && productItem.product.photos.length > 0 ? productItem.product.photos[0] : null)
+								return (
+									<View key={index} style={styles.productRow}>
+										<View style={styles.productThumbnailContainer}>
+											<SmartImage source={{ uri: imageUrl || '' }} style={styles.productThumbnail} resizeMode="cover" fallbackIcon="inventory" />
+										</View>
+										<View style={styles.productDetailsInner}>
+											<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
+												{localize(productItem.product.name)}
+											</Text>
+											<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.quantity}</Text>
+										</View>
+									</View>
+								)
+							})}
+						</ScrollView>
+						<View style={[styles.scrollIndicatorTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]} />
+					</View>
 
 					{/* Footer with Actions */}
 					<View style={styles.cardFooter}>
@@ -405,75 +428,85 @@ const PurchasesScreen = () => {
 						</View>
 
 						{/* Items List */}
-						<ScrollView style={{ flex: 1, marginHorizontal: -6 }} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-							<View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-								{group.items.map((item: BasketItem, index: number) => {
-									const price = item.price?.total?.tnd || 0
-									const quantity = item.quantity || 1
-									const itemWidth = '100%'
-									const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+						<View style={styles.scrollWithIndicator}>
+							<ScrollView
+								style={{ flex: 1, marginHorizontal: -6 }}
+								nestedScrollEnabled
+								showsVerticalScrollIndicator={true}
+								persistentScrollbar={true}
+								contentContainerStyle={{ flexGrow: 1, paddingBottom: 12 }}
+								indicatorStyle={isDark ? 'white' : 'black'}
+							>
+								<View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
+									{group.items.map((item: BasketItem, index: number) => {
+										const price = item.price?.total?.tnd || 0
+										const quantity = item.quantity || 1
+										const itemWidth = '100%'
+										const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
 
-									return (
-										<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
-											<View
-												style={[
-													styles.basketItemCard,
-													{
-														backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
-														borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-													}
-												]}
-											>
-												{/* Image Area */}
-												<View style={styles.basketItemImageContainer}>
-													<SmartImage source={{ uri: imageUrl || '' }} style={styles.basketItemImage} resizeMode="cover" fallbackIcon="image" />
-												</View>
-
-												{/* Content Area */}
-												<View style={styles.basketItemContent}>
-													<View style={styles.itemTopRow}>
-														<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
-															{localize(item.name)}
-														</Text>
-														<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-															<Ionicons name="trash-outline" size={18} color={colors.error} />
-														</TouchableOpacity>
+										return (
+											<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
+												<View
+													style={[
+														styles.basketItemCard,
+														{
+															backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
+															borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+														}
+													]}
+												>
+													{/* Image Area */}
+													<View style={styles.basketItemImageContainer}>
+														<SmartImage source={{ uri: imageUrl || '' }} style={styles.basketItemImage} resizeMode="cover" fallbackIcon="image" />
 													</View>
 
-													<View style={styles.itemBottomRow}>
-														<Text style={[styles.basketItemPrice, { color: colors.primary }]}>
-															{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
-														</Text>
-
-														<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
-															<TouchableOpacity
-																onPress={() => updateBasketQuantity(item._id, quantity - 1)}
-																style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
-																hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
-															>
-																<Ionicons name="remove" size={16} color={colors.text} />
+													{/* Content Area */}
+													<View style={styles.basketItemContent}>
+														<View style={styles.itemTopRow}>
+															<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
+																{localize(item.name)}
+															</Text>
+															<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+																<Ionicons name="trash-outline" size={18} color={colors.error} />
 															</TouchableOpacity>
+														</View>
 
-															<Text style={[styles.compactQText, { color: colors.text }]}>
-																{quantity} {localize(item.unit?.measure as any) || ''}
+														<View style={styles.itemBottomRow}>
+															<Text style={[styles.basketItemPrice, { color: colors.primary }]}>
+																{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
 															</Text>
 
-															<TouchableOpacity
-																onPress={() => updateBasketQuantity(item._id, quantity + 1)}
-																style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
-																hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
-															>
-																<Ionicons name="add" size={16} color="#fff" />
-															</TouchableOpacity>
+															<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
+																<TouchableOpacity
+																	onPress={() => updateBasketQuantity(item._id, quantity - 1)}
+																	style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
+																	hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
+																>
+																	<Ionicons name="remove" size={16} color={colors.text} />
+																</TouchableOpacity>
+
+																<Text style={[styles.compactQText, { color: colors.text }]}>
+																	{quantity} {localize(item.unit?.measure as any) || ''}
+																</Text>
+
+																<TouchableOpacity
+																	onPress={() => updateBasketQuantity(item._id, quantity + 1)}
+																	style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
+																	hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
+																>
+																	<Ionicons name="add" size={16} color="#fff" />
+																</TouchableOpacity>
+															</View>
 														</View>
 													</View>
 												</View>
 											</View>
-										</View>
-									)
-								})}
-							</View>
-						</ScrollView>
+										)
+									})}
+								</View>
+							</ScrollView>
+							<View style={[styles.scrollIndicatorTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]} />
+						</View>
 
 						{/* Footer */}
 						<View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
@@ -525,8 +558,7 @@ const PurchasesScreen = () => {
 				onPress={() => setFilter(status)}
 				activeOpacity={0.7}
 			>
-				<Ionicons name={icon as any} size={18} color={isActive ? '#fff' : colors.text} />
-				<Text style={[styles.filterText, { color: isActive ? '#fff' : colors.text }]}>{label}</Text>
+				<Ionicons name={icon as any} size={24} color={isActive ? '#fff' : colors.text} />
 				{count > 0 && (
 					<View style={[styles.countBadge, { backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : colors.primary + '15' }]}>
 						<Text style={[styles.countText, { color: isActive ? '#fff' : colors.primary }]}>{count}</Text>
@@ -586,7 +618,7 @@ const PurchasesScreen = () => {
 	if (error && purchases.length === 0 && filter !== 'cart') {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('purchases_title', 'Purchases')} showBack={true} onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))} />
+				<ScreenHeader title={translate('purchases_title', 'Purchases')} showBack={true} onBackPress={() => router.replace('/home/dashboard' as any)} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -606,7 +638,7 @@ const PurchasesScreen = () => {
 				title={translate('purchases_title', 'Purchases')}
 				subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`}
 				showBack={true}
-				onBackPress={() => (router.canGoBack() ? router.back() : router.replace('/home/dashboard' as any))}
+				onBackPress={() => router.replace('/home/dashboard' as any)}
 				rightActions={
 					<TouchableOpacity onPress={onRefresh}>
 						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
@@ -668,14 +700,13 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 		},
 		filterButton: {
 			flex: 1,
+			height: 48,
+			borderRadius: 16,
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
-			paddingVertical: 10,
-			paddingHorizontal: 8,
-			borderRadius: 12,
-			borderWidth: 1.5,
-			gap: 4
+			borderWidth: 1,
+			paddingHorizontal: 12
 		},
 		filterText: {
 			fontSize: 12,
@@ -698,21 +729,17 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			paddingTop: 8
 		},
 		purchaseCard: {
-			flex: 1,
-			height: 480,
-			borderRadius: 16,
-			padding: 16,
-			margin: 6,
-			marginBottom: 12,
+			height: 540,
+			borderRadius: 24,
+			padding: 20,
+			margin: 8,
 			borderWidth: 1,
 			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: isDark ? 0.3 : 0.08,
-			shadowRadius: 8,
-			elevation: 4,
-			width: numColumns === 1 && isTablet && filter !== 'cart' ? 600 : undefined,
-			alignSelf: numColumns === 1 && isTablet && filter !== 'cart' ? 'center' : undefined,
-			maxWidth: numColumns === 1 && isTablet && filter !== 'cart' ? '100%' : undefined
+			shadowOffset: { width: 0, height: 8 },
+			shadowOpacity: isDark ? 0.4 : 0.1,
+			shadowRadius: 12,
+			elevation: 6,
+			overflow: 'hidden'
 		},
 		cardHeader: {
 			flexDirection: 'row',
@@ -767,20 +794,39 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 		productRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 8,
-			marginBottom: 6
+			gap: 12,
+			marginBottom: 10
+		},
+		productThumbnailContainer: {
+			width: 44,
+			height: 44,
+			borderRadius: 8,
+			overflow: 'hidden',
+			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5',
+			borderWidth: 1,
+			borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
+		},
+		productThumbnail: {
+			width: '100%',
+			height: '100%'
+		},
+		productDetailsInner: {
+			flex: 1,
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			alignItems: 'center'
 		},
 		productName: {
-			fontSize: 15,
+			fontSize: 14,
 			fontWeight: '600',
-			flex: 1
+			flex: 1,
+			marginRight: 8
 		},
-
 		productQuantity: {
 			fontSize: 13,
-			fontWeight: '600',
-			marginLeft: 'auto'
+			fontWeight: '700'
 		},
+
 		productCount: {
 			fontSize: 12,
 			fontWeight: '500',
@@ -986,6 +1032,18 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			shadowOpacity: 0.15,
 			shadowRadius: 4,
 			elevation: 3
+		},
+		scrollWithIndicator: {
+			flex: 1,
+			flexDirection: 'row',
+			marginBottom: 12
+		},
+		scrollIndicatorTrack: {
+			width: 3,
+			borderRadius: 1.5,
+			marginVertical: 4,
+			marginLeft: 4,
+			opacity: 0.5
 		}
 	})
 }
