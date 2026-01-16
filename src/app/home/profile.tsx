@@ -10,6 +10,7 @@ import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '.
 import { useTheme } from '../../contexts/ThemeContext'
 import ScreenHeader from '../../components/common/ScreenHeader'
 import ErrorState from '../../components/common/ErrorState'
+import SmartImage from '../../components/common/SmartImage'
 import { showPopup, showAlert, showConfirm } from '../../utils/popup'
 import { requestBusiness } from '../../components/business/business.api'
 import { parseError, logError } from '../../utils/errorHandler'
@@ -524,18 +525,12 @@ export default function ProfileScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} />
+			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} onRefresh={loadProfile} isRefreshing={loading} />
 			<ScrollView contentContainerStyle={styles.contentContainer}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
 					<View style={styles.photoContainer}>
-						{userData.media?.thumbnail?.url && !imageError ? (
-							<Image source={{ uri: userData.media.thumbnail.url }} style={styles.profilePhoto} onError={() => setImageError(true)} />
-						) : (
-							<View style={styles.placeholderPhoto}>
-								<Text style={styles.placeholderText}>{(userData.slug || '').charAt(0).toUpperCase()}</Text>
-							</View>
-						)}
+						<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" />
 						<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
 							<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
 						</TouchableOpacity>

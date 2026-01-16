@@ -118,11 +118,11 @@ export default function ShopDetailsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(shop.name)} showBack={true} />
+			<ScreenHeader title={localize(shop.name)} showBack={true} onRefresh={loadShopDetails} />
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
 				{/* Shop Image */}
 				<View style={styles.imageContainer}>
-					<SmartImage source={{ uri: shop.media?.thumbnail?.url }} style={styles.shopImage} resizeMode="cover" fallbackIcon="store" />
+					<SmartImage source={shop.media?.thumbnail?.url} style={styles.shopImage} resizeMode="cover" entityType="shop" />
 				</View>
 
 				{/* Shop Info Card */}

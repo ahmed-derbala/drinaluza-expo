@@ -25,7 +25,7 @@ const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 
 	return (
 		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-			<SmartImage source={getImageUrl() ? { uri: getImageUrl()! } : undefined} style={styles.productImage} fallbackIcon="image-not-supported" />
+			<SmartImage source={getImageUrl()} style={styles.productImage} entityType="product" />
 			<View style={styles.productDetails}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
 					{localize(product.product.name)}
@@ -159,9 +159,9 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			<View style={[styles.customerSection, { borderBottomColor: colors.border }]}>
 				<View style={styles.customerInfo}>
 					<SmartImage
-						source={sale.customer.media?.thumbnail?.url ? { uri: sale.customer.media.thumbnail.url } : undefined}
+						source={sale.customer.media?.thumbnail?.url}
 						style={[styles.avatar, { borderColor: colors.border }]}
-						fallbackIcon="person"
+						entityType="user"
 						containerStyle={[styles.avatarContainer, { backgroundColor: colors.surface }]}
 					/>
 					<View style={styles.customerDetails}>

@@ -70,13 +70,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 			{/* Product Photo */}
 			<View style={styles.imageContainer}>
-				<SmartImage
-					source={{ uri: item.media?.thumbnail?.url }}
-					style={styles.productImage}
-					resizeMode="cover"
-					entityType="product"
-					fallbackSources={[item.defaultProduct?.media?.thumbnail?.url, item.photos?.[0]]}
-				/>
+				<SmartImage source={item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0]} style={styles.productImage} resizeMode="cover" entityType="product" />
 				{!isAvailable && (
 					<View style={styles.unavailableOverlay}>
 						<Text style={styles.unavailableText}>{item.state.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>

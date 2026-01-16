@@ -1,5 +1,5 @@
-import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native'
+import React, { useRef, useEffect } from 'react'
+import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../contexts/ThemeContext'
@@ -12,12 +12,39 @@ interface ScreenHeaderProps {
 	rightActions?: React.ReactNode
 	subtitle?: string
 	transparent?: boolean
+	/** Callback to refresh screen data. When provided, shows a refresh icon in the header */
+	onRefresh?: () => void | Promise<void>
+	/** Whether the refresh is currently in progress */
+	isRefreshing?: boolean
 }
 
-export default function ScreenHeader({ title, showBack = true, onBackPress, rightActions, subtitle, transparent = false }: ScreenHeaderProps) {
+export default function ScreenHeader({ title, showBack = true, onBackPress, rightActions, subtitle, transparent = false, onRefresh, isRefreshing = false }: ScreenHeaderProps) {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
+
+	// Animation for refresh icon spinning
+	const spinValue = useRef(new Animated.Value(0)).current
+
+	useEffect(() => {
+		if (isRefreshing) {
+			Animated.loop(
+				Animated.timing(spinValue, {
+					toValue: 1,
+					duration: 1000,
+					easing: Easing.linear,
+					useNativeDriver: true
+				})
+			).start()
+		} else {
+			spinValue.setValue(0)
+		}
+	}, [isRefreshing, spinValue])
+
+	const spin = spinValue.interpolate({
+		inputRange: [0, 1],
+		outputRange: ['0deg', '360deg']
+	})
 
 	const handleBackPress = () => {
 		if (onBackPress) {
@@ -28,6 +55,15 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 			router.replace('/home/feed')
 		}
 	}
+
+	const handleRefresh = async () => {
+		if (onRefresh && !isRefreshing) {
+			await onRefresh()
+		}
+	}
+
+	// Modern blue color for refresh icon
+	const refreshIconColor = '#2196F3'
 
 	return (
 		<View
@@ -59,7 +95,16 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 					</View>
 				)}
 			</View>
-			{rightActions && <View style={styles.rightSection}>{rightActions}</View>}
+			<View style={styles.rightSection}>
+				{onRefresh && (
+					<TouchableOpacity style={[styles.refreshButton, { backgroundColor: colors.surface }]} onPress={handleRefresh} disabled={isRefreshing} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+						<Animated.View style={{ transform: [{ rotate: isRefreshing ? spin : '0deg' }] }}>
+							<MaterialIcons name="refresh" size={22} color={refreshIconColor} />
+						</Animated.View>
+					</TouchableOpacity>
+				)}
+				{rightActions}
+			</View>
 		</View>
 	)
 }
@@ -96,6 +141,13 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 12
+	},
+	refreshButton: {
+		width: 44,
+		height: 44,
+		borderRadius: 12,
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
 	titleContainer: {
 		flex: 1

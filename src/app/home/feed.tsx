@@ -295,16 +295,7 @@ export default function FeedScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader
-				title={translate('feed', 'Feed')}
-				subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`}
-				showBack={false}
-				rightActions={
-					<TouchableOpacity style={styles.refreshButtonSmall} onPress={refreshData} disabled={refreshing}>
-						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh'} size={20} color={colors.primary} />
-					</TouchableOpacity>
-				}
-			/>
+			<ScreenHeader title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} showBack={false} onRefresh={refreshData} isRefreshing={refreshing} />
 
 			{/* Search Bar */}
 			<View

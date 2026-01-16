@@ -70,7 +70,7 @@ export default function MyProductsTab() {
 				<LinearGradient colors={[`${colors.primary}08`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
 				<View style={styles.cardContent}>
 					<View style={styles.imageContainer}>
-						<SmartImage source={{ uri: imageUrl || '' }} style={styles.productImage} resizeMode="cover" fallbackIcon="inventory" />
+						<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
 						{item.stock?.quantity && item.stock.quantity <= (item.stock.minThreshold || 5) && (
 							<View style={styles.lowStockBadge}>
 								<Text style={styles.lowStockText}>Low</Text>

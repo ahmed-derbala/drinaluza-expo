@@ -268,7 +268,7 @@ const PurchasesScreen = () => {
 								return (
 									<View key={index} style={styles.productRow}>
 										<View style={styles.productThumbnailContainer}>
-											<SmartImage source={{ uri: imageUrl || '' }} style={styles.productThumbnail} resizeMode="cover" fallbackIcon="inventory" />
+											<SmartImage source={imageUrl} style={styles.productThumbnail} resizeMode="cover" entityType="product" />
 										</View>
 										<View style={styles.productDetailsInner}>
 											<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
@@ -457,7 +457,7 @@ const PurchasesScreen = () => {
 												>
 													{/* Image Area */}
 													<View style={styles.basketItemImageContainer}>
-														<SmartImage source={{ uri: imageUrl || '' }} style={styles.basketItemImage} resizeMode="cover" fallbackIcon="image" />
+														<SmartImage source={imageUrl} style={styles.basketItemImage} resizeMode="cover" entityType="product" />
 													</View>
 
 													{/* Content Area */}

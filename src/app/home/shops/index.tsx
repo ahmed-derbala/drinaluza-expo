@@ -659,7 +659,7 @@ export default function ShopsListScreen() {
 			<TouchableOpacity style={styles.shopCard as ViewStyle} onPress={() => handleShopPress(item.slug)}>
 				{/* Shop Image */}
 				<View style={styles.shopImageContainer as ViewStyle}>
-					<SmartImage source={{ uri: item.media?.thumbnail?.url }} style={styles.shopImage as ImageStyle} resizeMode="cover" />
+					<SmartImage source={item.media?.thumbnail?.url} style={styles.shopImage as ImageStyle} resizeMode="cover" entityType="shop" />
 				</View>
 
 				<View style={styles.shopCardContent as ViewStyle}>
@@ -775,6 +775,8 @@ export default function ShopsListScreen() {
 				title={translate('discover_shops', 'Discover Shops')}
 				subtitle={`${shops.length} ${shops.length === 1 ? translate('shop_product', 'shop') : translate('shop_products_plural', 'shops')} ${translate('shops_available', 'available near you')}`}
 				showBack={true}
+				onRefresh={handleRefresh}
+				isRefreshing={refreshing}
 			/>
 			<FlatList
 				key={`cols-${numColumns}`}
