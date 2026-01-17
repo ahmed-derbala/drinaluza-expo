@@ -543,7 +543,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={translate('business.my_shops', 'My Shops')} showBack={true} />
+			<ScreenHeader title={translate('business.my_shops', 'My Shops')} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 			<FlatList
 				data={sortedShops}
 				keyExtractor={(item) => item._id}

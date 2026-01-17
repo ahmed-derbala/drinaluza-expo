@@ -205,6 +205,8 @@ export default function SettingsScreen() {
 					<SettingItem icon="server-outline" title={translate('environment', 'Environment')} value={serverInfo.NODE_ENV} type="value" color={colors.textSecondary} />
 					<SettingItem icon="information-circle-outline" title={translate('app_name', 'App Name')} value={serverInfo.app?.name} type="value" color={colors.textSecondary} />
 					<SettingItem icon="git-network-outline" title={translate('version', 'Version')} value={serverInfo.app?.version} type="value" color={colors.textSecondary} />
+					{serverInfo.NODE_VERSION && <SettingItem icon="logo-nodejs" title="Node.js" value={serverInfo.NODE_VERSION} type="value" color="#339933" />}
+					{serverInfo.uptime && <SettingItem icon="time-outline" title={translate('uptime', 'Uptime')} value={serverInfo.uptime} type="value" color={colors.textSecondary} />}
 				</SettingSection>
 			)}
 

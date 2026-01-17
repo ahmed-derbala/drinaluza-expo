@@ -184,7 +184,7 @@ export default function SalesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title="Sales" showBack={true} />
+			<ScreenHeader title="Sales" showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 
 			{/* Status Filter */}
 			<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>

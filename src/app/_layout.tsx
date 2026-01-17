@@ -10,15 +10,11 @@ if (typeof setImmediate === 'undefined') {
 import { ThemeProvider } from '../contexts/ThemeContext'
 import { NotificationProvider } from '../contexts/NotificationContext'
 import { UserProvider } from '../contexts/UserContext'
-import { useDeepLinking } from '../hooks/useDeepLinking'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 
 import { getPlatformStackOptions } from '../config/navigation'
 
 function RootLayoutContent() {
-	// Initialize deep linking
-	useDeepLinking()
-
 	const stackOptions = getPlatformStackOptions({
 		headerShown: false
 	})

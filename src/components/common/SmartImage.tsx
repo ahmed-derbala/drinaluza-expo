@@ -10,12 +10,13 @@ export type ImageEntityType = 'user' | 'shop' | 'product' | 'default-product'
 /**
  * Default images for each entity type
  * These are local assets that will be shown when the remote image URL fails to load
+ * Image filenames use no hyphens to prevent Metro from generating problematic asset names during Android builds
  */
 const DEFAULT_IMAGES: Record<ImageEntityType, ImageSourcePropType> = {
-	user: require('../../../assets/images/default-user.png'),
-	shop: require('../../../assets/images/default-shop.png'),
-	product: require('../../../assets/images/default-product.png'),
-	'default-product': require('../../../assets/images/default-default-product.png')
+	user: require('../../../assets/images/defaultuser.png'),
+	shop: require('../../../assets/images/defaultshop.png'),
+	product: require('../../../assets/images/defaultproduct.png'),
+	'default-product': require('../../../assets/images/defaultdefaultproduct.png')
 }
 
 interface SmartImageProps extends Omit<ImageProps, 'source'> {

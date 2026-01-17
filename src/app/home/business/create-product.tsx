@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../../contexts/ThemeContext'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '../../../components/products/products.api'
@@ -11,6 +11,7 @@ import SmartImage from '../../../components/common/SmartImage'
 
 export default function CreateProductScreen() {
 	const router = useRouter()
+	const { shopId, shopSlug } = useLocalSearchParams<{ shopId?: string; shopSlug?: string }>()
 	const { colors } = useTheme()
 
 	// Form state
@@ -57,6 +58,16 @@ export default function CreateProductScreen() {
 		loadShops()
 		loadDefaultProducts()
 	}, [])
+
+	// Auto-select shop if navigated from shop details page
+	useEffect(() => {
+		if ((shopId || shopSlug) && shops.length > 0 && !selectedShop) {
+			const matchedShop = shops.find((s) => s._id === shopId || s.slug === shopSlug)
+			if (matchedShop) {
+				setSelectedShop(matchedShop)
+			}
+		}
+	}, [shopId, shopSlug, shops, selectedShop])
 
 	const loadShops = async () => {
 		try {

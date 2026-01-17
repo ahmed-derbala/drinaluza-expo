@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, Platform } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, Platform, ActivityIndicator } from 'react-native'
 import SmartImage from '../common/SmartImage'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -11,6 +11,92 @@ import { useTheme } from '../../contexts/ThemeContext'
 
 import ScreenHeader from '../common/ScreenHeader'
 import { useUser } from '../../contexts/UserContext'
+
+const ProductItem = ({ item }: { item: ProductType }) => {
+	const { colors } = useTheme()
+	const { localize, translate } = useUser()
+	const router = useRouter()
+	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+
+	// Stock status logic
+	const stockQty = item.stock?.quantity || 0
+	const minThreshold = item.stock?.minThreshold || 5
+	const isLowStock = stockQty > 0 && stockQty <= minThreshold
+	const isOutOfStock = stockQty === 0
+	const isInStock = stockQty > minThreshold
+
+	// Get stock status color and label
+	const getStockStatus = () => {
+		if (isOutOfStock) return { color: '#EF4444', bgColor: '#EF444415', label: translate('out_of_stock', 'Out of Stock'), icon: 'alert-circle' as const }
+		if (isLowStock) return { color: '#F59E0B', bgColor: '#F59E0B15', label: translate('low_stock', 'Low Stock'), icon: 'warning' as const }
+		return { color: '#10B981', bgColor: '#10B98115', label: translate('in_stock', 'In Stock'), icon: 'checkmark-circle' as const }
+	}
+	const stockStatus = getStockStatus()
+
+	return (
+		<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.85} onPress={() => {}}>
+			{/* Gradient overlay */}
+			<LinearGradient colors={[`${colors.primary}06`, `transparent`, `${colors.primary}03`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
+
+			{/* Main content */}
+			<View style={styles.cardContent}>
+				{/* Product Image */}
+				<View style={styles.imageWrapper}>
+					<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.imageContainer} />
+
+					{/* Stock status overlay on image */}
+					{(isOutOfStock || isLowStock) && (
+						<View style={[styles.imageOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.4)' }]}>
+							<Ionicons name={stockStatus.icon} size={20} color="#fff" />
+						</View>
+					)}
+				</View>
+
+				{/* Info section */}
+				<View style={styles.infoContainer}>
+					{/* Product name */}
+					<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+						{localize(item.name) || item.name?.en}
+					</Text>
+
+					{/* Shop info */}
+					<View style={styles.shopRow}>
+						<View style={[styles.shopBadge, { backgroundColor: `${colors.primary}10` }]}>
+							<Ionicons name="storefront" size={10} color={colors.primary} />
+						</View>
+						<Text style={[styles.shopName, { color: colors.textSecondary }]} numberOfLines={1}>
+							{localize(item.shop?.name) || item.shop?.name?.en || 'Unknown Shop'}
+						</Text>
+					</View>
+
+					{/* Price section */}
+					<View style={styles.priceContainer}>
+						<Text style={[styles.priceValue, { color: colors.primary }]}>{item.price?.total?.tnd?.toFixed(2) || '0.00'}</Text>
+						<Text style={[styles.priceCurrency, { color: colors.primary }]}> TND</Text>
+						<Text style={[styles.priceUnit, { color: colors.textTertiary }]}>/{item.unit?.measure || 'unit'}</Text>
+					</View>
+
+					{/* Bottom row: Stock status + quantity */}
+					<View style={styles.bottomRow}>
+						<View style={[styles.statusPill, { backgroundColor: stockStatus.bgColor }]}>
+							<Ionicons name={stockStatus.icon} size={12} color={stockStatus.color} />
+							<Text style={[styles.statusText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
+						</View>
+						<View style={[styles.quantityBadge, { backgroundColor: colors.surface }]}>
+							<Ionicons name="cube-outline" size={14} color={colors.textSecondary} />
+							<Text style={[styles.quantityText, { color: colors.text }]}>{stockQty}</Text>
+						</View>
+					</View>
+				</View>
+
+				{/* Arrow indicator */}
+				<View style={[styles.arrowContainer, { backgroundColor: `${colors.primary}08` }]}>
+					<Ionicons name="chevron-forward" size={20} color={colors.primary} />
+				</View>
+			</View>
+		</TouchableOpacity>
+	)
+}
 
 export default function MyProductsTab() {
 	const router = useRouter()
@@ -61,51 +147,6 @@ export default function MyProductsTab() {
 		}
 	}
 
-	const renderProductItem = ({ item }: { item: ProductType }) => {
-		const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
-		const { localize, translate } = useUser()
-
-		return (
-			<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.8} onPress={() => {}}>
-				<LinearGradient colors={[`${colors.primary}08`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
-				<View style={styles.cardContent}>
-					<View style={styles.imageContainer}>
-						<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
-						{item.stock?.quantity && item.stock.quantity <= (item.stock.minThreshold || 5) && (
-							<View style={styles.lowStockBadge}>
-								<Text style={styles.lowStockText}>Low</Text>
-							</View>
-						)}
-					</View>
-					<View style={styles.infoContainer}>
-						<Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
-							{localize(item.name) || item.name?.en}
-						</Text>
-						<View style={styles.shopRow}>
-							<Ionicons name="storefront-outline" size={12} color={colors.textSecondary} />
-							<Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-								{localize(item.shop?.name) || item.shop?.name?.en || 'Unknown Shop'}
-							</Text>
-						</View>
-						<View style={styles.footerRow}>
-							<Text style={[styles.priceText, { color: colors.primary }]}>
-								{item.price?.total?.tnd?.toFixed(2) || '0.00'} <Text style={styles.currencyText}>TND</Text>
-								<Text style={[styles.unitText, { color: colors.textTertiary }]}> / {item.unit?.measure || 'unit'}</Text>
-							</Text>
-							<View style={styles.stockBadge}>
-								<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
-								<Text style={[styles.stockText, { color: colors.textSecondary }]}>{item.stock?.quantity || 0}</Text>
-							</View>
-						</View>
-					</View>
-					<View style={styles.arrowContainer}>
-						<Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
-					</View>
-				</View>
-			</TouchableOpacity>
-		)
-	}
-
 	if (loading && products.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -116,10 +157,10 @@ export default function MyProductsTab() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={translate('business.my_products', 'My Products')} showBack={true} />
+			<ScreenHeader title={translate('business.my_products', 'My Products')} showBack={true} onRefresh={onRefresh} isRefreshing={refreshing} />
 			<FlatList
 				data={products}
-				renderItem={renderProductItem}
+				renderItem={({ item }) => <ProductItem item={item} />}
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.list}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -159,24 +200,24 @@ const styles = StyleSheet.create({
 		marginTop: 50
 	},
 	list: {
-		padding: 20,
+		padding: 16,
 		paddingBottom: 100
 	},
 	card: {
 		padding: 16,
-		marginBottom: 16,
-		borderRadius: 20,
+		marginBottom: 14,
+		borderRadius: 24,
 		borderWidth: 1,
 		overflow: 'hidden',
 		...Platform.select({
 			ios: {
 				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8
+				shadowOffset: { width: 0, height: 6 },
+				shadowOpacity: 0.12,
+				shadowRadius: 12
 			},
 			android: {
-				elevation: 3
+				elevation: 4
 			}
 		})
 	},
@@ -185,93 +226,115 @@ const styles = StyleSheet.create({
 	},
 	cardContent: {
 		flexDirection: 'row',
-		alignItems: 'center'
+		alignItems: 'flex-start'
+	},
+	imageWrapper: {
+		position: 'relative'
 	},
 	imageContainer: {
-		width: 80,
-		height: 80,
-		borderRadius: 16,
+		width: 90,
+		height: 90,
+		borderRadius: 18,
 		overflow: 'hidden',
-		backgroundColor: 'rgba(0,0,0,0.05)',
-		position: 'relative'
+		backgroundColor: 'rgba(0,0,0,0.05)'
 	},
 	productImage: {
 		width: '100%',
 		height: '100%'
 	},
-	lowStockBadge: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		backgroundColor: '#EF4444',
-		paddingVertical: 2,
+	imageOverlay: {
+		...StyleSheet.absoluteFillObject,
+		borderRadius: 18,
+		justifyContent: 'center',
 		alignItems: 'center'
-	},
-	lowStockText: {
-		color: '#fff',
-		fontSize: 9,
-		fontWeight: '800',
-		textTransform: 'uppercase'
 	},
 	infoContainer: {
 		flex: 1,
-		marginLeft: 16,
-		marginRight: 8
+		marginLeft: 14,
+		marginRight: 8,
+		paddingVertical: 2
 	},
-	cardTitle: {
-		fontSize: 17,
+	productName: {
+		fontSize: 16,
 		fontWeight: '700',
-		marginBottom: 4,
-		letterSpacing: -0.3
+		letterSpacing: -0.3,
+		lineHeight: 22,
+		marginBottom: 6
 	},
 	shopRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 4,
+		gap: 6,
 		marginBottom: 8
 	},
-	cardSubtitle: {
+	shopBadge: {
+		width: 20,
+		height: 20,
+		borderRadius: 6,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	shopName: {
+		fontSize: 12,
+		fontWeight: '500',
+		flex: 1
+	},
+	priceContainer: {
+		flexDirection: 'row',
+		alignItems: 'baseline',
+		marginBottom: 10
+	},
+	priceValue: {
+		fontSize: 20,
+		fontWeight: '800',
+		letterSpacing: -0.5
+	},
+	priceCurrency: {
 		fontSize: 13,
+		fontWeight: '700'
+	},
+	priceUnit: {
+		fontSize: 12,
 		fontWeight: '500'
 	},
-	footerRow: {
+	bottomRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between'
 	},
-	priceText: {
-		fontSize: 16,
-		fontWeight: '800'
-	},
-	currencyText: {
-		fontSize: 12,
-		fontWeight: '600'
-	},
-	unitText: {
-		fontSize: 12,
-		fontWeight: '500'
-	},
-	stockBadge: {
+	statusPill: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 4,
-		backgroundColor: 'rgba(0,0,0,0.03)',
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 8
+		paddingHorizontal: 10,
+		paddingVertical: 5,
+		borderRadius: 12
 	},
-	stockText: {
-		fontSize: 12,
+	statusText: {
+		fontSize: 11,
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 0.3
+	},
+	quantityBadge: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 5,
+		paddingHorizontal: 10,
+		paddingVertical: 5,
+		borderRadius: 10
+	},
+	quantityText: {
+		fontSize: 14,
 		fontWeight: '700'
 	},
 	arrowContainer: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		backgroundColor: 'rgba(0,0,0,0.02)',
+		width: 36,
+		height: 36,
+		borderRadius: 12,
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
+		alignSelf: 'center'
 	},
 	emptyContainer: {
 		flex: 1,

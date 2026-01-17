@@ -239,7 +239,7 @@ export default function AuthScreen() {
 									<Ionicons name="home-outline" size={20} color={colors.primary} />
 								</TouchableOpacity>
 								<TouchableOpacity onPress={handleResetApp} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-									<Ionicons name="refresh-outline" size={20} color={colors.error} />
+									<Ionicons name="refresh-outline" size={20} color={colors.primary} />
 								</TouchableOpacity>
 							</View>
 							<Text style={[styles.title, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>

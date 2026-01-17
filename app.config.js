@@ -46,6 +46,7 @@ export default {
         },
         plugins: [
             "expo-router",
+            "./plugins/withAndroidOptimization",
             [
                 "expo-build-properties",
                 {
@@ -53,7 +54,8 @@ export default {
                         usesCleartextTraffic: true,
                         ndk: {
                             abiFilters: [
-                                "arm64-v8a"
+                                "arm64-v8a",
+                                "armeabi-v7a"
                             ]
                         },
                         packagingOptions: {
@@ -74,8 +76,8 @@ export default {
             routerRoot: "src",
             router: {},
             eas: {
-        projectId: "663c7ecc-f495-4630-9913-c923ef3f8bb2"
-      }
+                projectId: "663c7ecc-f495-4630-9913-c923ef3f8bb2"
+            }
 
         },
         jsEngine: "hermes",

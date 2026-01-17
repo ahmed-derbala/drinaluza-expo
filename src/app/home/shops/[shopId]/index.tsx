@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking } from 'react-native'
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { getShopBySlug, getShopProductsBySlug } from '../../../../components/shops/shops.api'
 import { Shop } from '../../../../components/shops/shops.interface'
+import { ProductType } from '../../../../components/products/products.type'
 import { useTheme } from '../../../../contexts/ThemeContext'
 import { parseError } from '../../../../utils/errorHandler'
 import ErrorState from '../../../../components/common/ErrorState'
@@ -11,58 +12,85 @@ import ScreenHeader from '../../../../components/common/ScreenHeader'
 import SmartImage from '../../../../components/common/SmartImage'
 import { useUser } from '../../../../contexts/UserContext'
 
+// Product Card for inline display
+const ProductCard = ({ product, colors, localize, onPress }: { product: ProductType; colors: any; localize: (obj: any) => string; onPress?: () => void }) => {
+	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
+	const stockQty = product.stock?.quantity || 0
+	const isOutOfStock = stockQty === 0
+
+	return (
+		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.8} onPress={onPress}>
+			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.productImageContainer} />
+			<View style={styles.productInfo}>
+				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+					{localize(product.name)}
+				</Text>
+				<View style={styles.productPriceRow}>
+					<Text style={[styles.productPrice, { color: colors.primary }]}>{product.price?.total?.tnd?.toFixed(2) || '0.00'}</Text>
+					<Text style={[styles.productCurrency, { color: colors.primary }]}> TND</Text>
+					<Text style={[styles.productUnit, { color: colors.textTertiary }]}>/{product.unit?.measure || 'unit'}</Text>
+				</View>
+				{isOutOfStock && (
+					<View style={[styles.outOfStockBadge, { backgroundColor: '#EF444415' }]}>
+						<Text style={styles.outOfStockText}>Out of Stock</Text>
+					</View>
+				)}
+			</View>
+		</TouchableOpacity>
+	)
+}
+
 export default function ShopDetailsScreen() {
 	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
-	const isDark = true
 	const { localize, translate } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
+
 	const [shop, setShop] = useState<Shop | null>(null)
-	const [productsCount, setProductsCount] = useState<number | null>(null)
+	const [products, setProducts] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
+	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
-	const loadShopDetails = async () => {
-		if (!shopSlug) return
+	const loadShopDetails = useCallback(
+		async (isRefresh = false) => {
+			if (!shopSlug) return
 
-		try {
-			setLoading(true)
-			setError(null)
-			const [shopResponse, productsResponse] = await Promise.all([
-				getShopBySlug(shopSlug),
-				getShopProductsBySlug(shopSlug).catch(() => null) // Don't fail if products fail
-			])
-			setShop(shopResponse.data)
-			if (productsResponse?.data?.pagination) {
-				setProductsCount(productsResponse.data.pagination.totalDocs)
+			try {
+				if (!isRefresh) setLoading(true)
+				setError(null)
+
+				const [shopResponse, productsResponse] = await Promise.all([getShopBySlug(shopSlug), getShopProductsBySlug(shopSlug).catch(() => null)])
+
+				setShop(shopResponse.data)
+				setProducts(productsResponse?.data?.docs || [])
+			} catch (err: any) {
+				console.error('Failed to load shop details:', err)
+				const errorInfo = parseError(err)
+				setError({
+					title: errorInfo.title,
+					message: errorInfo.message,
+					type: errorInfo.type
+				})
+			} finally {
+				setLoading(false)
+				setRefreshing(false)
 			}
-		} catch (err: any) {
-			console.error('Failed to load shop details:', err)
-			const errorInfo = parseError(err)
-			setError({
-				title: errorInfo.title,
-				message: errorInfo.message,
-				type: errorInfo.type
-			})
-		} finally {
-			setLoading(false)
-		}
-	}
+		},
+		[shopSlug]
+	)
 
 	useEffect(() => {
 		loadShopDetails()
-	}, [shopSlug])
+	}, [loadShopDetails])
 
-	const handleViewProducts = () => {
-		if (!shop) return
-		router.push({
-			pathname: '/home/shops/[shopId]/products',
-			params: { shopId: shop.slug }
-		})
-	}
+	const handleRefresh = useCallback(() => {
+		setRefreshing(true)
+		loadShopDetails(true)
+	}, [loadShopDetails])
 
 	const handleOpenMap = () => {
 		if (!shop?.location?.coordinates) return
@@ -90,7 +118,7 @@ export default function ShopDetailsScreen() {
 					<ErrorState
 						title={error.title}
 						message={error.message}
-						onRetry={loadShopDetails}
+						onRetry={() => loadShopDetails()}
 						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
 					/>
 				</View>
@@ -118,8 +146,11 @@ export default function ShopDetailsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(shop.name)} showBack={true} onRefresh={loadShopDetails} />
-			<ScrollView contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
+			<ScreenHeader title={localize(shop.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScrollView
+				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+			>
 				{/* Shop Image */}
 				<View style={styles.imageContainer}>
 					<SmartImage source={shop.media?.thumbnail?.url} style={styles.shopImage} resizeMode="cover" entityType="shop" />
@@ -187,27 +218,31 @@ export default function ShopDetailsScreen() {
 							</View>
 						</View>
 					)}
+				</View>
 
-					{/* Products Count */}
-					{productsCount !== null && (
-						<View style={styles.infoRow}>
-							<MaterialIcons name="inventory" size={18} color={colors.textSecondary} />
-							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_products', 'Products')}</Text>
-								<Text style={[styles.infoValue, { color: colors.text }]}>
-									{productsCount} {productsCount === 1 ? translate('shop_product', 'product') : translate('shop_products_plural', 'products')} {translate('shop_available', 'available')}
-								</Text>
-							</View>
+				{/* Products Section */}
+				<View style={[styles.productsSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={styles.productsSectionHeader}>
+						<Ionicons name="fish-outline" size={20} color={colors.primary} />
+						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('shop_products', 'Products')}</Text>
+						<View style={[styles.productsCountBadge, { backgroundColor: colors.primary + '15' }]}>
+							<Text style={[styles.productsCountText, { color: colors.primary }]}>{products.length}</Text>
+						</View>
+					</View>
+
+					{products.length > 0 ? (
+						<View style={styles.productsGrid}>
+							{products.map((product) => (
+								<ProductCard key={product._id} product={product} colors={colors} localize={localize} />
+							))}
+						</View>
+					) : (
+						<View style={styles.emptyProducts}>
+							<Ionicons name="fish-outline" size={48} color={colors.textTertiary} />
+							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('no_products_available', 'No products available')}</Text>
 						</View>
 					)}
 				</View>
-
-				{/* View Products Button */}
-				<TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={handleViewProducts} activeOpacity={0.8}>
-					<MaterialIcons name="shopping-bag" size={20} color="#fff" />
-					<Text style={styles.buttonText}>{translate('shop_view_products', 'View Products')}</Text>
-					<Ionicons name="chevron-forward" size={20} color="#fff" />
-				</TouchableOpacity>
 			</ScrollView>
 		</View>
 	)
@@ -232,8 +267,8 @@ const styles = StyleSheet.create({
 	},
 	imageContainer: {
 		width: '100%',
-		height: 240,
-		borderRadius: 16,
+		height: 200,
+		borderRadius: 20,
 		overflow: 'hidden',
 		marginBottom: 20,
 		backgroundColor: '#f0f0f0'
@@ -243,25 +278,31 @@ const styles = StyleSheet.create({
 		height: '100%'
 	},
 	infoCard: {
-		borderRadius: 16,
+		borderRadius: 20,
 		padding: 20,
 		marginBottom: 20,
 		borderWidth: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 8,
-		elevation: 3
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 3
+			}
+		})
 	},
 	shopName: {
-		fontSize: 28,
+		fontSize: 26,
 		fontWeight: '700',
 		marginBottom: 20,
 		letterSpacing: -0.5
 	},
 	infoRow: {
 		flexDirection: 'row',
-		marginBottom: 20,
+		marginBottom: 16,
 		alignItems: 'flex-start'
 	},
 	infoContent: {
@@ -269,14 +310,14 @@ const styles = StyleSheet.create({
 		marginLeft: 12
 	},
 	infoLabel: {
-		fontSize: 12,
+		fontSize: 11,
 		fontWeight: '600',
 		marginBottom: 4,
 		textTransform: 'uppercase',
 		letterSpacing: 0.5
 	},
 	infoValue: {
-		fontSize: 16,
+		fontSize: 15,
 		fontWeight: '500',
 		lineHeight: 22
 	},
@@ -287,7 +328,7 @@ const styles = StyleSheet.create({
 		gap: 8
 	},
 	slugText: {
-		fontSize: 14,
+		fontSize: 13,
 		fontWeight: '500'
 	},
 	businessBadge: {
@@ -304,25 +345,109 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		gap: 6
 	},
-	button: {
+	productsSection: {
+		borderRadius: 20,
+		padding: 20,
+		borderWidth: 1,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 3
+			}
+		})
+	},
+	productsSectionHeader: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'center',
-		borderRadius: 12,
-		padding: 16,
-		gap: 8,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.2,
-		shadowRadius: 8,
-		elevation: 4
+		marginBottom: 16,
+		gap: 8
 	},
-	buttonText: {
-		color: '#fff',
-		fontSize: 16,
-		fontWeight: '600',
+	productsSectionTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		flex: 1
+	},
+	productsCountBadge: {
+		paddingHorizontal: 12,
+		paddingVertical: 4,
+		borderRadius: 12
+	},
+	productsCountText: {
+		fontSize: 14,
+		fontWeight: '700'
+	},
+	productsGrid: {
+		gap: 12
+	},
+	productCard: {
+		flexDirection: 'row',
+		padding: 12,
+		borderRadius: 14,
+		borderWidth: 1,
+		gap: 12
+	},
+	productImageContainer: {
+		width: 72,
+		height: 72,
+		borderRadius: 12,
+		overflow: 'hidden'
+	},
+	productImage: {
+		width: '100%',
+		height: '100%'
+	},
+	productInfo: {
 		flex: 1,
-		textAlign: 'center'
+		justifyContent: 'center'
+	},
+	productName: {
+		fontSize: 15,
+		fontWeight: '600',
+		marginBottom: 6,
+		lineHeight: 20
+	},
+	productPriceRow: {
+		flexDirection: 'row',
+		alignItems: 'baseline'
+	},
+	productPrice: {
+		fontSize: 18,
+		fontWeight: '800'
+	},
+	productCurrency: {
+		fontSize: 13,
+		fontWeight: '600'
+	},
+	productUnit: {
+		fontSize: 12,
+		fontWeight: '500'
+	},
+	outOfStockBadge: {
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		marginTop: 6,
+		alignSelf: 'flex-start'
+	},
+	outOfStockText: {
+		fontSize: 10,
+		fontWeight: '700',
+		color: '#EF4444',
+		textTransform: 'uppercase'
+	},
+	emptyProducts: {
+		alignItems: 'center',
+		paddingVertical: 32,
+		gap: 12
+	},
+	emptyText: {
+		fontSize: 15,
+		fontWeight: '500'
 	},
 	errorText: {
 		fontSize: 16,

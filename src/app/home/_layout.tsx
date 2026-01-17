@@ -199,8 +199,11 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	activeIconContainer: {
-		padding: 8,
+		width: 44,
+		height: 44,
 		borderRadius: 12,
-		backgroundColor: 'rgba(56, 189, 248, 0.15)' // primary with low opacity
+		backgroundColor: 'rgba(56, 189, 248, 0.15)', // primary with low opacity
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })

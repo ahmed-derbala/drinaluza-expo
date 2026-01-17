@@ -63,7 +63,7 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 	}
 
 	// Modern blue color for refresh icon
-	const refreshIconColor = '#2196F3'
+	const refreshIconColor = colors.primary
 
 	return (
 		<View

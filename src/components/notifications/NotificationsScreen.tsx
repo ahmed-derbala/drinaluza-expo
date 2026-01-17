@@ -151,11 +151,8 @@ export default function NotificationsScreen() {
 				title={translate('notifications_title', 'Notifications')}
 				subtitle={`${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`}
 				showBack={false}
-				rightActions={
-					<TouchableOpacity onPress={onRefresh} disabled={refreshing}>
-						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
-					</TouchableOpacity>
-				}
+				onRefresh={onRefresh}
+				isRefreshing={refreshing}
 			/>
 
 			<FlatList
