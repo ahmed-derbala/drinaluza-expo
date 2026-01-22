@@ -1,0 +1,9 @@
+{
+  "framework": "expo",
+  "buildCommand": "npm run build:web",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/:path*", "destination": "/" }
+  ]
+}

@@ -31,8 +31,8 @@ export const getMyBusiness = async (): Promise<MyBusinessResponse> => {
 	return response.data
 }
 
-export const requestBusiness = async () => {
-	const response = await getApiClient().post('/businesses/requests')
+export const requestBusiness = async (businessName?: LocalizedName) => {
+	const response = await getApiClient().post('/businesses/requests', businessName ? { name: businessName } : undefined)
 	return response.data
 }
 

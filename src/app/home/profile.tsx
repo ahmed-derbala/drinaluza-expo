@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator, Linking } from 'react-native'
+import React, { useEffect, useState, useCallback, useRef } from 'react'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator, Linking, Modal, KeyboardAvoidingView } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -17,6 +17,7 @@ import { parseError, logError } from '../../utils/errorHandler'
 import { useUser } from '../../contexts/UserContext'
 
 import { UserData } from '../../components/profile/profile.interface'
+import { LocalizedName } from '../../components/shops/shops.interface'
 import { LANGUAGES, CURRENCIES, SOCIAL_PLATFORMS } from '../../constants/settings'
 
 // Components moved outside to prevent re-creation on render
@@ -192,6 +193,11 @@ export default function ProfileScreen() {
 	const [showDatePicker, setShowDatePicker] = useState(false)
 	const [imageError, setImageError] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const [showBusinessModal, setShowBusinessModal] = useState(false)
+	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
+	const [businessLoading, setBusinessLoading] = useState(false)
+	const tnLatnInputRef = useRef<TextInput>(null)
+	const tnArabInputRef = useRef<TextInput>(null)
 
 	const loadProfile = async () => {
 		try {
@@ -426,17 +432,37 @@ export default function ProfileScreen() {
 		})
 	}
 
-	const handleRequestBusiness = async () => {
-		showConfirm(translate('request_business', 'Request Business'), 'Do you want to request to become a business owner?', async () => {
-			try {
-				await requestBusiness()
-				showAlert(translate('success', 'Success'), 'Your request has been sent successfully!')
-			} catch (error: any) {
-				console.error('Request business failed:', error)
-				const errorMessage = error.response?.data?.message || 'Failed to send business request'
-				showAlert(translate('error', 'Error'), errorMessage)
+	const handleRequestBusiness = () => {
+		setBusinessName({ en: '', tn_latn: '', tn_arab: '' })
+		setShowBusinessModal(true)
+	}
+
+	const updateBusinessName = (field: keyof LocalizedName, value: string) => {
+		setBusinessName((prev) => ({ ...prev, [field]: value }))
+	}
+
+	const handleSubmitBusinessRequest = async () => {
+		if (!businessName.en.trim()) {
+			showAlert(translate('error', 'Error'), translate('business_name_required', 'Please enter a business name in English'))
+			return
+		}
+		try {
+			setBusinessLoading(true)
+			const nameData: LocalizedName = {
+				en: businessName.en.trim(),
+				tn_latn: businessName.tn_latn?.trim() || undefined,
+				tn_arab: businessName.tn_arab?.trim() || undefined
 			}
-		})
+			await requestBusiness(nameData)
+			setShowBusinessModal(false)
+			showAlert(translate('success', 'Success'), 'Your business request has been sent successfully!')
+		} catch (error: any) {
+			console.error('Request business failed:', error)
+			const errorMessage = error.response?.data?.message || 'Failed to send business request'
+			showAlert(translate('error', 'Error'), errorMessage)
+		} finally {
+			setBusinessLoading(false)
+		}
 	}
 
 	const handleGetCurrentLocation = async () => {
@@ -1509,6 +1535,114 @@ export default function ProfileScreen() {
 					</View>
 				</Section>
 			</ScrollView>
+
+			{/* Business Name Modal */}
+			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => setShowBusinessModal(false)}>
+				<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+					<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => !businessLoading && setShowBusinessModal(false)} />
+					<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
+						<View style={styles.businessModalHeader}>
+							<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
+								<Ionicons name="briefcase" size={32} color={colors.primary} />
+							</View>
+							<Text style={[styles.businessModalTitle, { color: colors.text }]}>{translate('create_business', 'Create Business')}</Text>
+							<Text style={[styles.businessModalSubtitle, { color: colors.textSecondary }]}>{translate('enter_business_name', 'Enter a name for your business in multiple languages')}</Text>
+						</View>
+						<ScrollView style={styles.businessInputContainer} showsVerticalScrollIndicator={false}>
+							{/* English Name (Required) */}
+							<View style={styles.languageInputGroup}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
+									<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+								</View>
+								<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+									<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+										<Text style={styles.flagText}>🇺🇸</Text>
+									</View>
+									<TextInput
+										style={[styles.languageInput, { color: colors.text }]}
+										value={businessName.en}
+										onChangeText={(text) => updateBusinessName('en', text)}
+										placeholder="e.g., Fresh Seafood Market"
+										placeholderTextColor={colors.textSecondary}
+										autoFocus
+										maxLength={50}
+										editable={!businessLoading}
+										returnKeyType="next"
+										onSubmitEditing={() => tnLatnInputRef.current?.focus()}
+									/>
+								</View>
+							</View>
+
+							{/* Tunisian Latin (Optional) */}
+							<View style={styles.languageInputGroup}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Latin)</Text>
+									<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
+								</View>
+								<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_latn ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+									<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+										<Text style={styles.flagText}>🇹🇳</Text>
+									</View>
+									<TextInput
+										ref={tnLatnInputRef}
+										style={[styles.languageInput, { color: colors.text }]}
+										value={businessName.tn_latn}
+										onChangeText={(text) => updateBusinessName('tn_latn', text)}
+										placeholder="e.g., Souk el 7out"
+										placeholderTextColor={colors.textSecondary}
+										maxLength={50}
+										editable={!businessLoading}
+										returnKeyType="next"
+										onSubmitEditing={() => tnArabInputRef.current?.focus()}
+									/>
+								</View>
+							</View>
+
+							{/* Tunisian Arabic (Optional) */}
+							<View style={styles.languageInputGroup}>
+								<View style={styles.inputLabelRow}>
+									<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Arabic)</Text>
+									<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
+								</View>
+								<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_arab ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+									<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+										<Text style={styles.flagText}>🇹🇳</Text>
+									</View>
+									<TextInput
+										ref={tnArabInputRef}
+										style={[styles.languageInput, { color: colors.text, textAlign: 'right' }]}
+										value={businessName.tn_arab}
+										onChangeText={(text) => updateBusinessName('tn_arab', text)}
+										placeholder="مثال: سوق الحوت"
+										placeholderTextColor={colors.textSecondary}
+										maxLength={50}
+										editable={!businessLoading}
+										returnKeyType="done"
+										onSubmitEditing={handleSubmitBusinessRequest}
+									/>
+								</View>
+							</View>
+						</ScrollView>
+						<View style={styles.businessModalActions}>
+							<TouchableOpacity
+								style={[styles.businessModalButton, styles.businessModalCancelButton, { borderColor: colors.border }]}
+								onPress={() => setShowBusinessModal(false)}
+								disabled={businessLoading}
+							>
+								<Text style={[styles.businessModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
+							</TouchableOpacity>
+							<TouchableOpacity
+								style={[styles.businessModalButton, styles.businessModalSubmitButton, { backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }]}
+								onPress={handleSubmitBusinessRequest}
+								disabled={businessLoading || !businessName.en.trim()}
+							>
+								{businessLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.businessModalButtonText, { color: '#fff' }]}>{translate('submit', 'Submit')}</Text>}
+							</TouchableOpacity>
+						</View>
+					</View>
+				</KeyboardAvoidingView>
+			</Modal>
 		</View>
 	)
 }
@@ -2058,5 +2192,115 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			shadowOpacity: 0.2,
 			shadowRadius: 2,
 			elevation: 2
+		},
+		// Business Modal Styles
+		modalOverlay: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+			backgroundColor: 'rgba(0, 0, 0, 0.5)'
+		},
+		modalBackdrop: {
+			position: 'absolute',
+			top: 0,
+			left: 0,
+			right: 0,
+			bottom: 0
+		},
+		businessModalContent: {
+			width: isWideScreen ? 500 : (width || 400) - 40,
+			maxWidth: 500,
+			borderRadius: 16,
+			padding: 24,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 4 },
+			shadowOpacity: 0.3,
+			shadowRadius: 8,
+			elevation: 8
+		},
+		businessModalHeader: {
+			alignItems: 'center',
+			marginBottom: 20
+		},
+		businessModalIcon: {
+			width: 64,
+			height: 64,
+			borderRadius: 32,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginBottom: 16
+		},
+		businessModalTitle: {
+			fontSize: 20,
+			fontWeight: '700',
+			marginBottom: 8
+		},
+		businessModalSubtitle: {
+			fontSize: 14,
+			textAlign: 'center'
+		},
+		businessInputContainer: {
+			marginBottom: 20,
+			maxHeight: 300
+		},
+		languageInputGroup: {
+			marginBottom: 16
+		},
+		inputLabelRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			marginBottom: 8
+		},
+		required: {
+			marginLeft: 4,
+			fontSize: 14,
+			fontWeight: '600'
+		},
+		optional: {
+			marginLeft: 4,
+			fontSize: 12,
+			fontWeight: '500'
+		},
+		languageInputWrapper: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			borderWidth: 1,
+			borderRadius: 12,
+			overflow: 'hidden'
+		},
+		languageIcon: {
+			width: 48,
+			height: 48,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		languageInput: {
+			flex: 1,
+			padding: 12,
+			fontSize: 16,
+			fontWeight: '500'
+		},
+		businessModalActions: {
+			flexDirection: 'row',
+			gap: 12
+		},
+		businessModalButton: {
+			flex: 1,
+			padding: 16,
+			borderRadius: 12,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 48
+		},
+		businessModalCancelButton: {
+			borderWidth: 1,
+			backgroundColor: 'transparent'
+		},
+		businessModalSubmitButton: {
+			// backgroundColor set dynamically
+		},
+		businessModalButtonText: {
+			fontSize: 16,
+			fontWeight: '600'
 		}
 	})

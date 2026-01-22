@@ -21,8 +21,8 @@
     "env:prod": "cp envs/.env.prod .env",
     "env:local": "cp envs/.env.local .env",
     "ver": "npm version patch --no-git-tag-version",
-    "build:apk": "clear && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build --platform android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive && npm run ver",
-    "build:web": "npm run clean:prod && NODE_ENV=production npx expo export --platform web",
+    "build:apk": "clear && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive && npm run ver",
+    "build:web": "npm run clean:prod && NODE_ENV=production npx expo export -p web",
     "start": "expo start",
     "start:local": "rm -rf .expo && npm run env:local && expo start -c",
     "dev": "npm run env:local && expo start",
@@ -44,7 +44,7 @@
     "check-updates": "npm i -D npm-check-updates && ncu -u",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "push": "npm run format && git add . && git commit -m",
-    "postpush": "git push",
+    "postpush": "git push && npm run ver",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {

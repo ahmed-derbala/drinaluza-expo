@@ -167,7 +167,7 @@ export default function SettingsScreen() {
 					icon="globe-outline"
 					title="Web App"
 					subtitle="Access via Browser"
-					onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
+					onPress={() => Linking.openURL('https://drinaluza.vercel.app/')}
 					copyValue="https://drinaluza.netlify.app/"
 					color="#6366F1"
 				/>
