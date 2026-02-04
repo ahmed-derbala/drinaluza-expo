@@ -116,7 +116,12 @@ export const translations: Record<string, Record<string, string>> = {
 		notifications_title: 'Notifications',
 		notification: 'notification',
 		notifications_plural: 'notifications',
-		no_notifications: 'No new notifications',
+		no_notifications: 'No notifications',
+		no_notifications_desc: "You're all caught up!",
+		new: 'New',
+		priority_high: 'High',
+		priority_medium: 'Medium',
+		priority_low: 'Low',
 		mark_as_read: 'Mark as Read',
 
 		// Shops
@@ -285,7 +290,12 @@ export const translations: Record<string, Record<string, string>> = {
 		notifications_title: 'Notifications',
 		notification: 'notification',
 		notifications_plural: 'notifications',
-		no_notifications: 'Ma famma chay jdid',
+		no_notifications: 'Ma famma chay',
+		no_notifications_desc: 'Kolchi tjawi!',
+		new: 'Jdid',
+		priority_high: 'Mohim',
+		priority_medium: 'Wset',
+		priority_low: 'Sghir',
 		mark_as_read: 'Aqraha',
 
 		// Shops
@@ -454,7 +464,12 @@ export const translations: Record<string, Record<string, string>> = {
 		notifications_title: 'الإشعارات',
 		notification: 'إشعار',
 		notifications_plural: 'إشعارات',
-		no_notifications: 'ما فما شيء جديد',
+		no_notifications: 'ما فما شيء',
+		no_notifications_desc: 'كل شيء تجاوي!',
+		new: 'جديد',
+		priority_high: 'مهم',
+		priority_medium: 'وسط',
+		priority_low: 'صغير',
 		mark_as_read: 'حدد كمقروء',
 
 		// Shops

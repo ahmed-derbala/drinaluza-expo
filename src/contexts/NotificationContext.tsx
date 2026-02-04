@@ -33,8 +33,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
 	useEffect(() => {
 		refreshNotificationCount()
-		const interval = setInterval(refreshNotificationCount, 60000)
-		return () => clearInterval(interval)
 	}, [refreshNotificationCount])
 
 	return <NotificationContext.Provider value={{ notificationCount, refreshNotificationCount, decrementNotificationCount }}>{children}</NotificationContext.Provider>
