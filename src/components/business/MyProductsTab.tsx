@@ -1,16 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, Alert, TouchableOpacity, Platform, ActivityIndicator } from 'react-native'
-import SmartImage from '../common/SmartImage'
+import SmartImage from '../../core/helpers/SmartImage'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons'
 import { getMyProducts } from '../products/products.api'
 import { ProductType } from '../products/products.type'
 import { useFocusEffect } from '@react-navigation/native'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 
 import ScreenHeader from '../common/ScreenHeader'
-import { useUser } from '../../contexts/UserContext'
+import { useUser } from '../../core/contexts/UserContext'
 
 const ProductItem = ({ item }: { item: ProductType }) => {
 	const { colors } = useTheme()

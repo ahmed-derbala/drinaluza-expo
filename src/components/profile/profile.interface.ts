@@ -85,3 +85,6 @@ export interface UserData {
 	createdAt: string
 	updatedAt: string
 }
+
+// Export alias for backward compatibility
+export type User = UserData

@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from 'react-native'
 import { useRouter } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 interface ScreenHeaderProps {

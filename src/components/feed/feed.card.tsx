@@ -2,9 +2,9 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { FeedItem, ProductFeedItem } from './feed.interface'
 import ProductCard from '../products/products.card'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { MaterialIcons } from '@expo/vector-icons'
-import { useUser } from '../../contexts/UserContext'
+import { useUser } from '../../core/contexts/UserContext'
 
 type FeedCardProps = {
 	item: FeedItem

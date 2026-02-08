@@ -7,12 +7,12 @@ if (typeof setImmediate === 'undefined') {
 	global.setImmediate = (callback: (...args: any[]) => void) => setTimeout(callback, 0)
 }
 
-import { ThemeProvider } from '../contexts/ThemeContext'
-import { NotificationProvider } from '../contexts/NotificationContext'
-import { UserProvider } from '../contexts/UserContext'
-import { ErrorBoundary } from '../components/ErrorBoundary'
+import { ThemeProvider } from '@/core/contexts/ThemeContext'
+import { NotificationProvider } from '@/core/contexts/NotificationContext'
+import { UserProvider } from '@/core/contexts/UserContext'
+import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 
-import { getPlatformStackOptions } from '../config/navigation'
+import { getPlatformStackOptions } from '@/config/navigation'
 
 function RootLayoutContent() {
 	const stackOptions = getPlatformStackOptions({

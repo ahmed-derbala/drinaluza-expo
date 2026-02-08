@@ -1,16 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTheme } from '../../contexts/ThemeContext'
-import { useNotification } from '../../contexts/NotificationContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
+import { useNotification } from '../../core/contexts/NotificationContext'
 import ScreenHeader from '../common/ScreenHeader'
 import ErrorState from '../common/ErrorState'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
-import { parseError, logError } from '../../utils/errorHandler'
-import { useUser } from '../../contexts/UserContext'
+import { parseError, logError } from '../../core/helpers/errorHandler'
+import { useUser } from '../../core/contexts/UserContext'
 
 // Priority color mapping
 const PRIORITY_COLORS = {
@@ -21,8 +21,6 @@ const PRIORITY_COLORS = {
 
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
-	// Determine if dark mode by checking background luminance
-	const isDark = colors.background.toLowerCase() !== '#ffffff' && colors.background.toLowerCase() !== '#fff'
 	const router = useRouter()
 	const [notifications, setNotifications] = useState<NotificationItem[]>([])
 	const [loading, setLoading] = useState(true)
@@ -113,10 +111,11 @@ export default function NotificationsScreen() {
 	const getPriorityStyles = (priority?: 'low' | 'medium' | 'high') => {
 		if (!priority) return null
 		const config = PRIORITY_COLORS[priority]
+		// Always use dark theme styles
 		return {
-			backgroundColor: isDark ? config.border + '20' : config.bg,
+			backgroundColor: config.border + '20',
 			borderColor: config.border,
-			textColor: isDark ? config.border : config.text,
+			textColor: config.border,
 			iconName: config.icon as keyof typeof Ionicons.glyphMap
 		}
 	}

@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { searchFeed } from '../feed/feed.api'
 import { FeedItem } from '../feed/feed.interface'
-import { parseError, logError } from '../../utils/errorHandler'
-import { useUser } from '../../contexts/UserContext'
+import { parseError, logError } from '../../core/helpers/errorHandler'
+import { useUser } from '../../core/contexts/UserContext'
 
 interface SearchBarProps {
 	onSearchResults: (results: FeedItem[]) => void

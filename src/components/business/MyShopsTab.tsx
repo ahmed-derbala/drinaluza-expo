@@ -23,7 +23,7 @@ import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { getMyShops, createShop } from '../shops/shops.api'
 import { Shop, CreateShopRequest } from '../shops/shops.interface'
-import { useUser } from '../../contexts/UserContext'
+import { useUser } from '../../core/contexts/UserContext'
 
 type ShopsStackParamList = {
 	ShopDetails: { shopId: string }
@@ -36,7 +36,7 @@ interface MyShopsTabProps {
 	navigation?: MyShopsTabNavigationProp
 }
 import { useFocusEffect } from '@react-navigation/native'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { debounce } from 'lodash'
 
 interface ThemeType {

@@ -1,14 +1,14 @@
 import React, { useMemo, useCallback, useEffect, useState } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, useWindowDimensions, ActivityIndicator, Platform, RefreshControl } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { MaterialIcons, FontAwesome5, Ionicons } from '@expo/vector-icons'
 import ScreenHeader from '../common/ScreenHeader'
 import { getMyBusiness, MyBusiness } from './business.api'
-import { parseError } from '../../utils/errorHandler'
+import { parseError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { LinearGradient } from 'expo-linear-gradient'
-import { showAlert } from '../../utils/popup'
+import { showAlert } from '../../core/helpers/popup'
 
 type ActionButtonProps = {
 	icon: React.ReactNode

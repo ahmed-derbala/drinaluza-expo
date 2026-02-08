@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
-import SmartImage from '../common/SmartImage'
+import SmartImage from '../../core/helpers/SmartImage'
 import { MaterialIcons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { useRouter } from 'expo-router'
-import { useUser } from '../../contexts/UserContext'
+import { useUser } from '../../core/contexts/UserContext'
 
 type ProductCardProps = {
 	item: ProductFeedItem

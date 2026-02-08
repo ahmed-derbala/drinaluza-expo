@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 
 const ShopDetailsScreen = () => {
 	const { shopId } = useLocalSearchParams<{ shopId: string }>()

@@ -1,12 +1,12 @@
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Alert, useWindowDimensions } from 'react-native'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
-import { orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
-import SmartImage from '../common/SmartImage'
-import { useUser } from '../../contexts/UserContext'
+import { orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
+import SmartImage from '../../core/helpers/SmartImage'
+import { useUser } from '../../core/contexts/UserContext'
 
 interface SaleCardProps {
 	sale: Sale

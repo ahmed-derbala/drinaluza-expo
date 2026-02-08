@@ -3,14 +3,14 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, P
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
 import { getPurchases } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
-import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../constants/orderStatus'
-import { logError, parseError } from '../../utils/errorHandler'
+import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
+import { logError, parseError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
-import { useUser } from '../../contexts/UserContext'
+import { useUser } from '../../core/contexts/UserContext'
 
 type Order = OrderItem
 

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '../../contexts/ThemeContext'
+import { useTheme } from '../../core/contexts/ThemeContext'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
