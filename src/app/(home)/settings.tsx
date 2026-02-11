@@ -165,11 +165,19 @@ export default function SettingsScreen() {
 				/>
 				<SettingItem
 					icon="globe-outline"
-					title="Web App"
-					subtitle="Access via Browser"
-					onPress={() => Linking.openURL('https://drinaluza.vercel.app/')}
+					title="Netlify"
+					subtitle="drinaluza.netlify.app"
+					onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
 					copyValue="https://drinaluza.netlify.app/"
-					color="#6366F1"
+					color="#00C7B7"
+				/>
+				<SettingItem
+					icon="globe-outline"
+					title="Vercel"
+					subtitle="drinaluza.vercel.app"
+					onPress={() => Linking.openURL('https://drinaluza.vercel.app/')}
+					copyValue="https://drinaluza.vercel.app/"
+					color={colors.text}
 				/>
 				<SettingItem
 					icon="cloud-download-outline"
