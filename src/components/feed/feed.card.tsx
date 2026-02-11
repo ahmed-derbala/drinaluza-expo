@@ -1,7 +1,9 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { FeedItem, ProductFeedItem } from './feed.interface'
+import { FeedItem, ProductFeedItem, ShopFeedItem, UserFeedItem } from './feed.interface'
 import ProductCard from '../products/products.card'
+import ShopCard from './shops.card'
+import UserCard from './users.card'
 import { useTheme } from '../../core/contexts/ThemeContext'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useUser } from '../../core/contexts/UserContext'
@@ -12,33 +14,17 @@ type FeedCardProps = {
 }
 
 export default function FeedCard({ item, addToBasket }: FeedCardProps) {
-	const { localize, translate } = useUser()
+	const { translate } = useUser()
 	const { colors } = useTheme()
-	const cardType = item.card?.type || 'product'
+	const cardType = item.card?.kind || 'product'
 
 	switch (cardType) {
 		case 'product':
 			return <ProductCard item={item as ProductFeedItem} addToBasket={addToBasket} />
 		case 'shop':
-			return (
-				<View style={[styles.placeholderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-					<View style={[styles.placeholderIcon, { backgroundColor: colors.primaryContainer }]}>
-						<MaterialIcons name="store" size={32} color={colors.primary} />
-					</View>
-					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{localize(item.shop?.name) || translate('shop', 'Shop')}</Text>
-					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>{translate('shop_card', 'Shop Card')}</Text>
-				</View>
-			)
+			return <ShopCard item={item as ShopFeedItem} />
 		case 'user':
-			return (
-				<View style={[styles.placeholderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-					<View style={[styles.placeholderIcon, { backgroundColor: colors.primaryContainer }]}>
-						<MaterialIcons name="person" size={32} color={colors.primary} />
-					</View>
-					<Text style={[styles.placeholderTitle, { color: colors.text }]}>{translate('user_card', 'User Card')}</Text>
-					<Text style={[styles.placeholderSubtitle, { color: colors.textSecondary }]}>{translate('coming_soon', 'Coming soon')}</Text>
-				</View>
-			)
+			return <UserCard item={item as UserFeedItem} />
 		default:
 			return (
 				<View style={[styles.placeholderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>

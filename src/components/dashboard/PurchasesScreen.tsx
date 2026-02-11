@@ -39,9 +39,9 @@ const PurchasesScreen = () => {
 	const { translate, localize } = useUser()
 
 	useBackButton(() => {
-		router.replace('/home/dashboard')
+		router.replace('/(home)/dashboard')
 		return true
-	}, '/home/dashboard')
+	}, '/(home)/dashboard')
 
 	const { width } = useWindowDimensions()
 
@@ -618,7 +618,7 @@ const PurchasesScreen = () => {
 	if (error && purchases.length === 0 && filter !== 'cart') {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('purchases_title', 'Purchases')} showBack={true} onBackPress={() => router.replace('/home/dashboard' as any)} />
+				<ScreenHeader title={translate('purchases_title', 'Purchases')} showBack={true} onBackPress={() => router.replace('/(home)/dashboard' as any)} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -638,7 +638,7 @@ const PurchasesScreen = () => {
 				title={translate('purchases_title', 'Purchases')}
 				subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`}
 				showBack={true}
-				onBackPress={() => router.replace('/home/dashboard' as any)}
+				onBackPress={() => router.replace('/(home)/dashboard' as any)}
 				rightActions={
 					<TouchableOpacity onPress={onRefresh}>
 						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />

@@ -156,28 +156,28 @@ const Dashboard = () => {
 				value: formatPrice({ total: { [currency]: stats.totalSpent } }),
 				icon: <MaterialIcons name="payments" size={24} color={colors.primary} />,
 				accent: colors.primary,
-				onPress: () => router.push('/home/purchases' as any)
+				onPress: () => router.push('/(home)/purchases' as any)
 			},
 			{
 				title: translate('dashboard.purchases', 'Purchases'),
 				value: stats.totalPurchases,
 				icon: <MaterialIcons name="shopping-bag" size={24} color={colors.info} />,
 				accent: colors.info,
-				onPress: () => router.push('/home/purchases' as any)
+				onPress: () => router.push('/(home)/purchases' as any)
 			},
 			{
 				title: translate('dashboard.pending', 'Pending'),
 				value: stats.pendingPurchases,
 				icon: <MaterialIcons name="schedule" size={24} color={colors.warning} />,
 				accent: colors.warning,
-				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'pending' } } as any)
+				onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'pending' } } as any)
 			},
 			{
 				title: translate('dashboard.completed', 'Completed'),
 				value: stats.completedPurchases,
 				icon: <MaterialIcons name="check-circle" size={24} color={colors.success} />,
 				accent: colors.success,
-				onPress: () => router.push({ pathname: '/home/purchases', params: { filter: 'completed' } } as any)
+				onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'completed' } } as any)
 			}
 		],
 		[colors.primary, colors.success, colors.warning, colors.info, router, stats, currency, formatPrice, translate]
@@ -188,22 +188,22 @@ const Dashboard = () => {
 			{
 				icon: <MaterialIcons name="storefront" size={26} color={colors.primary} />,
 				color: colors.primary,
-				onPress: () => router.push('/home/shops' as any)
+				onPress: () => router.push('/(home)/shops' as any)
 			},
 			{
 				icon: <Feather name="package" size={26} color={colors.info} />,
 				color: colors.info,
-				onPress: () => router.push('/home/purchases' as any)
+				onPress: () => router.push('/(home)/purchases' as any)
 			},
 			{
 				icon: <Feather name="tag" size={26} color={colors.success} />,
 				color: colors.success,
-				onPress: () => router.push('/home/feed' as any)
+				onPress: () => router.push('/(home)/feed' as any)
 			},
 			{
 				icon: <Feather name="settings" size={26} color={colors.textTertiary} />,
 				color: colors.textTertiary,
-				onPress: () => router.push('/home/settings' as any)
+				onPress: () => router.push('/(home)/settings' as any)
 			}
 		],
 		[colors.info, colors.primary, colors.success, colors.textTertiary, router]
@@ -260,7 +260,7 @@ const Dashboard = () => {
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.recent_purchases', 'Recent Purchases')}</Text>
-							<TouchableOpacity onPress={() => router.push('/home/purchases' as any)} style={styles.iconButton}>
+							<TouchableOpacity onPress={() => router.push('/(home)/purchases' as any)} style={styles.iconButton}>
 								<Ionicons name="chevron-forward" size={20} color={colors.primary} />
 							</TouchableOpacity>
 						</View>
@@ -278,7 +278,7 @@ const Dashboard = () => {
 									<TouchableOpacity
 										key={purchase._id}
 										style={[styles.purchaseRow, { borderColor: colors.border }, index === recentPurchases.length - 1 && { borderBottomWidth: 0 }]}
-										onPress={() => router.push('/home/purchases' as any)}
+										onPress={() => router.push('/(home)/purchases' as any)}
 										activeOpacity={0.8}
 									>
 										<View style={[styles.purchaseIcon, { backgroundColor: `${colors.primary}10` }]}>

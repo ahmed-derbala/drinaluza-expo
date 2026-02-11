@@ -45,7 +45,7 @@ export default function AuthScreen() {
 			setIsLoading(true)
 			const success = await signInWithToken(auth.token)
 			if (success) {
-				router.replace('/home/feed')
+				router.replace('/(home)/feed')
 			} else {
 				setSlug(auth.slug)
 				setPassword('')
@@ -151,7 +151,7 @@ export default function AuthScreen() {
 					label: 'auth',
 					message: 'Navigating to /home'
 				})
-				router.replace('/home/feed')
+				router.replace('/(home)/feed')
 			} else {
 				log({
 					level: 'error',
@@ -216,7 +216,7 @@ export default function AuthScreen() {
 	const handleSignUp = async () => {
 		try {
 			await signUp(slug, password)
-			router.replace('/home/feed')
+			router.replace('/(home)/feed')
 		} catch (error) {
 			log({
 				level: 'error',
@@ -235,7 +235,7 @@ export default function AuthScreen() {
 					<ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
 						<View style={[styles.innerContainer, isWideScreen && { maxWidth }]}>
 							<View style={styles.topUtilityBar}>
-								<TouchableOpacity onPress={() => router.replace('/home/feed' as any)} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+								<TouchableOpacity onPress={() => router.replace('/(home)/feed' as any)} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 									<Ionicons name="home-outline" size={20} color={colors.primary} />
 								</TouchableOpacity>
 								<TouchableOpacity onPress={handleResetApp} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>

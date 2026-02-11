@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router'
  * Otherwise, it will try to go back using router.back(),
  * and if not possible, it will navigate to a fallback route (defaulting to /home/feed).
  */
-export const useBackButton = (handler?: () => boolean, fallback: string = '/home/feed') => {
+export const useBackButton = (handler?: () => boolean, fallback: string = '/(home)/feed') => {
 	const router = useRouter()
 
 	useEffect(() => {

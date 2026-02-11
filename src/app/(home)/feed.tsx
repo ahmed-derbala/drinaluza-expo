@@ -1,12 +1,12 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getFeed } from '@/components/feed/feed.api'
 import { FeedItem } from '@/components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
 import FeedCard from '@/components/feed/feed.card'
 import { useTheme } from '@/core/contexts/ThemeContext'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import ErrorState from '@/components/common/ErrorState'
 import Toast from '@/components/common/Toast'
@@ -14,6 +14,14 @@ import SearchBar from '@/components/search/SearchBar'
 import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
+
+type FilterKey = 'product' | 'shop' | 'user'
+
+const FILTER_OPTIONS: { key: FilterKey; icon: string; iconSet: 'ionicons' | 'material' }[] = [
+	{ key: 'product', icon: 'fish-outline', iconSet: 'ionicons' },
+	{ key: 'shop', icon: 'store', iconSet: 'material' },
+	{ key: 'user', icon: 'people-outline', iconSet: 'ionicons' }
+]
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
@@ -100,7 +108,29 @@ const createStyles = (colors: any) =>
 			paddingBottom: 20
 		},
 		cardWrapper: {
-			marginBottom: 16
+			marginBottom: 16,
+			minHeight: 420
+		},
+		// Filter chip styles
+		filterContainer: {
+			paddingVertical: 8,
+			paddingHorizontal: 16,
+			backgroundColor: colors.background
+		},
+		filterChip: {
+			width: 44,
+			height: 44,
+			borderRadius: 12,
+			backgroundColor: colors.surface,
+			justifyContent: 'center',
+			alignItems: 'center',
+			borderWidth: 1,
+			borderColor: colors.border,
+			marginRight: 8
+		},
+		filterChipActive: {
+			backgroundColor: colors.primaryContainer,
+			borderColor: colors.primary
 		}
 	})
 
@@ -114,6 +144,7 @@ export default function FeedScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [isSearchActive, setIsSearchActive] = useState(false)
+	const [activeFilters, setActiveFilters] = useState<FilterKey[]>([])
 
 	const { width } = useWindowDimensions()
 	const minColumnWidth = 320
@@ -140,6 +171,12 @@ export default function FeedScreen() {
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 
+	const getFilterParam = (filters: FilterKey[]): string | undefined => {
+		// No filter or all selected = show everything
+		if (filters.length === 0 || filters.length === FILTER_OPTIONS.length) return undefined
+		return filters.join(',')
+	}
+
 	const loadBasket = async () => {
 		try {
 			const storedBasket = await AsyncStorage.getItem('basket')
@@ -151,12 +188,12 @@ export default function FeedScreen() {
 		}
 	}
 
-	const fetchFeed = async (pageNum: number = 1, shouldAppend: boolean = false) => {
+	const fetchFeed = async (pageNum: number = 1, shouldAppend: boolean = false, filters: FilterKey[] = activeFilters) => {
 		try {
 			if (pageNum === 1) setLoading(true)
 			else setIsLoadingMore(true)
 
-			const response = await getFeed(pageNum, 10)
+			const response = await getFeed(pageNum, 10, getFilterParam(filters))
 			const newItems = response.data.docs
 
 			if (newItems.length < 10) {
@@ -182,7 +219,7 @@ export default function FeedScreen() {
 			const errorInfo = parseError(err)
 			setError({
 				message: errorInfo.message,
-				retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend) : undefined
+				retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend, filters) : undefined
 			})
 			setToastType('error')
 			setShowToast(true)
@@ -196,9 +233,9 @@ export default function FeedScreen() {
 		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
-		await Promise.all([loadBasket(), fetchFeed(1, false)])
+		await Promise.all([loadBasket(), fetchFeed(1, false, activeFilters)])
 		setRefreshing(false)
-	}, [])
+	}, [activeFilters])
 
 	const handleLoadMore = useCallback(() => {
 		if (!isSearchActive && hasMore && !loading && !isLoadingMore) {
@@ -207,6 +244,17 @@ export default function FeedScreen() {
 			fetchFeed(nextPage, true)
 		}
 	}, [isSearchActive, hasMore, loading, isLoadingMore, page])
+
+	const handleFilterToggle = useCallback((key: FilterKey) => {
+		setActiveFilters((prev) => {
+			const newFilters = prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key]
+			setPage(1)
+			setHasMore(true)
+			setIsSearchActive(false)
+			fetchFeed(1, false, newFilters)
+			return newFilters
+		})
+	}, [])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -293,6 +341,17 @@ export default function FeedScreen() {
 		</View>
 	)
 
+	const renderFilterIcon = (option: (typeof FILTER_OPTIONS)[0]) => {
+		const isActive = activeFilters.includes(option.key)
+		const iconColor = isActive ? colors.primary : colors.textTertiary
+		const size = 22
+
+		if (option.iconSet === 'material') {
+			return <MaterialIcons name={option.icon as any} size={size} color={iconColor} />
+		}
+		return <Ionicons name={option.icon as any} size={size} color={iconColor} />
+	}
+
 	return (
 		<View style={styles.container}>
 			<ScreenHeader title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} showBack={false} onRefresh={refreshData} isRefreshing={refreshing} />
@@ -308,6 +367,22 @@ export default function FeedScreen() {
 				}}
 			>
 				<SearchBar onSearchResults={handleSearchResults} onSearchClear={handleSearchClear} onError={handleSearchError} />
+			</View>
+
+			{/* Filter Chips — icon only */}
+			<View style={styles.filterContainer}>
+				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
+					{FILTER_OPTIONS.map((option) => (
+						<TouchableOpacity
+							key={option.key}
+							style={[styles.filterChip, activeFilters.includes(option.key) && styles.filterChipActive]}
+							onPress={() => handleFilterToggle(option.key)}
+							activeOpacity={0.7}
+						>
+							{renderFilterIcon(option)}
+						</TouchableOpacity>
+					))}
+				</ScrollView>
 			</View>
 
 			<Animated.FlatList

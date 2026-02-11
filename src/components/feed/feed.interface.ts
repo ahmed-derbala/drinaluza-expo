@@ -19,14 +19,17 @@ export interface ShopOwner {
 export interface ShopAddress {
 	street: string
 	city: string
-	state: string
-	postalCode: string
+	region?: string
+	state?: string
+	postalCode?: string
 	country: string
 }
 
 export interface ShopLocation {
 	type: string
 	coordinates: number[]
+	sharingEnabled?: boolean
+	updatedAt?: string
 }
 
 export interface Shop {
@@ -34,13 +37,7 @@ export interface Shop {
 	name: LocalizedName
 	slug: string
 	owner: ShopOwner
-	address: {
-		street: string
-		city: string
-		state?: string
-		postalCode?: string
-		country: string
-	}
+	address: ShopAddress
 	location: ShopLocation
 	createdAt: string
 	updatedAt: string
@@ -68,7 +65,7 @@ export interface Stock {
 }
 
 export interface CardInfo {
-	type: string
+	kind: string
 }
 
 export interface FeedItem {
@@ -109,6 +106,25 @@ export interface FeedItem {
 			}
 		}
 	}
+	contact?: {
+		phone?: {
+			fullNumber: string
+			countryCode: string
+			localNumber: string
+		}
+		backupPhones?: Array<{
+			fullNumber: string
+			countryCode: string
+			localNumber: string
+		}>
+		whatsapp?: string
+		email?: string
+	}
+	// User-specific fields
+	role?: string
+	address?: ShopAddress
+	location?: ShopLocation
+	shops?: string[]
 }
 
 export interface ProductFeedItem extends FeedItem {
@@ -121,6 +137,40 @@ export interface ProductFeedItem extends FeedItem {
 		updatedAt: string
 	}
 	stock: Stock
+}
+
+export interface ShopFeedItem extends FeedItem {
+	shop: Shop
+	name: LocalizedName
+	media: {
+		thumbnail?: {
+			url: string
+		}
+	}
+}
+
+export interface UserFeedItem extends FeedItem {
+	name: LocalizedName
+	role: string
+	address: ShopAddress
+	state: {
+		code: string
+		updatedAt: string
+	}
+}
+
+// Raw API response types (before normalization)
+
+export interface RawFeedDoc {
+	_id: string
+	targetData: any
+	targetResource: 'product' | 'shop' | 'user'
+	card: {
+		kind: string
+	}
+	createdAt: string
+	updatedAt: string
+	__v: number
 }
 
 export interface FeedResponse {
@@ -137,6 +187,14 @@ export interface FeedResponse {
 			prevPage: number | null
 			returnedDocsCount: number
 		}
+		docs: RawFeedDoc[]
+	}
+}
+
+export interface NormalizedFeedResponse {
+	status: number
+	data: {
+		pagination: FeedResponse['data']['pagination']
 		docs: FeedItem[]
 	}
 }

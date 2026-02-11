@@ -87,21 +87,21 @@ const BusinessDashboard = () => {
 			{
 				label: 'Shops',
 				icon: <MaterialIcons name="store" size={28} color={colors.primary} />,
-				onPress: () => router.push('/home/business/my-shops' as any),
+				onPress: () => router.push('/(home)/business/my-shops' as any),
 				count: business?.shopsCount,
 				color: colors.primary
 			},
 			{
 				label: 'Products',
 				icon: <MaterialIcons name="inventory" size={28} color={colors.success} />,
-				onPress: () => router.push('/home/business/my-products' as any),
+				onPress: () => router.push('/(home)/business/my-products' as any),
 				count: business?.productsCount,
 				color: colors.success
 			},
 			{
 				label: 'Sales',
 				icon: <MaterialIcons name="receipt-long" size={28} color={colors.info} />,
-				onPress: () => router.push('/home/business/sales' as any),
+				onPress: () => router.push('/(home)/business/sales' as any),
 				count: business?.salessCount,
 				color: colors.info
 			}

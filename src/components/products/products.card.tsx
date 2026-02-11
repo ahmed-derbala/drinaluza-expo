@@ -137,6 +137,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 
 	return StyleSheet.create({
 		card: {
+			flex: 1,
 			backgroundColor: colors.card,
 			borderRadius: 16,
 			overflow: 'hidden',
@@ -210,8 +211,10 @@ const createStyles = (colors: any, screenWidth: number) => {
 			textTransform: 'uppercase'
 		},
 		productInfo: {
+			flex: 1,
 			padding: 16,
-			gap: 12
+			gap: 12,
+			justifyContent: 'space-between'
 		},
 		productNameContainer: {
 			minHeight: isSmallScreen ? 48 : 56

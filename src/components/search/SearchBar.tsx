@@ -18,20 +18,13 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 	const { translate, appLang } = useUser()
 	const [searchText, setSearchText] = useState('')
 
-	const searchTypes = [
-		{ id: 'products', label: translate('products', 'Products'), icon: 'fish-outline' },
-		{ id: 'shops', label: translate('shops', 'Shops'), icon: 'storefront-outline' },
-		{ id: 'users', label: translate('users', 'Users'), icon: 'person-outline' }
-	]
-
-	const [selectedTypes, setSelectedTypes] = useState<string[]>(['products'])
 	const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
 
 	const performSearch = useCallback(
 		async (text: string) => {
 			try {
 				const apiLang = (appLang.startsWith('tn') ? 'tn' : 'en') as 'en' | 'tn'
-				const response = await searchFeed(text, apiLang, selectedTypes)
+				const response = await searchFeed(text, apiLang, ['products'])
 				onSearchResults(response.data.docs)
 			} catch (err) {
 				logError(err, 'SearchBar')
@@ -41,27 +34,8 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 				}
 			}
 		},
-		[onSearchResults, onSearchClear, onError, selectedTypes, appLang, translate]
+		[onSearchResults, onSearchClear, onError, appLang, translate]
 	)
-
-	const toggleType = useCallback((typeId: string) => {
-		setSelectedTypes((prev) => {
-			const newTypes = prev.includes(typeId) ? prev.filter((id) => id !== typeId) : [...prev, typeId]
-
-			// Ensure at least one type is selected
-			if (newTypes.length === 0) return ['products']
-
-			return newTypes
-		})
-	}, [])
-
-	// Trigger search when filters change
-	React.useEffect(() => {
-		// Search if text exists OR if filters are not just default 'products'
-		if (searchText.trim() || (selectedTypes.length > 0 && (selectedTypes.length !== 1 || selectedTypes[0] !== 'products'))) {
-			performSearch(searchText)
-		}
-	}, [selectedTypes, performSearch])
 
 	const handleTextChange = useCallback(
 		(text: string) => {
@@ -115,20 +89,6 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 					</TouchableOpacity>
 				)}
 			</View>
-			<View style={styles.filtersContainer}>
-				{searchTypes.map((type) => {
-					const isSelected = selectedTypes.includes(type.id)
-					return (
-						<TouchableOpacity
-							key={type.id}
-							style={[styles.filterPill, { backgroundColor: isSelected ? colors.primary : colors.surface, borderColor: isSelected ? colors.primary : colors.border }]}
-							onPress={() => toggleType(type.id)}
-						>
-							<Ionicons name={type.icon as any} size={16} color={isSelected ? colors.textOnPrimary : colors.textSecondary} />
-						</TouchableOpacity>
-					)
-				})}
-			</View>
 		</View>
 	)
 }
@@ -154,19 +114,6 @@ const styles = StyleSheet.create({
 		width: 28,
 		height: 28,
 		borderRadius: 8,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	filtersContainer: {
-		flexDirection: 'row',
-		marginTop: 12,
-		gap: 8
-	},
-	filterPill: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
-		borderWidth: 1,
 		justifyContent: 'center',
 		alignItems: 'center'
 	}

@@ -38,7 +38,7 @@ export function useAuthGuard(options: AuthGuardOptions = {}) {
 
 				// Check role-based access
 				if (isAuth && allowedRoles.length > 0 && userRole && !allowedRoles.includes(userRole)) {
-					router.replace('/home/feed') // or a dedicated "access denied" page
+					router.replace('/(home)/feed') // or a dedicated "access denied" page
 					return
 				}
 			} catch (error) {

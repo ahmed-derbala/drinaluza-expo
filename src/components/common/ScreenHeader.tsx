@@ -52,7 +52,7 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 		} else if (router.canGoBack()) {
 			router.back()
 		} else {
-			router.replace('/home/feed')
+			router.replace('/(home)/feed')
 		}
 	}
 

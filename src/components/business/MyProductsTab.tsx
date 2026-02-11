@@ -173,7 +173,7 @@ export default function MyProductsTab() {
 						</LinearGradient>
 						<Text style={[styles.emptyTitleText, { color: colors.text }]}>No Products Yet</Text>
 						<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your seafood products to your shops to start selling.</Text>
-						<TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/home/business/create-product')}>
+						<TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/(home)/business/create-product')}>
 							<Ionicons name="add" size={32} color="#fff" />
 						</TouchableOpacity>
 					</View>
@@ -181,7 +181,7 @@ export default function MyProductsTab() {
 			/>
 
 			{/* FAB to create product */}
-			<TouchableOpacity style={styles.fabContainer} onPress={() => router.push('/home/business/create-product')}>
+			<TouchableOpacity style={styles.fabContainer} onPress={() => router.push('/(home)/business/create-product')}>
 				<LinearGradient colors={[colors.primary, `${colors.primary}E6`]} style={styles.fab}>
 					<Ionicons name="add" size={30} color="#fff" />
 				</LinearGradient>
