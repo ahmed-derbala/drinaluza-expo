@@ -46,7 +46,6 @@ export default {
         },
         plugins: [
             "expo-router",
-            "./plugins/withAndroidOptimization",
             [
                 "expo-build-properties",
                 {
@@ -54,8 +53,7 @@ export default {
                         usesCleartextTraffic: true,
                         ndk: {
                             abiFilters: [
-                                "arm64-v8a",
-                                "armeabi-v7a"
+                                "arm64-v8a"
                             ]
                         },
                         packagingOptions: {

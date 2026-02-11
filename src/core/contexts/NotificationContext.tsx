@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { secureGetItem } from '../auth/storage'
-import { getNotifications } from '@/components/notifications'
+import { getNotifications } from '@/components/notifications/notifications.api'
 
 interface NotificationContextType {
 	notificationCount: number

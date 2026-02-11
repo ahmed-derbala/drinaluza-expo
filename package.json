@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.0.69",
+  "version": "1.0.72",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -21,7 +21,7 @@
     "env:prod": "cp envs/.env.prod .env",
     "env:local": "cp envs/.env.local .env",
     "ver": "npm version patch --no-git-tag-version",
-    "build:apk": "clear && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive && npm run ver",
+    "build:apk": "clear && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive",
     "build:web": "npm run clean && NODE_ENV=production npx expo export -p web",
     "start": "expo start",
     "start:local": "rm -rf .expo && npm run env:local && expo start -c",
@@ -30,7 +30,6 @@
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "test": "jest --watchAll",
     "i": "npm i",
     "i:prod": "NODE_ENV=production npm ci --omit=dev",
     "i:check": "echo y | npx expo install --check",
@@ -40,11 +39,11 @@
     "clean:prod": "npm run rmallexceptpackagelock && npm run i:prod",
     "clean": "npm run clean:only && npm run i",
     "code": "antigravity . && npm run start:local",
-    "update": "npm i -g eas-cli && npm run clean:only && npm run check-updates && npm run clean && npm run ver",
+    "update": "npm i -g eas-cli && npm run clean:only && npm run check-updates && npm run clean",
     "check-updates": "npm i -D npm-check-updates && ncu -u",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
-    "push": "npm run format && git add . && git commit -m",
-    "postpush": "git push && npm run ver",
+    "push": "npm run ver && npm run format && git add . && git commit -m",
+    "postpush": "git push",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {
@@ -65,7 +64,6 @@
     "expo-router": "~6.0.23",
     "expo-secure-store": "~15.0.8",
     "expo-status-bar": "~3.0.9",
-    "expo-system-ui": "~6.0.9",
     "expo-updates": "~29.0.16",
     "lodash": "^4.17.23",
     "react": "19.1.0",
@@ -80,15 +78,9 @@
     "@babel/core": "^7.29.0",
     "@types/lodash": "^4.17.23",
     "@types/react": "~19.1.10",
-    "@types/react-native-dotenv": "^0.2.2",
     "eas-local-cache": "^1.0.3",
-    "jest": "~29.7.0",
-    "jest-expo": "~54.0.17",
     "npm-check-updates": "^19.3.2",
     "prettier": "^3.8.1",
     "typescript": "^5.9.3"
-  },
-  "jest": {
-    "preset": "jest-expo"
   }
 }
