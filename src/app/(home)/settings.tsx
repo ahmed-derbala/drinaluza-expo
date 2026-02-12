@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '@/core/contexts/ThemeContext'
+import { useVersion } from '@/core/contexts/VersionContext'
 import { APP_VERSION, BACKEND_URL } from '@/config'
 import Toast from '@/components/common/Toast'
 import { log } from '@/core/log'
@@ -13,6 +14,7 @@ import ScreenHeader from '@/components/common/ScreenHeader'
 export default function SettingsScreen() {
 	const { colors } = useTheme()
 	const { translate } = useUser()
+	const { checkVersion } = useVersion()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
@@ -26,6 +28,9 @@ export default function SettingsScreen() {
 	const [serverInfo, setServerInfo] = useState<any>(null)
 
 	useEffect(() => {
+		// Trigger version check when settings screen opens
+		checkVersion()
+
 		if (!BACKEND_URL) return
 
 		fetch(BACKEND_URL)

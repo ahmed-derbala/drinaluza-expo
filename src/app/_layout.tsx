@@ -8,6 +8,7 @@ if (typeof setImmediate === 'undefined') {
 }
 
 import { ThemeProvider } from '@/core/contexts/ThemeContext'
+import { VersionProvider } from '@/core/contexts/VersionContext'
 import { NotificationProvider } from '@/core/contexts/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
@@ -29,11 +30,13 @@ function RootLayoutContent() {
 export default function RootLayout() {
 	return (
 		<ThemeProvider>
-			<NotificationProvider>
-				<UserProvider>
-					<RootLayoutContent />
-				</UserProvider>
-			</NotificationProvider>
+			<VersionProvider>
+				<NotificationProvider>
+					<UserProvider>
+						<RootLayoutContent />
+					</UserProvider>
+				</NotificationProvider>
+			</VersionProvider>
 		</ThemeProvider>
 	)
 }
