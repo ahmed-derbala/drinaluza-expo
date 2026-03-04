@@ -7,6 +7,9 @@ import { log } from '../log'
 const GOOGLE_DRIVE_URL = 'https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm'
 const GOOGLE_PLAY_URL = '' // TODO: set when published
 
+const VERSION_CHECK_KEY = 'version_last_check'
+const ONE_DAY_MS = 24 * 60 * 60 * 1000
+
 export interface PlatformVersion {
 	latest: string
 	min: string
@@ -50,6 +53,51 @@ export const compareVersions = (a: string, b: string): number => {
 		if (na < nb) return -1
 	}
 	return 0
+}
+
+/**
+ * Check if enough time has passed since the last version check (24 hours)
+ */
+export const shouldCheckVersion = async (): Promise<boolean> => {
+	try {
+		let lastCheck: string | null = null
+
+		if (Platform.OS === 'web') {
+			if (typeof window !== 'undefined') {
+				lastCheck = localStorage.getItem(VERSION_CHECK_KEY)
+			}
+		} else {
+			const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
+			lastCheck = await AsyncStorage.getItem(VERSION_CHECK_KEY)
+		}
+
+		if (!lastCheck) return true
+
+		const elapsed = Date.now() - Number(lastCheck)
+		return elapsed >= ONE_DAY_MS
+	} catch (e) {
+		return true
+	}
+}
+
+/**
+ * Save the current time as the last version check timestamp
+ */
+export const saveLastCheckTime = async (): Promise<void> => {
+	try {
+		const now = String(Date.now())
+
+		if (Platform.OS === 'web') {
+			if (typeof window !== 'undefined') {
+				localStorage.setItem(VERSION_CHECK_KEY, now)
+			}
+		} else {
+			const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
+			await AsyncStorage.setItem(VERSION_CHECK_KEY, now)
+		}
+	} catch (e) {
+		// Storage might not be available
+	}
 }
 
 /**

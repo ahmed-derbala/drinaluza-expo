@@ -1,7 +1,19 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Modal } from 'react-native'
 import { useTheme } from './ThemeContext'
-import { fetchBackendInfo, checkVersionStatus, getVersionInfo, handleUpdate, shouldResetApp, resetWebApp, resetAndroidApp, BackendInfo, VersionStatus } from '../helpers/versionCheck'
+import {
+	fetchBackendInfo,
+	checkVersionStatus,
+	getVersionInfo,
+	handleUpdate,
+	shouldResetApp,
+	resetWebApp,
+	resetAndroidApp,
+	shouldCheckVersion,
+	saveLastCheckTime,
+	BackendInfo,
+	VersionStatus
+} from '../helpers/versionCheck'
 import { showConfirm } from '../helpers/popup'
 import { log } from '../log'
 
@@ -27,10 +39,18 @@ export const VersionProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const checkVersion = useCallback(async () => {
 		try {
+			// Only check once per day
+			const shouldCheck = await shouldCheckVersion()
+			if (!shouldCheck) {
+				log({ level: 'info', label: 'versionCheck', message: 'Skipping version check (already checked today)' })
+				return
+			}
+
 			const info = await fetchBackendInfo()
 			if (!info) return
 
 			setBackendInfo(info)
+			await saveLastCheckTime()
 
 			const status = checkVersionStatus(info)
 			setVersionStatus(status)
