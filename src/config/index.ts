@@ -16,7 +16,7 @@ export const config: AppConfig = {
 	app: {
 		name: packagejson.name,
 		version: packagejson.version,
-		timeout: 10000, // 10 seconds
+		timeout: 60000, // 1 minute
 		retryAttempts: 3
 	}
 }
