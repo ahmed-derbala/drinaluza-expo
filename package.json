@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.0.78",
+  "version": "1.0.79",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -34,7 +34,7 @@
     "i:prod": "NODE_ENV=production npm ci --omit=dev",
     "i:check": "echo y | npx expo install --check",
     "fix": "npm run i:check && npx expo-doctor",
-    "rmallexceptpackagelock": "rm -rf builds/* logs/* dist android ios .expo node_modules",
+    "rmallexceptpackagelock": "rm -rf builds/ logs dist android ios .expo node_modules",
     "clean:only": "npm run rmallexceptpackagelock && rm -rf package-lock.json",
     "clean:prod": "npm run rmallexceptpackagelock && npm run i:prod",
     "clean": "npm run clean:only && npm run i",
@@ -47,10 +47,10 @@
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "3.0.1",
+    "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "8.6.0",
-    "@react-navigation/native": "^7.1.33",
-    "@react-navigation/native-stack": "^7.14.4",
+    "@react-navigation/native": "^7.1.28",
+    "@react-navigation/native-stack": "^7.10.1",
     "axios": "^1.13.6",
     "date-fns": "^4.1.0",
     "dotenv": "^17.3.1",
@@ -66,12 +66,12 @@
     "expo-status-bar": "~55.0.4",
     "expo-updates": "~55.0.12",
     "lodash": "^4.17.23",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
-    "react-native": "0.84.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.2",
     "react-native-gesture-handler": "~2.30.0",
-    "react-native-safe-area-context": "5.7.0",
-    "react-native-screens": "~4.24.0",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
     "react-native-web": "~0.21.2"
   },
   "devDependencies": {
