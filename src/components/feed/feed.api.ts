@@ -17,10 +17,11 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 	const { targetData, targetResource, card, _id, createdAt, updatedAt, __v } = doc
 
 	if (targetResource === 'product') {
-		const { shop, defaultProduct, slug, name, price, unit, searchKeywords, state, availability, stock, media } = targetData
+		const { _id: productId, shop, defaultProduct, slug, name, price, unit, searchKeywords, state, availability, stock, media } = targetData
 
 		return {
-			_id,
+			_id: productId || _id,
+			feedId: _id,
 			shop,
 			defaultProduct,
 			slug,
@@ -43,7 +44,8 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 		const { owner, name, address, location, media, contact, _id: shopId, slug, createdAt: shopCreatedAt, updatedAt: shopUpdatedAt } = targetData
 
 		return {
-			_id,
+			_id: shopId || _id,
+			feedId: _id,
 			shop: {
 				_id: shopId || _id,
 				name,
@@ -69,7 +71,8 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 		const { slug, name, role, address, location, media, contact, _id: userId, shops, state, createdAt: userCreatedAt, updatedAt: userUpdatedAt } = targetData
 
 		return {
-			_id,
+			_id: userId || _id,
+			feedId: _id,
 			slug: slug || '',
 			name,
 			role,

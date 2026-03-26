@@ -70,6 +70,7 @@ export interface CardInfo {
 
 export interface FeedItem {
 	_id: string
+	feedId?: string
 	shop?: Shop
 	name?: LocalizedName
 	price?: Price

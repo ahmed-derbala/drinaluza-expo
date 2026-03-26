@@ -361,13 +361,28 @@ const PurchasesScreen = () => {
 			if (!shop) throw new Error('Shop not found')
 
 			// Map products for API
-			const products = group.items.map((item) => ({
-				product: {
-					slug: item.slug,
-					_id: item._id
-				},
-				quantity: item.quantity
-			}))
+			const products = group.items.map((item) => {
+				return {
+					product: {
+						_id: item._id,
+						slug: item.slug,
+						name: item.name,
+						price: item.price,
+						unit: item.unit,
+						media: item.media,
+						photos: item.photos,
+						state: item.state,
+						stock: item.stock,
+						shop: item.shop,
+						card: item.card || { kind: 'product' },
+						defaultProduct: item.defaultProduct,
+						__v: item.__v,
+						createdAt: item.createdAt,
+						updatedAt: item.updatedAt
+					},
+					quantity: item.quantity
+				}
+			})
 
 			// Call createPurchase API
 			await createPurchase({

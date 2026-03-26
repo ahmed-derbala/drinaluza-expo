@@ -637,7 +637,7 @@ export default function ShopsListScreen() {
 
 	const handleShopPress = (slug: string) => {
 		// Navigate to shop details using slug
-		router.push(`/home/shops/${slug}` as any)
+		router.push(`/shops/${slug}` as any)
 	}
 
 	const renderShopCard = ({ item }: { item: Shop }) => {

@@ -27,7 +27,7 @@ export default function ShopCard({ item }: ShopCardProps) {
 	const handlePress = () => {
 		const slug = item.shop?.slug || item.slug
 		if (slug) {
-			router.push(`/home/shops/${slug}` as any)
+			router.push(`/shops/${slug}` as any)
 		}
 	}
 

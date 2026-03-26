@@ -45,7 +45,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 	const handleShopPress = () => {
 		if (item.shop?.slug) {
-			router.push(`/home/shops/${item.shop.slug}` as any)
+			router.push(`/shops/${item.shop.slug}` as any)
 		}
 	}
 
