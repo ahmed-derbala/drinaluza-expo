@@ -110,13 +110,16 @@ src/
 ```
 
 
-## gradle.properties
+## ~/.gradle/gradle.properties
 ```
 org.gradle.java.installations.auto-download=false
-org.gradle.java.home=/usr/lib/jvm/jdk-17.0.2
+org.gradle.java.home=/usr/lib/jvm/jdk-17
+org.gradle.parallel=true
+org.gradle.configureondemand=true
+org.gradle.caching=true
 ```
 
-## ANDROID_HOME
+## ANDROID_HOME paths for .zshrc or .bashrc
 ```
 export ANDROID_HOME=$HOME/Android/sdk
 export ANDROID_SDK_ROOT=$ANDROID_HOME

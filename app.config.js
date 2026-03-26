@@ -51,6 +51,12 @@ export default {
                 "expo-build-properties",
                 {
                     android: {
+                        "extraGradleProperties": [
+                            { "name": "org.gradle.jvmargs", "value": "-Xmx8g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC" },
+                            { "name": "org.gradle.parallel", "value": "true" },
+                            { "name": "org.gradle.vfs.watch", "value": "true" },
+                            { "name": "org.gradle.caching", "value": "true" }
+                        ],
                         usesCleartextTraffic: true,
                         ndk: {
                             abiFilters: [
