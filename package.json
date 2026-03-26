@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.0.85",
+  "version": "1.0.86",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -21,7 +21,7 @@
     "env:prod": "cp envs/.env.prod .env",
     "env:local": "cp envs/.env.local .env",
     "ver": "npm version patch --no-git-tag-version",
-    "build:apk": "npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive",
+    "build:apk": "npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production npx eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive",
     "build:web": "npm run clean && NODE_ENV=production expo export -p web",
     "start": "expo start",
     "start:local": "rm -rf .expo && npm run env:local && expo start -c",
@@ -32,14 +32,14 @@
     "web": "expo start --web",
     "i": "npm i",
     "i:prod": "NODE_ENV=production npm ci --omit=dev",
-    "i:check": "echo y | expo install --check",
-    "fix": "npm run env:local && npm run i:check && expo-doctor",
+    "i:check": "echo y | npx expo install --check",
+    "fix": "npm run env:local && npm run i:check && npx expo-doctor",
     "rmallexceptpackagelock": "rm -rf builds/ logs dist android ios .expo node_modules",
     "clean:only": "npm run rmallexceptpackagelock && rm -rf package-lock.json",
     "clean:prod": "npm run rmallexceptpackagelock && npm run i:prod",
     "clean": "npm run clean:only && npm run i",
     "code": "antigravity . && npm run start:local",
-    "update": "npm i -g eas-cli expo-doctor npm-check-updates && ncu -u && npm run clean",
+    "update": "npx npm-check-updates && ncu -u && npm run clean",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "push": "npm run ver && npm run format && git add . && git commit -m",
     "postpush": "git push",
@@ -79,6 +79,6 @@
     "@types/react": "~19.2.14",
     "eas-local-cache": "^1.0.3",
     "prettier": "^3.8.1",
-    "typescript": "~5.9.2"
+    "typescript": "~6.0.2"
   }
 }

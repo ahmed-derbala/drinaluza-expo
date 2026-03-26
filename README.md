@@ -109,6 +109,23 @@ src/
 └── utils/               # Helper functions
 ```
 
+
+## gradle.properties
+```
+org.gradle.java.installations.auto-download=false
+org.gradle.java.home=/usr/lib/jvm/jdk-17.0.2
+```
+
+## ANDROID_HOME
+```
+export ANDROID_HOME=$HOME/Android/sdk
+export ANDROID_SDK_ROOT=$ANDROID_HOME
+export PATH=$ANDROID_HOME/emulator:$PATH
+export PATH=$ANDROID_HOME/platform-tools:$PATH
+export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/
+export PATH=$ANDROID_NDK_HOME:$PATH
+```
 ## ✍️ Author
 
 Ahmed Derbala
