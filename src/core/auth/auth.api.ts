@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
 import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken } from './storage'
 import { log } from '../log'
-
+import { registerForExpoPush, saveExpoPushTokenInSession } from '../../components/notifications/notifications.api'
 // Default settings
 const defaultAuthSettings = {
 	tokenStorageKey: 'auth_token',
@@ -172,6 +172,17 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 
 		const { token, user } = response.data.data
 
+		const expoPushToken = await registerForExpoPush()
+		log({
+			level: 'info',
+			label: 'auth.api',
+			message: 'Expo push token',
+			data: expoPushToken
+		})
+		if (expoPushToken) {
+			await saveExpoPushTokenInSession(expoPushToken)
+			await secureSetItem('expoPushToken', expoPushToken)
+		}
 		// Store token and user data
 		await Promise.all([setToken(token), setUserData(user), saveAuthentication(user.slug, token)])
 
