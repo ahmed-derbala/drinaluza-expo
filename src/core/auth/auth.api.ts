@@ -172,6 +172,16 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 
 		const { token, user } = response.data.data
 
+		// Store token and user data
+		await Promise.all([setToken(token), setUserData(user), saveAuthentication(user.slug, token)])
+
+		log({
+			level: 'info',
+			label: 'auth.api',
+			message: 'Authentication data stored successfully'
+		})
+
+		//expo push notification
 		const expoPushToken = await registerForExpoPush()
 		log({
 			level: 'info',
@@ -183,14 +193,6 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 			await saveExpoPushTokenInSession(expoPushToken)
 			await secureSetItem('expoPushToken', expoPushToken)
 		}
-		// Store token and user data
-		await Promise.all([setToken(token), setUserData(user), saveAuthentication(user.slug, token)])
-
-		log({
-			level: 'info',
-			label: 'auth.api',
-			message: 'Authentication data stored successfully'
-		})
 
 		// Start session timer if auto-signout is enabled
 		if (defaultAuthSettings.enableAutoSignOut) {
