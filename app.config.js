@@ -31,6 +31,7 @@ export default {
             bundleIdentifier: "com.ahmedderbala.drinaluza"
         },
         android: {
+            googleServicesFile: "./google-services.json",
             adaptiveIcon: {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#1C2526"

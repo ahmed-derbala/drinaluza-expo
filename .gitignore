@@ -3,7 +3,7 @@
 backups/
 builds/
 logs/
-
+google-services.json
 #env
 envs/
 .env

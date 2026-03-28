@@ -23,6 +23,11 @@ export const markNotificationSeen = async (notificationId: string): Promise<any>
 }
 
 export async function registerForExpoPush() {
+	// ❌ BLOCK WEB
+	if (Platform.OS === 'web') {
+		return null
+	}
+
 	if (!Device.isDevice) return null
 
 	const { status } = await Notifications.requestPermissionsAsync()
