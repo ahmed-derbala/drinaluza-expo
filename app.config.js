@@ -31,12 +31,13 @@ export default {
             bundleIdentifier: "com.ahmedderbala.drinaluza"
         },
         android: {
-            googleServicesFile: "./google-services.json",
+            googleServicesFile: "google-services.json",
+            // Add this line to give Gradle 8GB of Heap and 2GB of Metaspace
+            gradleArguments: ["-Dorg.gradle.jvmargs=-Xmx8192m -XX:MaxMetaspaceSize=2048m"],
             adaptiveIcon: {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#1C2526"
             },
-            edgeToEdgeEnabled: true,
             package: "com.ahmedderbala.drinaluza",
             versionCode: 1
         },
@@ -52,12 +53,6 @@ export default {
                 "expo-build-properties",
                 {
                     android: {
-                        "extraGradleProperties": [
-                            { "name": "org.gradle.jvmargs", "value": "-Xmx8g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC" },
-                            { "name": "org.gradle.parallel", "value": "true" },
-                            { "name": "org.gradle.vfs.watch", "value": "true" },
-                            { "name": "org.gradle.caching", "value": "true" }
-                        ],
                         usesCleartextTraffic: true,
                         ndk: {
                             abiFilters: [

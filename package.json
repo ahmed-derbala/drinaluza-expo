@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.0.91",
+  "version": "1.0.92",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -35,7 +35,7 @@
     "i:check": "echo y | npx expo install --check",
     "fix": "npm run env:local && npm run i:check && npx expo-doctor",
     "rmallexceptpackagelock": "rm -rf builds logs dist .expo node_modules",
-    "clean:only": "npm run rmallexceptpackagelock && rm -rf package-lock.json",
+    "clean:only": "npm run rmallexceptpackagelock && rm -rf package-lock.json android ios",
     "clean:prod": "npm run rmallexceptpackagelock && npm run i:prod",
     "clean": "npm run clean:only && npm run i",
     "code": "antigravity . && npm run start:local",
