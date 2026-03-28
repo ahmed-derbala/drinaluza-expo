@@ -37,9 +37,10 @@ export async function registerForExpoPush() {
 	return expoPushTokenData.data
 }
 
-export const saveExpoPushTokenInSession = async (expoPushToken: string) => {
+export const saveExpoPushTokenInSession = async (expoPushToken: string, token: string) => {
 	const response = await getApiClient().post('/sessions/expo-push-token', {
-		expoPushToken
+		expoPushToken,
+		token
 	})
 	return response.data
 }

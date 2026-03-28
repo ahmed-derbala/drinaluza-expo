@@ -190,7 +190,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 			data: expoPushToken
 		})
 		if (expoPushToken) {
-			await saveExpoPushTokenInSession(expoPushToken)
+			await saveExpoPushTokenInSession(expoPushToken, token)
 			await secureSetItem('expoPushToken', expoPushToken)
 		}
 
