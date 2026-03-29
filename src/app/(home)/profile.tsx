@@ -119,67 +119,7 @@ export default function ProfileScreen() {
 	const styles = createStyles(colors, isDark, isWideScreen, width)
 
 	const [loading, setLoading] = useState(false)
-	const [userData, setUserData] = useState<UserData | null>({
-		_id: '6964f6381d9b566c103122c0',
-		slug: 'c28',
-		name: { en: 'c28' },
-		role: 'customer',
-		address: {
-			street: 'street 1',
-			city: 'ellouza',
-			state: 'sfax',
-			postalCode: '3016',
-			country: 'Tunisia'
-		},
-		settings: {
-			lang: {
-				app: 'en',
-				content: 'tn_arab'
-			},
-			currency: 'tnd'
-		},
-		state: {
-			code: 'active',
-			updatedAt: '2026-01-12T13:25:12.938Z'
-		},
-		createdAt: '2026-01-12T13:25:12.938Z',
-		updatedAt: '2026-01-12T13:31:40.264Z',
-		basicInfos: {
-			birthDate: '2025-12-20T00:00:00.000Z',
-			biography: 'hello im ahmed'
-		},
-		contact: {
-			phone: {
-				fullNumber: '+21699112619',
-				countryCode: '+216',
-				shortNumber: '99112619'
-			},
-			backupPhones: [
-				{
-					fullNumber: '+21699112645',
-					countryCode: '+216',
-					shortNumber: '99112645'
-				}
-			],
-			whatsapp: '+21699112618',
-			email: 'derbala.ahmed53@gmail.com'
-		},
-		media: {
-			thumbnail: {
-				url: 'https://scontent.ftun15-1.fna.fbcdn.net/v/t39.30808-6/480797900_9563147623771985_8782635803627400360_n.jpg?_nc_cat=111&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=2-gC3oPiHS4Q7kNvwFY3O0G&_nc_oc=AdmlH6InV5Si-4qeF4tOdXPqDRv6f_GrylbaxqQ2BIWnM-nefUUvYmboLWW4yXXO8fO9OfHYQMtXrijmgv4CCldc&_nc_zt=23&_nc_ht=scontent.ftun15-1.fna&_nc_gid=hQZOtp4ueA685l1wgw6vsg&oh=00_AfqjHnRQKmgGRP9fMFwy4UPgBhMurmGTS8_afENErKefgQ&oe=6969E901'
-			}
-		},
-		socialMedia: {
-			facebook: {
-				url: 'https://www.facebook.com/derbala.ahmed92',
-				username: 'derbala.ahmed92'
-			},
-			instagram: {
-				url: 'https://www.instagram.com/derbala.ahmed92',
-				username: 'derbala.ahmed92'
-			}
-		}
-	})
+	const [userData, setUserData] = useState<UserData | null>(null)
 	const [editMode, setEditMode] = useState({
 		name: false,
 		basic: false,
