@@ -76,6 +76,7 @@ export default {
         extra: {
             routerRoot: "src",
             router: {},
+            NODE_ENV: process.env.EXPO_PUBLIC_NODE_ENV || 'development',
             eas: {
                 projectId: "663c7ecc-f495-4630-9913-c923ef3f8bb2"
             }

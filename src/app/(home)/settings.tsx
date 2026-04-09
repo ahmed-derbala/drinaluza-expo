@@ -5,7 +5,7 @@ import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { useVersion } from '@/core/contexts/VersionContext'
-import { APP_VERSION, BACKEND_URL } from '@/config'
+import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import Toast from '@/components/common/Toast'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
@@ -225,7 +225,9 @@ export default function SettingsScreen() {
 
 			<View style={styles.footer}>
 				<View style={styles.versionBadge}>
-					<Text style={styles.versionText}>v{APP_VERSION}</Text>
+					<Text style={styles.versionText}>
+						v{APP_VERSION} • {NODE_ENV}
+					</Text>
 				</View>
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
