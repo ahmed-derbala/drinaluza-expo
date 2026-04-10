@@ -24,8 +24,8 @@ export const toast = {
 			console.warn('Toast helper called before Provider was registered')
 		}
 	},
-	success: (message: string, duration?: number) => toast.show({ message, type: 'success', duration }),
-	error: (message: string, duration?: number) => toast.show({ message, type: 'error', duration }),
-	warning: (message: string, duration?: number) => toast.show({ message, type: 'warning', duration }),
-	info: (message: string, duration?: number) => toast.show({ message, type: 'info', duration })
+	success: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'success', ...options }),
+	error: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'error', ...options }),
+	warning: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'warning', ...options }),
+	info: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'info', ...options })
 }

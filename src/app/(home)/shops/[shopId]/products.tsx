@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform } from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, useRouter } from 'expo-router'
 import { getShopProductsBySlug } from '@/components/shops/shops.api'
 import { Product } from '@/components/shops/shops.interface'
 import { useTheme } from '@/core/contexts/ThemeContext'
@@ -26,6 +26,7 @@ const BREAKPOINTS = {
 export default function ShopProductsScreen() {
 	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
 	const { colors } = useTheme()
+	const router = useRouter()
 	const { localize, translate } = useUser()
 	const [headerTitle, setHeaderTitle] = useState(translate('shop_products', 'Products'))
 	const { width, height } = useWindowDimensions()

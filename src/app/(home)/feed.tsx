@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { useRouter } from 'expo-router'
 import { getFeed } from '@/components/feed/feed.api'
 import { FeedItem } from '@/components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
@@ -138,6 +139,7 @@ type BasketItem = FeedItem & { quantity: number }
 
 export default function FeedScreen() {
 	const { colors } = useTheme()
+	const router = useRouter()
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
 	const [basket, setBasket] = useState<BasketItem[]>([])
