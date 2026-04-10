@@ -9,7 +9,7 @@ import ErrorState from '@/components/common/ErrorState'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
-import Toast from '@/components/common/Toast'
+import { toast } from '@/core/helpers/toast'
 import { TextInput } from 'react-native'
 import FeedCard from '@/components/feed/feed.card'
 import { FeedItem } from '@/components/feed/feed.interface'
@@ -77,9 +77,6 @@ export default function ShopProductsScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [searchText, setSearchText] = useState('')
-	const [showToast, setShowToast] = useState(false)
-	const [toastType, setToastType] = useState<'success' | 'error' | 'info'>('success')
-	const [toastMessage, setToastMessage] = useState('')
 
 	const loadBasket = async () => {
 		try {
@@ -148,14 +145,18 @@ export default function ShopProductsScreen() {
 			setBasket(newBasket)
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 
-			setToastType('success')
-			setToastMessage(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`)
-			setShowToast(true)
+			toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
+				actions: [
+					{
+						label: translate('go_to_basket', 'Go to Basket'),
+						icon: 'cart-outline',
+						onPress: () => router.push('/(home)/purchases')
+					}
+				]
+			})
 		} catch (err) {
 			console.error('Failed to add to basket:', err)
-			setToastType('error')
-			setToastMessage(translate('basket_failed_to_add', 'Failed to add to basket'))
-			setShowToast(true)
+			toast.error(translate('basket_failed_to_add', 'Failed to add to basket'))
 		}
 	}
 
@@ -339,8 +340,6 @@ export default function ShopProductsScreen() {
 					) : null
 				}
 			/>
-
-			<Toast visible={showToast} message={toastMessage} type={toastType} onHide={() => setShowToast(false)} />
 		</View>
 	)
 }

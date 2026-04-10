@@ -9,6 +9,7 @@ export interface ToastAction {
 	label: string
 	onPress: () => void
 	color?: string
+	icon?: keyof typeof Ionicons.glyphMap
 }
 
 export interface ToastProps {
@@ -140,6 +141,7 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 								}}
 								style={styles.actionButton}
 							>
+								{action.icon && <Ionicons name={action.icon} size={16} color={action.color || '#fff'} style={{ marginRight: 6 }} />}
 								<Text style={[styles.actionLabel, action.color ? { color: action.color } : null]}>{action.label}</Text>
 							</TouchableOpacity>
 						))}
@@ -221,6 +223,8 @@ const styles = StyleSheet.create({
 		paddingTop: 10
 	},
 	actionButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
 		paddingHorizontal: 14,
 		paddingVertical: 8,
 		borderRadius: 10,

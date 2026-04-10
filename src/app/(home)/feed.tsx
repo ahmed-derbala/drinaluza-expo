@@ -9,7 +9,7 @@ import { useTheme } from '@/core/contexts/ThemeContext'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import ErrorState from '@/components/common/ErrorState'
-import Toast from '@/components/common/Toast'
+import { toast } from '@/core/helpers/toast'
 import SearchBar from '@/components/search/SearchBar'
 import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
@@ -164,8 +164,6 @@ export default function FeedScreen() {
 
 	// Error handling state
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
-	const [showToast, setShowToast] = useState(false)
-	const [toastType, setToastType] = useState<'success' | 'error' | 'warning' | 'info'>('error')
 
 	const { user, localize, translate } = useUser()
 
@@ -280,14 +278,18 @@ export default function FeedScreen() {
 			setBasket(newBasket)
 
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			setError({ message: `${localize(item.name)} added to basket`, retry: undefined })
-			setToastType('success')
-			setShowToast(true)
+			toast.success(`${localize(item.name)} added to basket`, {
+				actions: [
+					{
+						label: translate('go_to_basket', 'Go to Basket'),
+						icon: 'cart-outline',
+						onPress: () => router.push('/(home)/purchases')
+					}
+				]
+			})
 		} catch (error) {
 			console.error('Failed to add to basket:', error)
-			setError({ message: 'Failed to add to basket', retry: undefined })
-			setToastType('error')
-			setShowToast(true)
+			toast.error('Failed to add to basket')
 		}
 	}
 
@@ -302,9 +304,7 @@ export default function FeedScreen() {
 	}, [feedItems])
 
 	const handleSearchError = useCallback((message: string, retry?: () => void) => {
-		setError({ message, retry })
-		setToastType('error')
-		setShowToast(true)
+		toast.error(message)
 	}, [])
 
 	const renderFooter = () => {
@@ -407,8 +407,6 @@ export default function FeedScreen() {
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
 			)}
-
-			<Toast visible={showToast} message={error?.message || ''} type={toastType} onHide={() => setShowToast(false)} onRetry={error?.retry} />
 		</View>
 	)
 }
