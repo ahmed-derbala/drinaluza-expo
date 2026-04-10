@@ -23,7 +23,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		// Initialize sound
 		const loadSound = async () => {
 			try {
-				const { sound } = await Audio.Sound.createAsync(require('../../assets/sounds/notification.mp3'))
+				const { sound } = await Audio.Sound.createAsync(require('../../../assets/sounds/notification.mp3'))
 				soundRef.current = sound
 			} catch (error) {
 				log({ level: 'error', label: 'socket', message: 'Failed to load notification sound', error })
@@ -32,23 +32,41 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 		loadSound()
 
-		// Initialize socket
+		return () => {
+			if (soundRef.current) {
+				soundRef.current.unloadAsync()
+			}
+		}
+	}, [])
+
+	useEffect(() => {
+		// Only connect if user is logged in
+		if (!user?.slug) {
+			if (socketRef.current) {
+				socketRef.current.disconnect()
+				socketRef.current = null
+			}
+			return
+		}
+
+		console.log('[Socket] Initializing for user:', user.slug)
+
+		// Initialize socket with query for room auto-join
 		const socket = io(BACKEND_URL, {
 			transports: ['websocket'],
 			autoConnect: true,
 			reconnection: true,
-			reconnectionAttempts: 10
+			reconnectionAttempts: 10,
+			query: {
+				userSlug: user.slug
+			}
 		})
 
 		socketRef.current = socket
 
 		socket.on('connect', () => {
 			console.log('[Socket] Connected to server:', socket.id)
-			log({ level: 'info', label: 'socket', message: 'Connected to socket server', data: { id: socket.id } })
-			if (user?.slug) {
-				console.log('[Socket] Joining room:', user.slug)
-				socket.emit('join', user.slug)
-			}
+			log({ level: 'info', label: 'socket', message: 'Connected to socket server', data: { id: socket.id, userSlug: user.slug } })
 		})
 
 		socket.on('connect_error', (error) => {
@@ -80,23 +98,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		})
 
 		socket.on('disconnect', (reason) => {
+			console.log('[Socket] Disconnected:', reason)
 			log({ level: 'info', label: 'socket', message: 'Disconnected from socket server', data: { reason } })
 		})
 
 		return () => {
+			console.log('[Socket] Cleaning up connection')
 			socket.disconnect()
-			if (soundRef.current) {
-				soundRef.current.unloadAsync()
-			}
+			socketRef.current = null
 		}
-	}, [refreshNotificationCount])
-
-	// Re-join room when user slug changes
-	useEffect(() => {
-		if (socketRef.current?.connected && user?.slug) {
-			socketRef.current.emit('join', user.slug)
-		}
-	}, [user?.slug])
+	}, [user?.slug, refreshNotificationCount])
 
 	return <SocketContext.Provider value={{ socket: socketRef.current }}>{children}</SocketContext.Provider>
 }
