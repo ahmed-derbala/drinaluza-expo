@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.1.5",
+  "version": "1.1.6",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -57,6 +57,7 @@
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.1",
     "expo": "~55.0.13",
+    "expo-av": "^16.0.8",
     "expo-build-properties": "~55.0.13",
     "expo-clipboard": "~55.0.13",
     "expo-constants": "~55.0.12",
@@ -76,7 +77,8 @@
     "react-native-gesture-handler": "~2.30.0",
     "react-native-safe-area-context": "~5.6.2",
     "react-native-screens": "~4.23.0",
-    "react-native-web": "~0.21.2"
+    "react-native-web": "~0.21.2",
+    "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",

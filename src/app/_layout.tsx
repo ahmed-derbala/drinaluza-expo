@@ -7,11 +7,7 @@ if (typeof setImmediate === 'undefined') {
 	global.setImmediate = (callback: (...args: any[]) => void) => setTimeout(callback, 0)
 }
 
-import { ThemeProvider } from '@/core/contexts/ThemeContext'
-import { VersionProvider } from '@/core/contexts/VersionContext'
-import { NotificationProvider } from '@/core/contexts/NotificationContext'
-import { UserProvider } from '@/core/contexts/UserContext'
-import { ToastProvider } from '@/core/contexts/ToastContext'
+import { ThemeProvider, VersionProvider, NotificationProvider, UserProvider, ToastProvider, SocketProvider } from '@/core/contexts'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 
 import { getPlatformStackOptions } from '@/config/navigation'
@@ -35,7 +31,9 @@ export default function RootLayout() {
 				<VersionProvider>
 					<NotificationProvider>
 						<UserProvider>
-							<RootLayoutContent />
+							<SocketProvider>
+								<RootLayoutContent />
+							</SocketProvider>
 						</UserProvider>
 					</NotificationProvider>
 				</VersionProvider>
