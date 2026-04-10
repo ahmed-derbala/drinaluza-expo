@@ -6,7 +6,7 @@ import * as Clipboard from 'expo-clipboard'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { useVersion } from '@/core/contexts/VersionContext'
 import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
-import Toast from '@/components/common/Toast'
+import { toast } from '@/core/helpers/toast'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import ScreenHeader from '@/components/common/ScreenHeader'
@@ -20,11 +20,6 @@ export default function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 
 	const styles = useMemo(() => createStyles(colors), [colors])
-	const [toast, setToast] = useState<{ visible: boolean; message: string; type: 'success' | 'error' }>({
-		visible: false,
-		message: '',
-		type: 'success'
-	})
 	const [serverInfo, setServerInfo] = useState<any>(null)
 
 	useEffect(() => {
@@ -87,11 +82,7 @@ export default function SettingsScreen() {
 		const handleCopy = async () => {
 			if (copyValue) {
 				await Clipboard.setStringAsync(copyValue)
-				setToast({
-					visible: true,
-					message: translate('copied_to_clipboard', 'Copied to clipboard!'),
-					type: 'success'
-				})
+				toast.success(translate('copied_to_clipboard', 'Copied to clipboard!'))
 			}
 		}
 
@@ -232,8 +223,6 @@ export default function SettingsScreen() {
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 			</View>
-
-			<Toast visible={toast.visible} message={toast.message} type={toast.type} onHide={() => setToast((prev) => ({ ...prev, visible: false }))} />
 		</ScrollView>
 	)
 }

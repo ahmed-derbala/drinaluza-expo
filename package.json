@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.1.2",
+  "version": "1.1.3",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -24,7 +24,7 @@
     "env:local": "cp envs/.env.local .env",
     "ver": "npm version patch --no-git-tag-version",
     "build:apk-local": "npm run env:local && export $(grep -v '^#' .env | xargs) && NODE_ENV=production npx eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive-local",
-    "build:apk-prod": "npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production npx eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive-prod",
+    "build:apk-prod": "npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production npx eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive-prod && npm run env:local",
     "build:web": "npm run clean && NODE_ENV=production expo export -p web",
     "start": "expo start",
     "start:local": "rm -rf .expo && npm run env:local && expo start -c",

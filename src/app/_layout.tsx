@@ -11,6 +11,7 @@ import { ThemeProvider } from '@/core/contexts/ThemeContext'
 import { VersionProvider } from '@/core/contexts/VersionContext'
 import { NotificationProvider } from '@/core/contexts/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
+import { ToastProvider } from '@/core/contexts/ToastContext'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 
 import { getPlatformStackOptions } from '@/config/navigation'
@@ -30,13 +31,15 @@ function RootLayoutContent() {
 export default function RootLayout() {
 	return (
 		<ThemeProvider>
-			<VersionProvider>
-				<NotificationProvider>
-					<UserProvider>
-						<RootLayoutContent />
-					</UserProvider>
-				</NotificationProvider>
-			</VersionProvider>
+			<ToastProvider>
+				<VersionProvider>
+					<NotificationProvider>
+						<UserProvider>
+							<RootLayoutContent />
+						</UserProvider>
+					</NotificationProvider>
+				</VersionProvider>
+			</ToastProvider>
 		</ThemeProvider>
 	)
 }
