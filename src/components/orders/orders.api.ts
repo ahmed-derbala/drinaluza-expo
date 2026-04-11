@@ -30,10 +30,8 @@ export const createPurchase = async ({ products, shop }: { products: { product: 
 	return response.data
 }
 
-export const updatePurchaseStatus = async ({ purchaseId, status, by }: { purchaseId: string; status?: string; by?: string }) => {
-	let body: { status: string } = { status: status || 'cancelled_by_user' }
-	if (!status && by === 'shop') body.status = 'cancelled_by_shop'
-	const response = await getApiClient().patch(`/purchases/${purchaseId}/status`, body)
+export const updatePurchaseStatus = async ({ purchaseId, status }: { purchaseId: string; status: string }) => {
+	const response = await getApiClient().patch(`/purchases/${purchaseId}`, { status })
 	return response.data
 }
 

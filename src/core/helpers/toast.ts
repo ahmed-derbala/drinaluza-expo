@@ -5,7 +5,7 @@
 
 import { ToastType, ToastAction } from '@/components/common/Toast'
 
-type ShowToastFn = (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[] }) => void
+type ShowToastFn = (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => void
 
 let showToastRef: ShowToastFn | null = null
 
@@ -17,7 +17,7 @@ export const registerToast = (fn: ShowToastFn) => {
 }
 
 export const toast = {
-	show: (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[] }) => {
+	show: (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => {
 		if (showToastRef) {
 			showToastRef(options)
 		} else {

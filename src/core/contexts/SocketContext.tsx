@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { Audio } from 'expo-av'
+import { useRouter } from 'expo-router'
 import { BACKEND_URL } from '@/config'
 import { useUser } from './UserContext'
 import { useNotification } from './NotificationContext'
@@ -16,6 +17,7 @@ const SocketContext = createContext<SocketContextType | undefined>(undefined)
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { user } = useUser()
 	const { refreshNotificationCount } = useNotification()
+	const router = useRouter()
 	const socketRef = useRef<Socket | null>(null)
 	const soundRef = useRef<Audio.Sound | null>(null)
 
@@ -88,9 +90,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			}
 
 			// Show toast
-			const message = data.content || data.title || 'New notification received'
-			toast.info(message, {
-				duration: 5000
+			const toastTitle = data.title || 'New notification'
+			const toastMessage = data.content || ''
+
+			toast.info(`${toastTitle}: ${toastMessage}`, {
+				duration: 8000,
+				onPress: data.screen ? () => router.push(data.screen as any) : undefined
 			})
 
 			// Refresh count

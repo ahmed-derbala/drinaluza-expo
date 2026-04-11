@@ -19,6 +19,7 @@ export interface ToastProps {
 	duration?: number
 	onHide: () => void
 	actions?: ToastAction[]
+	onPress?: () => void
 }
 
 const TAB_BAR_HEIGHT =
@@ -28,7 +29,7 @@ const TAB_BAR_HEIGHT =
 		web: 70
 	}) || 70
 
-export default function Toast({ visible, message, type = 'info', duration = 3000, onHide, actions = [] }: ToastProps) {
+export default function Toast({ visible, message, type = 'info', duration = 3000, onHide, actions = [], onPress }: ToastProps) {
 	const { colors } = useTheme()
 	const translateY = useRef(new Animated.Value(100)).current
 	const opacity = useRef(new Animated.Value(0)).current
@@ -117,7 +118,16 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 				}
 			]}
 		>
-			<View style={styles.content}>
+			<TouchableOpacity
+				activeOpacity={onPress ? 0.8 : 1}
+				onPress={() => {
+					if (onPress) {
+						onPress()
+						hideToast()
+					}
+				}}
+				style={styles.content}
+			>
 				<View style={styles.header}>
 					<View style={styles.mainInfo}>
 						<Ionicons name={getIconName()} size={24} color="#fff" />
@@ -125,7 +135,13 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 							{message}
 						</Text>
 					</View>
-					<TouchableOpacity onPress={hideToast} style={styles.closeButton}>
+					<TouchableOpacity
+						onPress={(e) => {
+							e.stopPropagation()
+							hideToast()
+						}}
+						style={styles.closeButton}
+					>
 						<Ionicons name="close" size={20} color="#fff" />
 					</TouchableOpacity>
 				</View>
@@ -135,7 +151,8 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 						{actions.map((action, index) => (
 							<TouchableOpacity
 								key={index}
-								onPress={() => {
+								onPress={(e) => {
+									e.stopPropagation()
 									action.onPress()
 									hideToast()
 								}}
@@ -147,7 +164,7 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 						))}
 					</View>
 				)}
-			</View>
+			</TouchableOpacity>
 		</Animated.View>
 	)
 }

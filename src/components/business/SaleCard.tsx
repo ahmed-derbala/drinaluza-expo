@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Alert, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Alert, useWindowDimensions, ActivityIndicator } from 'react-native'
 import { useTheme } from '../../core/contexts/ThemeContext'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
@@ -7,6 +7,9 @@ import { format } from 'date-fns'
 import { orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
 import SmartImage from '../../core/helpers/SmartImage'
 import { useUser } from '../../core/contexts/UserContext'
+import { updateSaleStatus } from './sales.api'
+import { toast } from '../../core/helpers/toast'
+import { orderStatusEnum as statuses } from '../../config/orderStatus'
 
 interface SaleCardProps {
 	sale: Sale
@@ -51,9 +54,11 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 	const isWeb = Platform.OS === 'web'
 	const isTablet = width >= 768
 	const isDesktop = width >= 1024
+	const [updating, setUpdating] = React.useState(false)
+	const [currentStatus, setCurrentStatus] = React.useState(sale.status)
 
-	const statusColor = orderStatusColors[sale.status as keyof typeof orderStatusColors] || colors.primary
-	const statusLabel = orderStatusLabels[sale.status as keyof typeof orderStatusLabels] || sale.status
+	const statusColor = orderStatusColors[currentStatus as keyof typeof orderStatusColors] || colors.primary
+	const statusLabel = orderStatusLabels[currentStatus as keyof typeof orderStatusLabels] || currentStatus
 
 	const handlePhonePress = async () => {
 		const phoneNumber = sale.customer.contact?.phone?.fullNumber
@@ -129,13 +134,69 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 		}
 	}
 
+	const handleStatusUpdate = async (newStatus: string) => {
+		try {
+			setUpdating(true)
+			await updateSaleStatus(sale._id, newStatus)
+			setCurrentStatus(newStatus)
+			toast.success(translate('status_updated', 'Status updated successfully'))
+		} catch (err: any) {
+			console.error('Failed to update status:', err)
+			toast.error(err.message || translate('failed_to_update_status', 'Failed to update status'))
+		} finally {
+			setUpdating(false)
+		}
+	}
+
+	const renderStatusActions = () => {
+		const actions = []
+
+		switch (currentStatus) {
+			case statuses.PENDING_SHOP_CONFIRMATION:
+				actions.push(
+					{ status: statuses.CONFIRMED_BY_SHOP, label: translate('confirm', 'Confirm'), icon: 'checkmark-circle-outline', color: colors.success },
+					{ status: statuses.CANCELLED_BY_SHOP, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
+				)
+				break
+			case statuses.CONFIRMED_BY_SHOP:
+				actions.push(
+					{ status: statuses.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER, label: translate('ready_for_pickup', 'Ready'), icon: 'storefront-outline', color: colors.info },
+					{ status: statuses.DELIVERING_TO_CUSTOMER, label: translate('start_delivery', 'Deliver'), icon: 'bicycle-outline', color: colors.info },
+					{ status: statuses.CANCELLED_BY_SHOP, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
+				)
+				break
+			case statuses.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER:
+			case statuses.DELIVERING_TO_CUSTOMER:
+				actions.push({ status: statuses.DELIVERED_TO_CUSTOMER, label: translate('mark_delivered', 'Delivered'), icon: 'checkmark-circle-outline', color: colors.success })
+				break
+		}
+
+		if (actions.length === 0) return null
+
+		return (
+			<View style={[styles.actionsBar, { borderTopColor: colors.border }]}>
+				{actions.map((action) => (
+					<TouchableOpacity
+						key={action.status}
+						onPress={() => handleStatusUpdate(action.status)}
+						disabled={updating}
+						style={[styles.actionBtn, { borderColor: action.color + '40', backgroundColor: action.color + '10' }]}
+					>
+						{updating ? <ActivityIndicator size="small" color={action.color} /> : <Ionicons name={action.icon as any} size={20} color={action.color} />}
+						<Text style={[styles.actionBtnText, { color: action.color }]}>{action.label}</Text>
+					</TouchableOpacity>
+				))}
+			</View>
+		)
+	}
+
 	return (
 		<View
 			style={[
 				styles.card,
 				{
 					backgroundColor: colors.card,
-					borderColor: colors.border
+					borderColor: colors.info || '#3B82F6'
 				}
 			]}
 		>
@@ -213,11 +274,12 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 				</ScrollView>
 			</View>
 
-			{/* Footer - Total Price */}
 			<View style={[styles.footer, { borderTopColor: colors.border }]}>
 				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 				<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(sale.price)}</Text>
 			</View>
+
+			{renderStatusActions()}
 		</View>
 	)
 }
@@ -225,7 +287,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 const styles = StyleSheet.create({
 	card: {
 		borderRadius: 16,
-		borderWidth: 1,
+		borderWidth: 2,
 		marginBottom: 16,
 		overflow: 'hidden',
 		width: '100%',
@@ -412,6 +474,28 @@ const styles = StyleSheet.create({
 	},
 	totalPrice: {
 		fontSize: 22,
+		fontWeight: '700'
+	},
+	actionsBar: {
+		flexDirection: 'row',
+		padding: 12,
+		gap: 12,
+		borderTopWidth: 1,
+		backgroundColor: 'rgba(0,0,0,0.02)'
+	},
+	actionBtn: {
+		flex: 1,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 10,
+		paddingHorizontal: 12,
+		borderRadius: 12,
+		borderWidth: 1.5,
+		gap: 8
+	},
+	actionBtnText: {
+		fontSize: 14,
 		fontWeight: '700'
 	}
 })

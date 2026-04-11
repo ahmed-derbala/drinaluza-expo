@@ -8,10 +8,11 @@ interface ToastState {
 	type: ToastType
 	duration: number
 	actions: ToastAction[]
+	onPress?: () => void
 }
 
 interface ToastContextData {
-	showToast: (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[] }) => void
+	showToast: (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => void
 	hideToast: () => void
 	success: (message: string, duration?: number) => void
 	error: (message: string, duration?: number) => void
@@ -27,20 +28,22 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 		message: '',
 		type: 'info',
 		duration: 3000,
-		actions: []
+		actions: [],
+		onPress: undefined
 	})
 
 	const hideToast = useCallback(() => {
 		setState((prev) => ({ ...prev, visible: false }))
 	}, [])
 
-	const showToast = useCallback((options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[] }) => {
+	const showToast = useCallback((options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => {
 		setState({
 			visible: true,
 			message: options.message,
 			type: options.type || 'info',
 			duration: options.duration ?? 3000,
-			actions: options.actions || []
+			actions: options.actions || [],
+			onPress: options.onPress
 		})
 	}, [])
 
@@ -56,7 +59,7 @@ export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 	return (
 		<ToastContext.Provider value={{ showToast, hideToast, success, error, warning, info }}>
 			{children}
-			<Toast visible={state.visible} message={state.message} type={state.type} duration={state.duration} actions={state.actions} onHide={hideToast} />
+			<Toast visible={state.visible} message={state.message} type={state.type} duration={state.duration} actions={state.actions} onPress={state.onPress} onHide={hideToast} />
 		</ToastContext.Provider>
 	)
 }

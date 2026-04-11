@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, Dimensions, useWindowDimensions, ScrollView, Alert } from 'react-native'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, Dimensions, useWindowDimensions, ScrollView, Alert, Platform } from 'react-native'
 import SmartImage from '../../core/helpers/SmartImage'
 import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -14,8 +14,9 @@ import { FeedItem } from '../feed/feed.interface'
 import { useBackButton } from '../../core/hooks/useBackButton'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useUser } from '../../core/contexts/UserContext'
+import { toast } from '../../core/helpers/toast'
 
-type FilterStatus = 'cart' | 'active' | 'completed' | 'cancelled'
+type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled'
 
 type BasketItem = FeedItem & { quantity: number }
 
@@ -110,47 +111,53 @@ const PurchasesScreen = () => {
 		}, [])
 	)
 
-	const handleCancelOrder = async (purchaseId: string) => {
-		Alert.alert(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), [
-			{ text: translate('no', 'No'), style: 'cancel' },
-			{
-				text: translate('confirm', 'Confirm'),
-				style: 'destructive',
-				onPress: async () => {
-					try {
-						await updatePurchaseStatus({ purchaseId })
-						loadPurchases()
-						Alert.alert(translate('success', 'Success'), translate('cancel_order_success', 'Order cancelled successfully'))
-					} catch (error) {
-						console.error('Error cancelling order:', error)
-						Alert.alert(translate('error', 'Error'), translate('cancel_order_failed', 'Failed to cancel order. Please try again.'))
+	const handleCancelOrder = (purchaseId: string) => {
+		toast.show({
+			message: translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'),
+			type: 'warning',
+			duration: 8000,
+			actions: [
+				{
+					label: translate('no', 'No'),
+					onPress: () => {}
+				},
+				{
+					label: translate('confirm', 'Confirm'),
+					onPress: async () => {
+						console.log('Cancelling purchase:', purchaseId)
+						try {
+							await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
+							loadPurchases()
+							toast.success(translate('cancel_order_success', 'Order cancelled successfully'))
+						} catch (error) {
+							console.error('Error cancelling order:', error)
+							toast.error(translate('cancel_order_failed', 'Failed to cancel order. Please try again.'))
+						}
 					}
 				}
-			}
-		])
+			]
+		})
 	}
 
 	const handleStatusUpdate = async (purchaseId: string, newStatus: string) => {
 		try {
 			await updatePurchaseStatus({ purchaseId, status: newStatus })
 			loadPurchases()
-			Alert.alert(translate('success', 'Success'), translate('status_updated', 'Order status updated successfully'))
+			toast.success(translate('status_updated', 'Order status updated successfully'))
 		} catch (error) {
 			console.error('Error updating order status:', error)
-			Alert.alert(translate('error', 'Error'), translate('status_update_failed', 'Failed to update order status. Please try again.'))
+			toast.error(translate('status_update_failed', 'Failed to update order status. Please try again.'))
 		}
 	}
 
 	// Filter purchases based on selected filter
 	const filteredPurchases = useMemo(() => {
 		switch (filter) {
-			case 'active':
+			case 'pending':
+				return purchases.filter((p) => p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION)
+			case 'processing':
 				return purchases.filter(
-					(p) =>
-						p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION ||
-						p.status === orderStatusEnum.CONFIRMED_BY_SHOP ||
-						p.status === orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER ||
-						p.status === orderStatusEnum.DELIVERING_TO_CUSTOMER
+					(p) => p.status === orderStatusEnum.CONFIRMED_BY_SHOP || p.status === orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER || p.status === orderStatusEnum.DELIVERING_TO_CUSTOMER
 				)
 			case 'completed':
 				return purchases.filter((p) => p.status === orderStatusEnum.DELIVERED_TO_CUSTOMER || p.status === orderStatusEnum.RECEIVED_BY_CUSTOMER)
@@ -242,8 +249,15 @@ const PurchasesScreen = () => {
 								<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
 							</View>
 						</View>
-						<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-							<Text style={[styles.statusText, { color: statusColor }]}>{translate(`status_${item.status.replace(/_/g, '_')}`, orderStatusLabels[item.status] || item.status)}</Text>
+						<View style={styles.headerRightGroup}>
+							<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+								<Text style={[styles.statusText, { color: statusColor }]}>{translate(`status_${item.status.replace(/_/g, '_')}`, orderStatusLabels[item.status] || item.status)}</Text>
+							</View>
+							{canCancelOrder(item.status) && (
+								<TouchableOpacity onPress={() => handleCancelOrder(item._id)} style={styles.headerCancelBtn} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+									<Ionicons name="close-circle" size={24} color={colors.error} />
+								</TouchableOpacity>
+							)}
 						</View>
 					</View>
 
@@ -300,21 +314,11 @@ const PurchasesScreen = () => {
 					{item.status === orderStatusEnum.DELIVERED_TO_CUSTOMER && (
 						<View style={styles.actionButtonsContainer}>
 							<TouchableOpacity
-								style={[styles.actionButton, { backgroundColor: orderStatusColors[orderStatusEnum.RECEIVED_BY_CUSTOMER] }]}
+								style={[styles.actionButton, { backgroundColor: colors.success + '10', borderColor: colors.success + '40' }]}
 								onPress={() => handleStatusUpdate(item._id, orderStatusEnum.RECEIVED_BY_CUSTOMER)}
 							>
-								<Ionicons name="checkmark-circle-outline" size={16} color="#fff" />
-								<Text style={styles.actionButtonText}>{translate('mark_as_received', 'Mark as Received')}</Text>
-							</TouchableOpacity>
-						</View>
-					)}
-
-					{/* Cancel Button (if applicable) */}
-					{canCancelOrder(item.status) && (
-						<View style={styles.cancelButtonContainer}>
-							<TouchableOpacity style={[styles.cancelButton, { backgroundColor: colors.error + '15' }]} onPress={() => handleCancelOrder(item._id)}>
-								<Ionicons name="close-circle-outline" size={16} color={colors.error} />
-								<Text style={[styles.cancelText, { color: colors.error }]}>{translate('cancel_order', 'Cancel Order')}</Text>
+								<Ionicons name="checkmark-circle-outline" size={18} color={colors.success} />
+								<Text style={[styles.actionButtonText, { color: colors.success }]}>{translate('mark_as_received', 'Mark as Received')}</Text>
 							</TouchableOpacity>
 						</View>
 					)}
@@ -404,7 +408,7 @@ const PurchasesScreen = () => {
 
 			// Refresh purchases list and switch tab
 			onRefresh()
-			setFilter('active')
+			setFilter('pending')
 		} catch (error) {
 			console.error('Checkout failed:', error)
 			Alert.alert(translate('error', 'Error'), translate('checkout_failed', 'Failed to place order'))
@@ -549,13 +553,11 @@ const PurchasesScreen = () => {
 			switch (status) {
 				case 'cart':
 					return basket.length
-				case 'active':
+				case 'pending':
+					return purchases.filter((p) => p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION).length
+				case 'processing':
 					return purchases.filter(
-						(p) =>
-							p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION ||
-							p.status === orderStatusEnum.CONFIRMED_BY_SHOP ||
-							p.status === orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER ||
-							p.status === orderStatusEnum.DELIVERING_TO_CUSTOMER
+						(p) => p.status === orderStatusEnum.CONFIRMED_BY_SHOP || p.status === orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER || p.status === orderStatusEnum.DELIVERING_TO_CUSTOMER
 					).length
 				case 'completed':
 					return purchases.filter((p) => p.status === orderStatusEnum.DELIVERED_TO_CUSTOMER || p.status === orderStatusEnum.RECEIVED_BY_CUSTOMER).length
@@ -591,10 +593,15 @@ const PurchasesScreen = () => {
 				subtitle: 'Add items to your cart to see them here'
 			},
 
-			active: {
+			pending: {
 				icon: 'time-outline',
-				title: 'No active orders',
-				subtitle: 'All your orders have been completed or cancelled'
+				title: 'No pending orders',
+				subtitle: 'Orders waiting for shop confirmation will appear here'
+			},
+			processing: {
+				icon: 'sync-outline',
+				title: 'No orders in process',
+				subtitle: 'Orders being prepared or delivered will appear here'
 			},
 			completed: {
 				icon: 'checkmark-circle-outline',
@@ -608,7 +615,7 @@ const PurchasesScreen = () => {
 			}
 		}
 
-		const config = emptyConfig[filter]
+		const config = emptyConfig[filter] || emptyConfig.cart
 
 		return (
 			<View style={styles.emptyContainer}>
@@ -665,10 +672,10 @@ const PurchasesScreen = () => {
 				{/* Filter Tabs */}
 				<View style={styles.filterContainer}>
 					<FilterButton status="cart" label={translate('cart', 'Cart')} icon="cart-outline" />
-
-					<FilterButton status="active" label={translate('active', 'Active')} icon="time-outline" />
+					<FilterButton status="pending" label={translate('pending', 'Pending')} icon="hourglass-outline" />
+					<FilterButton status="processing" label={translate('active', 'Active')} icon="sync-outline" />
 					<FilterButton status="completed" label={translate('done', 'Done')} icon="checkmark-circle-outline" />
-					<FilterButton status="cancelled" label={translate('cancelled', 'Cancelled')} icon="close-circle-outline" />
+					<FilterButton status="cancelled" label={translate('cancelled', 'Cancelled')} icon="close-outline" />
 				</View>
 
 				{/* Purchases List */}
@@ -797,6 +804,15 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			fontWeight: '700',
 			textTransform: 'uppercase',
 			letterSpacing: 0.5
+		},
+		headerRightGroup: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8
+		},
+		headerCancelBtn: {
+			padding: 2,
+			...(Platform.OS === 'web' && { cursor: 'pointer' })
 		},
 		divider: {
 			height: 1,
@@ -1012,28 +1028,23 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			fontWeight: '700'
 		},
 		actionButtonsContainer: {
-			marginTop: 12,
 			flexDirection: 'row',
-			gap: 8,
-			justifyContent: 'flex-end'
+			marginTop: 12,
+			gap: 8
 		},
 		actionButton: {
+			flex: 1,
 			flexDirection: 'row',
+			height: 44,
+			borderRadius: 12,
+			borderWidth: 1.5,
 			alignItems: 'center',
-			gap: 6,
-			paddingHorizontal: 16,
-			paddingVertical: 10,
-			borderRadius: 10,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4,
-			elevation: 2
+			justifyContent: 'center',
+			gap: 8
 		},
 		actionButtonText: {
-			color: '#fff',
 			fontSize: 13,
-			fontWeight: '600'
+			fontWeight: '700'
 		},
 		checkoutButton: {
 			width: 36,

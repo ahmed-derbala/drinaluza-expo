@@ -184,10 +184,18 @@ export interface Sale {
 
 export const getSales = async (page = 1, limit = 10, status?: string): Promise<SalesResponse> => {
 	try {
-		// Remove the leading slash since the baseURL in apiClient already includes '/api'
 		const response = await apiClient.get('sales', {
 			params: { page, limit, ...(status ? { status } : {}) }
 		})
+		return response.data
+	} catch (error) {
+		throw parseError(error)
+	}
+}
+
+export const updateSaleStatus = async (orderId: string, status: string): Promise<any> => {
+	try {
+		const response = await apiClient.patch(`sales/${orderId}`, { status })
 		return response.data
 	} catch (error) {
 		throw parseError(error)
