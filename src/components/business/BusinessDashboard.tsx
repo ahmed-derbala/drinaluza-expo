@@ -21,7 +21,7 @@ const ActionButton = ({ icon, onPress, count, color }: ActionButtonProps) => {
 	const { colors } = useTheme()
 	return (
 		<View style={styles.actionItem}>
-			<TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.actionCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+			<TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.actionCard, { borderColor: colors.info || '#3B82F6', backgroundColor: colors.card }]}>
 				<LinearGradient colors={[`${color}15`, `${color}05`]} style={styles.actionGradient} />
 				<View style={[styles.actionIcon, { backgroundColor: `${color}20` }]}>{icon}</View>
 				{count !== undefined && (

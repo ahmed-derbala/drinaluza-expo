@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, Dimensions, useWindowDimensions, ScrollView, Alert, Platform } from 'react-native'
 import SmartImage from '../../core/helpers/SmartImage'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '../../core/contexts/ThemeContext'
@@ -34,7 +34,15 @@ const PurchasesScreen = () => {
 	const [loading, setLoading] = useState(true)
 	const [purchases, setPurchases] = useState<OrderItem[]>([])
 	const [basket, setBasket] = useState<BasketItem[]>([])
-	const [filter, setFilter] = useState<FilterStatus>('cart')
+	const params = useLocalSearchParams<{ filter?: FilterStatus }>()
+	const [filter, setFilter] = useState<FilterStatus>(params.filter || 'cart')
+
+	useEffect(() => {
+		if (params.filter) {
+			setFilter(params.filter)
+		}
+	}, [params.filter])
+
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
 	const { translate, localize } = useUser()

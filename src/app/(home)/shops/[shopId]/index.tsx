@@ -19,7 +19,7 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 	const isOutOfStock = stockQty === 0
 
 	return (
-		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.8} onPress={onPress}>
+		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]} activeOpacity={0.8} onPress={onPress}>
 			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.productImageContainer} />
 			<View style={styles.productInfo}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
@@ -157,7 +157,7 @@ export default function ShopDetailsScreen() {
 				</View>
 
 				{/* Shop Info Card */}
-				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<Text style={[styles.shopName, { color: colors.text }]}>{localize(shop.name)}</Text>
 
 					{/* Owner Info */}
@@ -221,7 +221,7 @@ export default function ShopDetailsScreen() {
 				</View>
 
 				{/* Products Section */}
-				<View style={[styles.productsSection, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.productsSection, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.productsSectionHeader}>
 						<Ionicons name="fish-outline" size={20} color={colors.primary} />
 						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('shop_products', 'Products')}</Text>

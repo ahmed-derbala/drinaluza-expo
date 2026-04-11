@@ -94,7 +94,7 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 
 	return (
 		<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating} activeOpacity={0.8}>
-			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.border }]}>
+			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.info || '#3B82F6' }]}>
 				<LinearGradient colors={[`${theme.primary}10`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
 
 				<View style={styles.shopContent}>

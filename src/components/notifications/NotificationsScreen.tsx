@@ -131,7 +131,7 @@ export default function NotificationsScreen() {
 					styles.card,
 					{
 						backgroundColor: priorityStyles ? priorityStyles.backgroundColor : isUnseen ? colors.primary + '08' : colors.card,
-						borderColor: priorityStyles ? priorityStyles.borderColor : isUnseen ? colors.primary : colors.border,
+						borderColor: priorityStyles ? priorityStyles.borderColor : isUnseen ? colors.primary : colors.info || '#3B82F6',
 						borderLeftWidth: isUnseen || priorityStyles ? 4 : 1
 					}
 				]}

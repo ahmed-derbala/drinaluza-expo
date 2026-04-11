@@ -45,7 +45,7 @@ const Dashboard = () => {
 				style={[
 					styles.statCard,
 					{
-						borderColor: colors.border,
+						borderColor: colors.info || '#3B82F6',
 						backgroundColor: colors.card
 					}
 				]}
@@ -264,7 +264,7 @@ const Dashboard = () => {
 								<Ionicons name="chevron-forward" size={20} color={colors.primary} />
 							</TouchableOpacity>
 						</View>
-						<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 							{recentPurchases.length === 0 ? (
 								<View style={styles.emptyState}>
 									<View style={[styles.emptyIconContainer, { backgroundColor: colors.surface }]}>

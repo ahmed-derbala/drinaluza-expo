@@ -6,7 +6,7 @@ import { useTheme } from '../../core/contexts/ThemeContext'
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
 export interface ToastAction {
-	label: string
+	label?: string
 	onPress: () => void
 	color?: string
 	icon?: keyof typeof Ionicons.glyphMap
@@ -156,10 +156,10 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 									action.onPress()
 									hideToast()
 								}}
-								style={styles.actionButton}
+								style={[styles.actionButton, !action.label && { paddingHorizontal: 10, paddingVertical: 10 }]}
 							>
-								{action.icon && <Ionicons name={action.icon} size={16} color={action.color || '#fff'} style={{ marginRight: 6 }} />}
-								<Text style={[styles.actionLabel, action.color ? { color: action.color } : null]}>{action.label}</Text>
+								{action.icon && <Ionicons name={action.icon} size={action.label ? 16 : 22} color={action.color || '#fff'} style={action.label ? { marginRight: 6 } : {}} />}
+								{action.label && <Text style={[styles.actionLabel, action.color ? { color: action.color } : null]}>{action.label}</Text>}
 							</TouchableOpacity>
 						))}
 					</View>

@@ -29,7 +29,7 @@ const ProductCard = ({ product, colors, localize, translate }: { product: Produc
 	const stockStatus = getStockStatus()
 
 	return (
-		<View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+		<View style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.productImageContainer} />
 			<View style={styles.productInfo}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
@@ -137,7 +137,7 @@ export default function MyShopDetailsScreen() {
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 			>
 				{/* Shop Status Info */}
-				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.sectionHeader}>
 						<MaterialIcons name="info-outline" size={20} color={colors.primary} />
 						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('shop_information', 'Shop Information')}</Text>
@@ -166,7 +166,7 @@ export default function MyShopDetailsScreen() {
 				</View>
 
 				{/* Products Section */}
-				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.sectionHeader}>
 						<Ionicons name="fish-outline" size={20} color={colors.primary} />
 						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('products', 'Products')}</Text>

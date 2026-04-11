@@ -283,9 +283,8 @@ export default function FeedScreen() {
 			toast.success(`${localize(item.name)} added to basket`, {
 				actions: [
 					{
-						label: translate('go_to_basket', 'Go to Basket'),
 						icon: 'cart-outline',
-						onPress: () => router.push('/(home)/purchases')
+						onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'cart' } })
 					}
 				]
 			})

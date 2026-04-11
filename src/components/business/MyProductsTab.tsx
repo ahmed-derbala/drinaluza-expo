@@ -34,7 +34,7 @@ const ProductItem = ({ item }: { item: ProductType }) => {
 	const stockStatus = getStockStatus()
 
 	return (
-		<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.85} onPress={() => {}}>
+		<TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]} activeOpacity={0.85} onPress={() => {}}>
 			{/* Gradient overlay */}
 			<LinearGradient colors={[`${colors.primary}06`, `transparent`, `${colors.primary}03`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
 

@@ -149,9 +149,8 @@ export default function ShopProductsScreen() {
 			toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
 				actions: [
 					{
-						label: translate('go_to_basket', 'Go to Basket'),
 						icon: 'cart-outline',
-						onPress: () => router.push('/(home)/purchases')
+						onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'cart' } })
 					}
 				]
 			})

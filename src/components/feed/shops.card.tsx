@@ -160,8 +160,8 @@ const createStyles = (colors: any, screenWidth: number) => {
 			backgroundColor: colors.card,
 			borderRadius: 16,
 			overflow: 'hidden',
-			borderWidth: 1,
-			borderColor: colors.border,
+			borderWidth: 1.5,
+			borderColor: colors.info || '#3B82F6',
 			...Platform.select({
 				ios: {
 					shadowColor: colors.primary,
