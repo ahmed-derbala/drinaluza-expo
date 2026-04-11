@@ -1,7 +1,7 @@
 import { getApiClient } from '../../core/api'
 import { NotificationResponse } from './notifications.interface'
-import * as Notifications from 'expo-notifications'
 import * as Device from 'expo-device'
+import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 
 export const getNotifications = async (page: number = 1, limit: number = 10): Promise<NotificationResponse> => {
@@ -23,18 +23,51 @@ export const markNotificationSeen = async (notificationId: string): Promise<any>
 }
 
 export async function registerForExpoPush() {
-	// ❌ BLOCK WEB
-	if (Platform.OS === 'web') {
+	try {
+		// ❌ BLOCK WEB
+		if (Platform.OS === 'web') {
+			return null
+		}
+
+		// ❌ Expo Go on Android no longer supports remote push notifications (SDK 53+)
+		// We use Constants.executionEnvironment to detect Expo Go
+		const isExpoGo = Constants.executionEnvironment === 'storeClient'
+
+		if (Platform.OS === 'android' && isExpoGo) {
+			console.warn('[Push] Skipped: expo-notifications remote push is not supported in Expo Go on Android (SDK 53+). Use a development build instead.')
+			return null
+		}
+
+		if (!Device.isDevice) {
+			console.warn('[Push] Skipped: Must use a physical device for push notifications.')
+			return null
+		}
+
+		// ✅ Use require() for true lazy loading to avoid Metro static analysis issues
+		const Notifications = require('expo-notifications')
+
+		const { status: existingStatus } = await Notifications.getPermissionsAsync()
+		let finalStatus = existingStatus
+
+		if (existingStatus !== 'granted') {
+			const { status } = await Notifications.requestPermissionsAsync()
+			finalStatus = status
+		}
+
+		if (finalStatus !== 'granted') {
+			console.warn('[Push] Permission not granted for push notifications.')
+			return null
+		}
+
+		const expoPushTokenData = await Notifications.getExpoPushTokenAsync({
+			projectId: Constants.expoConfig?.extra?.eas?.projectId || Constants.easConfig?.projectId
+		})
+
+		return expoPushTokenData.data
+	} catch (error) {
+		console.error('[Push] Error registering for push notifications:', error)
 		return null
 	}
-
-	if (!Device.isDevice) return null
-
-	const { status } = await Notifications.requestPermissionsAsync()
-	if (status !== 'granted') return null
-
-	const expoPushTokenData = await Notifications.getExpoPushTokenAsync()
-	return expoPushTokenData.data
 }
 
 export const saveExpoPushTokenInSession = async (expoPushToken: string, token: string) => {

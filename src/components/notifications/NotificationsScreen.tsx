@@ -1,8 +1,10 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTheme } from '../../core/contexts/ThemeContext'
-import { useNotification } from '../../core/contexts/NotificationContext'
+import { useTheme } from '@/core/contexts/ThemeContext'
+import { useNotification } from '@/core/contexts/NotificationContext'
+import { useUser } from '@/core/contexts/UserContext'
+
 import ScreenHeader from '../common/ScreenHeader'
 import ErrorState from '../common/ErrorState'
 import { getNotifications, markNotificationSeen } from './notifications.api'
@@ -10,7 +12,6 @@ import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import { parseError, logError } from '../../core/helpers/errorHandler'
-import { useUser } from '../../core/contexts/UserContext'
 
 // Priority color mapping
 const PRIORITY_COLORS = {

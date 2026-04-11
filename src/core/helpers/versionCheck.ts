@@ -8,7 +8,8 @@ const GOOGLE_DRIVE_URL = 'https://drive.google.com/drive/folders/1euN1ogdssvbiq4
 const GOOGLE_PLAY_URL = '' // TODO: set when published
 
 const VERSION_CHECK_KEY = 'version_last_check'
-const ONE_DAY_MS = 24 * 60 * 60 * 1000
+const VERSION_OPTIONAL_PROMPT_KEY = 'version_optional_prompt'
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000
 
 export interface PlatformVersion {
 	latest: string
@@ -56,27 +57,47 @@ export const compareVersions = (a: string, b: string): number => {
 }
 
 /**
- * Check if enough time has passed since the last version check (24 hours)
+ * Check if the optional update prompt should be shown (once a week)
  */
-export const shouldCheckVersion = async (): Promise<boolean> => {
+export const shouldPromptOptionalUpdate = async (): Promise<boolean> => {
 	try {
-		let lastCheck: string | null = null
+		let lastPrompt: string | null = null
 
 		if (Platform.OS === 'web') {
 			if (typeof window !== 'undefined') {
-				lastCheck = localStorage.getItem(VERSION_CHECK_KEY)
+				lastPrompt = localStorage.getItem(VERSION_OPTIONAL_PROMPT_KEY)
 			}
 		} else {
 			const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
-			lastCheck = await AsyncStorage.getItem(VERSION_CHECK_KEY)
+			lastPrompt = await AsyncStorage.getItem(VERSION_OPTIONAL_PROMPT_KEY)
 		}
 
-		if (!lastCheck) return true
+		if (!lastPrompt) return true
 
-		const elapsed = Date.now() - Number(lastCheck)
-		return elapsed >= ONE_DAY_MS
+		const elapsed = Date.now() - Number(lastPrompt)
+		return elapsed >= ONE_WEEK_MS
 	} catch (e) {
 		return true
+	}
+}
+
+/**
+ * Save the current time as the optional prompt timestamp
+ */
+export const saveOptionalPromptTime = async (): Promise<void> => {
+	try {
+		const now = String(Date.now())
+
+		if (Platform.OS === 'web') {
+			if (typeof window !== 'undefined') {
+				localStorage.setItem(VERSION_OPTIONAL_PROMPT_KEY, now)
+			}
+		} else {
+			const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
+			await AsyncStorage.setItem(VERSION_OPTIONAL_PROMPT_KEY, now)
+		}
+	} catch (e) {
+		// Storage might not be available
 	}
 }
 
@@ -148,8 +169,8 @@ export const checkVersionStatus = (backendInfo: BackendInfo): VersionStatus => {
 		return 'update_required'
 	}
 
-	// Check if below latest version (only relevant for Android — web has no optional prompt)
-	if (Platform.OS !== 'web' && latest && compareVersions(currentVersion, latest) < 0) {
+	// Check if below latest version
+	if (latest && compareVersions(currentVersion, latest) < 0) {
 		return 'update_available'
 	}
 

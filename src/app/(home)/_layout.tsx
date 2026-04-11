@@ -5,11 +5,12 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useTheme } from '@/core/contexts/ThemeContext'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useNotification } from '@/core/contexts/NotificationContext'
+import { useUser } from '@/core/contexts/UserContext'
+
+import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { secureGetItem } from '../../core/auth/storage'
 import { useBackButton } from '../../core/hooks/useBackButton'
-import { useUser } from '@/core/contexts/UserContext'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()

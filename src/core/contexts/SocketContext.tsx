@@ -1,12 +1,20 @@
 import React, { createContext, useContext, useEffect, useRef } from 'react'
 import { io, Socket } from 'socket.io-client'
-import { Audio } from 'expo-av'
+import { View, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { BACKEND_URL } from '@/config'
 import { useUser } from './UserContext'
 import { useNotification } from './NotificationContext'
 import { toast } from '../helpers/toast'
 import { log } from '../log'
+
+// Safely import Audio to prevent crashes in environments without native modules
+let Audio: any = null
+try {
+	Audio = require('expo-av').Audio
+} catch (e) {
+	console.warn('expo-av Audio module not available')
+}
 
 interface SocketContextType {
 	socket: Socket | null
@@ -19,10 +27,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
 	const socketRef = useRef<Socket | null>(null)
-	const soundRef = useRef<Audio.Sound | null>(null)
+	const soundRef = useRef<any>(null)
 
 	useEffect(() => {
-		// Initialize sound
+		// Initialize sound only on native platforms and if Audio is available
+		if (Platform.OS === 'web' || !Audio) return
+
 		const loadSound = async () => {
 			try {
 				const { sound } = await Audio.Sound.createAsync(require('../../../assets/sounds/notification.mp3'))
@@ -80,9 +90,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			console.log('[Socket] New notification received:', data)
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
 
-			// Play sound
+			// Play sound if available and on native
 			try {
-				if (soundRef.current) {
+				if (Audio && soundRef.current) {
 					await soundRef.current.replayAsync()
 				}
 			} catch (error) {

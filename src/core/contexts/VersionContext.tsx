@@ -9,13 +9,15 @@ import {
 	shouldResetApp,
 	resetWebApp,
 	resetAndroidApp,
-	shouldCheckVersion,
+	shouldPromptOptionalUpdate,
+	saveOptionalPromptTime,
 	saveLastCheckTime,
 	BackendInfo,
 	VersionStatus
 } from '../helpers/versionCheck'
-import { showConfirm } from '../helpers/popup'
+import { showPopup } from '../helpers/popup'
 import { log } from '../log'
+import { translate } from '../../config/translations'
 
 interface VersionContextType {
 	versionStatus: VersionStatus
@@ -39,13 +41,7 @@ export const VersionProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const checkVersion = useCallback(async () => {
 		try {
-			// Only check once per day
-			const shouldCheck = await shouldCheckVersion()
-			if (!shouldCheck) {
-				log({ level: 'info', label: 'versionCheck', message: 'Skipping version check (already checked today)' })
-				return
-			}
-
+			// Always fetch info at startup
 			const info = await fetchBackendInfo()
 			if (!info) return
 
@@ -79,14 +75,59 @@ export const VersionProvider: React.FC<{ children: ReactNode }> = ({ children })
 				return
 			}
 
-			// On Android, show optional update prompt (only once per app session)
-			if (Platform.OS !== 'web' && status === 'update_available' && !optionalPromptShown) {
-				setOptionalPromptShown(true)
-				const versionInfo = getVersionInfo(info)
+			// Handle optional update prompt
+			if (status === 'update_available' && !optionalPromptShown) {
+				const shouldPrompt = await shouldPromptOptionalUpdate()
+				if (shouldPrompt) {
+					setOptionalPromptShown(true)
+					const versionInfo = getVersionInfo(info)
 
-				showConfirm('Update Available', `A new version (${versionInfo.latestVersion}) is available. You are on ${versionInfo.currentVersion}.\n\nWould you like to download the latest version?`, () =>
-					handleUpdate()
-				)
+					if (Platform.OS === 'web') {
+						// Web optional update prompt
+						showPopup(
+							translate('update_available', 'Update Available'),
+							`${translate('new_version_available', 'A new version')}: ${versionInfo.latestVersion}. ${translate('current_version', 'You are on')}: ${versionInfo.currentVersion}.\n\n${translate('optional_update_msg_web', 'Would you like to refresh to get the latest version?')}`,
+							[
+								{
+									text: translate('cancel', 'Cancel'),
+									style: 'cancel',
+									onPress: async () => {
+										await saveOptionalPromptTime()
+									}
+								},
+								{
+									text: translate('refresh', 'Refresh'),
+									onPress: async () => {
+										await saveOptionalPromptTime()
+										handleUpdate()
+									}
+								}
+							]
+						)
+					} else {
+						// Android optional update prompt (once a week)
+						showPopup(
+							translate('update_available', 'Update Available'),
+							`${translate('new_version_available', 'A new version')}: ${versionInfo.latestVersion}. ${translate('current_version', 'You are on')}: ${versionInfo.currentVersion}.\n\n${translate('optional_update_msg_android', 'Would you like to download the latest version?')}`,
+							[
+								{
+									text: translate('cancel', 'Cancel'),
+									style: 'cancel',
+									onPress: async () => {
+										await saveOptionalPromptTime()
+									}
+								},
+								{
+									text: translate('download', 'Download'),
+									onPress: async () => {
+										await saveOptionalPromptTime()
+										handleUpdate()
+									}
+								}
+							]
+						)
+					}
+				}
 			}
 		} catch (error: any) {
 			log({
@@ -117,9 +158,11 @@ export const VersionProvider: React.FC<{ children: ReactNode }> = ({ children })
 								<Text style={modalStyles.icon}>⚠️</Text>
 							</View>
 
-							<Text style={[modalStyles.title, { color: colors.text }]}>Update Required</Text>
+							<Text style={[modalStyles.title, { color: colors.text }]}>{translate('update_required', 'Update Required')}</Text>
 
-							<Text style={[modalStyles.message, { color: colors.textSecondary }]}>This version of the app is outdated and no longer supported. Please download the latest version to continue.</Text>
+							<Text style={[modalStyles.message, { color: colors.textSecondary }]}>
+								{translate('mandatory_update_msg', 'This version of the app is outdated and no longer supported. Please download the latest version to continue.')}
+							</Text>
 
 							{backendInfo && (
 								<View style={[modalStyles.versionInfo, { backgroundColor: colors.surfaceVariant }]}>
@@ -131,7 +174,7 @@ export const VersionProvider: React.FC<{ children: ReactNode }> = ({ children })
 							)}
 
 							<TouchableOpacity style={[modalStyles.button, { backgroundColor: colors.primary }]} onPress={handleUpdate} activeOpacity={0.8}>
-								<Text style={[modalStyles.buttonText, { color: colors.buttonText }]}>Download Update</Text>
+								<Text style={[modalStyles.buttonText, { color: colors.buttonText }]}>{translate('download_update', 'Download Update')}</Text>
 							</TouchableOpacity>
 						</View>
 					</View>
