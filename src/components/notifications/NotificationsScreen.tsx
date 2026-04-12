@@ -12,6 +12,7 @@ import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
 import { useFocusEffect } from '@react-navigation/native'
 import { parseError, logError } from '../../core/helpers/errorHandler'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 // Priority color mapping
 const PRIORITY_COLORS = {
@@ -30,6 +31,7 @@ export default function NotificationsScreen() {
 	const [hasMore, setHasMore] = useState(true)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { translate, localize } = useUser()
+	const { onScroll } = useScrollHandler()
 
 	const loadNotifications = async (pageNum: number = 1, isRefresh: boolean = false) => {
 		try {
@@ -214,6 +216,8 @@ export default function NotificationsScreen() {
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.list}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.2}
 				ListEmptyComponent={

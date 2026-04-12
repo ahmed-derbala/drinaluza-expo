@@ -13,6 +13,7 @@ import { NotificationProvider } from '@/core/contexts/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/core/contexts/ToastContext'
 import { SocketProvider } from '@/core/contexts/SocketContext'
+import { LayoutProvider } from '@/core/contexts/LayoutContext'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 
@@ -38,7 +39,9 @@ export default function RootLayout() {
 					<UserProvider>
 						<NotificationProvider>
 							<SocketProvider>
-								<RootLayoutContent />
+								<LayoutProvider>
+									<RootLayoutContent />
+								</LayoutProvider>
 							</SocketProvider>
 						</NotificationProvider>
 					</UserProvider>

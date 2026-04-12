@@ -4,16 +4,14 @@ import { useRouter } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { useTheme } from '@/core/contexts/ThemeContext'
-import { useNotification } from '@/core/contexts/NotificationContext'
-import { useUser } from '@/core/contexts/UserContext'
-
+import { useUser, useLayout, useTheme, useNotification } from '@/core/contexts'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { secureGetItem } from '../../core/auth/storage'
 import { useBackButton } from '../../core/hooks/useBackButton'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
+	const { isTabBarVisible } = useLayout()
 	const { translate } = useUser()
 	const router = useRouter()
 	const pathname = usePathname()
@@ -45,7 +43,7 @@ export default function HomeLayout() {
 		loadAuthData()
 	}, [])
 
-	const iconSize = Platform.select({ ios: 24, android: 26, web: 24 })
+	const iconSize = Platform.select({ ios: 22, android: 24, web: 22 })
 
 	return (
 		<SafeAreaProvider>
@@ -55,31 +53,34 @@ export default function HomeLayout() {
 					screenOptions={{
 						headerShown: false,
 						tabBarStyle: {
+							display: isTabBarVisible ? 'flex' : 'none',
 							backgroundColor: colors.background,
 							borderTopColor: colors.primary,
-							borderTopWidth: 2,
+							borderTopWidth: isTabBarVisible ? 2 : 0,
 							paddingVertical: Platform.select({
-								ios: 8,
-								android: 10,
-								web: 12
+								ios: 4,
+								android: 6,
+								web: 8
 							}),
-							height: Platform.select({
-								ios: 60,
-								android: 70,
-								web: 70
-							}),
+							height: isTabBarVisible
+								? Platform.select({
+										ios: 48,
+										android: 56,
+										web: 56
+									})
+								: 0,
 							...Platform.select({
 								ios: {
 									shadowColor: colors.primary,
 									shadowOffset: { width: 0, height: -4 },
-									shadowOpacity: 0.15,
+									shadowOpacity: isTabBarVisible ? 0.15 : 0,
 									shadowRadius: 8
 								},
 								android: {
-									elevation: 10
+									elevation: isTabBarVisible ? 10 : 0
 								},
 								web: {
-									boxShadow: `0 -4px 12px ${colors.primary}20`
+									boxShadow: isTabBarVisible ? `0 -4px 12px ${colors.primary}20` : 'none'
 								}
 							})
 						},
@@ -90,9 +91,9 @@ export default function HomeLayout() {
 						tabBarShowLabel: false,
 						tabBarIconStyle: {
 							marginTop: Platform.select({
-								ios: 4,
-								android: 6,
-								web: 4
+								ios: 0,
+								android: 2,
+								web: 0
 							})
 						}
 					}}
@@ -200,9 +201,9 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	activeIconContainer: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		backgroundColor: 'rgba(56, 189, 248, 0.15)', // primary with low opacity
 		justifyContent: 'center',
 		alignItems: 'center'

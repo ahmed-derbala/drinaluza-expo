@@ -8,12 +8,12 @@ import { useNotification } from './NotificationContext'
 import { toast } from '../helpers/toast'
 import { log } from '../log'
 
-// Safely import Audio to prevent crashes in environments without native modules
-let Audio: any = null
+// Safely import expo-audio
+let useAudioPlayer: any = null
 try {
-	Audio = require('expo-av').Audio
+	useAudioPlayer = require('expo-audio').useAudioPlayer
 } catch (e) {
-	console.warn('expo-av Audio module not available')
+	console.warn('expo-audio module not available')
 }
 
 interface SocketContextType {
@@ -27,29 +27,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
 	const socketRef = useRef<Socket | null>(null)
-	const soundRef = useRef<any>(null)
 
-	useEffect(() => {
-		// Initialize sound only on native platforms and if Audio is available
-		if (Platform.OS === 'web' || !Audio) return
+	// Initialize audio player
+	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/notification.mp3')) : null
 
-		const loadSound = async () => {
-			try {
-				const { sound } = await Audio.Sound.createAsync(require('../../../assets/sounds/notification.mp3'))
-				soundRef.current = sound
-			} catch (error) {
-				log({ level: 'error', label: 'socket', message: 'Failed to load notification sound', error })
-			}
-		}
-
-		loadSound()
-
-		return () => {
-			if (soundRef.current) {
-				soundRef.current.unloadAsync()
-			}
-		}
-	}, [])
+	// Auto-play is handled by the player object itself when play() is called
 
 	useEffect(() => {
 		// Only connect if user is logged in
@@ -90,10 +72,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			console.log('[Socket] New notification received:', data)
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
 
-			// Play sound if available and on native
+			// Play sound if available
 			try {
-				if (Audio && soundRef.current) {
-					await soundRef.current.replayAsync()
+				if (player) {
+					player.play()
 				}
 			} catch (error) {
 				console.error('Error playing notification sound:', error)

@@ -72,7 +72,7 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 				{
 					backgroundColor: transparent ? 'transparent' : colors.background,
 					borderBottomColor: transparent ? 'transparent' : colors.border,
-					paddingTop: insets.top + 8
+					paddingTop: insets.top + 4
 				}
 			]}
 		>
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		paddingHorizontal: 16,
-		paddingBottom: 16,
+		paddingBottom: 8,
 		borderBottomWidth: 1,
 		...Platform.select({
 			ios: {
@@ -135,17 +135,17 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	backButton: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		justifyContent: 'center',
 		alignItems: 'center',
-		marginRight: 12
+		marginRight: 10
 	},
 	refreshButton: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	title: {
-		fontSize: 20,
+		fontSize: 18,
 		fontWeight: '700',
 		letterSpacing: -0.3
 	},

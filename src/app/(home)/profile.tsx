@@ -15,6 +15,7 @@ import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { requestBusiness } from '@/components/business/business.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 import { UserData } from '@/components/profile/profile.interface'
 import { LocalizedName } from '@/components/shops/shops.interface'
@@ -117,6 +118,7 @@ export default function ProfileScreen() {
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 	const styles = createStyles(colors, isDark, isWideScreen, width)
+	const { onScroll } = useScrollHandler()
 
 	const [loading, setLoading] = useState(false)
 	const [userData, setUserData] = useState<UserData | null>(null)
@@ -492,7 +494,7 @@ export default function ProfileScreen() {
 	return (
 		<View style={styles.container}>
 			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} onRefresh={loadProfile} isRefreshing={loading} />
-			<ScrollView contentContainerStyle={styles.contentContainer}>
+			<ScrollView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
 					<View style={styles.photoContainer}>

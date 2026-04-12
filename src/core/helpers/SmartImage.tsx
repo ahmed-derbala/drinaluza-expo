@@ -5,7 +5,7 @@ import { useTheme } from '../contexts/ThemeContext'
 /**
  * Entity types that have specific default fallback images
  */
-export type ImageEntityType = 'user' | 'shop' | 'product' | 'default-product'
+export type ImageEntityType = 'user' | 'shop' | 'product'
 
 /**
  * Default images for each entity type
@@ -15,8 +15,7 @@ export type ImageEntityType = 'user' | 'shop' | 'product' | 'default-product'
 const DEFAULT_IMAGES: Record<ImageEntityType, ImageSourcePropType> = {
 	user: require('../../../assets/images/defaultuser.png'),
 	shop: require('../../../assets/images/defaultshop.png'),
-	product: require('../../../assets/images/defaultproduct.png'),
-	'default-product': require('../../../assets/images/defaultdefaultproduct.png')
+	product: require('../../../assets/images/defaultproduct.png')
 }
 
 interface SmartImageProps extends Omit<ImageProps, 'source'> {

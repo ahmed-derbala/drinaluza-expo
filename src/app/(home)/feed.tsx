@@ -6,7 +6,6 @@ import { getFeed } from '@/components/feed/feed.api'
 import { FeedItem } from '@/components/feed/feed.interface'
 import { useFocusEffect } from '@react-navigation/native'
 import FeedCard from '@/components/feed/feed.card'
-import { useTheme } from '@/core/contexts/ThemeContext'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import ErrorState from '@/components/common/ErrorState'
@@ -14,7 +13,8 @@ import { toast } from '@/core/helpers/toast'
 import SearchBar from '@/components/search/SearchBar'
 import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
-import { useUser } from '@/core/contexts/UserContext'
+import { useUser, useLayout, useTheme } from '@/core/contexts'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 type FilterKey = 'product' | 'shop' | 'user'
 
@@ -169,6 +169,8 @@ export default function FeedScreen() {
 
 	const { user, localize, translate } = useUser()
 
+	const { onScroll } = useScrollHandler()
+	const { isSearchBarVisible } = useLayout()
 	const styles = useMemo(() => createStyles(colors), [colors])
 
 	const getFilterParam = (filters: FilterKey[]): string | undefined => {
@@ -360,10 +362,12 @@ export default function FeedScreen() {
 			{/* Search Bar */}
 			<View
 				style={{
+					display: isSearchBarVisible ? 'flex' : 'none',
+					height: isSearchBarVisible ? 'auto' : 0,
 					paddingHorizontal: padding,
-					paddingVertical: 10,
+					paddingVertical: isSearchBarVisible ? 10 : 0,
 					backgroundColor: colors.background,
-					borderBottomWidth: 1,
+					borderBottomWidth: isSearchBarVisible ? 1 : 0,
 					borderBottomColor: colors.border
 				}}
 			>
@@ -398,6 +402,8 @@ export default function FeedScreen() {
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}
 				keyboardShouldPersistTaps="handled"
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
 				ListFooterComponent={renderFooter}

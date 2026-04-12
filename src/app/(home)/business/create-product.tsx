@@ -259,7 +259,7 @@ export default function CreateProductScreen() {
 						</View>
 						<TouchableOpacity style={[styles.selectButton, selectedDefaultProduct && styles.selectButtonActive]} onPress={() => setShowDefaultProducts(true)}>
 							<View style={[styles.selectIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
-								<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="default-product" />
+								<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="product" />
 							</View>
 							<View style={{ flex: 1 }}>
 								<Text style={[styles.selectLabel, selectedDefaultProduct && { color: colors.text }]}>{selectedDefaultProduct ? selectedDefaultProduct.name.en : 'Select default product'}</Text>
@@ -534,7 +534,7 @@ export default function CreateProductScreen() {
 								renderItem={({ item }) => (
 									<TouchableOpacity style={[styles.categoryItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectDefaultProduct(item)}>
 										<View style={styles.categoryImageContainer}>
-											<SmartImage source={item.media?.thumbnail?.url} style={styles.categoryThumbnail} resizeMode="cover" entityType="default-product" />
+											<SmartImage source={item.media?.thumbnail?.url} style={styles.categoryThumbnail} resizeMode="cover" entityType="product" />
 										</View>
 										<View style={{ flex: 1 }}>
 											<Text style={[styles.categoryName, { color: colors.text }]}>{item.name.en}</Text>

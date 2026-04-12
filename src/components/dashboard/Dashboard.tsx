@@ -8,9 +8,10 @@ import ScreenHeader from '../common/ScreenHeader'
 import { getPurchases } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
-import { logError, parseError } from '../../core/helpers/errorHandler'
+import { parseError, logError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { useUser } from '../../core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 type Order = OrderItem
 
@@ -36,6 +37,7 @@ const Dashboard = () => {
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const { localize, formatPrice, translate, currency, user } = useUser()
 	const router = useRouter()
+	const { onScroll } = useScrollHandler()
 
 	const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
 		return (
@@ -234,6 +236,8 @@ const Dashboard = () => {
 					contentContainerStyle={styles.scrollContent}
 					refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 					showsVerticalScrollIndicator={false}
+					onScroll={onScroll}
+					scrollEventThrottle={16}
 				>
 					{/* Overview Section */}
 					<View style={styles.section}>

@@ -9,6 +9,7 @@ import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/core/helpers/toast'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ScreenHeader from '@/components/common/ScreenHeader'
 
 export default function SettingsScreen() {
@@ -18,6 +19,7 @@ export default function SettingsScreen() {
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
+	const { onScroll } = useScrollHandler()
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
@@ -115,7 +117,12 @@ export default function SettingsScreen() {
 	}
 
 	return (
-		<ScrollView style={styles.container} contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}>
+		<ScrollView
+			style={styles.container}
+			contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
+			onScroll={onScroll}
+			scrollEventThrottle={16}
+		>
 			<ScreenHeader title={translate('settings', 'Settings')} subtitle="Drinaluza - Seafood Business Manager" showBack={false} />
 			<View style={{ height: 16 }} />
 
