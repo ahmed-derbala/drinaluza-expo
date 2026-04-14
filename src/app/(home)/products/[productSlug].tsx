@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { useUser } from '@/core/contexts/UserContext'
+import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug } from '@/components/products/products.api'
 import { ProductType } from '@/components/products/products.type'
 import { parseError } from '@/core/helpers/errorHandler'
@@ -19,12 +20,23 @@ export default function ProductDetailScreen() {
 	const { colors } = useTheme()
 	const { localize, translate, currency, formatPrice } = useUser()
 	const { onScroll } = useScrollHandler()
+	const { setTabBarVisible } = useLayout()
 	const { width } = useWindowDimensions()
+
+	console.log('ProductDetailScreen: Received productSlug:', productSlug)
 
 	const [product, setProduct] = useState<ProductType | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+
+	// Hide bottom tab bar when on product detail screen
+	useEffect(() => {
+		setTabBarVisible(false)
+		return () => {
+			setTabBarVisible(true)
+		}
+	}, [setTabBarVisible])
 
 	const loadProduct = useCallback(
 		async (isRefresh = false) => {
@@ -74,7 +86,7 @@ export default function ProductDetailScreen() {
 
 	if (loading && !product) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<ScreenHeader title={translate('product_details', 'Product Details')} showBack={true} />
 				<View style={styles.loadingContainer}>
 					<ActivityIndicator size="large" color={colors.primary} />
@@ -86,7 +98,7 @@ export default function ProductDetailScreen() {
 
 	if (error && !product) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<ScreenHeader title={translate('product_details', 'Product Details')} showBack={true} />
 				<ErrorState
 					title={error.title}
@@ -100,7 +112,7 @@ export default function ProductDetailScreen() {
 
 	if (!product) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<ScreenHeader title={translate('product_details', 'Product Details')} showBack={true} />
 				<ErrorState
 					title={translate('product_not_found', 'Product Not Found')}
@@ -129,7 +141,7 @@ export default function ProductDetailScreen() {
 	const stockStatus = getStockStatus()
 
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background }]}>
+		<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader title={localize(product.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 
 			<ScrollView

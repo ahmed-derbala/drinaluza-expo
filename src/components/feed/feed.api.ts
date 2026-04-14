@@ -6,10 +6,11 @@ import { FeedItem, FeedResponse, NormalizedFeedResponse, RawFeedDoc } from './fe
  * that UI components can consume directly.
  */
 const normalizeFeedDoc = (doc: any): FeedItem => {
-	// Search results come as flat docs without targetData wrapper — pass through as-is
+	// Search results come as flat docs without targetData wrapper — ensure slug is properly set
 	if (!doc.targetData) {
 		return {
 			...doc,
+			slug: doc.slug || doc._id,
 			card: { kind: doc.card?.kind || 'product' }
 		} as FeedItem
 	}

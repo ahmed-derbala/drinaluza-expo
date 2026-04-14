@@ -50,8 +50,11 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	}
 
 	const handleProductPress = () => {
+		console.log('ProductCard: handleProductPress - item.slug:', item.slug, 'item._id:', item._id, 'item.name:', item.name)
 		if (item.slug) {
 			router.push(`/products/${item.slug}` as any)
+		} else {
+			console.warn('ProductCard: No slug available for item', item)
 		}
 	}
 

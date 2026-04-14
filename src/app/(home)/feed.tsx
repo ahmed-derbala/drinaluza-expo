@@ -396,7 +396,7 @@ export default function FeedScreen() {
 				renderItem={renderItem}
 				numColumns={numColumns}
 				columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding, alignItems: 'stretch' } : undefined}
-				keyExtractor={(item) => item._id}
+				keyExtractor={(item) => item.slug || item._id}
 				contentContainerStyle={[styles.list, numColumns === 1 && { paddingHorizontal: padding }]}
 				ListEmptyComponent={!loading ? renderEmpty : null}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={[colors.primary]} tintColor={colors.primary} />}

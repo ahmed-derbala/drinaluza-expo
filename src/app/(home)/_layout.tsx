@@ -190,6 +190,12 @@ export default function HomeLayout() {
 							href: null
 						}}
 					/>
+					<Tabs.Screen
+						name="products"
+						options={{
+							href: null
+						}}
+					/>
 				</Tabs>
 			</SafeAreaView>
 		</SafeAreaProvider>
