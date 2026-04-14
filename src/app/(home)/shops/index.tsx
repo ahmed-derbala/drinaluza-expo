@@ -12,6 +12,7 @@ import { showPopup, showAlert } from '@/core/helpers/popup'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { Shop } from '@/components/shops/shops.interface'
 import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 // Common themed styles removed as they're not needed
 
 // Responsive layout will be calculated inside the component
@@ -554,6 +555,7 @@ export default function ShopsListScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { translate, localize } = useUser()
+	const { onScroll } = useScrollHandler()
 
 	const { width } = useWindowDimensions()
 	const responsiveConfig = getResponsiveConfig(width)
@@ -795,6 +797,8 @@ export default function ShopsListScreen() {
 				numColumns={numColumns}
 				ListEmptyComponent={renderEmpty}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 			/>
 		</View>
 	)

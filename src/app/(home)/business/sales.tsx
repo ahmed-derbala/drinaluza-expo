@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useCallback } from 'react'
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme } from '@/core/contexts/ThemeContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/components/business/sales.api'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import SaleCard from '@/components/business/SaleCard'
@@ -25,6 +26,7 @@ export default function SalesScreen() {
 	const [loadingMore, setLoadingMore] = useState(false)
 	const [selectedStatus, setSelectedStatus] = useState<string>('all')
 	const { width } = useWindowDimensions()
+	const { onScroll } = useScrollHandler()
 
 	// Responsive layout
 	const isTablet = width >= 768
@@ -267,6 +269,8 @@ export default function SalesScreen() {
 				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
 				contentContainerStyle={styles.listContent}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
 				ListFooterComponent={renderFooter}

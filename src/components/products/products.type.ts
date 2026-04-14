@@ -75,6 +75,10 @@ export type ProductType = {
 		quantity: number
 		minThreshold: number
 	}
+	state: {
+		code: string
+		updatedAt?: string
+	}
 	slug: string
 	createdAt: string
 	updatedAt: string

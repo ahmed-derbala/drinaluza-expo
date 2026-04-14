@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Activi
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/contexts/ThemeContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/components/products/products.api'
 import { getMyShops } from '@/components/shops/shops.api'
 import { Shop } from '@/components/shops/shops.interface'
@@ -226,13 +227,14 @@ export default function CreateProductScreen() {
 	}
 
 	const styles = createStyles(colors)
+	const { onScroll } = useScrollHandler()
 
 	return (
 		<View style={styles.container}>
 			<ScreenHeader title="Create Product" showBack={true} />
 
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false}>
+				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16}>
 					{/* Shop Selection */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>

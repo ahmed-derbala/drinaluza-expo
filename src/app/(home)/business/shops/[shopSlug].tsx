@@ -12,6 +12,7 @@ import ScreenHeader from '@/components/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 // Inline Product Card Component
 const ProductCard = ({ product, colors, localize, translate }: { product: ProductType; colors: any; localize: (obj: any) => string; translate: (key: string, fallback: string) => string }) => {
@@ -57,6 +58,7 @@ export default function MyShopDetailsScreen() {
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { onScroll } = useScrollHandler()
 
 	const loadShopDetails = useCallback(
 		async (isRefresh = false) => {
@@ -135,6 +137,8 @@ export default function MyShopDetailsScreen() {
 			<ScrollView
 				contentContainerStyle={styles.scrollContent}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 			>
 				{/* Shop Status Info */}
 				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>

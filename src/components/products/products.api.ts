@@ -124,3 +124,8 @@ export const getMyProducts = async (page: number = 1, limit: number = 10): Promi
 	const response = await getApiClient().get(`/products/my-products?page=${page}&limit=${limit}`)
 	return response.data
 }
+
+export const getProductBySlug = async (productSlug: string): Promise<{ status: number; data: ProductType }> => {
+	const response = await getApiClient().get(`/products/${productSlug}`)
+	return response.data
+}

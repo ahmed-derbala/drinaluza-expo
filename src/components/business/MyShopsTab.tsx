@@ -24,6 +24,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack'
 import { getMyShops, createShop } from '../shops/shops.api'
 import { Shop, CreateShopRequest } from '../shops/shops.interface'
 import { useUser } from '../../core/contexts/UserContext'
+import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 
 type ShopsStackParamList = {
 	ShopDetails: { shopId: string }
@@ -386,6 +387,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
+	const { onScroll } = useScrollHandler()
 	const [state, setState] = useState<ShopState>({
 		shops: [],
 		loading: true,
@@ -549,6 +551,8 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.listContent}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 				ListEmptyComponent={
 					!refreshing ? (
 						<View style={styles.emptyContainer}>

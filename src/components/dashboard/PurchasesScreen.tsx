@@ -12,6 +12,7 @@ import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
 import { FeedItem } from '../feed/feed.interface'
 import { useBackButton } from '../../core/hooks/useBackButton'
+import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useUser } from '../../core/contexts/UserContext'
 import { toast } from '../../core/helpers/toast'
@@ -46,6 +47,7 @@ const PurchasesScreen = () => {
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
 	const { translate, localize } = useUser()
+	const { onScroll } = useScrollHandler()
 
 	useBackButton(() => {
 		router.replace('/(home)/dashboard')
@@ -697,6 +699,8 @@ const PurchasesScreen = () => {
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 					ListEmptyComponent={renderEmptyState}
 					showsVerticalScrollIndicator={false}
+					onScroll={onScroll}
+					scrollEventThrottle={16}
 				/>
 			</Animated.View>
 		</View>

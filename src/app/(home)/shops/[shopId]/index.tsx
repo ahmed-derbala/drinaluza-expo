@@ -11,6 +11,7 @@ import ErrorState from '@/components/common/ErrorState'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 // Product Card for inline display
 const ProductCard = ({ product, colors, localize, onPress }: { product: ProductType; colors: any; localize: (obj: any) => string; onPress?: () => void }) => {
@@ -54,6 +55,7 @@ export default function ShopDetailsScreen() {
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { onScroll } = useScrollHandler()
 
 	const loadShopDetails = useCallback(
 		async (isRefresh = false) => {
@@ -150,6 +152,8 @@ export default function ShopDetailsScreen() {
 			<ScrollView
 				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 			>
 				{/* Shop Image */}
 				<View style={styles.imageContainer}>

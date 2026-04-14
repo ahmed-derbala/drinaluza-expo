@@ -14,6 +14,7 @@ import { TextInput } from 'react-native'
 import FeedCard from '@/components/feed/feed.card'
 import { FeedItem } from '@/components/feed/feed.interface'
 import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
 // Responsive breakpoints
 const BREAKPOINTS = {
@@ -78,6 +79,7 @@ export default function ShopProductsScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [searchText, setSearchText] = useState('')
+	const { onScroll } = useScrollHandler()
 
 	const loadBasket = async () => {
 		try {
@@ -317,6 +319,8 @@ export default function ShopProductsScreen() {
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
 				showsVerticalScrollIndicator={false}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 				ListEmptyComponent={
 					error ? (
 						<ErrorState

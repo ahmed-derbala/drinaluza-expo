@@ -9,6 +9,7 @@ import { parseError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { LinearGradient } from 'expo-linear-gradient'
 import { showAlert } from '../../core/helpers/popup'
+import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 
 type ActionButtonProps = {
 	icon: React.ReactNode
@@ -45,6 +46,7 @@ const BusinessDashboard = () => {
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { onScroll } = useScrollHandler()
 
 	const loadBusiness = useCallback(async () => {
 		try {
@@ -143,6 +145,8 @@ const BusinessDashboard = () => {
 				contentContainerStyle={[styles.scrollContainer, { width: contentWidth }]}
 				showsVerticalScrollIndicator={false}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 			>
 				{/* Business Hero */}
 				{business && (

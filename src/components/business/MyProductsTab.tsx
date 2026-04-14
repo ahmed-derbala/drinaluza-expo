@@ -11,6 +11,7 @@ import { useTheme } from '../../core/contexts/ThemeContext'
 
 import ScreenHeader from '../common/ScreenHeader'
 import { useUser } from '../../core/contexts/UserContext'
+import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 
 const ProductItem = ({ item }: { item: ProductType }) => {
 	const { colors } = useTheme()
@@ -102,6 +103,7 @@ export default function MyProductsTab() {
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { translate } = useUser()
+	const { onScroll } = useScrollHandler()
 	const [products, setProducts] = useState<ProductType[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
@@ -164,6 +166,8 @@ export default function MyProductsTab() {
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.list}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.1}
 				ListEmptyComponent={
