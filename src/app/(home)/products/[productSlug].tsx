@@ -113,7 +113,8 @@ export default function ProductDetailScreen() {
 	}
 
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
-	const unitPrice = product.price.total[currency] || product.price.total.tnd || 0
+	const priceTotal = product.price.total
+	const unitPrice = (priceTotal[currency as keyof typeof priceTotal] as number | null | undefined) || priceTotal.tnd || 0
 	const isAvailable = product.stock.quantity > 0 && product.state?.code === 'active'
 	const stockQty = product.stock?.quantity || 0
 	const minThreshold = product.stock?.minThreshold || 5

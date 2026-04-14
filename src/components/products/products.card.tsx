@@ -49,6 +49,12 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 		}
 	}
 
+	const handleProductPress = () => {
+		if (item.slug) {
+			router.push(`/products/${item.slug}` as any)
+		}
+	}
+
 	const isAvailable = item.stock.quantity > 0 && item.state.code === 'active'
 
 	return (
@@ -69,28 +75,30 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 			</TouchableOpacity>
 
 			{/* Product Photo */}
-			<View style={styles.imageContainer}>
+			<TouchableOpacity onPress={handleProductPress} activeOpacity={0.9} style={styles.imageContainer}>
 				<SmartImage source={item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0]} style={styles.productImage} resizeMode="cover" entityType="product" />
 				{!isAvailable && (
 					<View style={styles.unavailableOverlay}>
 						<Text style={styles.unavailableText}>{item.state.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
 					</View>
 				)}
-			</View>
+			</TouchableOpacity>
 
 			{/* Product Info */}
 			<View style={styles.productInfo}>
 				{/* Product Name */}
-				<View style={styles.productNameContainer}>
-					<Text style={styles.productName} numberOfLines={2}>
-						{localize(item.name)}
-					</Text>
-					{(item.name?.tn_latn || item.name?.tn_arab) && (
-						<Text style={styles.productNameSecondary} numberOfLines={1}>
-							{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
+				<TouchableOpacity onPress={handleProductPress} activeOpacity={0.8}>
+					<View style={styles.productNameContainer}>
+						<Text style={styles.productName} numberOfLines={2}>
+							{localize(item.name)}
 						</Text>
-					)}
-				</View>
+						{(item.name?.tn_latn || item.name?.tn_arab) && (
+							<Text style={styles.productNameSecondary} numberOfLines={1}>
+								{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
+							</Text>
+						)}
+					</View>
+				</TouchableOpacity>
 
 				{/* Price */}
 				<View style={styles.priceContainer}>
