@@ -237,7 +237,7 @@ export default function ShopDetailsScreen() {
 					{products.length > 0 ? (
 						<View style={styles.productsGrid}>
 							{products.map((product) => (
-								<ProductCard key={product._id} product={product} colors={colors} localize={localize} />
+								<ProductCard key={product._id} product={product} colors={colors} localize={localize} onPress={() => product.slug && router.push(`/products/${product.slug}` as any)} />
 							))}
 						</View>
 					) : (

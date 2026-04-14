@@ -15,6 +15,7 @@ import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser, useLayout, useTheme } from '@/core/contexts'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 type FilterKey = 'product' | 'shop' | 'user'
 
@@ -170,7 +171,8 @@ export default function FeedScreen() {
 	const { user, localize, translate } = useUser()
 
 	const { onScroll } = useScrollHandler()
-	const { isSearchBarVisible } = useLayout()
+	const { isSearchBarVisible, setSearchBarVisible } = useLayout()
+	const insets = useSafeAreaInsets()
 	const styles = useMemo(() => createStyles(colors), [colors])
 
 	const getFilterParam = (filters: FilterKey[]): string | undefined => {
@@ -310,6 +312,10 @@ export default function FeedScreen() {
 		toast.error(message)
 	}, [])
 
+	const handleToggleSearch = useCallback(() => {
+		setSearchBarVisible(!isSearchBarVisible)
+	}, [isSearchBarVisible, setSearchBarVisible])
+
 	const renderFooter = () => {
 		if (!isLoadingMore) return null
 		return (
@@ -355,39 +361,68 @@ export default function FeedScreen() {
 		return <Ionicons name={option.icon as any} size={size} color={iconColor} />
 	}
 
+	const headerRightActions = (
+		<View style={{ flexDirection: 'row', gap: 8 }}>
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={handleToggleSearch}>
+				<Ionicons name={isSearchBarVisible ? 'search' : 'search-outline'} size={20} color={colors.primary} />
+			</TouchableOpacity>
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={refreshData} disabled={refreshing}>
+				<Ionicons name="refresh" size={20} color={colors.primary} />
+			</TouchableOpacity>
+		</View>
+	)
+
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} showBack={false} onRefresh={refreshData} isRefreshing={refreshing} />
+			<ScreenHeader title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} showBack={false} rightActions={headerRightActions} />
 
-			{/* Search Bar */}
+			{/* Backdrop to dismiss search bar when tapping outside */}
+			{isSearchBarVisible && (
+				<TouchableOpacity
+					style={{
+						position: 'absolute',
+						top: Platform.OS === 'web' ? 50 : insets.top + 60,
+						left: 0,
+						right: 0,
+						bottom: 0,
+						zIndex: 5
+					}}
+					activeOpacity={1}
+					onPress={handleToggleSearch}
+				/>
+			)}
+
+			{/* Search Bar and Filters - combined container */}
 			<View
 				style={{
+					position: 'absolute',
+					top: Platform.OS === 'web' ? 50 : insets.top + 60,
+					left: 0,
+					right: 0,
+					zIndex: 10,
 					display: isSearchBarVisible ? 'flex' : 'none',
-					height: isSearchBarVisible ? 'auto' : 0,
-					paddingHorizontal: padding,
-					paddingVertical: isSearchBarVisible ? 10 : 0,
 					backgroundColor: colors.background,
-					borderBottomWidth: isSearchBarVisible ? 1 : 0,
+					borderBottomWidth: 1,
 					borderBottomColor: colors.border
 				}}
 			>
-				<SearchBar onSearchResults={handleSearchResults} onSearchClear={handleSearchClear} onError={handleSearchError} />
-			</View>
-
-			{/* Filter Chips — icon only */}
-			<View style={styles.filterContainer}>
-				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
-					{FILTER_OPTIONS.map((option) => (
-						<TouchableOpacity
-							key={option.key}
-							style={[styles.filterChip, activeFilters.includes(option.key) && styles.filterChipActive]}
-							onPress={() => handleFilterToggle(option.key)}
-							activeOpacity={0.7}
-						>
-							{renderFilterIcon(option)}
-						</TouchableOpacity>
-					))}
-				</ScrollView>
+				<View style={{ paddingHorizontal: padding, paddingVertical: 10 }}>
+					<SearchBar onSearchResults={handleSearchResults} onSearchClear={handleSearchClear} onError={handleSearchError} />
+				</View>
+				<View style={{ ...styles.filterContainer, paddingTop: 12, paddingBottom: 12 }}>
+					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
+						{FILTER_OPTIONS.map((option) => (
+							<TouchableOpacity
+								key={option.key}
+								style={[styles.filterChip, activeFilters.includes(option.key) && styles.filterChipActive]}
+								onPress={() => handleFilterToggle(option.key)}
+								activeOpacity={0.7}
+							>
+								{renderFilterIcon(option)}
+							</TouchableOpacity>
+						))}
+					</ScrollView>
+				</View>
 			</View>
 
 			<Animated.FlatList

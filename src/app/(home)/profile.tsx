@@ -491,9 +491,28 @@ export default function ProfileScreen() {
 
 	if (!userData) return null
 
+	const headerRightActions = (
+		<View style={{ flexDirection: 'row', gap: 8 }}>
+			{userData.role === 'customer' && (
+				<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.primary + '15' }]} onPress={handleRequestBusiness}>
+					<Ionicons name="briefcase" size={20} color={colors.primary} />
+				</TouchableOpacity>
+			)}
+			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.text + '05' }]} onPress={handleSwitchUser}>
+				<Ionicons name="people" size={20} color={colors.text} />
+			</TouchableOpacity>
+			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.error + '10' }]} onPress={handleSignOut}>
+				<Ionicons name="log-out" size={20} color={colors.error} />
+			</TouchableOpacity>
+			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.surface }]} onPress={loadProfile} disabled={loading}>
+				<Ionicons name="refresh" size={20} color={colors.primary} />
+			</TouchableOpacity>
+		</View>
+	)
+
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} onRefresh={loadProfile} isRefreshing={loading} />
+			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} rightActions={headerRightActions} />
 			<ScrollView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
@@ -1460,22 +1479,6 @@ export default function ProfileScreen() {
 						</>
 					)}
 				</Section>
-
-				<Section title="🔐 Account Actions" styles={styles}>
-					<View style={styles.actionRow}>
-						{userData.role === 'customer' && (
-							<TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.primary + '15' }]} onPress={handleRequestBusiness}>
-								<Ionicons name="briefcase" size={24} color={colors.primary} />
-							</TouchableOpacity>
-						)}
-						<TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.text + '05' }]} onPress={handleSwitchUser}>
-							<Ionicons name="people" size={24} color={colors.text} />
-						</TouchableOpacity>
-						<TouchableOpacity style={[styles.iconButton, { backgroundColor: colors.error + '10' }]} onPress={handleSignOut}>
-							<Ionicons name="log-out" size={24} color={colors.error} />
-						</TouchableOpacity>
-					</View>
-				</Section>
 			</ScrollView>
 
 			{/* Business Name Modal */}
@@ -1625,11 +1628,15 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			width: 40,
 			height: 40,
 			borderRadius: 20,
-			backgroundColor: colors.card,
 			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderColor: colors.border
+			alignItems: 'center'
+		},
+		headerActionButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 10,
+			justifyContent: 'center',
+			alignItems: 'center'
 		},
 		profileCard: {
 			alignItems: 'center',

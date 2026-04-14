@@ -23,8 +23,6 @@ export default function ProductDetailScreen() {
 	const { setTabBarVisible } = useLayout()
 	const { width } = useWindowDimensions()
 
-	console.log('ProductDetailScreen: Received productSlug:', productSlug)
-
 	const [product, setProduct] = useState<ProductType | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)

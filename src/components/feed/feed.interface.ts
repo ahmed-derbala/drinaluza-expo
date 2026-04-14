@@ -66,6 +66,9 @@ export interface Stock {
 
 export interface CardInfo {
 	kind: string
+	purchase?: {
+		allowed: boolean
+	}
 }
 
 export interface FeedItem {

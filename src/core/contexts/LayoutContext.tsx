@@ -11,7 +11,7 @@ const LayoutContext = createContext<LayoutContextType | undefined>(undefined)
 
 export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 	const [isTabBarVisible, setTabBarVisible] = useState(true)
-	const [isSearchBarVisible, setSearchBarVisible] = useState(true)
+	const [isSearchBarVisible, setSearchBarVisible] = useState(false)
 
 	return <LayoutContext.Provider value={{ isTabBarVisible, setTabBarVisible, isSearchBarVisible, setSearchBarVisible }}>{children}</LayoutContext.Provider>
 }

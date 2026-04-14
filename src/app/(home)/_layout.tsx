@@ -43,7 +43,7 @@ export default function HomeLayout() {
 		loadAuthData()
 	}, [])
 
-	const iconSize = Platform.select({ ios: 22, android: 24, web: 22 })
+	const iconSize = Platform.select({ ios: 20, android: 22, web: 20 })
 
 	return (
 		<SafeAreaProvider>
@@ -53,34 +53,37 @@ export default function HomeLayout() {
 					screenOptions={{
 						headerShown: false,
 						tabBarStyle: {
-							display: isTabBarVisible ? 'flex' : 'none',
+							position: 'absolute',
+							bottom: 0,
+							left: 0,
+							right: 0,
 							backgroundColor: colors.background,
 							borderTopColor: colors.primary,
-							borderTopWidth: isTabBarVisible ? 2 : 0,
+							borderTopWidth: 1.5,
 							paddingVertical: Platform.select({
-								ios: 4,
-								android: 6,
-								web: 8
+								ios: 2,
+								android: 4,
+								web: 4
 							}),
-							height: isTabBarVisible
-								? Platform.select({
-										ios: 48,
-										android: 56,
-										web: 56
-									})
-								: 0,
+							height: Platform.select({
+								ios: 40,
+								android: 48,
+								web: 48
+							}),
+							transform: [{ translateY: isTabBarVisible ? 0 : 100 }],
+							opacity: isTabBarVisible ? 1 : 0,
 							...Platform.select({
 								ios: {
 									shadowColor: colors.primary,
-									shadowOffset: { width: 0, height: -4 },
-									shadowOpacity: isTabBarVisible ? 0.15 : 0,
-									shadowRadius: 8
+									shadowOffset: { width: 0, height: -3 },
+									shadowOpacity: 0.12,
+									shadowRadius: 6
 								},
 								android: {
-									elevation: isTabBarVisible ? 10 : 0
+									elevation: 8
 								},
 								web: {
-									boxShadow: isTabBarVisible ? `0 -4px 12px ${colors.primary}20` : 'none'
+									boxShadow: `0 -3px 10px ${colors.primary}18`
 								}
 							})
 						},
@@ -92,7 +95,7 @@ export default function HomeLayout() {
 						tabBarIconStyle: {
 							marginTop: Platform.select({
 								ios: 0,
-								android: 2,
+								android: 1,
 								web: 0
 							})
 						}
@@ -207,9 +210,9 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	activeIconContainer: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
+		width: 32,
+		height: 32,
+		borderRadius: 8,
 		backgroundColor: 'rgba(56, 189, 248, 0.15)', // primary with low opacity
 		justifyContent: 'center',
 		alignItems: 'center'

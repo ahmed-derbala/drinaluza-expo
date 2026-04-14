@@ -50,15 +50,13 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	}
 
 	const handleProductPress = () => {
-		console.log('ProductCard: handleProductPress - item.slug:', item.slug, 'item._id:', item._id, 'item.name:', item.name)
 		if (item.slug) {
 			router.push(`/products/${item.slug}` as any)
-		} else {
-			console.warn('ProductCard: No slug available for item', item)
 		}
 	}
 
 	const isAvailable = item.stock.quantity > 0 && item.state.code === 'active'
+	const purchaseAllowed = item.card?.purchase?.allowed !== false
 
 	return (
 		<View style={styles.card}>
@@ -111,31 +109,35 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 					<Text style={styles.unitText}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
 				</View>
 
-				{/* Quantity Controls */}
-				<View style={styles.quantityRow}>
-					<View style={styles.quantityControls}>
-						<TouchableOpacity onPress={decrement} style={styles.quantityButton} disabled={!isAvailable}>
-							<MaterialIcons name="remove" size={20} color={isAvailable ? colors.text : colors.textDisabled} />
-						</TouchableOpacity>
-						<Text style={styles.quantityText}>
-							{quantity} {item.unit?.measure || ''}
-						</Text>
-						<TouchableOpacity onPress={increment} style={styles.quantityButton} disabled={!isAvailable}>
-							<MaterialIcons name="add" size={20} color={isAvailable ? colors.text : colors.textDisabled} />
-						</TouchableOpacity>
+				{/* Quantity Controls - only when purchase allowed */}
+				{purchaseAllowed && (
+					<View style={styles.quantityRow}>
+						<View style={styles.quantityControls}>
+							<TouchableOpacity onPress={decrement} style={styles.quantityButton} disabled={!isAvailable}>
+								<MaterialIcons name="remove" size={20} color={isAvailable ? colors.text : colors.textDisabled} />
+							</TouchableOpacity>
+							<Text style={styles.quantityText}>
+								{quantity} {item.unit?.measure || ''}
+							</Text>
+							<TouchableOpacity onPress={increment} style={styles.quantityButton} disabled={!isAvailable}>
+								<MaterialIcons name="add" size={20} color={isAvailable ? colors.text : colors.textDisabled} />
+							</TouchableOpacity>
+						</View>
 					</View>
-				</View>
+				)}
 
-				{/* Total & Add Button */}
-				<View style={styles.footer}>
-					<View style={styles.totalContainer}>
-						<Text style={styles.totalLabel}>{translate('total', 'Total')}</Text>
-						<Text style={styles.totalPrice}>{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}</Text>
+				{/* Total & Add Button - only when purchase allowed */}
+				{purchaseAllowed && (
+					<View style={styles.footer}>
+						<View style={styles.totalContainer}>
+							<Text style={styles.totalLabel}>{translate('total', 'Total')}</Text>
+							<Text style={styles.totalPrice}>{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}</Text>
+						</View>
+						<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToBasket(item, quantity)} disabled={!isAvailable}>
+							<MaterialIcons name={isAvailable ? 'add-shopping-cart' : 'remove-shopping-cart'} size={24} color="#fff" />
+						</TouchableOpacity>
 					</View>
-					<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToBasket(item, quantity)} disabled={!isAvailable}>
-						<MaterialIcons name={isAvailable ? 'add-shopping-cart' : 'remove-shopping-cart'} size={24} color="#fff" />
-					</TouchableOpacity>
-				</View>
+				)}
 			</View>
 		</View>
 	)
