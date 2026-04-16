@@ -7,12 +7,24 @@ export type LocalizedName = {
 export type GeoPoint = {
 	type: 'Point'
 	coordinates: [number, number]
+	sharingEnabled?: boolean
+	_id?: string
+	createdAt?: string
+	updatedAt?: string
 }
 
 export type Owner = {
 	_id: string
 	slug: string
 	name: LocalizedName
+	business?: {
+		_id: string
+		slug: string
+		name: LocalizedName
+		state?: {
+			code: string
+		}
+	}
 	updatedAt?: string
 }
 
@@ -21,64 +33,65 @@ export type Contact = {
 		fullNumber: string
 		countryCode: string
 		localNumber: string
-		createdAt: string
-		updatedAt: string
+		_id: string
 	}
 	backupPhones?: Array<{
 		fullNumber: string
 		countryCode: string
 		localNumber: string
-		createdAt: string
-		updatedAt: string
+		_id: string
 	}>
 	whatsapp?: string
 	email?: string
-	createdAt: string
-	updatedAt: string
+}
+
+export type RatingBreakdown = {
+	1: number
+	2: number
+	3: number
+	4: number
+	5: number
+}
+
+export type Rating = {
+	breakdown: RatingBreakdown
+	average: number
+	count: number
+	total: number
+}
+
+export type ShopState = {
+	code: string
 }
 
 export type Shop = {
 	_id: string
 	name: LocalizedName
 	slug: string
-	owner: Owner & {
-		_id: string
-		slug: string
-		name: LocalizedName
-		business?: {
-			_id: string
-			slug: string
-			name: LocalizedName
-			state?: {
-				code: string
-				updatedAt?: string
-			}
-			updatedAt?: string
-		}
-	}
-	location?: GeoPoint
+	owner: Owner
 	address?: {
 		street: string
 		city: string
-		state: string
-		postalCode?: string
+		region: string
 		country: string
 	}
+	location?: GeoPoint
+	state?: ShopState
 	media?: {
 		thumbnail?: {
 			url: string
 		}
+		_id?: string
 	}
+	contact?: Contact
+	rating?: Rating
 	deliveryRadiusKm?: number
 	isActive?: boolean
 	createdAt?: string
 	updatedAt?: string
 	operatingHours?: Record<string, unknown>
 	description?: string
-	rating?: number
-	reviewCount?: number
 	categories?: string[]
-	contact?: Contact
 }
 
 export type Pagination = {

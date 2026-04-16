@@ -23,6 +23,8 @@ export default function ShopCard({ item }: ShopCardProps) {
 	const address = item.shop?.address
 	const locationText = address ? [address.city, address.country].filter(Boolean).join(', ') : ''
 	const streetText = address?.street || ''
+	const rating = item.rating?.average || item.shop?.rating?.average || 0
+	const ratingCount = item.rating?.count || item.shop?.rating?.count || 0
 
 	const handlePress = () => {
 		const slug = item.shop?.slug || item.slug
@@ -85,6 +87,14 @@ export default function ShopCard({ item }: ShopCardProps) {
 				<Text style={styles.shopName} numberOfLines={1}>
 					{shopName}
 				</Text>
+
+				{rating > 0 && (
+					<View style={styles.ratingRow}>
+						<Ionicons name="star" size={12} color="#FFD700" />
+						<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+						<Text style={styles.ratingCount}>({ratingCount})</Text>
+					</View>
+				)}
 
 				{ownerName ? (
 					<View style={styles.ownerRow}>
@@ -208,6 +218,20 @@ const createStyles = (colors: any, screenWidth: number) => {
 			fontSize: isSmall ? 17 : 19,
 			fontWeight: '700',
 			color: colors.text
+		},
+		ratingRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4
+		},
+		ratingText: {
+			fontSize: 13,
+			fontWeight: '600',
+			color: colors.text
+		},
+		ratingCount: {
+			fontSize: 12,
+			color: colors.textSecondary
 		},
 		ownerRow: {
 			flexDirection: 'row',

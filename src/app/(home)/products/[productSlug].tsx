@@ -13,6 +13,7 @@ import ScreenHeader from '@/components/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import ReviewSection from '@/components/reviews/Reviews'
 
 export default function ProductDetailScreen() {
 	const { productSlug } = useLocalSearchParams<{ productSlug: string }>()
@@ -289,6 +290,9 @@ export default function ProductDetailScreen() {
 					<Text style={[styles.slugLabel, { color: colors.textSecondary }]}>{translate('product_slug', 'Product ID')}</Text>
 					<Text style={[styles.slugValue, { color: colors.text }]}>{product.slug}</Text>
 				</View>
+
+				{/* Reviews Section */}
+				{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 
 				{/* Bottom Spacing */}
 				<View style={styles.bottomSpacing} />

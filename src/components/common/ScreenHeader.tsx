@@ -25,6 +25,7 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 
 	// Animation for refresh icon spinning
 	const spinValue = useRef(new Animated.Value(0)).current
+	const pressSpinValue = useRef(new Animated.Value(0)).current
 
 	useEffect(() => {
 		if (isRefreshing) {
@@ -46,6 +47,11 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 		outputRange: ['0deg', '360deg']
 	})
 
+	const pressSpin = pressSpinValue.interpolate({
+		inputRange: [0, 1],
+		outputRange: ['0deg', '180deg']
+	})
+
 	const handleBackPress = () => {
 		if (onBackPress) {
 			onBackPress()
@@ -58,6 +64,15 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 
 	const handleRefresh = async () => {
 		if (onRefresh && !isRefreshing) {
+			// Animate rotation on press
+			Animated.timing(pressSpinValue, {
+				toValue: 1,
+				duration: 300,
+				easing: Easing.out(Easing.ease),
+				useNativeDriver: true
+			}).start(() => {
+				pressSpinValue.setValue(0)
+			})
 			await onRefresh()
 		}
 	}
@@ -98,7 +113,7 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 			<View style={styles.rightSection}>
 				{onRefresh && (
 					<TouchableOpacity style={[styles.refreshButton, { backgroundColor: colors.surface }]} onPress={handleRefresh} disabled={isRefreshing} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-						<Animated.View style={{ transform: [{ rotate: isRefreshing ? spin : '0deg' }] }}>
+						<Animated.View style={{ transform: [{ rotate: isRefreshing ? spin : pressSpin }] }}>
 							<MaterialIcons name="refresh" size={22} color={refreshIconColor} />
 						</Animated.View>
 					</TouchableOpacity>

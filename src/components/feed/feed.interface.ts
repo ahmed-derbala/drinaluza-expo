@@ -1,5 +1,20 @@
 import { LocalizedName } from '../shops/shops.interface'
 
+export interface RatingBreakdown {
+	1: number
+	2: number
+	3: number
+	4: number
+	5: number
+}
+
+export interface Rating {
+	breakdown: RatingBreakdown
+	average: number
+	count: number
+	total: number
+}
+
 export interface ShopOwner {
 	_id: string
 	slug: string
@@ -39,6 +54,7 @@ export interface Shop {
 	owner: ShopOwner
 	address: ShopAddress
 	location: ShopLocation
+	rating?: Rating
 	createdAt: string
 	updatedAt: string
 }
@@ -129,6 +145,7 @@ export interface FeedItem {
 	address?: ShopAddress
 	location?: ShopLocation
 	shops?: string[]
+	rating?: Rating
 }
 
 export interface ProductFeedItem extends FeedItem {
@@ -141,6 +158,7 @@ export interface ProductFeedItem extends FeedItem {
 		updatedAt: string
 	}
 	stock: Stock
+	rating?: Rating
 }
 
 export interface ShopFeedItem extends FeedItem {
@@ -151,6 +169,7 @@ export interface ShopFeedItem extends FeedItem {
 			url: string
 		}
 	}
+	rating?: Rating
 }
 
 export interface UserFeedItem extends FeedItem {
@@ -168,7 +187,7 @@ export interface UserFeedItem extends FeedItem {
 export interface RawFeedDoc {
 	_id: string
 	targetData: any
-	targetResource: 'product' | 'shop' | 'user'
+	targetResource: 'products' | 'shops' | 'users'
 	card: {
 		kind: string
 	}

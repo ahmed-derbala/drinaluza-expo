@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView } from 'react-native'
+import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useRouter } from 'expo-router'
 import { getFeed } from '@/components/feed/feed.api'
@@ -16,6 +16,7 @@ import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser, useLayout, useTheme } from '@/core/contexts'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { getToken } from '@/core/auth/storage'
 
 type FilterKey = 'product' | 'shop' | 'user'
 
@@ -165,6 +166,9 @@ export default function FeedScreen() {
 	const scrollY = useRef(new Animated.Value(0)).current
 	const searchBarHeight = 80
 
+	// Animation for refresh icon
+	const refreshSpinValue = useRef(new Animated.Value(0)).current
+
 	// Error handling state
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
 
@@ -225,8 +229,6 @@ export default function FeedScreen() {
 				message: errorInfo.message,
 				retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend, filters) : undefined
 			})
-			setToastType('error')
-			setShowToast(true)
 		} finally {
 			setLoading(false)
 			setIsLoadingMore(false)
@@ -234,12 +236,22 @@ export default function FeedScreen() {
 	}
 
 	const refreshData = useCallback(async () => {
+		// Animate rotation on press
+		Animated.timing(refreshSpinValue, {
+			toValue: 1,
+			duration: 300,
+			easing: Easing.out(Easing.ease),
+			useNativeDriver: true
+		}).start(() => {
+			refreshSpinValue.setValue(0)
+		})
+
 		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
 		await Promise.all([loadBasket(), fetchFeed(1, false, activeFilters)])
 		setRefreshing(false)
-	}, [activeFilters])
+	}, [activeFilters, refreshSpinValue])
 
 	const handleLoadMore = useCallback(() => {
 		if (!isSearchActive && hasMore && !loading && !isLoadingMore) {
@@ -268,6 +280,13 @@ export default function FeedScreen() {
 
 	const addToBasket = async (item: FeedItem, quantity: number) => {
 		try {
+			const token = await getToken()
+			if (!token) {
+				toast.info('Please log in to add items to basket')
+				router.push('/auth')
+				return
+			}
+
 			const existingItemIndex = basket.findIndex((basketItem) => basketItem._id === item._id)
 			let newBasket: BasketItem[]
 
@@ -367,7 +386,9 @@ export default function FeedScreen() {
 				<Ionicons name={isSearchBarVisible ? 'search' : 'search-outline'} size={20} color={colors.primary} />
 			</TouchableOpacity>
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={refreshData} disabled={refreshing}>
-				<Ionicons name="refresh" size={20} color={colors.primary} />
+				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+					<MaterialIcons name="refresh" size={20} color={colors.primary} />
+				</Animated.View>
 			</TouchableOpacity>
 		</View>
 	)

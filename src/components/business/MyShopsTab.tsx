@@ -15,7 +15,8 @@ import {
 	ScrollView,
 	ViewStyle,
 	TextInput as RNTextInput,
-	TextStyle
+	TextStyle,
+	Image
 } from 'react-native'
 import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -84,6 +85,14 @@ interface ShopState {
 	creating: boolean
 	navigatingShopId: string | null
 	error: string | null
+	pagination: {
+		totalDocs: number
+		totalPages: number
+		page: number
+		limit: number
+		hasNextPage: boolean
+		hasPrevPage: boolean
+	}
 }
 
 const DEBOUNCE_DELAY = 300
@@ -93,27 +102,45 @@ const MAX_SHOP_NAME_LENGTH = 50
 const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPress, theme }) => {
 	const { localize, translate } = useUser()
 
+	const isActive = shop.state?.code === 'active'
+	const thumbnailUrl = shop.media?.thumbnail?.url
+	const rating = shop.rating?.average || 0
+	const ratingCount = shop.rating?.count || 0
+	const phone = shop.contact?.phone?.fullNumber
+	const whatsapp = shop.contact?.whatsapp
+
 	return (
 		<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating} activeOpacity={0.8}>
-			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.info || '#3B82F6' }]}>
+			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.primary + '30' }]}>
 				<LinearGradient colors={[`${theme.primary}10`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
 
 				<View style={styles.shopContent}>
 					<View style={styles.shopHeader}>
 						<View style={styles.shopIconContainer}>
-							<LinearGradient colors={[theme.primary, `${theme.primary}CC`]} style={styles.shopIconGradient}>
-								<Ionicons name="storefront" size={24} color="#fff" />
-							</LinearGradient>
+							{thumbnailUrl ? (
+								<Image source={{ uri: thumbnailUrl }} style={styles.shopThumbnail} />
+							) : (
+								<LinearGradient colors={[theme.primary, `${theme.primary}CC`]} style={styles.shopIconGradient}>
+									<Ionicons name="storefront" size={24} color="#fff" />
+								</LinearGradient>
+							)}
 						</View>
 						<View style={styles.shopInfo}>
 							<Text style={[styles.shopName, { color: theme.text }]} numberOfLines={1}>
 								{localize(shop.name) || translate('unnamed_shop', 'Unnamed Shop')}
 							</Text>
 							<Text style={[styles.shopSlug, { color: theme.textSecondary }]}>@{shop.slug}</Text>
+							{rating > 0 && (
+								<View style={styles.ratingContainer}>
+									<Ionicons name="star" size={12} color="#FFD700" />
+									<Text style={[styles.ratingText, { color: theme.textSecondary }]}>{rating.toFixed(1)}</Text>
+									<Text style={[styles.ratingCount, { color: theme.textSecondary }]}>({ratingCount})</Text>
+								</View>
+							)}
 						</View>
-						<View style={[styles.statusBadge, { backgroundColor: shop.isActive ? '#10B98115' : '#EF444415' }]}>
-							<View style={[styles.statusDot, { backgroundColor: shop.isActive ? '#10B981' : '#EF4444' }]} />
-							<Text style={[styles.statusText, { color: shop.isActive ? '#10B981' : '#EF4444' }]}>{shop.isActive ? 'Active' : 'Inactive'}</Text>
+						<View style={[styles.statusBadge, { backgroundColor: isActive ? '#10B98115' : '#EF444415' }]}>
+							<View style={[styles.statusDot, { backgroundColor: isActive ? '#10B981' : '#EF4444' }]} />
+							<Text style={[styles.statusText, { color: isActive ? '#10B981' : '#EF4444' }]}>{isActive ? 'Active' : 'Inactive'}</Text>
 						</View>
 					</View>
 
@@ -124,11 +151,34 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 								{shop.address?.city || 'No location set'}
 							</Text>
 						</View>
-						<View style={styles.metaItem}>
-							<Ionicons name="navigate-outline" size={16} color={theme.textSecondary} />
-							<Text style={[styles.metaText, { color: theme.textSecondary }]}>{shop.deliveryRadiusKm || 0} km radius</Text>
-						</View>
+						{shop.deliveryRadiusKm && (
+							<View style={styles.metaItem}>
+								<Ionicons name="navigate-outline" size={16} color={theme.textSecondary} />
+								<Text style={[styles.metaText, { color: theme.textSecondary }]}>{shop.deliveryRadiusKm} km radius</Text>
+							</View>
+						)}
 					</View>
+
+					{(phone || whatsapp) && (
+						<View style={styles.contactRow}>
+							{phone && (
+								<View style={styles.contactItem}>
+									<Ionicons name="call-outline" size={14} color={theme.textSecondary} />
+									<Text style={[styles.contactText, { color: theme.textSecondary }]} numberOfLines={1}>
+										{phone}
+									</Text>
+								</View>
+							)}
+							{whatsapp && (
+								<View style={styles.contactItem}>
+									<Ionicons name="logo-whatsapp" size={14} color="#25D366" />
+									<Text style={[styles.contactText, { color: theme.textSecondary }]} numberOfLines={1}>
+										WhatsApp
+									</Text>
+								</View>
+							)}
+						</View>
+					)}
 
 					<View style={[styles.cardFooter, { borderTopColor: theme.border }]}>
 						<Text style={[styles.tapHint, { color: theme.primary }]}>{isNavigating ? 'Opening...' : 'View Details'}</Text>
@@ -399,10 +449,18 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		deliveryRadius: '5',
 		creating: false,
 		navigatingShopId: null,
-		error: null
+		error: null,
+		pagination: {
+			totalDocs: 0,
+			totalPages: 0,
+			page: 1,
+			limit: 10,
+			hasNextPage: false,
+			hasPrevPage: false
+		}
 	})
 
-	const { shops, loading, refreshing, modalVisible, shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, creating, navigatingShopId, error } = state
+	const { shops, loading, refreshing, modalVisible, shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, creating, navigatingShopId, error, pagination } = state
 
 	const updateState = useCallback((updates: Partial<ShopState>) => {
 		setState((prev) => ({ ...prev, ...updates }))
@@ -415,11 +473,20 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				const response = await getMyShops()
 				// Access the shops array from the nested data property
 				const shops = response?.data?.docs || []
+				const paginationData = response?.data?.pagination || {
+					totalDocs: 0,
+					totalPages: 0,
+					page: 1,
+					limit: 10,
+					hasNextPage: false,
+					hasPrevPage: false
+				}
 				updateState({
 					shops: shops.sort((a: Shop, b: Shop) => localize(a.name).localeCompare(localize(b.name))),
 					loading: false,
 					refreshing: false,
-					error: null
+					error: null,
+					pagination: paginationData
 				})
 			} catch (err) {
 				console.error('Failed to load shops:', err)
@@ -678,6 +745,11 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
+	shopThumbnail: {
+		width: '100%',
+		height: '100%',
+		borderRadius: 16
+	},
 	shopInfo: {
 		flex: 1,
 		marginLeft: 16
@@ -690,6 +762,19 @@ const styles = StyleSheet.create({
 	shopSlug: {
 		fontSize: 13,
 		marginTop: 2
+	},
+	ratingContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		marginTop: 4
+	},
+	ratingText: {
+		fontSize: 13,
+		fontWeight: '600'
+	},
+	ratingCount: {
+		fontSize: 12
 	},
 	statusBadge: {
 		flexDirection: 'row',
@@ -713,6 +798,20 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		marginBottom: 20,
 		gap: 20
+	},
+	contactRow: {
+		flexDirection: 'row',
+		marginBottom: 20,
+		gap: 16
+	},
+	contactItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6
+	},
+	contactText: {
+		fontSize: 13,
+		fontWeight: '500'
 	},
 	metaItem: {
 		flexDirection: 'row',

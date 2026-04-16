@@ -23,6 +23,9 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
 
+	const rating = item.rating?.average || 0
+	const ratingCount = item.rating?.count || 0
+
 	// @ts-ignore
 	const unitPrice = item.price.total[currency] || item.price.total.tnd || 0
 	const pricePerUnit = unitPrice / (item.unit?.min || 1)
@@ -100,6 +103,15 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 						)}
 					</View>
 				</TouchableOpacity>
+
+				{/* Rating */}
+				{rating > 0 && (
+					<View style={styles.ratingRow}>
+						<MaterialIcons name="star" size={14} color="#FFD700" />
+						<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+						<Text style={styles.ratingCount}>({ratingCount})</Text>
+					</View>
+				)}
 
 				{/* Price */}
 				<View style={styles.priceContainer}>
@@ -242,6 +254,21 @@ const createStyles = (colors: any, screenWidth: number) => {
 			fontSize: isSmallScreen ? 12 : 13,
 			color: colors.textSecondary,
 			marginTop: 4
+		},
+		ratingRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			marginTop: 4
+		},
+		ratingText: {
+			fontSize: 13,
+			fontWeight: '600',
+			color: colors.text
+		},
+		ratingCount: {
+			fontSize: 12,
+			color: colors.textSecondary
 		},
 		priceContainer: {
 			flexDirection: 'row',

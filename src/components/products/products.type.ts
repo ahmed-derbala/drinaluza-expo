@@ -1,5 +1,20 @@
 import { LocalizedName } from '../shops/shops.interface'
 
+export interface RatingBreakdown {
+	1: number
+	2: number
+	3: number
+	4: number
+	5: number
+}
+
+export interface Rating {
+	breakdown: RatingBreakdown
+	average: number
+	count: number
+	total: number
+}
+
 export type ProductType = {
 	_id: string
 	shop: {
@@ -79,6 +94,7 @@ export type ProductType = {
 		code: string
 		updatedAt?: string
 	}
+	rating?: Rating
 	slug: string
 	createdAt: string
 	updatedAt: string

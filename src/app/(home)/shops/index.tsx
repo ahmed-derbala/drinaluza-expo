@@ -199,6 +199,11 @@ const createStyles = (
 			fontWeight: '600',
 			marginRight: 6
 		},
+		ratingCount: {
+			color: colors.textSecondary,
+			fontSize: 12,
+			marginLeft: 4
+		},
 		ratingStars: {
 			color: '#fff',
 			fontSize: 14
@@ -647,7 +652,7 @@ export default function ShopsListScreen() {
 		const addressParts = []
 		if (item.address?.street) addressParts.push(item.address.street)
 		if (item.address?.city) addressParts.push(item.address.city)
-		if (item.address?.state) addressParts.push(item.address.state)
+		if (item.address?.region) addressParts.push(item.address.region)
 		if (item.address?.country) addressParts.push(item.address.country)
 		const fullAddress = addressParts.join(', ')
 
@@ -656,6 +661,8 @@ export default function ShopsListScreen() {
 		const businessName = localize(item.owner?.business?.name) || ''
 		const ownerSlug = item.owner?.slug || 'owner'
 		const ownerName = localize(item.owner?.name) || ''
+		const rating = item.rating?.average || 0
+		const ratingCount = item.rating?.count || 0
 
 		return (
 			<TouchableOpacity style={styles.shopCard as ViewStyle} onPress={() => handleShopPress(item.slug)}>
@@ -670,6 +677,13 @@ export default function ShopsListScreen() {
 						<Text style={styles.shopName as TextStyle} numberOfLines={2}>
 							{shopName}
 						</Text>
+						{rating > 0 && (
+							<View style={styles.ratingContainer as ViewStyle}>
+								<Ionicons name="star" size={isExtraSmall ? 12 : 14} color="#FFD700" />
+								<Text style={styles.ratingText as TextStyle}>{rating.toFixed(1)}</Text>
+								<Text style={styles.ratingCount as TextStyle}>({ratingCount})</Text>
+							</View>
+						)}
 						{showExtended && businessName && (
 							<Text style={styles.businessName as TextStyle} numberOfLines={1}>
 								{businessName}

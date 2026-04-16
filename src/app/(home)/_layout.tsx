@@ -11,7 +11,7 @@ import { useBackButton } from '../../core/hooks/useBackButton'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
-	const { isTabBarVisible } = useLayout()
+	const { isTabBarVisible, setTabBarVisible } = useLayout()
 	const { translate } = useUser()
 	const router = useRouter()
 	const pathname = usePathname()
@@ -42,6 +42,11 @@ export default function HomeLayout() {
 		}
 		loadAuthData()
 	}, [])
+
+	// Show tab bar when navigating to a new screen
+	useEffect(() => {
+		setTabBarVisible(true)
+	}, [pathname, setTabBarVisible])
 
 	const iconSize = Platform.select({ ios: 20, android: 22, web: 20 })
 

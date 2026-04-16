@@ -1,10 +1,27 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator, Linking, Modal, KeyboardAvoidingView } from 'react-native'
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import {
+	View,
+	Text,
+	StyleSheet,
+	ScrollView,
+	TextInput,
+	TouchableOpacity,
+	Image,
+	Alert,
+	Platform,
+	useWindowDimensions,
+	ActivityIndicator,
+	Linking,
+	Modal,
+	KeyboardAvoidingView,
+	Animated,
+	Easing
+} from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, useFocusEffect } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/core/auth/auth.api'
 import { useTheme } from '@/core/contexts/ThemeContext'
@@ -16,6 +33,7 @@ import { requestBusiness } from '@/components/business/business.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import ReviewSection from '@/components/reviews/Reviews'
 
 import { UserData } from '@/components/profile/profile.interface'
 import { LocalizedName } from '@/components/shops/shops.interface'
@@ -113,7 +131,7 @@ export default function ProfileScreen() {
 	const router = useRouter()
 	const { colors } = useTheme()
 	const isDark = true
-	const { refreshUser, translate } = useUser()
+	const { refreshUser, translate, localize } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
@@ -141,7 +159,20 @@ export default function ProfileScreen() {
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
+	// Animation for refresh icon
+	const refreshSpinValue = useRef(new Animated.Value(0)).current
+
 	const loadProfile = async () => {
+		// Animate rotation on press
+		Animated.timing(refreshSpinValue, {
+			toValue: 1,
+			duration: 300,
+			easing: Easing.out(Easing.ease),
+			useNativeDriver: true
+		}).start(() => {
+			refreshSpinValue.setValue(0)
+		})
+
 		try {
 			setLoading(true)
 			setError(null)
@@ -505,7 +536,9 @@ export default function ProfileScreen() {
 				<Ionicons name="log-out" size={20} color={colors.error} />
 			</TouchableOpacity>
 			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.surface }]} onPress={loadProfile} disabled={loading}>
-				<Ionicons name="refresh" size={20} color={colors.primary} />
+				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+					<MaterialIcons name="refresh" size={20} color={colors.primary} />
+				</Animated.View>
 			</TouchableOpacity>
 		</View>
 	)
@@ -1479,6 +1512,9 @@ export default function ProfileScreen() {
 						</>
 					)}
 				</Section>
+
+				{/* Reviews Section */}
+				{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
 			</ScrollView>
 
 			{/* Business Name Modal */}

@@ -12,12 +12,15 @@ import ScreenHeader from '@/components/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import ReviewSection from '@/components/reviews/Reviews'
 
 // Product Card for inline display
 const ProductCard = ({ product, colors, localize, onPress }: { product: ProductType; colors: any; localize: (obj: any) => string; onPress?: () => void }) => {
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
 	const stockQty = product.stock?.quantity || 0
 	const isOutOfStock = stockQty === 0
+	const rating = product.rating?.average || 0
+	const ratingCount = product.rating?.count || 0
 
 	return (
 		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]} activeOpacity={0.8} onPress={onPress}>
@@ -26,6 +29,13 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
 					{localize(product.name)}
 				</Text>
+				{rating > 0 && (
+					<View style={styles.ratingRow}>
+						<Ionicons name="star" size={12} color="#FFD700" />
+						<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+						<Text style={styles.ratingCount}>({ratingCount})</Text>
+					</View>
+				)}
 				<View style={styles.productPriceRow}>
 					<Text style={[styles.productPrice, { color: colors.primary }]}>{product.price?.total?.tnd?.toFixed(2) || '0.00'}</Text>
 					<Text style={[styles.productCurrency, { color: colors.primary }]}> TND</Text>
@@ -139,10 +149,11 @@ export default function ShopDetailsScreen() {
 		)
 	}
 
+	// Build address string
 	const addressParts = []
 	if (shop.address?.street) addressParts.push(shop.address.street)
 	if (shop.address?.city) addressParts.push(shop.address.city)
-	if (shop.address?.state) addressParts.push(shop.address.state)
+	if (shop.address?.region) addressParts.push(shop.address.region)
 	if (shop.address?.country) addressParts.push(shop.address.country)
 	const fullAddress = addressParts.join(', ')
 
@@ -247,6 +258,9 @@ export default function ShopDetailsScreen() {
 						</View>
 					)}
 				</View>
+
+				{/* Reviews Section */}
+				{shop && <ReviewSection targetResource="shops" targetId={shop._id} targetName={localize(shop.name)} />}
 			</ScrollView>
 		</View>
 	)
@@ -414,6 +428,21 @@ const styles = StyleSheet.create({
 		fontWeight: '600',
 		marginBottom: 6,
 		lineHeight: 20
+	},
+	ratingRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		marginBottom: 4
+	},
+	ratingText: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: '#FFD700'
+	},
+	ratingCount: {
+		fontSize: 11,
+		color: '#666'
 	},
 	productPriceRow: {
 		flexDirection: 'row',

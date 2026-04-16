@@ -16,6 +16,15 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 	})
 
 	client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
+		// Skip token injection if skipAuth flag is set (for anonymous requests)
+		// @ts-ignore - Custom header flag
+		if (config.headers?.skipAuth) {
+			// Remove the skipAuth header before sending the request
+			// @ts-ignore
+			delete config.headers.skipAuth
+			return config
+		}
+
 		const token = await secureGetItem('authToken')
 		if (token && config.headers) {
 			// Set both Authorization and token headers for compatibility
