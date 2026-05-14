@@ -110,7 +110,7 @@ export const getFileInfo = async (uri: string): Promise<FileInfo> => {
  */
 export const uploadFile = async (options: FileUploadOptions): Promise<UploadResult> => {
 	try {
-		const { uri, name, type, fileType = 'image', fieldName = 'files', onProgress, headers = {}, fileObj } = options
+		const { uri, name, type, fileType = 'image', fieldName = 'file', onProgress, headers = {}, fileObj } = options
 
 		console.log('uploadFile called with:', { uri, name, type, fileType, fieldName, hasFileObj: !!fileObj })
 
