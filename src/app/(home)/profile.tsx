@@ -34,6 +34,7 @@ import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/components/reviews/Reviews'
+import { uploadFile } from '@/core/fileHandler'
 
 import { UserData } from '@/components/profile/profile.interface'
 import { LocalizedName } from '@/components/shops/shops.interface'
@@ -156,6 +157,7 @@ export default function ProfileScreen() {
 	const [showBusinessModal, setShowBusinessModal] = useState(false)
 	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [businessLoading, setBusinessLoading] = useState(false)
+	const [uploadingPhoto, setUploadingPhoto] = useState(false)
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
@@ -272,6 +274,67 @@ export default function ProfileScreen() {
 		const text = await Clipboard.getStringAsync()
 		if (text) {
 			updatePhotoUrl(text)
+		}
+	}
+
+	const handleUploadPhoto = async () => {
+		try {
+			// Try to dynamically import expo-document-picker
+			let DocumentPicker: any
+			try {
+				DocumentPicker = require('expo-document-picker')
+			} catch (e) {
+				console.error('expo-document-picker not installed:', e)
+				showAlert('Error', 'expo-document-picker is not installed. Install it to enable photo upload.')
+				return
+			}
+
+			const result = await DocumentPicker.getDocumentAsync({
+				type: ['image/*'],
+				copyToCacheDirectory: true
+			})
+
+			console.log('Document picker result:', result)
+
+			if (result.canceled) {
+				return
+			}
+
+			const file = result.assets[0]
+			if (!file) {
+				console.error('No file selected')
+				return
+			}
+
+			console.log('Selected file:', file)
+			setUploadingPhoto(true)
+
+			const uploadResult = await uploadFile({
+				uri: file.uri,
+				name: file.name,
+				type: file.mimeType || 'image/jpeg',
+				fileType: 'image',
+				fileObj: file, // Pass the actual file object for web
+				onProgress: (progress) => {
+					console.log(`Upload progress: ${progress}%`)
+				}
+			})
+
+			console.log('Upload result:', uploadResult)
+
+			if (uploadResult.success && uploadResult.fileUrl) {
+				updatePhotoUrl(uploadResult.fileUrl)
+				showAlert('Success', 'Photo uploaded successfully!')
+				await saveUserData('photo')
+			} else {
+				console.error('Upload failed:', uploadResult.error)
+				showAlert('Error', uploadResult.error || 'Failed to upload photo')
+			}
+		} catch (error: any) {
+			console.error('Error uploading photo:', error)
+			showAlert('Error', error.message || 'Failed to upload photo')
+		} finally {
+			setUploadingPhoto(false)
 		}
 	}
 
@@ -553,6 +616,9 @@ export default function ProfileScreen() {
 						<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" />
 						<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
 							<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
+						</TouchableOpacity>
+						<TouchableOpacity style={[styles.uploadPhotoButton, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
+							{uploadingPhoto ? <ActivityIndicator size={16} color="#fff" /> : <Ionicons name="cloud-upload-outline" size={20} color="#fff" />}
 						</TouchableOpacity>
 					</View>
 
@@ -1714,6 +1780,19 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			position: 'absolute',
 			bottom: 0,
 			right: 0,
+			backgroundColor: colors.primary,
+			width: 32,
+			height: 32,
+			borderRadius: 16,
+			justifyContent: 'center',
+			alignItems: 'center',
+			borderWidth: 2,
+			borderColor: colors.background
+		},
+		uploadPhotoButton: {
+			position: 'absolute',
+			bottom: 0,
+			left: 0,
 			backgroundColor: colors.primary,
 			width: 32,
 			height: 32,

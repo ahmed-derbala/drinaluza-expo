@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.2.11",
+  "version": "1.2.12",
   "main": "expo-router/entry",
   "description": "Drinaluza, seafood business manager (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -42,17 +42,16 @@
     "clean:prod": "npm run rmallexceptpackagelock && npm run i:prod",
     "clean": "npm run clean:only && npm run i",
     "code": "antigravity . && npm run start:local",
-    "update": "npx npm-check-updates --peer -u && npm run clean",
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "push": "npm run ver && npm run format && git add . && git commit -m",
     "postpush": "git push",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {
-    "@react-native-async-storage/async-storage": "3.0.2",
-    "@react-native-community/datetimepicker": "9.1.0",
-    "@react-navigation/native": "^7.2.4",
-    "@react-navigation/native-stack": "^7.15.0",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@react-native-community/datetimepicker": "8.6.0",
+    "@react-navigation/native": "^7.1.33",
+    "@react-navigation/native-stack": "^7.14.5",
     "axios": "^1.16.1",
     "date-fns": "^4.1.0",
     "dotenv": "^17.4.2",
@@ -63,6 +62,7 @@
     "expo-clipboard": "~55.0.13",
     "expo-constants": "~55.0.16",
     "expo-device": "~55.0.17",
+    "expo-document-picker": "~55.0.13",
     "expo-linear-gradient": "~55.0.14",
     "expo-linking": "~55.0.15",
     "expo-location": "~55.1.10",
@@ -72,12 +72,12 @@
     "expo-status-bar": "~55.0.6",
     "expo-updates": "~55.0.22",
     "lodash": "^4.18.1",
-    "react": "19.2.6",
-    "react-dom": "19.2.6",
-    "react-native": "0.85.3",
-    "react-native-gesture-handler": "~2.31.2",
-    "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "~4.25.0",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "react-native": "0.83.6",
+    "react-native-gesture-handler": "~2.30.0",
+    "react-native-safe-area-context": "~5.6.2",
+    "react-native-screens": "~4.23.0",
     "react-native-web": "~0.21.2",
     "socket.io-client": "^4.8.3"
   },
@@ -87,6 +87,6 @@
     "@types/react": "~19.2.14",
     "eas-local-cache": "^1.0.3",
     "prettier": "^3.8.3",
-    "typescript": "~6.0.3"
+    "typescript": "~5.9.2"
   }
 }
