@@ -54,6 +54,11 @@ export interface Shop {
 	owner: ShopOwner
 	address: ShopAddress
 	location: ShopLocation
+	media?: {
+		thumbnail?: {
+			url: string
+		}
+	}
 	rating?: Rating
 	createdAt: string
 	updatedAt: string

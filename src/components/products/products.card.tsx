@@ -65,16 +65,22 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 		<View style={styles.card}>
 			{/* Shop Header */}
 			<TouchableOpacity onPress={handleShopPress} style={styles.shopHeader}>
-				<View style={styles.shopInfo}>
-					<Text style={styles.shopName} numberOfLines={1}>
-						{localize(item.shop.name)}
-					</Text>
-					<Text style={styles.shopLocation} numberOfLines={1}>
-						{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : translate('location_not_available', 'Location not available')}
-					</Text>
-				</View>
-				<View style={styles.shopIconContainer}>
-					<MaterialIcons name="store" size={18} color={colors.primary} />
+				<View style={styles.shopInfoWithImage}>
+					{item.shop.media?.thumbnail?.url ? (
+						<SmartImage source={item.shop.media.thumbnail.url} style={styles.shopImage} resizeMode="cover" entityType="shop" />
+					) : (
+						<View style={styles.shopIconContainer}>
+							<MaterialIcons name="store" size={18} color={colors.primary} />
+						</View>
+					)}
+					<View style={styles.shopInfo}>
+						<Text style={styles.shopName} numberOfLines={1}>
+							{localize(item.shop.name)}
+						</Text>
+						<Text style={styles.shopLocation} numberOfLines={1}>
+							{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : translate('location_not_available', 'Location not available')}
+						</Text>
+					</View>
 				</View>
 			</TouchableOpacity>
 
@@ -192,6 +198,12 @@ const createStyles = (colors: any, screenWidth: number) => {
 			borderBottomWidth: 1,
 			borderBottomColor: colors.border
 		},
+		shopInfoWithImage: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			flex: 1,
+			gap: 12
+		},
 		shopInfo: {
 			flex: 1
 		},
@@ -212,6 +224,12 @@ const createStyles = (colors: any, screenWidth: number) => {
 			backgroundColor: colors.primaryContainer,
 			justifyContent: 'center',
 			alignItems: 'center'
+		},
+		shopImage: {
+			width: 36,
+			height: 36,
+			borderRadius: 10,
+			backgroundColor: colors.surface
 		},
 		imageContainer: {
 			width: '100%',
