@@ -86,6 +86,28 @@ export const getMyShopBySlug = async (slug: string): Promise<ShopResponse> => {
 	}
 }
 
+export const updateMyShop = async (shopSlug: string, shopData: Partial<ShopResponse['data']>): Promise<ShopResponse> => {
+	try {
+		log({
+			level: 'info',
+			label: 'shops.api',
+			message: 'Updating my shop',
+			data: { shopSlug, shopData }
+		})
+		const response = await getApiClient().patch(`/shops/my-shops/${shopSlug}`, shopData)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'shops.api',
+			message: 'Error updating my shop',
+			error,
+			data: { shopSlug, shopData }
+		})
+		throw error
+	}
+}
+
 export const getShopBySlug = async (slug: string): Promise<ShopResponse> => {
 	try {
 		const response = await getApiClient().get(`/shops/${slug}`)

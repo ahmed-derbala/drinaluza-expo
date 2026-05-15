@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, FlatList, Platform, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, FlatList, Platform, RefreshControl, TextInput } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { getMyShopBySlug, getShopProducts } from '@/components/shops/shops.api'
+import { getMyShopBySlug, getShopProducts, updateMyShop } from '@/components/shops/shops.api'
 import { Shop } from '@/components/shops/shops.interface'
 import { ProductType } from '@/components/products/products.type'
 import { useTheme } from '@/core/contexts/ThemeContext'
@@ -13,7 +13,8 @@ import SmartImage from '@/core/helpers/SmartImage'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-
+import { uploadFile } from '@/core/fileHandler'
+import { showAlert } from '@/core/helpers/popup'
 // Inline Product Card Component
 const ProductCard = ({ product, colors, localize, translate }: { product: ProductType; colors: any; localize: (obj: any) => string; translate: (key: string, fallback: string) => string }) => {
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
@@ -59,6 +60,109 @@ export default function MyShopDetailsScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { onScroll } = useScrollHandler()
+
+	const [uploadingPhoto, setUploadingPhoto] = useState(false)
+	const [editMode, setEditMode] = useState({ photo: false })
+
+	const updatePhotoUrl = (url: string) => {
+		if (!shop) return
+		setShop((prev) => {
+			if (!prev) return null
+			return {
+				...prev,
+				media: {
+					...prev.media,
+					thumbnail: {
+						...(prev.media?.thumbnail || {}),
+						url
+					}
+				}
+			}
+		})
+	}
+
+	const handleUploadPhoto = async () => {
+		if (!shopSlug) return
+		try {
+			let DocumentPicker: any
+			try {
+				DocumentPicker = require('expo-document-picker')
+			} catch (e) {
+				console.error('expo-document-picker not installed:', e)
+				showAlert('Error', 'expo-document-picker is not installed.')
+				return
+			}
+
+			const result = await DocumentPicker.getDocumentAsync({
+				type: ['image/*'],
+				copyToCacheDirectory: true
+			})
+
+			if (result.canceled) return
+
+			const file = result.assets[0]
+			if (!file) return
+
+			setUploadingPhoto(true)
+
+			const uploadResult = await uploadFile({
+				uri: file.uri,
+				name: file.name,
+				type: file.mimeType || 'image/jpeg',
+				fileType: 'image',
+				fileObj: file
+			})
+
+			if (uploadResult.success && uploadResult.file) {
+				setShop((prev) => {
+					if (!prev) return null
+					return {
+						...prev,
+						media: {
+							...prev.media,
+							thumbnail: uploadResult.file
+						}
+					}
+				})
+				showAlert('Success', 'Photo uploaded successfully!')
+
+				try {
+					const updatedMedia = {
+						...(shop?.media || {}),
+						thumbnail: uploadResult.file
+					}
+					await updateMyShop(shopSlug, { media: updatedMedia })
+					setEditMode((prev) => ({ ...prev, photo: false }))
+				} catch (e) {
+					console.error('Error saving shop photo:', e)
+				}
+			} else if (uploadResult.success && uploadResult.fileUrl) {
+				updatePhotoUrl(uploadResult.fileUrl)
+				showAlert('Success', 'Photo uploaded successfully!')
+
+				try {
+					const updatedMedia = {
+						...(shop?.media || {}),
+						thumbnail: {
+							...(shop?.media?.thumbnail || {}),
+							url: uploadResult.fileUrl
+						}
+					}
+					await updateMyShop(shopSlug, { media: updatedMedia })
+					setEditMode((prev) => ({ ...prev, photo: false }))
+				} catch (e) {
+					console.error('Error saving shop photo:', e)
+				}
+			} else {
+				showAlert('Error', uploadResult.error || 'Failed to upload photo')
+			}
+		} catch (error: any) {
+			console.error('Error uploading photo:', error)
+			showAlert('Error', error.message || 'Failed to upload photo')
+		} finally {
+			setUploadingPhoto(false)
+		}
+	}
 
 	const loadShopDetails = useCallback(
 		async (isRefresh = false) => {
@@ -140,6 +244,63 @@ export default function MyShopDetailsScreen() {
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 			>
+				{/* Shop Photo Card */}
+				<View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+					<View style={styles.photoContainer}>
+						<SmartImage source={shop.media?.thumbnail?.url} style={styles.profilePhoto} entityType="shop" />
+						<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
+							<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
+						</TouchableOpacity>
+						<TouchableOpacity style={[styles.uploadPhotoButton, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
+							{uploadingPhoto ? <ActivityIndicator size={16} color="#fff" /> : <Ionicons name="cloud-upload-outline" size={20} color="#fff" />}
+						</TouchableOpacity>
+					</View>
+
+					{editMode.photo && (
+						<View style={[styles.inputGroup, { width: '100%', marginTop: 16, paddingHorizontal: 20 }]}>
+							<Text style={styles.inputLabel}>Photo URL</Text>
+							<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.background }]}>
+								<TextInput
+									style={[styles.socialInput, { fontSize: 13, color: colors.text }]}
+									value={shop.media?.thumbnail?.url || ''}
+									onChangeText={updatePhotoUrl}
+									placeholder="https://example.com/photo.jpg"
+									placeholderTextColor={colors.textTertiary}
+									selectTextOnFocus
+								/>
+								<TouchableOpacity
+									onPress={async () => {
+										try {
+											const updatedMedia = {
+												...(shop?.media || {}),
+												thumbnail: {
+													...(shop?.media?.thumbnail || {}),
+													url: shop.media?.thumbnail?.url
+												}
+											}
+											await updateMyShop(shopSlug as string, { media: updatedMedia })
+											setEditMode((prev) => ({ ...prev, photo: false }))
+											showAlert('Success', 'Photo updated successfully!')
+										} catch (e) {
+											console.error('Error saving shop photo:', e)
+											showAlert('Error', 'Failed to save shop photo')
+										}
+									}}
+									style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
+								>
+									<Ionicons name="save-outline" size={18} color={colors.primary} />
+								</TouchableOpacity>
+								<TouchableOpacity
+									onPress={() => setEditMode((prev) => ({ ...prev, photo: false }))}
+									style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: '#EF4444' + '10' }]}
+								>
+									<Ionicons name="close-outline" size={18} color="#EF4444" />
+								</TouchableOpacity>
+							</View>
+						</View>
+					)}
+				</View>
+
 				{/* Shop Status Info */}
 				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.sectionHeader}>
@@ -366,5 +527,100 @@ const styles = StyleSheet.create({
 				elevation: 6
 			}
 		})
+	},
+	profileCard: {
+		alignItems: 'center',
+		paddingVertical: 24,
+		borderRadius: 16,
+		borderWidth: 1,
+		marginBottom: 16,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.08,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 2
+			}
+		})
+	},
+	photoContainer: {
+		position: 'relative',
+		width: 120,
+		height: 120,
+		marginBottom: 16
+	},
+	profilePhoto: {
+		width: 120,
+		height: 120,
+		borderRadius: 60,
+		borderWidth: 4,
+		borderColor: '#fff'
+	},
+	changePhotoButton: {
+		position: 'absolute',
+		right: 0,
+		bottom: 0,
+		backgroundColor: '#1F2937',
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: 3,
+		borderColor: '#fff',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.15,
+		shadowRadius: 4,
+		elevation: 4
+	},
+	uploadPhotoButton: {
+		position: 'absolute',
+		left: 0,
+		bottom: 0,
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: 3,
+		borderColor: '#fff',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.15,
+		shadowRadius: 4,
+		elevation: 4
+	},
+	inputGroup: {
+		marginBottom: 16
+	},
+	inputLabel: {
+		fontSize: 13,
+		fontWeight: '600',
+		marginBottom: 6,
+		color: '#6B7280',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5
+	},
+	socialInputContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		borderWidth: 1,
+		borderRadius: 12,
+		overflow: 'hidden'
+	},
+	socialInput: {
+		flex: 1,
+		padding: 12,
+		fontSize: 15
+	},
+	socialIconBadge: {
+		width: 44,
+		height: '100%',
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })

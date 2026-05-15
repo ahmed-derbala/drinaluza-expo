@@ -216,6 +216,11 @@ export type CreateShopRequest = {
 		coordinates?: [number, number]
 	}
 	deliveryRadiusKm: number
+	media?: {
+		thumbnail?: {
+			url: string
+		}
+	}
 }
 
 export type CreateShopResponse = {

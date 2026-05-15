@@ -26,6 +26,8 @@ import { getMyShops, createShop } from '../shops/shops.api'
 import { Shop, CreateShopRequest } from '../shops/shops.interface'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
+import { uploadFile } from '../../core/fileHandler'
+import { showAlert } from '../../core/helpers/popup'
 
 type ShopsStackParamList = {
 	ShopDetails: { shopId: string }
@@ -64,10 +66,16 @@ interface CreateShopFormProps {
 	shopNameTnLatn: string
 	shopNameTnArab: string
 	deliveryRadius: string
+	photoUrl: string
+	uploadingPhoto: boolean
+	editMode: { photo: boolean }
 	onShopNameEnChange: (text: string) => void
 	onShopNameTnLatnChange: (text: string) => void
 	onShopNameTnArabChange: (text: string) => void
 	onDeliveryRadiusChange: (text: string) => void
+	onPhotoUrlChange: (url: string) => void
+	onUploadPhoto: () => void
+	onToggleEditMode: (field: 'photo') => void
 	onSubmit: () => void
 	onDismiss: () => void
 	theme: ThemeType & { textSecondary: string }
@@ -82,6 +90,9 @@ interface ShopState {
 	shopNameTnLatn: string
 	shopNameTnArab: string
 	deliveryRadius: string
+	photoUrl: string
+	uploadingPhoto: boolean
+	editMode: { photo: boolean }
 	creating: boolean
 	navigatingShopId: string | null
 	error: string | null
@@ -198,10 +209,16 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 		shopNameTnLatn,
 		shopNameTnArab,
 		deliveryRadius,
+		photoUrl,
+		uploadingPhoto,
+		editMode,
 		onShopNameEnChange,
 		onShopNameTnLatnChange,
 		onShopNameTnArabChange,
 		onDeliveryRadiusChange,
+		onPhotoUrlChange,
+		onUploadPhoto,
+		onToggleEditMode,
 		onSubmit,
 		onDismiss,
 		theme
@@ -229,6 +246,46 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 						</View>
 
 						<ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
+							{/* Shop Photo Upload */}
+							<View style={[styles.photoUploadSection, { alignItems: 'center', marginBottom: 24 }]}>
+								<View style={styles.photoContainer}>
+									{photoUrl ? (
+										<Image source={{ uri: photoUrl }} style={styles.profilePhoto} />
+									) : (
+										<LinearGradient colors={[theme.primary, `${theme.primary}CC`]} style={styles.profilePhoto}>
+											<Ionicons name="storefront" size={40} color="#fff" />
+										</LinearGradient>
+									)}
+									<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: theme.primary }]} onPress={() => onToggleEditMode('photo')}>
+										<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
+									</TouchableOpacity>
+									<TouchableOpacity style={[styles.uploadPhotoButton, { backgroundColor: theme.primary }]} onPress={onUploadPhoto} disabled={uploadingPhoto}>
+										{uploadingPhoto ? <ActivityIndicator size={16} color="#fff" /> : <Ionicons name="cloud-upload-outline" size={20} color="#fff" />}
+									</TouchableOpacity>
+								</View>
+
+								{editMode.photo && (
+									<View style={[styles.photoInputGroup, { width: '100%', paddingHorizontal: 20 }]}>
+										<Text style={styles.photoInputLabel}>Photo URL</Text>
+										<View style={[styles.socialInputContainer, { borderColor: theme.primary + '40', backgroundColor: theme.background }]}>
+											<TextInput
+												style={[styles.socialInput, { fontSize: 13, color: theme.text }]}
+												value={photoUrl}
+												onChangeText={onPhotoUrlChange}
+												placeholder="https://example.com/photo.jpg"
+												placeholderTextColor={theme.textSecondary}
+												selectTextOnFocus
+											/>
+											<TouchableOpacity
+												onPress={() => onToggleEditMode('photo')}
+												style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: theme.border + '20', backgroundColor: '#EF4444' + '10' }]}
+											>
+												<Ionicons name="close-outline" size={18} color="#EF4444" />
+											</TouchableOpacity>
+										</View>
+									</View>
+								)}
+							</View>
 							{/* English Name Input (Required) */}
 							<View style={styles.inputContainer}>
 								<View style={styles.inputLabelRow}>
@@ -447,6 +504,9 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		shopNameTnLatn: '',
 		shopNameTnArab: '',
 		deliveryRadius: '5',
+		photoUrl: '',
+		uploadingPhoto: false,
+		editMode: { photo: false },
 		creating: false,
 		navigatingShopId: null,
 		error: null,
@@ -460,7 +520,8 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		}
 	})
 
-	const { shops, loading, refreshing, modalVisible, shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, creating, navigatingShopId, error, pagination } = state
+	const { shops, loading, refreshing, modalVisible, shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, photoUrl, uploadingPhoto, editMode, creating, navigatingShopId, error, pagination } =
+		state
 
 	const updateState = useCallback((updates: Partial<ShopState>) => {
 		setState((prev) => ({ ...prev, ...updates }))
@@ -513,6 +574,54 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		debouncedLoadShops(true)
 	}, [debouncedLoadShops])
 
+	const handleUploadPhoto = useCallback(async () => {
+		try {
+			let DocumentPicker: any
+			try {
+				DocumentPicker = require('expo-document-picker')
+			} catch (e) {
+				console.error('expo-document-picker not installed:', e)
+				showAlert('Error', 'expo-document-picker is not installed.')
+				return
+			}
+
+			const result = await DocumentPicker.getDocumentAsync({
+				type: ['image/*'],
+				copyToCacheDirectory: true
+			})
+
+			if (result.canceled) return
+
+			const file = result.assets[0]
+			if (!file) return
+
+			updateState({ uploadingPhoto: true })
+
+			const uploadResult = await uploadFile({
+				uri: file.uri,
+				name: file.name,
+				type: file.mimeType || 'image/jpeg',
+				fileType: 'image',
+				fileObj: file
+			})
+
+			if (uploadResult.success && uploadResult.file) {
+				updateState({ photoUrl: uploadResult.file.url || '', uploadingPhoto: false })
+				showAlert('Success', 'Photo uploaded successfully!')
+			} else if (uploadResult.success && uploadResult.fileUrl) {
+				updateState({ photoUrl: uploadResult.fileUrl, uploadingPhoto: false })
+				showAlert('Success', 'Photo uploaded successfully!')
+			} else {
+				updateState({ uploadingPhoto: false })
+				showAlert('Error', uploadResult.error || 'Failed to upload photo')
+			}
+		} catch (error: any) {
+			console.error('Error uploading photo:', error)
+			updateState({ uploadingPhoto: false })
+			showAlert('Error', error.message || 'Failed to upload photo')
+		}
+	}, [updateState])
+
 	const handleCreateShop = useCallback(async () => {
 		if (shopNameEn.trim().length < MIN_SHOP_NAME_LENGTH || shopNameEn.trim().length > MAX_SHOP_NAME_LENGTH) {
 			return
@@ -537,13 +646,15 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				location: {
 					coordinates: undefined
 				},
-				deliveryRadiusKm: parseFloat(deliveryRadius) || 5
+				deliveryRadiusKm: parseFloat(deliveryRadius) || 5,
+				...(photoUrl && { media: { thumbnail: { url: photoUrl } } })
 			}
 
 			console.log('=== CREATE SHOP DEBUG ===')
 			console.log('shopNameEn:', shopNameEn)
 			console.log('shopNameTnLatn:', shopNameTnLatn)
 			console.log('shopNameTnArab:', shopNameTnArab)
+			console.log('photoUrl:', photoUrl)
 			console.log('newShop object:', newShop)
 			console.log('newShop.name:', newShop.name)
 			console.log('newShop.name type:', typeof newShop.name)
@@ -559,6 +670,9 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				shopNameTnLatn: '',
 				shopNameTnArab: '',
 				deliveryRadius: '5',
+				photoUrl: '',
+				uploadingPhoto: false,
+				editMode: { photo: false },
 				creating: false
 			})
 			Alert.alert('Success', 'Shop created successfully! You can update the address and location from shop settings.')
@@ -570,7 +684,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			})
 			Alert.alert('Error', 'Failed to create shop. Please try again.')
 		}
-	}, [shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, updateState, loadShops])
+	}, [shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, photoUrl, updateState, loadShops])
 
 	const handleShopPress = useCallback(
 		(shop: Shop) => {
@@ -666,10 +780,16 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				shopNameTnLatn={shopNameTnLatn}
 				shopNameTnArab={shopNameTnArab}
 				deliveryRadius={deliveryRadius}
+				photoUrl={photoUrl}
+				uploadingPhoto={uploadingPhoto}
+				editMode={editMode}
 				onShopNameEnChange={(text: string) => updateState({ shopNameEn: text })}
 				onShopNameTnLatnChange={(text: string) => updateState({ shopNameTnLatn: text })}
 				onShopNameTnArabChange={(text: string) => updateState({ shopNameTnArab: text })}
 				onDeliveryRadiusChange={(text) => updateState({ deliveryRadius: text })}
+				onPhotoUrlChange={(url) => updateState({ photoUrl: url })}
+				onUploadPhoto={handleUploadPhoto}
+				onToggleEditMode={(field) => updateState({ editMode: { ...editMode, [field]: !editMode[field] } })}
 				onSubmit={handleCreateShop}
 				onDismiss={() =>
 					updateState({
@@ -678,6 +798,9 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 						shopNameTnLatn: '',
 						shopNameTnArab: '',
 						deliveryRadius: '5',
+						photoUrl: '',
+						uploadingPhoto: false,
+						editMode: { photo: false },
 						error: null
 					})
 				}
@@ -1052,11 +1175,89 @@ const styles = StyleSheet.create({
 		marginTop: 16
 	},
 	modalButton: {
-		padding: 10,
-		marginLeft: 10,
-		minWidth: 80,
+		padding: 10
+	},
+	photoUploadSection: {
+		alignItems: 'center'
+	},
+	photoContainer: {
+		position: 'relative',
+		width: 120,
+		height: 120,
+		marginBottom: 16
+	},
+	profilePhoto: {
+		width: 120,
+		height: 120,
+		borderRadius: 60,
+		borderWidth: 4,
+		borderColor: '#fff',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	changePhotoButton: {
+		position: 'absolute',
+		right: 0,
+		bottom: 0,
+		backgroundColor: '#1F2937',
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		justifyContent: 'center',
 		alignItems: 'center',
-		borderRadius: 4
+		borderWidth: 3,
+		borderColor: '#fff',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.15,
+		shadowRadius: 4,
+		elevation: 4
+	},
+	uploadPhotoButton: {
+		position: 'absolute',
+		left: 0,
+		bottom: 0,
+		width: 36,
+		height: 36,
+		borderRadius: 18,
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: 3,
+		borderColor: '#fff',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 2 },
+		shadowOpacity: 0.15,
+		shadowRadius: 4,
+		elevation: 4
+	},
+	photoInputGroup: {
+		marginBottom: 16
+	},
+	photoInputLabel: {
+		fontSize: 13,
+		fontWeight: '600',
+		marginBottom: 6,
+		color: '#6B7280',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5
+	},
+	socialInputContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		borderWidth: 1,
+		borderRadius: 12,
+		overflow: 'hidden'
+	},
+	socialInput: {
+		flex: 1,
+		padding: 12,
+		fontSize: 15
+	},
+	socialIconBadge: {
+		width: 44,
+		height: '100%',
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
 	modalButtonText: {
 		fontWeight: '500'
