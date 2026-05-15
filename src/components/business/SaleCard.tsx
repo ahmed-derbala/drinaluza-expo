@@ -220,7 +220,7 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			<View style={[styles.customerSection, { borderBottomColor: colors.border }]}>
 				<View style={styles.customerInfo}>
 					<SmartImage
-						source={sale.customer.media?.thumbnail?.url}
+						source={typeof sale.customer.media?.thumbnail === 'string' ? sale.customer.media.thumbnail : sale.customer.media?.thumbnail?.url}
 						style={[styles.avatar, { borderColor: colors.border }]}
 						entityType="user"
 						containerStyle={[styles.avatarContainer, { backgroundColor: colors.surface }]}

@@ -50,7 +50,7 @@ export default function UserCard({ item }: UserCardProps) {
 			{/* Header with avatar and info */}
 			<View style={styles.header}>
 				<View style={styles.avatarContainer}>
-					<SmartImage source={item.media?.thumbnail?.url} style={styles.avatar} resizeMode="cover" entityType="user" />
+					<SmartImage source={typeof item.media?.thumbnail === 'string' ? item.media.thumbnail : item.media?.thumbnail?.url} style={styles.avatar} resizeMode="cover" entityType="user" />
 					{/* Online indicator */}
 					{isActive && <View style={styles.statusDot} />}
 				</View>
