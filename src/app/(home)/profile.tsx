@@ -322,7 +322,36 @@ export default function ProfileScreen() {
 
 			console.log('Upload result:', uploadResult)
 
-			if (uploadResult.success && uploadResult.fileUrl) {
+			if (uploadResult.success && uploadResult.file) {
+				// Update the local state with the full file object returned by the upload API
+				setUserData((prev) => {
+					if (!prev) return null
+					return {
+						...prev,
+						media: {
+							...prev.media,
+							thumbnail: uploadResult.file
+						}
+					}
+				})
+				showAlert('Success', 'Photo uploaded successfully!')
+
+				// We need a slight delay to ensure the state is updated before saveUserData is called,
+				// or we can pass the specific payload to saveUserData or updateMyProfile directly.
+				// Since saveUserData reads from `userData`, and setState is asynchronous, we will call the API directly here for the photo update.
+				try {
+					const updatedMedia = {
+						...(userData?.media || {}),
+						thumbnail: uploadResult.file
+					}
+					await updateMyProfile({ media: updatedMedia })
+					setEditMode((prev) => ({ ...prev, photo: false }))
+					await refreshUser()
+				} catch (e) {
+					console.error('Error saving profile photo:', e)
+				}
+			} else if (uploadResult.success && uploadResult.fileUrl) {
+				// Fallback if file object is not available but url is
 				updatePhotoUrl(uploadResult.fileUrl)
 				showAlert('Success', 'Photo uploaded successfully!')
 				await saveUserData('photo')

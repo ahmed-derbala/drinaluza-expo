@@ -78,6 +78,7 @@ export interface UploadResult {
 	success: boolean
 	fileUrl?: string
 	fileId?: string
+	file?: any
 	error?: string
 }
 

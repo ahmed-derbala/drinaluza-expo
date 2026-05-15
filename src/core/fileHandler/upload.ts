@@ -110,7 +110,7 @@ export const getFileInfo = async (uri: string): Promise<FileInfo> => {
  */
 export const uploadFile = async (options: FileUploadOptions): Promise<UploadResult> => {
 	try {
-		const { uri, name, type, fileType = 'image', fieldName = 'file', onProgress, headers = {}, fileObj } = options
+		const { uri, name, type, fileType = 'image', fieldName = 'files', onProgress, headers = {}, fileObj } = options
 
 		console.log('uploadFile called with:', { uri, name, type, fileType, fieldName, hasFileObj: !!fileObj })
 
@@ -124,7 +124,9 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 		// On web, use File object directly; on native, use uri
 		if (Platform.OS === 'web') {
 			if (fileObj) {
-				formData.append(fieldName, fileObj)
+				// expo-document-picker puts the actual File object in a 'file' property
+				const webFile = (fileObj as any).file || fileObj
+				formData.append(fieldName, webFile)
 				console.log('Appended file object to FormData')
 			} else if (uri instanceof File) {
 				formData.append(fieldName, uri as any)
@@ -138,7 +140,7 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 			}
 		} else {
 			formData.append(fieldName, {
-				uri: uri,
+				uri: Platform.OS === 'android' ? uri : uri.replace('file://', ''),
 				name: name,
 				type: type
 			} as any)
@@ -153,10 +155,11 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 
 		console.log('Sending request to:', `/files/upload?fileType=${fileType}`)
 
-		// Don't set Content-Type header - let axios set it automatically with the correct boundary
+		// Explicitly set Content-Type to multipart/form-data to override the application/json default
 		const response = await apiClient.post(`/files/upload?fileType=${fileType}`, formData, {
 			headers: {
-				...headers
+				...headers,
+				'Content-Type': 'multipart/form-data'
 			},
 			onUploadProgress: (progressEvent) => {
 				if (onProgress && progressEvent.total) {
@@ -168,10 +171,14 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 
 		console.log('Upload response:', response.data)
 
+		// The backend returns the uploaded files array inside `data` property of the JSON response
+		const fileData = response.data?.data && Array.isArray(response.data.data) && response.data.data.length > 0 ? response.data.data[0] : response.data
+
 		return {
 			success: true,
-			fileUrl: response.data.url,
-			fileId: response.data.id
+			fileUrl: fileData?.url,
+			fileId: fileData?._id || fileData?.id,
+			file: fileData
 		}
 	} catch (error: any) {
 		console.error('Upload error:', error)
