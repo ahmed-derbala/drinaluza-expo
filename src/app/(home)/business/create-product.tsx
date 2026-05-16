@@ -5,18 +5,18 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/components/products/products.api'
-import { getMyShops } from '@/components/shops/shops.api'
-import { Shop } from '@/components/shops/shops.interface'
+import { getMyBusinesses } from '@/components/businesses/businesses.api'
+import { Business } from '@/components/businesses/businesses.interface'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 
 export default function CreateProductScreen() {
 	const router = useRouter()
-	const { shopId, shopSlug } = useLocalSearchParams<{ shopId?: string; shopSlug?: string }>()
+	const { businessId, businessSlug } = useLocalSearchParams<{ businessId?: string; businessSlug?: string }>()
 	const { colors } = useTheme()
 
 	// Form state
-	const [selectedShop, setSelectedShop] = useState<Shop | null>(null)
+	const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null)
 	const [productNameEn, setProductNameEn] = useState('')
 	const [productNameTnLatn, setProductNameTnLatn] = useState('')
 	const [productNameTnArab, setProductNameTnArab] = useState('')
@@ -30,11 +30,11 @@ export default function CreateProductScreen() {
 
 	// UI state
 	const [creating, setCreating] = useState(false)
-	const [showShops, setShowShops] = useState(false)
+	const [showBusinesses, setShowBusinesses] = useState(false)
 	const [showDefaultProducts, setShowDefaultProducts] = useState(false)
-	const [shops, setShops] = useState<Shop[]>([])
+	const [businesses, setBusinesss] = useState<Business[]>([])
 	const [defaultProducts, setDefaultProducts] = useState<DefaultProduct[]>([])
-	const [loadingShops, setLoadingShops] = useState(false)
+	const [loadingBusinesses, setLoadingBusinesses] = useState(false)
 	const [loadingDefaults, setLoadingDefaults] = useState(false)
 	const [searchQuery, setSearchQuery] = useState('')
 	const [showUnitPicker, setShowUnitPicker] = useState(false)
@@ -56,29 +56,29 @@ export default function CreateProductScreen() {
 	}
 
 	useEffect(() => {
-		loadShops()
+		loadBusinesses()
 		loadDefaultProducts()
 	}, [])
 
-	// Auto-select shop if navigated from shop details page
+	// Auto-select business if navigated from business details page
 	useEffect(() => {
-		if ((shopId || shopSlug) && shops.length > 0 && !selectedShop) {
-			const matchedShop = shops.find((s) => s._id === shopId || s.slug === shopSlug)
-			if (matchedShop) {
-				setSelectedShop(matchedShop)
+		if ((businessId || businessSlug) && businesses.length > 0 && !selectedBusiness) {
+			const matchedBusiness = businesses.find((s) => s._id === businessId || s.slug === businessSlug)
+			if (matchedBusiness) {
+				setSelectedBusiness(matchedBusiness)
 			}
 		}
-	}, [shopId, shopSlug, shops, selectedShop])
+	}, [businessId, businessSlug, businesses, selectedBusiness])
 
-	const loadShops = async () => {
+	const loadBusinesses = async () => {
 		try {
-			setLoadingShops(true)
-			const response = await getMyShops()
-			setShops(response.data.docs || [])
+			setLoadingBusinesses(true)
+			const response = await getMyBusinesses()
+			setBusinesss(response.data.docs || [])
 		} catch (error) {
-			console.error('Failed to load shops:', error)
+			console.error('Failed to load businesses:', error)
 		} finally {
-			setLoadingShops(false)
+			setLoadingBusinesses(false)
 		}
 	}
 
@@ -96,9 +96,9 @@ export default function CreateProductScreen() {
 
 	const filteredDefaultProducts = defaultProducts.filter((p) => p.name.en.toLowerCase().includes(searchQuery.toLowerCase()))
 
-	const handleSelectShop = (shop: Shop) => {
-		setSelectedShop(shop)
-		setShowShops(false)
+	const handleSelectBusiness = (business: Business) => {
+		setSelectedBusiness(business)
+		setShowBusinesses(false)
 	}
 
 	const handleSelectDefaultProduct = (product: DefaultProduct) => {
@@ -132,8 +132,8 @@ export default function CreateProductScreen() {
 	}
 
 	const validateForm = () => {
-		if (!selectedShop) {
-			Alert.alert('Validation Error', 'Please select a shop')
+		if (!selectedBusiness) {
+			Alert.alert('Validation Error', 'Please select a business')
 			return false
 		}
 		if (!productNameEn.trim()) {
@@ -167,15 +167,15 @@ export default function CreateProductScreen() {
 	}
 
 	const handleCreateProduct = async () => {
-		if (!validateForm() || !selectedShop || !selectedDefaultProduct) return
+		if (!validateForm() || !selectedBusiness || !selectedDefaultProduct) return
 
 		try {
 			setCreating(true)
 
 			const productData: CreateProductRequest = {
-				shop: {
-					slug: selectedShop.slug,
-					_id: selectedShop._id
+				business: {
+					slug: selectedBusiness.slug,
+					_id: selectedBusiness._id
 				},
 				defaultProduct: {
 					slug: selectedDefaultProduct.slug,
@@ -235,19 +235,19 @@ export default function CreateProductScreen() {
 
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
 				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16}>
-					{/* Shop Selection */}
+					{/* Business Selection */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
-							<Text style={styles.sectionTitle}>Shop</Text>
+							<Text style={styles.sectionTitle}>Business</Text>
 							<Text style={styles.required}>*</Text>
 						</View>
-						<TouchableOpacity style={[styles.selectButton, selectedShop && styles.selectButtonActive]} onPress={() => setShowShops(true)}>
+						<TouchableOpacity style={[styles.selectButton, selectedBusiness && styles.selectButtonActive]} onPress={() => setShowBusinesses(true)}>
 							<View style={[styles.selectIcon, { backgroundColor: colors.primary + '15' }]}>
-								<Text style={{ fontSize: 20 }}>{selectedShop ? '✓' : '🏪'}</Text>
+								<Text style={{ fontSize: 20 }}>{selectedBusiness ? '✓' : '🏪'}</Text>
 							</View>
 							<View style={{ flex: 1 }}>
-								<Text style={[styles.selectLabel, selectedShop && { color: colors.text }]}>{selectedShop ? selectedShop.name.en : 'Select shop'}</Text>
-								{selectedShop && <Text style={styles.selectSubtext}>{selectedShop.address?.city || 'No address'}</Text>}
+								<Text style={[styles.selectLabel, selectedBusiness && { color: colors.text }]}>{selectedBusiness ? selectedBusiness.name.en : 'Select business'}</Text>
+								{selectedBusiness && <Text style={styles.selectSubtext}>{selectedBusiness.address?.city || 'No address'}</Text>}
 							</View>
 							<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
 						</TouchableOpacity>
@@ -453,12 +453,12 @@ export default function CreateProductScreen() {
 						style={[
 							styles.createButton,
 							{
-								backgroundColor: selectedShop && productNameEn && selectedDefaultProduct && priceTND ? colors.primary : colors.border,
-								opacity: selectedShop && productNameEn && selectedDefaultProduct && priceTND ? 1 : 0.5
+								backgroundColor: selectedBusiness && productNameEn && selectedDefaultProduct && priceTND ? colors.primary : colors.border,
+								opacity: selectedBusiness && productNameEn && selectedDefaultProduct && priceTND ? 1 : 0.5
 							}
 						]}
 						onPress={handleCreateProduct}
-						disabled={!selectedShop || !productNameEn || !selectedDefaultProduct || !priceTND || creating}
+						disabled={!selectedBusiness || !productNameEn || !selectedDefaultProduct || !priceTND || creating}
 					>
 						{creating ? (
 							<ActivityIndicator color="#fff" size="small" />
@@ -472,33 +472,33 @@ export default function CreateProductScreen() {
 				</View>
 			</KeyboardAvoidingView>
 
-			{/* Shops Modal */}
-			<Modal visible={showShops} animationType="slide" transparent onRequestClose={() => setShowShops(false)}>
+			{/* Businesses Modal */}
+			<Modal visible={showBusinesses} animationType="slide" transparent onRequestClose={() => setShowBusinesses(false)}>
 				<View style={styles.modalOverlay}>
 					<View style={[styles.modalContent, { backgroundColor: colors.card }]}>
 						<View style={styles.modalHeader}>
-							<Text style={[styles.modalTitle, { color: colors.text }]}>Select Shop</Text>
-							<TouchableOpacity onPress={() => setShowShops(false)}>
+							<Text style={[styles.modalTitle, { color: colors.text }]}>Select Business</Text>
+							<TouchableOpacity onPress={() => setShowBusinesses(false)}>
 								<Ionicons name="close" size={24} color={colors.text} />
 							</TouchableOpacity>
 						</View>
 
-						{loadingShops ? (
+						{loadingBusinesses ? (
 							<ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
 						) : (
 							<FlatList
-								data={shops}
+								data={businesses}
 								keyExtractor={(item) => item._id}
 								renderItem={({ item }) => (
-									<TouchableOpacity style={[styles.categoryItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectShop(item)}>
+									<TouchableOpacity style={[styles.categoryItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectBusiness(item)}>
 										<View style={{ flex: 1 }}>
 											<Text style={[styles.categoryName, { color: colors.text }]}>{item.name.en}</Text>
 											<Text style={[styles.categoryNameAlt, { color: colors.textSecondary }]}>{item.address?.city || 'No address'}</Text>
 										</View>
-										{selectedShop?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
+										{selectedBusiness?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
 									</TouchableOpacity>
 								)}
-								ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No shops found. Create a shop first.</Text>}
+								ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.textSecondary }]}>No businesses found. Create a business first.</Text>}
 							/>
 						)}
 					</View>

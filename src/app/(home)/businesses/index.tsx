@@ -7,10 +7,10 @@ import { useState, useEffect } from 'react'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import ErrorState from '@/components/common/ErrorState'
 import SmartImage from '@/core/helpers/SmartImage'
-import { getShops } from '@/components/shops/shops.api'
+import { getBusinesses } from '@/components/businesses/businesses.api'
 import { showPopup, showAlert } from '@/core/helpers/popup'
 import { parseError, logError } from '@/core/helpers/errorHandler'
-import { Shop } from '@/components/shops/shops.interface'
+import { Business } from '@/components/businesses/businesses.interface'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 // Common themed styles removed as they're not needed
@@ -66,7 +66,7 @@ const createStyles = (
 			paddingBottom: 24,
 			paddingTop: opts.isExtraSmall ? 4 : 8
 		},
-		shopCard: {
+		businessCard: {
 			flex: 1,
 			margin: opts.isExtraSmall ? 4 : 6,
 			borderRadius: opts.isExtraSmall ? 12 : 16,
@@ -86,7 +86,7 @@ const createStyles = (
 			flexDirection: 'column',
 			justifyContent: 'space-between' as const
 		},
-		shopImageContainer: {
+		businessImageContainer: {
 			position: 'relative',
 			width: '100%',
 			height: opts.imageHeight,
@@ -100,25 +100,25 @@ const createStyles = (
 			height: 64,
 			backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.18)'
 		},
-		shopImage: {
+		businessImage: {
 			width: '100%',
 			height: '100%'
 		},
-		shopCardContent: {
+		businessCardContent: {
 			flex: 1,
 			padding: opts.isExtraSmall ? 10 : 16,
 			justifyContent: 'space-between'
 		},
-		shopHeader: {
+		businessHeader: {
 			marginBottom: opts.isExtraSmall ? 8 : 12
 		},
-		businessName: {
+		businessOwnerLabel: {
 			fontSize: opts.smallFontSize,
 			color: colors.textSecondary,
 			marginBottom: 2,
 			fontWeight: '500'
 		},
-		shopName: {
+		businessName: {
 			fontSize: opts.fontSize,
 			fontWeight: '700',
 			color: colors.text,
@@ -130,12 +130,12 @@ const createStyles = (
 			color: colors.textTertiary,
 			fontWeight: '500'
 		},
-		shopOwnerRow: {
+		businessOwnerRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			marginBottom: 8
 		},
-		shopOwner: {
+		businessOwner: {
 			fontSize: 14,
 			color: colors.textSecondary,
 			marginLeft: 6
@@ -152,7 +152,7 @@ const createStyles = (
 			fontWeight: '600',
 			color: colors.primary
 		},
-		shopAddress: {
+		businessAddress: {
 			fontSize: 13,
 			color: colors.textTertiary,
 			flexDirection: 'row',
@@ -160,7 +160,7 @@ const createStyles = (
 			marginTop: 4
 		},
 		// addressText is defined later in the styles
-		shopFooter: {
+		businessFooter: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'space-between',
@@ -169,7 +169,7 @@ const createStyles = (
 			borderTopWidth: 1,
 			borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
 		},
-		shopStats: {
+		businessStats: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: 16
@@ -551,11 +551,11 @@ const getResponsiveConfig = (width: number): ResponsiveConfig => {
 	}
 }
 
-export default function ShopsListScreen() {
+export default function BusinessesListScreen() {
 	const { colors } = useTheme()
 	const isDark = true
 	const router = useRouter()
-	const [shops, setShops] = useState<Shop[]>([])
+	const [businesses, setBusinesss] = useState<Business[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
@@ -599,14 +599,14 @@ export default function ShopsListScreen() {
 		isExtraLarge
 	})
 
-	const loadShops = async () => {
+	const loadBusinesses = async () => {
 		try {
 			if (!refreshing) setLoading(true)
 			setError(null)
-			const response = await getShops()
-			setShops(response.data.docs || [])
+			const response = await getBusinesses()
+			setBusinesss(response.data.docs || [])
 		} catch (err: any) {
-			console.error('Error loading shops:', err)
+			console.error('Error loading businesses:', err)
 
 			// Handle 401 Unauthorized - redirect to auth screen
 			if (err.response?.status === 401) {
@@ -630,7 +630,7 @@ export default function ShopsListScreen() {
 	const handleRefresh = async () => {
 		setRefreshing(true)
 		try {
-			await loadShops()
+			await loadBusinesses()
 		} finally {
 			setRefreshing(false)
 		}
@@ -639,15 +639,15 @@ export default function ShopsListScreen() {
 	const onRefresh = handleRefresh
 
 	useEffect(() => {
-		loadShops()
+		loadBusinesses()
 	}, [])
 
-	const handleShopPress = (slug: string) => {
-		// Navigate to shop details using slug
-		router.push(`/shops/${slug}` as any)
+	const handleBusinessPress = (slug: string) => {
+		// Navigate to business details using slug
+		router.push(`/businesses/${slug}` as any)
 	}
 
-	const renderShopCard = ({ item }: { item: Shop }) => {
+	const renderBusinessCard = ({ item }: { item: Business }) => {
 		// Build address string
 		const addressParts = []
 		if (item.address?.street) addressParts.push(item.address.street)
@@ -656,26 +656,25 @@ export default function ShopsListScreen() {
 		if (item.address?.country) addressParts.push(item.address.country)
 		const fullAddress = addressParts.join(', ')
 
-		// Get shop details from API response
-		const shopName = localize(item.name) || translate('unnamed_shop', 'Unnamed Shop')
-		const businessName = localize(item.owner?.business?.name) || ''
+		// Get business details from API response
+		const businessName = localize(item.name) || translate('unnamed_business', 'Unnamed Business')
 		const ownerSlug = item.owner?.slug || 'owner'
 		const ownerName = localize(item.owner?.name) || ''
 		const rating = item.rating?.average || 0
 		const ratingCount = item.rating?.count || 0
 
 		return (
-			<TouchableOpacity style={styles.shopCard as ViewStyle} onPress={() => handleShopPress(item.slug)}>
-				{/* Shop Image */}
-				<View style={styles.shopImageContainer as ViewStyle}>
-					<SmartImage source={item.media?.thumbnail?.url} style={styles.shopImage as ImageStyle} resizeMode="cover" entityType="shop" />
+			<TouchableOpacity style={styles.businessCard as ViewStyle} onPress={() => handleBusinessPress(item.slug)}>
+				{/* Business Image */}
+				<View style={styles.businessImageContainer as ViewStyle}>
+					<SmartImage source={item.media?.thumbnail?.url} style={styles.businessImage as ImageStyle} resizeMode="cover" entityType="business" />
 				</View>
 
-				<View style={styles.shopCardContent as ViewStyle}>
-					{/* Shop Name and Owner */}
-					<View style={styles.shopHeader as ViewStyle}>
-						<Text style={styles.shopName as TextStyle} numberOfLines={2}>
-							{shopName}
+				<View style={styles.businessCardContent as ViewStyle}>
+					{/* Business Name and Owner */}
+					<View style={styles.businessHeader as ViewStyle}>
+						<Text style={styles.businessName as TextStyle} numberOfLines={2}>
+							{businessName}
 						</Text>
 						{rating > 0 && (
 							<View style={styles.ratingContainer as ViewStyle}>
@@ -684,9 +683,9 @@ export default function ShopsListScreen() {
 								<Text style={styles.ratingCount as TextStyle}>({ratingCount})</Text>
 							</View>
 						)}
-						{showExtended && businessName && (
-							<Text style={styles.businessName as TextStyle} numberOfLines={1}>
-								{businessName}
+						{showExtended && ownerName && (
+							<Text style={styles.businessOwnerLabel as TextStyle} numberOfLines={1}>
+								{ownerName}
 							</Text>
 						)}
 						<Text style={styles.ownerName as TextStyle} numberOfLines={1}>
@@ -747,8 +746,8 @@ export default function ShopsListScreen() {
 						) : null}
 					</View>
 
-					{/* View Shop Button */}
-					<TouchableOpacity style={styles.viewButton as ViewStyle} onPress={() => handleShopPress(item.slug)}>
+					{/* View Business Button */}
+					<TouchableOpacity style={styles.viewButton as ViewStyle} onPress={() => handleBusinessPress(item.slug)}>
 						<Ionicons name="storefront-outline" size={isExtraSmall ? 16 : 18} color="#fff" />
 					</TouchableOpacity>
 				</View>
@@ -759,7 +758,12 @@ export default function ShopsListScreen() {
 	const renderEmpty = () => {
 		if (error) {
 			return (
-				<ErrorState title={error.title} message={error.message} onRetry={loadShops} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
+				<ErrorState
+					title={error.title}
+					message={error.message}
+					onRetry={loadBusinesses}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+				/>
 			)
 		}
 		return (
@@ -767,8 +771,8 @@ export default function ShopsListScreen() {
 				<View style={styles.emptyIcon as ViewStyle}>
 					<MaterialIcons name="store" size={isExtraSmall ? 32 : 40} color={colors.textTertiary} />
 				</View>
-				<Text style={styles.emptyTitle as TextStyle}>{translate('no_shops', 'No shops available')}</Text>
-				<Text style={styles.emptyText as TextStyle}>{translate('check_back_later_shops', 'Check back later for new shops')}</Text>
+				<Text style={styles.emptyTitle as TextStyle}>{translate('no_businesses', 'No businesses available')}</Text>
+				<Text style={styles.emptyText as TextStyle}>{translate('check_back_later_businesses', 'Check back later for new businesses')}</Text>
 			</View>
 		)
 	}
@@ -788,16 +792,16 @@ export default function ShopsListScreen() {
 	return (
 		<View style={styles.container as ViewStyle}>
 			<ScreenHeader
-				title={translate('discover_shops', 'Discover Shops')}
-				subtitle={`${shops.length} ${shops.length === 1 ? translate('shop_product', 'shop') : translate('shop_products_plural', 'shops')} ${translate('shops_available', 'available near you')}`}
+				title={translate('discover_businesses', 'Discover Businesses')}
+				subtitle={`${businesses.length} ${businesses.length === 1 ? translate('business_product', 'business') : translate('business_products_plural', 'businesses')} ${translate('businesses_available', 'available near you')}`}
 				showBack={true}
 				onRefresh={handleRefresh}
 				isRefreshing={refreshing}
 			/>
 			<FlatList
 				key={`cols-${numColumns}`}
-				data={shops}
-				renderItem={renderShopCard}
+				data={businesses}
+				renderItem={renderBusinessCard}
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.listContent as ViewStyle}
 				columnWrapperStyle={

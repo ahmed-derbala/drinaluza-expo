@@ -21,12 +21,12 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 	const { targetData, targetResource, card, _id, createdAt, updatedAt, __v } = doc
 
 	if (targetResource === 'products') {
-		const { _id: productId, shop, defaultProduct, slug, name, price, unit, searchKeywords, state, availability, stock, media, rating } = targetData
+		const { _id: productId, business, defaultProduct, slug, name, price, unit, searchKeywords, state, availability, stock, media, rating } = targetData
 
 		return {
 			_id: productId || _id,
 			feedId: _id,
-			shop,
+			business,
 			defaultProduct,
 			slug,
 			name,
@@ -48,22 +48,22 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 		}
 	}
 
-	if (targetResource === 'shops') {
-		const { owner, name, address, location, media, contact, rating, _id: shopId, slug, createdAt: shopCreatedAt, updatedAt: shopUpdatedAt } = targetData
+	if (targetResource === 'businesses') {
+		const { owner, name, address, location, media, contact, rating, _id: businessId, slug, createdAt: businessCreatedAt, updatedAt: businessUpdatedAt } = targetData
 
 		return {
-			_id: shopId || _id,
+			_id: businessId || _id,
 			feedId: _id,
-			shop: {
-				_id: shopId || _id,
+			business: {
+				_id: businessId || _id,
 				name,
 				slug,
 				owner,
 				address,
 				location,
 				rating,
-				createdAt: shopCreatedAt || createdAt,
-				updatedAt: shopUpdatedAt || updatedAt
+				createdAt: businessCreatedAt || createdAt,
+				updatedAt: businessUpdatedAt || updatedAt
 			},
 			name,
 			slug: slug || '',
@@ -78,7 +78,7 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 	}
 
 	if (targetResource === 'users') {
-		const { slug, name, role, address, location, media, contact, _id: userId, shops, state, createdAt: userCreatedAt, updatedAt: userUpdatedAt } = targetData
+		const { slug, name, role, address, location, media, contact, _id: userId, businesses, state, createdAt: userCreatedAt, updatedAt: userUpdatedAt } = targetData
 
 		return {
 			_id: userId || _id,
@@ -90,7 +90,7 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 			location,
 			media,
 			contact,
-			shops: shops || [],
+			businesses: businesses || [],
 			state,
 			createdAt,
 			updatedAt,

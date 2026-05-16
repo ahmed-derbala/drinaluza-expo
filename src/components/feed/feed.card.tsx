@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { FeedItem, ProductFeedItem, ShopFeedItem, UserFeedItem } from './feed.interface'
+import { FeedItem, ProductFeedItem, BusinessFeedItem, UserFeedItem } from './feed.interface'
 import ProductCard from '../products/products.card'
-import ShopCard from './shops.card'
+import BusinessCard from './businesses.card'
 import UserCard from './users.card'
 import { useTheme } from '../../core/contexts/ThemeContext'
 import { MaterialIcons } from '@expo/vector-icons'
@@ -21,8 +21,8 @@ export default function FeedCard({ item, addToBasket }: FeedCardProps) {
 	switch (cardType) {
 		case 'product':
 			return <ProductCard item={item as ProductFeedItem} addToBasket={addToBasket} />
-		case 'shop':
-			return <ShopCard item={item as ShopFeedItem} />
+		case 'business':
+			return <BusinessCard item={item as BusinessFeedItem} />
 		case 'user':
 			return <UserCard item={item as UserFeedItem} />
 		default:

@@ -46,9 +46,9 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 	const calculateTotal = () => (pricePerUnit * quantity).toFixed(2)
 
-	const handleShopPress = () => {
-		if (item.shop?.slug) {
-			router.push(`/shops/${item.shop.slug}` as any)
+	const handleBusinessPress = () => {
+		if (item.business?.slug) {
+			router.push(`/businesses/${item.business.slug}` as any)
 		}
 	}
 
@@ -63,22 +63,24 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 	return (
 		<View style={styles.card}>
-			{/* Shop Header */}
-			<TouchableOpacity onPress={handleShopPress} style={styles.shopHeader}>
-				<View style={styles.shopInfoWithImage}>
-					{item.shop.media?.thumbnail?.url ? (
-						<SmartImage source={item.shop.media.thumbnail.url} style={styles.shopImage} resizeMode="cover" entityType="shop" />
+			{/* Business Header */}
+			<TouchableOpacity onPress={handleBusinessPress} style={styles.businessHeader}>
+				<View style={styles.businessInfoWithImage}>
+					{item.business.media?.thumbnail?.url ? (
+						<SmartImage source={item.business.media.thumbnail.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
 					) : (
-						<View style={styles.shopIconContainer}>
+						<View style={styles.businessIconContainer}>
 							<MaterialIcons name="store" size={18} color={colors.primary} />
 						</View>
 					)}
-					<View style={styles.shopInfo}>
-						<Text style={styles.shopName} numberOfLines={1}>
-							{localize(item.shop.name)}
+					<View style={styles.businessInfo}>
+						<Text style={styles.businessName} numberOfLines={1}>
+							{localize(item.business.name)}
 						</Text>
-						<Text style={styles.shopLocation} numberOfLines={1}>
-							{item.shop.address?.city && item.shop.address?.country ? `${item.shop.address.city}, ${item.shop.address.country}` : translate('location_not_available', 'Location not available')}
+						<Text style={styles.businessLocation} numberOfLines={1}>
+							{item.business.address?.city && item.business.address?.country
+								? `${item.business.address.city}, ${item.business.address.country}`
+								: translate('location_not_available', 'Location not available')}
 						</Text>
 					</View>
 				</View>
@@ -189,7 +191,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 				}
 			})
 		},
-		shopHeader: {
+		businessHeader: {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
 			alignItems: 'center',
@@ -198,26 +200,26 @@ const createStyles = (colors: any, screenWidth: number) => {
 			borderBottomWidth: 1,
 			borderBottomColor: colors.border
 		},
-		shopInfoWithImage: {
+		businessInfoWithImage: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			flex: 1,
 			gap: 12
 		},
-		shopInfo: {
+		businessInfo: {
 			flex: 1
 		},
-		shopName: {
+		businessName: {
 			fontSize: isSmallScreen ? 14 : 15,
 			fontWeight: '600',
 			color: colors.text
 		},
-		shopLocation: {
+		businessLocation: {
 			fontSize: isSmallScreen ? 11 : 12,
 			color: colors.textSecondary,
 			marginTop: 2
 		},
-		shopIconContainer: {
+		businessIconContainer: {
 			width: 36,
 			height: 36,
 			borderRadius: 10,
@@ -225,7 +227,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 			justifyContent: 'center',
 			alignItems: 'center'
 		},
-		shopImage: {
+		businessImage: {
 			width: 36,
 			height: 36,
 			borderRadius: 10,

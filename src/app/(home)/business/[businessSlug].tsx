@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, TouchableOpacity, FlatList, Platform, RefreshControl, TextInput } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { getMyShopBySlug, getShopProducts, updateMyShop } from '@/components/shops/shops.api'
-import { Shop } from '@/components/shops/shops.interface'
+import { getMyBusinessBySlug, getBusinessProducts, updateMyBusiness } from '@/components/businesses/businesses.api'
+import { Business } from '@/components/businesses/businesses.interface'
 import { ProductType } from '@/components/products/products.type'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
@@ -49,12 +49,12 @@ const ProductCard = ({ product, colors, localize, translate }: { product: Produc
 	)
 }
 
-export default function MyShopDetailsScreen() {
-	const { shopSlug } = useLocalSearchParams<{ shopSlug: string }>()
+export default function MyBusinessDetailsScreen() {
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
-	const [shop, setShop] = useState<Shop | null>(null)
+	const [business, setBusiness] = useState<Business | null>(null)
 	const [products, setProducts] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
@@ -65,8 +65,8 @@ export default function MyShopDetailsScreen() {
 	const [editMode, setEditMode] = useState({ photo: false })
 
 	const updatePhotoUrl = (url: string) => {
-		if (!shop) return
-		setShop((prev) => {
+		if (!business) return
+		setBusiness((prev) => {
 			if (!prev) return null
 			return {
 				...prev,
@@ -82,7 +82,7 @@ export default function MyShopDetailsScreen() {
 	}
 
 	const handleUploadPhoto = async () => {
-		if (!shopSlug) return
+		if (!businessSlug) return
 		try {
 			let DocumentPicker: any
 			try {
@@ -114,7 +114,7 @@ export default function MyShopDetailsScreen() {
 			})
 
 			if (uploadResult.success && uploadResult.file) {
-				setShop((prev) => {
+				setBusiness((prev) => {
 					if (!prev) return null
 					return {
 						...prev,
@@ -128,13 +128,13 @@ export default function MyShopDetailsScreen() {
 
 				try {
 					const updatedMedia = {
-						...(shop?.media || {}),
+						...(business?.media || {}),
 						thumbnail: uploadResult.file
 					}
-					await updateMyShop(shopSlug, { media: updatedMedia })
+					await updateMyBusiness(businessSlug, { media: updatedMedia })
 					setEditMode((prev) => ({ ...prev, photo: false }))
 				} catch (e) {
-					console.error('Error saving shop photo:', e)
+					console.error('Error saving business photo:', e)
 				}
 			} else if (uploadResult.success && uploadResult.fileUrl) {
 				updatePhotoUrl(uploadResult.fileUrl)
@@ -142,16 +142,16 @@ export default function MyShopDetailsScreen() {
 
 				try {
 					const updatedMedia = {
-						...(shop?.media || {}),
+						...(business?.media || {}),
 						thumbnail: {
-							...(shop?.media?.thumbnail || {}),
+							...(business?.media?.thumbnail || {}),
 							url: uploadResult.fileUrl
 						}
 					}
-					await updateMyShop(shopSlug, { media: updatedMedia })
+					await updateMyBusiness(businessSlug, { media: updatedMedia })
 					setEditMode((prev) => ({ ...prev, photo: false }))
 				} catch (e) {
-					console.error('Error saving shop photo:', e)
+					console.error('Error saving business photo:', e)
 				}
 			} else {
 				showAlert('Error', uploadResult.error || 'Failed to upload photo')
@@ -164,20 +164,20 @@ export default function MyShopDetailsScreen() {
 		}
 	}
 
-	const loadShopDetails = useCallback(
+	const loadBusinessDetails = useCallback(
 		async (isRefresh = false) => {
-			if (!shopSlug) return
+			if (!businessSlug) return
 
 			try {
 				if (!isRefresh) setLoading(true)
 				setError(null)
 
-				const [shopResponse, productsResponse] = await Promise.all([getMyShopBySlug(shopSlug), getShopProducts(shopSlug).catch(() => null)])
+				const [businessResponse, productsResponse] = await Promise.all([getMyBusinessBySlug(businessSlug), getBusinessProducts(businessSlug).catch(() => null)])
 
-				setShop(shopResponse.data)
+				setBusiness(businessResponse.data)
 				setProducts(productsResponse?.data?.docs || [])
 			} catch (err: any) {
-				console.error('Failed to load my shop details:', err)
+				console.error('Failed to load my business details:', err)
 				const errorInfo = parseError(err)
 				setError({
 					title: errorInfo.title,
@@ -189,17 +189,17 @@ export default function MyShopDetailsScreen() {
 				setRefreshing(false)
 			}
 		},
-		[shopSlug]
+		[businessSlug]
 	)
 
 	useEffect(() => {
-		loadShopDetails()
-	}, [loadShopDetails])
+		loadBusinessDetails()
+	}, [loadBusinessDetails])
 
 	const handleRefresh = useCallback(() => {
 		setRefreshing(true)
-		loadShopDetails(true)
-	}, [loadShopDetails])
+		loadBusinessDetails(true)
+	}, [loadBusinessDetails])
 
 	if (loading) {
 		return (
@@ -212,23 +212,23 @@ export default function MyShopDetailsScreen() {
 	if (error) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title="Shop Details" showBack={true} />
+				<ScreenHeader title="Business Details" showBack={true} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
-					onRetry={() => loadShopDetails()}
+					onRetry={() => loadBusinessDetails()}
 					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
 				/>
 			</View>
 		)
 	}
 
-	if (!shop) {
+	if (!business) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title="Shop Details" showBack={true} />
+				<ScreenHeader title="Business Details" showBack={true} />
 				<View style={styles.centerContent}>
-					<Text style={[styles.errorText, { color: colors.text }]}>Shop not found</Text>
+					<Text style={[styles.errorText, { color: colors.text }]}>Business not found</Text>
 				</View>
 			</View>
 		)
@@ -236,7 +236,7 @@ export default function MyShopDetailsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(shop.name)} subtitle={translate('manage_shop', 'Manage Shop')} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScreenHeader title={localize(business.name)} subtitle={translate('manage_business', 'Manage Business')} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 
 			<ScrollView
 				contentContainerStyle={styles.scrollContent}
@@ -244,10 +244,10 @@ export default function MyShopDetailsScreen() {
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 			>
-				{/* Shop Photo Card */}
+				{/* Business Photo Card */}
 				<View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.photoContainer}>
-						<SmartImage source={shop.media?.thumbnail?.url} style={styles.profilePhoto} entityType="shop" />
+						<SmartImage source={business.media?.thumbnail?.url} style={styles.profilePhoto} entityType="business" />
 						<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
 							<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
 						</TouchableOpacity>
@@ -262,7 +262,7 @@ export default function MyShopDetailsScreen() {
 							<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.background }]}>
 								<TextInput
 									style={[styles.socialInput, { fontSize: 13, color: colors.text }]}
-									value={shop.media?.thumbnail?.url || ''}
+									value={business.media?.thumbnail?.url || ''}
 									onChangeText={updatePhotoUrl}
 									placeholder="https://example.com/photo.jpg"
 									placeholderTextColor={colors.textTertiary}
@@ -271,19 +271,21 @@ export default function MyShopDetailsScreen() {
 								<TouchableOpacity
 									onPress={async () => {
 										try {
+											const photoUrl = business.media?.thumbnail?.url
+											if (!photoUrl) return
 											const updatedMedia = {
-												...(shop?.media || {}),
+												...(business?.media || {}),
 												thumbnail: {
-													...(shop?.media?.thumbnail || {}),
-													url: shop.media?.thumbnail?.url
+													...(business?.media?.thumbnail || {}),
+													url: photoUrl
 												}
 											}
-											await updateMyShop(shopSlug as string, { media: updatedMedia })
+											await updateMyBusiness(businessSlug as string, { media: updatedMedia })
 											setEditMode((prev) => ({ ...prev, photo: false }))
 											showAlert('Success', 'Photo updated successfully!')
 										} catch (e) {
-											console.error('Error saving shop photo:', e)
-											showAlert('Error', 'Failed to save shop photo')
+											console.error('Error saving business photo:', e)
+											showAlert('Error', 'Failed to save business photo')
 										}
 									}}
 									style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
@@ -301,31 +303,31 @@ export default function MyShopDetailsScreen() {
 					)}
 				</View>
 
-				{/* Shop Status Info */}
+				{/* Business Status Info */}
 				<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.sectionHeader}>
 						<MaterialIcons name="info-outline" size={20} color={colors.primary} />
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('shop_information', 'Shop Information')}</Text>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('business_information', 'Business Information')}</Text>
 					</View>
 
 					<View style={styles.infoRow}>
 						<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('status', 'Status')}</Text>
-						<View style={[styles.statusBadge, { backgroundColor: shop.isActive !== false ? '#10B98115' : '#EF444415' }]}>
-							<Text style={[styles.statusText, { color: shop.isActive !== false ? '#10B981' : '#EF4444' }]}>
-								{shop.isActive !== false ? translate('active', 'ACTIVE') : translate('inactive', 'INACTIVE')}
+						<View style={[styles.statusBadge, { backgroundColor: business.isActive !== false ? '#10B98115' : '#EF444415' }]}>
+							<Text style={[styles.statusText, { color: business.isActive !== false ? '#10B981' : '#EF4444' }]}>
+								{business.isActive !== false ? translate('active', 'ACTIVE') : translate('inactive', 'INACTIVE')}
 							</Text>
 						</View>
 					</View>
 
 					<View style={styles.infoRow}>
 						<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('city', 'City')}</Text>
-						<Text style={[styles.infoValue, { color: colors.text }]}>{shop.address?.city || 'N/A'}</Text>
+						<Text style={[styles.infoValue, { color: colors.text }]}>{business.address?.city || 'N/A'}</Text>
 					</View>
 
 					<View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
 						<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('address', 'Address')}</Text>
 						<Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={1}>
-							{shop.address?.street || 'N/A'}
+							{business.address?.street || 'N/A'}
 						</Text>
 					</View>
 				</View>
@@ -356,7 +358,7 @@ export default function MyShopDetailsScreen() {
 					{/* Add Product FAB */}
 					<TouchableOpacity
 						style={[styles.addProductFab, { backgroundColor: colors.primary }]}
-						onPress={() => router.push({ pathname: '/business/create-product', params: { shopSlug: shop.slug, shopId: shop._id } })}
+						onPress={() => router.push({ pathname: '/business/create-product', params: { businessSlug: business.slug, businessId: business._id } })}
 						activeOpacity={0.8}
 					>
 						<Ionicons name="add" size={28} color="#fff" />

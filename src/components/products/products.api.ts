@@ -1,9 +1,9 @@
 import { getApiClient } from '../../core/api'
-import { LocalizedName } from '../shops/shops.interface'
+import { LocalizedName } from '../businesses/businesses.interface'
 import { ProductType } from './products.type'
 
 export interface CreateProductRequest {
-	shop: {
+	business: {
 		slug: string
 		_id: string
 	}
@@ -100,8 +100,8 @@ export interface DefaultProductsResponse {
 	}
 }
 
-export const getShopProducts = async (shopId: string, page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
-	const response = await getApiClient().get(`/shops/my-shops/${shopId}/products?page=${page}&limit=${limit}`)
+export const getBusinessProducts = async (businessId: string, page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
+	const response = await getApiClient().get(`/businesses/my-businesses/${businessId}/products?page=${page}&limit=${limit}`)
 	return response.data
 }
 

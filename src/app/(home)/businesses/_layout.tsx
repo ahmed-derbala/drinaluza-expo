@@ -3,7 +3,7 @@ import { Platform } from 'react-native'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
 
-export default function ShopsLayout() {
+export default function BusinessesLayout() {
 	const { colors } = useTheme()
 	const stackOptions = getPlatformStackOptions(
 		withThemedHeader(colors, {
@@ -24,18 +24,18 @@ export default function ShopsLayout() {
 			<Stack.Screen
 				name="index"
 				options={{
-					headerTitle: 'Browse Shops',
+					headerTitle: 'Browse Businesses',
 					headerShown: false
 				}}
 			/>
 			<Stack.Screen
-				name="[shopId]/index"
+				name="[businessSlug]/index"
 				options={{
 					headerShown: false
 				}}
 			/>
 			<Stack.Screen
-				name="[shopId]/products"
+				name="[businessSlug]/products"
 				options={{
 					headerShown: false
 				}}

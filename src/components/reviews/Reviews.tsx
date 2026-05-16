@@ -7,7 +7,7 @@ import { getReviews, createReview } from './reviews.api'
 import { Review } from './reviews.interface'
 
 type ReviewSectionProps = {
-	targetResource: 'shops' | 'products' | 'users'
+	targetResource: 'businesses' | 'products' | 'users'
 	targetId: string
 	targetName?: string
 }

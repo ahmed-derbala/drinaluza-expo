@@ -36,7 +36,7 @@ export const orderStatusLabels = {
 	[orderStatusEnum.DELIVERED_TO_CUSTOMER]: translate('delivered_to_customer', 'Delivered'),
 	[orderStatusEnum.RECEIVED_BY_CUSTOMER]: translate('received_by_customer', 'Received'),
 	[orderStatusEnum.CANCELLED_BY_CUSTOMER]: translate('cancelled_by_customer', 'Cancelled'),
-	[orderStatusEnum.CANCELLED_BY_SHOP]: translate('cancelled_by_shop', 'Cancelled by Shop')
+	[orderStatusEnum.CANCELLED_BY_SHOP]: translate('cancelled_by_shop', 'Cancelled by Business')
 }
 
 // Get next valid statuses for progression

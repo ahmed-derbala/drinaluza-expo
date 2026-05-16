@@ -11,7 +11,7 @@ export interface SearchFilters {
 
 export interface SearchResult {
 	id: string
-	type: 'product' | 'shop' | 'user'
+	type: 'product' | 'business' | 'user'
 	name: string
 	description?: string
 	imageUrl?: string

@@ -11,7 +11,7 @@ type UserCardProps = {
 }
 
 const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string; bg: string }> = {
-	shop_owner: { icon: 'storefront', label: 'Shop Owner', color: '#38BDF8', bg: '#0C4A6E' },
+	shop_owner: { icon: 'storefront', label: 'Business Owner', color: '#38BDF8', bg: '#0C4A6E' },
 	admin: { icon: 'shield', label: 'Admin', color: '#FBBF24', bg: '#78350F' },
 	customer: { icon: 'person', label: 'Customer', color: '#2DD4BF', bg: '#134E4A' },
 	default: { icon: 'person', label: 'User', color: '#94A3B8', bg: '#1E293B' }

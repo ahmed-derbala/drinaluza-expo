@@ -1,4 +1,4 @@
-import { LocalizedName } from '../shops/shops.interface'
+import { LocalizedName } from '../businesses/businesses.interface'
 
 export interface ReviewAuthor {
 	_id: string
@@ -12,7 +12,7 @@ export interface Review {
 	comment: string
 	author: ReviewAuthor
 	targetId: string
-	targetResource: 'shops' | 'products' | 'users'
+	targetResource: 'businesses' | 'products' | 'users'
 	createdAt: string
 	updatedAt: string
 	__v: number

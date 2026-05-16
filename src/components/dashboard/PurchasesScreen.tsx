@@ -21,9 +21,9 @@ type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled
 
 type BasketItem = FeedItem & { quantity: number }
 
-type ShopBasketGroup = {
-	shopId: string
-	shopName: string
+type BusinessBasketGroup = {
+	businessId: string
+	businessName: string
 	items: BasketItem[]
 }
 
@@ -179,17 +179,17 @@ const PurchasesScreen = () => {
 	}, [purchases, filter])
 
 	const groupedBasket = useMemo(() => {
-		const groups: { [key: string]: ShopBasketGroup } = {}
+		const groups: { [key: string]: BusinessBasketGroup } = {}
 		basket.forEach((item) => {
-			const shopId = item.shop?._id || 'unknown'
-			if (!groups[shopId]) {
-				groups[shopId] = {
-					shopId,
-					shopName: localize(item.shop?.name) || translate('unnamed_shop', 'Unnamed Shop'),
+			const businessId = item.business?._id || 'unknown'
+			if (!groups[businessId]) {
+				groups[businessId] = {
+					businessId: businessId,
+					businessName: localize(item.business?.name) || translate('unnamed_business', 'Unnamed Business'),
 					items: []
 				}
 			}
-			groups[shopId].items.push(item)
+			groups[businessId].items.push(item)
 		})
 		return Object.values(groups)
 	}, [basket])
@@ -255,7 +255,7 @@ const PurchasesScreen = () => {
 								<Ionicons name={getStatusIcon(item.status) as any} size={24} color={statusColor} />
 							</View>
 							<View style={styles.headerInfo}>
-								<Text style={[styles.shopName, { color: colors.text }]}>{localize(item.shop.name)}</Text>
+								<Text style={[styles.businessName, { color: colors.text }]}>{localize(item.business.name)}</Text>
 								<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
 							</View>
 						</View>
@@ -369,10 +369,10 @@ const PurchasesScreen = () => {
 		}
 	}
 
-	const handleCheckout = async (group: ShopBasketGroup) => {
+	const handleCheckout = async (group: BusinessBasketGroup) => {
 		try {
-			const shop = group.items[0]?.shop
-			if (!shop) throw new Error('Shop not found')
+			const business = group.items[0]?.business
+			if (!business) throw new Error('Business not found')
 
 			// Map products for API
 			const products = group.items.map((item) => {
@@ -387,7 +387,7 @@ const PurchasesScreen = () => {
 						photos: item.photos,
 						state: item.state,
 						stock: item.stock,
-						shop: item.shop,
+						business: item.business,
 						card: item.card || { kind: 'product' },
 						defaultProduct: item.defaultProduct,
 						__v: item.__v,
@@ -401,9 +401,9 @@ const PurchasesScreen = () => {
 			// Call createPurchase API
 			await createPurchase({
 				products,
-				shop: {
-					slug: shop.slug,
-					_id: shop._id
+				business: {
+					slug: business.slug,
+					_id: business._id
 				}
 			})
 
@@ -425,7 +425,7 @@ const PurchasesScreen = () => {
 		}
 	}
 
-	const renderBasketGroup = ({ item: group }: { item: ShopBasketGroup }) => {
+	const renderBasketGroup = ({ item: group }: { item: BusinessBasketGroup }) => {
 		const groupTotal = group.items.reduce((sum: number, item: BasketItem) => {
 			const price = item.price?.total?.tnd || 0
 			const quantity = item.quantity || 1
@@ -445,7 +445,7 @@ const PurchasesScreen = () => {
 									<Ionicons name="storefront-outline" size={24} color={colors.primary} />
 								</View>
 								<View style={styles.headerInfo}>
-									<Text style={[styles.shopName, { color: colors.text }]}>{group.shopName}</Text>
+									<Text style={[styles.businessName, { color: colors.text }]}>{group.businessName}</Text>
 									<Text style={[styles.orderDate, { color: colors.textSecondary }]}>
 										{group.items.length} {group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')}
 									</Text>
@@ -606,7 +606,7 @@ const PurchasesScreen = () => {
 			pending: {
 				icon: 'time-outline',
 				title: 'No pending orders',
-				subtitle: 'Orders waiting for shop confirmation will appear here'
+				subtitle: 'Orders waiting for business confirmation will appear here'
 			},
 			processing: {
 				icon: 'sync-outline',
@@ -694,7 +694,7 @@ const PurchasesScreen = () => {
 					numColumns={numColumns}
 					data={displayData as any}
 					renderItem={filter === 'cart' ? (renderBasketGroup as any) : renderPurchaseItem}
-					keyExtractor={(item: any) => (filter === 'cart' ? item.shopId : item._id)}
+					keyExtractor={(item: any) => (filter === 'cart' ? item.businessId : item._id)}
 					contentContainerStyle={styles.listContent}
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 					ListEmptyComponent={renderEmptyState}
@@ -797,7 +797,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 		headerInfo: {
 			flex: 1
 		},
-		shopName: {
+		businessName: {
 			fontSize: 16,
 			fontWeight: '700',
 			marginBottom: 2

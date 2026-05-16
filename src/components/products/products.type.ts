@@ -1,4 +1,4 @@
-import { LocalizedName } from '../shops/shops.interface'
+import { LocalizedName } from '../businesses/businesses.interface'
 
 export interface RatingBreakdown {
 	1: number
@@ -17,7 +17,7 @@ export interface Rating {
 
 export type ProductType = {
 	_id: string
-	shop: {
+	business: {
 		_id: string
 		name: LocalizedName
 		slug: string
@@ -26,15 +26,6 @@ export type ProductType = {
 			slug: string
 			name: LocalizedName
 			updatedAt: string
-			business?: {
-				_id: string
-				slug: string
-				name: LocalizedName
-				state: {
-					code: string
-					updatedAt: string
-				}
-			}
 		}
 		address: {
 			street: string

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
 import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons'
@@ -12,6 +12,9 @@ import { parseError, logError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { secureGetItem } from '../../core/auth/storage'
+import { getMyBusinesses } from '../businesses/businesses.api'
+import { Business } from '../businesses/businesses.interface'
 
 type Order = OrderItem
 
@@ -30,6 +33,7 @@ type ActionButtonProps = {
 	icon: React.ReactNode
 	onPress: () => void
 	color: string
+	count?: number
 }
 
 const Dashboard = () => {
@@ -39,39 +43,7 @@ const Dashboard = () => {
 	const router = useRouter()
 	const { onScroll } = useScrollHandler()
 
-	const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => {
-		return (
-			<TouchableOpacity
-				activeOpacity={0.9}
-				onPress={onPress}
-				style={[
-					styles.statCard,
-					{
-						borderColor: colors.info || '#3B82F6',
-						backgroundColor: colors.card
-					}
-				]}
-			>
-				<LinearGradient colors={[`${accent}15`, `${accent}05`]} style={styles.statGradient} />
-				<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
-				<View style={styles.statBody}>
-					<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-					<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
-				</View>
-			</TouchableOpacity>
-		)
-	}
-
-	const ActionButton = ({ icon, onPress, color }: ActionButtonProps) => {
-		return (
-			<View style={styles.actionItem}>
-				<TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-					<View style={[styles.actionIconInner, { backgroundColor: `${color}15` }]}>{icon}</View>
-				</TouchableOpacity>
-			</View>
-		)
-	}
-
+	const [userRole, setUserRole] = useState<string | null>(null)
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [stats, setStats] = useState({
@@ -81,19 +53,63 @@ const Dashboard = () => {
 		totalSpent: 0
 	})
 	const [recentPurchases, setRecentPurchases] = useState<Order[]>([])
+	const [myBusinesses, setMyBusinesses] = useState<Business[]>([])
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+
+	const isOwner = userRole === 'shop_owner'
+
+	useEffect(() => {
+		const loadRole = async () => {
+			try {
+				const storedUserData = await secureGetItem('userData')
+				if (storedUserData) {
+					const userData = JSON.parse(storedUserData)
+					setUserRole(userData.role || null)
+				}
+			} catch {
+				setUserRole(null)
+			}
+		}
+		loadRole()
+	}, [])
+
+	const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => (
+		<TouchableOpacity activeOpacity={0.9} onPress={onPress} style={[styles.statCard, { borderColor: colors.info || '#3B82F6', backgroundColor: colors.card }]}>
+			<LinearGradient colors={[`${accent}15`, `${accent}05`]} style={styles.statGradient} />
+			<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
+			<View style={styles.statBody}>
+				<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+				<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
+			</View>
+		</TouchableOpacity>
+	)
+
+	const ActionButton = ({ icon, onPress, color, count }: ActionButtonProps) => (
+		<View style={styles.actionItem}>
+			<TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+				<View style={[styles.actionIconInner, { backgroundColor: `${color}15` }]}>{icon}</View>
+				{count !== undefined && count > 0 && (
+					<View style={[styles.countBadge, { backgroundColor: color }]}>
+						<Text style={styles.countBadgeText}>{count}</Text>
+					</View>
+				)}
+			</TouchableOpacity>
+		</View>
+	)
 
 	const loadDashboard = useCallback(async () => {
 		try {
 			setLoading(true)
 			setError(null)
-			const response = await getPurchases()
-			const docs = response.data.docs || []
 
-			// Calculate stats from data
+			const purchasesPromise = getPurchases()
+			const businessesPromise = isOwner ? getMyBusinesses() : Promise.resolve(null)
+
+			const [purchasesResponse, businessesResponse] = await Promise.all([purchasesPromise, businessesPromise])
+
+			const docs = purchasesResponse.data.docs || []
 			const totalSpent = docs.reduce((acc, order) => {
-				// @ts-ignore
-				const amount = order.price?.total?.[currency as any] || order.price?.total?.tnd || order.price?.total || 0
+				const amount = order.price?.total?.[currency as keyof typeof order.price.total] || order.price?.total?.tnd || 0
 				return acc + (typeof amount === 'number' ? amount : 0)
 			}, 0)
 			const pendingCount = docs.filter((o) => o.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION).length
@@ -103,10 +119,13 @@ const Dashboard = () => {
 				totalPurchases: docs.length,
 				pendingPurchases: pendingCount,
 				completedPurchases: completedCount,
-				totalSpent: totalSpent
+				totalSpent
 			})
-
 			setRecentPurchases(docs.slice(0, 5))
+
+			if (businessesResponse) {
+				setMyBusinesses(businessesResponse.data?.docs || [])
+			}
 		} catch (err: any) {
 			logError(err, 'loadDashboard')
 			const errorInfo = parseError(err)
@@ -119,7 +138,7 @@ const Dashboard = () => {
 			setLoading(false)
 			setRefreshing(false)
 		}
-	}, [currency])
+	}, [currency, isOwner])
 
 	useEffect(() => {
 		loadDashboard()
@@ -130,12 +149,7 @@ const Dashboard = () => {
 		loadDashboard()
 	}, [loadDashboard])
 
-	const getStatusColor = useCallback(
-		(status: string) => {
-			return orderStatusColors[status] || colors.textSecondary
-		},
-		[colors]
-	)
+	const getStatusColor = useCallback((status: string) => orderStatusColors[status] || colors.textSecondary, [colors])
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString)
@@ -149,6 +163,11 @@ const Dashboard = () => {
 		if (diffHours < 24) return `${diffHours}h ${translate('ago', 'ago')}`
 		if (diffDays < 7) return `${diffDays}d ${translate('ago', 'ago')}`
 		return date.toLocaleDateString()
+	}
+
+	const getOrderBusinessName = (order: Order) => {
+		const entity = order.business || (order as any).business
+		return entity?.name ? localize(entity.name) : translate('unknown', 'Unknown')
 	}
 
 	const statCards = useMemo(
@@ -182,15 +201,15 @@ const Dashboard = () => {
 				onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'completed' } } as any)
 			}
 		],
-		[colors.primary, colors.success, colors.warning, colors.info, router, stats, currency, formatPrice, translate]
+		[colors, router, stats, currency, formatPrice, translate]
 	)
 
-	const actions = useMemo(
+	const customerActions = useMemo(
 		() => [
 			{
 				icon: <MaterialIcons name="storefront" size={26} color={colors.primary} />,
 				color: colors.primary,
-				onPress: () => router.push('/(home)/shops' as any)
+				onPress: () => router.push('/(home)/businesses' as any)
 			},
 			{
 				icon: <Feather name="package" size={26} color={colors.info} />,
@@ -208,8 +227,45 @@ const Dashboard = () => {
 				onPress: () => router.push('/(home)/settings' as any)
 			}
 		],
-		[colors.info, colors.primary, colors.success, colors.textTertiary, router]
+		[colors, router]
 	)
+
+	const ownerActions = useMemo(
+		() => [
+			{
+				icon: <MaterialIcons name="store" size={26} color={colors.primary} />,
+				color: colors.primary,
+				count: myBusinesses.length,
+				onPress: () => router.push('/(home)/business/my-businesses' as any)
+			},
+			{
+				icon: <MaterialIcons name="inventory" size={26} color={colors.success} />,
+				color: colors.success,
+				onPress: () => router.push('/(home)/business/my-products' as any)
+			},
+			{
+				icon: <MaterialIcons name="receipt-long" size={26} color={colors.info} />,
+				color: colors.info,
+				onPress: () => router.push('/(home)/business/sales' as any)
+			},
+			{
+				icon: <MaterialIcons name="add-business" size={26} color={colors.warning} />,
+				color: colors.warning,
+				onPress: () => router.push('/(home)/business/create-product' as any)
+			}
+		],
+		[colors, router, myBusinesses.length]
+	)
+
+	const featuredBusiness = myBusinesses[0]
+
+	if (loading && !refreshing) {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
+	}
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -224,7 +280,7 @@ const Dashboard = () => {
 				}
 			/>
 
-			{error && recentPurchases.length === 0 ? (
+			{error && recentPurchases.length === 0 && !isOwner ? (
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -239,8 +295,41 @@ const Dashboard = () => {
 					onScroll={onScroll}
 					scrollEventThrottle={16}
 				>
-					{/* Overview Section */}
+					{isOwner && featuredBusiness && (
+						<View style={styles.section}>
+							<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+								<View style={styles.heroInfo}>
+									<View style={[styles.statusBadge, { backgroundColor: featuredBusiness.state?.code === 'active' ? colors.success + '20' : colors.warning + '20' }]}>
+										<View style={[styles.statusDot, { backgroundColor: featuredBusiness.state?.code === 'active' ? colors.success : colors.warning }]} />
+										<Text style={[styles.statusText, { color: featuredBusiness.state?.code === 'active' ? colors.success : colors.warning }]}>
+											{(featuredBusiness.state?.code || 'unknown').toUpperCase()}
+										</Text>
+									</View>
+									<Text style={[styles.businessName, { color: colors.text }]}>{localize(featuredBusiness.name)}</Text>
+									<Text style={[styles.businessSlug, { color: colors.textSecondary }]}>@{featuredBusiness.slug}</Text>
+								</View>
+								<FontAwesome5 name="anchor" size={36} color={colors.primary} style={{ opacity: 0.5 }} />
+							</LinearGradient>
+						</View>
+					)}
+
+					{isOwner && (
+						<View style={styles.section}>
+							<View style={styles.sectionHeader}>
+								<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.management', 'Management')}</Text>
+							</View>
+							<View style={styles.actionsRow}>
+								{ownerActions.map((action, index) => (
+									<ActionButton key={index} {...action} />
+								))}
+							</View>
+						</View>
+					)}
+
 					<View style={styles.section}>
+						<View style={styles.sectionHeader}>
+							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.overview', 'Overview')}</Text>
+						</View>
 						<View style={styles.statsGrid}>
 							{statCards.map((card) => (
 								<StatCard key={card.title} {...card} />
@@ -248,19 +337,17 @@ const Dashboard = () => {
 						</View>
 					</View>
 
-					{/* Quick Actions - Icon Centric */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.quick_actions', 'Quick Actions')}</Text>
 						</View>
 						<View style={styles.actionsRow}>
-							{actions.map((action, index) => (
+							{customerActions.map((action, index) => (
 								<ActionButton key={index} {...action} />
 							))}
 						</View>
 					</View>
 
-					{/* Recent Purchases */}
 					<View style={styles.section}>
 						<View style={styles.sectionHeader}>
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.recent_purchases', 'Recent Purchases')}</Text>
@@ -275,7 +362,7 @@ const Dashboard = () => {
 										<Feather name="shopping-bag" size={32} color={colors.textTertiary} />
 									</View>
 									<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('dashboard.no_purchases', 'No purchases yet')}</Text>
-									<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{translate('dashboard.browse_shops_sub', 'Browse shops to place your first purchase')}</Text>
+									<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{translate('dashboard.browse_businesses_sub', 'Browse businesses to place your first purchase')}</Text>
 								</View>
 							) : (
 								recentPurchases.map((purchase, index) => (
@@ -290,14 +377,14 @@ const Dashboard = () => {
 										</View>
 										<View style={styles.purchaseMeta}>
 											<Text style={[styles.purchaseTitle, { color: colors.text }]} numberOfLines={1}>
-												{localize(purchase.shop.name)}
+												{getOrderBusinessName(purchase)}
 											</Text>
 											<Text style={[styles.purchaseDate, { color: colors.textSecondary }]}>{formatDate(purchase.createdAt)}</Text>
 										</View>
 										<View style={styles.purchaseRight}>
 											<Text style={[styles.purchaseAmount, { color: colors.text }]}>{formatPrice(purchase.price)}</Text>
-											<View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(purchase.status)}15` }]}>
-												<Text style={[styles.statusText, { color: getStatusColor(purchase.status) }]}>
+											<View style={[styles.statusBadgeSmall, { backgroundColor: `${getStatusColor(purchase.status)}15` }]}>
+												<Text style={[styles.statusTextSmall, { color: getStatusColor(purchase.status) }]}>
 													{translate(`status_${purchase.status}`, orderStatusLabels[purchase.status] || purchase.status)}
 												</Text>
 											</View>
@@ -315,33 +402,12 @@ const Dashboard = () => {
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
-		container: {
-			flex: 1
-		},
-		scrollContent: {
-			paddingHorizontal: 16,
-			paddingBottom: 28,
-			paddingTop: 8
-		},
-		section: {
-			marginBottom: 24
-		},
-		sectionHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 16
-		},
-		sectionTitle: {
-			fontSize: 18,
-			fontWeight: '700',
-			letterSpacing: -0.5
-		},
-		statsGrid: {
-			flexDirection: 'row',
-			flexWrap: 'wrap',
-			gap: 12
-		},
+		container: { flex: 1 },
+		scrollContent: { paddingHorizontal: 16, paddingBottom: 28, paddingTop: 8 },
+		section: { marginBottom: 24 },
+		sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+		sectionTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.5 },
+		statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
 		statCard: {
 			width: COLUMN_WIDTH,
 			borderRadius: 20,
@@ -349,49 +415,17 @@ const createStyles = (colors: any) =>
 			borderWidth: 1,
 			overflow: 'hidden',
 			...Platform.select({
-				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 4 },
-					shadowOpacity: 0.1,
-					shadowRadius: 8
-				},
-				android: {
-					elevation: 3
-				}
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
+				android: { elevation: 3 }
 			})
 		},
-		statGradient: {
-			...StyleSheet.absoluteFillObject
-		},
-		statIcon: {
-			width: 44,
-			height: 44,
-			borderRadius: 12,
-			alignItems: 'center',
-			justifyContent: 'center',
-			marginBottom: 12
-		},
-		statBody: {
-			gap: 2
-		},
-		statValue: {
-			fontSize: 20,
-			fontWeight: '700'
-		},
-		statLabel: {
-			fontSize: 12,
-			fontWeight: '500'
-		},
-		actionsRow: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center'
-		},
-		actionItem: {
-			alignItems: 'center',
-			width: (width - 32) / 4,
-			gap: 8
-		},
+		statGradient: { ...StyleSheet.absoluteFillObject },
+		statIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+		statBody: { gap: 2 },
+		statValue: { fontSize: 20, fontWeight: '700' },
+		statLabel: { fontSize: 12, fontWeight: '500' },
+		actionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+		actionItem: { alignItems: 'center', width: (width - 32) / 4, gap: 8 },
 		actionButton: {
 			width: 60,
 			height: 60,
@@ -400,109 +434,53 @@ const createStyles = (colors: any) =>
 			justifyContent: 'center',
 			alignItems: 'center',
 			...Platform.select({
-				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 2 },
-					shadowOpacity: 0.1,
-					shadowRadius: 4
-				},
-				android: {
-					elevation: 2
-				}
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+				android: { elevation: 2 }
 			})
 		},
-		actionIconInner: {
-			width: 48,
-			height: 48,
-			borderRadius: 16,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		actionButtonLabel: {
-			fontSize: 12,
-			fontWeight: '600'
-		},
-		panel: {
-			borderRadius: 24,
-			borderWidth: 1,
-			padding: 8
-		},
-		purchaseRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			padding: 12,
-			borderBottomWidth: 1,
-			gap: 12
-		},
-		purchaseIcon: {
-			width: 40,
-			height: 40,
-			borderRadius: 12,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		purchaseMeta: {
-			flex: 1
-		},
-		purchaseTitle: {
-			fontSize: 15,
-			fontWeight: '600'
-		},
-		purchaseDate: {
-			fontSize: 12,
-			marginTop: 2
-		},
-		purchaseRight: {
-			alignItems: 'flex-end'
-		},
-		purchaseAmount: {
-			fontSize: 15,
-			fontWeight: '700'
-		},
-		statusBadge: {
-			marginTop: 4,
-			paddingHorizontal: 8,
+		actionIconInner: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+		countBadge: {
+			position: 'absolute',
+			top: -4,
+			right: -4,
+			paddingHorizontal: 6,
 			paddingVertical: 2,
-			borderRadius: 8
-		},
-		statusText: {
-			fontSize: 10,
-			fontWeight: '700',
-			textTransform: 'uppercase'
-		},
-		headerIcon: {
-			width: 40,
-			height: 40,
-			borderRadius: 12,
-			justifyContent: 'center',
+			borderRadius: 10,
+			minWidth: 20,
 			alignItems: 'center'
 		},
-		iconButton: {
-			padding: 4
-		},
-		emptyState: {
+		countBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
+		panel: { borderRadius: 24, borderWidth: 1, padding: 8 },
+		purchaseRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, gap: 12 },
+		purchaseIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+		purchaseMeta: { flex: 1 },
+		purchaseTitle: { fontSize: 15, fontWeight: '600' },
+		purchaseDate: { fontSize: 12, marginTop: 2 },
+		purchaseRight: { alignItems: 'flex-end' },
+		purchaseAmount: { fontSize: 15, fontWeight: '700' },
+		statusBadgeSmall: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+		statusTextSmall: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
+		headerIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
+		iconButton: { padding: 4 },
+		emptyState: { alignItems: 'center', paddingVertical: 40, gap: 12 },
+		emptyIconContainer: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+		emptyText: { fontSize: 16, fontWeight: '700' },
+		emptySubtext: { fontSize: 14, textAlign: 'center', maxWidth: '80%', lineHeight: 20 },
+		heroCard: {
+			borderRadius: 24,
+			padding: 20,
+			flexDirection: 'row',
+			justifyContent: 'space-between',
 			alignItems: 'center',
-			paddingVertical: 40,
-			gap: 12
+			borderWidth: 1,
+			borderColor: 'rgba(255,255,255,0.05)'
 		},
-		emptyIconContainer: {
-			width: 80,
-			height: 80,
-			borderRadius: 40,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 8
-		},
-		emptyText: {
-			fontSize: 16,
-			fontWeight: '700'
-		},
-		emptySubtext: {
-			fontSize: 14,
-			textAlign: 'center',
-			maxWidth: '80%',
-			lineHeight: 20
-		}
+		heroInfo: { flex: 1 },
+		statusBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 6, marginBottom: 8 },
+		statusDot: { width: 6, height: 6, borderRadius: 3 },
+		statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
+		businessName: { fontSize: 22, fontWeight: '800', marginBottom: 2 },
+		businessSlug: { fontSize: 14, fontWeight: '500' }
 	})
 
 export default Dashboard

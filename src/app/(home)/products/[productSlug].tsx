@@ -71,15 +71,15 @@ export default function ProductDetailScreen() {
 		loadProduct(true)
 	}
 
-	const handleShopPress = () => {
-		if (product?.shop?.slug) {
-			router.push(`/shops/${product.shop.slug}` as any)
+	const handleBusinessNavPress = () => {
+		if (product?.business?.slug) {
+			router.push(`/businesses/${product.business.slug}` as any)
 		}
 	}
 
-	const handleBusinessPress = () => {
-		if (product?.shop?.owner?.business?.slug) {
-			router.push(`/business/${product.shop.owner.business.slug}` as any)
+	const handleOwnerPress = () => {
+		if (product?.business?.owner?.slug) {
+			router.push(`/(home)/profile` as any)
 		}
 	}
 
@@ -212,33 +212,30 @@ export default function ProductDetailScreen() {
 					</View>
 				</View>
 
-				{/* Shop Info Card */}
-				<TouchableOpacity onPress={handleShopPress} style={[styles.shopCard, { backgroundColor: colors.card }]}>
+				{/* Business Info Card */}
+				<TouchableOpacity onPress={handleBusinessNavPress} style={[styles.businessCard, { backgroundColor: colors.card }]}>
 					<View style={styles.sectionHeader}>
 						<MaterialIcons name="store" size={20} color={colors.primary} />
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('shop', 'Shop')}</Text>
+						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('business', 'Business')}</Text>
 						<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
 					</View>
-					<Text style={[styles.shopName, { color: colors.text }]}>{localize(product.shop?.name)}</Text>
-					{product.shop?.address && (
-						<Text style={[styles.shopAddress, { color: colors.textSecondary }]}>
-							{product.shop.address.city}, {product.shop.address.country}
+					<Text style={[styles.businessName, { color: colors.text }]}>{localize(product.business?.name)}</Text>
+					{product.business?.address && (
+						<Text style={[styles.businessAddress, { color: colors.textSecondary }]}>
+							{product.business.address.city}, {product.business.address.country}
 						</Text>
 					)}
 				</TouchableOpacity>
 
-				{/* Business Info Card */}
-				{product.shop?.owner?.business && (
-					<TouchableOpacity onPress={handleBusinessPress} style={[styles.shopCard, { backgroundColor: colors.card }]}>
+				{/* Owner Info Card */}
+				{product.business?.owner && (
+					<TouchableOpacity onPress={handleOwnerPress} style={[styles.businessCard, { backgroundColor: colors.card }]}>
 						<View style={styles.sectionHeader}>
-							<MaterialIcons name="business" size={20} color={colors.primary} />
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('business', 'Business')}</Text>
+							<MaterialIcons name="person" size={20} color={colors.primary} />
+							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('owner', 'Owner')}</Text>
 							<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
 						</View>
-						<Text style={[styles.shopName, { color: colors.text }]}>{localize(product.shop.owner.business.name)}</Text>
-						<Text style={[styles.shopAddress, { color: colors.textSecondary }]}>
-							{translate('owner', 'Owner')}: {localize(product.shop.owner.name)}
-						</Text>
+						<Text style={[styles.businessName, { color: colors.text }]}>{localize(product.business.owner.name)}</Text>
 					</TouchableOpacity>
 				)}
 
@@ -249,7 +246,7 @@ export default function ProductDetailScreen() {
 							<Ionicons name="fish-outline" size={20} color={colors.primary} />
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('default_product', 'Default Product')}</Text>
 						</View>
-						<Text style={[styles.shopName, { color: colors.text }]}>{localize(product.defaultProduct.name)}</Text>
+						<Text style={[styles.businessName, { color: colors.text }]}>{localize(product.defaultProduct.name)}</Text>
 					</View>
 				)}
 
@@ -444,7 +441,7 @@ const styles = StyleSheet.create({
 		fontWeight: '600',
 		textTransform: 'uppercase'
 	},
-	shopCard: {
+	businessCard: {
 		borderRadius: 16,
 		padding: 16,
 		marginBottom: 12
@@ -461,11 +458,11 @@ const styles = StyleSheet.create({
 		flex: 1,
 		marginLeft: 8
 	},
-	shopName: {
+	businessName: {
 		fontSize: 16,
 		fontWeight: '600'
 	},
-	shopAddress: {
+	businessAddress: {
 		fontSize: 13,
 		marginTop: 2
 	},

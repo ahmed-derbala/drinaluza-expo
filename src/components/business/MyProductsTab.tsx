@@ -60,13 +60,13 @@ const ProductItem = ({ item }: { item: ProductType }) => {
 						{localize(item.name) || item.name?.en}
 					</Text>
 
-					{/* Shop info */}
-					<View style={styles.shopRow}>
-						<View style={[styles.shopBadge, { backgroundColor: `${colors.primary}10` }]}>
+					{/* Business info */}
+					<View style={styles.businessRow}>
+						<View style={[styles.businessBadge, { backgroundColor: `${colors.primary}10` }]}>
 							<Ionicons name="storefront" size={10} color={colors.primary} />
 						</View>
-						<Text style={[styles.shopName, { color: colors.textSecondary }]} numberOfLines={1}>
-							{localize(item.shop?.name) || item.shop?.name?.en || 'Unknown Shop'}
+						<Text style={[styles.businessName, { color: colors.textSecondary }]} numberOfLines={1}>
+							{localize(item.business?.name) || item.business?.name?.en || 'Unknown Business'}
 						</Text>
 					</View>
 
@@ -176,7 +176,7 @@ export default function MyProductsTab() {
 							<Ionicons name="fish-outline" size={48} color={colors.primary} />
 						</LinearGradient>
 						<Text style={[styles.emptyTitleText, { color: colors.text }]}>No Products Yet</Text>
-						<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your seafood products to your shops to start selling.</Text>
+						<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your seafood products to your businesses to start selling.</Text>
 						<TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/(home)/business/create-product')}>
 							<Ionicons name="add" size={32} color="#fff" />
 						</TouchableOpacity>
@@ -265,20 +265,20 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 		marginBottom: 6
 	},
-	shopRow: {
+	businessRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 6,
 		marginBottom: 8
 	},
-	shopBadge: {
+	businessBadge: {
 		width: 20,
 		height: 20,
 		borderRadius: 6,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
-	shopName: {
+	businessName: {
 		fontSize: 12,
 		fontWeight: '500',
 		flex: 1

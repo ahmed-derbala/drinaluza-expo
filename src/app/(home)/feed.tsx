@@ -18,11 +18,11 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getToken } from '@/core/auth/storage'
 
-type FilterKey = 'product' | 'shop' | 'user'
+type FilterKey = 'product' | 'business' | 'user'
 
 const FILTER_OPTIONS: { key: FilterKey; icon: string; iconSet: 'ionicons' | 'material' }[] = [
 	{ key: 'product', icon: 'fish-outline', iconSet: 'ionicons' },
-	{ key: 'shop', icon: 'store', iconSet: 'material' },
+	{ key: 'business', icon: 'store', iconSet: 'material' },
 	{ key: 'user', icon: 'people-outline', iconSet: 'ionicons' }
 ]
 

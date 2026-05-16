@@ -17,14 +17,6 @@ export type Owner = {
 	_id: string
 	slug: string
 	name: LocalizedName
-	business?: {
-		_id: string
-		slug: string
-		name: LocalizedName
-		state?: {
-			code: string
-		}
-	}
 	updatedAt?: string
 }
 
@@ -60,11 +52,11 @@ export type Rating = {
 	total: number
 }
 
-export type ShopState = {
+export type BusinessState = {
 	code: string
 }
 
-export type Shop = {
+export type Business = {
 	_id: string
 	name: LocalizedName
 	slug: string
@@ -76,7 +68,7 @@ export type Shop = {
 		country: string
 	}
 	location?: GeoPoint
-	state?: ShopState
+	state?: BusinessState
 	media?: {
 		thumbnail?: {
 			url: string
@@ -106,12 +98,12 @@ export type Pagination = {
 	returnedDocsCount: number
 }
 
-export type ShopsData = {
+export type BusinessesData = {
 	pagination: Pagination
-	docs: Shop[]
+	docs: Business[]
 }
 
-export type ShopProductsResponse = {
+export type BusinessProductsResponse = {
 	status: number
 	data: {
 		pagination: Pagination
@@ -126,7 +118,7 @@ export type ShopProductsResponse = {
 
 export interface Product {
 	_id: string
-	shop: Shop
+	business: Business
 	name: LocalizedName
 	price: {
 		total: {
@@ -176,9 +168,9 @@ export interface Product {
 	__v?: number
 }
 
-export type ShopResponse = {
+export type BusinessResponse = {
 	status: number
-	data: Shop
+	data: Business
 	req: {
 		headers: {
 			tid: string
@@ -186,10 +178,10 @@ export type ShopResponse = {
 	}
 }
 
-export interface ShopsResponse {
+export interface BusinessesResponse {
 	status: number
 	data: {
-		docs: Shop[]
+		docs: Business[]
 		pagination: Pagination
 	}
 	req: {
@@ -203,7 +195,7 @@ export interface ShopsResponse {
 	tid: string
 }
 
-export type CreateShopRequest = {
+export type CreateBusinessRequest = {
 	name: LocalizedName
 	address?: {
 		street: string
@@ -223,9 +215,9 @@ export type CreateShopRequest = {
 	}
 }
 
-export type CreateShopResponse = {
+export type CreateBusinessResponse = {
 	status: number
-	data: Shop
+	data: Business
 	req: {
 		headers: {
 			tid: string

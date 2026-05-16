@@ -1,4 +1,4 @@
-import { LocalizedName } from '../shops/shops.interface'
+import { LocalizedName } from '../businesses/businesses.interface'
 
 export interface RatingBreakdown {
 	1: number
@@ -15,23 +15,14 @@ export interface Rating {
 	total: number
 }
 
-export interface ShopOwner {
+export interface BusinessOwner {
 	_id: string
 	slug: string
 	name: LocalizedName
 	updatedAt: string
-	business?: {
-		_id: string
-		slug: string
-		name: LocalizedName
-		state: {
-			code: string
-			updatedAt: string
-		}
-	}
 }
 
-export interface ShopAddress {
+export interface BusinessAddress {
 	street: string
 	city: string
 	region?: string
@@ -40,20 +31,20 @@ export interface ShopAddress {
 	country: string
 }
 
-export interface ShopLocation {
+export interface BusinessLocation {
 	type: string
 	coordinates: number[]
 	sharingEnabled?: boolean
 	updatedAt?: string
 }
 
-export interface Shop {
+export interface FeedBusiness {
 	_id: string
 	name: LocalizedName
 	slug: string
-	owner: ShopOwner
-	address: ShopAddress
-	location: ShopLocation
+	owner: BusinessOwner
+	address: BusinessAddress
+	location: BusinessLocation
 	media?: {
 		thumbnail?: {
 			url: string
@@ -95,7 +86,7 @@ export interface CardInfo {
 export interface FeedItem {
 	_id: string
 	feedId?: string
-	shop?: Shop
+	business?: FeedBusiness
 	name?: LocalizedName
 	price?: Price
 	unit?: Unit
@@ -145,16 +136,15 @@ export interface FeedItem {
 		whatsapp?: string
 		email?: string
 	}
-	// User-specific fields
 	role?: string
-	address?: ShopAddress
-	location?: ShopLocation
-	shops?: string[]
+	address?: BusinessAddress
+	location?: BusinessLocation
+	businesses?: string[]
 	rating?: Rating
 }
 
 export interface ProductFeedItem extends FeedItem {
-	shop: Shop
+	business: FeedBusiness
 	name: LocalizedName
 	price: Price
 	unit: Unit
@@ -166,8 +156,8 @@ export interface ProductFeedItem extends FeedItem {
 	rating?: Rating
 }
 
-export interface ShopFeedItem extends FeedItem {
-	shop: Shop
+export interface BusinessFeedItem extends FeedItem {
+	business: FeedBusiness
 	name: LocalizedName
 	media: {
 		thumbnail?: {
@@ -180,19 +170,17 @@ export interface ShopFeedItem extends FeedItem {
 export interface UserFeedItem extends FeedItem {
 	name: LocalizedName
 	role: string
-	address: ShopAddress
+	address: BusinessAddress
 	state: {
 		code: string
 		updatedAt: string
 	}
 }
 
-// Raw API response types (before normalization)
-
 export interface RawFeedDoc {
 	_id: string
 	targetData: any
-	targetResource: 'products' | 'shops' | 'users'
+	targetResource: 'products' | 'businesses' | 'users'
 	card: {
 		kind: string
 	}

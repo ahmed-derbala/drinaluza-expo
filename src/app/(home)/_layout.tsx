@@ -1,10 +1,9 @@
-import React, { useEffect, useState, useCallback } from 'react'
-import { Tabs, useFocusEffect, usePathname } from 'expo-router'
-import { useRouter } from 'expo-router'
+import React, { useEffect, useState } from 'react'
+import { Tabs, usePathname } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { useUser, useLayout, useTheme, useNotification } from '@/core/contexts'
+import { useLayout, useTheme, useNotification, useUser } from '@/core/contexts'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { secureGetItem } from '../../core/auth/storage'
 import { useBackButton } from '../../core/hooks/useBackButton'
@@ -13,37 +12,24 @@ export default function HomeLayout() {
 	const { colors } = useTheme()
 	const { isTabBarVisible, setTabBarVisible } = useLayout()
 	const { translate } = useUser()
-	const router = useRouter()
 	const pathname = usePathname()
 	useBackButton()
-	const [userRole, setUserRole] = useState<string | null>(null)
 	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 	const { notificationCount } = useNotification()
 
-	// Load auth status and user data
 	useEffect(() => {
 		const loadAuthData = async () => {
 			try {
 				const token = await secureGetItem('authToken')
 				setIsAuthenticated(!!token)
-
-				const storedUserData = await secureGetItem('userData')
-				if (storedUserData) {
-					const userData = JSON.parse(storedUserData)
-					setUserRole(userData.role || null)
-				} else {
-					setUserRole(null)
-				}
 			} catch (error) {
 				console.error('Failed to load auth data:', error)
 				setIsAuthenticated(false)
-				setUserRole(null)
 			}
 		}
 		loadAuthData()
 	}, [])
 
-	// Show tab bar when navigating to a new screen
 	useEffect(() => {
 		setTabBarVisible(true)
 	}, [pathname, setTabBarVisible])
@@ -95,7 +81,6 @@ export default function HomeLayout() {
 						tabBarActiveTintColor: colors.primary,
 						tabBarInactiveTintColor: colors.textTertiary,
 						tabBarHideOnKeyboard: Platform.OS === 'android',
-						// Icons only - no labels
 						tabBarShowLabel: false,
 						tabBarIconStyle: {
 							marginTop: Platform.select({
@@ -127,18 +112,6 @@ export default function HomeLayout() {
 								</View>
 							),
 							tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
-						}}
-					/>
-					<Tabs.Screen
-						name="business"
-						options={{
-							href: userRole === 'shop_owner' ? '/business' : null,
-							tabBarIcon: ({ color, focused }) => (
-								<View style={focused ? styles.activeIconContainer : undefined}>
-									<MaterialIcons name="business-center" size={iconSize} color={color} />
-								</View>
-							),
-							tabBarAccessibilityLabel: translate('business', 'Business')
 						}}
 					/>
 					<Tabs.Screen
@@ -185,25 +158,10 @@ export default function HomeLayout() {
 							tabBarAccessibilityLabel: translate('settings', 'Settings')
 						}}
 					/>
-					{/* Hidden screens - not shown in tab bar */}
-					<Tabs.Screen
-						name="shops"
-						options={{
-							href: null
-						}}
-					/>
-					<Tabs.Screen
-						name="purchases"
-						options={{
-							href: null
-						}}
-					/>
-					<Tabs.Screen
-						name="products"
-						options={{
-							href: null
-						}}
-					/>
+					<Tabs.Screen name="business" options={{ href: null }} />
+					<Tabs.Screen name="businesses" options={{ href: null }} />
+					<Tabs.Screen name="purchases" options={{ href: null }} />
+					<Tabs.Screen name="products" options={{ href: null }} />
 				</Tabs>
 			</SafeAreaView>
 		</SafeAreaProvider>
@@ -218,7 +176,7 @@ const styles = StyleSheet.create({
 		width: 32,
 		height: 32,
 		borderRadius: 8,
-		backgroundColor: 'rgba(56, 189, 248, 0.15)', // primary with low opacity
+		backgroundColor: 'rgba(56, 189, 248, 0.15)',
 		justifyContent: 'center',
 		alignItems: 'center'
 	}

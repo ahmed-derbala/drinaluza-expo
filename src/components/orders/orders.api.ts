@@ -21,10 +21,10 @@ export const getSales = async (page: number = 1, limit: number = 10, status?: st
 	return response.data
 }
 
-export const createPurchase = async ({ products, shop }: { products: { product: any; quantity: number }[]; shop: any }) => {
+export const createPurchase = async ({ products, business }: { products: { product: any; quantity: number }[]; business: any }) => {
 	const body = {
 		products,
-		shop
+		business
 	}
 	const response = await getApiClient().post('/purchases', body)
 	return response.data

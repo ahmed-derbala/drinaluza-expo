@@ -74,7 +74,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 				<Ionicons name="search" size={20} color={colors.textSecondary} style={styles.icon} />
 				<TextInput
 					style={[styles.input, { color: colors.text }]}
-					placeholder={translate('search_placeholder', 'Search products, shops...')}
+					placeholder={translate('search_placeholder', 'Search products, businesses...')}
 					placeholderTextColor={colors.textTertiary}
 					value={searchText}
 					onChangeText={handleTextChange}

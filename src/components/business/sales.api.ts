@@ -85,7 +85,7 @@ export interface SaleProduct {
 
 export interface Sale {
 	_id: string
-	shop: {
+	business: {
 		_id: string
 		name: {
 			en: string

@@ -2,8 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { getShopBySlug, getShopProductsBySlug } from '@/components/shops/shops.api'
-import { Shop } from '@/components/shops/shops.interface'
+import { getBusinessBySlug, getBusinessProductsBySlug } from '@/components/businesses/businesses.api'
+import { Business } from '@/components/businesses/businesses.interface'
 import { ProductType } from '@/components/products/products.type'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { parseError } from '@/core/helpers/errorHandler'
@@ -51,8 +51,8 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 	)
 }
 
-export default function ShopDetailsScreen() {
-	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
+export default function BusinessDetailsScreen() {
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
@@ -60,27 +60,27 @@ export default function ShopDetailsScreen() {
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 
-	const [shop, setShop] = useState<Shop | null>(null)
+	const [business, setBusiness] = useState<Business | null>(null)
 	const [products, setProducts] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { onScroll } = useScrollHandler()
 
-	const loadShopDetails = useCallback(
+	const loadBusinessDetails = useCallback(
 		async (isRefresh = false) => {
-			if (!shopSlug) return
+			if (!businessSlug) return
 
 			try {
 				if (!isRefresh) setLoading(true)
 				setError(null)
 
-				const [shopResponse, productsResponse] = await Promise.all([getShopBySlug(shopSlug), getShopProductsBySlug(shopSlug).catch(() => null)])
+				const [businessResponse, productsResponse] = await Promise.all([getBusinessBySlug(businessSlug), getBusinessProductsBySlug(businessSlug).catch(() => null)])
 
-				setShop(shopResponse.data)
+				setBusiness(businessResponse.data)
 				setProducts(productsResponse?.data?.docs || [])
 			} catch (err: any) {
-				console.error('Failed to load shop details:', err)
+				console.error('Failed to load business details:', err)
 				const errorInfo = parseError(err)
 				setError({
 					title: errorInfo.title,
@@ -92,21 +92,21 @@ export default function ShopDetailsScreen() {
 				setRefreshing(false)
 			}
 		},
-		[shopSlug]
+		[businessSlug]
 	)
 
 	useEffect(() => {
-		loadShopDetails()
-	}, [loadShopDetails])
+		loadBusinessDetails()
+	}, [loadBusinessDetails])
 
 	const handleRefresh = useCallback(() => {
 		setRefreshing(true)
-		loadShopDetails(true)
-	}, [loadShopDetails])
+		loadBusinessDetails(true)
+	}, [loadBusinessDetails])
 
 	const handleOpenMap = () => {
-		if (!shop?.location?.coordinates) return
-		const [lng, lat] = shop.location.coordinates
+		if (!business?.location?.coordinates) return
+		const [lng, lat] = business.location.coordinates
 		const url = `https://www.google.com/maps?q=${lat},${lng}`
 		Linking.openURL(url).catch((err) => console.error('Failed to open map:', err))
 	}
@@ -130,7 +130,7 @@ export default function ShopDetailsScreen() {
 					<ErrorState
 						title={error.title}
 						message={error.message}
-						onRetry={() => loadShopDetails()}
+						onRetry={() => loadBusinessDetails()}
 						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
 					/>
 				</View>
@@ -138,12 +138,12 @@ export default function ShopDetailsScreen() {
 		)
 	}
 
-	if (!shop) {
+	if (!business) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader title={translate('shop_not_found', 'Shop not found')} showBack={true} />
+				<ScreenHeader title={translate('business_not_found', 'Business not found')} showBack={true} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-					<Text style={[styles.errorText, { color: colors.text }]}>{translate('shop_not_found', 'Shop not found')}</Text>
+					<Text style={[styles.errorText, { color: colors.text }]}>{translate('business_not_found', 'Business not found')}</Text>
 				</View>
 			</View>
 		)
@@ -151,43 +151,43 @@ export default function ShopDetailsScreen() {
 
 	// Build address string
 	const addressParts = []
-	if (shop.address?.street) addressParts.push(shop.address.street)
-	if (shop.address?.city) addressParts.push(shop.address.city)
-	if (shop.address?.region) addressParts.push(shop.address.region)
-	if (shop.address?.country) addressParts.push(shop.address.country)
+	if (business.address?.street) addressParts.push(business.address.street)
+	if (business.address?.city) addressParts.push(business.address.city)
+	if (business.address?.region) addressParts.push(business.address.region)
+	if (business.address?.country) addressParts.push(business.address.country)
 	const fullAddress = addressParts.join(', ')
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(shop.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScreenHeader title={localize(business.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 			<ScrollView
 				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 			>
-				{/* Shop Image */}
+				{/* Business Image */}
 				<View style={styles.imageContainer}>
-					<SmartImage source={shop.media?.thumbnail?.url} style={styles.shopImage} resizeMode="cover" entityType="shop" />
+					<SmartImage source={business.media?.thumbnail?.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
 				</View>
 
-				{/* Shop Info Card */}
+				{/* Business Info Card */}
 				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
-					<Text style={[styles.shopName, { color: colors.text }]}>{localize(shop.name)}</Text>
+					<Text style={[styles.businessName, { color: colors.text }]}>{localize(business.name)}</Text>
 
 					{/* Owner Info */}
-					{shop.owner && (
+					{business.owner && (
 						<View style={styles.infoRow}>
 							<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_owner', 'Owner')}</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_owner', 'Owner')}</Text>
 								<View style={styles.ownerRow}>
-									<Text style={[styles.infoValue, { color: colors.text }]}>{localize(shop.owner.name)}</Text>
-									<Text style={[styles.slugText, { color: colors.textTertiary }]}>@{shop.owner.slug}</Text>
-									{shop.owner.business && (
+									<Text style={[styles.infoValue, { color: colors.text }]}>{localize(business.owner.name)}</Text>
+									<Text style={[styles.slugText, { color: colors.textTertiary }]}>@{business.owner.slug}</Text>
+									{business.owner && (
 										<View style={[styles.businessBadge, { backgroundColor: colors.primary + '15' }]}>
 											<Text style={[styles.businessBadgeText, { color: colors.primary }]} numberOfLines={1}>
-												{localize(shop.owner.business.name)}
+												{localize(business.owner.name)}
 											</Text>
 										</View>
 									)}
@@ -197,25 +197,25 @@ export default function ShopDetailsScreen() {
 					)}
 
 					{/* Address */}
-					{shop.address && (
+					{business.address && (
 						<View style={styles.infoRow}>
 							<Ionicons name="location-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_address', 'Address')}</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_address', 'Address')}</Text>
 								<Text style={[styles.infoValue, { color: colors.text }]}>{fullAddress}</Text>
 							</View>
 						</View>
 					)}
 
 					{/* Location Coordinates */}
-					{shop.location?.coordinates && (
+					{business.location?.coordinates && (
 						<TouchableOpacity style={styles.infoRow} onPress={handleOpenMap} activeOpacity={0.7}>
 							<Ionicons name="map-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_location', 'Location')}</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_location', 'Location')}</Text>
 								<View style={styles.locationRow}>
 									<Text style={[styles.infoValue, { color: colors.text }]}>
-										{shop.location.coordinates[1].toFixed(4)}, {shop.location.coordinates[0].toFixed(4)}
+										{business.location.coordinates[1].toFixed(4)}, {business.location.coordinates[0].toFixed(4)}
 									</Text>
 									<Ionicons name="open-outline" size={16} color={colors.primary} />
 								</View>
@@ -224,12 +224,12 @@ export default function ShopDetailsScreen() {
 					)}
 
 					{/* Delivery Radius */}
-					{typeof shop.deliveryRadiusKm === 'number' && (
+					{typeof business.deliveryRadiusKm === 'number' && (
 						<View style={styles.infoRow}>
 							<Ionicons name="navigate-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('shop_delivery_radius', 'Delivery Radius')}</Text>
-								<Text style={[styles.infoValue, { color: colors.text }]}>{shop.deliveryRadiusKm} km</Text>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_delivery_radius', 'Delivery Radius')}</Text>
+								<Text style={[styles.infoValue, { color: colors.text }]}>{business.deliveryRadiusKm} km</Text>
 							</View>
 						</View>
 					)}
@@ -239,7 +239,7 @@ export default function ShopDetailsScreen() {
 				<View style={[styles.productsSection, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={styles.productsSectionHeader}>
 						<Ionicons name="fish-outline" size={20} color={colors.primary} />
-						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('shop_products', 'Products')}</Text>
+						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('business_products', 'Products')}</Text>
 						<View style={[styles.productsCountBadge, { backgroundColor: colors.primary + '15' }]}>
 							<Text style={[styles.productsCountText, { color: colors.primary }]}>{products.length}</Text>
 						</View>
@@ -260,7 +260,7 @@ export default function ShopDetailsScreen() {
 				</View>
 
 				{/* Reviews Section */}
-				{shop && <ReviewSection targetResource="shops" targetId={shop._id} targetName={localize(shop.name)} />}
+				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
 			</ScrollView>
 		</View>
 	)
@@ -291,7 +291,7 @@ const styles = StyleSheet.create({
 		marginBottom: 20,
 		backgroundColor: '#f0f0f0'
 	},
-	shopImage: {
+	businessImage: {
 		width: '100%',
 		height: '100%'
 	},
@@ -312,7 +312,7 @@ const styles = StyleSheet.create({
 			}
 		})
 	},
-	shopName: {
+	businessName: {
 		fontSize: 26,
 		fontWeight: '700',
 		marginBottom: 20,

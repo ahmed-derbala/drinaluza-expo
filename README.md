@@ -16,17 +16,17 @@ CTRL+click to open in new tab
 
 ### For Customers
 *   **Feed**: Discover new products and updates from local businesses.
-*   **Shops**: Browse a directory of shops and view detailed shop profiles.
+*   **Businesses**: Browse a directory of businesses and view detailed business profiles.
 *   **Orders**: Track purchase history and current order status.
 *   **Profile**: Manage personal information and settings.
 *   **Customer Dashboard**: A personalized hub for your activity.
 
 ### For Business Owners
 *   **Business Dashboard**: A dedicated command center for your business operations.
-*   **Shop Management**: Create and manage multiple shops.
+*   **Business Management**: Create and manage multiple businesses.
 *   **Product Management**: deeply integrated tools to add, edit, and list products with categories and details.
 *   **Sales Tracking**: Visualize sales data (powered by `react-native-chart-kit`).
-*   **Inventory**: Keep track of "My Products" and "My Shops".
+*   **Inventory**: Keep track of "My Products" and "My Businesses".
 
 ## 🛠 Tech Stack
 
@@ -98,7 +98,7 @@ src/
 │   ├── auth/            # Authentication screens
 │   └── home/            # Main application screens
 │       ├── business/    # Business dashboard & management
-│       ├── shops/       # Shop browsing
+│       ├── businesses/       # Business browsing
 │       └── ...          # Profile, Feed, Settings
 ├── components/          # Reusable UI components
 ├── config/              # App configuration

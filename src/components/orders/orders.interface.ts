@@ -1,4 +1,4 @@
-import { LocalizedName } from '../shops/shops.interface'
+import { LocalizedName } from '../businesses/businesses.interface'
 
 export interface Product {
 	_id: string
@@ -46,7 +46,7 @@ export interface ProductItem {
 
 export interface OrderItem {
 	_id: string
-	shop: {
+	business: {
 		_id: string
 		name: LocalizedName
 		slug?: string

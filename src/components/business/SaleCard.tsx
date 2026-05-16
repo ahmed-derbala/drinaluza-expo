@@ -203,8 +203,8 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			{/* Header Section */}
 			<View style={styles.header}>
 				<View style={styles.headerLeft}>
-					<Text style={[styles.shopName, { color: colors.text }]} numberOfLines={1}>
-						{localize(sale.shop.name)}
+					<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+						{localize(sale.business.name)}
 					</Text>
 					<Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(sale.createdAt), 'MMM d, yyyy • h:mm a')}</Text>
 				</View>
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
 	headerLeft: {
 		flex: 1
 	},
-	shopName: {
+	businessName: {
 		fontSize: 18,
 		fontWeight: '700',
 		marginBottom: 4

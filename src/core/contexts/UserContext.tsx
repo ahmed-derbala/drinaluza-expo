@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { getCurrentUser } from '../auth/auth.api'
 import { UserData } from '../../components/profile/profile.interface'
-import { LocalizedName } from '../../components/shops/shops.interface'
+import { LocalizedName } from '../../components/businesses/businesses.interface'
 import { translate as translateHelper, setGlobalAppLang } from '../../config/translations'
 
 interface UserContextType {

@@ -1,8 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { getShopProductsBySlug } from '@/components/shops/shops.api'
-import { Product } from '@/components/shops/shops.interface'
+import { getBusinessProductsBySlug } from '@/components/businesses/businesses.api'
+import { Product } from '@/components/businesses/businesses.interface'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/components/common/ErrorState'
@@ -24,12 +24,12 @@ const BREAKPOINTS = {
 	wide: 1440
 }
 
-export default function ShopProductsScreen() {
-	const { shopId: shopSlug } = useLocalSearchParams<{ shopId: string }>()
+export default function BusinessProductsScreen() {
+	const { businessId: businessSlug } = useLocalSearchParams<{ businessId: string }>()
 	const { colors } = useTheme()
 	const router = useRouter()
 	const { localize, translate } = useUser()
-	const [headerTitle, setHeaderTitle] = useState(translate('shop_products', 'Products'))
+	const [headerTitle, setHeaderTitle] = useState(translate('business_products', 'Products'))
 	const { width, height } = useWindowDimensions()
 
 	// Responsive calculations
@@ -91,19 +91,19 @@ export default function ShopProductsScreen() {
 	}
 
 	const loadProducts = async () => {
-		if (!shopSlug) return
+		if (!businessSlug) return
 
 		try {
 			if (!refreshing) setLoading(true)
 			setError(null)
-			const response = await getShopProductsBySlug(shopSlug)
+			const response = await getBusinessProductsBySlug(businessSlug)
 			const fetchedProducts = response.data.docs || []
 			setProducts(fetchedProducts)
 			setFilteredProducts(fetchedProducts)
 
-			// Update header title if shop info is available in products
-			if (fetchedProducts.length > 0 && fetchedProducts[0].shop?.name) {
-				setHeaderTitle(localize(fetchedProducts[0].shop.name))
+			// Update header title if business info is available in products
+			if (fetchedProducts.length > 0 && fetchedProducts[0].business?.name) {
+				setHeaderTitle(localize(fetchedProducts[0].business.name))
 			}
 		} catch (err: any) {
 			console.error('Failed to load products:', err)
@@ -122,7 +122,7 @@ export default function ShopProductsScreen() {
 	useEffect(() => {
 		loadBasket()
 		loadProducts()
-	}, [shopSlug])
+	}, [businessSlug])
 
 	useEffect(() => {
 		if (!searchText.trim()) {
@@ -282,7 +282,7 @@ export default function ShopProductsScreen() {
 						<Ionicons name="search-outline" size={isDesktop ? 22 : 20} color={colors.textSecondary} style={styles.searchIcon} />
 						<TextInput
 							style={[responsiveStyles.searchInput, { color: colors.text }]}
-							placeholder={translate('shop_search_placeholder', 'Search in this shop...')}
+							placeholder={translate('business_search_placeholder', 'Search in this business...')}
 							placeholderTextColor={colors.textTertiary}
 							value={searchText}
 							onChangeText={setSearchText}
@@ -333,7 +333,7 @@ export default function ShopProductsScreen() {
 						<View style={responsiveStyles.emptyContainer}>
 							<Ionicons name={searchText ? 'search-outline' : 'cube-outline'} size={isDesktop ? 64 : 48} color={colors.textTertiary} style={responsiveStyles.emptyIcon} />
 							<Text style={[responsiveStyles.emptyText, { color: colors.text }]}>
-								{searchText ? translate('shop_no_results', 'No products match your search') : translate('shop_no_products', 'No products found for this shop.')}
+								{searchText ? translate('business_no_results', 'No products match your search') : translate('business_no_products', 'No products found for this business.')}
 							</Text>
 							{searchText && (
 								<TouchableOpacity style={[styles.clearSearchButton, { borderColor: colors.primary }]} onPress={() => setSearchText('')}>

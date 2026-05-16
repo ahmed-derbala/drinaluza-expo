@@ -37,7 +37,7 @@ import ReviewSection from '@/components/reviews/Reviews'
 import { uploadFile } from '@/core/fileHandler'
 
 import { UserData } from '@/components/profile/profile.interface'
-import { LocalizedName } from '@/components/shops/shops.interface'
+import { LocalizedName } from '@/components/businesses/businesses.interface'
 import { LANGUAGES, CURRENCIES, SOCIAL_PLATFORMS } from '@/config/settings'
 
 // Components moved outside to prevent re-creation on render
@@ -685,8 +685,8 @@ export default function ProfileScreen() {
 					<Text style={styles.profileName}>@{userData.slug}</Text>
 
 					<View style={styles.roleStateContainer}>
-						<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.shopOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
-							<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Shop Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+						<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+							<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
 						</View>
 						{userData.state?.code && (
 							<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>
@@ -1528,7 +1528,7 @@ export default function ProfileScreen() {
 								</ScrollView>
 							</View>
 							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>{translate('content_lang', 'Content Language (Products/Shops)')}</Text>
+								<Text style={styles.inputLabel}>{translate('content_lang', 'Content Language (Products/Businesses)')}</Text>
 								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
 									{LANGUAGES.map((lang) => (
 										<TouchableOpacity
@@ -1870,7 +1870,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			paddingVertical: 5,
 			borderRadius: 10
 		},
-		shopOwnerBadge: {
+		businessOwnerBadge: {
 			backgroundColor: '#3B82F6' + '20'
 		},
 		adminBadge: {

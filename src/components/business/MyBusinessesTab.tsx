@@ -22,22 +22,22 @@ import { useRouter } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons'
 import { NativeStackNavigationProp } from '@react-navigation/native-stack'
-import { getMyShops, createShop } from '../shops/shops.api'
-import { Shop, CreateShopRequest } from '../shops/shops.interface'
+import { getMyBusinesses, createBusiness } from '../businesses/businesses.api'
+import { Business, CreateBusinessRequest } from '../businesses/businesses.interface'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import { uploadFile } from '../../core/fileHandler'
 import { showAlert } from '../../core/helpers/popup'
 
-type ShopsStackParamList = {
-	ShopDetails: { shopId: string }
-	// Add other screens in the shops stack here
+type BusinessesStackParamList = {
+	BusinessDetails: { businessId: string }
+	// Add other screens in the businesses stack here
 }
 
-type MyShopsTabNavigationProp = NativeStackNavigationProp<ShopsStackParamList, 'ShopDetails'>
+type MyBusinessesTabNavigationProp = NativeStackNavigationProp<BusinessesStackParamList, 'BusinessDetails'>
 
-interface MyShopsTabProps {
-	navigation?: MyShopsTabNavigationProp
+interface MyBusinessesTabProps {
+	navigation?: MyBusinessesTabNavigationProp
 }
 import { useFocusEffect } from '@react-navigation/native'
 import { useTheme } from '../../core/contexts/ThemeContext'
@@ -52,26 +52,26 @@ interface ThemeType {
 	border: string
 }
 
-interface ShopItemProps {
-	shop: Shop
+interface BusinessItemProps {
+	business: Business
 	isNavigating: boolean
-	onPress: (shop: Shop) => void
+	onPress: (business: Business) => void
 	theme: ThemeType
 }
 
-interface CreateShopFormProps {
+interface CreateBusinessFormProps {
 	visible: boolean
 	loading: boolean
-	shopNameEn: string
-	shopNameTnLatn: string
-	shopNameTnArab: string
+	businessNameEn: string
+	businessNameTnLatn: string
+	businessNameTnArab: string
 	deliveryRadius: string
 	photoUrl: string
 	uploadingPhoto: boolean
 	editMode: { photo: boolean }
-	onShopNameEnChange: (text: string) => void
-	onShopNameTnLatnChange: (text: string) => void
-	onShopNameTnArabChange: (text: string) => void
+	onBusinessNameEnChange: (text: string) => void
+	onBusinessNameTnLatnChange: (text: string) => void
+	onBusinessNameTnArabChange: (text: string) => void
 	onDeliveryRadiusChange: (text: string) => void
 	onPhotoUrlChange: (url: string) => void
 	onUploadPhoto: () => void
@@ -81,20 +81,20 @@ interface CreateShopFormProps {
 	theme: ThemeType & { textSecondary: string }
 }
 
-interface ShopState {
-	shops: Shop[]
+interface BusinessState {
+	businesses: Business[]
 	loading: boolean
 	refreshing: boolean
 	modalVisible: boolean
-	shopNameEn: string
-	shopNameTnLatn: string
-	shopNameTnArab: string
+	businessNameEn: string
+	businessNameTnLatn: string
+	businessNameTnArab: string
 	deliveryRadius: string
 	photoUrl: string
 	uploadingPhoto: boolean
 	editMode: { photo: boolean }
 	creating: boolean
-	navigatingShopId: string | null
+	navigatingBusinessId: string | null
 	error: string | null
 	pagination: {
 		totalDocs: number
@@ -110,37 +110,37 @@ const DEBOUNCE_DELAY = 300
 const MIN_SHOP_NAME_LENGTH = 3
 const MAX_SHOP_NAME_LENGTH = 50
 
-const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPress, theme }) => {
+const BusinessItem: React.FC<BusinessItemProps> = React.memo(({ business, isNavigating, onPress, theme }) => {
 	const { localize, translate } = useUser()
 
-	const isActive = shop.state?.code === 'active'
-	const thumbnailUrl = shop.media?.thumbnail?.url
-	const rating = shop.rating?.average || 0
-	const ratingCount = shop.rating?.count || 0
-	const phone = shop.contact?.phone?.fullNumber
-	const whatsapp = shop.contact?.whatsapp
+	const isActive = business.state?.code === 'active'
+	const thumbnailUrl = business.media?.thumbnail?.url
+	const rating = business.rating?.average || 0
+	const ratingCount = business.rating?.count || 0
+	const phone = business.contact?.phone?.fullNumber
+	const whatsapp = business.contact?.whatsapp
 
 	return (
-		<TouchableOpacity onPress={() => onPress(shop)} disabled={isNavigating} activeOpacity={0.8}>
+		<TouchableOpacity onPress={() => onPress(business)} disabled={isNavigating} activeOpacity={0.8}>
 			<View style={[styles.card, isNavigating && styles.disabledCard, { backgroundColor: theme.card, borderColor: theme.primary + '30' }]}>
 				<LinearGradient colors={[`${theme.primary}10`, `transparent`]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.cardGradient} />
 
-				<View style={styles.shopContent}>
-					<View style={styles.shopHeader}>
-						<View style={styles.shopIconContainer}>
+				<View style={styles.businessContent}>
+					<View style={styles.businessHeader}>
+						<View style={styles.businessIconContainer}>
 							{thumbnailUrl ? (
-								<Image source={{ uri: thumbnailUrl }} style={styles.shopThumbnail} />
+								<Image source={{ uri: thumbnailUrl }} style={styles.businessThumbnail} />
 							) : (
-								<LinearGradient colors={[theme.primary, `${theme.primary}CC`]} style={styles.shopIconGradient}>
+								<LinearGradient colors={[theme.primary, `${theme.primary}CC`]} style={styles.businessIconGradient}>
 									<Ionicons name="storefront" size={24} color="#fff" />
 								</LinearGradient>
 							)}
 						</View>
-						<View style={styles.shopInfo}>
-							<Text style={[styles.shopName, { color: theme.text }]} numberOfLines={1}>
-								{localize(shop.name) || translate('unnamed_shop', 'Unnamed Shop')}
+						<View style={styles.businessInfo}>
+							<Text style={[styles.businessName, { color: theme.text }]} numberOfLines={1}>
+								{localize(business.name) || translate('unnamed_business', 'Unnamed Business')}
 							</Text>
-							<Text style={[styles.shopSlug, { color: theme.textSecondary }]}>@{shop.slug}</Text>
+							<Text style={[styles.businessSlug, { color: theme.textSecondary }]}>@{business.slug}</Text>
 							{rating > 0 && (
 								<View style={styles.ratingContainer}>
 									<Ionicons name="star" size={12} color="#FFD700" />
@@ -155,17 +155,17 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 						</View>
 					</View>
 
-					<View style={styles.shopMetaGrid}>
+					<View style={styles.businessMetaGrid}>
 						<View style={styles.metaItem}>
 							<Ionicons name="location-outline" size={16} color={theme.textSecondary} />
 							<Text style={[styles.metaText, { color: theme.textSecondary }]} numberOfLines={1}>
-								{shop.address?.city || 'No location set'}
+								{business.address?.city || 'No location set'}
 							</Text>
 						</View>
-						{shop.deliveryRadiusKm && (
+						{business.deliveryRadiusKm && (
 							<View style={styles.metaItem}>
 								<Ionicons name="navigate-outline" size={16} color={theme.textSecondary} />
-								<Text style={[styles.metaText, { color: theme.textSecondary }]}>{shop.deliveryRadiusKm} km radius</Text>
+								<Text style={[styles.metaText, { color: theme.textSecondary }]}>{business.deliveryRadiusKm} km radius</Text>
 							</View>
 						)}
 					</View>
@@ -201,20 +201,20 @@ const ShopItem: React.FC<ShopItemProps> = React.memo(({ shop, isNavigating, onPr
 	)
 })
 
-const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
+const CreateBusinessForm: React.FC<CreateBusinessFormProps> = React.memo(
 	({
 		visible,
 		loading,
-		shopNameEn,
-		shopNameTnLatn,
-		shopNameTnArab,
+		businessNameEn,
+		businessNameTnLatn,
+		businessNameTnArab,
 		deliveryRadius,
 		photoUrl,
 		uploadingPhoto,
 		editMode,
-		onShopNameEnChange,
-		onShopNameTnLatnChange,
-		onShopNameTnArabChange,
+		onBusinessNameEnChange,
+		onBusinessNameTnLatnChange,
+		onBusinessNameTnArabChange,
 		onDeliveryRadiusChange,
 		onPhotoUrlChange,
 		onUploadPhoto,
@@ -227,7 +227,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 		const tnArabInputRef = useRef<RNTextInput>(null)
 		const deliveryRadiusInputRef = useRef<RNTextInput>(null)
 
-		const isFormValid = shopNameEn.trim().length >= MIN_SHOP_NAME_LENGTH && shopNameEn.trim().length <= MAX_SHOP_NAME_LENGTH
+		const isFormValid = businessNameEn.trim().length >= MIN_SHOP_NAME_LENGTH && businessNameEn.trim().length <= MAX_SHOP_NAME_LENGTH
 		const deliveryRadiusNum = parseFloat(deliveryRadius) || 0
 		const isDeliveryValid = deliveryRadiusNum > 0 && deliveryRadiusNum <= 100
 
@@ -241,12 +241,12 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 							<View style={[styles.modalIconContainer, { backgroundColor: theme.primary + '15' }]}>
 								<Text style={styles.modalIcon}>🏪</Text>
 							</View>
-							<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Shop</Text>
-							<Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Set up your shop in multiple languages</Text>
+							<Text style={[styles.modalTitle, { color: theme.text }]}>Create New Business</Text>
+							<Text style={[styles.modalSubtitle, { color: theme.textSecondary }]}>Set up your business in multiple languages</Text>
 						</View>
 
 						<ScrollView style={styles.modalForm} showsVerticalScrollIndicator={false}>
-							{/* Shop Photo Upload */}
+							{/* Business Photo Upload */}
 							<View style={[styles.photoUploadSection, { alignItems: 'center', marginBottom: 24 }]}>
 								<View style={styles.photoContainer}>
 									{photoUrl ? (
@@ -289,14 +289,14 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 							{/* English Name Input (Required) */}
 							<View style={styles.inputContainer}>
 								<View style={styles.inputLabelRow}>
-									<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name (English)</Text>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Business Name (English)</Text>
 									<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
 								</View>
 								<View
 									style={[
 										styles.inputWrapper,
 										{
-											borderColor: shopNameEn.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.border,
+											borderColor: businessNameEn.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.border,
 											backgroundColor: theme.background
 										}
 									]}
@@ -306,8 +306,8 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 									</View>
 									<TextInput
 										style={[styles.textInput, { color: theme.text, flex: 1 }]}
-										value={shopNameEn}
-										onChangeText={onShopNameEnChange}
+										value={businessNameEn}
+										onChangeText={onBusinessNameEnChange}
 										placeholder="e.g., Fresh Seafood Market"
 										placeholderTextColor={theme.textSecondary}
 										maxLength={MAX_SHOP_NAME_LENGTH}
@@ -317,15 +317,15 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 									/>
 								</View>
 								<View style={styles.inputFooter}>
-									<Text style={[styles.inputHint, { color: shopNameEn.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
-										{shopNameEn.length < MIN_SHOP_NAME_LENGTH && shopNameEn.length > 0
+									<Text style={[styles.inputHint, { color: businessNameEn.length > 0 ? (isFormValid ? '#10B981' : '#EF4444') : theme.textSecondary }]}>
+										{businessNameEn.length < MIN_SHOP_NAME_LENGTH && businessNameEn.length > 0
 											? `At least ${MIN_SHOP_NAME_LENGTH} characters required`
-											: shopNameEn.length > 0 && isFormValid
+											: businessNameEn.length > 0 && isFormValid
 												? '✓ Looks good!'
 												: 'English name is required'}
 									</Text>
 									<Text style={[styles.characterCount, { color: theme.textSecondary }]}>
-										{shopNameEn.length}/{MAX_SHOP_NAME_LENGTH}
+										{businessNameEn.length}/{MAX_SHOP_NAME_LENGTH}
 									</Text>
 								</View>
 							</View>
@@ -333,7 +333,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 							{/* Tunisian Latin Name Input (Optional) */}
 							<View style={styles.inputContainer}>
 								<View style={styles.inputLabelRow}>
-									<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name (Tunisian - Latin)</Text>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Business Name (Tunisian - Latin)</Text>
 									<Text style={[styles.optional, { color: theme.textSecondary }]}>Optional</Text>
 								</View>
 								<View
@@ -354,8 +354,8 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 									<TextInput
 										ref={tnLatnInputRef}
 										style={[styles.textInput, { color: theme.text, flex: 1 }]}
-										value={shopNameTnLatn}
-										onChangeText={onShopNameTnLatnChange}
+										value={businessNameTnLatn}
+										onChangeText={onBusinessNameTnLatnChange}
 										placeholder="e.g., Souk el 7out"
 										placeholderTextColor={theme.textSecondary}
 										maxLength={MAX_SHOP_NAME_LENGTH}
@@ -369,7 +369,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 							{/* Tunisian Arabic Name Input (Optional) */}
 							<View style={styles.inputContainer}>
 								<View style={styles.inputLabelRow}>
-									<Text style={[styles.inputLabel, { color: theme.text }]}>Shop Name (Tunisian - Arabic)</Text>
+									<Text style={[styles.inputLabel, { color: theme.text }]}>Business Name (Tunisian - Arabic)</Text>
 									<Text style={[styles.optional, { color: theme.textSecondary }]}>Optional</Text>
 								</View>
 								<View
@@ -390,8 +390,8 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 									<TextInput
 										ref={tnArabInputRef}
 										style={[styles.textInput, { color: theme.text, flex: 1, textAlign: 'right' }]}
-										value={shopNameTnArab}
-										onChangeText={onShopNameTnArabChange}
+										value={businessNameTnArab}
+										onChangeText={onBusinessNameTnArabChange}
 										placeholder="مثال: سوق الحوت"
 										placeholderTextColor={theme.textSecondary}
 										maxLength={MAX_SHOP_NAME_LENGTH}
@@ -448,7 +448,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 								<View style={{ flex: 1 }}>
 									<Text style={[styles.infoTitle, { color: theme.text }]}>Multi-language Support</Text>
 									<Text style={[styles.infoText, { color: theme.textSecondary }]}>
-										Providing names in multiple languages helps customers find your shop more easily. You can update these later from shop settings.
+										Providing names in multiple languages helps customers find your business more easily. You can update these later from business settings.
 									</Text>
 								</View>
 							</View>
@@ -475,7 +475,7 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 									<ActivityIndicator color="#fff" size="small" />
 								) : (
 									<>
-										<Text style={styles.createButtonText}>Create Shop</Text>
+										<Text style={styles.createButtonText}>Create Business</Text>
 										<Text style={{ fontSize: 16 }}>→</Text>
 									</>
 								)}
@@ -490,25 +490,25 @@ const CreateShopForm: React.FC<CreateShopFormProps> = React.memo(
 
 import ScreenHeader from '../common/ScreenHeader'
 
-const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
+const MyBusinessesTab: React.FC<MyBusinessesTabProps> = ({ navigation }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 	const { onScroll } = useScrollHandler()
-	const [state, setState] = useState<ShopState>({
-		shops: [],
+	const [state, setState] = useState<BusinessState>({
+		businesses: [],
 		loading: true,
 		refreshing: false,
 		modalVisible: false,
-		shopNameEn: '',
-		shopNameTnLatn: '',
-		shopNameTnArab: '',
+		businessNameEn: '',
+		businessNameTnLatn: '',
+		businessNameTnArab: '',
 		deliveryRadius: '5',
 		photoUrl: '',
 		uploadingPhoto: false,
 		editMode: { photo: false },
 		creating: false,
-		navigatingShopId: null,
+		navigatingBusinessId: null,
 		error: null,
 		pagination: {
 			totalDocs: 0,
@@ -520,20 +520,35 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		}
 	})
 
-	const { shops, loading, refreshing, modalVisible, shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, photoUrl, uploadingPhoto, editMode, creating, navigatingShopId, error, pagination } =
-		state
+	const {
+		businesses,
+		loading,
+		refreshing,
+		modalVisible,
+		businessNameEn,
+		businessNameTnLatn,
+		businessNameTnArab,
+		deliveryRadius,
+		photoUrl,
+		uploadingPhoto,
+		editMode,
+		creating,
+		navigatingBusinessId,
+		error,
+		pagination
+	} = state
 
-	const updateState = useCallback((updates: Partial<ShopState>) => {
+	const updateState = useCallback((updates: Partial<BusinessState>) => {
 		setState((prev) => ({ ...prev, ...updates }))
 	}, [])
 
-	const loadShops = useCallback(
+	const loadBusinesses = useCallback(
 		async (showRefreshing = false) => {
 			try {
 				updateState(showRefreshing ? { refreshing: true } : { loading: true, error: null })
-				const response = await getMyShops()
-				// Access the shops array from the nested data property
-				const shops = response?.data?.docs || []
+				const response = await getMyBusinesses()
+				// Access the businesses array from the nested data property
+				const businesses = response?.data?.docs || []
 				const paginationData = response?.data?.pagination || {
 					totalDocs: 0,
 					totalPages: 0,
@@ -543,36 +558,36 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 					hasPrevPage: false
 				}
 				updateState({
-					shops: shops.sort((a: Shop, b: Shop) => localize(a.name).localeCompare(localize(b.name))),
+					businesses: businesses.sort((a: Business, b: Business) => localize(a.name).localeCompare(localize(b.name))),
 					loading: false,
 					refreshing: false,
 					error: null,
 					pagination: paginationData
 				})
 			} catch (err) {
-				console.error('Failed to load shops:', err)
+				console.error('Failed to load businesses:', err)
 				updateState({
 					loading: false,
 					refreshing: false,
-					error: 'Failed to load shops. Please try again.'
+					error: 'Failed to load businesses. Please try again.'
 				})
 			}
 		},
 		[updateState]
 	)
 
-	const debouncedLoadShops = useMemo(() => debounce(loadShops, DEBOUNCE_DELAY), [loadShops])
+	const debouncedLoadBusinesss = useMemo(() => debounce(loadBusinesses, DEBOUNCE_DELAY), [loadBusinesses])
 
 	useFocusEffect(
 		useCallback(() => {
-			debouncedLoadShops(false)
-			return () => debouncedLoadShops.cancel()
-		}, [debouncedLoadShops])
+			debouncedLoadBusinesss(false)
+			return () => debouncedLoadBusinesss.cancel()
+		}, [debouncedLoadBusinesss])
 	)
 
 	const handleRefresh = useCallback(() => {
-		debouncedLoadShops(true)
-	}, [debouncedLoadShops])
+		debouncedLoadBusinesss(true)
+	}, [debouncedLoadBusinesss])
 
 	const handleUploadPhoto = useCallback(async () => {
 		try {
@@ -622,19 +637,19 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		}
 	}, [updateState])
 
-	const handleCreateShop = useCallback(async () => {
-		if (shopNameEn.trim().length < MIN_SHOP_NAME_LENGTH || shopNameEn.trim().length > MAX_SHOP_NAME_LENGTH) {
+	const handleCreateBusiness = useCallback(async () => {
+		if (businessNameEn.trim().length < MIN_SHOP_NAME_LENGTH || businessNameEn.trim().length > MAX_SHOP_NAME_LENGTH) {
 			return
 		}
 
 		try {
 			updateState({ creating: true, error: null })
 
-			const newShop: CreateShopRequest = {
+			const newBusiness: CreateBusinessRequest = {
 				name: {
-					en: shopNameEn.trim(),
-					...(shopNameTnLatn.trim() && { tn_latn: shopNameTnLatn.trim() }),
-					...(shopNameTnArab.trim() && { tn_arab: shopNameTnArab.trim() })
+					en: businessNameEn.trim(),
+					...(businessNameTnLatn.trim() && { tn_latn: businessNameTnLatn.trim() }),
+					...(businessNameTnArab.trim() && { tn_arab: businessNameTnArab.trim() })
 				},
 				address: {
 					street: '',
@@ -651,52 +666,52 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			}
 
 			console.log('=== CREATE SHOP DEBUG ===')
-			console.log('shopNameEn:', shopNameEn)
-			console.log('shopNameTnLatn:', shopNameTnLatn)
-			console.log('shopNameTnArab:', shopNameTnArab)
+			console.log('businessNameEn:', businessNameEn)
+			console.log('businessNameTnLatn:', businessNameTnLatn)
+			console.log('businessNameTnArab:', businessNameTnArab)
 			console.log('photoUrl:', photoUrl)
-			console.log('newShop object:', newShop)
-			console.log('newShop.name:', newShop.name)
-			console.log('newShop.name type:', typeof newShop.name)
-			console.log('newShop.name.en:', newShop.name.en)
-			console.log('newShop stringified:', JSON.stringify(newShop, null, 2))
+			console.log('newBusiness object:', newBusiness)
+			console.log('newBusiness.name:', newBusiness.name)
+			console.log('newBusiness.name type:', typeof newBusiness.name)
+			console.log('newBusiness.name.en:', newBusiness.name.en)
+			console.log('newBusiness stringified:', JSON.stringify(newBusiness, null, 2))
 			console.log('========================')
 
-			await createShop(newShop)
-			await loadShops()
+			await createBusiness(newBusiness)
+			await loadBusinesses()
 			updateState({
 				modalVisible: false,
-				shopNameEn: '',
-				shopNameTnLatn: '',
-				shopNameTnArab: '',
+				businessNameEn: '',
+				businessNameTnLatn: '',
+				businessNameTnArab: '',
 				deliveryRadius: '5',
 				photoUrl: '',
 				uploadingPhoto: false,
 				editMode: { photo: false },
 				creating: false
 			})
-			Alert.alert('Success', 'Shop created successfully! You can update the address and location from shop settings.')
+			Alert.alert('Success', 'Business created successfully! You can update the address and location from business settings.')
 		} catch (err) {
-			console.error('Failed to create shop:', err)
+			console.error('Failed to create business:', err)
 			updateState({
 				creating: false,
-				error: 'Failed to create shop. Please try again.'
+				error: 'Failed to create business. Please try again.'
 			})
-			Alert.alert('Error', 'Failed to create shop. Please try again.')
+			Alert.alert('Error', 'Failed to create business. Please try again.')
 		}
-	}, [shopNameEn, shopNameTnLatn, shopNameTnArab, deliveryRadius, photoUrl, updateState, loadShops])
+	}, [businessNameEn, businessNameTnLatn, businessNameTnArab, deliveryRadius, photoUrl, updateState, loadBusinesses])
 
-	const handleShopPress = useCallback(
-		(shop: Shop) => {
-			if (!shop?._id) return
+	const handleBusinessPress = useCallback(
+		(business: Business) => {
+			if (!business?._id) return
 
-			updateState({ navigatingShopId: shop._id })
+			updateState({ navigatingBusinessId: business._id })
 
-			// Navigate to the business shop details using expo-router
+			// Navigate to the business business details using expo-router
 			if (router) {
 				router.push({
-					pathname: '/(home)/business/shops/[shopSlug]',
-					params: { shopSlug: shop.slug }
+					pathname: '/(home)/business/[businessSlug]',
+					params: { businessSlug: business.slug }
 				} as any)
 			}
 
@@ -704,7 +719,7 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 			const timeoutId = setTimeout(() => {
 				setState((prevState) => ({
 					...prevState,
-					navigatingShopId: null
+					navigatingBusinessId: null
 				}))
 			}, 5000)
 
@@ -714,21 +729,21 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 		[router, updateState]
 	)
 
-	const sortedShops = useMemo(() => {
-		return [...shops].sort((a, b) => {
+	const sortedBusinesss = useMemo(() => {
+		return [...businesses].sort((a, b) => {
 			// Sort by active status first, then by name
 			if (a.isActive !== b.isActive) {
 				return a.isActive ? -1 : 1
 			}
 			return localize(a.name).localeCompare(localize(b.name))
 		})
-	}, [shops, localize])
+	}, [businesses, localize])
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={translate('business.my_shops', 'My Shops')} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScreenHeader title={translate('business.my_businesses', 'My Businesss')} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 			<FlatList
-				data={sortedShops}
+				data={sortedBusinesss}
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.listContent}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
@@ -740,21 +755,23 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 							<LinearGradient colors={[`${colors.primary}15`, `${colors.primary}05`]} style={styles.emptyIconContainer}>
 								<Ionicons name="storefront-outline" size={48} color={colors.primary} />
 							</LinearGradient>
-							<Text style={[styles.emptyTitleText, { color: colors.text }]}>{error || translate('business.no_shops', 'Manage Your Shops')}</Text>
+							<Text style={[styles.emptyTitleText, { color: colors.text }]}>{error || translate('business.no_businesses', 'Manage Your Businesss')}</Text>
 							<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
-								{error ? translate('error_occurred', 'Wait, something went wrong...') : translate('business.no_shops_desc', 'Create your first shop to start selling seafood and managing inventory.')}
+								{error
+									? translate('error_occurred', 'Wait, something went wrong...')
+									: translate('business.no_businesses_desc', 'Create your first business to start selling seafood and managing inventory.')}
 							</Text>
-							<TouchableOpacity onPress={() => (error ? loadShops() : updateState({ modalVisible: true }))} style={[styles.emptyButton, { backgroundColor: colors.primary }]}>
+							<TouchableOpacity onPress={() => (error ? loadBusinesses() : updateState({ modalVisible: true }))} style={[styles.emptyButton, { backgroundColor: colors.primary }]}>
 								<Ionicons name={error ? 'refresh' : 'add'} size={32} color="#fff" />
 							</TouchableOpacity>
 						</View>
 					) : null
 				}
 				renderItem={({ item }) => (
-					<ShopItem
-						shop={item}
-						isNavigating={navigatingShopId === item._id}
-						onPress={handleShopPress}
+					<BusinessItem
+						business={item}
+						isNavigating={navigatingBusinessId === item._id}
+						onPress={handleBusinessPress}
 						theme={{
 							primary: colors.primary,
 							text: colors.text,
@@ -773,30 +790,30 @@ const MyShopsTab: React.FC<MyShopsTabProps> = ({ navigation }) => {
 				</LinearGradient>
 			</TouchableOpacity>
 
-			<CreateShopForm
+			<CreateBusinessForm
 				visible={modalVisible}
 				loading={creating}
-				shopNameEn={shopNameEn}
-				shopNameTnLatn={shopNameTnLatn}
-				shopNameTnArab={shopNameTnArab}
+				businessNameEn={businessNameEn}
+				businessNameTnLatn={businessNameTnLatn}
+				businessNameTnArab={businessNameTnArab}
 				deliveryRadius={deliveryRadius}
 				photoUrl={photoUrl}
 				uploadingPhoto={uploadingPhoto}
 				editMode={editMode}
-				onShopNameEnChange={(text: string) => updateState({ shopNameEn: text })}
-				onShopNameTnLatnChange={(text: string) => updateState({ shopNameTnLatn: text })}
-				onShopNameTnArabChange={(text: string) => updateState({ shopNameTnArab: text })}
+				onBusinessNameEnChange={(text: string) => updateState({ businessNameEn: text })}
+				onBusinessNameTnLatnChange={(text: string) => updateState({ businessNameTnLatn: text })}
+				onBusinessNameTnArabChange={(text: string) => updateState({ businessNameTnArab: text })}
 				onDeliveryRadiusChange={(text) => updateState({ deliveryRadius: text })}
 				onPhotoUrlChange={(url) => updateState({ photoUrl: url })}
 				onUploadPhoto={handleUploadPhoto}
 				onToggleEditMode={(field) => updateState({ editMode: { ...editMode, [field]: !editMode[field] } })}
-				onSubmit={handleCreateShop}
+				onSubmit={handleCreateBusiness}
 				onDismiss={() =>
 					updateState({
 						modalVisible: false,
-						shopNameEn: '',
-						shopNameTnLatn: '',
-						shopNameTnArab: '',
+						businessNameEn: '',
+						businessNameTnLatn: '',
+						businessNameTnArab: '',
 						deliveryRadius: '5',
 						photoUrl: '',
 						uploadingPhoto: false,
@@ -845,44 +862,44 @@ const styles = StyleSheet.create({
 	cardGradient: {
 		...StyleSheet.absoluteFillObject
 	},
-	shopContent: {
+	businessContent: {
 		padding: 20
 	},
 	disabledCard: {
 		opacity: 0.7
 	},
-	shopHeader: {
+	businessHeader: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		marginBottom: 20
 	},
-	shopIconContainer: {
+	businessIconContainer: {
 		width: 52,
 		height: 52,
 		borderRadius: 16,
 		overflow: 'hidden'
 	},
-	shopIconGradient: {
+	businessIconGradient: {
 		width: '100%',
 		height: '100%',
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
-	shopThumbnail: {
+	businessThumbnail: {
 		width: '100%',
 		height: '100%',
 		borderRadius: 16
 	},
-	shopInfo: {
+	businessInfo: {
 		flex: 1,
 		marginLeft: 16
 	},
-	shopName: {
+	businessName: {
 		fontSize: 18,
 		fontWeight: '700',
 		letterSpacing: -0.5
 	},
-	shopSlug: {
+	businessSlug: {
 		fontSize: 13,
 		marginTop: 2
 	},
@@ -917,7 +934,7 @@ const styles = StyleSheet.create({
 		fontWeight: '800',
 		textTransform: 'uppercase'
 	},
-	shopMetaGrid: {
+	businessMetaGrid: {
 		flexDirection: 'row',
 		marginBottom: 20,
 		gap: 20
@@ -1316,4 +1333,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default MyShopsTab
+export default MyBusinessesTab

@@ -2,34 +2,34 @@ import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, useWindowDimensions } from 'react-native'
 import SmartImage from '../../core/helpers/SmartImage'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { ShopFeedItem } from './feed.interface'
+import { BusinessFeedItem } from './feed.interface'
 import { useTheme } from '../../core/contexts/ThemeContext'
 import { useRouter } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 
-type ShopCardProps = {
-	item: ShopFeedItem
+type BusinessCardProps = {
+	item: BusinessFeedItem
 }
 
-export default function ShopCard({ item }: ShopCardProps) {
+export default function BusinessCard({ item }: BusinessCardProps) {
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 	const router = useRouter()
 	const { width } = useWindowDimensions()
 	const styles = useMemo(() => createStyles(colors, width), [colors, width])
 
-	const shopName = localize(item.name) || localize(item.shop?.name) || translate('shop', 'Shop')
-	const ownerName = localize(item.shop?.owner?.name)
-	const address = item.shop?.address
+	const businessName = localize(item.name) || localize(item.business?.name) || translate('business', 'Business')
+	const ownerName = localize(item.business?.owner?.name)
+	const address = item.business?.address
 	const locationText = address ? [address.city, address.country].filter(Boolean).join(', ') : ''
 	const streetText = address?.street || ''
-	const rating = item.rating?.average || item.shop?.rating?.average || 0
-	const ratingCount = item.rating?.count || item.shop?.rating?.count || 0
+	const rating = item.rating?.average || item.business?.rating?.average || 0
+	const ratingCount = item.rating?.count || item.business?.rating?.count || 0
 
 	const handlePress = () => {
-		const slug = item.shop?.slug || item.slug
+		const slug = item.business?.slug || item.slug
 		if (slug) {
-			router.push(`/shops/${slug}` as any)
+			router.push(`/businesses/${slug}` as any)
 		}
 	}
 
@@ -48,7 +48,7 @@ export default function ShopCard({ item }: ShopCardProps) {
 	}
 
 	const handleDirections = () => {
-		const coords = item.shop?.location?.coordinates
+		const coords = item.business?.location?.coordinates
 		if (coords && coords.length === 2) {
 			const [lng, lat] = coords
 			const url = Platform.select({
@@ -68,15 +68,15 @@ export default function ShopCard({ item }: ShopCardProps) {
 	}
 
 	const hasContact = item.contact?.phone || item.contact?.whatsapp || item.contact?.email
-	const hasLocation = item.shop?.location?.coordinates && item.shop.location.coordinates.length === 2
+	const hasLocation = item.business?.location?.coordinates && item.business.location.coordinates.length === 2
 
 	return (
 		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.85}>
 			{/* Thumbnail */}
 			<View style={styles.imageContainer}>
-				<SmartImage source={item.media?.thumbnail?.url} style={styles.image} resizeMode="cover" entityType="shop" />
+				<SmartImage source={item.media?.thumbnail?.url} style={styles.image} resizeMode="cover" entityType="business" />
 				<View style={styles.imageOverlay} />
-				{/* Shop badge */}
+				{/* Business badge */}
 				<View style={styles.badge}>
 					<MaterialIcons name="store" size={14} color={colors.primary} />
 				</View>
@@ -84,8 +84,8 @@ export default function ShopCard({ item }: ShopCardProps) {
 
 			{/* Info */}
 			<View style={styles.info}>
-				<Text style={styles.shopName} numberOfLines={1}>
-					{shopName}
+				<Text style={styles.businessName} numberOfLines={1}>
+					{businessName}
 				</Text>
 
 				{rating > 0 && (
@@ -214,7 +214,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 			gap: 6,
 			justifyContent: 'space-between'
 		},
-		shopName: {
+		businessName: {
 			fontSize: isSmall ? 17 : 19,
 			fontWeight: '700',
 			color: colors.text
