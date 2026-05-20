@@ -2,143 +2,90 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
-import { MaterialIcons, Ionicons, Feather, FontAwesome5 } from '@expo/vector-icons'
+import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
 import { useTheme } from '../../core/contexts/ThemeContext'
 import ScreenHeader from '../common/ScreenHeader'
-import { getPurchases } from '../orders/orders.api'
-import { OrderItem } from '../orders/orders.interface'
-import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { secureGetItem } from '../../core/auth/storage'
-import { getMyBusinesses } from '../businesses/businesses.api'
-import { Business } from '../businesses/businesses.interface'
-
-type Order = OrderItem
+import SmartImage from '../../core/helpers/SmartImage'
+import { getDashboard, getDashboardProfiles, getPersonalDashboard, getBusinessDashboard } from './dashboard.api'
+import { DashboardData, DashboardProfile, DashboardRankItem, isBusinessDashboard, isPersonalDashboard, ProductStats } from './dashboard.interface'
+import { LocalizedName } from '../businesses/businesses.interface'
 
 const { width } = Dimensions.get('window')
-const COLUMN_WIDTH = (width - 44) / 2
+const STAT_WIDTH = (width - 44) / 2
 
-type StatCardProps = {
-	title: string
-	value: string | number
-	icon: React.ReactNode
-	accent: string
-	onPress?: () => void
-}
-
-type ActionButtonProps = {
-	icon: React.ReactNode
-	onPress: () => void
-	color: string
-	count?: number
+type SelectedProfile = {
+	kind: 'personal' | 'business'
+	slug?: string
+	profileId: string
 }
 
 const Dashboard = () => {
 	const { colors } = useTheme()
 	const styles = useMemo(() => createStyles(colors), [colors])
-	const { localize, formatPrice, translate, currency, user } = useUser()
+	const { localize, translate, user } = useUser()
 	const router = useRouter()
 	const { onScroll } = useScrollHandler()
 
-	const [userRole, setUserRole] = useState<string | null>(null)
+	const [profiles, setProfiles] = useState<DashboardProfile[]>([])
+	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
+	const [selectedProfile, setSelectedProfile] = useState<SelectedProfile | null>(null)
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
-	const [stats, setStats] = useState({
-		totalPurchases: 0,
-		pendingPurchases: 0,
-		completedPurchases: 0,
-		totalSpent: 0
-	})
-	const [recentPurchases, setRecentPurchases] = useState<Order[]>([])
-	const [myBusinesses, setMyBusinesses] = useState<Business[]>([])
+	const [switchingProfile, setSwitchingProfile] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
-	const isOwner = userRole === 'shop_owner'
+	const showProfileSwitcher = profiles.length > 1
 
-	useEffect(() => {
-		const loadRole = async () => {
-			try {
-				const storedUserData = await secureGetItem('userData')
-				if (storedUserData) {
-					const userData = JSON.parse(storedUserData)
-					setUserRole(userData.role || null)
-				}
-			} catch {
-				setUserRole(null)
+	const resolveSelectedFromData = useCallback((data: DashboardData, list: DashboardProfile[]): SelectedProfile => {
+		if (isBusinessDashboard(data)) {
+			const match = list.find((p) => p.kind === 'business' && p.slug === data.business.slug) || list.find((p) => p.kind === 'business')
+			return {
+				kind: 'business',
+				slug: data.business.slug,
+				profileId: match?._id || data._id
 			}
 		}
-		loadRole()
+		const personal = list.find((p) => p.kind === 'personal')
+		return { kind: 'personal', profileId: personal?._id || data._id }
 	}, [])
 
-	const StatCard = ({ title, value, icon, accent, onPress }: StatCardProps) => (
-		<TouchableOpacity activeOpacity={0.9} onPress={onPress} style={[styles.statCard, { borderColor: colors.info || '#3B82F6', backgroundColor: colors.card }]}>
-			<LinearGradient colors={[`${accent}15`, `${accent}05`]} style={styles.statGradient} />
-			<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
-			<View style={styles.statBody}>
-				<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
-				<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
-			</View>
-		</TouchableOpacity>
-	)
-
-	const ActionButton = ({ icon, onPress, color, count }: ActionButtonProps) => (
-		<View style={styles.actionItem}>
-			<TouchableOpacity onPress={onPress} activeOpacity={0.8} style={[styles.actionButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-				<View style={[styles.actionIconInner, { backgroundColor: `${color}15` }]}>{icon}</View>
-				{count !== undefined && count > 0 && (
-					<View style={[styles.countBadge, { backgroundColor: color }]}>
-						<Text style={styles.countBadgeText}>{count}</Text>
-					</View>
-				)}
-			</TouchableOpacity>
-		</View>
-	)
-
-	const loadDashboard = useCallback(async () => {
-		try {
-			setLoading(true)
-			setError(null)
-
-			const purchasesPromise = getPurchases()
-			const businessesPromise = isOwner ? getMyBusinesses() : Promise.resolve(null)
-
-			const [purchasesResponse, businessesResponse] = await Promise.all([purchasesPromise, businessesPromise])
-
-			const docs = purchasesResponse.data.docs || []
-			const totalSpent = docs.reduce((acc, order) => {
-				const amount = order.price?.total?.[currency as keyof typeof order.price.total] || order.price?.total?.tnd || 0
-				return acc + (typeof amount === 'number' ? amount : 0)
-			}, 0)
-			const pendingCount = docs.filter((o) => o.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION).length
-			const completedCount = docs.filter((o) => [orderStatusEnum.DELIVERED_TO_CUSTOMER, orderStatusEnum.RECEIVED_BY_CUSTOMER].includes(o.status)).length
-
-			setStats({
-				totalPurchases: docs.length,
-				pendingPurchases: pendingCount,
-				completedPurchases: completedCount,
-				totalSpent
-			})
-			setRecentPurchases(docs.slice(0, 5))
-
-			if (businessesResponse) {
-				setMyBusinesses(businessesResponse.data?.docs || [])
-			}
-		} catch (err: any) {
-			logError(err, 'loadDashboard')
-			const errorInfo = parseError(err)
-			setError({
-				title: errorInfo.title,
-				message: errorInfo.message,
-				type: errorInfo.type
-			})
-		} finally {
-			setLoading(false)
-			setRefreshing(false)
+	const fetchDashboardForProfile = useCallback(async (profile: SelectedProfile) => {
+		if (profile.kind === 'personal') {
+			return (await getPersonalDashboard()).data
 		}
-	}, [currency, isOwner])
+		if (profile.slug) {
+			return (await getBusinessDashboard(profile.slug)).data
+		}
+		return (await getDashboard()).data
+	}, [])
+
+	const loadDashboard = useCallback(
+		async (profileOverride?: SelectedProfile) => {
+			try {
+				setError(null)
+				const [profilesRes, defaultRes] = await Promise.all([getDashboardProfiles(), getDashboard()])
+				const profileList = profilesRes.data || []
+				setProfiles(profileList)
+
+				const data = profileOverride ? await fetchDashboardForProfile(profileOverride) : defaultRes.data
+				setDashboardData(data)
+				setSelectedProfile(profileOverride || resolveSelectedFromData(data, profileList))
+			} catch (err: unknown) {
+				logError(err, 'loadDashboard')
+				const errorInfo = parseError(err)
+				setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
+			} finally {
+				setLoading(false)
+				setRefreshing(false)
+				setSwitchingProfile(false)
+			}
+		},
+		[fetchDashboardForProfile, resolveSelectedFromData]
+	)
 
 	useEffect(() => {
 		loadDashboard()
@@ -146,123 +93,61 @@ const Dashboard = () => {
 
 	const onRefresh = useCallback(() => {
 		setRefreshing(true)
-		loadDashboard()
-	}, [loadDashboard])
+		loadDashboard(selectedProfile ?? undefined)
+	}, [loadDashboard, selectedProfile])
 
-	const getStatusColor = useCallback((status: string) => orderStatusColors[status] || colors.textSecondary, [colors])
+	const handleSelectProfile = useCallback(
+		async (profile: DashboardProfile) => {
+			if (!selectedProfile || profile._id === selectedProfile.profileId) return
 
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString)
-		const now = new Date()
-		const diffTime = Math.abs(now.getTime() - date.getTime())
-		const diffMinutes = Math.floor(diffTime / (1000 * 60))
-		const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
-		const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
-		if (diffMinutes < 60) return `${diffMinutes}m ${translate('ago', 'ago')}`
-		if (diffHours < 24) return `${diffHours}h ${translate('ago', 'ago')}`
-		if (diffDays < 7) return `${diffDays}d ${translate('ago', 'ago')}`
-		return date.toLocaleDateString()
-	}
-
-	const getOrderBusinessName = (order: Order) => {
-		const entity = order.business || (order as any).business
-		return entity?.name ? localize(entity.name) : translate('unknown', 'Unknown')
-	}
-
-	const statCards = useMemo(
-		() => [
-			{
-				title: translate('dashboard.total_spent', 'Total Spent'),
-				value: formatPrice({ total: { [currency]: stats.totalSpent } }),
-				icon: <MaterialIcons name="payments" size={24} color={colors.primary} />,
-				accent: colors.primary,
-				onPress: () => router.push('/(home)/purchases' as any)
-			},
-			{
-				title: translate('dashboard.purchases', 'Purchases'),
-				value: stats.totalPurchases,
-				icon: <MaterialIcons name="shopping-bag" size={24} color={colors.info} />,
-				accent: colors.info,
-				onPress: () => router.push('/(home)/purchases' as any)
-			},
-			{
-				title: translate('dashboard.pending', 'Pending'),
-				value: stats.pendingPurchases,
-				icon: <MaterialIcons name="schedule" size={24} color={colors.warning} />,
-				accent: colors.warning,
-				onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'pending' } } as any)
-			},
-			{
-				title: translate('dashboard.completed', 'Completed'),
-				value: stats.completedPurchases,
-				icon: <MaterialIcons name="check-circle" size={24} color={colors.success} />,
-				accent: colors.success,
-				onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'completed' } } as any)
+			const next: SelectedProfile = {
+				kind: profile.kind,
+				slug: profile.slug,
+				profileId: profile._id
 			}
-		],
-		[colors, router, stats, currency, formatPrice, translate]
+
+			try {
+				setSwitchingProfile(true)
+				setError(null)
+				const data = await fetchDashboardForProfile(next)
+				setDashboardData(data)
+				setSelectedProfile(next)
+			} catch (err: unknown) {
+				logError(err, 'switchDashboardProfile')
+				const errorInfo = parseError(err)
+				setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
+			} finally {
+				setSwitchingProfile(false)
+			}
+		},
+		[fetchDashboardForProfile, selectedProfile]
 	)
 
-	const customerActions = useMemo(
-		() => [
-			{
-				icon: <MaterialIcons name="storefront" size={26} color={colors.primary} />,
-				color: colors.primary,
-				onPress: () => router.push('/(home)/businesses' as any)
-			},
-			{
-				icon: <Feather name="package" size={26} color={colors.info} />,
-				color: colors.info,
-				onPress: () => router.push('/(home)/purchases' as any)
-			},
-			{
-				icon: <Feather name="tag" size={26} color={colors.success} />,
-				color: colors.success,
-				onPress: () => router.push('/(home)/feed' as any)
-			},
-			{
-				icon: <Feather name="settings" size={26} color={colors.textTertiary} />,
-				color: colors.textTertiary,
-				onPress: () => router.push('/(home)/settings' as any)
-			}
-		],
-		[colors, router]
-	)
+	const getProfileLabel = (profile: DashboardProfile) => localize(profile.name)
 
-	const ownerActions = useMemo(
-		() => [
-			{
-				icon: <MaterialIcons name="store" size={26} color={colors.primary} />,
-				color: colors.primary,
-				count: myBusinesses.length,
-				onPress: () => router.push('/(home)/business/my-businesses' as any)
-			},
-			{
-				icon: <MaterialIcons name="inventory" size={26} color={colors.success} />,
-				color: colors.success,
-				onPress: () => router.push('/(home)/business/my-products' as any)
-			},
-			{
-				icon: <MaterialIcons name="receipt-long" size={26} color={colors.info} />,
-				color: colors.info,
-				onPress: () => router.push('/(home)/business/sales' as any)
-			},
-			{
-				icon: <MaterialIcons name="add-business" size={26} color={colors.warning} />,
-				color: colors.warning,
-				onPress: () => router.push('/(home)/business/create-product' as any)
-			}
-		],
-		[colors, router, myBusinesses.length]
-	)
-
-	const featuredBusiness = myBusinesses[0]
+	const getProfileThumbnail = (profile: DashboardProfile) => profile.media?.thumbnail?.url
 
 	if (loading && !refreshing) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
+	}
+
+	if (error && !dashboardData) {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<ScreenHeader title={translate('dashboard', 'Dashboard')} showBack={false} onRefresh={onRefresh} isRefreshing={refreshing} />
+				<ErrorState
+					title={error.title}
+					message={error.message}
+					onRetry={() => {
+						setLoading(true)
+						loadDashboard()
+					}}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+				/>
 			</View>
 		)
 	}
@@ -273,214 +158,506 @@ const Dashboard = () => {
 				title={translate('dashboard', 'Dashboard')}
 				subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
 				showBack={false}
-				rightActions={
-					<TouchableOpacity onPress={onRefresh} style={styles.headerIcon} accessibilityLabel="Refresh dashboard">
-						<Ionicons name={refreshing ? 'hourglass' : 'refresh'} size={22} color={colors.text} />
-					</TouchableOpacity>
-				}
+				onRefresh={onRefresh}
+				isRefreshing={refreshing || switchingProfile}
 			/>
 
-			{error && recentPurchases.length === 0 && !isOwner ? (
-				<ErrorState
-					title={error.title}
-					message={error.message}
-					onRetry={loadDashboard}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-				/>
-			) : (
-				<ScrollView
-					contentContainerStyle={styles.scrollContent}
-					refreshControl={<RefreshControl refreshing={refreshing || loading} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-					showsVerticalScrollIndicator={false}
-					onScroll={onScroll}
-					scrollEventThrottle={16}
-				>
-					{isOwner && featuredBusiness && (
-						<View style={styles.section}>
-							<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-								<View style={styles.heroInfo}>
-									<View style={[styles.statusBadge, { backgroundColor: featuredBusiness.state?.code === 'active' ? colors.success + '20' : colors.warning + '20' }]}>
-										<View style={[styles.statusDot, { backgroundColor: featuredBusiness.state?.code === 'active' ? colors.success : colors.warning }]} />
-										<Text style={[styles.statusText, { color: featuredBusiness.state?.code === 'active' ? colors.success : colors.warning }]}>
-											{(featuredBusiness.state?.code || 'unknown').toUpperCase()}
-										</Text>
-									</View>
-									<Text style={[styles.businessName, { color: colors.text }]}>{localize(featuredBusiness.name)}</Text>
-									<Text style={[styles.businessSlug, { color: colors.textSecondary }]}>@{featuredBusiness.slug}</Text>
-								</View>
-								<FontAwesome5 name="anchor" size={36} color={colors.primary} style={{ opacity: 0.5 }} />
-							</LinearGradient>
-						</View>
-					)}
-
-					{isOwner && (
-						<View style={styles.section}>
-							<View style={styles.sectionHeader}>
-								<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.management', 'Management')}</Text>
-							</View>
-							<View style={styles.actionsRow}>
-								{ownerActions.map((action, index) => (
-									<ActionButton key={index} {...action} />
-								))}
-							</View>
-						</View>
-					)}
-
+			<ScrollView
+				contentContainerStyle={styles.scrollContent}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				showsVerticalScrollIndicator={false}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
+			>
+				{showProfileSwitcher && (
 					<View style={styles.section}>
-						<View style={styles.sectionHeader}>
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.overview', 'Overview')}</Text>
-						</View>
-						<View style={styles.statsGrid}>
-							{statCards.map((card) => (
-								<StatCard key={card.title} {...card} />
-							))}
-						</View>
-					</View>
-
-					<View style={styles.section}>
-						<View style={styles.sectionHeader}>
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.quick_actions', 'Quick Actions')}</Text>
-						</View>
-						<View style={styles.actionsRow}>
-							{customerActions.map((action, index) => (
-								<ActionButton key={index} {...action} />
-							))}
-						</View>
-					</View>
-
-					<View style={styles.section}>
-						<View style={styles.sectionHeader}>
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('dashboard.recent_purchases', 'Recent Purchases')}</Text>
-							<TouchableOpacity onPress={() => router.push('/(home)/purchases' as any)} style={styles.iconButton}>
-								<Ionicons name="chevron-forward" size={20} color={colors.primary} />
-							</TouchableOpacity>
-						</View>
-						<View style={[styles.panel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
-							{recentPurchases.length === 0 ? (
-								<View style={styles.emptyState}>
-									<View style={[styles.emptyIconContainer, { backgroundColor: colors.surface }]}>
-										<Feather name="shopping-bag" size={32} color={colors.textTertiary} />
-									</View>
-									<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('dashboard.no_purchases', 'No purchases yet')}</Text>
-									<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{translate('dashboard.browse_businesses_sub', 'Browse businesses to place your first purchase')}</Text>
-								</View>
-							) : (
-								recentPurchases.map((purchase, index) => (
+						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('dashboard.switch_profile', 'Switch profile')}</Text>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.profileRow}>
+							{profiles.map((profile) => {
+								const active = selectedProfile?.profileId === profile._id
+								const thumb = getProfileThumbnail(profile)
+								return (
 									<TouchableOpacity
-										key={purchase._id}
-										style={[styles.purchaseRow, { borderColor: colors.border }, index === recentPurchases.length - 1 && { borderBottomWidth: 0 }]}
-										onPress={() => router.push('/(home)/purchases' as any)}
-										activeOpacity={0.8}
+										key={profile._id}
+										activeOpacity={0.85}
+										onPress={() => handleSelectProfile(profile)}
+										style={[
+											styles.profileChip,
+											{
+												backgroundColor: active ? colors.primaryContainer : colors.surface,
+												borderColor: active ? colors.primary : colors.border
+											}
+										]}
 									>
-										<View style={[styles.purchaseIcon, { backgroundColor: `${colors.primary}10` }]}>
-											<MaterialIcons name="store" size={20} color={colors.primary} />
-										</View>
-										<View style={styles.purchaseMeta}>
-											<Text style={[styles.purchaseTitle, { color: colors.text }]} numberOfLines={1}>
-												{getOrderBusinessName(purchase)}
-											</Text>
-											<Text style={[styles.purchaseDate, { color: colors.textSecondary }]}>{formatDate(purchase.createdAt)}</Text>
-										</View>
-										<View style={styles.purchaseRight}>
-											<Text style={[styles.purchaseAmount, { color: colors.text }]}>{formatPrice(purchase.price)}</Text>
-											<View style={[styles.statusBadgeSmall, { backgroundColor: `${getStatusColor(purchase.status)}15` }]}>
-												<Text style={[styles.statusTextSmall, { color: getStatusColor(purchase.status) }]}>
-													{translate(`status_${purchase.status}`, orderStatusLabels[purchase.status] || purchase.status)}
-												</Text>
+										{thumb ? (
+											<SmartImage source={thumb} style={styles.profileAvatar} entityType="business" />
+										) : (
+											<View style={[styles.profileAvatar, styles.profileAvatarFallback, { backgroundColor: `${colors.primary}20` }]}>
+												<MaterialIcons name={profile.kind === 'personal' ? 'person' : 'store'} size={20} color={colors.primary} />
 											</View>
+										)}
+										<View style={styles.profileChipText}>
+											<Text style={[styles.profileKind, { color: colors.textTertiary }]} numberOfLines={1}>
+												{profile.kind === 'personal' ? translate('dashboard.personal', 'Personal') : translate('dashboard.business', 'Business')}
+											</Text>
+											<Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
+												{getProfileLabel(profile)}
+											</Text>
 										</View>
+										{active && <View style={[styles.activeDot, { backgroundColor: colors.primary }]} />}
 									</TouchableOpacity>
-								))
-							)}
-						</View>
+								)
+							})}
+						</ScrollView>
 					</View>
-				</ScrollView>
+				)}
+
+				{switchingProfile && (
+					<View style={styles.switchingBanner}>
+						<ActivityIndicator size="small" color={colors.primary} />
+						<Text style={[styles.switchingText, { color: colors.textSecondary }]}>{translate('loading', 'Loading...')}</Text>
+					</View>
+				)}
+
+				{dashboardData && isPersonalDashboard(dashboardData) && <PersonalDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} />}
+
+				{dashboardData && isBusinessDashboard(dashboardData) && <BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} />}
+			</ScrollView>
+		</View>
+	)
+}
+
+// --- Personal dashboard ---
+
+type ContentProps = {
+	data: DashboardData
+	styles: ReturnType<typeof createStyles>
+	colors: typeof import('../../config/theme').colors
+	router: ReturnType<typeof useRouter>
+}
+
+const PersonalDashboardContent = ({ data, styles, colors, router }: ContentProps & { data: import('./dashboard.interface').PersonalDashboard }) => {
+	const { localize, translate } = useUser()
+
+	const exploreActions = useMemo(
+		() => [
+			{
+				label: translate('dashboard.browse_businesses', 'Browse businesses'),
+				icon: <MaterialIcons name="storefront" size={22} color={colors.primary} />,
+				color: colors.primary,
+				onPress: () => router.push('/(home)/businesses' as never)
+			},
+			{
+				label: translate('dashboard.purchases', 'Purchases'),
+				icon: <Feather name="package" size={22} color={colors.info} />,
+				color: colors.info,
+				onPress: () => router.push('/(home)/purchases' as never)
+			},
+			{
+				label: translate('feed', 'Feed'),
+				icon: <Feather name="tag" size={22} color={colors.success} />,
+				color: colors.success,
+				onPress: () => router.push('/(home)/feed' as never)
+			},
+			{
+				label: translate('settings', 'Settings'),
+				icon: <Feather name="settings" size={22} color={colors.textTertiary} />,
+				color: colors.textTertiary,
+				onPress: () => router.push('/(home)/settings' as never)
+			}
+		],
+		[colors, router, translate]
+	)
+
+	return (
+		<>
+			<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+				<View style={styles.heroInfo}>
+					<View style={[styles.kindBadge, { backgroundColor: `${colors.secondary}25` }]}>
+						<MaterialIcons name="person" size={14} color={colors.secondary} />
+						<Text style={[styles.kindBadgeText, { color: colors.secondary }]}>{translate('dashboard.personal', 'Personal')}</Text>
+					</View>
+					<Text style={[styles.heroTitle, { color: colors.text }]}>{localize(data.user.name)}</Text>
+					<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>@{data.user.slug}</Text>
+				</View>
+				<View style={[styles.heroIconWrap, { backgroundColor: `${colors.primary}15` }]}>
+					<MaterialIcons name="explore" size={32} color={colors.primary} />
+				</View>
+			</LinearGradient>
+
+			<SectionTitle title={translate('dashboard.explore', 'Explore')} colors={colors} />
+			<View style={styles.actionsGrid}>
+				{exploreActions.map((action) => (
+					<QuickAction key={action.label} {...action} styles={styles} colors={colors} />
+				))}
+			</View>
+
+			<RankPairSection
+				title={translate('dashboard.top_businesses', 'Top businesses')}
+				leftTitle={translate('dashboard.top_businesses_new', 'New')}
+				rightTitle={translate('dashboard.top_businesses_frequent', 'Frequent')}
+				leftItems={data.topBusinesses.new}
+				rightItems={data.topBusinesses.frequent}
+				styles={styles}
+				colors={colors}
+				entityType="business"
+				emptyHint={translate('dashboard.no_businesses_yet', 'No businesses to show yet')}
+			/>
+		</>
+	)
+}
+
+// --- Business dashboard ---
+
+const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps & { data: import('./dashboard.interface').BusinessDashboard }) => {
+	const { localize, translate } = useUser()
+	const business = data.business
+
+	const managementActions = useMemo(
+		() => [
+			{
+				label: translate('dashboard.management', 'Management'),
+				icon: <MaterialIcons name="store" size={22} color={colors.primary} />,
+				color: colors.primary,
+				onPress: () => router.push('/(home)/business/my-businesses' as never)
+			},
+			{
+				label: translate('my_products', 'My Products'),
+				icon: <MaterialIcons name="inventory" size={22} color={colors.success} />,
+				color: colors.success,
+				onPress: () => router.push('/(home)/business/my-products' as never)
+			},
+			{
+				label: translate('sales', 'Sales'),
+				icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
+				color: colors.info,
+				onPress: () => router.push('/(home)/business/sales' as never)
+			},
+			{
+				label: translate('create_product', 'Create Product'),
+				icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
+				color: colors.warning,
+				onPress: () =>
+					router.push({
+						pathname: '/(home)/business/create-product',
+						params: { businessSlug: business.slug, businessId: business._id }
+					} as never)
+			}
+		],
+		[business._id, business.slug, colors, router, translate]
+	)
+
+	const productStats: { key: keyof ProductStats; label: string; icon: React.ReactNode; accent: string }[] = [
+		{
+			key: 'count',
+			label: translate('dashboard.products_total', 'Products'),
+			icon: <MaterialIcons name="inventory-2" size={22} color={colors.primary} />,
+			accent: colors.primary
+		},
+		{
+			key: 'lowStock',
+			label: translate('dashboard.low_stock', 'Low stock'),
+			icon: <MaterialIcons name="warning-amber" size={22} color={colors.warning} />,
+			accent: colors.warning
+		},
+		{
+			key: 'outOfStock',
+			label: translate('dashboard.out_of_stock', 'Out of stock'),
+			icon: <MaterialIcons name="remove-shopping-cart" size={22} color={colors.error} />,
+			accent: colors.error
+		}
+	]
+
+	return (
+		<>
+			<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
+				<SmartImage source={business.media?.thumbnail?.url} style={styles.heroThumbnail} entityType="business" />
+				<View style={styles.heroInfo}>
+					<View style={[styles.kindBadge, { backgroundColor: `${colors.primary}25` }]}>
+						<MaterialIcons name="store" size={14} color={colors.primary} />
+						<Text style={[styles.kindBadgeText, { color: colors.primary }]}>{translate('dashboard.business', 'Business')}</Text>
+					</View>
+					<Text style={[styles.heroTitle, { color: colors.text }]}>{localize(business.name)}</Text>
+					<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>@{business.slug}</Text>
+					{business.owner && (
+						<Text style={[styles.heroMeta, { color: colors.textTertiary }]}>
+							{translate('business_owner', 'Owner')}: {localize(business.owner.name)}
+						</Text>
+					)}
+				</View>
+			</LinearGradient>
+
+			<SectionTitle title={translate('dashboard.inventory', 'Inventory')} colors={colors} />
+			<View style={styles.statsRow}>
+				{productStats.map((stat) => (
+					<StatCard
+						key={stat.key}
+						title={stat.label}
+						value={data.products[stat.key]}
+						icon={stat.icon}
+						accent={stat.accent}
+						styles={styles}
+						colors={colors}
+						onPress={() => router.push('/(home)/business/my-products' as never)}
+					/>
+				))}
+			</View>
+
+			<SectionTitle title={translate('dashboard.management', 'Management')} colors={colors} />
+			<View style={styles.actionsGrid}>
+				{managementActions.map((action) => (
+					<QuickAction key={action.label} {...action} styles={styles} colors={colors} />
+				))}
+			</View>
+
+			<SectionTitle title={translate('dashboard.insights', 'Insights')} colors={colors} />
+
+			<RankPairSection
+				title={translate('dashboard.top_products', 'Top products')}
+				leftTitle={translate('dashboard.top_selling', 'Best selling')}
+				rightTitle={translate('dashboard.top_viewed', 'Most viewed')}
+				leftItems={data.topProducts.selling}
+				rightItems={data.topProducts.viewed}
+				styles={styles}
+				colors={colors}
+				entityType="product"
+				emptyHint={translate('dashboard.no_products_yet', 'No product data yet')}
+			/>
+
+			<RankPairSection
+				title={translate('dashboard.top_customers', 'Top customers')}
+				leftTitle={translate('dashboard.top_customers_frequent', 'Frequent')}
+				rightTitle={translate('dashboard.top_customers_new', 'New')}
+				leftItems={data.topCustomers.frequent}
+				rightItems={data.topCustomers.new}
+				styles={styles}
+				colors={colors}
+				entityType="user"
+				emptyHint={translate('dashboard.no_customers_yet', 'No customer data yet')}
+			/>
+		</>
+	)
+}
+
+// --- Shared UI pieces ---
+
+const SectionTitle = ({ title, colors }: { title: string; colors: typeof import('../../config/theme').colors }) => (
+	<Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, letterSpacing: -0.5, marginBottom: 12, marginTop: 8 }}>{title}</Text>
+)
+
+type StatCardProps = {
+	title: string
+	value: number
+	icon: React.ReactNode
+	accent: string
+	styles: ReturnType<typeof createStyles>
+	colors: typeof import('../../config/theme').colors
+	onPress?: () => void
+}
+
+const StatCard = ({ title, value, icon, accent, styles, colors, onPress }: StatCardProps) => (
+	<TouchableOpacity activeOpacity={0.9} onPress={onPress} style={[styles.statCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
+		<LinearGradient colors={[`${accent}18`, `${accent}06`]} style={StyleSheet.absoluteFill} />
+		<View style={[styles.statIcon, { backgroundColor: `${accent}22` }]}>{icon}</View>
+		<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+		<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
+	</TouchableOpacity>
+)
+
+type QuickActionProps = {
+	label: string
+	icon: React.ReactNode
+	color: string
+	onPress: () => void
+	styles: ReturnType<typeof createStyles>
+	colors: typeof import('../../config/theme').colors
+}
+
+const QuickAction = ({ label, icon, color, onPress, styles, colors }: QuickActionProps) => (
+	<TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+		<View style={[styles.quickActionIcon, { backgroundColor: `${color}18` }]}>{icon}</View>
+		<Text style={[styles.quickActionLabel, { color: colors.textSecondary }]} numberOfLines={2}>
+			{label}
+		</Text>
+	</TouchableOpacity>
+)
+
+type RankPairSectionProps = {
+	title: string
+	leftTitle: string
+	rightTitle: string
+	leftItems: DashboardRankItem[]
+	rightItems: DashboardRankItem[]
+	styles: ReturnType<typeof createStyles>
+	colors: typeof import('../../config/theme').colors
+	entityType: 'business' | 'product' | 'user'
+	emptyHint: string
+}
+
+const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, styles, colors, entityType, emptyHint }: RankPairSectionProps) => {
+	const { localize } = useUser()
+
+	const renderList = (items: DashboardRankItem[], listTitle: string) => (
+		<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+			<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{listTitle}</Text>
+			{items.length === 0 ? (
+				<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{emptyHint}</Text>
+			) : (
+				items
+					.slice(0, 5)
+					.map((item, index) => (
+						<RankRow
+							key={item._id || `${listTitle}-${index}`}
+							item={item}
+							localize={localize}
+							styles={styles}
+							colors={colors}
+							entityType={entityType}
+							isLast={index === Math.min(items.length, 5) - 1}
+						/>
+					))
+			)}
+		</View>
+	)
+
+	return (
+		<View style={styles.section}>
+			<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{title}</Text>
+			<View style={styles.rankPairRow}>
+				{renderList(leftItems, leftTitle)}
+				{renderList(rightItems, rightTitle)}
+			</View>
+		</View>
+	)
+}
+
+type RankRowProps = {
+	item: DashboardRankItem
+	localize: (name?: LocalizedName) => string
+	styles: ReturnType<typeof createStyles>
+	colors: typeof import('../../config/theme').colors
+	entityType: 'business' | 'product' | 'user'
+	isLast: boolean
+}
+
+const RankRow = ({ item, localize, styles, colors, entityType, isLast }: RankRowProps) => {
+	const label = item.name ? localize(item.name) : item.slug || '—'
+	const metric = item.count ?? item.views
+
+	return (
+		<View style={[styles.rankRow, { borderColor: colors.border }, isLast && { borderBottomWidth: 0 }]}>
+			<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType={entityType} />
+			<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
+				{label}
+			</Text>
+			{metric !== undefined && (
+				<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}18` }]}>
+					<Text style={[styles.rankMetricText, { color: colors.primary }]}>{metric}</Text>
+				</View>
 			)}
 		</View>
 	)
 }
 
-const createStyles = (colors: any) =>
+const createStyles = (colors: typeof import('../../config/theme').colors) =>
 	StyleSheet.create({
 		container: { flex: 1 },
-		scrollContent: { paddingHorizontal: 16, paddingBottom: 28, paddingTop: 8 },
-		section: { marginBottom: 24 },
-		sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
-		sectionTitle: { fontSize: 18, fontWeight: '700', letterSpacing: -0.5 },
-		statsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
+		centered: { justifyContent: 'center', alignItems: 'center' },
+		scrollContent: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 8, gap: 4 },
+		section: { marginBottom: 20 },
+		sectionLabel: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+		profileRow: { gap: 10, paddingRight: 8 },
+		profileChip: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingVertical: 10,
+			paddingHorizontal: 12,
+			borderRadius: 16,
+			borderWidth: 1.5,
+			gap: 10,
+			maxWidth: width * 0.72,
+			position: 'relative'
+		},
+		profileAvatar: { width: 40, height: 40, borderRadius: 12 },
+		profileAvatarFallback: { justifyContent: 'center', alignItems: 'center' },
+		profileChipText: { flex: 1, minWidth: 0 },
+		profileKind: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
+		profileName: { fontSize: 14, fontWeight: '700', marginTop: 2 },
+		activeDot: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4 },
+		switchingBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8 },
+		switchingText: { fontSize: 13 },
+		heroCard: {
+			borderRadius: 24,
+			padding: 20,
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 16,
+			borderWidth: 1,
+			borderColor: 'rgba(255,255,255,0.06)',
+			marginBottom: 8
+		},
+		heroThumbnail: { width: 72, height: 72, borderRadius: 18 },
+		heroInfo: { flex: 1 },
+		heroIconWrap: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+		kindBadge: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			alignSelf: 'flex-start',
+			gap: 4,
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			borderRadius: 8,
+			marginBottom: 8
+		},
+		kindBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
+		heroTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
+		heroSubtitle: { fontSize: 14, fontWeight: '500', marginTop: 2 },
+		heroMeta: { fontSize: 12, marginTop: 6 },
+		statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
 		statCard: {
-			width: COLUMN_WIDTH,
+			width: STAT_WIDTH,
 			borderRadius: 20,
 			padding: 16,
 			borderWidth: 1,
 			overflow: 'hidden',
 			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 8 },
-				android: { elevation: 3 }
-			})
-		},
-		statGradient: { ...StyleSheet.absoluteFillObject },
-		statIcon: { width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-		statBody: { gap: 2 },
-		statValue: { fontSize: 20, fontWeight: '700' },
-		statLabel: { fontSize: 12, fontWeight: '500' },
-		actionsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-		actionItem: { alignItems: 'center', width: (width - 32) / 4, gap: 8 },
-		actionButton: {
-			width: 60,
-			height: 60,
-			borderRadius: 20,
-			borderWidth: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
 				android: { elevation: 2 }
 			})
 		},
-		actionIconInner: { width: 48, height: 48, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-		countBadge: {
-			position: 'absolute',
-			top: -4,
-			right: -4,
-			paddingHorizontal: 6,
-			paddingVertical: 2,
-			borderRadius: 10,
-			minWidth: 20,
-			alignItems: 'center'
-		},
-		countBadgeText: { fontSize: 10, fontWeight: '800', color: '#fff' },
-		panel: { borderRadius: 24, borderWidth: 1, padding: 8 },
-		purchaseRow: { flexDirection: 'row', alignItems: 'center', padding: 12, borderBottomWidth: 1, gap: 12 },
-		purchaseIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-		purchaseMeta: { flex: 1 },
-		purchaseTitle: { fontSize: 15, fontWeight: '600' },
-		purchaseDate: { fontSize: 12, marginTop: 2 },
-		purchaseRight: { alignItems: 'flex-end' },
-		purchaseAmount: { fontSize: 15, fontWeight: '700' },
-		statusBadgeSmall: { marginTop: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-		statusTextSmall: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase' },
-		headerIcon: { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center' },
-		iconButton: { padding: 4 },
-		emptyState: { alignItems: 'center', paddingVertical: 40, gap: 12 },
-		emptyIconContainer: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
-		emptyText: { fontSize: 16, fontWeight: '700' },
-		emptySubtext: { fontSize: 14, textAlign: 'center', maxWidth: '80%', lineHeight: 20 },
-		heroCard: {
-			borderRadius: 24,
-			padding: 20,
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
+		statIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+		statValue: { fontSize: 26, fontWeight: '800', letterSpacing: -1 },
+		statLabel: { fontSize: 12, fontWeight: '600', marginTop: 2 },
+		actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
+		quickAction: {
+			width: (width - 44) / 2,
+			borderRadius: 18,
 			borderWidth: 1,
-			borderColor: 'rgba(255,255,255,0.05)'
+			padding: 14,
+			alignItems: 'center',
+			gap: 10,
+			...Platform.select({
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4 },
+				android: { elevation: 1 }
+			})
 		},
-		heroInfo: { flex: 1 },
-		statusBadge: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, gap: 6, marginBottom: 8 },
-		statusDot: { width: 6, height: 6, borderRadius: 3 },
-		statusText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5 },
-		businessName: { fontSize: 22, fontWeight: '800', marginBottom: 2 },
-		businessSlug: { fontSize: 14, fontWeight: '500' }
+		quickActionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
+		quickActionLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
+		rankPairRow: { flexDirection: 'row', gap: 12 },
+		rankPanel: {
+			flex: 1,
+			borderRadius: 20,
+			borderWidth: 1,
+			padding: 12,
+			minHeight: 120
+		},
+		rankPanelTitle: { fontSize: 13, fontWeight: '700', marginBottom: 10 },
+		rankEmpty: { fontSize: 12, lineHeight: 18, paddingVertical: 8 },
+		rankRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1 },
+		rankAvatar: { width: 32, height: 32, borderRadius: 8 },
+		rankName: { flex: 1, fontSize: 13, fontWeight: '600' },
+		rankMetric: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
+		rankMetricText: { fontSize: 12, fontWeight: '700' }
 	})
 
 export default Dashboard
