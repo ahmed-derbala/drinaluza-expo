@@ -1,53 +1,47 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, Easing, Dimensions, Platform } from 'react-native'
 import { colors } from '@/config/theme'
+import { Ionicons } from '@expo/vector-icons'
+import { LinearGradient } from 'expo-linear-gradient'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
-
 const USE_NATIVE = Platform.OS !== 'web'
 
-// Bubble configuration
-const BUBBLES = Array.from({ length: 12 }, (_, i) => ({
-	id: i,
-	size: Math.random() * 12 + 6,
-	left: Math.random() * SCREEN_WIDTH,
-	delay: Math.random() * 3000,
-	duration: Math.random() * 2000 + 3000
-}))
-
-// Wave configuration
-const WAVE_COUNT = 3
+// Business icons representing different types of small businesses
+const BUSINESS_ICONS = [
+	{ name: 'fish-outline', color: '#38BDF8', label: 'Seafood' }, // Sky
+	{ name: 'cafe-outline', color: '#FBBF24', label: 'Cafe' }, // Amber
+	{ name: 'cut-outline', color: '#F87171', label: 'Barber' }, // Red
+	{ name: 'cart-outline', color: '#34D399', label: 'Retail' }, // Emerald
+	{ name: 'shirt-outline', color: '#A78BFA', label: 'Boutique' }, // Purple
+	{ name: 'restaurant-outline', color: '#FB923C', label: 'Restaurant' } // Orange
+]
 
 interface AnimatedSplashScreenProps {
 	onAnimationReady?: () => void
 }
 
 export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplashScreenProps) {
-	// Dolphin animations
-	const dolphinY = useRef(new Animated.Value(0)).current
-	const dolphinRotate = useRef(new Animated.Value(0)).current
-	const dolphinScale = useRef(new Animated.Value(0.3)).current
-
-	// Splash ring
-	const splashRingScale = useRef(new Animated.Value(0)).current
-	const splashRingOpacity = useRef(new Animated.Value(0)).current
+	// Central icon animations
+	const centerScale = useRef(new Animated.Value(0.5)).current
+	const centerOpacity = useRef(new Animated.Value(0)).current
 
 	// Title & subtitle
 	const titleOpacity = useRef(new Animated.Value(0)).current
-	const titleTranslateY = useRef(new Animated.Value(30)).current
+	const titleTranslateY = useRef(new Animated.Value(20)).current
 	const subtitleOpacity = useRef(new Animated.Value(0)).current
 
 	// Glow pulse
-	const glowOpacity = useRef(new Animated.Value(0.3)).current
+	const glowScale = useRef(new Animated.Value(0.8)).current
+	const glowOpacity = useRef(new Animated.Value(0)).current
 
-	// Waves
-	const waveAnims = useRef(Array.from({ length: WAVE_COUNT }, () => new Animated.Value(0))).current
-
-	// Bubbles
-	const bubbleAnims = useRef(
-		BUBBLES.map(() => ({
-			translateY: new Animated.Value(0),
-			opacity: new Animated.Value(0)
+	// Floating business icons
+	const iconAnims = useRef(
+		BUSINESS_ICONS.map(() => ({
+			scale: new Animated.Value(0),
+			opacity: new Animated.Value(0),
+			translateY: new Animated.Value(20),
+			float: new Animated.Value(0)
 		}))
 	).current
 
@@ -62,80 +56,100 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 	}, [])
 
 	const startAnimations = () => {
-		// 1. Dolphin entrance — scale up and bounce in
-		Animated.sequence([
-			Animated.spring(dolphinScale, {
+		// 1. Center icon entrance
+		Animated.parallel([
+			Animated.spring(centerScale, {
 				toValue: 1,
-				friction: 4,
-				tension: 50,
+				friction: 5,
+				tension: 40,
 				useNativeDriver: USE_NATIVE
 			}),
-			// Splash ring on landing
-			Animated.parallel([
-				Animated.timing(splashRingScale, {
-					toValue: 2.5,
-					duration: 600,
-					easing: Easing.out(Easing.cubic),
-					useNativeDriver: USE_NATIVE
-				}),
-				Animated.timing(splashRingOpacity, {
-					toValue: 0,
-					duration: 600,
-					useNativeDriver: USE_NATIVE
-				})
-			])
+			Animated.timing(centerOpacity, {
+				toValue: 1,
+				duration: 800,
+				useNativeDriver: USE_NATIVE
+			})
 		]).start()
 
-		// Splash ring initial opacity
-		Animated.timing(splashRingOpacity, {
-			toValue: 0.6,
-			duration: 100,
-			delay: 500,
-			useNativeDriver: USE_NATIVE
-		}).start()
-
-		// 2. Dolphin continuous jump animation
-		const dolphinJump = () => {
-			Animated.loop(
+		// 2. Glow pulse behind center icon
+		Animated.loop(
+			Animated.parallel([
 				Animated.sequence([
-					// Jump up
-					Animated.parallel([
-						Animated.timing(dolphinY, {
-							toValue: -35,
-							duration: 1200,
-							easing: Easing.out(Easing.cubic),
-							useNativeDriver: USE_NATIVE
-						}),
-						Animated.timing(dolphinRotate, {
-							toValue: -0.15,
-							duration: 1200,
-							easing: Easing.out(Easing.cubic),
-							useNativeDriver: USE_NATIVE
-						})
-					]),
-					// Come back down
-					Animated.parallel([
-						Animated.timing(dolphinY, {
-							toValue: 0,
-							duration: 1200,
-							easing: Easing.in(Easing.cubic),
-							useNativeDriver: USE_NATIVE
-						}),
-						Animated.timing(dolphinRotate, {
-							toValue: 0.15,
-							duration: 1200,
-							easing: Easing.in(Easing.cubic),
-							useNativeDriver: USE_NATIVE
-						})
-					]),
-					// Slight pause at bottom
-					Animated.delay(200)
+					Animated.timing(glowScale, {
+						toValue: 1.5,
+						duration: 2000,
+						easing: Easing.out(Easing.cubic),
+						useNativeDriver: USE_NATIVE
+					}),
+					Animated.timing(glowScale, {
+						toValue: 0.8,
+						duration: 0,
+						useNativeDriver: USE_NATIVE
+					})
+				]),
+				Animated.sequence([
+					Animated.timing(glowOpacity, {
+						toValue: 0.3,
+						duration: 1000,
+						easing: Easing.out(Easing.cubic),
+						useNativeDriver: USE_NATIVE
+					}),
+					Animated.timing(glowOpacity, {
+						toValue: 0,
+						duration: 1000,
+						easing: Easing.in(Easing.cubic),
+						useNativeDriver: USE_NATIVE
+					})
 				])
-			).start()
-		}
-		setTimeout(dolphinJump, 600)
+			])
+		).start()
 
-		// 3. Title fade in
+		// 3. Floating business icons entrance
+		iconAnims.forEach((anim, index) => {
+			const delay = 400 + index * 150
+			Animated.sequence([
+				Animated.delay(delay),
+				Animated.parallel([
+					Animated.spring(anim.scale, {
+						toValue: 1,
+						friction: 6,
+						tension: 40,
+						useNativeDriver: USE_NATIVE
+					}),
+					Animated.timing(anim.opacity, {
+						toValue: 0.8,
+						duration: 400,
+						useNativeDriver: USE_NATIVE
+					}),
+					Animated.timing(anim.translateY, {
+						toValue: 0,
+						duration: 500,
+						easing: Easing.out(Easing.back(1.5)),
+						useNativeDriver: USE_NATIVE
+					})
+				])
+			]).start(() => {
+				// Continuous floating after entrance
+				Animated.loop(
+					Animated.sequence([
+						Animated.timing(anim.float, {
+							toValue: -10,
+							duration: 1500 + Math.random() * 1000,
+							easing: Easing.inOut(Easing.sin),
+							useNativeDriver: USE_NATIVE
+						}),
+						Animated.timing(anim.float, {
+							toValue: 0,
+							duration: 1500 + Math.random() * 1000,
+							easing: Easing.inOut(Easing.sin),
+							useNativeDriver: USE_NATIVE
+						})
+					])
+				).start()
+			})
+		})
+
+		// 4. Title & Subtitle fade in
 		Animated.parallel([
 			Animated.timing(titleOpacity, {
 				toValue: 1,
@@ -152,7 +166,6 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 			})
 		]).start()
 
-		// 4. Subtitle fade in
 		Animated.timing(subtitleOpacity, {
 			toValue: 1,
 			duration: 600,
@@ -160,69 +173,7 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 			useNativeDriver: USE_NATIVE
 		}).start()
 
-		// 5. Glow pulse
-		Animated.loop(
-			Animated.sequence([
-				Animated.timing(glowOpacity, {
-					toValue: 0.8,
-					duration: 1500,
-					easing: Easing.inOut(Easing.sin),
-					useNativeDriver: USE_NATIVE
-				}),
-				Animated.timing(glowOpacity, {
-					toValue: 0.3,
-					duration: 1500,
-					easing: Easing.inOut(Easing.sin),
-					useNativeDriver: USE_NATIVE
-				})
-			])
-		).start()
-
-		// 6. Wave animations
-		waveAnims.forEach((anim, index) => {
-			Animated.loop(
-				Animated.timing(anim, {
-					toValue: 1,
-					duration: 3000 + index * 500,
-					easing: Easing.inOut(Easing.sin),
-					useNativeDriver: USE_NATIVE
-				})
-			).start()
-		})
-
-		// 7. Bubble animations
-		bubbleAnims.forEach((bubble, index) => {
-			bubble.translateY.setValue(0)
-			bubble.opacity.setValue(0)
-
-			Animated.loop(
-				Animated.sequence([
-					Animated.delay(BUBBLES[index].delay),
-					Animated.parallel([
-						Animated.timing(bubble.translateY, {
-							toValue: -(SCREEN_HEIGHT * 0.5),
-							duration: BUBBLES[index].duration,
-							easing: Easing.out(Easing.quad),
-							useNativeDriver: USE_NATIVE
-						}),
-						Animated.sequence([
-							Animated.timing(bubble.opacity, {
-								toValue: 0.6,
-								duration: 500,
-								useNativeDriver: USE_NATIVE
-							}),
-							Animated.timing(bubble.opacity, {
-								toValue: 0,
-								duration: BUBBLES[index].duration - 500,
-								useNativeDriver: USE_NATIVE
-							})
-						])
-					])
-				])
-			).start()
-		})
-
-		// 8. Loading dots
+		// 5. Loading dots
 		const animateDot = (dot: Animated.Value, delay: number) => {
 			Animated.loop(
 				Animated.sequence([
@@ -247,98 +198,74 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 		animateDot(dot3, 300)
 	}
 
-	const dolphinRotateInterpolate = dolphinRotate.interpolate({
-		inputRange: [-1, 1],
-		outputRange: ['-30deg', '30deg']
-	})
+	// Calculate positions for floating icons in a circle
+	const radius = SCREEN_WIDTH > 400 ? 140 : 110
+	const getIconPosition = (index: number, total: number) => {
+		const angle = (index / total) * Math.PI * 2 - Math.PI / 2 // Start from top
+		return {
+			x: Math.cos(angle) * radius,
+			y: Math.sin(angle) * radius
+		}
+	}
 
 	return (
 		<View style={styles.container}>
-			{/* Deep ocean gradient simulation via layered views */}
 			<View style={styles.gradientTop} />
 			<View style={styles.gradientBottom} />
 
-			{/* Bubbles */}
-			{BUBBLES.map((bubble, index) => (
-				<Animated.View
-					key={bubble.id}
-					style={[
-						styles.bubble,
-						{
-							width: bubble.size,
-							height: bubble.size,
-							borderRadius: bubble.size / 2,
-							left: bubble.left,
-							bottom: SCREEN_HEIGHT * 0.15,
-							transform: [{ translateY: bubbleAnims[index].translateY }],
-							opacity: bubbleAnims[index].opacity
-						}
-					]}
-				/>
-			))}
-
-			{/* Center content */}
 			<View style={styles.centerContent}>
-				{/* Glow behind dolphin */}
+				{/* Background Glow */}
 				<Animated.View
 					style={[
 						styles.glow,
 						{
 							opacity: glowOpacity,
-							transform: [{ scale: dolphinScale }]
+							transform: [{ scale: glowScale }]
 						}
 					]}
 				/>
 
-				{/* Splash ring */}
-				<Animated.View
-					style={[
-						styles.splashRing,
-						{
-							opacity: splashRingOpacity,
-							transform: [{ scale: splashRingScale }]
-						}
-					]}
-				/>
-
-				{/* Dolphin */}
-				<Animated.View
-					style={[
-						styles.dolphinContainer,
-						{
-							transform: [{ translateY: dolphinY }, { rotate: dolphinRotateInterpolate }, { scale: dolphinScale }]
-						}
-					]}
-				>
-					<Text style={styles.dolphinEmoji}>🐬</Text>
-				</Animated.View>
-
-				{/* Water ripple lines */}
-				<View style={styles.rippleContainer}>
-					{waveAnims.map((anim, index) => {
-						const translateX = anim.interpolate({
-							inputRange: [0, 0.5, 1],
-							outputRange: [-20 - index * 10, 20 + index * 10, -20 - index * 10]
-						})
+				{/* Floating Business Icons */}
+				<View style={styles.orbitContainer}>
+					{BUSINESS_ICONS.map((icon, index) => {
+						const pos = getIconPosition(index, BUSINESS_ICONS.length)
+						const anim = iconAnims[index]
 						return (
 							<Animated.View
-								key={index}
+								key={icon.name}
 								style={[
-									styles.rippleLine,
+									styles.floatingIconWrapper,
 									{
-										width: 60 + index * 30,
-										opacity: 0.3 - index * 0.08,
-										marginTop: 4 + index * 3,
-										transform: [{ translateX }]
+										transform: [{ translateX: pos.x }, { translateY: pos.y }, { translateY: anim.translateY }, { translateY: anim.float }, { scale: anim.scale }],
+										opacity: anim.opacity
 									}
 								]}
-							/>
+							>
+								<View style={[styles.iconCircle, { backgroundColor: `${icon.color}15`, borderColor: `${icon.color}30` }]}>
+									<Ionicons name={icon.name as any} size={24} color={icon.color} />
+								</View>
+							</Animated.View>
 						)
 					})}
 				</View>
+
+				{/* Central Store Icon */}
+				<Animated.View
+					style={[
+						styles.centerIconContainer,
+						{
+							opacity: centerOpacity,
+							transform: [{ scale: centerScale }]
+						}
+					]}
+				>
+					<LinearGradient colors={[colors.primaryContainer, colors.surface]} style={styles.centerIconBg}>
+						<Ionicons name="storefront" size={54} color={colors.primary} />
+					</LinearGradient>
+				</Animated.View>
 			</View>
 
-			{/* Title */}
+			{/* Title Section */}
 			<Animated.View
 				style={[
 					styles.titleContainer,
@@ -351,38 +278,13 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 				<Text style={styles.title}>Drinaluza</Text>
 			</Animated.View>
 
-			{/* Subtitle */}
-			<Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>Seafood Market & Manager</Animated.Text>
+			<Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>Business Manager</Animated.Text>
 
 			{/* Loading indicator */}
 			<View style={styles.loadingContainer}>
 				<Animated.View style={[styles.loadingDot, { transform: [{ translateY: dot1 }] }]} />
 				<Animated.View style={[styles.loadingDot, { transform: [{ translateY: dot2 }] }]} />
 				<Animated.View style={[styles.loadingDot, { transform: [{ translateY: dot3 }] }]} />
-			</View>
-
-			{/* Bottom wave shapes */}
-			<View style={styles.wavesContainer}>
-				{waveAnims.map((anim, index) => {
-					const translateX = anim.interpolate({
-						inputRange: [0, 0.5, 1],
-						outputRange: [0, 30, 0]
-					})
-					return (
-						<Animated.View
-							key={`wave-${index}`}
-							style={[
-								styles.wave,
-								{
-									bottom: index * 18,
-									opacity: 0.08 + index * 0.04,
-									height: 50 + index * 10,
-									transform: [{ translateX }]
-								}
-							]}
-						/>
-					)
-				})}
 			</View>
 		</View>
 	)
@@ -416,41 +318,75 @@ const styles = StyleSheet.create({
 	centerContent: {
 		alignItems: 'center',
 		justifyContent: 'center',
-		marginBottom: 24
+		marginBottom: 40,
+		height: 300,
+		width: 300
 	},
 	glow: {
 		position: 'absolute',
-		width: 180,
-		height: 180,
-		borderRadius: 90,
+		width: 160,
+		height: 160,
+		borderRadius: 80,
 		backgroundColor: colors.primary,
 		opacity: 0.15
 	},
-	splashRing: {
+	orbitContainer: {
 		position: 'absolute',
-		width: 80,
-		height: 80,
-		borderRadius: 40,
-		borderWidth: 3,
-		borderColor: colors.primary
-	},
-	dolphinContainer: {
-		width: 120,
-		height: 120,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	dolphinEmoji: {
-		fontSize: 80
-	},
-	rippleContainer: {
+		width: '100%',
+		height: '100%',
 		alignItems: 'center',
-		marginTop: -8
+		justifyContent: 'center'
 	},
-	rippleLine: {
-		height: 2,
-		borderRadius: 1,
-		backgroundColor: colors.primaryLight
+	floatingIconWrapper: {
+		position: 'absolute'
+	},
+	iconCircle: {
+		width: 48,
+		height: 48,
+		borderRadius: 24,
+		borderWidth: 1,
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.3,
+				shadowRadius: 5
+			},
+			android: { elevation: 6 },
+			web: {
+				boxShadow: '0px 4px 10px rgba(0,0,0,0.3)',
+				backdropFilter: 'blur(4px)'
+			}
+		})
+	},
+	centerIconContainer: {
+		width: 110,
+		height: 110,
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({
+			ios: {
+				shadowColor: colors.primary,
+				shadowOffset: { width: 0, height: 8 },
+				shadowOpacity: 0.4,
+				shadowRadius: 15
+			},
+			android: { elevation: 12 },
+			web: {
+				boxShadow: `0px 10px 30px ${colors.primary}40`
+			}
+		})
+	},
+	centerIconBg: {
+		width: '100%',
+		height: '100%',
+		borderRadius: 35,
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: 2,
+		borderColor: `${colors.primary}50`
 	},
 	titleContainer: {
 		marginBottom: 8
@@ -484,27 +420,5 @@ const styles = StyleSheet.create({
 		height: 8,
 		borderRadius: 4,
 		backgroundColor: colors.primary
-	},
-	bubble: {
-		position: 'absolute',
-		backgroundColor: 'rgba(56, 189, 248, 0.15)',
-		borderWidth: 1,
-		borderColor: 'rgba(56, 189, 248, 0.25)'
-	},
-	wavesContainer: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		height: 100,
-		overflow: 'hidden'
-	},
-	wave: {
-		position: 'absolute',
-		left: -50,
-		right: -50,
-		backgroundColor: colors.primary,
-		borderTopLeftRadius: 1000,
-		borderTopRightRadius: 1000
 	}
 })

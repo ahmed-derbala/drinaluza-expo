@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform } from 'react-native'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
+import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/components/businesses/businesses.api'
 import { Product } from '@/components/businesses/businesses.interface'
 import { useTheme } from '@/core/contexts/ThemeContext'
@@ -8,49 +9,211 @@ import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/components/common/ErrorState'
 import ScreenHeader from '@/components/common/ScreenHeader'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { Ionicons } from '@expo/vector-icons'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/core/helpers/toast'
-import { TextInput } from 'react-native'
-import FeedCard from '@/components/feed/feed.card'
-import { FeedItem } from '@/components/feed/feed.interface'
+import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
-// Responsive breakpoints
-const BREAKPOINTS = {
-	mobile: 480,
-	tablet: 768,
-	desktop: 1024,
-	wide: 1440
+// ─── Breakpoints ────────────────────────────────────────────────────────────
+const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
+
+// ─── Product Card ────────────────────────────────────────────────────────────
+type ProductCardProps = {
+	item: Product
+	colors: any
+	localize: (obj: any) => string
+	formatPrice: (p: any) => string
+	currency: string
+	translate: (k: string, d: string) => string
+	onAddToBasket: (item: Product, qty: number) => void
+	isWide: boolean
 }
 
+function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToBasket, isWide }: ProductCardProps) {
+	const router = useRouter()
+	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos[0])
+	const stockQty = item.stock?.quantity || 0
+	const minThreshold = item.stock?.minThreshold || 5
+	const isOutOfStock = stockQty === 0
+	const isLowStock = stockQty > 0 && stockQty <= minThreshold
+	const isActive = item.isActive !== false
+
+	// @ts-ignore
+	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
+	const minQty = item.unit?.min || 1
+
+	const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
+	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
+	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
+
+	return (
+		<Pressable
+			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.card, borderColor: colors.border }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
+			onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}
+		>
+			{/* Image */}
+			<View style={cardStyles.imageWrap}>
+				<SmartImage source={imageUrl} style={cardStyles.image} resizeMode="cover" entityType="product" />
+				{/* Stock badge overlay */}
+				{(isOutOfStock || isLowStock) && (
+					<View style={[cardStyles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)' }]}>
+						<View style={[cardStyles.stockPill, { backgroundColor: stockColor + '22', borderColor: stockColor + '66' }]}>
+							<MaterialIcons name={stockIcon} size={12} color={stockColor} />
+							<Text style={[cardStyles.stockPillText, { color: stockColor }]}>{stockLabel}</Text>
+						</View>
+					</View>
+				)}
+				{/* Active stock badge top-left */}
+				{!isOutOfStock && !isLowStock && (
+					<View style={[cardStyles.inStockBadge, { backgroundColor: colors.success + '22', borderColor: colors.success + '44' }]}>
+						<MaterialIcons name="check-circle" size={10} color={colors.success} />
+						<Text style={[cardStyles.inStockText, { color: colors.success }]}>{stockLabel}</Text>
+					</View>
+				)}
+			</View>
+
+			{/* Body */}
+			<View style={cardStyles.body}>
+				<Text style={[cardStyles.name, { color: colors.text }]} numberOfLines={2}>
+					{localize(item.name)}
+				</Text>
+				{item.name?.tn_latn && (
+					<Text style={[cardStyles.nameAlt, { color: colors.textTertiary }]} numberOfLines={1}>
+						{item.name.tn_latn}
+					</Text>
+				)}
+
+				{/* Price row */}
+				<View style={cardStyles.priceRow}>
+					<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
+					<Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
+				</View>
+
+				{/* Footer */}
+				<View style={cardStyles.footer}>
+					<View style={[cardStyles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
+						<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
+						<Text style={[cardStyles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
+					</View>
+
+					{isActive && !isOutOfStock && (
+						<TouchableOpacity
+							style={[cardStyles.addBtn, { backgroundColor: colors.primary }]}
+							onPress={(e) => {
+								e.stopPropagation?.()
+								onAddToBasket(item, minQty)
+							}}
+							activeOpacity={0.8}
+						>
+							<MaterialIcons name="add-shopping-cart" size={16} color={colors.textOnPrimary || '#0F172A'} />
+						</TouchableOpacity>
+					)}
+				</View>
+			</View>
+		</Pressable>
+	)
+}
+
+const cardStyles = StyleSheet.create({
+	card: {
+		borderRadius: 20,
+		borderWidth: 1,
+		overflow: 'hidden',
+		...Platform.select({
+			ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },
+			android: { elevation: 4 },
+			web: { boxShadow: '0 4px 16px rgba(0,0,0,0.25)' } as any
+		})
+	},
+	imageWrap: {
+		width: '100%',
+		aspectRatio: 1.35,
+		position: 'relative',
+		backgroundColor: '#1E293B'
+	},
+	image: { width: '100%', height: '100%' },
+	stockOverlay: {
+		...StyleSheet.absoluteFillObject,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	stockPill: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		paddingHorizontal: 10,
+		paddingVertical: 5,
+		borderRadius: 20,
+		borderWidth: 1
+	},
+	stockPillText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
+	inStockBadge: {
+		position: 'absolute',
+		top: 8,
+		left: 8,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 3,
+		paddingHorizontal: 7,
+		paddingVertical: 3,
+		borderRadius: 10,
+		borderWidth: 1
+	},
+	inStockText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
+	body: { padding: 14, gap: 6 },
+	name: { fontSize: 15, fontWeight: '700', lineHeight: 20, letterSpacing: -0.2 },
+	nameAlt: { fontSize: 12, fontWeight: '500' },
+	priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 2 },
+	price: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
+	unit: { fontSize: 12, fontWeight: '500' },
+	footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+	qtyBadge: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 8
+	},
+	qtyText: { fontSize: 12, fontWeight: '600' },
+	addBtn: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any })
+	}
+})
+
+// ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function BusinessProductsScreen() {
-	const { businessId: businessSlug } = useLocalSearchParams<{ businessId: string }>()
+	// FIX: read 'businessSlug' not 'businessId'
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const { colors } = useTheme()
 	const router = useRouter()
-	const { localize, translate } = useUser()
-	const [headerTitle, setHeaderTitle] = useState(translate('business_products', 'Products'))
+	const { localize, translate, currency, formatPrice } = useUser()
 	const { width, height } = useWindowDimensions()
+	const { onScroll } = useScrollHandler()
 
-	// Responsive calculations
-	const isSmallMobile = width < BREAKPOINTS.mobile
-	const isMobile = width < BREAKPOINTS.tablet
-	const isTablet = width >= BREAKPOINTS.tablet && width < BREAKPOINTS.desktop
-	const isDesktop = width >= BREAKPOINTS.desktop
-	const isWide = width >= BREAKPOINTS.wide
+	// Responsive
+	const isSmallMobile = width < BP.mobile
+	const isMobile = width < BP.tablet
+	const isTablet = width >= BP.tablet && width < BP.desktop
+	const isDesktop = width >= BP.desktop
+	const isWide = width >= BP.wide
 	const isLandscape = width > height
 
-	// Dynamic column count based on screen size
 	const numColumns = useMemo(() => {
 		if (isSmallMobile) return 1
-		if (isMobile && !isLandscape) return 1
-		if (isMobile && isLandscape) return 2
-		if (isTablet) return 2
-		if (isDesktop && !isWide) return 3
-		return Math.min(4, Math.floor(width / 350))
+		if (isMobile && !isLandscape) return 2
+		if (isMobile && isLandscape) return 3
+		if (isTablet) return 3
+		if (isDesktop && !isWide) return 4
+		return Math.min(5, Math.floor(width / 280))
 	}, [width, height, isSmallMobile, isMobile, isTablet, isDesktop, isWide, isLandscape])
 
-	// Dynamic max width for content container
 	const contentMaxWidth = useMemo(() => {
 		if (isWide) return 1400
 		if (isDesktop) return 1200
@@ -58,20 +221,16 @@ export default function BusinessProductsScreen() {
 		return width
 	}, [width, isTablet, isDesktop, isWide])
 
-	// Dynamic padding based on screen size
 	const horizontalPadding = useMemo(() => {
 		if (isDesktop) return 32
 		if (isTablet) return 24
 		return 16
 	}, [isTablet, isDesktop])
 
-	// Dynamic card gap
-	const cardGap = useMemo(() => {
-		if (isDesktop) return 20
-		if (isTablet) return 16
-		return 12
-	}, [isTablet, isDesktop])
+	const cardGap = useMemo(() => (isDesktop ? 18 : isTablet ? 14 : 10), [isTablet, isDesktop])
 
+	// State
+	const [businessName, setBusinessName] = useState('')
 	const [products, setProducts] = useState<Product[]>([])
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
 	const [basket, setBasket] = useState<any[]>([])
@@ -79,210 +238,147 @@ export default function BusinessProductsScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [searchText, setSearchText] = useState('')
-	const { onScroll } = useScrollHandler()
+	const [activeFilter, setActiveFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all')
 
+	// Load basket
 	const loadBasket = async () => {
 		try {
-			const savedBasket = await AsyncStorage.getItem('basket')
-			if (savedBasket) setBasket(JSON.parse(savedBasket))
-		} catch (err) {
-			console.error('Failed to load basket:', err)
-		}
+			const saved = await AsyncStorage.getItem('basket')
+			if (saved) setBasket(JSON.parse(saved))
+		} catch {}
 	}
 
-	const loadProducts = async () => {
+	// Load products
+	const loadProducts = useCallback(async () => {
 		if (!businessSlug) return
-
 		try {
-			if (!refreshing) setLoading(true)
 			setError(null)
 			const response = await getBusinessProductsBySlug(businessSlug)
-			const fetchedProducts = response.data.docs || []
-			setProducts(fetchedProducts)
-			setFilteredProducts(fetchedProducts)
-
-			// Update header title if business info is available in products
-			if (fetchedProducts.length > 0 && fetchedProducts[0].business?.name) {
-				setHeaderTitle(localize(fetchedProducts[0].business.name))
+			const docs = response.data.docs || []
+			setProducts(docs)
+			setFilteredProducts(docs)
+			if (docs.length > 0 && docs[0].business?.name) {
+				setBusinessName(localize(docs[0].business.name))
 			}
 		} catch (err: any) {
-			console.error('Failed to load products:', err)
 			const errorInfo = parseError(err)
-			setError({
-				title: errorInfo.title,
-				message: errorInfo.message,
-				type: errorInfo.type
-			})
+			setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
 		} finally {
 			setLoading(false)
 			setRefreshing(false)
 		}
-	}
+	}, [businessSlug, localize])
 
 	useEffect(() => {
 		loadBasket()
 		loadProducts()
-	}, [businessSlug])
+	}, [loadProducts])
 
+	// Search + filter
 	useEffect(() => {
-		if (!searchText.trim()) {
-			setFilteredProducts(products)
-			return
+		let list = products
+		if (searchText.trim()) {
+			const q = searchText.toLowerCase()
+			list = list.filter((p) => localize(p.name).toLowerCase().includes(q))
 		}
-		const searchLower = searchText.toLowerCase()
-		const filtered = products.filter((p) => localize(p.name).toLowerCase().includes(searchLower))
-		setFilteredProducts(filtered)
-	}, [searchText, products, localize])
-
-	const addToBasket = async (item: FeedItem, quantity: number) => {
-		try {
-			const existingItemIndex = basket.findIndex((basketItem) => basketItem._id === item._id)
-			let newBasket: any[]
-
-			if (existingItemIndex > -1) {
-				newBasket = basket.map((basketItem, index) => (index === existingItemIndex ? { ...basketItem, quantity: basketItem.quantity + quantity } : basketItem))
-			} else {
-				newBasket = [...basket, { ...item, quantity }]
-			}
-
-			setBasket(newBasket)
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-
-			toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
-				actions: [
-					{
-						icon: 'cart-outline',
-						onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'cart' } })
-					}
-				]
+		if (activeFilter === 'inStock') list = list.filter((p) => p.stock?.quantity > (p.stock?.minThreshold || 5))
+		if (activeFilter === 'lowStock') {
+			list = list.filter((p) => {
+				const q = p.stock?.quantity || 0
+				const t = p.stock?.minThreshold || 5
+				return q > 0 && q <= t
 			})
-		} catch (err) {
-			console.error('Failed to add to basket:', err)
-			toast.error(translate('basket_failed_to_add', 'Failed to add to basket'))
 		}
-	}
+		if (activeFilter === 'outOfStock') list = list.filter((p) => (p.stock?.quantity || 0) === 0)
+		setFilteredProducts(list)
+	}, [searchText, products, activeFilter, localize])
+
+	// Add to basket
+	const handleAddToBasket = useCallback(
+		async (item: Product, qty: number) => {
+			try {
+				const existing = basket.findIndex((b) => b._id === item._id)
+				const newBasket = existing > -1 ? basket.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...basket, { ...item, quantity: qty }]
+				setBasket(newBasket)
+				await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+				toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
+					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'cart' } }) }]
+				})
+			} catch {
+				toast.error(translate('basket_failed_to_add', 'Failed to add to basket'))
+			}
+		},
+		[basket, localize, translate, router]
+	)
 
 	const handleRefresh = () => {
 		setRefreshing(true)
 		loadProducts()
 	}
 
-	// Calculate card width based on columns and gap
-	const getCardWidth = () => {
-		if (numColumns === 1) return '100%'
-		const totalGaps = (numColumns - 1) * cardGap
-		const availableWidth = 100 // percentage
-		return `${(availableWidth - (totalGaps / (contentMaxWidth - horizontalPadding * 2)) * 100) / numColumns}%`
-	}
+	// Filter counts
+	const counts = useMemo(() => {
+		const outOfStock = products.filter((p) => (p.stock?.quantity || 0) === 0).length
+		const lowStock = products.filter((p) => {
+			const q = p.stock?.quantity || 0
+			const t = p.stock?.minThreshold || 5
+			return q > 0 && q <= t
+		}).length
+		const inStock = products.length - outOfStock - lowStock
+		return { all: products.length, inStock, lowStock, outOfStock }
+	}, [products])
 
-	const renderProductItem = ({ item, index }: { item: Product; index: number }) => {
-		// Calculate width percentage for each card
-		const cardWidthPercent = numColumns === 1 ? 100 : (100 - (numColumns - 1) * 2) / numColumns
+	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
+		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },
+		{ key: 'inStock', label: translate('in_stock', 'In Stock'), color: colors.success, count: counts.inStock },
+		{ key: 'lowStock', label: translate('low_stock', 'Low Stock'), color: colors.warning, count: counts.lowStock },
+		{ key: 'outOfStock', label: translate('out_of_stock', 'Out of Stock'), color: colors.error, count: counts.outOfStock }
+	]
 
-		return (
-			<View
-				style={[
-					styles.cardWrapper,
-					{
-						width: numColumns === 1 ? '100%' : `${cardWidthPercent}%`,
-						marginBottom: cardGap,
-						marginRight: numColumns > 1 && (index + 1) % numColumns !== 0 ? `${2}%` : 0
-					}
-				]}
-			>
-				<FeedCard item={item as unknown as FeedItem} addToBasket={addToBasket} />
-			</View>
-		)
-	}
-
-	// Create responsive styles
-	const responsiveStyles = useMemo(
-		() =>
-			StyleSheet.create({
-				searchContainer: {
-					paddingHorizontal: horizontalPadding,
-					paddingVertical: isDesktop ? 16 : 12,
-					maxWidth: contentMaxWidth,
-					alignSelf: 'center' as const,
-					width: '100%'
-				},
-				searchInputWrapper: {
-					flexDirection: 'row' as const,
-					alignItems: 'center' as const,
-					borderRadius: isDesktop ? 16 : 12,
-					paddingHorizontal: isDesktop ? 16 : 12,
-					height: isDesktop ? 56 : isTablet ? 52 : 48,
-					borderWidth: 1,
-					...Platform.select({
-						web: {
-							transition: 'all 0.2s ease'
-						}
-					})
-				},
-				searchInput: {
-					flex: 1,
-					fontSize: isDesktop ? 17 : 16,
-					padding: 0
-				},
-				listContent: {
-					paddingHorizontal: horizontalPadding,
-					paddingTop: 8,
-					paddingBottom: isDesktop ? 40 : 24,
-					flexGrow: 1,
-					maxWidth: contentMaxWidth,
-					alignSelf: 'center' as const,
-					width: '100%'
-				},
-				emptyContainer: {
-					flex: 1,
-					justifyContent: 'center' as const,
-					alignItems: 'center' as const,
-					padding: isDesktop ? 60 : 40,
-					marginTop: isDesktop ? 60 : 40
-				},
-				emptyIcon: {
-					marginBottom: isDesktop ? 20 : 12
-				},
-				emptyText: {
-					fontSize: isDesktop ? 18 : 16,
-					fontWeight: '600' as const,
-					textAlign: 'center' as const,
-					maxWidth: 400
-				},
-				resultsCount: {
-					paddingHorizontal: horizontalPadding,
-					paddingBottom: 8,
-					maxWidth: contentMaxWidth,
-					alignSelf: 'center' as const,
-					width: '100%'
-				}
-			}),
-		[horizontalPadding, contentMaxWidth, isDesktop, isTablet]
+	// Render item
+	const renderItem = useCallback(
+		({ item, index }: { item: Product; index: number }) => {
+			const pct = numColumns === 1 ? 100 : (100 - (numColumns - 1) * (cardGap / (contentMaxWidth - horizontalPadding * 2)) * 100) / numColumns
+			return (
+				<View
+					style={{
+						width: numColumns === 1 ? '100%' : `${(100 - (numColumns - 1) * 1.5) / numColumns}%`,
+						marginBottom: cardGap
+					}}
+				>
+					<ProductCard item={item} colors={colors} localize={localize} formatPrice={formatPrice} currency={currency} translate={translate} onAddToBasket={handleAddToBasket} isWide={isWide} />
+				</View>
+			)
+		},
+		[numColumns, cardGap, colors, localize, formatPrice, currency, translate, handleAddToBasket, isWide, contentMaxWidth, horizontalPadding]
 	)
 
+	// ─── Loading ──────────────────────────────────────────────────────────────
 	if (loading && !refreshing) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={headerTitle} showBack={true} />
-				<View style={styles.loadingContainer}>
+			<View style={[s.container, { backgroundColor: colors.background }]}>
+				<ScreenHeader title={businessName || translate('business_products', 'Products')} showBack={true} />
+				<View style={s.centered}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
 			</View>
 		)
 	}
 
+	const headerTitle = businessName || translate('business_products', 'Products')
+
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background }]}>
+		<View style={[s.container, { backgroundColor: colors.background }]}>
 			<ScreenHeader title={headerTitle} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
 
-			{/* Search Component */}
+			{/* Search bar */}
 			{!error && (
-				<View style={responsiveStyles.searchContainer}>
-					<View style={[responsiveStyles.searchInputWrapper, { backgroundColor: colors.inputBackground, borderColor: colors.inputBorder }]}>
-						<Ionicons name="search-outline" size={isDesktop ? 22 : 20} color={colors.textSecondary} style={styles.searchIcon} />
+				<View style={[s.searchWrap, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
+					<View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
+						<Ionicons name="search-outline" size={18} color={colors.textSecondary} />
 						<TextInput
-							style={[responsiveStyles.searchInput, { color: colors.text }]}
-							placeholder={translate('business_search_placeholder', 'Search in this business...')}
+							style={[s.searchInput, { color: colors.text }]}
+							placeholder={translate('business_search_placeholder', 'Search products…')}
 							placeholderTextColor={colors.textTertiary}
 							value={searchText}
 							onChangeText={setSearchText}
@@ -291,33 +387,74 @@ export default function BusinessProductsScreen() {
 						/>
 						{searchText.length > 0 && (
 							<TouchableOpacity onPress={() => setSearchText('')} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-								<Ionicons name="close-circle" size={isDesktop ? 22 : 20} color={colors.textSecondary} />
+								<Ionicons name="close-circle" size={18} color={colors.textSecondary} />
 							</TouchableOpacity>
 						)}
 					</View>
 				</View>
 			)}
 
-			{/* Results Count */}
+			{/* Filter chips */}
+			{!error && products.length > 0 && (
+				<View style={s.filtersOuter}>
+					<FlatList
+						horizontal
+						data={filters}
+						keyExtractor={(f) => f.key}
+						showsHorizontalScrollIndicator={false}
+						contentContainerStyle={[s.filtersContent, { paddingHorizontal: horizontalPadding }]}
+						renderItem={({ item: f }) => {
+							const active = activeFilter === f.key
+							return (
+								<TouchableOpacity
+									onPress={() => setActiveFilter(f.key)}
+									style={[
+										s.chip,
+										{
+											backgroundColor: active ? f.color + '22' : colors.surface,
+											borderColor: active ? f.color : colors.border
+										}
+									]}
+									activeOpacity={0.75}
+								>
+									<Text style={[s.chipText, { color: active ? f.color : colors.textSecondary }]}>{f.label}</Text>
+									<View style={[s.chipCount, { backgroundColor: active ? f.color : colors.surfaceVariant }]}>
+										<Text style={[s.chipCountText, { color: active ? '#0F172A' : colors.textSecondary }]}>{f.count}</Text>
+									</View>
+								</TouchableOpacity>
+							)
+						}}
+					/>
+				</View>
+			)}
+
+			{/* Results count */}
 			{!error && !loading && filteredProducts.length > 0 && (
-				<View style={responsiveStyles.resultsCount}>
-					<Text style={[styles.resultsText, { color: colors.textSecondary }]}>
+				<View style={{ paddingHorizontal: horizontalPadding, paddingBottom: 8, maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }}>
+					<Text style={[s.resultsText, { color: colors.textTertiary }]}>
 						{filteredProducts.length} {filteredProducts.length === 1 ? translate('product', 'product') : translate('products', 'products')}
 						{searchText ? ` ${translate('found', 'found')}` : ''}
 					</Text>
 				</View>
 			)}
 
-			{/* Products List */}
+			{/* Grid */}
 			<FlatList
-				key={`flatlist-${numColumns}`} // Force re-render when columns change
+				key={`grid-${numColumns}`}
 				data={filteredProducts}
-				renderItem={renderProductItem}
+				renderItem={renderItem}
 				keyExtractor={(item) => item._id}
 				numColumns={numColumns}
-				contentContainerStyle={responsiveStyles.listContent}
+				contentContainerStyle={{
+					paddingHorizontal: horizontalPadding,
+					paddingTop: 8,
+					paddingBottom: 40,
+					maxWidth: contentMaxWidth,
+					alignSelf: 'center',
+					width: '100%'
+				}}
+				columnWrapperStyle={numColumns > 1 ? { gap: cardGap * 0.6, justifyContent: 'flex-start' } : undefined}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
 				showsVerticalScrollIndicator={false}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
@@ -329,15 +466,28 @@ export default function BusinessProductsScreen() {
 							onRetry={loadProducts}
 							icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
 						/>
-					) : !loading && !refreshing ? (
-						<View style={responsiveStyles.emptyContainer}>
-							<Ionicons name={searchText ? 'search-outline' : 'cube-outline'} size={isDesktop ? 64 : 48} color={colors.textTertiary} style={responsiveStyles.emptyIcon} />
-							<Text style={[responsiveStyles.emptyText, { color: colors.text }]}>
-								{searchText ? translate('business_no_results', 'No products match your search') : translate('business_no_products', 'No products found for this business.')}
+					) : !loading ? (
+						<View style={s.emptyWrap}>
+							<LinearGradient colors={[colors.primary + '18', colors.primary + '06']} style={s.emptyIconWrap}>
+								<Ionicons name={searchText || activeFilter !== 'all' ? 'search-outline' : 'cube-outline'} size={48} color={colors.primary} />
+							</LinearGradient>
+							<Text style={[s.emptyTitle, { color: colors.text }]}>
+								{searchText
+									? translate('business_no_results', 'No products match your search')
+									: activeFilter !== 'all'
+										? translate('no_products_this_filter', 'No products in this category')
+										: translate('business_no_products', 'No products yet')}
 							</Text>
-							{searchText && (
-								<TouchableOpacity style={[styles.clearSearchButton, { borderColor: colors.primary }]} onPress={() => setSearchText('')}>
-									<Text style={[styles.clearSearchText, { color: colors.primary }]}>{translate('clear_search', 'Clear search')}</Text>
+							<Text style={[s.emptySubtitle, { color: colors.textSecondary }]}>{translate('business_no_products_hint', 'Products from this business will appear here.')}</Text>
+							{(searchText || activeFilter !== 'all') && (
+								<TouchableOpacity
+									style={[s.clearBtn, { borderColor: colors.primary }]}
+									onPress={() => {
+										setSearchText('')
+										setActiveFilter('all')
+									}}
+								>
+									<Text style={[s.clearBtnText, { color: colors.primary }]}>{translate('clear_filters', 'Clear filters')}</Text>
 								</TouchableOpacity>
 							)}
 						</View>
@@ -348,37 +498,76 @@ export default function BusinessProductsScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1
+// ─── Styles ───────────────────────────────────────────────────────────────────
+const s = StyleSheet.create({
+	container: { flex: 1 },
+	centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+	searchWrap: {
+		alignSelf: 'center',
+		width: '100%',
+		paddingTop: 12,
+		paddingBottom: 8
 	},
-	loadingContainer: {
+	searchBox: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10,
+		borderRadius: 14,
+		paddingHorizontal: 14,
+		height: 46,
+		borderWidth: 1,
+		...Platform.select({ web: { outlineWidth: 0 } as any })
+	},
+	searchInput: {
 		flex: 1,
+		fontSize: 15,
+		padding: 0,
+		...Platform.select({ web: { outlineStyle: 'none' } as any })
+	},
+	filtersOuter: { paddingTop: 4, paddingBottom: 10 },
+	filtersContent: { gap: 8, paddingVertical: 2 },
+	chip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		paddingHorizontal: 12,
+		paddingVertical: 7,
+		borderRadius: 20,
+		borderWidth: 1.5
+	},
+	chipText: { fontSize: 13, fontWeight: '600' },
+	chipCount: {
+		minWidth: 20,
+		height: 20,
+		borderRadius: 10,
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
+		paddingHorizontal: 4
 	},
-	columnWrapper: {
-		justifyContent: 'flex-start'
+	chipCountText: { fontSize: 11, fontWeight: '700' },
+	resultsText: { fontSize: 12, fontWeight: '500' },
+	emptyWrap: {
+		alignItems: 'center',
+		paddingTop: 60,
+		paddingHorizontal: 32,
+		gap: 12
 	},
-	cardWrapper: {
-		// Width is set dynamically
+	emptyIconWrap: {
+		width: 96,
+		height: 96,
+		borderRadius: 48,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginBottom: 8
 	},
-	searchIcon: {
-		marginRight: 10
-	},
-	resultsText: {
-		fontSize: 13,
-		fontWeight: '500'
-	},
-	clearSearchButton: {
-		marginTop: 20,
+	emptyTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center', letterSpacing: -0.3 },
+	emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
+	clearBtn: {
+		marginTop: 8,
 		paddingHorizontal: 20,
 		paddingVertical: 10,
-		borderRadius: 8,
+		borderRadius: 10,
 		borderWidth: 1
 	},
-	clearSearchText: {
-		fontSize: 14,
-		fontWeight: '600'
-	}
+	clearBtnText: { fontSize: 14, fontWeight: '600' }
 })

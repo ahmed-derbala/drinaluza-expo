@@ -4,13 +4,9 @@
  * ⚠️ IMPORTANT: This app ONLY supports dark theme with blue variants.
  * There is NO light theme, NO theme switching, and NO theme customization.
  *
- * The dark ocean blue theme is specifically designed for seafood business
- * management and provides optimal visibility and professional appearance.
- *
  * Color Palette:
  * - Background: Deep ocean blues (Slate 950, 900, 800)
  * - Primary: Sky blue (#38BDF8) - vibrant and readable
- * - Secondary: Teal (#2DD4BF) - seafood accent
  * - Text: High contrast light colors for readability
  */
 
@@ -36,7 +32,6 @@ export const colors = {
 	primaryDark: '#0EA5E9', // Sky 500
 	primaryContainer: '#0C4A6E', // Sky 900
 
-	// Secondary - Teal/Cyan (Seafood accent)
 	secondary: '#2DD4BF', // Teal 400
 	secondaryLight: '#5EEAD4', // Teal 300
 	secondaryDark: '#14B8A6', // Teal 500

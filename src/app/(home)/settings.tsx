@@ -123,7 +123,7 @@ export default function SettingsScreen() {
 			onScroll={onScroll}
 			scrollEventThrottle={16}
 		>
-			<ScreenHeader title={translate('settings', 'Settings')} subtitle="Drinaluza - Seafood Business Manager" showBack={false} />
+			<ScreenHeader title={translate('settings', 'Settings')} subtitle="Drinaluza - Business Manager" showBack={false} />
 			<View style={{ height: 16 }} />
 
 			<SettingSection title={translate('social_media', 'Social Media')}>

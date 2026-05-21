@@ -243,7 +243,7 @@ export default function AuthScreen() {
 								</TouchableOpacity>
 							</View>
 							<Text style={[styles.title, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
-							<Text style={[styles.subtitle, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Seafood Business Manager')}</Text>
+							<Text style={[styles.subtitle, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
 
 							{/* Language and Currency Selection */}
 							<View style={styles.settingsSection}>

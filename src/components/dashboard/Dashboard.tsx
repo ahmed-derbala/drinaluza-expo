@@ -15,7 +15,7 @@ import { DashboardData, DashboardProfile, DashboardRankItem, isBusinessDashboard
 import { LocalizedName } from '../businesses/businesses.interface'
 
 const { width } = Dimensions.get('window')
-const STAT_WIDTH = (width - 44) / 2
+const MEDALS = ['🥇', '🥈', '🥉']
 
 type SelectedProfile = {
 	kind: 'personal' | 'business'
@@ -325,7 +325,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				label: translate('my_products', 'My Products'),
 				icon: <MaterialIcons name="inventory" size={22} color={colors.success} />,
 				color: colors.success,
-				onPress: () => router.push('/(home)/business/my-products' as never)
+				onPress: () => router.push(`/(home)/businesses/${business.slug}/products` as never)
 			},
 			{
 				label: translate('sales', 'Sales'),
@@ -338,10 +338,12 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
 				color: colors.warning,
 				onPress: () =>
-					router.push({
-						pathname: '/(home)/business/create-product',
-						params: { businessSlug: business.slug, businessId: business._id }
-					} as never)
+					Platform.OS === 'web'
+						? router.push(`/(home)/businesses/${business.slug}/products/create` as never)
+						: router.push({
+								pathname: '/(home)/business/create-product',
+								params: { businessSlug: business.slug, businessId: business._id }
+							} as never)
 			}
 		],
 		[business._id, business.slug, colors, router, translate]
@@ -442,7 +444,10 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 // --- Shared UI pieces ---
 
 const SectionTitle = ({ title, colors }: { title: string; colors: typeof import('../../config/theme').colors }) => (
-	<Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, letterSpacing: -0.5, marginBottom: 12, marginTop: 8 }}>{title}</Text>
+	<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginTop: 10 }}>
+		<View style={{ width: 4, height: 22, borderRadius: 2, backgroundColor: colors.primary }} />
+		<Text style={{ fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.5, flex: 1 }}>{title}</Text>
+	</View>
 )
 
 type StatCardProps = {
@@ -456,10 +461,10 @@ type StatCardProps = {
 }
 
 const StatCard = ({ title, value, icon, accent, styles, colors, onPress }: StatCardProps) => (
-	<TouchableOpacity activeOpacity={0.9} onPress={onPress} style={[styles.statCard, { borderColor: colors.border, backgroundColor: colors.card }]}>
-		<LinearGradient colors={[`${accent}18`, `${accent}06`]} style={StyleSheet.absoluteFill} />
-		<View style={[styles.statIcon, { backgroundColor: `${accent}22` }]}>{icon}</View>
-		<Text style={[styles.statValue, { color: colors.text }]}>{value}</Text>
+	<TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.statCard, { borderColor: `${accent}40`, backgroundColor: colors.card }]}>
+		<LinearGradient colors={[`${accent}15`, `${accent}05`, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+		<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
+		<Text style={[styles.statValue, { color: accent }]}>{value}</Text>
 		<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
 	</TouchableOpacity>
 )
@@ -474,9 +479,9 @@ type QuickActionProps = {
 }
 
 const QuickAction = ({ label, icon, color, onPress, styles, colors }: QuickActionProps) => (
-	<TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-		<View style={[styles.quickActionIcon, { backgroundColor: `${color}18` }]}>{icon}</View>
-		<Text style={[styles.quickActionLabel, { color: colors.textSecondary }]} numberOfLines={2}>
+	<TouchableOpacity activeOpacity={0.8} onPress={onPress} style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: `${color}20` }]}>
+		<View style={[styles.quickActionIcon, { backgroundColor: `${color}15` }]}>{icon}</View>
+		<Text style={[styles.quickActionLabel, { color: colors.text }]} numberOfLines={2}>
 			{label}
 		</Text>
 	</TouchableOpacity>
@@ -509,6 +514,7 @@ const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, 
 						<RankRow
 							key={item._id || `${listTitle}-${index}`}
 							item={item}
+							index={index}
 							localize={localize}
 							styles={styles}
 							colors={colors}
@@ -540,18 +546,20 @@ type RankRowProps = {
 	isLast: boolean
 }
 
-const RankRow = ({ item, localize, styles, colors, entityType, isLast }: RankRowProps) => {
+const RankRow = ({ item, localize, styles, colors, entityType, isLast, index }: RankRowProps & { index?: number }) => {
 	const label = item.name ? localize(item.name) : item.slug || '—'
 	const metric = item.count ?? item.views
+	const medal = index !== undefined && index < 3 ? MEDALS[index] : undefined
 
 	return (
-		<View style={[styles.rankRow, { borderColor: colors.border }, isLast && { borderBottomWidth: 0 }]}>
+		<View style={[styles.rankRow, { borderColor: `${colors.border}60` }, isLast && { borderBottomWidth: 0 }]}>
+			{medal ? <Text style={{ fontSize: 16, marginRight: -2 }}>{medal}</Text> : null}
 			<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType={entityType} />
 			<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
 				{label}
 			</Text>
 			{metric !== undefined && (
-				<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}18` }]}>
+				<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}15` }]}>
 					<Text style={[styles.rankMetricText, { color: colors.primary }]}>{metric}</Text>
 				</View>
 			)}
@@ -563,101 +571,119 @@ const createStyles = (colors: typeof import('../../config/theme').colors) =>
 	StyleSheet.create({
 		container: { flex: 1 },
 		centered: { justifyContent: 'center', alignItems: 'center' },
-		scrollContent: { paddingHorizontal: 16, paddingBottom: 32, paddingTop: 8, gap: 4 },
-		section: { marginBottom: 20 },
-		sectionLabel: { fontSize: 12, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+		scrollContent: { paddingHorizontal: 16, paddingBottom: 40, paddingTop: 12, gap: 6 },
+		section: { marginBottom: 24 },
+		sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
 		profileRow: { gap: 10, paddingRight: 8 },
 		profileChip: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			paddingVertical: 10,
-			paddingHorizontal: 12,
-			borderRadius: 16,
+			paddingVertical: 12,
+			paddingHorizontal: 14,
+			borderRadius: 20,
 			borderWidth: 1.5,
-			gap: 10,
+			gap: 12,
 			maxWidth: width * 0.72,
-			position: 'relative'
+			position: 'relative',
+			...Platform.select({
+				web: { backdropFilter: 'blur(12px)', transition: 'all 0.2s ease' } as any,
+				ios: { shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
+				android: { elevation: 3 }
+			})
 		},
-		profileAvatar: { width: 40, height: 40, borderRadius: 12 },
+		profileAvatar: { width: 44, height: 44, borderRadius: 14 },
 		profileAvatarFallback: { justifyContent: 'center', alignItems: 'center' },
 		profileChipText: { flex: 1, minWidth: 0 },
-		profileKind: { fontSize: 10, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 },
-		profileName: { fontSize: 14, fontWeight: '700', marginTop: 2 },
-		activeDot: { position: 'absolute', top: 8, right: 8, width: 8, height: 8, borderRadius: 4 },
-		switchingBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 8 },
-		switchingText: { fontSize: 13 },
+		profileKind: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
+		profileName: { fontSize: 15, fontWeight: '700', marginTop: 3, letterSpacing: -0.2 },
+		activeDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4 },
+		switchingBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, marginBottom: 4, borderRadius: 12, backgroundColor: `${colors.primary}08` },
+		switchingText: { fontSize: 13, fontWeight: '500' },
 		heroCard: {
-			borderRadius: 24,
-			padding: 20,
+			borderRadius: 28,
+			padding: 24,
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 16,
+			gap: 18,
 			borderWidth: 1,
-			borderColor: 'rgba(255,255,255,0.06)',
-			marginBottom: 8
+			borderColor: `${colors.primary}15`,
+			marginBottom: 12,
+			...Platform.select({
+				web: { backdropFilter: 'blur(20px)', boxShadow: `0 8px 32px ${colors.primary}12` } as any,
+				ios: { shadowColor: colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20 },
+				android: { elevation: 6 }
+			})
 		},
-		heroThumbnail: { width: 72, height: 72, borderRadius: 18 },
+		heroThumbnail: { width: 80, height: 80, borderRadius: 22, borderWidth: 2, borderColor: `${colors.primary}30` },
 		heroInfo: { flex: 1 },
-		heroIconWrap: { width: 56, height: 56, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+		heroIconWrap: { width: 60, height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
 		kindBadge: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			alignSelf: 'flex-start',
-			gap: 4,
-			paddingHorizontal: 8,
-			paddingVertical: 4,
-			borderRadius: 8,
-			marginBottom: 8
+			gap: 5,
+			paddingHorizontal: 10,
+			paddingVertical: 5,
+			borderRadius: 10,
+			marginBottom: 10
 		},
-		kindBadgeText: { fontSize: 10, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' },
-		heroTitle: { fontSize: 22, fontWeight: '800', letterSpacing: -0.5 },
-		heroSubtitle: { fontSize: 14, fontWeight: '500', marginTop: 2 },
-		heroMeta: { fontSize: 12, marginTop: 6 },
-		statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 8 },
+		kindBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
+		heroTitle: { fontSize: 24, fontWeight: '800', letterSpacing: -0.6 },
+		heroSubtitle: { fontSize: 14, fontWeight: '500', marginTop: 4, letterSpacing: 0.2 },
+		heroMeta: { fontSize: 12, marginTop: 8, fontWeight: '500' },
+		statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
 		statCard: {
-			width: STAT_WIDTH,
-			borderRadius: 20,
-			padding: 16,
-			borderWidth: 1,
+			flex: 1,
+			minWidth: 100,
+			borderRadius: 22,
+			padding: 18,
+			borderWidth: 1.5,
 			overflow: 'hidden',
 			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 8 },
+				web: { backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' } as any,
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12 },
+				android: { elevation: 4 }
+			})
+		},
+		statIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
+		statValue: { fontSize: 30, fontWeight: '800', letterSpacing: -1.5 },
+		statLabel: { fontSize: 11, fontWeight: '700', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+		actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
+		quickAction: {
+			width: (width - 42) / 2,
+			borderRadius: 22,
+			borderWidth: 1,
+			padding: 18,
+			alignItems: 'center',
+			gap: 12,
+			...Platform.select({
+				web: { backdropFilter: 'blur(8px)', transition: 'transform 0.15s ease, box-shadow 0.15s ease', cursor: 'pointer' } as any,
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 6 },
 				android: { elevation: 2 }
 			})
 		},
-		statIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
-		statValue: { fontSize: 26, fontWeight: '800', letterSpacing: -1 },
-		statLabel: { fontSize: 12, fontWeight: '600', marginTop: 2 },
-		actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginBottom: 16 },
-		quickAction: {
-			width: (width - 44) / 2,
-			borderRadius: 18,
-			borderWidth: 1,
-			padding: 14,
-			alignItems: 'center',
-			gap: 10,
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4 },
-				android: { elevation: 1 }
-			})
-		},
-		quickActionIcon: { width: 48, height: 48, borderRadius: 14, justifyContent: 'center', alignItems: 'center' },
-		quickActionLabel: { fontSize: 12, fontWeight: '600', textAlign: 'center' },
-		rankPairRow: { flexDirection: 'row', gap: 12 },
+		quickActionIcon: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
+		quickActionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center', letterSpacing: -0.2 },
+		rankPairRow: { flexDirection: 'row', gap: 10 },
 		rankPanel: {
 			flex: 1,
-			borderRadius: 20,
+			borderRadius: 22,
 			borderWidth: 1,
-			padding: 12,
-			minHeight: 120
+			padding: 16,
+			minHeight: 140,
+			...Platform.select({
+				web: { backdropFilter: 'blur(8px)' } as any,
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6 },
+				android: { elevation: 2 }
+			})
 		},
-		rankPanelTitle: { fontSize: 13, fontWeight: '700', marginBottom: 10 },
-		rankEmpty: { fontSize: 12, lineHeight: 18, paddingVertical: 8 },
-		rankRow: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, borderBottomWidth: 1 },
-		rankAvatar: { width: 32, height: 32, borderRadius: 8 },
-		rankName: { flex: 1, fontSize: 13, fontWeight: '600' },
-		rankMetric: { paddingHorizontal: 8, paddingVertical: 2, borderRadius: 8 },
-		rankMetricText: { fontSize: 12, fontWeight: '700' }
+		rankPanelTitle: { fontSize: 14, fontWeight: '800', marginBottom: 12, letterSpacing: -0.2 },
+		rankEmpty: { fontSize: 12, lineHeight: 20, paddingVertical: 10, fontStyle: 'italic' },
+		rankRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1 },
+		rankAvatar: { width: 36, height: 36, borderRadius: 10 },
+		rankName: { flex: 1, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
+		rankMetric: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
+		rankMetricText: { fontSize: 11, fontWeight: '800' }
 	})
 
 export default Dashboard

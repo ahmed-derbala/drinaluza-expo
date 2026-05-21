@@ -176,7 +176,7 @@ export default function MyProductsTab() {
 							<Ionicons name="fish-outline" size={48} color={colors.primary} />
 						</LinearGradient>
 						<Text style={[styles.emptyTitleText, { color: colors.text }]}>No Products Yet</Text>
-						<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your seafood products to your businesses to start selling.</Text>
+						<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add your products to your businesses to start selling.</Text>
 						<TouchableOpacity style={[styles.emptyButton, { backgroundColor: colors.primary }]} onPress={() => router.push('/(home)/business/create-product')}>
 							<Ionicons name="add" size={32} color="#fff" />
 						</TouchableOpacity>

@@ -3,7 +3,6 @@
  *
  * This app uses ONLY a dark theme with blue variants.
  * No light theme or theme switching is supported.
- * The dark theme is optimized for seafood business management.
  */
 
 import React, { ReactNode } from 'react'

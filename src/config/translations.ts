@@ -59,7 +59,7 @@ export const translations: Record<string, Record<string, string>> = {
 
 		// Auth
 		auth_title: 'Drinaluza',
-		auth_subtitle: 'Seafood Business Manager',
+		auth_subtitle: 'Business Manager',
 		saved_accounts: 'SAVED ACCOUNTS',
 		last_signin: 'Last',
 		username: 'Username',
@@ -290,7 +290,7 @@ export const translations: Record<string, Record<string, string>> = {
 
 		// Auth
 		auth_title: 'Drinaluza',
-		auth_subtitle: 'Seafood Business Manager',
+		auth_subtitle: 'Business Manager',
 		saved_accounts: 'COMPTES MSEYYVINE',
 		last_signin: 'Ekher marra',
 		username: 'Ism el compte',

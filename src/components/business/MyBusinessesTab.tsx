@@ -759,7 +759,7 @@ const MyBusinessesTab: React.FC<MyBusinessesTabProps> = ({ navigation }) => {
 							<Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>
 								{error
 									? translate('error_occurred', 'Wait, something went wrong...')
-									: translate('business.no_businesses_desc', 'Create your first business to start selling seafood and managing inventory.')}
+									: translate('business.no_businesses_desc', 'Create your first business to start selling products and managing inventory.')}
 							</Text>
 							<TouchableOpacity onPress={() => (error ? loadBusinesses() : updateState({ modalVisible: true }))} style={[styles.emptyButton, { backgroundColor: colors.primary }]}>
 								<Ionicons name={error ? 'refresh' : 'add'} size={32} color="#fff" />
