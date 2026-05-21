@@ -27,7 +27,7 @@ export default function FeedCard({ item, addToBasket }: FeedCardProps) {
 			return <UserCard item={item as UserFeedItem} />
 		default:
 			return (
-				<View style={[styles.placeholderCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.placeholderCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<View style={[styles.placeholderIcon, { backgroundColor: colors.surfaceVariant }]}>
 						<MaterialIcons name="help-outline" size={32} color={colors.textSecondary} />
 					</View>

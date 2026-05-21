@@ -49,8 +49,8 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 
 	return (
 		<Pressable
-			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.card, borderColor: colors.border }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
-			onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}
+			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
+			onPress={() => item.slug && router.push(`/(home)/products/${item.slug}` as any)}
 		>
 			{/* Image */}
 			<View style={cardStyles.imageWrap}>

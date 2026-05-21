@@ -1,4 +1,4 @@
-import { translate } from './translations'
+import { translate } from '../core/translation'
 
 export const orderStatusEnum = {
 	PENDING_SHOP_CONFIRMATION: 'pending_shop_confirmation', //active

@@ -48,13 +48,13 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 
 	const handleBusinessPress = () => {
 		if (item.business?.slug) {
-			router.push(`/businesses/${item.business.slug}` as any)
+			router.push(`/(home)/businesses/${item.business.slug}` as any)
 		}
 	}
 
 	const handleProductPress = () => {
 		if (item.slug) {
-			router.push(`/products/${item.slug}` as any)
+			router.push(`/(home)/products/${item.slug}` as any)
 		}
 	}
 

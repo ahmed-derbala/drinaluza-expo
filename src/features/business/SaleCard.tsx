@@ -27,7 +27,7 @@ const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 	const unitMeasure = product.product.unit?.measure || translate('unit', 'unit')
 
 	return (
-		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.info || '#3B82F6' }]}>
 			<SmartImage source={getImageUrl()} style={styles.productImage} entityType="product" />
 			<View style={styles.productDetails}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>

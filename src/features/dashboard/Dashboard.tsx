@@ -503,7 +503,7 @@ const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, 
 	const { localize } = useUser()
 
 	const renderList = (items: DashboardRankItem[], listTitle: string) => (
-		<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.border }]}>
+		<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 			<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{listTitle}</Text>
 			{items.length === 0 ? (
 				<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{emptyHint}</Text>

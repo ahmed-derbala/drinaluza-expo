@@ -1,6 +1,5 @@
-export type LanguageCode = 'en' | 'tn_latn' | 'tn_arab' | 'fr' | 'ar'
 
-export const translations: Record<string, Record<string, string>> = {
+module.exports =  {
 	en: {
 		// Navigation
 		feed: 'Feed',
@@ -742,13 +741,13 @@ export const translations: Record<string, Record<string, string>> = {
 
 let currentAppLang = 'en'
 
-export const setGlobalAppLang = (lang: string) => {
+
 	currentAppLang = lang
 }
 
-export const getGlobalAppLang = () => currentAppLang
 
-export const translate = (key: string, defaultText?: string, lang?: string): string => {
+
+
 	const targetLang = (lang || currentAppLang).split('-')[0].toLowerCase()
 	const text = translations[targetLang]?.[key] || translations['en']?.[key]
 	return text || defaultText || key

@@ -275,7 +275,7 @@ const createStyles = (colors: any) =>
 			borderRadius: 16,
 			overflow: 'hidden',
 			borderWidth: 1,
-			borderColor: colors.border
+			borderColor: colors.info || '#3B82F6'
 		},
 		item: {
 			flexDirection: 'row',

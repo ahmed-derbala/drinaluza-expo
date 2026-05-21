@@ -312,7 +312,7 @@ const createStyles = (
 			backgroundColor: colors.card,
 			borderRadius: 8,
 			borderWidth: 1,
-			borderColor: colors.border,
+			borderColor: colors.info || '#3B82F6',
 			padding: 12
 		},
 		hoursHeader: {
@@ -644,7 +644,7 @@ export default function BusinessesListScreen() {
 
 	const handleBusinessPress = (slug: string) => {
 		// Navigate to business details using slug
-		router.push(`/businesses/${slug}` as any)
+		router.push(`/(home)/businesses/${slug}` as any)
 	}
 
 	const renderBusinessCard = ({ item }: { item: Business }) => {

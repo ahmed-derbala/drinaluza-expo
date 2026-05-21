@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import { View, Text, TouchableOpacity, StyleSheet, Platform, Animated, Easing } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, usePathname } from 'expo-router'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '../../core/contexts/ThemeContext'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -55,11 +55,24 @@ export default function ScreenHeader({ title, showBack = true, onBackPress, righ
 	const handleBackPress = () => {
 		if (onBackPress) {
 			onBackPress()
-		} else if (router.canGoBack()) {
-			router.back()
-		} else {
-			router.replace('/(home)/feed')
+			return
 		}
+
+		// Try expo-router's built-in back first
+		if (router.canGoBack()) {
+			router.back()
+			return
+		}
+
+		// On web, try the browser history as a fallback
+		// (Expo Router's canGoBack() can return false even when browser history exists)
+		if (Platform.OS === 'web' && typeof window !== 'undefined' && window.history?.length > 1) {
+			window.history.back()
+			return
+		}
+
+		// Last resort: navigate to feed
+		router.replace('/(home)/feed')
 	}
 
 	const handleRefresh = async () => {

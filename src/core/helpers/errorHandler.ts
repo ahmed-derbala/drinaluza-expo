@@ -1,5 +1,5 @@
 import { showPopup } from './popup'
-import { translate } from '../../config/translations'
+import { translate } from '../translation'
 
 export interface ErrorInfo {
 	title: string

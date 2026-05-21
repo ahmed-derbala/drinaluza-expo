@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { getCurrentUser } from '../auth/auth.api'
 import { UserData } from '../../features/profile/profile.interface'
 import { LocalizedName } from '../../features/businesses/businesses.interface'
-import { translate as translateHelper, setGlobalAppLang } from '../../config/translations'
+import { translate as translateHelper, setGlobalAppLang, localizeName } from '../translation'
 
 interface UserContextType {
 	user: UserData | null
@@ -131,9 +131,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
 	const localize = useCallback(
 		(name?: LocalizedName): string => {
-			if (!name) return ''
-			// @ts-ignore
-			return name[contentLang] || name[DEFAULT_CONTENT_LANG] || name['en'] || ''
+			return localizeName(name, contentLang)
 		},
 		[contentLang]
 	)

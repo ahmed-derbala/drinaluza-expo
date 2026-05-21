@@ -92,7 +92,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 	}
 
 	const renderReviewItem = (review: Review) => (
-		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.card, borderColor: colors.border }]}>
+		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 			<View style={styles.reviewHeader}>
 				<View style={styles.authorInfo}>
 					<View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryContainer }]}>
@@ -134,7 +134,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 
 			{/* Add Review Form */}
 			{showAddReview && (
-				<View style={[styles.addReviewForm, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.addReviewForm, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 					<Text style={[styles.formTitle, { color: colors.text }]}>
 						{translate('write_review', 'Write a Review')}
 						{targetName && ` for ${targetName}`}

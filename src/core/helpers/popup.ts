@@ -1,5 +1,5 @@
 import { Alert, Platform } from 'react-native'
-import { translate } from '../../config/translations'
+import { translate } from '../translation'
 
 interface PopupAction {
 	text: string

@@ -17,7 +17,7 @@ import {
 } from '../helpers/versionCheck'
 import { showPopup } from '../helpers/popup'
 import { log } from '../log'
-import { translate } from '../../config/translations'
+import { translate } from '../translation'
 
 interface VersionContextType {
 	versionStatus: VersionStatus

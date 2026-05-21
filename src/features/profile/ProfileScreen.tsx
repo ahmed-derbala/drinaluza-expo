@@ -1777,7 +1777,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			backgroundColor: colors.card,
 			borderRadius: 20,
 			borderWidth: 1,
-			borderColor: colors.border
+			borderColor: colors.info || '#3B82F6'
 		},
 		photoContainer: {
 			position: 'relative',
@@ -1908,7 +1908,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderRadius: 16,
 			padding: 20,
 			borderWidth: 1,
-			borderColor: colors.border
+			borderColor: colors.info || '#3B82F6'
 		},
 		sectionTitle: {
 			fontSize: 18,
