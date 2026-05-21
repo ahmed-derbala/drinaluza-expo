@@ -9,7 +9,7 @@ export default function BusinessOwnerLayout() {
 	const { colors } = useTheme()
 	const { isLoading, userRole } = useAuthGuard({
 		requireAuth: true,
-		allowedRoles: ['shop_owner'],
+		allowedRoles: ['business_owner', 'shop_owner'],
 		redirectTo: '/auth'
 	})
 
@@ -22,7 +22,11 @@ export default function BusinessOwnerLayout() {
 	)
 
 	return (
-		<NavigationGuard isLoading={isLoading} accessDenied={userRole !== 'shop_owner' && !isLoading} accessDeniedMessage="Access Denied. This section is only available for business owners.">
+		<NavigationGuard
+			isLoading={isLoading}
+			accessDenied={userRole !== 'business_owner' && userRole !== 'shop_owner' && !isLoading}
+			accessDeniedMessage="Access Denied. This section is only available for business owners."
+		>
 			<Stack screenOptions={stackOptions}>
 				<Stack.Screen name="my-businesses" options={{ headerShown: false }} />
 				<Stack.Screen name="my-products" options={{ headerShown: false }} />

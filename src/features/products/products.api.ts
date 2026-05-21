@@ -33,6 +33,12 @@ export interface CreateProductRequest {
 		startDate: string
 		endDate?: string | null
 	}
+	media?: {
+		thumbnail?: {
+			url: string
+		}
+	}
+	photos?: string[]
 }
 
 export interface ProductsResponse {

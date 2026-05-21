@@ -1,0 +1,490 @@
+import React, { useEffect, useState, useCallback } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
+import { useLocalSearchParams, useRouter } from 'expo-router'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
+import { Business } from '@/features/businesses/businesses.interface'
+import { ProductType } from '@/features/products/products.type'
+import { useTheme } from '@/core/contexts/ThemeContext'
+import { parseError } from '@/core/helpers/errorHandler'
+import ErrorState from '@/features/common/ErrorState'
+import ScreenHeader from '@/features/common/ScreenHeader'
+import SmartImage from '@/core/helpers/SmartImage'
+import { useUser } from '@/core/contexts/UserContext'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import ReviewSection from '@/features/reviews/Reviews'
+
+// Product Card for inline display
+const ProductCard = ({ product, colors, localize, onPress }: { product: ProductType; colors: any; localize: (obj: any) => string; onPress?: () => void }) => {
+	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
+	const stockQty = product.stock?.quantity || 0
+	const isOutOfStock = stockQty === 0
+	const rating = product.rating?.average || 0
+	const ratingCount = product.rating?.count || 0
+
+	return (
+		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]} activeOpacity={0.8} onPress={onPress}>
+			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.productImageContainer} />
+			<View style={styles.productInfo}>
+				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
+					{localize(product.name)}
+				</Text>
+				{rating > 0 && (
+					<View style={styles.ratingRow}>
+						<Ionicons name="star" size={12} color="#FFD700" />
+						<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+						<Text style={styles.ratingCount}>({ratingCount})</Text>
+					</View>
+				)}
+				<View style={styles.productPriceRow}>
+					<Text style={[styles.productPrice, { color: colors.primary }]}>{product.price?.total?.tnd?.toFixed(2) || '0.00'}</Text>
+					<Text style={[styles.productCurrency, { color: colors.primary }]}> TND</Text>
+					<Text style={[styles.productUnit, { color: colors.textTertiary }]}>/{product.unit?.measure || 'unit'}</Text>
+				</View>
+				{isOutOfStock && (
+					<View style={[styles.outOfStockBadge, { backgroundColor: '#EF444415' }]}>
+						<Text style={styles.outOfStockText}>Out of Stock</Text>
+					</View>
+				)}
+			</View>
+		</TouchableOpacity>
+	)
+}
+
+export default function BusinessDetailsScreen() {
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
+	const router = useRouter()
+	const { colors } = useTheme()
+	const { localize, translate } = useUser()
+	const { width } = useWindowDimensions()
+	const maxWidth = 800
+	const isWideScreen = width > maxWidth
+
+	const [business, setBusiness] = useState<Business | null>(null)
+	const [products, setProducts] = useState<any[]>([])
+	const [loading, setLoading] = useState(true)
+	const [refreshing, setRefreshing] = useState(false)
+	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { onScroll } = useScrollHandler()
+
+	const loadBusinessDetails = useCallback(
+		async (isRefresh = false) => {
+			if (!businessSlug) return
+
+			try {
+				if (!isRefresh) setLoading(true)
+				setError(null)
+
+				const [businessResponse, productsResponse] = await Promise.all([getBusinessBySlug(businessSlug), getBusinessProductsBySlug(businessSlug).catch(() => null)])
+
+				setBusiness(businessResponse.data)
+				setProducts(productsResponse?.data?.docs || [])
+			} catch (err: any) {
+				console.error('Failed to load business details:', err)
+				const errorInfo = parseError(err)
+				setError({
+					title: errorInfo.title,
+					message: errorInfo.message,
+					type: errorInfo.type
+				})
+			} finally {
+				setLoading(false)
+				setRefreshing(false)
+			}
+		},
+		[businessSlug]
+	)
+
+	useEffect(() => {
+		loadBusinessDetails()
+	}, [loadBusinessDetails])
+
+	const handleRefresh = useCallback(() => {
+		setRefreshing(true)
+		loadBusinessDetails(true)
+	}, [loadBusinessDetails])
+
+	const handleOpenMap = () => {
+		if (!business?.location?.coordinates) return
+		const [lng, lat] = business.location.coordinates
+		const url = `https://www.google.com/maps?q=${lat},${lng}`
+		Linking.openURL(url).catch((err) => console.error('Failed to open map:', err))
+	}
+
+	if (loading) {
+		return (
+			<View style={styles.container}>
+				<ScreenHeader title={translate('common.loading', 'Loading...')} showBack={true} />
+				<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
+					<ActivityIndicator size="large" color={colors.primary} />
+				</View>
+			</View>
+		)
+	}
+
+	if (error) {
+		return (
+			<View style={styles.container}>
+				<ScreenHeader title={translate('common.error', 'Error')} showBack={true} />
+				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+					<ErrorState
+						title={error.title}
+						message={error.message}
+						onRetry={() => loadBusinessDetails()}
+						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+					/>
+				</View>
+			</View>
+		)
+	}
+
+	if (!business) {
+		return (
+			<View style={styles.container}>
+				<ScreenHeader title={translate('business_not_found', 'Business not found')} showBack={true} />
+				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
+					<Text style={[styles.errorText, { color: colors.text }]}>{translate('business_not_found', 'Business not found')}</Text>
+				</View>
+			</View>
+		)
+	}
+
+	// Build address string
+	const addressParts = []
+	if (business.address?.street) addressParts.push(business.address.street)
+	if (business.address?.city) addressParts.push(business.address.city)
+	if (business.address?.region) addressParts.push(business.address.region)
+	if (business.address?.country) addressParts.push(business.address.country)
+	const fullAddress = addressParts.join(', ')
+
+	return (
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<ScreenHeader title={localize(business.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScrollView
+				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
+			>
+				{/* Business Image */}
+				<View style={styles.imageContainer}>
+					<SmartImage source={business.media?.thumbnail?.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
+				</View>
+
+				{/* Business Info Card */}
+				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+					<Text style={[styles.businessName, { color: colors.text }]}>{localize(business.name)}</Text>
+
+					{/* Owner Info */}
+					{business.owner && (
+						<View style={styles.infoRow}>
+							<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+							<View style={styles.infoContent}>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_owner', 'Owner')}</Text>
+								<View style={styles.ownerRow}>
+									<Text style={[styles.infoValue, { color: colors.text }]}>{localize(business.owner.name)}</Text>
+									<Text style={[styles.slugText, { color: colors.textTertiary }]}>@{business.owner.slug}</Text>
+									{business.owner && (
+										<View style={[styles.businessBadge, { backgroundColor: colors.primary + '15' }]}>
+											<Text style={[styles.businessBadgeText, { color: colors.primary }]} numberOfLines={1}>
+												{localize(business.owner.name)}
+											</Text>
+										</View>
+									)}
+								</View>
+							</View>
+						</View>
+					)}
+
+					{/* Address */}
+					{business.address && (
+						<View style={styles.infoRow}>
+							<Ionicons name="location-outline" size={18} color={colors.textSecondary} />
+							<View style={styles.infoContent}>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_address', 'Address')}</Text>
+								<Text style={[styles.infoValue, { color: colors.text }]}>{fullAddress}</Text>
+							</View>
+						</View>
+					)}
+
+					{/* Location Coordinates */}
+					{business.location?.coordinates && (
+						<TouchableOpacity style={styles.infoRow} onPress={handleOpenMap} activeOpacity={0.7}>
+							<Ionicons name="map-outline" size={18} color={colors.textSecondary} />
+							<View style={styles.infoContent}>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_location', 'Location')}</Text>
+								<View style={styles.locationRow}>
+									<Text style={[styles.infoValue, { color: colors.text }]}>
+										{business.location.coordinates[1].toFixed(4)}, {business.location.coordinates[0].toFixed(4)}
+									</Text>
+									<Ionicons name="open-outline" size={16} color={colors.primary} />
+								</View>
+							</View>
+						</TouchableOpacity>
+					)}
+
+					{/* Delivery Radius */}
+					{typeof business.deliveryRadiusKm === 'number' && (
+						<View style={styles.infoRow}>
+							<Ionicons name="navigate-outline" size={18} color={colors.textSecondary} />
+							<View style={styles.infoContent}>
+								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_delivery_radius', 'Delivery Radius')}</Text>
+								<Text style={[styles.infoValue, { color: colors.text }]}>{business.deliveryRadiusKm} km</Text>
+							</View>
+						</View>
+					)}
+				</View>
+
+				{/* Products Section */}
+				<View style={[styles.productsSection, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+					<View style={styles.productsSectionHeader}>
+						<Ionicons name="fish-outline" size={20} color={colors.primary} />
+						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('business_products', 'Products')}</Text>
+						<View style={[styles.productsCountBadge, { backgroundColor: colors.primary + '15' }]}>
+							<Text style={[styles.productsCountText, { color: colors.primary }]}>{products.length}</Text>
+						</View>
+					</View>
+
+					{products.length > 0 ? (
+						<View style={styles.productsGrid}>
+							{products.map((product) => (
+								<ProductCard key={product._id} product={product} colors={colors} localize={localize} onPress={() => product.slug && router.push(`/products/${product.slug}` as any)} />
+							))}
+						</View>
+					) : (
+						<View style={styles.emptyProducts}>
+							<Ionicons name="fish-outline" size={48} color={colors.textTertiary} />
+							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('no_products_available', 'No products available')}</Text>
+						</View>
+					)}
+				</View>
+
+				{/* Reviews Section */}
+				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
+			</ScrollView>
+		</View>
+	)
+}
+
+const styles = StyleSheet.create({
+	container: {
+		flex: 1
+	},
+	loadingContainer: {
+		flex: 1,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	errorContainer: {
+		flex: 1,
+		padding: 20
+	},
+	scrollContent: {
+		padding: 20,
+		paddingBottom: 40
+	},
+	imageContainer: {
+		width: '100%',
+		height: 200,
+		borderRadius: 20,
+		overflow: 'hidden',
+		marginBottom: 20,
+		backgroundColor: '#f0f0f0'
+	},
+	businessImage: {
+		width: '100%',
+		height: '100%'
+	},
+	infoCard: {
+		borderRadius: 20,
+		padding: 20,
+		marginBottom: 20,
+		borderWidth: 1,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 3
+			}
+		})
+	},
+	businessName: {
+		fontSize: 26,
+		fontWeight: '700',
+		marginBottom: 20,
+		letterSpacing: -0.5
+	},
+	infoRow: {
+		flexDirection: 'row',
+		marginBottom: 16,
+		alignItems: 'flex-start'
+	},
+	infoContent: {
+		flex: 1,
+		marginLeft: 12
+	},
+	infoLabel: {
+		fontSize: 11,
+		fontWeight: '600',
+		marginBottom: 4,
+		textTransform: 'uppercase',
+		letterSpacing: 0.5
+	},
+	infoValue: {
+		fontSize: 15,
+		fontWeight: '500',
+		lineHeight: 22
+	},
+	ownerRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flexWrap: 'wrap',
+		gap: 8
+	},
+	slugText: {
+		fontSize: 13,
+		fontWeight: '500'
+	},
+	businessBadge: {
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 6
+	},
+	businessBadgeText: {
+		fontSize: 11,
+		fontWeight: '600'
+	},
+	locationRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6
+	},
+	productsSection: {
+		borderRadius: 20,
+		padding: 20,
+		borderWidth: 1,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 3
+			}
+		})
+	},
+	productsSectionHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16,
+		gap: 8
+	},
+	productsSectionTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		flex: 1
+	},
+	productsCountBadge: {
+		paddingHorizontal: 12,
+		paddingVertical: 4,
+		borderRadius: 12
+	},
+	productsCountText: {
+		fontSize: 14,
+		fontWeight: '700'
+	},
+	productsGrid: {
+		gap: 12
+	},
+	productCard: {
+		flexDirection: 'row',
+		padding: 12,
+		borderRadius: 14,
+		borderWidth: 1,
+		gap: 12
+	},
+	productImageContainer: {
+		width: 72,
+		height: 72,
+		borderRadius: 12,
+		overflow: 'hidden'
+	},
+	productImage: {
+		width: '100%',
+		height: '100%'
+	},
+	productInfo: {
+		flex: 1,
+		justifyContent: 'center'
+	},
+	productName: {
+		fontSize: 15,
+		fontWeight: '600',
+		marginBottom: 6,
+		lineHeight: 20
+	},
+	ratingRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		marginBottom: 4
+	},
+	ratingText: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: '#FFD700'
+	},
+	ratingCount: {
+		fontSize: 11,
+		color: '#666'
+	},
+	productPriceRow: {
+		flexDirection: 'row',
+		alignItems: 'baseline'
+	},
+	productPrice: {
+		fontSize: 18,
+		fontWeight: '800'
+	},
+	productCurrency: {
+		fontSize: 13,
+		fontWeight: '600'
+	},
+	productUnit: {
+		fontSize: 12,
+		fontWeight: '500'
+	},
+	outOfStockBadge: {
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		marginTop: 6,
+		alignSelf: 'flex-start'
+	},
+	outOfStockText: {
+		fontSize: 10,
+		fontWeight: '700',
+		color: '#EF4444',
+		textTransform: 'uppercase'
+	},
+	emptyProducts: {
+		alignItems: 'center',
+		paddingVertical: 32,
+		gap: 12
+	},
+	emptyText: {
+		fontSize: 15,
+		fontWeight: '500'
+	},
+	errorText: {
+		fontSize: 16,
+		textAlign: 'center',
+		padding: 20
+	}
+})

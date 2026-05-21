@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Animated, StyleSheet, Platform } from 'react-native'
 import { Redirect } from 'expo-router'
-import AnimatedSplashScreen from '@/components/splash/AnimatedSplashScreen'
-import { getFeed } from '@/components/feed/feed.api'
+import AnimatedSplashScreen from '@/features/splash/AnimatedSplashScreen'
+import { getFeed } from '@/features/feed/feed.api'
 import { API_TIMEOUT } from '@/config'
 import { log } from '@/core/log'
 

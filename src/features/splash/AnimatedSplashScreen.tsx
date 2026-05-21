@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, Easing, Dimensions, Platform } from 'react-native'
-import { colors } from '@/config/theme'
+import { colors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 

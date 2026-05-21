@@ -1,5 +1,5 @@
 import React from 'react'
-import MyProductsTab from '../../../components/business/MyProductsTab'
+import MyProductsTab from '@/features/business/MyProductsTab'
 
 export default function MyProductsScreen() {
 	return <MyProductsTab />

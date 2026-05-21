@@ -1,5 +1,5 @@
 import React from 'react'
-import PurchasesScreenComponent from '@/components/dashboard/PurchasesScreen'
+import PurchasesScreenComponent from '@/features/dashboard/PurchasesScreen'
 
 export default function PurchasesScreen() {
 	return <PurchasesScreenComponent />

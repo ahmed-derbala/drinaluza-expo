@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect } from 'react'
-import Toast, { ToastType, ToastAction } from '@/components/common/Toast'
+import Toast, { ToastType, ToastAction } from '@/features/common/Toast'
 import { registerToast } from '@/core/helpers/toast'
 
 interface ToastState {

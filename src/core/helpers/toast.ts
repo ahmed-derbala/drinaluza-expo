@@ -3,7 +3,7 @@
  * Allows showing toasts from anywhere in the app, even outside React components.
  */
 
-import { ToastType, ToastAction } from '@/components/common/Toast'
+import { ToastType, ToastAction } from '@/features/common/Toast'
 
 type ShowToastFn = (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => void
 

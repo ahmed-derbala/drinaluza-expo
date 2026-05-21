@@ -6,7 +6,7 @@
  */
 
 import React, { ReactNode } from 'react'
-import { colors, theme, ThemeColors, Theme } from '@/config/theme'
+import { colors, theme, ThemeColors, Theme } from '../theme'
 
 /**
  * Hook to access the app's dark theme

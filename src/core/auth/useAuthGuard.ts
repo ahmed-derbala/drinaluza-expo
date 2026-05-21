@@ -26,19 +26,20 @@ export function useAuthGuard(options: AuthGuardOptions = {}) {
 					const userData = await secureGetItem('userData')
 					if (userData) {
 						const user = JSON.parse(userData)
-						setUserRole(user.role || null)
+						const currentRole = user.role || null
+						setUserRole(currentRole)
+
+						// Check role-based access immediately with the fetched role
+						if (allowedRoles.length > 0 && currentRole && !allowedRoles.includes(currentRole)) {
+							router.replace('/(home)/feed') // or a dedicated "access denied" page
+							return
+						}
 					}
 				}
 
 				// Redirect if auth is required but not authenticated
 				if (requireAuth && !isAuth) {
 					router.replace(redirectTo)
-					return
-				}
-
-				// Check role-based access
-				if (isAuth && allowedRoles.length > 0 && userRole && !allowedRoles.includes(userRole)) {
-					router.replace('/(home)/feed') // or a dedicated "access denied" page
 					return
 				}
 			} catch (error) {

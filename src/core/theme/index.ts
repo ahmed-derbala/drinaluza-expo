@@ -5,7 +5,7 @@
  * There is NO light theme, NO theme switching, and NO theme customization.
  *
  * Color Palette:
- * - Background: Deep ocean blues (Slate 950, 900, 800)
+ * - Background: Deep ocean blues
  * - Primary: Sky blue (#38BDF8) - vibrant and readable
  * - Text: High contrast light colors for readability
  */
