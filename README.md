@@ -1,32 +1,28 @@
-# Drinaluza Expo
+# 🛒 Drinaluza
 
-Drinaluza is a mobile-first application designed to empower small businesses by providing comprehensive management tools alongside a seamless shopping experience for customers. Built with Expo and React Native, it bridges the gap between local businesses and their community.
+**Drinaluza** is a powerful, mobile-first marketplace application designed to empower small businesses and provide a seamless shopping experience for customers. Built on a modern React Native & Expo stack, it bridges the gap between local businesses and their community.
 
-# download android app
-[google drive](https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm?usp=drive_link)
-CTRL+click to open in new tab
+[![Download Android App](https://img.shields.io/badge/Download-Android_App-3DDC84?style=for-the-badge&logo=android)](https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm?usp=drive_link)
+[![Web App Netlify](https://img.shields.io/badge/Web_App-Netlify-00C7B7?style=for-the-badge&logo=netlify)](https://drinaluza.netlify.app/)
+[![Web App Vercel](https://img.shields.io/badge/Web_App-Vercel-000000?style=for-the-badge&logo=vercel)](https://drinaluza.vercel.app/)
 
-# web app
-[netlify](https://drinaluza.netlify.app/)
-[vercel](https://drinaluza.vercel.app/)
-
-CTRL+click to open in new tab
+---
 
 ## 🚀 Features
 
-### For Customers
-*   **Feed**: Discover new products and updates from local businesses.
-*   **Businesses**: Browse a directory of businesses and view detailed business profiles.
-*   **Orders**: Track purchase history and current order status.
-*   **Profile**: Manage personal information and settings.
-*   **Customer Dashboard**: A personalized hub for your activity.
+### 🛍️ For Customers
+*   **Dynamic Feed**: Discover new products and stay updated on local businesses.
+*   **Business Directory**: Browse and view detailed, engaging business profiles.
+*   **Order Tracking**: Seamlessly monitor purchase history and live order status.
+*   **Profile Hub**: A comprehensive dashboard to manage personal information and settings.
 
-### For Business Owners
-*   **Business Dashboard**: A dedicated command center for your business operations.
-*   **Business Management**: Create and manage multiple businesses.
-*   **Product Management**: deeply integrated tools to add, edit, and list products with categories and details.
-*   **Sales Tracking**: Visualize sales data (powered by `react-native-chart-kit`).
-*   **Inventory**: Keep track of "My Products" and "My Businesses".
+### 🏪 For Business Owners
+*   **Business Command Center**: A dedicated dashboard for multi-business operations.
+*   **Product Management**: Deeply integrated, fluid tools to add, edit, and organize inventory with rich details.
+*   **Real-time Analytics**: Visualize live sales data and track business growth.
+*   **Intelligent Inventory**: Keep track of product status, low-stock warnings, and lifecycle operations.
+
+---
 
 ## 🛠 Tech Stack
 
@@ -34,15 +30,17 @@ CTRL+click to open in new tab
 *   **Core**: React Native, React 19
 *   **Language**: TypeScript
 *   **Navigation**: Expo Router (File-based routing)
-*   **Networking**: Axios
+*   **Networking**: Axios Custom Client
 *   **Storage**: `@react-native-async-storage/async-storage`, `expo-secure-store`
 *   **UI/UX**: `react-native-gesture-handler`, `expo-linear-gradient`, `react-native-svg`
+
+---
 
 ## 🏁 Getting Started
 
 ### Prerequisites
 
-*   Node.js (v24 recommended as per engines)
+*   Node.js (v24 recommended)
 *   npm
 *   Expo CLI (or use `npx expo`)
 
@@ -55,11 +53,11 @@ CTRL+click to open in new tab
     ```
 
 2.  **Install dependencies**
-    You can use the helper script for the first time setup:
+    You can use the built-in helper script for a complete initial setup:
     ```bash
     npm run first-time:local
     ```
-    Or manually:
+    Or manually install standard dependencies:
     ```bash
     npm install
     ```
@@ -75,43 +73,53 @@ CTRL+click to open in new tab
 
     *   Press `a` for Android emulator
     *   Press `i` for iOS simulator
-    *   Press `w` for Web
+    *   Press `w` for Web environment
+
+---
+
+## 📂 Project Architecture
+
+Drinaluza follows a clean, highly modular **feature-based architecture** to enforce separation of concerns and maintainability.
+
+```text
+src/
+├── app/                 # Expo Router file-based route definitions
+├── config/              # Environment configurations & layout constants
+├── core/                # Core utilities, API clients, and React contexts
+└── features/            # Feature modules (UI, API, Interfaces)
+    ├── auth/            # Authentication workflows
+    ├── business/        # Business administration & sales
+    ├── businesses/      # Public business directories
+    ├── common/          # Shared atomic components (Header, Toast, etc.)
+    ├── dashboard/       # Unified dashboard and profile switching
+    ├── feed/            # Activity feeds & algorithmic sorting
+    ├── products/        # Product browsing & creation
+    ├── profile/         # User profile management
+    └── search/          # Global search components
+```
+
+---
 
 ## 📜 Available Scripts
 
-*   `npm run dev` / `npm run start:local`: Starts the Expo development server with a clean cache.
-*   `npm run start`: Standard Expo start command.
-*   `npm run android`: Run on Android device/emulator.
-*   `npm run ios`: Run on iOS simulator.
-*   `npm run web`: Run in web browser.
-*   `npm run clean`: comprehensive clean up of `node_modules`, `.expo` cache, and reinstall dependencies.
-*   `npm run fix`: Runs expo-doctor, cleans cache, and reinstalls.
-*   `npm run build`: Local production build for Android.
-*   `npm run test`: Run Jest tests.
-*   `npm run format`: Format code with Prettier.
+| Command | Description |
+|---|---|
+| `npm run dev` | Starts the Expo development server with a clean cache. |
+| `npm run start` | Standard Expo start command. |
+| `npm run android` | Run on connected Android device/emulator. |
+| `npm run ios` | Run on iOS simulator. |
+| `npm run web` | Run as a responsive Web Application. |
+| `npm run clean` | Deep clean of `node_modules`, `.expo` cache, and fresh reinstall. |
+| `npm run build` | Local production build generator for Android APK/AAB. |
+| `npm run format` | Enforce code style with Prettier. |
 
-## 📂 Project Structure
+---
 
-```
-src/
-├── app/                 # Expo Router screens and layouts
-│   ├── auth/            # Authentication screens
-│   └── home/            # Main application screens
-│       ├── business/    # Business dashboard & management
-│       ├── businesses/       # Business browsing
-│       └── ...          # Profile, Feed, Settings
-├── components/          # Reusable UI components
-├── config/              # App configuration
-├── constants/           # Global constants
-├── contexts/            # React Context definitions
-├── core/                # Core business logic/types
-├── stores/              # State management
-└── utils/               # Helper functions
-```
+## ⚙️ Environment Configuration
 
-
-## ~/.gradle/gradle.properties
-```
+### Gradle Settings (`~/.gradle/gradle.properties`)
+For optimal Android build performance, ensure your gradle properties are set:
+```properties
 org.gradle.java.installations.auto-download=false
 org.gradle.java.home=/usr/lib/jvm/jdk-17
 org.gradle.parallel=true
@@ -119,8 +127,9 @@ org.gradle.configureondemand=true
 org.gradle.caching=true
 ```
 
-## ANDROID_HOME paths for .zshrc or .bashrc
-```
+### Android Environment (`~/.zshrc` or `~/.bashrc`)
+Ensure the Android SDK is correctly linked in your terminal profile:
+```bash
 export ANDROID_HOME=$HOME/Android/sdk
 export ANDROID_SDK_ROOT=$ANDROID_HOME
 export PATH=$ANDROID_HOME/emulator:$PATH
@@ -129,6 +138,9 @@ export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
 export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/
 export PATH=$ANDROID_NDK_HOME:$PATH
 ```
+
+---
+
 ## ✍️ Author
 
-Ahmed Derbala
+**Ahmed Derbala**
