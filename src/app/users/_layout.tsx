@@ -3,7 +3,7 @@ import { Platform } from 'react-native'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
 
-export default function ProductsLayout() {
+export default function UsersLayout() {
 	const { colors } = useTheme()
 	const stackOptions = getPlatformStackOptions(
 		withThemedHeader(colors, {
@@ -22,13 +22,7 @@ export default function ProductsLayout() {
 	return (
 		<Stack screenOptions={stackOptions}>
 			<Stack.Screen
-				name="index"
-				options={{
-					headerShown: false
-				}}
-			/>
-			<Stack.Screen
-				name="[productSlug]"
+				name="[userSlug]"
 				options={{
 					headerShown: false
 				}}

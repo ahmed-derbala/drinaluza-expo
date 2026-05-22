@@ -79,7 +79,7 @@ export default function ProductDetailScreen() {
 
 	const handleOwnerPress = () => {
 		if (product?.business?.owner?.slug) {
-			router.push(`/(home)/profile` as any)
+			router.push(`/users/${product.business.owner.slug}` as any)
 		}
 	}
 

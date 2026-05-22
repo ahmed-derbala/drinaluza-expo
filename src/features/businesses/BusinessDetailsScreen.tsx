@@ -177,7 +177,7 @@ export default function BusinessDetailsScreen() {
 
 					{/* Owner Info */}
 					{business.owner && (
-						<View style={styles.infoRow}>
+						<TouchableOpacity style={styles.infoRow} onPress={() => router.push(`/users/${business.owner!.slug}` as any)} activeOpacity={0.7}>
 							<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_owner', 'Owner')}</Text>
@@ -193,7 +193,7 @@ export default function BusinessDetailsScreen() {
 									)}
 								</View>
 							</View>
-						</View>
+						</TouchableOpacity>
 					)}
 
 					{/* Address */}

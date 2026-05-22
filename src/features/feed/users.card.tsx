@@ -30,6 +30,8 @@ export default function UserCard({ item }: UserCardProps) {
 	const isActive = item.state?.code === 'active'
 	const hasContact = item.contact?.phone || item.contact?.whatsapp || item.contact?.email
 
+	const router = require('expo-router').useRouter()
+
 	const handleCall = () => {
 		const phone = item.contact?.phone?.fullNumber
 		if (phone) Linking.openURL(`tel:${phone}`).catch(() => {})
@@ -45,8 +47,14 @@ export default function UserCard({ item }: UserCardProps) {
 		if (email) Linking.openURL(`mailto:${email}`).catch(() => {})
 	}
 
+	const handlePress = () => {
+		if (item.slug) {
+			router.push(`/users/${item.slug}`)
+		}
+	}
+
 	return (
-		<View style={styles.card}>
+		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.8}>
 			{/* Header with avatar and info */}
 			<View style={styles.header}>
 				<View style={styles.avatarContainer}>
@@ -116,7 +124,7 @@ export default function UserCard({ item }: UserCardProps) {
 					</View>
 				) : null}
 			</View>
-		</View>
+		</TouchableOpacity>
 	)
 }
 
