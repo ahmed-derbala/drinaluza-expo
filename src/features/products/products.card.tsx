@@ -30,8 +30,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const unitPrice = item.price.total[currency] || item.price.total.tnd || 0
 	const pricePerUnit = unitPrice / (item.unit?.min || 1)
 
-	const isDecimal = ['kg', 'l', 'kilogram', 'liter'].includes(item.unit?.measure?.toLowerCase() || '')
-	const step = isDecimal ? 0.1 : 1
+	const step = item.unit?.step || 1
 
 	const increment = () =>
 		setQuantity((prev) => {

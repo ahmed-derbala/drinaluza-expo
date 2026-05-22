@@ -70,6 +70,7 @@ export type ProductType = {
 		measure: string
 		min: number
 		max: number
+		step?: number
 		updatedAt: string
 	}
 	searchTerms: string[]

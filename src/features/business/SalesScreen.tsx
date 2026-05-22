@@ -5,7 +5,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/business/sales.api'
 import ScreenHeader from '@/features/common/ScreenHeader'
 import SaleCard from '@/features/business/SaleCard'
-import { useFocusEffect } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams } from 'expo-router'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/config/orderStatus'
 import { MaterialIcons } from '@expo/vector-icons'
@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons'
 const ITEMS_PER_PAGE = 10
 
 export default function SalesScreen() {
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const { colors } = useTheme()
 	const [sales, setSales] = useState<Sale[]>([])
 	const [allSales, setAllSales] = useState<Sale[]>([]) // Store all sales for counting
@@ -51,9 +52,10 @@ export default function SalesScreen() {
 
 	// Load all sales to get counts for each status
 	const loadAllSalesForCounts = async () => {
+		if (!businessSlug) return
 		try {
 			// Load all sales without status filter to get counts
-			const response = await getSales(1, 1000)
+			const response = await getSales(businessSlug as string, 1, 1000)
 			if (response && response.data && Array.isArray(response.data.docs)) {
 				const allSalesData = response.data.docs
 				setAllSales(allSalesData)
@@ -86,7 +88,9 @@ export default function SalesScreen() {
 				setLoadingMore(true)
 			}
 
-			const response = await getSales(pageNum, ITEMS_PER_PAGE, status === 'all' ? undefined : status)
+			if (!businessSlug) return
+
+			const response = await getSales(businessSlug as string, pageNum, ITEMS_PER_PAGE, status === 'all' ? undefined : status)
 
 			// Check if the response has the expected structure
 			if (response && response.data && Array.isArray(response.data.docs)) {

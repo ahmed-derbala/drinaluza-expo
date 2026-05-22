@@ -135,8 +135,14 @@ export interface Product {
 		max: number
 		updatedAt?: string
 	}
-	searchTerms?: string[]
-	isActive: boolean
+	searchKeywords?: string[]
+	state?: {
+		code: string
+		_id?: string
+		createdAt?: string
+		updatedAt?: string
+	}
+	isActive?: boolean
 	availability: {
 		endDate: string | null
 		startDate: string

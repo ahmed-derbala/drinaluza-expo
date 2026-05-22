@@ -69,6 +69,7 @@ export interface Unit {
 	measure: string
 	min: number
 	max: number
+	step?: number
 	updatedAt?: string
 }
 export interface Stock {

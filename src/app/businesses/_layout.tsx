@@ -40,12 +40,6 @@ export default function BusinessesLayout() {
 					headerShown: false
 				}}
 			/>
-			<Stack.Screen
-				name="[businessSlug]/products/create"
-				options={{
-					headerShown: false
-				}}
-			/>
 		</Stack>
 	)
 }

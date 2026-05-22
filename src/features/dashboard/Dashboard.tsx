@@ -23,7 +23,12 @@ type SelectedProfile = {
 	profileId: string
 }
 
-const Dashboard = () => {
+type DashboardProps = {
+	profileKind?: 'personal' | 'business'
+	businessSlug?: string
+}
+
+const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 	const { colors } = useTheme()
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const { localize, translate, user } = useUser()
@@ -35,7 +40,6 @@ const Dashboard = () => {
 	const [selectedProfile, setSelectedProfile] = useState<SelectedProfile | null>(null)
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
-	const [switchingProfile, setSwitchingProfile] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 
 	const showProfileSwitcher = profiles.length > 1
@@ -57,7 +61,7 @@ const Dashboard = () => {
 		if (profile.kind === 'personal') {
 			return (await getPersonalDashboard()).data
 		}
-		if (profile.slug) {
+		if (profile.kind === 'business' && profile.slug) {
 			return (await getBusinessDashboard(profile.slug)).data
 		}
 		return (await getDashboard()).data
@@ -67,7 +71,10 @@ const Dashboard = () => {
 		async (profileOverride?: SelectedProfile) => {
 			try {
 				setError(null)
-				const [profilesRes, defaultRes] = await Promise.all([getDashboardProfiles(), getDashboard()])
+				const [profilesRes, defaultRes] = await Promise.all([
+					getDashboardProfiles(),
+					profileKind === 'personal' ? getPersonalDashboard() : profileKind === 'business' && businessSlug ? getBusinessDashboard(businessSlug) : getDashboard()
+				])
 				const profileList = profilesRes.data || []
 				setProfiles(profileList)
 
@@ -81,10 +88,9 @@ const Dashboard = () => {
 			} finally {
 				setLoading(false)
 				setRefreshing(false)
-				setSwitchingProfile(false)
 			}
 		},
-		[fetchDashboardForProfile, resolveSelectedFromData]
+		[fetchDashboardForProfile, resolveSelectedFromData, profileKind, businessSlug]
 	)
 
 	useEffect(() => {
@@ -97,30 +103,16 @@ const Dashboard = () => {
 	}, [loadDashboard, selectedProfile])
 
 	const handleSelectProfile = useCallback(
-		async (profile: DashboardProfile) => {
+		(profile: DashboardProfile) => {
 			if (!selectedProfile || profile._id === selectedProfile.profileId) return
 
-			const next: SelectedProfile = {
-				kind: profile.kind,
-				slug: profile.slug,
-				profileId: profile._id
-			}
-
-			try {
-				setSwitchingProfile(true)
-				setError(null)
-				const data = await fetchDashboardForProfile(next)
-				setDashboardData(data)
-				setSelectedProfile(next)
-			} catch (err: unknown) {
-				logError(err, 'switchDashboardProfile')
-				const errorInfo = parseError(err)
-				setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
-			} finally {
-				setSwitchingProfile(false)
+			if (profile.kind === 'personal') {
+				router.replace('/dashboard/personal' as never)
+			} else if (profile.slug) {
+				router.replace(`/dashboard/business/${profile.slug}` as never)
 			}
 		},
-		[fetchDashboardForProfile, selectedProfile]
+		[selectedProfile, router]
 	)
 
 	const getProfileLabel = (profile: DashboardProfile) => localize(profile.name)
@@ -157,9 +149,9 @@ const Dashboard = () => {
 			<ScreenHeader
 				title={translate('dashboard', 'Dashboard')}
 				subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
-				showBack={false}
+				showBack={!!profileKind}
 				onRefresh={onRefresh}
-				isRefreshing={refreshing || switchingProfile}
+				isRefreshing={refreshing}
 			/>
 
 			<ScrollView
@@ -209,13 +201,6 @@ const Dashboard = () => {
 								)
 							})}
 						</ScrollView>
-					</View>
-				)}
-
-				{switchingProfile && (
-					<View style={styles.switchingBanner}>
-						<ActivityIndicator size="small" color={colors.primary} />
-						<Text style={[styles.switchingText, { color: colors.textSecondary }]}>{translate('loading', 'Loading...')}</Text>
 					</View>
 				)}
 
@@ -322,28 +307,16 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				onPress: () => router.push('/business/my-businesses' as never)
 			},
 			{
-				label: translate('my_products', 'My Products'),
-				icon: <MaterialIcons name="inventory" size={22} color={colors.success} />,
-				color: colors.success,
-				onPress: () => router.push(`/businesses/${business.slug}/products` as never)
-			},
-			{
 				label: translate('sales', 'Sales'),
 				icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
 				color: colors.info,
-				onPress: () => router.push('/business/sales' as never)
+				onPress: () => router.push(`/dashboard/business/${business.slug}/sales` as never)
 			},
 			{
 				label: translate('create_product', 'Create Product'),
 				icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
 				color: colors.warning,
-				onPress: () =>
-					Platform.OS === 'web'
-						? router.push(`/businesses/${business.slug}/products/create?source=dashboard` as never)
-						: router.push({
-								pathname: '/business/create-product',
-								params: { businessSlug: business.slug, businessId: business._id, source: 'dashboard' }
-							} as never)
+				onPress: () => router.push(`/dashboard/business/${business.slug}/products/create?source=dashboard` as never)
 			}
 		],
 		[business._id, business.slug, colors, router, translate]
@@ -400,7 +373,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 						accent={stat.accent}
 						styles={styles}
 						colors={colors}
-						onPress={() => router.push('/business/my-products' as never)}
+						onPress={() => router.push(`/dashboard/business/${business.slug}/products` as never)}
 					/>
 				))}
 			</View>

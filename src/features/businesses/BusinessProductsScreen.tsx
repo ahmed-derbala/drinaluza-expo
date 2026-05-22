@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Product } from '@/features/businesses/businesses.interface'
@@ -28,16 +28,17 @@ type ProductCardProps = {
 	translate: (k: string, d: string) => string
 	onAddToBasket: (item: Product, qty: number) => void
 	isWide: boolean
+	isDashboard: boolean
 }
 
-function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToBasket, isWide }: ProductCardProps) {
+function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToBasket, isWide, isDashboard }: ProductCardProps) {
 	const router = useRouter()
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos[0])
 	const stockQty = item.stock?.quantity || 0
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0
 	const isLowStock = stockQty > 0 && stockQty <= minThreshold
-	const isActive = item.isActive !== false
+	const isActive = item.state?.code === 'active' || item.isActive !== false
 
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
@@ -97,7 +98,7 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 						<Text style={[cardStyles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
 					</View>
 
-					{isActive && !isOutOfStock && (
+					{!isDashboard && isActive && !isOutOfStock && (
 						<TouchableOpacity
 							style={[cardStyles.addBtn, { backgroundColor: colors.primary }]}
 							onPress={(e) => {
@@ -193,6 +194,8 @@ export default function BusinessProductsScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const { colors } = useTheme()
 	const router = useRouter()
+	const pathname = usePathname()
+	const isDashboard = pathname.includes('/dashboard')
 	const { localize, translate, currency, formatPrice } = useUser()
 	const { width, height } = useWindowDimensions()
 	const { onScroll } = useScrollHandler()
@@ -346,7 +349,17 @@ export default function BusinessProductsScreen() {
 						marginBottom: cardGap
 					}}
 				>
-					<ProductCard item={item} colors={colors} localize={localize} formatPrice={formatPrice} currency={currency} translate={translate} onAddToBasket={handleAddToBasket} isWide={isWide} />
+					<ProductCard
+						item={item}
+						colors={colors}
+						localize={localize}
+						formatPrice={formatPrice}
+						currency={currency}
+						translate={translate}
+						onAddToBasket={handleAddToBasket}
+						isWide={isWide}
+						isDashboard={isDashboard}
+					/>
 				</View>
 			)
 		},
@@ -494,6 +507,12 @@ export default function BusinessProductsScreen() {
 					) : null
 				}
 			/>
+
+			{isDashboard && (
+				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/business/${businessSlug}/products/create` as any)}>
+					<Ionicons name="add" size={28} color={colors.textOnPrimary || '#0F172A'} />
+				</TouchableOpacity>
+			)}
 		</View>
 	)
 }
@@ -569,5 +588,20 @@ const s = StyleSheet.create({
 		borderRadius: 10,
 		borderWidth: 1
 	},
-	clearBtnText: { fontSize: 14, fontWeight: '600' }
+	clearBtnText: { fontSize: 14, fontWeight: '600' },
+	fab: {
+		position: 'absolute',
+		bottom: 24,
+		right: 24,
+		width: 56,
+		height: 56,
+		borderRadius: 28,
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({
+			ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
+			android: { elevation: 6 },
+			web: { boxShadow: '0 4px 12px rgba(0,0,0,0.3)' } as any
+		})
+	}
 })
