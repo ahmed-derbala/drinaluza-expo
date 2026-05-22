@@ -50,7 +50,7 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	return (
 		<Pressable
 			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
-			onPress={() => item.slug && router.push(`/(home)/products/${item.slug}` as any)}
+			onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}
 		>
 			{/* Image */}
 			<View style={cardStyles.imageWrap}>
@@ -302,7 +302,7 @@ export default function BusinessProductsScreen() {
 				setBasket(newBasket)
 				await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 				toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
-					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'cart' } }) }]
+					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/purchases', params: { filter: 'cart' } }) }]
 				})
 			} catch {
 				toast.error(translate('basket_failed_to_add', 'Failed to add to basket'))

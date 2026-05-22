@@ -245,13 +245,13 @@ const PersonalDashboardContent = ({ data, styles, colors, router }: ContentProps
 				label: translate('dashboard.browse_businesses', 'Browse businesses'),
 				icon: <MaterialIcons name="storefront" size={22} color={colors.primary} />,
 				color: colors.primary,
-				onPress: () => router.push('/(home)/businesses' as never)
+				onPress: () => router.push('/businesses' as never)
 			},
 			{
 				label: translate('dashboard.purchases', 'Purchases'),
 				icon: <Feather name="package" size={22} color={colors.info} />,
 				color: colors.info,
-				onPress: () => router.push('/(home)/purchases' as never)
+				onPress: () => router.push('/purchases' as never)
 			},
 			{
 				label: translate('feed', 'Feed'),
@@ -319,19 +319,19 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				label: translate('dashboard.management', 'Management'),
 				icon: <MaterialIcons name="store" size={22} color={colors.primary} />,
 				color: colors.primary,
-				onPress: () => router.push('/(home)/business/my-businesses' as never)
+				onPress: () => router.push('/business/my-businesses' as never)
 			},
 			{
 				label: translate('my_products', 'My Products'),
 				icon: <MaterialIcons name="inventory" size={22} color={colors.success} />,
 				color: colors.success,
-				onPress: () => router.push(`/(home)/businesses/${business.slug}/products` as never)
+				onPress: () => router.push(`/businesses/${business.slug}/products` as never)
 			},
 			{
 				label: translate('sales', 'Sales'),
 				icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
 				color: colors.info,
-				onPress: () => router.push('/(home)/business/sales' as never)
+				onPress: () => router.push('/business/sales' as never)
 			},
 			{
 				label: translate('create_product', 'Create Product'),
@@ -339,10 +339,10 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				color: colors.warning,
 				onPress: () =>
 					Platform.OS === 'web'
-						? router.push(`/(home)/businesses/${business.slug}/products/create` as never)
+						? router.push(`/businesses/${business.slug}/products/create?source=dashboard` as never)
 						: router.push({
-								pathname: '/(home)/business/create-product',
-								params: { businessSlug: business.slug, businessId: business._id }
+								pathname: '/business/create-product',
+								params: { businessSlug: business.slug, businessId: business._id, source: 'dashboard' }
 							} as never)
 			}
 		],
@@ -400,7 +400,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 						accent={stat.accent}
 						styles={styles}
 						colors={colors}
-						onPress={() => router.push('/(home)/business/my-products' as never)}
+						onPress={() => router.push('/business/my-products' as never)}
 					/>
 				))}
 			</View>

@@ -644,7 +644,7 @@ export default function BusinessesListScreen() {
 
 	const handleBusinessPress = (slug: string) => {
 		// Navigate to business details using slug
-		router.push(`/(home)/businesses/${slug}` as any)
+		router.push(`/businesses/${slug}` as any)
 	}
 
 	const renderBusinessCard = ({ item }: { item: Business }) => {

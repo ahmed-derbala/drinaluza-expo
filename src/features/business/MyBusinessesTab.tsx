@@ -710,7 +710,7 @@ const MyBusinessesTab: React.FC<MyBusinessesTabProps> = ({ navigation }) => {
 			// Navigate to the business business details using expo-router
 			if (router) {
 				router.push({
-					pathname: '/(home)/business/[businessSlug]',
+					pathname: '/business/[businessSlug]',
 					params: { businessSlug: business.slug }
 				} as any)
 			}

@@ -158,10 +158,6 @@ export default function HomeLayout() {
 							tabBarAccessibilityLabel: translate('settings', 'Settings')
 						}}
 					/>
-					<Tabs.Screen name="business" options={{ href: null }} />
-					<Tabs.Screen name="businesses" options={{ href: null }} />
-					<Tabs.Screen name="purchases" options={{ href: null }} />
-					<Tabs.Screen name="products" options={{ href: null }} />
 				</Tabs>
 			</SafeAreaView>
 		</SafeAreaProvider>

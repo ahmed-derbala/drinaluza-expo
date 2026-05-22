@@ -73,7 +73,7 @@ export default function ProductDetailScreen() {
 
 	const handleBusinessNavPress = () => {
 		if (product?.business?.slug) {
-			router.push(`/(home)/businesses/${product.business.slug}` as any)
+			router.push(`/businesses/${product.business.slug}` as any)
 		}
 	}
 

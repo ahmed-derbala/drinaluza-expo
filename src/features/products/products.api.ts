@@ -23,6 +23,7 @@ export interface CreateProductRequest {
 		measure: string
 		min: number
 		max: number
+		step: number
 	}
 	searchTerms?: string[]
 	stock?: {

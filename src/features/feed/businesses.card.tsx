@@ -29,7 +29,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	const handlePress = () => {
 		const slug = item.business?.slug || item.slug
 		if (slug) {
-			router.push(`/(home)/businesses/${slug}` as any)
+			router.push(`/businesses/${slug}` as any)
 		}
 	}
 

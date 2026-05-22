@@ -3,6 +3,9 @@ import { View, Text, StyleSheet, Animated, Easing, Dimensions, Platform } from '
 import { colors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import Constants from 'expo-constants'
+import { useVersion } from '@/core/contexts/VersionContext'
+import { NODE_ENV, APP_VERSION } from '@/config'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
 const USE_NATIVE = Platform.OS !== 'web'
@@ -22,6 +25,8 @@ interface AnimatedSplashScreenProps {
 }
 
 export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplashScreenProps) {
+	const { backendInfo } = useVersion()
+
 	// Central icon animations
 	const centerScale = useRef(new Animated.Value(0.5)).current
 	const centerOpacity = useRef(new Animated.Value(0)).current
@@ -280,6 +285,10 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 
 			<Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>Business Manager</Animated.Text>
 
+			<Animated.Text style={[styles.version, { opacity: subtitleOpacity }]}>
+				App v{APP_VERSION} • Server v{backendInfo?.app?.version || '...'} • {NODE_ENV}
+			</Animated.Text>
+
 			{/* Loading indicator */}
 			<View style={styles.loadingContainer}>
 				<Animated.View style={[styles.loadingDot, { transform: [{ translateY: dot1 }] }]} />
@@ -407,6 +416,15 @@ const styles = StyleSheet.create({
 		letterSpacing: 4,
 		textTransform: 'uppercase',
 		marginBottom: 40
+	},
+	version: {
+		position: 'absolute',
+		bottom: SCREEN_HEIGHT * 0.05,
+		fontSize: 12,
+		fontWeight: '600',
+		color: colors.textSecondary,
+		opacity: 0.6,
+		letterSpacing: 1
 	},
 	loadingContainer: {
 		flexDirection: 'row',

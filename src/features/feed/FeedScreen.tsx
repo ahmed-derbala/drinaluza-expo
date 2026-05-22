@@ -307,7 +307,7 @@ export default function FeedScreen() {
 				actions: [
 					{
 						icon: 'cart-outline',
-						onPress: () => router.push({ pathname: '/(home)/purchases', params: { filter: 'cart' } })
+						onPress: () => router.push({ pathname: '/purchases', params: { filter: 'cart' } })
 					}
 				]
 			})

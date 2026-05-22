@@ -358,7 +358,7 @@ export default function MyBusinessDetailsScreen() {
 					{/* Add Product FAB */}
 					<TouchableOpacity
 						style={[styles.addProductFab, { backgroundColor: colors.primary }]}
-						onPress={() => router.push({ pathname: '/(home)/business/create-product', params: { businessSlug: business.slug, businessId: business._id } })}
+						onPress={() => router.push({ pathname: '/business/create-product', params: { businessSlug: business.slug, businessId: business._id, source: 'business-detail' } })}
 						activeOpacity={0.8}
 					>
 						<Ionicons name="add" size={28} color="#fff" />
