@@ -236,7 +236,7 @@ const PersonalDashboardContent = ({ data, styles, colors, router }: ContentProps
 				label: translate('dashboard.purchases', 'Purchases'),
 				icon: <Feather name="package" size={22} color={colors.info} />,
 				color: colors.info,
-				onPress: () => router.push('/purchases' as never)
+				onPress: () => router.push('/dashboard/personal/purchases' as never)
 			},
 			{
 				label: translate('feed', 'Feed'),

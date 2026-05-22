@@ -1,6 +1,6 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { router } from 'expo-router'
-import { secureGetItem, secureRemoveItem } from '../auth/storage'
+import { secureGetItem, secureRemoveItem } from '../storage'
 import { API_TIMEOUT, API_URL, API_PREFIX } from '../../config'
 import { logError } from '../../core/helpers/errorHandler'
 import { log } from '../log'

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useRouter, type Href } from 'expo-router'
-import { secureGetItem } from './storage'
+import { secureGetItem } from '../storage'
 
 interface AuthGuardOptions {
 	requireAuth?: boolean

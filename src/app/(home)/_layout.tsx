@@ -5,7 +5,7 @@ import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useLayout, useTheme, useNotification, useUser } from '@/core/contexts'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { secureGetItem } from '@/core/auth/storage'
+import { secureGetItem } from '@/core/storage'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
 export default function HomeLayout() {

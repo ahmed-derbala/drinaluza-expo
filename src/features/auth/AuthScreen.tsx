@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth } from '@/core/auth/auth.api'
-import { secureGetItem } from '@/core/auth/storage'
+import { secureGetItem } from '@/core/storage'
 import { useTheme } from '@/core/contexts/ThemeContext'
 import { showAlert } from '@/core/helpers/popup'
 import { useBackButton } from '@/core/hooks/useBackButton'
@@ -16,7 +16,7 @@ import { LANGUAGES, CURRENCIES } from '@/config/settings'
 
 export default function AuthScreen() {
 	const { colors } = useTheme()
-	const { translate, setAppLang, setCurrency, appLang, currency } = useUser()
+	const { translate, setAppLang, setCurrency, appLang, currency, refreshUser } = useUser()
 	useBackButton()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
@@ -45,6 +45,7 @@ export default function AuthScreen() {
 			setIsLoading(true)
 			const success = await signInWithToken(auth.token)
 			if (success) {
+				await refreshUser()
 				router.replace('/(home)/feed')
 			} else {
 				setSlug(auth.slug)
@@ -151,6 +152,7 @@ export default function AuthScreen() {
 					label: 'auth',
 					message: 'Navigating to /home'
 				})
+				await refreshUser()
 				router.replace('/(home)/feed')
 			} else {
 				log({
@@ -216,6 +218,7 @@ export default function AuthScreen() {
 	const handleSignUp = async () => {
 		try {
 			await signUp(slug, password)
+			await refreshUser()
 			router.replace('/(home)/feed')
 		} catch (error) {
 			log({

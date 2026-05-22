@@ -305,7 +305,7 @@ export default function BusinessProductsScreen() {
 				setBasket(newBasket)
 				await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
 				toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
-					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/purchases', params: { filter: 'cart' } }) }]
+					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/dashboard/personal/purchases', params: { filter: 'cart' } }) }]
 				})
 			} catch {
 				toast.error(translate('basket_failed_to_add', 'Failed to add to basket'))

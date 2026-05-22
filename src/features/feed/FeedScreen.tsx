@@ -14,9 +14,10 @@ import SearchBar from '@/features/search/SearchBar'
 import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser, useLayout, useTheme } from '@/core/contexts'
+import Toast from '@/core/components/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { getToken } from '@/core/auth/storage'
+import { getToken } from '@/core/storage'
 
 type FilterKey = 'product' | 'business' | 'user'
 
@@ -149,6 +150,7 @@ export default function FeedScreen() {
 	const [loading, setLoading] = useState(true)
 	const [isSearchActive, setIsSearchActive] = useState(false)
 	const [activeFilters, setActiveFilters] = useState<FilterKey[]>([])
+	const [toastConfig, setToastConfig] = useState({ visible: false, message: '' })
 
 	const { width } = useWindowDimensions()
 	const minColumnWidth = 320
@@ -303,14 +305,7 @@ export default function FeedScreen() {
 			setBasket(newBasket)
 
 			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			toast.success(`${localize(item.name)} added to basket`, {
-				actions: [
-					{
-						icon: 'cart-outline',
-						onPress: () => router.push({ pathname: '/purchases', params: { filter: 'cart' } })
-					}
-				]
-			})
+			setToastConfig({ visible: true, message: `${localize(item.name)} added to basket` })
 		} catch (error) {
 			console.error('Failed to add to basket:', error)
 			toast.error('Failed to add to basket')
@@ -470,6 +465,14 @@ export default function FeedScreen() {
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
 			)}
+
+			<Toast
+				visible={toastConfig.visible}
+				onClose={() => setToastConfig((prev) => ({ ...prev, visible: false }))}
+				message={toastConfig.message}
+				color="blue"
+				screen="/dashboard/personal/purchases?filter=cart"
+			/>
 		</View>
 	)
 }
