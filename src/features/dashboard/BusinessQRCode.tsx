@@ -83,6 +83,8 @@ export default function BusinessQRCode({ business, colors }: Props) {
 	const handlePrint = async () => {
 		if (!qrcodeUrl) return
 		try {
+			const baseUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
+			const link = `${baseUrl}/b/${business.slug}`
 			const html = `
 				<html>
 					<head>
@@ -92,6 +94,7 @@ export default function BusinessQRCode({ business, colors }: Props) {
 						<h1>${business.name.en || business.slug}</h1>
 						<img src="${qrcodeUrl}" style="width: 300px; height: 300px;" />
 						<h2 style="color: #666; margin-top: 20px;">@${business.slug}</h2>
+						<p style="color: #666; margin-top: 10px; font-size: 16px;">${link}</p>
 					</body>
 				</html>
 			`

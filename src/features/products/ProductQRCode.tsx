@@ -74,6 +74,8 @@ export default function ProductQRCode({ product, colors, isDashboard = false }: 
 	const handlePrint = async () => {
 		if (!qrcodeUrl) return
 		try {
+			const baseUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
+			const link = `${baseUrl}/p/${product.slug}`
 			const html = `
 				<html>
 					<head>
@@ -83,6 +85,7 @@ export default function ProductQRCode({ product, colors, isDashboard = false }: 
 						<h1>${localize(product.name) || product.slug}</h1>
 						<img src="${qrcodeUrl}" style="width: 300px; height: 300px;" />
 						<h2 style="color: #666; margin-top: 20px;">@${product.slug}</h2>
+						<p style="color: #666; margin-top: 10px; font-size: 16px;">${link}</p>
 					</body>
 				</html>
 			`
