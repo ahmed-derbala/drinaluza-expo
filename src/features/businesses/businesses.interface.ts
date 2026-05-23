@@ -84,6 +84,11 @@ export type Business = {
 	operatingHours?: Record<string, unknown>
 	description?: string
 	categories?: string[]
+	qrcode?: {
+		_id?: string
+		name?: string
+		url: string
+	}
 }
 
 type Pagination = {

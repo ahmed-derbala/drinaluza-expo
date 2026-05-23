@@ -108,6 +108,28 @@ const updateMyBusiness = async (businessSlug: string, businessData: Partial<Busi
 	}
 }
 
+export const updateBusiness = async (businessSlug: string, businessData: any): Promise<BusinessResponse> => {
+	try {
+		log({
+			level: 'info',
+			label: 'businesses.api',
+			message: 'Updating business',
+			data: { businessSlug, businessData }
+		})
+		const response = await getApiClient().patch(`/businesses/${businessSlug}`, businessData)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'businesses.api',
+			message: 'Error updating business',
+			error,
+			data: { businessSlug, businessData }
+		})
+		throw error
+	}
+}
+
 export const getBusinessBySlug = async (slug: string): Promise<BusinessResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/${slug}`)

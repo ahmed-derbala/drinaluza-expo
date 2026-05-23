@@ -1,38 +1,92 @@
-import React, { useEffect, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, ReactNode, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native'
-import { useRouter } from 'expo-router'
-import { useAudioPlayer } from 'expo-audio'
 import { Ionicons } from '@expo/vector-icons'
+import { useTheme } from '../theme'
 
-export interface ToastProps {
-	title?: string
-	message: string
+// --- TYPES ---
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
+
+export interface ToastAction {
+	label?: string
+	onPress: () => void
 	color?: string
-	timeout?: number
-	screen?: string
-	visible: boolean
-	onClose: () => void
+	icon?: keyof typeof Ionicons.glyphMap
 }
 
-export default function Toast({ title, message, color = 'blue', timeout = 10000, screen, visible, onClose }: ToastProps) {
-	const router = useRouter()
+export interface ToastProps {
+	visible: boolean
+	message: string
+	type?: ToastType
+	duration?: number
+	onHide: () => void
+	actions?: ToastAction[]
+	onPress?: () => void
+}
+
+interface ToastState {
+	visible: boolean
+	message: string
+	type: ToastType
+	duration: number
+	actions: ToastAction[]
+	onPress?: () => void
+}
+
+interface ToastContextData {
+	showToast: (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => void
+	hideToast: () => void
+	success: (message: string, duration?: number) => void
+	error: (message: string, duration?: number) => void
+	warning: (message: string, duration?: number) => void
+	info: (message: string, duration?: number) => void
+}
+
+// --- GLOBAL HELPER ---
+type ShowToastFn = (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => void
+let showToastRef: ShowToastFn | null = null
+
+const show = (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => {
+	if (showToastRef) {
+		showToastRef(options)
+	} else {
+		console.warn('Toast helper called before Provider was registered')
+	}
+}
+
+export const toast = {
+	show,
+	success: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'success', ...options }),
+	error: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'error', ...options }),
+	warning: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'warning', ...options }),
+	info: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'info', ...options })
+}
+
+// --- CONTEXT ---
+const ToastContext = createContext<ToastContextData>({} as ToastContextData)
+
+export const useToast = () => {
+	const context = useContext(ToastContext)
+	if (!context) {
+		throw new Error('useToast must be used within a ToastProvider')
+	}
+	return context
+}
+
+// --- UI COMPONENT ---
+const TAB_BAR_HEIGHT =
+	Platform.select({
+		ios: 60,
+		android: 70,
+		web: 70
+	}) || 70
+
+function ToastComponent({ visible, message, type = 'info', duration = 3000, onHide, actions = [], onPress }: ToastProps) {
+	const { colors } = useTheme()
 	const translateY = useRef(new Animated.Value(100)).current
 	const opacity = useRef(new Animated.Value(0)).current
 
-	const player = useAudioPlayer(require('../../../assets/sounds/toast.wav'))
-
 	useEffect(() => {
 		if (visible) {
-			const playSound = () => {
-				try {
-					player.seekTo(0)
-					player.play()
-				} catch (error) {
-					console.log('Error playing toast sound:', error)
-				}
-			}
-			playSound()
-
 			Animated.parallel([
 				Animated.timing(translateY, {
 					toValue: 0,
@@ -46,16 +100,16 @@ export default function Toast({ title, message, color = 'blue', timeout = 10000,
 				})
 			]).start()
 
-			if (timeout > 0) {
+			if (duration > 0) {
 				const timer = setTimeout(() => {
 					hideToast()
-				}, timeout)
+				}, duration)
 				return () => clearTimeout(timer)
 			}
 		} else {
 			hideToast()
 		}
-	}, [visible, timeout])
+	}, [visible])
 
 	const hideToast = () => {
 		Animated.parallel([
@@ -70,15 +124,36 @@ export default function Toast({ title, message, color = 'blue', timeout = 10000,
 				useNativeDriver: true
 			})
 		]).start(() => {
-			onClose()
+			onHide()
 		})
 	}
 
-	const handlePress = () => {
-		if (screen) {
-			router.push(screen as any)
+	const getIconName = (): keyof typeof Ionicons.glyphMap => {
+		switch (type) {
+			case 'success':
+				return 'checkmark-circle'
+			case 'error':
+				return 'alert-circle'
+			case 'warning':
+				return 'warning'
+			case 'info':
+			default:
+				return 'information-circle'
 		}
-		hideToast()
+	}
+
+	const getBackgroundColor = () => {
+		switch (type) {
+			case 'success':
+				return colors.success || '#10B981'
+			case 'error':
+				return colors.error || '#EF4444'
+			case 'warning':
+				return colors.warning || '#F59E0B'
+			case 'info':
+			default:
+				return colors.info || '#3B82F6'
+		}
 	}
 
 	if (!visible && (opacity as any)._value === 0) return null
@@ -90,18 +165,23 @@ export default function Toast({ title, message, color = 'blue', timeout = 10000,
 				{
 					transform: [{ translateY }],
 					opacity,
-					backgroundColor: color
+					backgroundColor: getBackgroundColor()
 				}
 			]}
 		>
-			<TouchableOpacity activeOpacity={screen ? 0.8 : 1} onPress={handlePress} style={styles.content}>
+			<TouchableOpacity
+				activeOpacity={onPress ? 0.8 : 1}
+				onPress={() => {
+					if (onPress) {
+						onPress()
+						hideToast()
+					}
+				}}
+				style={styles.content}
+			>
 				<View style={styles.header}>
 					<View style={styles.mainInfo}>
-						{title && (
-							<Text style={styles.title} numberOfLines={1}>
-								{title}
-							</Text>
-						)}
+						<Ionicons name={getIconName()} size={24} color="#fff" />
 						<Text style={styles.message} numberOfLines={3}>
 							{message}
 						</Text>
@@ -116,17 +196,29 @@ export default function Toast({ title, message, color = 'blue', timeout = 10000,
 						<Ionicons name="close" size={20} color="#fff" />
 					</TouchableOpacity>
 				</View>
+
+				{actions.length > 0 && (
+					<View style={styles.actionsContainer}>
+						{actions.map((action, index) => (
+							<TouchableOpacity
+								key={index}
+								onPress={(e) => {
+									e.stopPropagation()
+									action.onPress()
+									hideToast()
+								}}
+								style={[styles.actionButton, !action.label && { paddingHorizontal: 10, paddingVertical: 10 }]}
+							>
+								{action.icon && <Ionicons name={action.icon} size={action.label ? 16 : 22} color={action.color || '#fff'} style={action.label ? { marginRight: 6 } : {}} />}
+								{action.label && <Text style={[styles.actionLabel, action.color ? { color: action.color } : null]}>{action.label}</Text>}
+							</TouchableOpacity>
+						))}
+					</View>
+				)}
 			</TouchableOpacity>
 		</Animated.View>
 	)
 }
-
-const TAB_BAR_HEIGHT =
-	Platform.select({
-		ios: 60,
-		android: 70,
-		web: 70
-	}) || 70
 
 const styles = StyleSheet.create({
 	container: {
@@ -157,28 +249,25 @@ const styles = StyleSheet.create({
 		})
 	},
 	content: {
-		padding: 16,
-		gap: 6
+		padding: 14,
+		gap: 10
 	},
 	header: {
 		flexDirection: 'row',
 		alignItems: 'flex-start',
-		justifyContent: 'space-between'
+		justifyContent: 'space-between',
+		gap: 12
 	},
 	mainInfo: {
 		flex: 1,
-		flexDirection: 'column',
-		gap: 6
-	},
-	title: {
-		fontSize: 16,
-		fontWeight: '700',
-		color: '#fff',
-		lineHeight: 22
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 12
 	},
 	message: {
-		fontSize: 14,
-		fontWeight: '500',
+		flex: 1,
+		fontSize: 15,
+		fontWeight: '600',
 		color: '#fff',
 		lineHeight: 20
 	},
@@ -189,7 +278,73 @@ const styles = StyleSheet.create({
 		backgroundColor: 'rgba(255, 255, 255, 0.15)',
 		justifyContent: 'center',
 		alignItems: 'center',
-		marginTop: -2,
-		marginLeft: 12
+		marginTop: -2
+	},
+	actionsContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'flex-end',
+		gap: 10,
+		marginTop: 4,
+		borderTopWidth: 1,
+		borderTopColor: 'rgba(255, 255, 255, 0.2)',
+		paddingTop: 10
+	},
+	actionButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 14,
+		paddingVertical: 8,
+		borderRadius: 10,
+		backgroundColor: 'rgba(255, 255, 255, 0.25)'
+	},
+	actionLabel: {
+		fontSize: 13,
+		fontWeight: '700',
+		color: '#fff',
+		letterSpacing: 0.5
 	}
 })
+
+// --- PROVIDER ---
+export const ToastProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+	const [state, setState] = useState<ToastState>({
+		visible: false,
+		message: '',
+		type: 'info',
+		duration: 3000,
+		actions: [],
+		onPress: undefined
+	})
+
+	const hideToast = useCallback(() => {
+		setState((prev) => ({ ...prev, visible: false }))
+	}, [])
+
+	const showToast = useCallback((options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => {
+		setState({
+			visible: true,
+			message: options.message,
+			type: options.type || 'info',
+			duration: options.duration ?? 3000,
+			actions: options.actions || [],
+			onPress: options.onPress
+		})
+	}, [])
+
+	useEffect(() => {
+		showToastRef = showToast
+	}, [showToast])
+
+	const success = useCallback((message: string, duration?: number) => showToast({ message, type: 'success', duration }), [showToast])
+	const error = useCallback((message: string, duration?: number) => showToast({ message, type: 'error', duration }), [showToast])
+	const warning = useCallback((message: string, duration?: number) => showToast({ message, type: 'warning', duration }), [showToast])
+	const info = useCallback((message: string, duration?: number) => showToast({ message, type: 'info', duration }), [showToast])
+
+	return (
+		<ToastContext.Provider value={{ showToast, hideToast, success, error, warning, info }}>
+			{children}
+			<ToastComponent visible={state.visible} message={state.message} type={state.type} duration={state.duration} actions={state.actions} onPress={state.onPress} onHide={hideToast} />
+		</ToastContext.Provider>
+	)
+}

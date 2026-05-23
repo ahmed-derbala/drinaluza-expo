@@ -15,7 +15,7 @@ import { useBackButton } from '../../core/hooks/useBackButton'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useUser } from '../../core/contexts/UserContext'
-import { toast } from '../../core/helpers/toast'
+import { toast } from '../../core/components/Toast'
 
 type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled'
 
@@ -35,14 +35,14 @@ const PurchasesScreen = () => {
 	const [loading, setLoading] = useState(true)
 	const [purchases, setPurchases] = useState<OrderItem[]>([])
 	const [cart, setCart] = useState<CartItem[]>([])
-	const params = useLocalSearchParams<{ filter?: FilterStatus }>()
-	const [filter, setFilter] = useState<FilterStatus>(params.filter || 'cart')
+	const params = useLocalSearchParams<{ status?: FilterStatus }>()
+	const [filter, setFilter] = useState<FilterStatus>(params.status || 'cart')
 
 	useEffect(() => {
-		if (params.filter) {
-			setFilter(params.filter)
+		if (params.status) {
+			setFilter(params.status)
 		}
-	}, [params.filter])
+	}, [params.status])
 
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const fadeAnim = React.useRef(new Animated.Value(0)).current
@@ -566,7 +566,10 @@ const PurchasesScreen = () => {
 		return (
 			<TouchableOpacity
 				style={[styles.filterButton, isActive && { backgroundColor: colors.primary }, { borderColor: isActive ? colors.primary : colors.border }]}
-				onPress={() => setFilter(status)}
+				onPress={() => {
+					setFilter(status)
+					router.setParams({ status })
+				}}
 				activeOpacity={0.7}
 			>
 				<Ionicons name={icon as any} size={24} color={isActive ? '#fff' : colors.text} />

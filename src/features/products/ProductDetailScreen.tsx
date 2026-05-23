@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -23,6 +23,8 @@ export default function ProductDetailScreen() {
 	const { onScroll } = useScrollHandler()
 	const { setTabBarVisible } = useLayout()
 	const { width } = useWindowDimensions()
+	const pathname = usePathname()
+	const isDashboard = pathname.includes('/dashboard')
 
 	const [product, setProduct] = useState<ProductType | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -141,7 +143,22 @@ export default function ProductDetailScreen() {
 
 	return (
 		<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(product.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScreenHeader
+				title={localize(product.name)}
+				showBack={true}
+				onRefresh={handleRefresh}
+				isRefreshing={refreshing}
+				rightActions={
+					isDashboard ? (
+						<TouchableOpacity
+							style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}
+							onPress={() => router.push(`${pathname}/edit` as any)}
+						>
+							<Ionicons name="pencil" size={20} color={colors.primary} />
+						</TouchableOpacity>
+					) : undefined
+				}
+			/>
 
 			<ScrollView
 				contentContainerStyle={[styles.scrollContent, width > 800 && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}

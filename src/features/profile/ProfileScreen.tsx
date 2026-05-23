@@ -24,12 +24,13 @@ import { useRouter, useFocusEffect } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/core/auth/auth.api'
+import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme } from '@/core/theme'
 import ScreenHeader from '@/features/common/ScreenHeader'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/helpers/SmartImage'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
-import { requestBusiness } from '@/features/business/business.api'
+import { requestBusiness } from '@/features/businesses/business.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -37,6 +38,7 @@ import ReviewSection from '@/features/reviews/Reviews'
 import { uploadFile } from '@/core/file'
 
 import { UserData } from '@/features/profile/profile.interface'
+import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
 import { LANGUAGES, CURRENCIES, SOCIAL_PLATFORMS } from '@/config/settings'
 
@@ -141,6 +143,7 @@ export default function ProfileScreen() {
 
 	const [loading, setLoading] = useState(false)
 	const [userData, setUserData] = useState<UserData | null>(null)
+	const [personalDashboard, setPersonalDashboard] = useState<PersonalDashboard | null>(null)
 	const [editMode, setEditMode] = useState({
 		name: false,
 		basic: false,
@@ -195,6 +198,15 @@ export default function ProfileScreen() {
 				setImageError(false)
 			} else {
 				throw new Error('No profile data received')
+			}
+
+			try {
+				const dashboardRes = await getPersonalDashboard()
+				if (dashboardRes?.data?.kind === 'personal') {
+					setPersonalDashboard(dashboardRes.data)
+				}
+			} catch (dashboardErr) {
+				console.log('Failed to fetch personal dashboard', dashboardErr)
 			}
 		} catch (err: any) {
 			logError(err, 'loadProfile')
@@ -621,6 +633,9 @@ export default function ProfileScreen() {
 					<Ionicons name="briefcase" size={20} color={colors.primary} />
 				</TouchableOpacity>
 			)}
+			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.info + '15' }]} onPress={() => router.push('/profile/purchases')}>
+				<Ionicons name="receipt-outline" size={20} color={colors.info} />
+			</TouchableOpacity>
 			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.text + '05' }]} onPress={handleSwitchUser}>
 				<Ionicons name="people" size={20} color={colors.text} />
 			</TouchableOpacity>
@@ -1608,6 +1623,55 @@ export default function ProfileScreen() {
 					)}
 				</Section>
 
+				{/* Customer Dashboard Data */}
+				{personalDashboard && (
+					<Section title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')} styles={styles}>
+						<View style={{ gap: 16 }}>
+							<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+								<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
+								{personalDashboard.topBusinesses.frequent.length === 0 ? (
+									<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
+								) : (
+									personalDashboard.topBusinesses.frequent.slice(0, 3).map((item, index) => (
+										<View
+											key={item._id || index}
+											style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.frequent.length, 3) - 1 && { borderBottomWidth: 0 }]}
+										>
+											<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
+											<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
+												{item.name ? localize(item.name) : item.slug || '—'}
+											</Text>
+											{item.count !== undefined && (
+												<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}15` }]}>
+													<Text style={[styles.rankMetricText, { color: colors.primary }]}>{item.count}</Text>
+												</View>
+											)}
+										</View>
+									))
+								)}
+							</View>
+							<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+								<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_new', 'Recently Discovered')}</Text>
+								{personalDashboard.topBusinesses.new.length === 0 ? (
+									<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
+								) : (
+									personalDashboard.topBusinesses.new.slice(0, 3).map((item, index) => (
+										<View
+											key={item._id || index}
+											style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.new.length, 3) - 1 && { borderBottomWidth: 0 }]}
+										>
+											<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
+											<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
+												{item.name ? localize(item.name) : item.slug || '—'}
+											</Text>
+										</View>
+									))
+								)}
+							</View>
+						</View>
+					</Section>
+				)}
+
 				{/* Reviews Section */}
 				{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
 			</ScrollView>
@@ -2395,5 +2459,50 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		businessModalButtonText: {
 			fontSize: 16,
 			fontWeight: '600'
+		},
+		rankPanel: {
+			flex: 1,
+			borderRadius: 16,
+			borderWidth: 1,
+			padding: 16,
+			minHeight: 120,
+			marginBottom: 12
+		},
+		rankPanelTitle: {
+			fontSize: 14,
+			fontWeight: '700',
+			marginBottom: 12
+		},
+		rankEmpty: {
+			fontSize: 12,
+			lineHeight: 20,
+			paddingVertical: 10,
+			fontStyle: 'italic'
+		},
+		rankRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 10,
+			paddingVertical: 10,
+			borderBottomWidth: 1
+		},
+		rankAvatar: {
+			width: 32,
+			height: 32,
+			borderRadius: 8
+		},
+		rankName: {
+			flex: 1,
+			fontSize: 13,
+			fontWeight: '600'
+		},
+		rankMetric: {
+			paddingHorizontal: 10,
+			paddingVertical: 4,
+			borderRadius: 10
+		},
+		rankMetricText: {
+			fontSize: 11,
+			fontWeight: '800'
 		}
 	})

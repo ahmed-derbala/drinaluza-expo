@@ -4,10 +4,9 @@ import { View, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { BACKEND_URL } from '@/config'
 import { useUser } from '../contexts/UserContext'
-import { useNotification } from '../contexts/NotificationContext'
-import { toast } from '../helpers/toast'
+import { useNotification } from '../../features/notifications/NotificationContext'
+import { toast } from '../components/Toast'
 import { log } from '../log'
-import Toast from '@/core/components/Toast'
 
 // Safely import expo-audio
 let useAudioPlayer: any = null
@@ -28,12 +27,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
 	const socketRef = useRef<Socket | null>(null)
-	const [toastConfig, setToastConfig] = useState<{ visible: boolean; title: string; message: string; screen?: string }>({
-		visible: false,
-		title: '',
-		message: '',
-		screen: undefined
-	})
 
 	// Initialize audio player
 	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/notification.mp3')) : null
@@ -88,15 +81,15 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 				console.error('Error playing notification sound:', error)
 			}
 
-			// Show toast
 			const toastTitle = data.title || 'New notification'
 			const toastMessage = data.content || ''
 
-			setToastConfig({
-				visible: true,
-				title: toastTitle,
-				message: toastMessage,
-				screen: data.screen
+			toast.info(`${toastTitle}\n${toastMessage}`, {
+				onPress: () => {
+					if (data.screen) {
+						router.push(data.screen as any)
+					}
+				}
 			})
 
 			// Refresh count
@@ -115,19 +108,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		}
 	}, [user?.slug, refreshNotificationCount])
 
-	return (
-		<SocketContext.Provider value={{ socket: socketRef.current }}>
-			{children}
-			<Toast
-				visible={toastConfig.visible}
-				onClose={() => setToastConfig((prev) => ({ ...prev, visible: false }))}
-				title={toastConfig.title}
-				message={toastConfig.message}
-				screen={toastConfig.screen}
-				color="#3B82F6"
-			/>
-		</SocketContext.Provider>
-	)
+	return <SocketContext.Provider value={{ socket: socketRef.current }}>{children}</SocketContext.Provider>
 }
 
 const useSocket = () => {

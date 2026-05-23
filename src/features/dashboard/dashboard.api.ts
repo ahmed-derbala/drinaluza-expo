@@ -11,12 +11,12 @@ export const getDashboard = async (): Promise<DashboardResponse> => {
 	return response.data
 }
 
-export const getPersonalDashboard = async (): Promise<DashboardResponse> => {
-	const response = await getApiClient().get('/dashboard/personal')
+export const getBusinessDashboard = async (businessSlug: string): Promise<DashboardResponse> => {
+	const response = await getApiClient().get(`/dashboard/business/${businessSlug}`)
 	return response.data
 }
 
-export const getBusinessDashboard = async (businessSlug: string): Promise<DashboardResponse> => {
-	const response = await getApiClient().get(`/dashboard/business/${businessSlug}`)
+export const getPersonalDashboard = async (): Promise<DashboardResponse> => {
+	const response = await getApiClient().get('/dashboard/personal')
 	return response.data
 }

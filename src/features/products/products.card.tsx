@@ -35,7 +35,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const mainName = localize(item.name)
 	const secondaryNames = useMemo(() => {
 		if (!item.name) return []
-		const allNames = [item.name.en, item.name.tn_latn, item.name.tn_arab].filter(Boolean) as string[]
+		const allNames = [item.name?.en, item.name?.tn_latn, item.name?.tn_arab].filter(Boolean) as string[]
 		return Array.from(new Set(allNames)).filter((n) => n !== mainName)
 	}, [item.name, mainName])
 

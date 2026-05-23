@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter } from 'expo-router'
@@ -10,9 +10,10 @@ import ErrorState from '../common/ErrorState'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SmartImage from '../../core/helpers/SmartImage'
-import { getDashboard, getDashboardProfiles, getPersonalDashboard, getBusinessDashboard } from './dashboard.api'
-import { DashboardData, DashboardProfile, DashboardRankItem, isBusinessDashboard, isPersonalDashboard, ProductStats } from './dashboard.interface'
+import { getDashboardProfiles, getBusinessDashboard } from './dashboard.api'
+import { isBusinessDashboard, DashboardData, DashboardProfile, DashboardRankItem, ProductStats, BusinessDashboard } from './dashboard.interface'
 import { LocalizedName } from '../businesses/businesses.interface'
+import BusinessQRCode from './BusinessQRCode'
 
 const { width } = Dimensions.get('window')
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -44,43 +45,43 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 
 	const showProfileSwitcher = profiles.length > 1
 
-	const resolveSelectedFromData = useCallback((data: DashboardData, list: DashboardProfile[]): SelectedProfile => {
-		if (isBusinessDashboard(data)) {
-			const match = list.find((p) => p.kind === 'business' && p.slug === data.business.slug) || list.find((p) => p.kind === 'business')
-			return {
-				kind: 'business',
-				slug: data.business.slug,
-				profileId: match?._id || data._id
-			}
+	const resolveSelectedFromData = useCallback((data: BusinessDashboard, list: DashboardProfile[]): SelectedProfile => {
+		const match = list.find((p) => p.kind === 'business' && p.slug === data.business.slug) || list.find((p) => p.kind === 'business')
+		return {
+			kind: 'business',
+			slug: data.business.slug,
+			profileId: match?._id || data._id
 		}
-		const personal = list.find((p) => p.kind === 'personal')
-		return { kind: 'personal', profileId: personal?._id || data._id }
-	}, [])
-
-	const fetchDashboardForProfile = useCallback(async (profile: SelectedProfile) => {
-		if (profile.kind === 'personal') {
-			return (await getPersonalDashboard()).data
-		}
-		if (profile.kind === 'business' && profile.slug) {
-			return (await getBusinessDashboard(profile.slug)).data
-		}
-		return (await getDashboard()).data
 	}, [])
 
 	const loadDashboard = useCallback(
 		async (profileOverride?: SelectedProfile) => {
 			try {
 				setError(null)
-				const [profilesRes, defaultRes] = await Promise.all([
-					getDashboardProfiles(),
-					profileKind === 'personal' ? getPersonalDashboard() : profileKind === 'business' && businessSlug ? getBusinessDashboard(businessSlug) : getDashboard()
-				])
-				const profileList = profilesRes.data || []
+				const profilesRes = await getDashboardProfiles()
+				const profileList = profilesRes.data?.filter((p) => p.kind === 'business') || []
 				setProfiles(profileList)
 
-				const data = profileOverride ? await fetchDashboardForProfile(profileOverride) : defaultRes.data
+				let targetSlug = profileOverride?.slug || businessSlug
+
+				// If no businessSlug is provided (e.g. on main tab), use the first available business profile
+				if (!targetSlug) {
+					if (profileList.length > 0 && profileList[0].slug) {
+						targetSlug = profileList[0].slug
+					} else {
+						// No business profile available
+						setLoading(false)
+						return
+					}
+				}
+
+				const dataRes = await getBusinessDashboard(targetSlug)
+				const data = dataRes.data
+
 				setDashboardData(data)
-				setSelectedProfile(profileOverride || resolveSelectedFromData(data, profileList))
+				if (isBusinessDashboard(data)) {
+					setSelectedProfile(profileOverride || resolveSelectedFromData(data, profileList))
+				}
 			} catch (err: unknown) {
 				logError(err, 'loadDashboard')
 				const errorInfo = parseError(err)
@@ -90,7 +91,7 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 				setRefreshing(false)
 			}
 		},
-		[fetchDashboardForProfile, resolveSelectedFromData, profileKind, businessSlug]
+		[resolveSelectedFromData, businessSlug]
 	)
 
 	useEffect(() => {
@@ -106,13 +107,14 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 		(profile: DashboardProfile) => {
 			if (!selectedProfile || profile._id === selectedProfile.profileId) return
 
-			if (profile.kind === 'personal') {
-				router.replace('/dashboard/personal' as never)
-			} else if (profile.slug) {
-				router.replace(`/dashboard/business/${profile.slug}` as never)
+			if (businessSlug && profile.slug) {
+				router.replace(`/dashboard/${profile.slug}` as never)
+			} else {
+				setLoading(true)
+				loadDashboard({ kind: profile.kind, slug: profile.slug, profileId: profile._id })
 			}
 		},
-		[selectedProfile, router]
+		[selectedProfile, router, businessSlug, loadDashboard]
 	)
 
 	const getProfileLabel = (profile: DashboardProfile) => localize(profile.name)
@@ -149,7 +151,7 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 			<ScreenHeader
 				title={translate('dashboard', 'Dashboard')}
 				subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
-				showBack={!!profileKind}
+				showBack={false}
 				onRefresh={onRefresh}
 				isRefreshing={refreshing}
 			/>
@@ -204,7 +206,11 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 					</View>
 				)}
 
-				{dashboardData && isPersonalDashboard(dashboardData) && <PersonalDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} />}
+				{profiles.length === 0 && !loading && !refreshing && (
+					<View style={[styles.centered, { marginTop: 40 }]}>
+						<Text style={{ color: colors.textSecondary }}>{translate('dashboard.no_business_profiles', 'No business profiles found.')}</Text>
+					</View>
+				)}
 
 				{dashboardData && isBusinessDashboard(dashboardData) && <BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} />}
 			</ScrollView>
@@ -212,7 +218,7 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 	)
 }
 
-// --- Personal dashboard ---
+// --- Business dashboard ---
 
 type ContentProps = {
 	data: DashboardData
@@ -220,79 +226,6 @@ type ContentProps = {
 	colors: typeof import('../../core/theme').colors
 	router: ReturnType<typeof useRouter>
 }
-
-const PersonalDashboardContent = ({ data, styles, colors, router }: ContentProps & { data: import('./dashboard.interface').PersonalDashboard }) => {
-	const { localize, translate } = useUser()
-
-	const exploreActions = useMemo(
-		() => [
-			{
-				label: translate('dashboard.browse_businesses', 'Browse businesses'),
-				icon: <MaterialIcons name="storefront" size={22} color={colors.primary} />,
-				color: colors.primary,
-				onPress: () => router.push('/businesses' as never)
-			},
-			{
-				label: translate('dashboard.purchases', 'Purchases'),
-				icon: <Feather name="package" size={22} color={colors.info} />,
-				color: colors.info,
-				onPress: () => router.push('/dashboard/personal/purchases' as never)
-			},
-			{
-				label: translate('feed', 'Feed'),
-				icon: <Feather name="tag" size={22} color={colors.success} />,
-				color: colors.success,
-				onPress: () => router.push('/(home)/feed' as never)
-			},
-			{
-				label: translate('settings', 'Settings'),
-				icon: <Feather name="settings" size={22} color={colors.textTertiary} />,
-				color: colors.textTertiary,
-				onPress: () => router.push('/(home)/settings' as never)
-			}
-		],
-		[colors, router, translate]
-	)
-
-	return (
-		<>
-			<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-				<View style={styles.heroInfo}>
-					<View style={[styles.kindBadge, { backgroundColor: `${colors.secondary}25` }]}>
-						<MaterialIcons name="person" size={14} color={colors.secondary} />
-						<Text style={[styles.kindBadgeText, { color: colors.secondary }]}>{translate('dashboard.personal', 'Personal')}</Text>
-					</View>
-					<Text style={[styles.heroTitle, { color: colors.text }]}>{localize(data.user.name)}</Text>
-					<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>@{data.user.slug}</Text>
-				</View>
-				<View style={[styles.heroIconWrap, { backgroundColor: `${colors.primary}15` }]}>
-					<MaterialIcons name="explore" size={32} color={colors.primary} />
-				</View>
-			</LinearGradient>
-
-			<SectionTitle title={translate('dashboard.explore', 'Explore')} colors={colors} />
-			<View style={styles.actionsGrid}>
-				{exploreActions.map((action) => (
-					<QuickAction key={action.label} {...action} styles={styles} colors={colors} />
-				))}
-			</View>
-
-			<RankPairSection
-				title={translate('dashboard.top_businesses', 'Top businesses')}
-				leftTitle={translate('dashboard.top_businesses_new', 'New')}
-				rightTitle={translate('dashboard.top_businesses_frequent', 'Frequent')}
-				leftItems={data.topBusinesses.new}
-				rightItems={data.topBusinesses.frequent}
-				styles={styles}
-				colors={colors}
-				entityType="business"
-				emptyHint={translate('dashboard.no_businesses_yet', 'No businesses to show yet')}
-			/>
-		</>
-	)
-}
-
-// --- Business dashboard ---
 
 const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps & { data: import('./dashboard.interface').BusinessDashboard }) => {
 	const { localize, translate } = useUser()
@@ -310,13 +243,13 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				label: translate('sales', 'Sales'),
 				icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
 				color: colors.info,
-				onPress: () => router.push(`/dashboard/business/${business.slug}/sales` as never)
+				onPress: () => router.push(`/dashboard/${business.slug}/sales` as never)
 			},
 			{
 				label: translate('create_product', 'Create Product'),
 				icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
 				color: colors.warning,
-				onPress: () => router.push(`/dashboard/business/${business.slug}/products/create?source=dashboard` as never)
+				onPress: () => router.push(`/dashboard/${business.slug}/products/create?source=dashboard` as never)
 			}
 		],
 		[business._id, business.slug, colors, router, translate]
@@ -373,7 +306,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 						accent={stat.accent}
 						styles={styles}
 						colors={colors}
-						onPress={() => router.push(`/dashboard/business/${business.slug}/products` as never)}
+						onPress={() => router.push(`/dashboard/${business.slug}/products` as never)}
 					/>
 				))}
 			</View>
@@ -384,6 +317,8 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 					<QuickAction key={action.label} {...action} styles={styles} colors={colors} />
 				))}
 			</View>
+
+			<BusinessQRCode business={business} colors={colors} />
 
 			<SectionTitle title={translate('dashboard.insights', 'Insights')} colors={colors} />
 

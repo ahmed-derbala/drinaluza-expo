@@ -10,7 +10,7 @@ import ErrorState from '@/features/common/ErrorState'
 import ScreenHeader from '@/features/common/ScreenHeader'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { toast } from '@/core/helpers/toast'
+import { toast } from '@/core/components/Toast'
 import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -29,9 +29,10 @@ type ProductCardProps = {
 	onAddToCart: (item: Product, qty: number) => void
 	isWide: boolean
 	isDashboard: boolean
+	businessSlug?: string
 }
 
-function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard }: ProductCardProps) {
+function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard, businessSlug }: ProductCardProps) {
 	const router = useRouter()
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos[0])
 	const stockQty = item.stock?.quantity || 0
@@ -51,7 +52,14 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	return (
 		<Pressable
 			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
-			onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}
+			onPress={() => {
+				if (!item.slug) return
+				if (isDashboard && businessSlug) {
+					router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)
+				} else {
+					router.push(`/products/${item.slug}` as any)
+				}
+			}}
 		>
 			{/* Image */}
 			<View style={cardStyles.imageWrap}>
@@ -305,7 +313,7 @@ export default function BusinessProductsScreen() {
 				setCart(newCart)
 				await AsyncStorage.setItem('cart', JSON.stringify(newCart))
 				toast.success(`${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, {
-					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/dashboard/personal/purchases', params: { filter: 'cart' } }) }]
+					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/profile/purchases', params: { status: 'cart' } } as any) }]
 				})
 			} catch {
 				toast.error(translate('cart_failed_to_add', 'Failed to add to cart'))
@@ -359,6 +367,7 @@ export default function BusinessProductsScreen() {
 						onAddToCart={handleAddToCart}
 						isWide={isWide}
 						isDashboard={isDashboard}
+						businessSlug={businessSlug}
 					/>
 				</View>
 			)
@@ -509,7 +518,7 @@ export default function BusinessProductsScreen() {
 			/>
 
 			{isDashboard && (
-				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/business/${businessSlug}/products/create` as any)}>
+				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/${businessSlug}/products/create` as any)}>
 					<Ionicons name="add" size={28} color={colors.textOnPrimary || '#0F172A'} />
 				</TouchableOpacity>
 			)}

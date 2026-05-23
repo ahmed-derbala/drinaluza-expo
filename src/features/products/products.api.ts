@@ -25,7 +25,7 @@ export interface CreateProductRequest {
 		max: number
 		step: number
 	}
-	searchTerms?: string[]
+	searchKeywords?: string[]
 	stock?: {
 		quantity: number
 		minThreshold: number
@@ -139,5 +139,9 @@ export const getProductBySlug = async (productSlug: string): Promise<{ status: n
 
 export const getProducts = async (page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
 	const response = await getApiClient().get(`/products?page=${page}&limit=${limit}`)
+	return response.data
+}
+export const updateProduct = async (productSlug: string, productData: Partial<CreateProductRequest> & { state?: { code: string } }): Promise<{ status: number; data: ProductType }> => {
+	const response = await getApiClient().patch(`/products/${productSlug}`, productData)
 	return response.data
 }

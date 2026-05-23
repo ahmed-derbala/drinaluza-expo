@@ -8,9 +8,9 @@ if (typeof setImmediate === 'undefined') {
 }
 
 import { VersionProvider } from '@/core/contexts/VersionContext'
-import { NotificationProvider } from '@/core/contexts/NotificationContext'
+import { NotificationProvider } from '@/features/notifications/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
-import { ToastProvider } from '@/core/contexts/ToastContext'
+import { ToastProvider } from '@/core/components/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 

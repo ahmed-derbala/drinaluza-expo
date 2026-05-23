@@ -21,7 +21,7 @@ type DashboardUserRef = {
 	role: string
 }
 
-type DashboardBusinessRef = {
+export type DashboardBusinessRef = {
 	_id: string
 	owner?: DashboardUserRef
 	name: LocalizedName
@@ -29,6 +29,11 @@ type DashboardBusinessRef = {
 	media?: {
 		thumbnail?: { url: string }
 		_id?: string
+	}
+	qrcode?: {
+		_id?: string
+		name?: string
+		url: string
 	}
 }
 
@@ -48,15 +53,6 @@ export type DashboardRankItem = {
 	[key: string]: unknown
 }
 
-export type PersonalDashboard = {
-	_id: string
-	user: DashboardUserRef
-	kind: 'personal'
-	topBusinesses: { new: DashboardRankItem[]; frequent: DashboardRankItem[] }
-	createdAt: string
-	updatedAt: string
-}
-
 export type BusinessDashboard = {
 	_id: string
 	user: DashboardUserRef
@@ -69,7 +65,16 @@ export type BusinessDashboard = {
 	updatedAt: string
 }
 
-export type DashboardData = PersonalDashboard | BusinessDashboard
+export type PersonalDashboard = {
+	_id: string
+	user: DashboardUserRef
+	kind: 'personal'
+	topBusinesses: { new: DashboardRankItem[]; frequent: DashboardRankItem[] }
+	createdAt: string
+	updatedAt: string
+}
+
+export type DashboardData = BusinessDashboard | PersonalDashboard
 
 export type DashboardProfilesResponse = {
 	status: number
@@ -82,5 +87,4 @@ export type DashboardResponse = {
 }
 
 export const isBusinessDashboard = (data: DashboardData): data is BusinessDashboard => data.kind === 'business'
-
 export const isPersonalDashboard = (data: DashboardData): data is PersonalDashboard => data.kind === 'personal'

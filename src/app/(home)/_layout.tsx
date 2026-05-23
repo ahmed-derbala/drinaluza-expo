@@ -3,7 +3,8 @@ import { Tabs, usePathname } from 'expo-router'
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
-import { useLayout, useNotification, useUser } from '@/core/contexts'
+import { useLayout, useUser } from '@/core/contexts'
+import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { secureGetItem } from '@/core/storage'
@@ -12,7 +13,7 @@ import { useBackButton } from '@/core/hooks/useBackButton'
 export default function HomeLayout() {
 	const { colors } = useTheme()
 	const { isTabBarVisible, setTabBarVisible } = useLayout()
-	const { translate } = useUser()
+	const { translate, user } = useUser()
 	const pathname = usePathname()
 	useBackButton()
 	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
@@ -106,7 +107,7 @@ export default function HomeLayout() {
 					<Tabs.Screen
 						name="dashboard"
 						options={{
-							href: isAuthenticated ? '/dashboard' : null,
+							href: isAuthenticated && user?.role === 'business_owner' ? '/dashboard' : null,
 							tabBarIcon: ({ color, focused }) => (
 								<View style={focused ? styles.activeIconContainer : undefined}>
 									<MaterialIcons name="dashboard" size={iconSize} color={color} />

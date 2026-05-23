@@ -9,16 +9,16 @@ import FeedCard from '@/features/feed/feed.card'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import ScreenHeader from '@/features/common/ScreenHeader'
 import ErrorState from '@/features/common/ErrorState'
-import { toast } from '@/core/helpers/toast'
+import { toast } from '@/core/components/Toast'
 import SearchBar from '@/features/search/SearchBar'
 import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser, useLayout } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
-import Toast from '@/core/components/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getToken } from '@/core/storage'
+import ScannerModal from '@/features/scanner/ScannerModal'
 
 type FilterKey = 'product' | 'business' | 'user'
 
@@ -151,7 +151,7 @@ export default function FeedScreen() {
 	const [loading, setLoading] = useState(true)
 	const [isSearchActive, setIsSearchActive] = useState(false)
 	const [activeFilters, setActiveFilters] = useState<FilterKey[]>([])
-	const [toastConfig, setToastConfig] = useState({ visible: false, message: '' })
+	const [isScannerVisible, setIsScannerVisible] = useState(false)
 
 	const { width } = useWindowDimensions()
 	const minColumnWidth = 320
@@ -306,7 +306,9 @@ export default function FeedScreen() {
 			setCart(newCart)
 
 			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-			setToastConfig({ visible: true, message: `${localize(item.name)} added to cart` })
+			toast.success(`${localize(item.name)} added to cart`, {
+				onPress: () => router.push('/profile/purchases?status=cart' as any)
+			})
 		} catch (error) {
 			console.error('Failed to add to cart:', error)
 			toast.error('Failed to add to cart')
@@ -378,6 +380,9 @@ export default function FeedScreen() {
 
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8 }}>
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => setIsScannerVisible(true)}>
+				<MaterialIcons name="qr-code-scanner" size={20} color={colors.primary} />
+			</TouchableOpacity>
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={handleToggleSearch}>
 				<Ionicons name={isSearchBarVisible ? 'search' : 'search-outline'} size={20} color={colors.primary} />
 			</TouchableOpacity>
@@ -386,7 +391,7 @@ export default function FeedScreen() {
 					<MaterialIcons name="refresh" size={20} color={colors.primary} />
 				</Animated.View>
 			</TouchableOpacity>
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/dashboard/personal/purchases?filter=cart')}>
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/profile/purchases?status=cart')}>
 				<Ionicons name="cart-outline" size={20} color={colors.primary} />
 				{cart.length > 0 && (
 					<View
@@ -490,13 +495,7 @@ export default function FeedScreen() {
 				</View>
 			)}
 
-			<Toast
-				visible={toastConfig.visible}
-				onClose={() => setToastConfig((prev) => ({ ...prev, visible: false }))}
-				message={toastConfig.message}
-				color="blue"
-				screen="/dashboard/personal/purchases?filter=cart"
-			/>
+			<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
 		</View>
 	)
 }

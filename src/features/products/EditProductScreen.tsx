@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
+import { updateProduct, getDefaultProducts, getProductBySlug, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import ScreenHeader from '@/features/common/ScreenHeader'
@@ -13,9 +13,9 @@ import { uploadFile } from '@/core/file'
 import { showAlert } from '@/core/helpers/popup'
 import { translate } from '@/core/translation'
 
-export default function CreateProductScreen() {
+export default function EditProductScreen() {
 	const router = useRouter()
-	const { businessId, businessSlug, source } = useLocalSearchParams<{ businessId?: string; businessSlug?: string; source?: string }>()
+	const { businessId, businessSlug, source, productSlug } = useLocalSearchParams<{ businessId?: string; businessSlug?: string; source?: string; productSlug?: string }>()
 	const { colors } = useTheme()
 	const styles = createStyles(colors)
 	const { onScroll } = useScrollHandler()
@@ -38,6 +38,7 @@ export default function CreateProductScreen() {
 	const [stockQuantity, setStockQuantity] = useState('')
 	const [minThreshold, setMinThreshold] = useState('5')
 	const [productPhoto, setProductPhoto] = useState<string | null>(null)
+	const [searchKeywords, setSearchKeywords] = useState<string[]>([])
 
 	// UI state
 	const [creating, setCreating] = useState(false)
@@ -54,6 +55,8 @@ export default function CreateProductScreen() {
 	const [loadingBusinesses, setLoadingBusinesses] = useState(false)
 	const [loadingDefaults, setLoadingDefaults] = useState(false)
 	const [searchQuery, setSearchQuery] = useState('')
+	const [loadingProduct, setLoadingProduct] = useState(false)
+	const [isActive, setIsActive] = useState(true)
 
 	// Refs
 	const priceInputRef = useRef<TextInput>(null)
@@ -69,7 +72,54 @@ export default function CreateProductScreen() {
 	useEffect(() => {
 		loadBusinesses()
 		loadDefaultProducts()
-	}, [])
+		if (productSlug) {
+			loadProductData()
+		}
+	}, [productSlug])
+
+	const loadProductData = async () => {
+		try {
+			setLoadingProduct(true)
+			const response = await getProductBySlug(productSlug as string)
+			const p = response.data
+
+			setProductNameEn(p.name?.en || '')
+			setProductNameTnLatn(p.name?.tn_latn || '')
+			setProductNameTnArab(p.name?.tn_arab || '')
+
+			// @ts-ignore
+			setPriceTND(p.price?.total?.tnd?.toString() || '10')
+			setUnit(p.unit?.measure || 'kg')
+			setMinUnit(p.unit?.min?.toString() || '1')
+			setMaxUnit(p.unit?.max?.toString() || '10')
+			setUnitStep(p.unit?.step?.toString() || '1')
+
+			setStockQuantity(p.stock?.quantity?.toString() || '')
+			setMinThreshold(p.stock?.minThreshold?.toString() || '5')
+
+			if ((p as any).searchKeywords) {
+				setSearchKeywords((p as any).searchKeywords)
+			}
+
+			if (p.media?.thumbnail?.url) {
+				setProductPhoto(p.media.thumbnail.url)
+			}
+			if (p.state?.code === 'inactive') {
+				setIsActive(false)
+			} else {
+				setIsActive(true)
+			}
+
+			// Try to match selectedBusiness
+			setSelectedBusiness(p.business as any)
+			setSelectedDefaultProduct(p.defaultProduct as any)
+		} catch (error) {
+			console.error('Failed to load product data:', error)
+			showAlert(translate('error', 'Error'), translate('err_load_product', 'Failed to load product data'))
+		} finally {
+			setLoadingProduct(false)
+		}
+	}
 
 	// Auto-select business if navigated from business details page
 	useEffect(() => {
@@ -105,7 +155,7 @@ export default function CreateProductScreen() {
 		}
 	}
 
-	const filteredDefaultProducts = defaultProducts.filter((p) => p.name.en.toLowerCase().includes(searchQuery.toLowerCase()))
+	const filteredDefaultProducts = defaultProducts.filter((p) => (p.name?.en || '').toLowerCase().includes(searchQuery.toLowerCase()))
 
 	const handleSelectBusiness = (business: Business) => {
 		setSelectedBusiness(business)
@@ -114,9 +164,12 @@ export default function CreateProductScreen() {
 
 	const handleSelectDefaultProduct = (product: DefaultProduct) => {
 		setSelectedDefaultProduct(product)
-		setProductNameEn(product.name.en)
-		setProductNameTnLatn(product.name.tn_latn || '')
-		setProductNameTnArab(product.name.tn_arab || '')
+		setProductNameEn(product.name?.en || '')
+		setProductNameTnLatn(product.name?.tn_latn || '')
+		setProductNameTnArab(product.name?.tn_arab || '')
+		if (product.searchKeywords) {
+			setSearchKeywords(product.searchKeywords)
+		}
 		setShowDefaultProducts(false)
 	}
 
@@ -229,17 +282,14 @@ export default function CreateProductScreen() {
 		}
 	}
 
-	const handleCreateProduct = async () => {
+	const handleUpdateProduct = async () => {
 		if (!validateForm() || !selectedBusiness || !selectedDefaultProduct) return
 
 		try {
 			setCreating(true)
 
-			const productData: CreateProductRequest = {
-				business: {
-					slug: selectedBusiness.slug,
-					_id: selectedBusiness._id
-				},
+			const productData: Partial<CreateProductRequest> & { slug?: string } = {
+				slug: productSlug as string,
 				defaultProduct: {
 					slug: selectedDefaultProduct.slug,
 					_id: selectedDefaultProduct._id
@@ -262,7 +312,7 @@ export default function CreateProductScreen() {
 					max: parseFloat(maxUnit),
 					step: parseFloat(unitStep)
 				},
-				searchTerms: selectedDefaultProduct.searchKeywords,
+				searchKeywords: searchKeywords.length > 0 ? searchKeywords : undefined,
 				stock: stockQuantity
 					? {
 							quantity: parseInt(stockQuantity),
@@ -277,13 +327,13 @@ export default function CreateProductScreen() {
 				photos: productPhoto ? [productPhoto] : undefined
 			}
 
-			await createProduct(productData)
-			showAlert(translate('success', 'Success'), translate('product_created_success', 'Product created successfully!'), () => {
-				router.replace(`/dashboard/business/${selectedBusiness.slug}/products` as never)
+			await updateProduct(productSlug as string, { ...productData, state: { code: isActive ? 'active' : 'inactive' } })
+			showAlert(translate('success', 'Success'), translate('product_updated_success', 'Product updated successfully!'), () => {
+				router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
 			})
 		} catch (error: any) {
 			console.error('Failed to create product:', error)
-			showAlert(translate('error', 'Error'), error?.response?.data?.message || translate('err_create_failed', 'Failed to create product. Please try again.'))
+			showAlert(translate('error', 'Error'), error?.response?.data?.message || translate('err_update_failed', 'Failed to update product. Please try again.'))
 		} finally {
 			setCreating(false)
 		}
@@ -296,7 +346,7 @@ export default function CreateProductScreen() {
 			router.back()
 		} else {
 			if (businessSlug || selectedBusiness?.slug) {
-				router.replace(`/dashboard/business/${businessSlug || selectedBusiness?.slug}/products` as never)
+				router.replace(`/dashboard/${businessSlug || selectedBusiness?.slug}/products` as never)
 			} else {
 				router.replace('/(home)/dashboard' as never)
 			}
@@ -305,13 +355,52 @@ export default function CreateProductScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('create_product', 'Create Product')} showBack={true} onBackPress={handleBack} />
+			{loadingProduct && (
+				<View style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, justifyContent: 'center', alignItems: 'center' }]}>
+					<ActivityIndicator size="large" color={colors.primary} />
+				</View>
+			)}
+			<ScreenHeader title={translate('edit_product', 'Edit Product')} showBack={true} onBackPress={handleBack} />
 
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16}>
 					{/* GENERAL INFO CARD */}
 					<View style={styles.card}>
 						<Text style={styles.cardTitle}>{translate('general_info', 'General Info')}</Text>
+
+						<View style={styles.fieldContainer}>
+							<Text style={styles.fieldLabel}>{translate('status', 'Status')}</Text>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+								<TouchableOpacity
+									style={[
+										styles.inputBox,
+										{
+											flex: 1,
+											justifyContent: 'center',
+											borderColor: isActive ? colors.success || '#10B981' : colors.borderLight,
+											backgroundColor: isActive ? (colors.success || '#10B981') + '15' : colors.surface
+										}
+									]}
+									onPress={() => setIsActive(true)}
+								>
+									<Text style={{ color: isActive ? colors.success || '#10B981' : colors.text, fontWeight: isActive ? '700' : '500' }}>{translate('active', 'Active')}</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={[
+										styles.inputBox,
+										{
+											flex: 1,
+											justifyContent: 'center',
+											borderColor: !isActive ? colors.error || '#EF4444' : colors.borderLight,
+											backgroundColor: !isActive ? (colors.error || '#EF4444') + '15' : colors.surface
+										}
+									]}
+									onPress={() => setIsActive(false)}
+								>
+									<Text style={{ color: !isActive ? colors.error || '#EF4444' : colors.text, fontWeight: !isActive ? '700' : '500' }}>{translate('inactive', 'Inactive')}</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
 
 						<View style={styles.fieldContainer}>
 							<Text style={styles.fieldLabel}>
@@ -322,7 +411,9 @@ export default function CreateProductScreen() {
 									<Text style={{ fontSize: 18 }}>{selectedBusiness ? '🏪' : '🏢'}</Text>
 								</View>
 								<View style={{ flex: 1 }}>
-									<Text style={[styles.pickerText, selectedBusiness && { color: colors.text }]}>{selectedBusiness ? selectedBusiness.name.en : translate('select_business', 'Select Business')}</Text>
+									<Text style={[styles.pickerText, selectedBusiness && { color: colors.text }]}>
+										{selectedBusiness ? selectedBusiness.name?.en || '' : translate('select_business', 'Select Business')}
+									</Text>
 								</View>
 								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
 							</TouchableOpacity>
@@ -338,7 +429,7 @@ export default function CreateProductScreen() {
 								</View>
 								<View style={{ flex: 1 }}>
 									<Text style={[styles.pickerText, selectedDefaultProduct && { color: colors.text }]}>
-										{selectedDefaultProduct ? selectedDefaultProduct.name.en : translate('select_default_product', 'Select Default Product')}
+										{selectedDefaultProduct ? selectedDefaultProduct.name?.en || '' : translate('select_default_product', 'Select Default Product')}
 									</Text>
 								</View>
 								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
@@ -439,7 +530,6 @@ export default function CreateProductScreen() {
 								<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
 									<Text style={styles.prefix}>TND</Text>
 									<TextInput
-										ref={priceInputRef}
 										style={[styles.textInput, { color: colors.text }]}
 										value={priceTND}
 										onChangeText={setPriceTND}
@@ -567,14 +657,14 @@ export default function CreateProductScreen() {
 								opacity: isFormValid && !creating ? 1 : 0.6
 							}
 						]}
-						onPress={handleCreateProduct}
+						onPress={handleUpdateProduct}
 						disabled={!isFormValid || creating}
 					>
 						{creating ? (
 							<ActivityIndicator color="#fff" size="small" />
 						) : (
 							<>
-								<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
+								<Text style={styles.submitBtnText}>{translate('edit_product', 'Edit Product')}</Text>
 								<Ionicons name="checkmark-done" size={22} color="#fff" />
 							</>
 						)}
@@ -602,7 +692,7 @@ export default function CreateProductScreen() {
 								renderItem={({ item }) => (
 									<TouchableOpacity style={[styles.listItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectBusiness(item)}>
 										<View style={{ flex: 1 }}>
-											<Text style={[styles.listTitle, { color: colors.text }]}>{item.name.en}</Text>
+											<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
 											<Text style={[styles.listSubtitle, { color: colors.textSecondary }]}>{item.address?.city || 'No address'}</Text>
 										</View>
 										{selectedBusiness?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
@@ -649,7 +739,7 @@ export default function CreateProductScreen() {
 											<SmartImage source={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" entityType="product" />
 										</View>
 										<View style={{ flex: 1 }}>
-											<Text style={[styles.listTitle, { color: colors.text }]}>{item.name.en}</Text>
+											<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
 											{item.searchKeywords && item.searchKeywords.length > 0 && (
 												<Text style={[styles.listSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
 													{item.searchKeywords.join(', ')}
