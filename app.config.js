@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import packagejson from './package.json' with { type: 'json' }
+import fs from 'fs';
+const packagejson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
 export default {
     expo: {
@@ -56,6 +57,7 @@ export default {
                 {
                     android: {
                         usesCleartextTraffic: true,
+                        enableProguardInReleaseBuilds: true,
                         ndk: {
                             abiFilters: [
                                 "arm64-v8a"

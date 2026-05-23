@@ -6,7 +6,7 @@ import * as Print from 'expo-print'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import { uploadFile } from '@/core/file'
-import { updateBusiness } from '../businesses/businesses.api'
+import { updateBusiness, getBusinessBySlug } from '../businesses/businesses.api'
 import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
 import { DashboardBusinessRef } from './dashboard.interface'
@@ -19,7 +19,24 @@ type Props = {
 export default function BusinessQRCode({ business, colors }: Props) {
 	const { translate } = useUser()
 	const [generating, setGenerating] = useState(false)
-	const [qrcodeUrl, setQrcodeUrl] = useState<string | undefined>(business.qrcode?.url)
+	const getQrUrl = (qr: any) => (typeof qr === 'string' ? qr : qr?.url)
+	const [qrcodeUrl, setQrcodeUrl] = useState<string | undefined>(getQrUrl(business.qrcode))
+
+	React.useEffect(() => {
+		const qr = getQrUrl(business.qrcode)
+		if (qr) {
+			setQrcodeUrl(qr)
+		} else {
+			// Fetch full business details to see if it has a qrcode (dashboard API might omit it)
+			getBusinessBySlug(business.slug)
+				.then((res) => {
+					if (res.data?.qrcode) {
+						setQrcodeUrl(getQrUrl(res.data.qrcode))
+					}
+				})
+				.catch((err) => console.log('Failed to fetch full business for qrcode', err))
+		}
+	}, [business.slug, business.qrcode])
 
 	const handleGenerate = async () => {
 		try {
@@ -77,7 +94,37 @@ export default function BusinessQRCode({ business, colors }: Props) {
 					</body>
 				</html>
 			`
-			await Print.printAsync({ html })
+
+			if (Platform.OS === 'web') {
+				const iframe = document.createElement('iframe')
+				iframe.style.position = 'absolute'
+				iframe.style.width = '0px'
+				iframe.style.height = '0px'
+				iframe.style.border = 'none'
+				document.body.appendChild(iframe)
+
+				const doc = iframe.contentWindow?.document
+				if (doc) {
+					doc.open()
+					doc.write(html)
+					doc.close()
+
+					const img = doc.querySelector('img')
+					if (img) {
+						img.onload = () => {
+							iframe.contentWindow?.focus()
+							iframe.contentWindow?.print()
+							setTimeout(() => document.body.removeChild(iframe), 1000)
+						}
+					} else {
+						iframe.contentWindow?.focus()
+						iframe.contentWindow?.print()
+						setTimeout(() => document.body.removeChild(iframe), 1000)
+					}
+				}
+			} else {
+				await Print.printAsync({ html })
+			}
 		} catch (error) {
 			console.error(error)
 		}

@@ -24,7 +24,7 @@
     "env:local": "cp envs/.env.local .env",
     "ver": "npm version patch --no-git-tag-version",
     "build:apk-local": "npm run env:local && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive-local",
-    "build:apk-prod": "npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run env:local && npm run cpapk2gdrive-prod",
+    "build:apk-prod": "npm run fix && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run env:local && npm run cpapk2gdrive-prod",
     "build:web": "npm run clean:prod && NODE_ENV=production expo export -p web",
     "start": "expo start",
     "start:local": "rm -rf .expo && npm run env:local && expo start -c",
@@ -93,6 +93,7 @@
     "@types/qrcode": "^1.5.6",
     "@types/react": "~19.2.14",
     "prettier": "^3.8.3",
+    "sharp-cli": "^5.2.0",
     "typescript": "~5.9.2"
   }
 }
