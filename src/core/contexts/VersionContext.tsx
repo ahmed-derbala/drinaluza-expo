@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Modal } from 'react-native'
-import { useTheme } from './ThemeContext'
+import { useTheme } from '../theme'
 import {
 	fetchBackendInfo,
 	checkVersionStatus,

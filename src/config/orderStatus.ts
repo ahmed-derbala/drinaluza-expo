@@ -13,7 +13,7 @@ export const orderStatusEnum = {
 }
 
 // Alias for external usage (matches requested naming)
-export const orderStatuses = orderStatusEnum
+const orderStatuses = orderStatusEnum
 
 export const orderStatusColors = {
 	[orderStatusEnum.PENDING_SHOP_CONFIRMATION]: '#FFA500', // Orange
@@ -40,7 +40,7 @@ export const orderStatusLabels = {
 }
 
 // Get next valid statuses for progression
-export const getNextValidStatuses = (currentStatus: string): string[] => {
+const getNextValidStatuses = (currentStatus: string): string[] => {
 	switch (currentStatus) {
 		case orderStatusEnum.PENDING_SHOP_CONFIRMATION:
 			return [orderStatusEnum.CONFIRMED_BY_SHOP]

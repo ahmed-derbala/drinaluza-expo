@@ -27,7 +27,7 @@ export interface SalesResponse {
 	}
 }
 
-export interface SaleProduct {
+interface SaleProduct {
 	product: {
 		_id: string
 		name: {

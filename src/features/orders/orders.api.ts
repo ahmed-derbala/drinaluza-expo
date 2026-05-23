@@ -7,12 +7,12 @@ export const getPurchases = async (status?: string): Promise<OrderResponse> => {
 	return response.data
 }
 
-export const cancelPurchaseAPI = async ({ purchaseId }: { purchaseId: string }) => {
+const cancelPurchaseAPI = async ({ purchaseId }: { purchaseId: string }) => {
 	const response = await getApiClient().delete(`/purchases/${purchaseId}`)
 	return response.data
 }
 
-export const getSales = async (page: number = 1, limit: number = 10, status?: string): Promise<OrderResponse> => {
+const getSales = async (page: number = 1, limit: number = 10, status?: string): Promise<OrderResponse> => {
 	let url = `/sales?page=${page}&limit=${limit}`
 	if (status) {
 		url += `&status=${status}`
@@ -35,12 +35,12 @@ export const updatePurchaseStatus = async ({ purchaseId, status }: { purchaseId:
 	return response.data
 }
 
-export const updateSaleStatus = async ({ saleId, status }: { saleId: string; status: string }) => {
+const updateSaleStatus = async ({ saleId, status }: { saleId: string; status: string }) => {
 	const response = await getApiClient().patch(`/sales/${saleId}`, { status })
 	return response.data
 }
 
-export const getSale = async (saleId: string) => {
+const getSale = async (saleId: string) => {
 	const response = await getApiClient().get(`/sales/${saleId}`)
 	return response.data
 }

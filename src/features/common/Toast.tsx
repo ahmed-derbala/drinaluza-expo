@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform, Dimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -105,7 +105,7 @@ export default function Toast({ visible, message, type = 'info', duration = 3000
 		}
 	}
 
-	if (!visible && opacity._value === 0) return null
+	if (!visible && (opacity as any)._value === 0) return null
 
 	return (
 		<Animated.View

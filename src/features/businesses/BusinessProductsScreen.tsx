@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Product } from '@/features/businesses/businesses.interface'
-import { useTheme } from '@/core/contexts/ThemeContext'
+import { useTheme } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import ScreenHeader from '@/features/common/ScreenHeader'
@@ -26,12 +26,12 @@ type ProductCardProps = {
 	formatPrice: (p: any) => string
 	currency: string
 	translate: (k: string, d: string) => string
-	onAddToBasket: (item: Product, qty: number) => void
+	onAddToCart: (item: Product, qty: number) => void
 	isWide: boolean
 	isDashboard: boolean
 }
 
-function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToBasket, isWide, isDashboard }: ProductCardProps) {
+function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard }: ProductCardProps) {
 	const router = useRouter()
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos[0])
 	const stockQty = item.stock?.quantity || 0
@@ -103,7 +103,7 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 							style={[cardStyles.addBtn, { backgroundColor: colors.primary }]}
 							onPress={(e) => {
 								e.stopPropagation?.()
-								onAddToBasket(item, minQty)
+								onAddToCart(item, minQty)
 							}}
 							activeOpacity={0.8}
 						>
@@ -236,18 +236,18 @@ export default function BusinessProductsScreen() {
 	const [businessName, setBusinessName] = useState('')
 	const [products, setProducts] = useState<Product[]>([])
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
-	const [basket, setBasket] = useState<any[]>([])
+	const [cart, setCart] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all')
 
-	// Load basket
-	const loadBasket = async () => {
+	// Load cart
+	const loadCart = async () => {
 		try {
-			const saved = await AsyncStorage.getItem('basket')
-			if (saved) setBasket(JSON.parse(saved))
+			const saved = await AsyncStorage.getItem('cart')
+			if (saved) setCart(JSON.parse(saved))
 		} catch {}
 	}
 
@@ -273,7 +273,7 @@ export default function BusinessProductsScreen() {
 	}, [businessSlug, localize])
 
 	useEffect(() => {
-		loadBasket()
+		loadCart()
 		loadProducts()
 	}, [loadProducts])
 
@@ -296,22 +296,22 @@ export default function BusinessProductsScreen() {
 		setFilteredProducts(list)
 	}, [searchText, products, activeFilter, localize])
 
-	// Add to basket
-	const handleAddToBasket = useCallback(
+	// Add to cart
+	const handleAddToCart = useCallback(
 		async (item: Product, qty: number) => {
 			try {
-				const existing = basket.findIndex((b) => b._id === item._id)
-				const newBasket = existing > -1 ? basket.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...basket, { ...item, quantity: qty }]
-				setBasket(newBasket)
-				await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-				toast.success(`${localize(item.name)} ${translate('basket_added_to_basket', 'added to basket')}`, {
+				const existing = cart.findIndex((b) => b._id === item._id)
+				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
+				setCart(newCart)
+				await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+				toast.success(`${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, {
 					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/dashboard/personal/purchases', params: { filter: 'cart' } }) }]
 				})
 			} catch {
-				toast.error(translate('basket_failed_to_add', 'Failed to add to basket'))
+				toast.error(translate('cart_failed_to_add', 'Failed to add to cart'))
 			}
 		},
-		[basket, localize, translate, router]
+		[cart, localize, translate, router]
 	)
 
 	const handleRefresh = () => {
@@ -356,14 +356,14 @@ export default function BusinessProductsScreen() {
 						formatPrice={formatPrice}
 						currency={currency}
 						translate={translate}
-						onAddToBasket={handleAddToBasket}
+						onAddToCart={handleAddToCart}
 						isWide={isWide}
 						isDashboard={isDashboard}
 					/>
 				</View>
 			)
 		},
-		[numColumns, cardGap, colors, localize, formatPrice, currency, translate, handleAddToBasket, isWide, contentMaxWidth, horizontalPadding]
+		[numColumns, cardGap, colors, localize, formatPrice, currency, translate, handleAddToCart, isWide, contentMaxWidth, horizontalPadding]
 	)
 
 	// ─── Loading ──────────────────────────────────────────────────────────────

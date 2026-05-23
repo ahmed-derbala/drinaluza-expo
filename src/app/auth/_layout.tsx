@@ -1,6 +1,6 @@
 import React from 'react'
 import { Stack } from 'expo-router'
-import { useTheme } from '@/core/contexts/ThemeContext'
+import { useTheme } from '@/core/theme'
 import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
 
 export default function AuthLayout() {

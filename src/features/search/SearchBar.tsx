@@ -1,7 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { View, TextInput, TouchableOpacity, StyleSheet, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { searchFeed } from '../feed/feed.api'
 import { FeedItem } from '../feed/feed.interface'
 import { parseError, logError } from '../../core/helpers/errorHandler'

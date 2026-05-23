@@ -54,7 +54,7 @@ export const getSavedAuthentications = async (): Promise<SavedAuth[]> => {
 	return saved ? JSON.parse(saved) : []
 }
 
-export const saveAuthentication = async (slug: string, token: string) => {
+const saveAuthentication = async (slug: string, token: string) => {
 	const saved = await getSavedAuthentications()
 	const filtered = saved.filter((a) => a.slug !== slug)
 	const updated = [
@@ -396,7 +396,7 @@ export const switchUser = async (): Promise<boolean> => {
 }
 
 // Token refresh functionality
-export const refreshAuthToken = async (): Promise<string | null> => {
+const refreshAuthToken = async (): Promise<string | null> => {
 	try {
 		const storedRefreshToken = await secureGetItem(defaultAuthSettings.refreshTokenStorageKey)
 
@@ -445,7 +445,7 @@ export const refreshAuthToken = async (): Promise<string | null> => {
 }
 
 // Check if user is authenticated
-export const isAuthenticated = async (): Promise<boolean> => {
+const isAuthenticated = async (): Promise<boolean> => {
 	try {
 		const token = await getToken()
 		if (!token) return false

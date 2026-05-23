@@ -16,16 +16,18 @@ export const registerToast = (fn: ShowToastFn) => {
 	showToastRef = fn
 }
 
+const show = (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => {
+	if (showToastRef) {
+		showToastRef(options)
+	} else {
+		console.warn('Toast helper called before Provider was registered')
+	}
+}
+
 export const toast = {
-	show: (options: { message: string; type?: ToastType; duration?: number; actions?: ToastAction[]; onPress?: () => void }) => {
-		if (showToastRef) {
-			showToastRef(options)
-		} else {
-			console.warn('Toast helper called before Provider was registered')
-		}
-	},
-	success: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'success', ...options }),
-	error: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'error', ...options }),
-	warning: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'warning', ...options }),
-	info: (message: string, options?: Omit<Parameters<typeof toast.show>[0], 'message' | 'type'>) => toast.show({ message, type: 'info', ...options })
+	show,
+	success: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'success', ...options }),
+	error: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'error', ...options }),
+	warning: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'warning', ...options }),
+	info: (message: string, options?: Omit<Parameters<typeof show>[0], 'message' | 'type'>) => show({ message, type: 'info', ...options })
 }

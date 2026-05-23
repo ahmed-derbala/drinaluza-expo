@@ -22,7 +22,7 @@ const getFileTypeFromMimeType = (mimeType: string): FileType => {
 /**
  * Get file info from URI
  */
-export const getFileInfo = async (uri: string): Promise<FileInfo> => {
+const getFileInfo = async (uri: string): Promise<FileInfo> => {
 	// On web, skip file info retrieval and return basic info
 	if (Platform.OS === 'web') {
 		const fileName = uri.split('/').pop() || 'unknown'
@@ -128,7 +128,7 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 				const webFile = (fileObj as any).file || fileObj
 				formData.append(fieldName, webFile)
 				console.log('Appended file object to FormData')
-			} else if (uri instanceof File) {
+			} else if (typeof File !== 'undefined' && (uri as any) instanceof File) {
 				formData.append(fieldName, uri as any)
 				console.log('Appended File instance to FormData')
 			} else if (typeof uri === 'string') {
@@ -148,7 +148,7 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 		}
 
 		// Log FormData contents (for debugging)
-		console.log('FormData entries:', Array.from(formData.entries()))
+		console.log('FormData:', formData)
 
 		// Upload to server using the specified API endpoint
 		const apiClient = getApiClient()
@@ -193,7 +193,7 @@ export const uploadFile = async (options: FileUploadOptions): Promise<UploadResu
 /**
  * Upload multiple files
  */
-export const uploadMultipleFiles = async (files: FileUploadOptions[], onProgress?: (current: number, total: number, fileProgress: number) => void): Promise<UploadResult[]> => {
+const uploadMultipleFiles = async (files: FileUploadOptions[], onProgress?: (current: number, total: number, fileProgress: number) => void): Promise<UploadResult[]> => {
 	const results: UploadResult[] = []
 
 	for (let i = 0; i < files.length; i++) {
@@ -214,7 +214,7 @@ export const uploadMultipleFiles = async (files: FileUploadOptions[], onProgress
 /**
  * Upload file as base64 string
  */
-export const uploadFileAsBase64 = async (uri: string): Promise<string> => {
+const uploadFileAsBase64 = async (uri: string): Promise<string> => {
 	try {
 		// On web, use FileReader to convert File to base64
 		// @ts-ignore - uri can be File object on web

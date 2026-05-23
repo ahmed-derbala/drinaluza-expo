@@ -1,4 +1,4 @@
-export interface UserLocation {
+interface UserLocation {
 	type: string
 	coordinates: [number, number]
 	sharingEnabled: boolean
@@ -6,14 +6,14 @@ export interface UserLocation {
 	updatedAt?: string
 }
 
-export interface UserAddress {
+interface UserAddress {
 	street?: string
 	city?: string
 	region?: string
 	country?: string
 }
 
-export interface UserContact {
+interface UserContact {
 	phone?: {
 		fullNumber: string
 		countryCode: string
@@ -28,7 +28,7 @@ export interface UserContact {
 	email?: string
 }
 
-export interface UserState {
+interface UserState {
 	code: 'active' | 'inactive' | 'suspended'
 	createdAt?: string
 	updatedAt?: string

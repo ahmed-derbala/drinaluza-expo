@@ -1,10 +1,10 @@
-export interface LocalizedText {
+interface LocalizedText {
 	en?: string
 	tn_latn?: string
 	tn_arab?: string
 }
 
-export interface NotificationUser {
+interface NotificationUser {
 	_id: string
 	slug: string
 	name: LocalizedText
@@ -12,7 +12,7 @@ export interface NotificationUser {
 	updatedAt: string
 }
 
-export interface NotificationTemplate {
+interface NotificationTemplate {
 	slug: string
 }
 

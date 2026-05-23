@@ -13,7 +13,8 @@ import { toast } from '@/core/helpers/toast'
 import SearchBar from '@/features/search/SearchBar'
 import { getCurrentUser } from '@/core/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
-import { useUser, useLayout, useTheme } from '@/core/contexts'
+import { useUser, useLayout } from '@/core/contexts'
+import { useTheme } from '@/core/theme'
 import Toast from '@/core/components/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -138,14 +139,14 @@ const createStyles = (colors: any) =>
 		}
 	})
 
-type BasketItem = FeedItem & { quantity: number }
+type CartItem = FeedItem & { quantity: number }
 
 export default function FeedScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
-	const [basket, setBasket] = useState<BasketItem[]>([])
+	const [cart, setCart] = useState<CartItem[]>([])
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [isSearchActive, setIsSearchActive] = useState(false)
@@ -187,14 +188,14 @@ export default function FeedScreen() {
 		return filters.join(',')
 	}
 
-	const loadBasket = async () => {
+	const loadCart = async () => {
 		try {
-			const storedBasket = await AsyncStorage.getItem('basket')
-			if (storedBasket) {
-				setBasket(JSON.parse(storedBasket))
+			const storedCart = await AsyncStorage.getItem('cart')
+			if (storedCart) {
+				setCart(JSON.parse(storedCart))
 			}
 		} catch (error) {
-			console.error('Failed to load basket:', error)
+			console.error('Failed to load cart:', error)
 		}
 	}
 
@@ -251,7 +252,7 @@ export default function FeedScreen() {
 		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
-		await Promise.all([loadBasket(), fetchFeed(1, false, activeFilters)])
+		await Promise.all([loadCart(), fetchFeed(1, false, activeFilters)])
 		setRefreshing(false)
 	}, [activeFilters, refreshSpinValue])
 
@@ -280,35 +281,35 @@ export default function FeedScreen() {
 		}, [refreshData])
 	)
 
-	const addToBasket = async (item: FeedItem, quantity: number) => {
+	const addToCart = async (item: FeedItem, quantity: number) => {
 		try {
 			const token = await getToken()
 			if (!token) {
-				toast.info('Please log in to add items to basket')
+				toast.info('Please log in to add items to cart')
 				router.push('/auth')
 				return
 			}
 
-			const existingItemIndex = basket.findIndex((basketItem) => basketItem._id === item._id)
-			let newBasket: BasketItem[]
+			const existingItemIndex = cart.findIndex((cartItem) => cartItem._id === item._id)
+			let newCart: CartItem[]
 
 			if (existingItemIndex > -1) {
-				newBasket = [...basket]
-				newBasket[existingItemIndex] = {
-					...newBasket[existingItemIndex],
-					quantity: (newBasket[existingItemIndex].quantity || 0) + quantity
+				newCart = [...cart]
+				newCart[existingItemIndex] = {
+					...newCart[existingItemIndex],
+					quantity: (newCart[existingItemIndex].quantity || 0) + quantity
 				}
 			} else {
-				newBasket = [...basket, { ...item, quantity }]
+				newCart = [...cart, { ...item, quantity }]
 			}
 
-			setBasket(newBasket)
+			setCart(newCart)
 
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
-			setToastConfig({ visible: true, message: `${localize(item.name)} added to basket` })
+			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+			setToastConfig({ visible: true, message: `${localize(item.name)} added to cart` })
 		} catch (error) {
-			console.error('Failed to add to basket:', error)
-			toast.error('Failed to add to basket')
+			console.error('Failed to add to cart:', error)
+			toast.error('Failed to add to cart')
 		}
 	}
 
@@ -360,7 +361,7 @@ export default function FeedScreen() {
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
 		<View style={[styles.cardWrapper, { width: numColumns > 1 ? itemWidth : '100%' }]}>
-			<FeedCard item={item} addToBasket={addToBasket} />
+			<FeedCard item={item} addToCart={addToCart} />
 		</View>
 	)
 
@@ -384,6 +385,29 @@ export default function FeedScreen() {
 				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
 					<MaterialIcons name="refresh" size={20} color={colors.primary} />
 				</Animated.View>
+			</TouchableOpacity>
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/dashboard/personal/purchases?filter=cart')}>
+				<Ionicons name="cart-outline" size={20} color={colors.primary} />
+				{cart.length > 0 && (
+					<View
+						style={{
+							position: 'absolute',
+							top: -6,
+							right: -6,
+							backgroundColor: colors.error || '#ef4444',
+							borderRadius: 10,
+							minWidth: 20,
+							height: 20,
+							justifyContent: 'center',
+							alignItems: 'center',
+							paddingHorizontal: 4,
+							borderWidth: 1.5,
+							borderColor: colors.surface
+						}}
+					>
+						<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.reduce((acc, item) => acc + (item.quantity || 1), 0)}</Text>
+					</View>
+				)}
 			</TouchableOpacity>
 		</View>
 	)

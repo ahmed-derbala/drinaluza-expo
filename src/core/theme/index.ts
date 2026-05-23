@@ -83,7 +83,7 @@ export const colors = {
 } as const
 
 // Spacing system
-export const spacing = {
+const spacing = {
 	xs: 4,
 	sm: 8,
 	md: 16,
@@ -93,7 +93,7 @@ export const spacing = {
 } as const
 
 // Border radius
-export const radius = {
+const radius = {
 	sm: 8,
 	md: 12,
 	lg: 16,
@@ -102,7 +102,7 @@ export const radius = {
 } as const
 
 // Typography
-export const typography = {
+const typography = {
 	sizes: {
 		xs: 11,
 		sm: 13,
@@ -122,7 +122,7 @@ export const typography = {
 } as const
 
 // Shadows for elevation
-export const shadows = {
+const shadows = {
 	sm: {
 		shadowColor: '#000',
 		shadowOffset: { width: 0, height: 1 },
@@ -164,3 +164,10 @@ export const theme = {
 
 export type ThemeColors = typeof colors
 export type Theme = typeof theme
+
+export const useTheme = () => {
+	return {
+		colors,
+		theme
+	}
+}

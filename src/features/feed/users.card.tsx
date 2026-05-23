@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, Linking, useWindowD
 import SmartImage from '../../core/helpers/SmartImage'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { UserFeedItem } from './feed.interface'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 
 type UserCardProps = {

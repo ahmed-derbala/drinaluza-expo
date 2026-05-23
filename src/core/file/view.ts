@@ -9,7 +9,7 @@ import { FileViewOptions, ViewResult } from './types'
 /**
  * Open a file using the default viewer
  */
-export const viewFile = async (options: FileViewOptions): Promise<ViewResult> => {
+const viewFile = async (options: FileViewOptions): Promise<ViewResult> => {
 	try {
 		const { uri, type } = options
 
@@ -39,21 +39,21 @@ export const viewFile = async (options: FileViewOptions): Promise<ViewResult> =>
 /**
  * View an image
  */
-export const viewImage = async (uri: string): Promise<ViewResult> => {
+const viewImage = async (uri: string): Promise<ViewResult> => {
 	return viewFile({ uri, type: 'image' })
 }
 
 /**
  * View a document
  */
-export const viewDocument = async (uri: string): Promise<ViewResult> => {
+const viewDocument = async (uri: string): Promise<ViewResult> => {
 	return viewFile({ uri, type: 'document' })
 }
 
 /**
  * Check if a file type is viewable
  */
-export const isViewable = (type: string): boolean => {
+const isViewable = (type: string): boolean => {
 	const viewableTypes = [
 		'image/jpeg',
 		'image/png',
@@ -72,7 +72,7 @@ export const isViewable = (type: string): boolean => {
 /**
  * Get file extension from URI
  */
-export const getFileExtension = (uri: string): string => {
+const getFileExtension = (uri: string): string => {
 	const parts = uri.split('.')
 	return parts.length > 1 ? parts[parts.length - 1].toLowerCase() : ''
 }

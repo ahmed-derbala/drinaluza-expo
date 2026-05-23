@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Alert, useWindowDimensions, ActivityIndicator } from 'react-native'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'

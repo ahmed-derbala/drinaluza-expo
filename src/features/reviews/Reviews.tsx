@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getReviews, createReview } from './reviews.api'
 import { Review } from './reviews.interface'

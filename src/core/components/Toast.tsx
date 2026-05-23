@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, Animated, TouchableOpacity, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Audio } from 'expo-av'
+import { useAudioPlayer } from 'expo-audio'
 import { Ionicons } from '@expo/vector-icons'
 
 export interface ToastProps {
@@ -19,17 +19,14 @@ export default function Toast({ title, message, color = 'blue', timeout = 10000,
 	const translateY = useRef(new Animated.Value(100)).current
 	const opacity = useRef(new Animated.Value(0)).current
 
+	const player = useAudioPlayer(require('../../../assets/sounds/toast.wav'))
+
 	useEffect(() => {
 		if (visible) {
-			const playSound = async () => {
+			const playSound = () => {
 				try {
-					const { sound } = await Audio.Sound.createAsync(require('../../../assets/sounds/toast.wav'))
-					await sound.playAsync()
-					sound.setOnPlaybackStatusUpdate((status) => {
-						if (status.isLoaded && status.didJustFinish) {
-							sound.unloadAsync()
-						}
-					})
+					player.seekTo(0)
+					player.play()
 				} catch (error) {
 					console.log('Error playing toast sound:', error)
 				}
@@ -84,7 +81,7 @@ export default function Toast({ title, message, color = 'blue', timeout = 10000,
 		hideToast()
 	}
 
-	if (!visible && opacity._value === 0) return null
+	if (!visible && (opacity as any)._value === 0) return null
 
 	return (
 		<Animated.View

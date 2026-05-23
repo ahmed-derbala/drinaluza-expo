@@ -9,7 +9,7 @@ import { FileRenameOptions, RenameResult } from './types'
 /**
  * Rename a local file
  */
-export const renameLocalFile = async (options: FileRenameOptions): Promise<RenameResult> => {
+const renameLocalFile = async (options: FileRenameOptions): Promise<RenameResult> => {
 	try {
 		const { oldUri, newName } = options
 
@@ -51,7 +51,7 @@ export const renameLocalFile = async (options: FileRenameOptions): Promise<Renam
 /**
  * Rename a file on the server
  */
-export const renameServerFile = async (fileId: string, newName: string): Promise<RenameResult> => {
+const renameServerFile = async (fileId: string, newName: string): Promise<RenameResult> => {
 	try {
 		const apiClient = (await import('../api')).getApiClient()
 		await apiClient.patch(`/files/${fileId}`, { name: newName })
@@ -70,7 +70,7 @@ export const renameServerFile = async (fileId: string, newName: string): Promise
 /**
  * Sanitize file name (remove invalid characters)
  */
-export const sanitizeFileName = (fileName: string): string => {
+const sanitizeFileName = (fileName: string): string => {
 	// Remove or replace invalid characters
 	return fileName
 		.replace(/[<>:"/\\|?*]/g, '_') // Replace invalid characters with underscore
@@ -81,7 +81,7 @@ export const sanitizeFileName = (fileName: string): string => {
 /**
  * Generate unique file name
  */
-export const generateUniqueFileName = (originalName: string): string => {
+const generateUniqueFileName = (originalName: string): string => {
 	const timestamp = Date.now()
 	const randomString = Math.random().toString(36).substring(2, 8)
 	const extension = originalName.split('.').pop()

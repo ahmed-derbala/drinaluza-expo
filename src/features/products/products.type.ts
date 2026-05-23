@@ -1,6 +1,6 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-export interface RatingBreakdown {
+interface RatingBreakdown {
 	1: number
 	2: number
 	3: number
@@ -8,7 +8,7 @@ export interface RatingBreakdown {
 	5: number
 }
 
-export interface Rating {
+interface Rating {
 	breakdown: RatingBreakdown
 	average: number
 	count: number

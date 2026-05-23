@@ -70,7 +70,10 @@ export default {
                     }
                 }
             ],
-            "@react-native-community/datetimepicker"
+            "@react-native-community/datetimepicker",
+            "expo-audio",
+            "expo-video",
+            "expo-sharing"
         ],
         experiments: {
             typedRoutes: true

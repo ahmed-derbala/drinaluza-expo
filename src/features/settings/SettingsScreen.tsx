@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindo
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
-import { useTheme } from '@/core/contexts/ThemeContext'
+import { useTheme } from '@/core/theme'
 import { useVersion } from '@/core/contexts/VersionContext'
 import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/core/helpers/toast'

@@ -1,6 +1,6 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-export interface Product {
+interface Product {
 	_id: string
 	name: LocalizedName
 	price: {
@@ -33,7 +33,7 @@ export interface Product {
 	photos?: string[]
 }
 
-export interface ProductItem {
+interface ProductItem {
 	product: Product
 	lineTotal: {
 		tnd: number

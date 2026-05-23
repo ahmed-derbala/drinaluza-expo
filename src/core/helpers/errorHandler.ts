@@ -105,7 +105,7 @@ export const parseError = (error: any): ErrorInfo => {
 /**
  * Show an alert dialog for an error
  */
-export const showErrorAlert = (error: any, onRetry?: () => void) => {
+const showErrorAlert = (error: any, onRetry?: () => void) => {
 	const errorInfo = parseError(error)
 
 	const buttons =

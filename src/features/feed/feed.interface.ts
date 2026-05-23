@@ -1,6 +1,6 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-export interface RatingBreakdown {
+interface RatingBreakdown {
 	1: number
 	2: number
 	3: number
@@ -8,21 +8,21 @@ export interface RatingBreakdown {
 	5: number
 }
 
-export interface Rating {
+interface Rating {
 	breakdown: RatingBreakdown
 	average: number
 	count: number
 	total: number
 }
 
-export interface BusinessOwner {
+interface BusinessOwner {
 	_id: string
 	slug: string
 	name: LocalizedName
 	updatedAt: string
 }
 
-export interface BusinessAddress {
+interface BusinessAddress {
 	street: string
 	city: string
 	region?: string
@@ -31,14 +31,14 @@ export interface BusinessAddress {
 	country: string
 }
 
-export interface BusinessLocation {
+interface BusinessLocation {
 	type: string
 	coordinates: number[]
 	sharingEnabled?: boolean
 	updatedAt?: string
 }
 
-export interface FeedBusiness {
+interface FeedBusiness {
 	_id: string
 	name: LocalizedName
 	slug: string
@@ -55,7 +55,7 @@ export interface FeedBusiness {
 	updatedAt: string
 }
 
-export interface Price {
+interface Price {
 	total: {
 		tnd: number
 		eur?: number | null
@@ -65,19 +65,19 @@ export interface Price {
 	updatedAt: string
 }
 
-export interface Unit {
+interface Unit {
 	measure: string
 	min: number
 	max: number
 	step?: number
 	updatedAt?: string
 }
-export interface Stock {
+interface Stock {
 	quantity: number
 	minThreshold: number
 }
 
-export interface CardInfo {
+interface CardInfo {
 	kind: string
 	purchase?: {
 		allowed: boolean

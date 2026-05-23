@@ -107,7 +107,7 @@ export interface DefaultProductsResponse {
 	}
 }
 
-export const getBusinessProducts = async (businessId: string, page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
+const getBusinessProducts = async (businessId: string, page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
 	const response = await getApiClient().get(`/businesses/my-businesses/${businessId}/products?page=${page}&limit=${limit}`)
 	return response.data
 }
@@ -122,12 +122,12 @@ export const getDefaultProducts = async (page: number = 1, limit: number = 50): 
 	return response.data
 }
 
-export const getDefaultProduct = async (id: string): Promise<{ status: number; data: DefaultProduct }> => {
+const getDefaultProduct = async (id: string): Promise<{ status: number; data: DefaultProduct }> => {
 	const response = await getApiClient().get(`/default-products/${id}`)
 	return response.data
 }
 
-export const getMyProducts = async (page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
+const getMyProducts = async (page: number = 1, limit: number = 10): Promise<ProductsResponse> => {
 	const response = await getApiClient().get(`/products/my-products?page=${page}&limit=${limit}`)
 	return response.data
 }

@@ -1,5 +1,5 @@
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '@/core/contexts/ThemeContext'
+import { useTheme } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle } from 'react-native'
 import { useRouter } from 'expo-router'

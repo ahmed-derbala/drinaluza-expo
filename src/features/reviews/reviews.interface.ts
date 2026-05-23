@@ -1,6 +1,6 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-export interface ReviewAuthor {
+interface ReviewAuthor {
 	_id: string
 	slug: string
 	name: LocalizedName
@@ -18,7 +18,7 @@ export interface Review {
 	__v: number
 }
 
-export interface ReviewPagination {
+interface ReviewPagination {
 	totalDocs: number
 	totalPages: number
 	page: number

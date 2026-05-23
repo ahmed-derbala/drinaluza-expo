@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useCallback } from 'react'
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
-import { useTheme } from '@/core/contexts/ThemeContext'
+import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/business/sales.api'
 import ScreenHeader from '@/features/common/ScreenHeader'

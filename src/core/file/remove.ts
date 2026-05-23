@@ -10,7 +10,7 @@ import { FileRemoveOptions, RemoveResult } from './types'
 /**
  * Remove a local file
  */
-export const removeLocalFile = async (options: FileRemoveOptions): Promise<RemoveResult> => {
+const removeLocalFile = async (options: FileRemoveOptions): Promise<RemoveResult> => {
 	try {
 		const { uri } = options
 
@@ -40,7 +40,7 @@ export const removeLocalFile = async (options: FileRemoveOptions): Promise<Remov
 /**
  * Remove a file from server
  */
-export const removeServerFile = async (fileId: string): Promise<RemoveResult> => {
+const removeServerFile = async (fileId: string): Promise<RemoveResult> => {
 	try {
 		const apiClient = getApiClient()
 		await apiClient.delete(`/files/${fileId}`)
@@ -59,7 +59,7 @@ export const removeServerFile = async (fileId: string): Promise<RemoveResult> =>
 /**
  * Clear cache directory
  */
-export const clearCache = async (): Promise<RemoveResult> => {
+const clearCache = async (): Promise<RemoveResult> => {
 	try {
 		const cacheDir = FileSystem.cacheDirectory
 		if (!cacheDir) {
@@ -85,7 +85,7 @@ export const clearCache = async (): Promise<RemoveResult> => {
 /**
  * Remove multiple local files
  */
-export const removeMultipleLocalFiles = async (uris: string[]): Promise<RemoveResult[]> => {
+const removeMultipleLocalFiles = async (uris: string[]): Promise<RemoveResult[]> => {
 	const results: RemoveResult[] = []
 
 	for (const uri of uris) {

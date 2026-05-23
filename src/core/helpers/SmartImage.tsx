@@ -1,11 +1,11 @@
 import React, { useState, useRef, useCallback } from 'react'
 import { Image, ImageProps, ImageSourcePropType, View, StyleSheet, ActivityIndicator } from 'react-native'
-import { useTheme } from '../contexts/ThemeContext'
+import { useTheme } from '../theme'
 
 /**
  * Entity types that have specific default fallback images
  */
-export type ImageEntityType = 'user' | 'business' | 'product'
+type ImageEntityType = 'user' | 'business' | 'product'
 
 /**
  * Default images for each entity type

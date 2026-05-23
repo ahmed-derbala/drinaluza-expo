@@ -9,7 +9,7 @@ import { FileDownloadOptions, DownloadResult } from './types'
 /**
  * Download a file from URL
  */
-export const downloadFile = async (options: FileDownloadOptions): Promise<DownloadResult> => {
+const downloadFile = async (options: FileDownloadOptions): Promise<DownloadResult> => {
 	try {
 		const { url, fileName, destination, onProgress, headers = {} } = options
 
@@ -57,7 +57,7 @@ export const downloadFile = async (options: FileDownloadOptions): Promise<Downlo
  * Download and share a file
  * Note: Requires expo-sharing to be installed
  */
-export const downloadAndShare = async (options: FileDownloadOptions): Promise<DownloadResult> => {
+const downloadAndShare = async (options: FileDownloadOptions): Promise<DownloadResult> => {
 	try {
 		const downloadResult = await downloadFile(options)
 
@@ -87,7 +87,7 @@ export const downloadAndShare = async (options: FileDownloadOptions): Promise<Do
 /**
  * Download file to cache directory
  */
-export const downloadToCache = async (url: string, fileName: string): Promise<DownloadResult> => {
+const downloadToCache = async (url: string, fileName: string): Promise<DownloadResult> => {
 	return downloadFile({
 		url,
 		fileName,
@@ -98,7 +98,7 @@ export const downloadToCache = async (url: string, fileName: string): Promise<Do
 /**
  * Get file size from URL (without downloading)
  */
-export const getFileSizeFromUrl = async (url: string): Promise<number> => {
+const getFileSizeFromUrl = async (url: string): Promise<number> => {
 	try {
 		const response = await fetch(url, { method: 'HEAD' })
 		const contentLength = response.headers.get('content-length')

@@ -1,41 +1,38 @@
 /**
  * File Play Utilities
  * Handles playing video and audio files
- * Note: Requires expo-av to be installed for audio playback
+ * Note: Requires expo-audio to be installed for audio playback
  */
 
 import { FilePlayOptions, PlayResult } from './types'
 
 /**
  * Play an audio file
- * Note: Requires expo-av to be installed
+ * Note: Requires expo-audio to be installed
  */
-export const playAudio = async (options: FilePlayOptions): Promise<PlayResult> => {
+const playAudio = async (options: FilePlayOptions): Promise<PlayResult> => {
 	try {
 		const { uri } = options
 
-		// Try to dynamically import expo-av
-		let Audio: any
+		// Try to dynamically import expo-audio
+		let expoAudio: any
 		try {
-			Audio = require('expo-av').Audio
+			expoAudio = require('expo-audio')
 		} catch (e) {
 			return {
 				success: false,
-				error: 'expo-av is not installed. Install it to enable audio playback.'
+				error: 'expo-audio is not installed. Install it to enable audio playback.'
 			}
 		}
 
 		const { autoPlay = true, loop = false } = options
 
-		// Configure audio mode
-		await Audio.setAudioModeAsync({
-			playsInSilentModeIOS: true,
-			staysActiveInBackground: true,
-			shouldDuckAndroid: true
-		})
+		const player = expoAudio.createAudioPlayer(uri)
+		player.loop = loop
 
-		// Create and load the sound
-		const { sound } = await Audio.Sound.createAsync({ uri }, { shouldPlay: autoPlay, isLooping: loop })
+		if (autoPlay) {
+			player.play()
+		}
 
 		return {
 			success: true
@@ -53,7 +50,7 @@ export const playAudio = async (options: FilePlayOptions): Promise<PlayResult> =
  * Note: For video playback, you should use a video component in your UI
  * This function prepares the video URI for playback
  */
-export const playVideo = async (options: FilePlayOptions): Promise<PlayResult> => {
+const playVideo = async (options: FilePlayOptions): Promise<PlayResult> => {
 	try {
 		const { uri } = options
 
@@ -75,7 +72,7 @@ export const playVideo = async (options: FilePlayOptions): Promise<PlayResult> =
 /**
  * Play a media file (audio or video)
  */
-export const playMedia = async (options: FilePlayOptions): Promise<PlayResult> => {
+const playMedia = async (options: FilePlayOptions): Promise<PlayResult> => {
 	const { type } = options
 
 	if (type === 'audio') {
@@ -92,20 +89,33 @@ export const playMedia = async (options: FilePlayOptions): Promise<PlayResult> =
 
 /**
  * Get audio duration
- * Note: Requires expo-av to be installed
+ * Note: Requires expo-audio to be installed
  */
-export const getAudioDuration = async (uri: string): Promise<number> => {
+const getAudioDuration = async (uri: string): Promise<number> => {
 	try {
-		let Audio: any
+		let expoAudio: any
 		try {
-			Audio = require('expo-av').Audio
+			expoAudio = require('expo-audio')
 		} catch (e) {
 			return 0
 		}
 
-		const { sound } = await Audio.Sound.createAsync({ uri })
-		const status = await sound.getStatusAsync()
-		return (status as any).durationMillis || 0
+		const player = expoAudio.createAudioPlayer(uri)
+		let retries = 0
+		while (player.duration === 0 && retries < 20) {
+			await new Promise((resolve) => setTimeout(resolve, 100))
+			retries++
+		}
+
+		const durationMs = (player.duration || 0) * 1000
+
+		if (player.release) {
+			player.release()
+		} else if (player.remove) {
+			player.remove()
+		}
+
+		return durationMs
 	} catch (error) {
 		return 0
 	}

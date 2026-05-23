@@ -4,7 +4,7 @@ export type LocalizedName = {
 	tn_arab?: string
 }
 
-export type GeoPoint = {
+type GeoPoint = {
 	type: 'Point'
 	coordinates: [number, number]
 	sharingEnabled?: boolean
@@ -13,14 +13,14 @@ export type GeoPoint = {
 	updatedAt?: string
 }
 
-export type Owner = {
+type Owner = {
 	_id: string
 	slug: string
 	name: LocalizedName
 	updatedAt?: string
 }
 
-export type Contact = {
+type Contact = {
 	phone: {
 		fullNumber: string
 		countryCode: string
@@ -37,7 +37,7 @@ export type Contact = {
 	email?: string
 }
 
-export type RatingBreakdown = {
+type RatingBreakdown = {
 	1: number
 	2: number
 	3: number
@@ -45,14 +45,14 @@ export type RatingBreakdown = {
 	5: number
 }
 
-export type Rating = {
+type Rating = {
 	breakdown: RatingBreakdown
 	average: number
 	count: number
 	total: number
 }
 
-export type BusinessState = {
+type BusinessState = {
 	code: string
 }
 
@@ -86,7 +86,7 @@ export type Business = {
 	categories?: string[]
 }
 
-export type Pagination = {
+type Pagination = {
 	totalDocs: number
 	totalPages: number
 	page: number
@@ -98,7 +98,7 @@ export type Pagination = {
 	returnedDocsCount: number
 }
 
-export type BusinessesData = {
+type BusinessesData = {
 	pagination: Pagination
 	docs: Business[]
 }

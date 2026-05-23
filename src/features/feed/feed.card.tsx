@@ -4,23 +4,23 @@ import { FeedItem, ProductFeedItem, BusinessFeedItem, UserFeedItem } from './fee
 import ProductCard from '../products/products.card'
 import BusinessCard from './businesses.card'
 import UserCard from './users.card'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useUser } from '../../core/contexts/UserContext'
 
 type FeedCardProps = {
 	item: FeedItem
-	addToBasket: (item: any, quantity: number) => void
+	addToCart: (item: any, quantity: number) => void
 }
 
-export default function FeedCard({ item, addToBasket }: FeedCardProps) {
+export default function FeedCard({ item, addToCart }: FeedCardProps) {
 	const { translate } = useUser()
 	const { colors } = useTheme()
 	const cardType = item.card?.kind || 'product'
 
 	switch (cardType) {
 		case 'product':
-			return <ProductCard item={item as ProductFeedItem} addToBasket={addToBasket} />
+			return <ProductCard item={item as ProductFeedItem} addToCart={addToCart} />
 		case 'business':
 			return <BusinessCard item={item as BusinessFeedItem} />
 		case 'user':

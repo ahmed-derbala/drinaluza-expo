@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
-import { useTheme } from '@/core/contexts/ThemeContext'
+import { useTheme } from '@/core/theme'
 import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
 
 export default function ProductsLayout() {

@@ -4,7 +4,7 @@ import SmartImage from '../../core/helpers/SmartImage'
 import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import ScreenHeader from '../common/ScreenHeader'
 import ErrorState from '../common/ErrorState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
@@ -19,12 +19,12 @@ import { toast } from '../../core/helpers/toast'
 
 type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled'
 
-type BasketItem = FeedItem & { quantity: number }
+type CartItem = FeedItem & { quantity: number }
 
-type BusinessBasketGroup = {
+type BusinessCartGroup = {
 	businessId: string
 	businessName: string
-	items: BasketItem[]
+	items: CartItem[]
 }
 
 const PurchasesScreen = () => {
@@ -34,7 +34,7 @@ const PurchasesScreen = () => {
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [purchases, setPurchases] = useState<OrderItem[]>([])
-	const [basket, setBasket] = useState<BasketItem[]>([])
+	const [cart, setCart] = useState<CartItem[]>([])
 	const params = useLocalSearchParams<{ filter?: FilterStatus }>()
 	const [filter, setFilter] = useState<FilterStatus>(params.filter || 'cart')
 
@@ -62,14 +62,14 @@ const PurchasesScreen = () => {
 
 	const styles = useMemo(() => createStyles(colors, isDark, width, numColumns, filter), [colors, isDark, width, numColumns, filter])
 
-	const loadBasket = async () => {
+	const loadCart = async () => {
 		try {
-			const storedBasket = await AsyncStorage.getItem('basket')
-			if (storedBasket) {
-				setBasket(JSON.parse(storedBasket))
+			const storedCart = await AsyncStorage.getItem('cart')
+			if (storedCart) {
+				setCart(JSON.parse(storedCart))
 			}
 		} catch (error) {
-			console.error('Failed to load basket:', error)
+			console.error('Failed to load cart:', error)
 		}
 	}
 
@@ -103,18 +103,18 @@ const PurchasesScreen = () => {
 	const onRefresh = () => {
 		setRefreshing(true)
 		loadPurchases()
-		loadBasket()
+		loadCart()
 	}
 
 	useEffect(() => {
 		loadPurchases()
-		loadBasket()
+		loadCart()
 	}, [])
 
-	// Refresh basket when screen comes into focus
+	// Refresh cart when screen comes into focus
 	useFocusEffect(
 		React.useCallback(() => {
-			loadBasket()
+			loadCart()
 		}, [])
 	)
 
@@ -175,9 +175,9 @@ const PurchasesScreen = () => {
 		}
 	}, [purchases, filter])
 
-	const groupedBasket = useMemo(() => {
-		const groups: { [key: string]: BusinessBasketGroup } = {}
-		basket.forEach((item) => {
+	const groupedCart = useMemo(() => {
+		const groups: { [key: string]: BusinessCartGroup } = {}
+		cart.forEach((item) => {
 			const businessId = item.business?._id || 'unknown'
 			if (!groups[businessId]) {
 				groups[businessId] = {
@@ -189,7 +189,7 @@ const PurchasesScreen = () => {
 			groups[businessId].items.push(item)
 		})
 		return Object.values(groups)
-	}, [basket])
+	}, [cart])
 
 	const getStatusIcon = (status: string) => {
 		switch (status) {
@@ -334,7 +334,7 @@ const PurchasesScreen = () => {
 		)
 	}
 
-	const updateBasketQuantity = async (itemId: string, newQuantity: number) => {
+	const updateCartQuantity = async (itemId: string, newQuantity: number) => {
 		try {
 			if (newQuantity < 1) {
 				Alert.alert(translate('remove_item', 'Remove Item'), translate('remove_item_confirm', 'Do you want to remove this item from your cart?'), [
@@ -342,31 +342,31 @@ const PurchasesScreen = () => {
 					{
 						text: translate('confirm', 'Confirm'),
 						style: 'destructive',
-						onPress: () => removeFromBasket(itemId)
+						onPress: () => removeFromCart(itemId)
 					}
 				])
 				return
 			}
 
-			const newBasket = basket.map((item) => (item._id === itemId ? { ...item, quantity: newQuantity } : item))
-			setBasket(newBasket)
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+			const newCart = cart.map((item) => (item._id === itemId ? { ...item, quantity: newQuantity } : item))
+			setCart(newCart)
+			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
 		} catch (error) {
-			console.error('Error updating basket:', error)
+			console.error('Error updating cart:', error)
 		}
 	}
 
-	const removeFromBasket = async (itemId: string) => {
+	const removeFromCart = async (itemId: string) => {
 		try {
-			const newBasket = basket.filter((item) => item._id !== itemId)
-			setBasket(newBasket)
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+			const newCart = cart.filter((item) => item._id !== itemId)
+			setCart(newCart)
+			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
 		} catch (error) {
-			console.error('Error removing from basket:', error)
+			console.error('Error removing from cart:', error)
 		}
 	}
 
-	const handleCheckout = async (group: BusinessBasketGroup) => {
+	const handleCheckout = async (group: BusinessCartGroup) => {
 		try {
 			const business = group.items[0]?.business
 			if (!business) throw new Error('Business not found')
@@ -376,20 +376,7 @@ const PurchasesScreen = () => {
 				return {
 					product: {
 						_id: item._id,
-						slug: item.slug,
-						name: item.name,
-						price: item.price,
-						unit: item.unit,
-						media: item.media,
-						photos: item.photos,
-						state: item.state,
-						stock: item.stock,
-						business: item.business,
-						card: item.card || { kind: 'product' },
-						defaultProduct: item.defaultProduct,
-						__v: item.__v,
-						createdAt: item.createdAt,
-						updatedAt: item.updatedAt
+						slug: item.slug
 					},
 					quantity: item.quantity
 				}
@@ -404,26 +391,26 @@ const PurchasesScreen = () => {
 				}
 			})
 
-			// On success, remove these items from basket
+			// On success, remove these items from cart
 			const purchasedItemIds = new Set(group.items.map((item) => item._id))
-			const newBasket = basket.filter((item) => !purchasedItemIds.has(item._id))
+			const newCart = cart.filter((item) => !purchasedItemIds.has(item._id))
 
-			setBasket(newBasket)
-			await AsyncStorage.setItem('basket', JSON.stringify(newBasket))
+			setCart(newCart)
+			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
 
 			Alert.alert(translate('success', 'Success'), translate('checkout_success', 'Order placed successfully!'))
 
 			// Refresh purchases list and switch tab
 			onRefresh()
 			setFilter('pending')
-		} catch (error) {
-			console.error('Checkout failed:', error)
-			Alert.alert(translate('error', 'Error'), translate('checkout_failed', 'Failed to place order'))
+		} catch (error: any) {
+			console.error('Checkout failed:', error?.response?.data || error)
+			Alert.alert(translate('error', 'Error'), error?.response?.data?.message || translate('checkout_failed', 'Failed to place order'))
 		}
 	}
 
-	const renderBasketGroup = ({ item: group }: { item: BusinessBasketGroup }) => {
-		const groupTotal = group.items.reduce((sum: number, item: BasketItem) => {
+	const renderCartGroup = ({ item: group }: { item: BusinessCartGroup }) => {
+		const groupTotal = group.items.reduce((sum: number, item: CartItem) => {
 			const price = item.price?.total?.tnd || 0
 			const quantity = item.quantity || 1
 			return sum + price * quantity
@@ -464,7 +451,7 @@ const PurchasesScreen = () => {
 								indicatorStyle={isDark ? 'white' : 'black'}
 							>
 								<View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-									{group.items.map((item: BasketItem, index: number) => {
+									{group.items.map((item: CartItem, index: number) => {
 										const price = item.price?.total?.tnd || 0
 										const quantity = item.quantity || 1
 										const itemWidth = '100%'
@@ -474,7 +461,7 @@ const PurchasesScreen = () => {
 											<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
 												<View
 													style={[
-														styles.basketItemCard,
+														styles.cartItemCard,
 														{
 															backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
 															borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
@@ -482,29 +469,29 @@ const PurchasesScreen = () => {
 													]}
 												>
 													{/* Image Area */}
-													<View style={styles.basketItemImageContainer}>
-														<SmartImage source={imageUrl} style={styles.basketItemImage} resizeMode="cover" entityType="product" />
+													<View style={styles.cartItemImageContainer}>
+														<SmartImage source={imageUrl} style={styles.cartItemImage} resizeMode="cover" entityType="product" />
 													</View>
 
 													{/* Content Area */}
-													<View style={styles.basketItemContent}>
+													<View style={styles.cartItemContent}>
 														<View style={styles.itemTopRow}>
-															<Text style={[styles.basketItemName, { color: colors.text }]} numberOfLines={2}>
+															<Text style={[styles.cartItemName, { color: colors.text }]} numberOfLines={2}>
 																{localize(item.name)}
 															</Text>
-															<TouchableOpacity onPress={() => removeFromBasket(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+															<TouchableOpacity onPress={() => removeFromCart(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
 																<Ionicons name="trash-outline" size={18} color={colors.error} />
 															</TouchableOpacity>
 														</View>
 
 														<View style={styles.itemBottomRow}>
-															<Text style={[styles.basketItemPrice, { color: colors.primary }]}>
+															<Text style={[styles.cartItemPrice, { color: colors.primary }]}>
 																{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
 															</Text>
 
 															<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
 																<TouchableOpacity
-																	onPress={() => updateBasketQuantity(item._id, quantity - 1)}
+																	onPress={() => updateCartQuantity(item._id, quantity - 1)}
 																	style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
 																	hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
 																>
@@ -516,7 +503,7 @@ const PurchasesScreen = () => {
 																</Text>
 
 																<TouchableOpacity
-																	onPress={() => updateBasketQuantity(item._id, quantity + 1)}
+																	onPress={() => updateCartQuantity(item._id, quantity + 1)}
 																	style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
 																	hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
 																>
@@ -559,7 +546,7 @@ const PurchasesScreen = () => {
 		const count = useMemo(() => {
 			switch (status) {
 				case 'cart':
-					return basket.length
+					return cart.length
 				case 'pending':
 					return purchases.filter((p) => p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION).length
 				case 'processing':
@@ -574,7 +561,7 @@ const PurchasesScreen = () => {
 				default:
 					return 0
 			}
-		}, [purchases, basket.length, status])
+		}, [purchases, cart.length, status])
 
 		return (
 			<TouchableOpacity
@@ -658,7 +645,7 @@ const PurchasesScreen = () => {
 		)
 	}
 
-	const displayData = filter === 'cart' ? groupedBasket : filteredPurchases
+	const displayData = filter === 'cart' ? groupedCart : filteredPurchases
 	const itemCount = displayData.length
 
 	return (
@@ -689,7 +676,7 @@ const PurchasesScreen = () => {
 					key={numColumns}
 					numColumns={numColumns}
 					data={displayData as any}
-					renderItem={filter === 'cart' ? (renderBasketGroup as any) : renderPurchaseItem}
+					renderItem={filter === 'cart' ? (renderCartGroup as any) : renderPurchaseItem}
 					keyExtractor={(item: any) => (filter === 'cart' ? item.businessId : item._id)}
 					contentContainerStyle={styles.listContent}
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
@@ -934,7 +921,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			fontWeight: '600',
 			marginBottom: 8
 		},
-		basketItemCard: {
+		cartItemCard: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			borderRadius: 16,
@@ -945,18 +932,18 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
 			backgroundColor: 'transparent' // Override card bg if we want a clean list look
 		},
-		basketItemImageContainer: {
+		cartItemImageContainer: {
 			width: 80,
 			height: 80,
 			borderRadius: 12,
 			overflow: 'hidden',
 			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5'
 		},
-		basketItemImage: {
+		cartItemImage: {
 			width: '100%',
 			height: '100%'
 		},
-		basketItemContent: {
+		cartItemContent: {
 			flex: 1,
 			justifyContent: 'center',
 			gap: 4
@@ -974,7 +961,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			alignItems: 'center',
 			marginTop: 4
 		},
-		basketItemName: {
+		cartItemName: {
 			fontSize: 15,
 			fontWeight: '600',
 			flex: 1,
@@ -984,7 +971,7 @@ const createStyles = (colors: any, isDark: boolean, width: number, numColumns: n
 			padding: 4,
 			opacity: 0.8
 		},
-		basketItemPrice: {
+		cartItemPrice: {
 			fontSize: 16,
 			fontWeight: '700'
 		},

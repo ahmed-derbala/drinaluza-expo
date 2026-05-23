@@ -42,7 +42,7 @@ export type VersionStatus = 'up_to_date' | 'update_available' | 'update_required
  *    0 if a === b
  *    1 if a > b
  */
-export const compareVersions = (a: string, b: string): number => {
+const compareVersions = (a: string, b: string): number => {
 	const pa = a.split('.').map(Number)
 	const pb = b.split('.').map(Number)
 	const len = Math.max(pa.length, pb.length)
@@ -148,7 +148,7 @@ export const fetchBackendInfo = async (): Promise<BackendInfo | null> => {
 /**
  * Get the platform version config for the current platform
  */
-export const getPlatformVersion = (backendInfo: BackendInfo): PlatformVersion | null => {
+const getPlatformVersion = (backendInfo: BackendInfo): PlatformVersion | null => {
 	const v = Platform.OS === 'web' ? backendInfo.frontend?.web?.version : backendInfo.frontend?.android?.version
 	return v || null
 }

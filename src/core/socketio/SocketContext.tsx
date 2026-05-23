@@ -3,8 +3,8 @@ import { io, Socket } from 'socket.io-client'
 import { View, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { BACKEND_URL } from '@/config'
-import { useUser } from './UserContext'
-import { useNotification } from './NotificationContext'
+import { useUser } from '../contexts/UserContext'
+import { useNotification } from '../contexts/NotificationContext'
 import { toast } from '../helpers/toast'
 import { log } from '../log'
 import Toast from '@/core/components/Toast'
@@ -130,7 +130,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	)
 }
 
-export const useSocket = () => {
+const useSocket = () => {
 	const context = useContext(SocketContext)
 	if (context === undefined) {
 		throw new Error('useSocket must be used within a SocketProvider')

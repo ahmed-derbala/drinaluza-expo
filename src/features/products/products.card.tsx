@@ -3,16 +3,16 @@ import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform
 import SmartImage from '../../core/helpers/SmartImage'
 import { MaterialIcons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 
 type ProductCardProps = {
 	item: ProductFeedItem
-	addToBasket: (item: ProductFeedItem, quantity: number) => void
+	addToCart: (item: ProductFeedItem, quantity: number) => void
 }
 
-export default function ProductCard({ item, addToBasket }: ProductCardProps) {
+export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const { colors } = useTheme()
 	const { localize, currency, formatPrice, translate } = useUser()
 	const router = useRouter()
@@ -31,6 +31,13 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 	const pricePerUnit = unitPrice / (item.unit?.min || 1)
 
 	const step = item.unit?.step || 1
+
+	const mainName = localize(item.name)
+	const secondaryNames = useMemo(() => {
+		if (!item.name) return []
+		const allNames = [item.name.en, item.name.tn_latn, item.name.tn_arab].filter(Boolean) as string[]
+		return Array.from(new Set(allNames)).filter((n) => n !== mainName)
+	}, [item.name, mainName])
 
 	const increment = () =>
 		setQuantity((prev) => {
@@ -100,12 +107,12 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 				{/* Product Name */}
 				<TouchableOpacity onPress={handleProductPress} activeOpacity={0.8}>
 					<View style={styles.productNameContainer}>
-						<Text style={styles.productName} numberOfLines={2}>
-							{localize(item.name)}
+						<Text style={styles.productName} numberOfLines={1}>
+							{mainName}
 						</Text>
-						{(item.name?.tn_latn || item.name?.tn_arab) && (
+						{secondaryNames.length > 0 && (
 							<Text style={styles.productNameSecondary} numberOfLines={1}>
-								{item.name?.tn_latn} {item.name?.tn_arab && `• ${item.name?.tn_arab}`}
+								{secondaryNames.join(' • ')}
 							</Text>
 						)}
 					</View>
@@ -152,7 +159,7 @@ export default function ProductCard({ item, addToBasket }: ProductCardProps) {
 							<Text style={styles.totalLabel}>{translate('total', 'Total')}</Text>
 							<Text style={styles.totalPrice}>{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}</Text>
 						</View>
-						<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToBasket(item, quantity)} disabled={!isAvailable}>
+						<TouchableOpacity style={[styles.addButton, !isAvailable && styles.addButtonDisabled]} onPress={() => isAvailable && addToCart(item, quantity)} disabled={!isAvailable}>
 							<MaterialIcons name={isAvailable ? 'add-shopping-cart' : 'remove-shopping-cart'} size={24} color="#fff" />
 						</TouchableOpacity>
 					</View>
@@ -267,12 +274,14 @@ const createStyles = (colors: any, screenWidth: number) => {
 			fontSize: isSmallScreen ? 18 : 20,
 			fontWeight: '700',
 			color: colors.text,
-			lineHeight: isSmallScreen ? 24 : 26
+			lineHeight: isSmallScreen ? 24 : 26,
+			textAlign: 'left'
 		},
 		productNameSecondary: {
 			fontSize: isSmallScreen ? 12 : 13,
 			color: colors.textSecondary,
-			marginTop: 4
+			marginTop: 4,
+			textAlign: 'left'
 		},
 		ratingRow: {
 			flexDirection: 'row',

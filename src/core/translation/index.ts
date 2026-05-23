@@ -4,9 +4,9 @@ import { tn_arab } from './tn_arab'
 import { fr } from './fr'
 import { ar } from './ar'
 
-export type LanguageCode = 'en' | 'tn_latn' | 'tn_arab' | 'fr' | 'ar'
+type LanguageCode = 'en' | 'tn_latn' | 'tn_arab' | 'fr' | 'ar'
 
-export const translations: Record<string, Record<string, string>> = {
+const translations: Record<string, Record<string, string>> = {
 	en,
 	tn_latn,
 	tn_arab,
@@ -20,7 +20,7 @@ export const setGlobalAppLang = (lang: string) => {
 	currentAppLang = lang
 }
 
-export const getGlobalAppLang = () => currentAppLang
+const getGlobalAppLang = () => currentAppLang
 
 export const translate = (key: string, defaultText?: string, lang?: string): string => {
 	// e.g. "en-US" -> "en"

@@ -1,35 +1,35 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-export interface Phone {
+interface Phone {
 	fullNumber?: string
 	countryCode?: string
 	shortNumber?: string
 }
 
-export interface BasicInfos {
+interface BasicInfos {
 	birthDate: Date | string | null
 	biography?: string
 }
 
-export interface SocialMediaPlatform {
+interface SocialMediaPlatform {
 	url?: string
 	username?: string
 }
 
-export interface SocialMedia {
+interface SocialMedia {
 	facebook?: SocialMediaPlatform
 	messenger?: SocialMediaPlatform
 	instagram?: SocialMediaPlatform
 	whatsapp?: SocialMediaPlatform
 }
 
-export interface Media {
+interface Media {
 	thumbnail?: {
 		url: string
 	}
 }
 
-export interface Address {
+interface Address {
 	street?: string
 	city?: string
 	state?: string
@@ -37,7 +37,7 @@ export interface Address {
 	country?: string
 }
 
-export interface Location {
+interface Location {
 	type: string
 	coordinates: [number, number] // [longitude, latitude]
 	sharingEnabled?: boolean
@@ -45,7 +45,7 @@ export interface Location {
 	updatedAt?: string
 }
 
-export interface UserSettings {
+interface UserSettings {
 	lang: {
 		app?: string
 		content?: string
@@ -53,12 +53,12 @@ export interface UserSettings {
 	currency: string
 }
 
-export interface UserState {
+interface UserState {
 	code: string
 	updatedAt: string
 }
 
-export interface Contact {
+interface Contact {
 	phone?: Phone
 	backupPhones?: Phone[]
 	whatsapp?: string
@@ -87,4 +87,4 @@ export interface UserData {
 }
 
 // Export alias for backward compatibility
-export type User = UserData
+type User = UserData

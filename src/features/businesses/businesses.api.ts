@@ -32,7 +32,7 @@ export const getBusinesses = async (page: number = 1, limit: number = 100): Prom
 	}
 }
 
-export const createBusiness = async (businessData: CreateBusinessRequest): Promise<CreateBusinessResponse> => {
+const createBusiness = async (businessData: CreateBusinessRequest): Promise<CreateBusinessResponse> => {
 	try {
 		log({
 			level: 'info',
@@ -54,7 +54,7 @@ export const createBusiness = async (businessData: CreateBusinessRequest): Promi
 	}
 }
 
-export const getBusinessDetails = async (businessId: string): Promise<BusinessResponse> => {
+const getBusinessDetails = async (businessId: string): Promise<BusinessResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses/${businessId}`)
 		return response.data
@@ -70,7 +70,7 @@ export const getBusinessDetails = async (businessId: string): Promise<BusinessRe
 	}
 }
 
-export const getMyBusinessBySlug = async (slug: string): Promise<BusinessResponse> => {
+const getMyBusinessBySlug = async (slug: string): Promise<BusinessResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses/${slug}`)
 		return response.data
@@ -86,7 +86,7 @@ export const getMyBusinessBySlug = async (slug: string): Promise<BusinessRespons
 	}
 }
 
-export const updateMyBusiness = async (businessSlug: string, businessData: Partial<BusinessResponse['data']>): Promise<BusinessResponse> => {
+const updateMyBusiness = async (businessSlug: string, businessData: Partial<BusinessResponse['data']>): Promise<BusinessResponse> => {
 	try {
 		log({
 			level: 'info',
@@ -124,7 +124,7 @@ export const getBusinessBySlug = async (slug: string): Promise<BusinessResponse>
 	}
 }
 
-export const getBusinessProducts = async (businessId: string): Promise<BusinessProductsResponse> => {
+const getBusinessProducts = async (businessId: string): Promise<BusinessProductsResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses/${businessId}/products`)
 		return response.data

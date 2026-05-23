@@ -1,6 +1,6 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-export type DashboardProfileKind = 'personal' | 'business'
+type DashboardProfileKind = 'personal' | 'business'
 
 export type DashboardProfile = {
 	_id: string
@@ -14,14 +14,14 @@ export type DashboardProfile = {
 	}
 }
 
-export type DashboardUserRef = {
+type DashboardUserRef = {
 	_id: string
 	slug: string
 	name: LocalizedName
 	role: string
 }
 
-export type DashboardBusinessRef = {
+type DashboardBusinessRef = {
 	_id: string
 	owner?: DashboardUserRef
 	name: LocalizedName

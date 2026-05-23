@@ -2,7 +2,7 @@
 import packagejson from '../../package.json' with { type: 'json' }
 import Constants from 'expo-constants'
 
-export interface AppConfig {
+interface AppConfig {
 	app: {
 		name: string
 		version: string
@@ -12,7 +12,7 @@ export interface AppConfig {
 }
 
 // Main configuration - edit these values as needed
-export const config: AppConfig = {
+const config: AppConfig = {
 	app: {
 		name: packagejson.name,
 		version: packagejson.version,
@@ -22,10 +22,10 @@ export const config: AppConfig = {
 }
 
 // App configuration
-export const APP_NAME = config.app.name
+const APP_NAME = config.app.name
 export const APP_VERSION = config.app.version
 export const API_TIMEOUT = config.app.timeout
-export const RETRY_ATTEMPTS = config.app.retryAttempts
+const RETRY_ATTEMPTS = config.app.retryAttempts
 
 // API URL from environment variables
 export const API_PREFIX = '/api'

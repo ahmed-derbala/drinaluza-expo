@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import ScreenHeader from '../common/ScreenHeader'
@@ -69,8 +69,8 @@ export default function ProductsScreen() {
 		}
 	}
 
-	const handleAddToBasket = (item: ProductFeedItem, quantity: number) => {
-		// Mock implementation for add to basket
+	const handleAddToCart = (item: ProductFeedItem, quantity: number) => {
+		// Mock implementation for add to cart
 		showAlert(translate('success', 'Success'), `${quantity} x ${item.name?.en} added to cart!`)
 	}
 
@@ -99,7 +99,7 @@ export default function ProductsScreen() {
 
 			<FlatList
 				data={products}
-				renderItem={({ item }) => <ProductCard item={item} addToBasket={handleAddToBasket} />}
+				renderItem={({ item }) => <ProductCard item={item} addToCart={handleAddToCart} />}
 				keyExtractor={(item) => item._id}
 				contentContainerStyle={styles.list}
 				showsVerticalScrollIndicator={false}

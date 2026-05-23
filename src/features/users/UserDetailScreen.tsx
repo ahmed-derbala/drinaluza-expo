@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams } from 'expo-router'
-import { useTheme } from '../../core/contexts/ThemeContext'
+import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getUserBySlug } from './users.api'
 import { UserProfile } from './users.interface'
