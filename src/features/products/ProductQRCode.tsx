@@ -6,46 +6,38 @@ import * as Print from 'expo-print'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import { uploadFile } from '@/core/file'
-import { updateBusiness, getBusinessBySlug } from '../businesses/businesses.api'
+import { updateProduct } from './products.api'
 import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
-import { DashboardBusinessRef } from './dashboard.interface'
+import { ProductType } from './products.type'
 
 type Props = {
-	business: DashboardBusinessRef
+	product: ProductType
 	colors: any
+	isDashboard?: boolean
 }
 
-export default function BusinessQRCode({ business, colors }: Props) {
-	const { translate } = useUser()
+export default function ProductQRCode({ product, colors, isDashboard = false }: Props) {
+	const { translate, localize } = useUser()
 	const [generating, setGenerating] = useState(false)
 	const getQrUrl = (qr: any) => (typeof qr === 'string' ? qr : qr?.url)
-	const [qrcodeUrl, setQrcodeUrl] = useState<string | undefined>(getQrUrl(business.qrcode))
+	const [qrcodeUrl, setQrcodeUrl] = useState<string | undefined>(getQrUrl(product.qrcode))
 
 	React.useEffect(() => {
-		const qr = getQrUrl(business.qrcode)
+		const qr = getQrUrl(product.qrcode)
 		if (qr) {
 			setQrcodeUrl(qr)
-		} else {
-			// Fetch full business details to see if it has a qrcode (dashboard API might omit it)
-			getBusinessBySlug(business.slug)
-				.then((res) => {
-					if (res.data?.qrcode) {
-						setQrcodeUrl(getQrUrl(res.data.qrcode))
-					}
-				})
-				.catch((err) => console.log('Failed to fetch full business for qrcode', err))
 		}
-	}, [business.slug, business.qrcode])
+	}, [product.qrcode])
 
 	const handleGenerate = async () => {
 		try {
 			setGenerating(true)
 			const baseUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
-			const link = `${baseUrl}/b/${business.slug}`
+			const link = `${baseUrl}/p/${product.slug}`
 			const base64DataUrl = await QRCode.toDataURL(link, { width: 500, margin: 2 })
 
-			const filename = `drinaluza_${business.slug}_qrcode.png`
+			const filename = `drinaluza_${product.slug}_qrcode.png`
 
 			let uploadResult
 			if (Platform.OS === 'web') {
@@ -55,7 +47,6 @@ export default function BusinessQRCode({ business, colors }: Props) {
 					type: 'image/png'
 				})
 			} else {
-				// On native, write base64 to a file first
 				const base64Data = base64DataUrl.split(',')[1]
 				const fileUri = FileSystem.cacheDirectory + filename
 				await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: FileSystem.EncodingType.Base64 })
@@ -67,7 +58,7 @@ export default function BusinessQRCode({ business, colors }: Props) {
 			}
 
 			if (uploadResult.success && uploadResult.file) {
-				await updateBusiness(business.slug, { qrcode: uploadResult.file })
+				await updateProduct(product.slug, { qrcode: uploadResult.file } as any)
 				setQrcodeUrl(uploadResult.file.url)
 				Alert.alert(translate('success', 'Success'), translate('qrcode_generated', 'QR code generated and saved successfully!'))
 			} else {
@@ -89,9 +80,9 @@ export default function BusinessQRCode({ business, colors }: Props) {
 						<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
 					</head>
 					<body style="text-align: center; margin-top: 50px; font-family: sans-serif;">
-						<h1>${business.name.en || business.slug}</h1>
+						<h1>${localize(product.name) || product.slug}</h1>
 						<img src="${qrcodeUrl}" style="width: 300px; height: 300px;" />
-						<h2 style="color: #666; margin-top: 20px;">@${business.slug}</h2>
+						<h2 style="color: #666; margin-top: 20px;">@${product.slug}</h2>
 					</body>
 				</html>
 			`
@@ -137,12 +128,12 @@ export default function BusinessQRCode({ business, colors }: Props) {
 			if (Platform.OS === 'web') {
 				const link = document.createElement('a')
 				link.href = qrcodeUrl
-				link.download = `drinaluza_${business.slug}_qrcode.png`
+				link.download = `drinaluza_${product.slug}_qrcode.png`
 				document.body.appendChild(link)
 				link.click()
 				document.body.removeChild(link)
 			} else {
-				const fileUri = FileSystem.documentDirectory + `drinaluza_${business.slug}_qrcode.png`
+				const fileUri = FileSystem.documentDirectory + `drinaluza_${product.slug}_qrcode.png`
 				const downloadedFile = await FileSystem.downloadAsync(qrcodeUrl, fileUri)
 				if (await Sharing.isAvailableAsync()) {
 					await Sharing.shareAsync(downloadedFile.uri)
@@ -155,6 +146,8 @@ export default function BusinessQRCode({ business, colors }: Props) {
 		}
 	}
 
+	if (!isDashboard && !qrcodeUrl) return null
+
 	return (
 		<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 			<View style={styles.header}>
@@ -164,12 +157,14 @@ export default function BusinessQRCode({ business, colors }: Props) {
 
 			{qrcodeUrl ? (
 				<View style={styles.qrContent}>
-					<SmartImage source={qrcodeUrl} style={styles.qrImage} entityType="business" />
+					<SmartImage source={qrcodeUrl} style={styles.qrImage} entityType="product" />
 					<View style={styles.actions}>
-						<TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primaryContainer }]} onPress={handleGenerate} disabled={generating}>
-							<MaterialIcons name="refresh" size={20} color={colors.primary} />
-							<Text style={[styles.actionText, { color: colors.primary }]}>{translate('regenerate', 'Regenerate')}</Text>
-						</TouchableOpacity>
+						{isDashboard && (
+							<TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.primaryContainer }]} onPress={handleGenerate} disabled={generating}>
+								<MaterialIcons name="refresh" size={20} color={colors.primary} />
+								<Text style={[styles.actionText, { color: colors.primary }]}>{translate('regenerate', 'Regenerate')}</Text>
+							</TouchableOpacity>
+						)}
 						<TouchableOpacity style={[styles.actionBtn, { backgroundColor: colors.info + '20' }]} onPress={handleDownload}>
 							<MaterialIcons name="file-download" size={20} color={colors.info} />
 						</TouchableOpacity>
@@ -181,10 +176,12 @@ export default function BusinessQRCode({ business, colors }: Props) {
 			) : (
 				<View style={styles.emptyState}>
 					<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('no_qr_code', 'No QR code generated yet')}</Text>
-					<TouchableOpacity style={[styles.generateBtn, { backgroundColor: colors.primary }]} onPress={handleGenerate} disabled={generating}>
-						<MaterialIcons name="qr-code-2" size={20} color="#fff" />
-						<Text style={styles.generateBtnText}>{translate('generate_qr', 'Generate QR Code')}</Text>
-					</TouchableOpacity>
+					{isDashboard && (
+						<TouchableOpacity style={[styles.generateBtn, { backgroundColor: colors.primary }]} onPress={handleGenerate} disabled={generating}>
+							<MaterialIcons name="qr-code-2" size={20} color="#fff" />
+							<Text style={styles.generateBtnText}>{translate('generate_qr', 'Generate QR Code')}</Text>
+						</TouchableOpacity>
+					)}
 				</View>
 			)}
 		</View>
@@ -193,7 +190,6 @@ export default function BusinessQRCode({ business, colors }: Props) {
 
 const styles = StyleSheet.create({
 	container: {
-		marginHorizontal: 16,
 		marginBottom: 24,
 		borderRadius: 16,
 		borderWidth: 1,
@@ -222,6 +218,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
+		flexWrap: 'wrap',
 		gap: 12
 	},
 	actionBtn: {

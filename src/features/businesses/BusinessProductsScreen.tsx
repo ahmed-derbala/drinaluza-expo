@@ -44,6 +44,25 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 	const minQty = item.unit?.min || 1
+	const maxQuantity = item.unit?.max || Infinity
+	const step = item.unit?.step || 1
+	const [quantity, setQuantity] = useState(minQty)
+
+	const increment = (e: any) => {
+		e.stopPropagation?.()
+		setQuantity((prev) => {
+			const next = Math.round((prev + step) * 100) / 100
+			return next <= maxQuantity && next <= stockQty ? next : prev
+		})
+	}
+
+	const decrement = (e: any) => {
+		e.stopPropagation?.()
+		setQuantity((prev) => {
+			const next = Math.round((prev - step) * 100) / 100
+			return next >= minQty ? next : minQty
+		})
+	}
 
 	const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
@@ -57,7 +76,7 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 				if (isDashboard && businessSlug) {
 					router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)
 				} else {
-					router.push(`/products/${item.slug}` as any)
+					router.push(`/businesses/${businessSlug || item.business?.slug}/products/${item.slug}` as any)
 				}
 			}}
 		>
@@ -95,29 +114,41 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 
 				{/* Price row */}
 				<View style={cardStyles.priceRow}>
-					<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
-					<Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
+					<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
+					{quantity === 1 && <Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
 				</View>
 
-				{/* Footer */}
-				<View style={cardStyles.footer}>
-					<View style={[cardStyles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
-						<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
-						<Text style={[cardStyles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
-					</View>
-
-					{!isDashboard && isActive && !isOutOfStock && (
+				{/* Quantity & Actions (Bottom of Price) */}
+				{!isDashboard && isActive && !isOutOfStock && (
+					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, zIndex: 10 }}>
+						<View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceVariant, borderRadius: 10, padding: 2 }}>
+							<TouchableOpacity onPress={decrement} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
+								<MaterialIcons name="remove" size={16} color={colors.text} />
+							</TouchableOpacity>
+							<Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 24, textAlign: 'center' }}>{quantity}</Text>
+							<TouchableOpacity onPress={increment} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
+								<MaterialIcons name="add" size={16} color={colors.text} />
+							</TouchableOpacity>
+						</View>
 						<TouchableOpacity
 							style={[cardStyles.addBtn, { backgroundColor: colors.primary }]}
 							onPress={(e) => {
 								e.stopPropagation?.()
-								onAddToCart(item, minQty)
+								onAddToCart(item, quantity)
 							}}
 							activeOpacity={0.8}
 						>
 							<MaterialIcons name="add-shopping-cart" size={16} color={colors.textOnPrimary || '#0F172A'} />
 						</TouchableOpacity>
-					)}
+					</View>
+				)}
+
+				{/* Footer for extra info like stock */}
+				<View style={cardStyles.footer}>
+					<View style={[cardStyles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
+						<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
+						<Text style={[cardStyles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
+					</View>
 				</View>
 			</View>
 		</Pressable>
@@ -176,7 +207,7 @@ const cardStyles = StyleSheet.create({
 	priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 2 },
 	price: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5 },
 	unit: { fontSize: 12, fontWeight: '500' },
-	footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
+	footer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4, flexWrap: 'wrap', rowGap: 8 },
 	qtyBadge: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -217,13 +248,14 @@ export default function BusinessProductsScreen() {
 	const isLandscape = width > height
 
 	const numColumns = useMemo(() => {
-		if (isSmallMobile) return 1
-		if (isMobile && !isLandscape) return 2
-		if (isMobile && isLandscape) return 3
-		if (isTablet) return 3
-		if (isDesktop && !isWide) return 4
-		return Math.min(5, Math.floor(width / 280))
-	}, [width, height, isSmallMobile, isMobile, isTablet, isDesktop, isWide, isLandscape])
+		// Intelligently calculate columns to ensure cards have enough width for all UI elements
+		const availableWidth = isWide ? 1400 : isDesktop ? 1200 : isTablet ? 900 : width
+		const hPadding = isDesktop ? 32 : isTablet ? 24 : 16
+
+		// 175px minimum width ensures UI elements aren't cramped.
+		// On a 390px phone (iPhone 12), this gives 2 columns. On a 320px phone (SE), this gives 1 column.
+		return Math.max(1, Math.floor((availableWidth - hPadding * 2) / 175))
+	}, [width, isTablet, isDesktop, isWide])
 
 	const contentMaxWidth = useMemo(() => {
 		if (isWide) return 1400
@@ -312,11 +344,9 @@ export default function BusinessProductsScreen() {
 				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
 				setCart(newCart)
 				await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-				toast.success(`${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, {
-					actions: [{ icon: 'cart-outline', onPress: () => router.push({ pathname: '/profile/purchases', params: { status: 'cart' } } as any) }]
-				})
+				toast.show({ title: 'Success', message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: '/profile/purchases?status=cart' })
 			} catch {
-				toast.error(translate('cart_failed_to_add', 'Failed to add to cart'))
+				toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
 			}
 		},
 		[cart, localize, translate, router]
@@ -391,7 +421,49 @@ export default function BusinessProductsScreen() {
 
 	return (
 		<View style={[s.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={headerTitle} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<ScreenHeader
+				title={headerTitle}
+				showBack={true}
+				onRefresh={handleRefresh}
+				isRefreshing={refreshing}
+				rightActions={
+					<TouchableOpacity
+						style={{
+							width: 40,
+							height: 40,
+							borderRadius: 10,
+							backgroundColor: colors.surface,
+							justifyContent: 'center',
+							alignItems: 'center',
+							borderWidth: 1,
+							borderColor: colors.border || 'transparent'
+						}}
+						onPress={() => router.push('/profile/purchases?status=cart' as any)}
+					>
+						<Ionicons name="cart-outline" size={20} color={colors.primary} />
+						{cart.length > 0 && (
+							<View
+								style={{
+									position: 'absolute',
+									top: -6,
+									right: -6,
+									backgroundColor: colors.error || '#ef4444',
+									borderRadius: 10,
+									minWidth: 20,
+									height: 20,
+									justifyContent: 'center',
+									alignItems: 'center',
+									paddingHorizontal: 4,
+									borderWidth: 1.5,
+									borderColor: colors.surface
+								}}
+							>
+								<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
+							</View>
+						)}
+					</TouchableOpacity>
+				}
+			/>
 
 			{/* Search bar */}
 			{!error && (

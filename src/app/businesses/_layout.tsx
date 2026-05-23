@@ -35,7 +35,13 @@ export default function BusinessesLayout() {
 				}}
 			/>
 			<Stack.Screen
-				name="[businessSlug]/products"
+				name="[businessSlug]/products/index"
+				options={{
+					headerShown: false
+				}}
+			/>
+			<Stack.Screen
+				name="[businessSlug]/products/[productSlug]"
 				options={{
 					headerShown: false
 				}}

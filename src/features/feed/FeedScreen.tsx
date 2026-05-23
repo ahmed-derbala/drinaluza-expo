@@ -113,8 +113,7 @@ const createStyles = (colors: any) =>
 			paddingBottom: 20
 		},
 		cardWrapper: {
-			marginBottom: 16,
-			minHeight: 420
+			marginBottom: 16
 		},
 		// Filter chip styles
 		filterContainer: {
@@ -154,9 +153,20 @@ export default function FeedScreen() {
 	const [isScannerVisible, setIsScannerVisible] = useState(false)
 
 	const { width } = useWindowDimensions()
-	const minColumnWidth = 320
-	const numColumns = Math.max(1, Math.floor(width / minColumnWidth))
-	const gap = 16
+	const isWide = width >= 1440
+	const isDesktop = width >= 1024
+	const isTablet = width >= 768
+
+	const numColumns = useMemo(() => {
+		// Intelligently scale column count based on device screen size
+		if (width < 500) return 1 // Mobile phones -> 1 large, highly readable column
+		if (width < 800) return 2 // Small tablets / Phablets -> 2 columns
+		if (width < 1100) return 3 // Tablets / Small laptops -> 3 columns
+		if (width < 1440) return 4 // Desktops -> 4 columns
+		return 5 // Ultrawide monitors -> 5 columns
+	}, [width])
+
+	const gap = 14
 	const padding = 16
 	const itemWidth = (width - padding * 2 - gap * (numColumns - 1)) / numColumns
 
@@ -285,7 +295,7 @@ export default function FeedScreen() {
 		try {
 			const token = await getToken()
 			if (!token) {
-				toast.info('Please log in to add items to cart')
+				toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: '#3B82F6' })
 				router.push('/auth')
 				return
 			}
@@ -306,12 +316,10 @@ export default function FeedScreen() {
 			setCart(newCart)
 
 			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-			toast.success(`${localize(item.name)} added to cart`, {
-				onPress: () => router.push('/profile/purchases?status=cart' as any)
-			})
-		} catch (error) {
-			console.error('Failed to add to cart:', error)
-			toast.error('Failed to add to cart')
+			toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
+		} catch (err) {
+			console.error('Failed to add to cart:', err)
+			toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 		}
 	}
 
@@ -326,7 +334,7 @@ export default function FeedScreen() {
 	}, [feedItems])
 
 	const handleSearchError = useCallback((message: string, retry?: () => void) => {
-		toast.error(message)
+		toast.show({ title: 'Error', message, color: '#EF4444' })
 	}, [])
 
 	const handleToggleSearch = useCallback(() => {
@@ -362,7 +370,7 @@ export default function FeedScreen() {
 	}
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
-		<View style={[styles.cardWrapper, { width: numColumns > 1 ? itemWidth : '100%' }]}>
+		<View style={[styles.cardWrapper, { width: numColumns > 1 ? `${(100 - (numColumns - 1) * 1.5) / numColumns}%` : '100%' }]}>
 			<FeedCard item={item} addToCart={addToCart} />
 		</View>
 	)
@@ -410,7 +418,7 @@ export default function FeedScreen() {
 							borderColor: colors.surface
 						}}
 					>
-						<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.reduce((acc, item) => acc + (item.quantity || 1), 0)}</Text>
+						<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
 					</View>
 				)}
 			</TouchableOpacity>

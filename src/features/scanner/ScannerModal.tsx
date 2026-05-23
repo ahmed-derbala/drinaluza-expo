@@ -35,20 +35,21 @@ export default function ScannerModal({ visible, onClose }: ScannerModalProps) {
 		console.log(`Scanned QR code: ${data}`)
 
 		try {
-			// Check if URL belongs to our app
-			// E.g., https://drinaluza.com/b/my-business
+			// E.g., https://drinaluza.vercel.app/b/my-business
+			const baseUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
+			const frontendHostname = new URL(baseUrl).hostname
 			const url = new URL(data)
-			if (url.hostname.includes('drinaluza.com') || url.hostname.includes('localhost')) {
+			if (url.hostname.includes(frontendHostname) || url.hostname.includes('localhost')) {
 				const path = url.pathname // e.g., /b/my-business
 				if (path.startsWith('/b/') || path.startsWith('/businesses/')) {
-					toast.success(translate('business_found', 'Business found!'))
+					toast.show({ title: 'Success', message: translate('business_found', 'Business found!'), color: '#10B981' })
 					onClose()
 					// Expo Router will handle the alias /b/ or direct /businesses/ navigation
 					setTimeout(() => {
 						router.push(path as any)
 					}, 300)
 				} else if (path.startsWith('/u/') || path.startsWith('/users/')) {
-					toast.success(translate('user_found', 'User found!'))
+					toast.show({ title: 'Success', message: translate('user_found', 'User found!'), color: '#10B981' })
 					onClose()
 					setTimeout(() => {
 						router.push(path as any)

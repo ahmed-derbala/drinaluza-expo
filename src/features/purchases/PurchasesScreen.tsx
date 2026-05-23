@@ -135,10 +135,10 @@ const PurchasesScreen = () => {
 						try {
 							await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
 							loadPurchases()
-							toast.success(translate('cancel_order_success', 'Order cancelled successfully'))
-						} catch (error) {
-							console.error('Error cancelling order:', error)
-							toast.error(translate('cancel_order_failed', 'Failed to cancel order. Please try again.'))
+							toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
+						} catch (err) {
+							console.error('Failed to cancel order:', err)
+							toast.show({ title: translate('error', 'Error'), message: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), color: '#EF4444' })
 						}
 					}
 				}
@@ -150,10 +150,10 @@ const PurchasesScreen = () => {
 		try {
 			await updatePurchaseStatus({ purchaseId, status: newStatus })
 			loadPurchases()
-			toast.success(translate('status_updated', 'Order status updated successfully'))
-		} catch (error) {
-			console.error('Error updating order status:', error)
-			toast.error(translate('status_update_failed', 'Failed to update order status. Please try again.'))
+			toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Order status updated successfully'), color: '#10B981' })
+		} catch (err) {
+			console.error('Failed to update order status:', err)
+			toast.show({ title: translate('error', 'Error'), message: translate('status_update_failed', 'Failed to update order status. Please try again.'), color: '#EF4444' })
 		}
 	}
 

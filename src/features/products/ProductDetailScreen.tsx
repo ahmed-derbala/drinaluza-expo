@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -11,9 +12,11 @@ import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import ScreenHeader from '@/features/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
+import { toast } from '@/core/components/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
+import ProductQRCode from './ProductQRCode'
 
 export default function ProductDetailScreen() {
 	const { productSlug } = useLocalSearchParams<{ productSlug: string }>()
@@ -30,6 +33,56 @@ export default function ProductDetailScreen() {
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const [cart, setCart] = useState<any[]>([])
+	const [quantity, setQuantity] = useState(1)
+
+	// effect to initialize quantity once product loads
+	useEffect(() => {
+		if (product?.unit?.min) {
+			setQuantity(product.unit.min)
+		}
+	}, [product])
+
+	const increment = () => {
+		if (!product) return
+		const step = product.unit?.step || 1
+		const maxQuantity = product.unit?.max || Infinity
+		const stockQty = product.stock?.quantity || 0
+		setQuantity((prev) => {
+			const next = Math.round((prev + step) * 100) / 100
+			return next <= maxQuantity && next <= stockQty ? next : prev
+		})
+	}
+
+	const decrement = () => {
+		if (!product) return
+		const step = product.unit?.step || 1
+		const minQty = product.unit?.min || 1
+		setQuantity((prev) => {
+			const next = Math.round((prev - step) * 100) / 100
+			return next >= minQty ? next : minQty
+		})
+	}
+
+	const handleAddToCart = async () => {
+		if (!product) return
+		try {
+			const existing = cart.findIndex((b) => b._id === product._id)
+			const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + quantity } : b)) : [...cart, { ...product, quantity }]
+			setCart(newCart)
+			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+			toast.show({ title: 'Success', message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: '/profile/purchases?status=cart' })
+		} catch {
+			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
+		}
+	}
+
+	const loadCart = async () => {
+		try {
+			const saved = await AsyncStorage.getItem('cart')
+			if (saved) setCart(JSON.parse(saved))
+		} catch {}
+	}
 
 	// Hide bottom tab bar when on product detail screen
 	useEffect(() => {
@@ -71,7 +124,12 @@ export default function ProductDetailScreen() {
 	const handleRefresh = () => {
 		setRefreshing(true)
 		loadProduct(true)
+		loadCart()
 	}
+
+	useEffect(() => {
+		loadCart()
+	}, [])
 
 	const handleBusinessNavPress = () => {
 		if (product?.business?.slug) {
@@ -149,14 +207,60 @@ export default function ProductDetailScreen() {
 				onRefresh={handleRefresh}
 				isRefreshing={refreshing}
 				rightActions={
-					isDashboard ? (
+					<View style={{ flexDirection: 'row', gap: 8 }}>
 						<TouchableOpacity
-							style={{ width: 36, height: 36, borderRadius: 10, backgroundColor: colors.surface, justifyContent: 'center', alignItems: 'center' }}
-							onPress={() => router.push(`${pathname}/edit` as any)}
+							style={{
+								width: 40,
+								height: 40,
+								borderRadius: 10,
+								backgroundColor: colors.surface,
+								justifyContent: 'center',
+								alignItems: 'center',
+								borderWidth: 1,
+								borderColor: colors.border || 'transparent'
+							}}
+							onPress={() => router.push('/profile/purchases?status=cart' as any)}
 						>
-							<Ionicons name="pencil" size={20} color={colors.primary} />
+							<Ionicons name="cart-outline" size={20} color={colors.primary} />
+							{cart.length > 0 && (
+								<View
+									style={{
+										position: 'absolute',
+										top: -6,
+										right: -6,
+										backgroundColor: colors.error || '#ef4444',
+										borderRadius: 10,
+										minWidth: 20,
+										height: 20,
+										justifyContent: 'center',
+										alignItems: 'center',
+										paddingHorizontal: 4,
+										borderWidth: 1.5,
+										borderColor: colors.surface
+									}}
+								>
+									<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
+								</View>
+							)}
 						</TouchableOpacity>
-					) : undefined
+						{isDashboard && (
+							<TouchableOpacity
+								style={{
+									width: 40,
+									height: 40,
+									borderRadius: 10,
+									backgroundColor: colors.surface,
+									justifyContent: 'center',
+									alignItems: 'center',
+									borderWidth: 1,
+									borderColor: colors.border || 'transparent'
+								}}
+								onPress={() => router.push(`${pathname}/edit` as any)}
+							>
+								<Ionicons name="pencil" size={20} color={colors.primary} />
+							</TouchableOpacity>
+						)}
+					</View>
 				}
 			/>
 
@@ -227,6 +331,35 @@ export default function ProductDetailScreen() {
 							</Text>
 						</View>
 					</View>
+
+					{/* Add to Cart Actions */}
+					{isAvailable && !isDashboard && (
+						<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' }}>
+							<View>
+								<Text style={{ fontSize: 12, fontWeight: '600', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 2 }}>{translate('total', 'Total')}</Text>
+								<Text style={{ fontSize: 20, fontWeight: '800', color: colors.primary }}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
+							</View>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+								<View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceVariant, borderRadius: 10, padding: 2 }}>
+									<TouchableOpacity onPress={decrement} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
+										<MaterialIcons name="remove" size={20} color={colors.text} />
+									</TouchableOpacity>
+									<Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, minWidth: 32, textAlign: 'center' }}>{quantity}</Text>
+									<TouchableOpacity onPress={increment} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
+										<MaterialIcons name="add" size={20} color={colors.text} />
+									</TouchableOpacity>
+								</View>
+
+								<TouchableOpacity
+									style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
+									onPress={handleAddToCart}
+									activeOpacity={0.8}
+								>
+									<MaterialIcons name="add-shopping-cart" size={22} color={colors.textOnPrimary || '#0F172A'} />
+								</TouchableOpacity>
+							</View>
+						</View>
+					)}
 				</View>
 
 				{/* Business Info Card */}
@@ -306,6 +439,8 @@ export default function ProductDetailScreen() {
 				</View>
 
 				{/* Reviews Section */}
+				<ProductQRCode product={product} colors={colors} isDashboard={isDashboard} />
+
 				{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 
 				{/* Bottom Spacing */}

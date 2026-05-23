@@ -139,10 +139,10 @@ const SaleCard = ({ sale }: SaleCardProps) => {
 			setUpdating(true)
 			await updateSaleStatus(sale._id, newStatus)
 			setCurrentStatus(newStatus)
-			toast.success(translate('status_updated', 'Status updated successfully'))
+			toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Status updated successfully'), color: '#10B981' })
+			if (onStatusUpdate) onStatusUpdate()
 		} catch (err: any) {
-			console.error('Failed to update status:', err)
-			toast.error(err.message || translate('failed_to_update_status', 'Failed to update status'))
+			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update_status', 'Failed to update status'), color: '#EF4444' })
 		} finally {
 			setUpdating(false)
 		}

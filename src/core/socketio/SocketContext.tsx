@@ -7,14 +7,7 @@ import { useUser } from '../contexts/UserContext'
 import { useNotification } from '../../features/notifications/NotificationContext'
 import { toast } from '../components/Toast'
 import { log } from '../log'
-
-// Safely import expo-audio
-let useAudioPlayer: any = null
-try {
-	useAudioPlayer = require('expo-audio').useAudioPlayer
-} catch (e) {
-	console.warn('expo-audio module not available')
-}
+import { getDashboardProfiles } from '../../features/dashboard/dashboard.api'
 
 interface SocketContextType {
 	socket: Socket | null
@@ -27,11 +20,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
 	const socketRef = useRef<Socket | null>(null)
-
-	// Initialize audio player
-	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/notification.mp3')) : null
-
-	// Auto-play is handled by the player object itself when play() is called
 
 	useEffect(() => {
 		// Only connect if user is logged in
@@ -72,24 +60,35 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			console.log('[Socket] New notification received:', data)
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
 
-			// Play sound if available
-			try {
-				if (player) {
-					player.play()
-				}
-			} catch (error) {
-				console.error('Error playing notification sound:', error)
-			}
-
 			const toastTitle = data.title || 'New notification'
 			const toastMessage = data.content || ''
 
-			toast.info(`${toastTitle}\n${toastMessage}`, {
-				onPress: () => {
-					if (data.screen) {
-						router.push(data.screen as any)
+			let targetScreen = data.screen
+			let customOnPress: (() => void) | undefined
+
+			if (targetScreen === '/business/sales') {
+				targetScreen = undefined
+				customOnPress = async () => {
+					try {
+						const profilesRes = await getDashboardProfiles()
+						const profileList = profilesRes.data?.filter((p: any) => p.kind === 'business') || []
+						if (profileList.length > 0 && profileList[0].slug) {
+							router.push(`/dashboard/${profileList[0].slug}/sales` as any)
+						} else {
+							router.push('/' as any)
+						}
+					} catch (e) {
+						console.error(e)
 					}
 				}
+			}
+
+			toast.show({
+				title: toastTitle,
+				message: toastMessage,
+				screen: targetScreen,
+				onPress: customOnPress,
+				color: '#3B82F6'
 			})
 
 			// Refresh count

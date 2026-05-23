@@ -107,11 +107,19 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 		(profile: DashboardProfile) => {
 			if (!selectedProfile || profile._id === selectedProfile.profileId) return
 
-			if (businessSlug && profile.slug) {
+			if (profile.kind === 'business' && profile.slug) {
+				// Navigating to a business profile dashboard
 				router.replace(`/dashboard/${profile.slug}` as never)
 			} else {
-				setLoading(true)
-				loadDashboard({ kind: profile.kind, slug: profile.slug, profileId: profile._id })
+				// Navigating to personal dashboard
+				if (businessSlug) {
+					// Coming from a business dashboard, route back to the personal dashboard
+					router.replace(`/dashboard` as never)
+				} else {
+					// Already on /dashboard, just update state
+					setLoading(true)
+					loadDashboard({ kind: profile.kind, slug: profile.slug, profileId: profile._id })
+				}
 			}
 		},
 		[selectedProfile, router, businessSlug, loadDashboard]

@@ -1,6 +1,6 @@
 import React from 'react'
-import ProductsScreen from '@/features/products/ProductsScreen'
+import ProductsListScreen from '@/features/products/ProductsListScreen'
 
-export default function ProductsRoute() {
-	return <ProductsScreen />
+export default function ProductsListRoute() {
+	return <ProductsListScreen />
 }

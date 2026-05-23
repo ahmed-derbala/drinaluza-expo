@@ -84,7 +84,7 @@ export default function SettingsScreen() {
 		const handleCopy = async () => {
 			if (copyValue) {
 				await Clipboard.setStringAsync(copyValue)
-				toast.success(translate('copied_to_clipboard', 'Copied to clipboard!'))
+				toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
 			}
 		}
 
