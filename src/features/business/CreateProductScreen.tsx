@@ -279,7 +279,7 @@ export default function CreateProductScreen() {
 
 			await createProduct(productData)
 			showAlert(translate('success', 'Success'), translate('product_created_success', 'Product created successfully!'), () => {
-				router.replace(`/businesses/${selectedBusiness.slug}/products` as never)
+				router.replace(`/dashboard/business/${selectedBusiness.slug}/products` as never)
 			})
 		} catch (error: any) {
 			console.error('Failed to create product:', error)
@@ -292,16 +292,14 @@ export default function CreateProductScreen() {
 	const isFormValid = selectedBusiness && productNameEn && selectedDefaultProduct && priceTND
 
 	const handleBack = () => {
-		if (source === 'dashboard') {
-			router.replace('/(home)/dashboard' as never)
-		} else if (source === 'my-products') {
-			router.replace('/business/my-products' as never)
-		} else if (source === 'business-detail') {
-			router.replace(`/businesses/${businessSlug || selectedBusiness?.slug}` as never)
-		} else if (businessSlug || selectedBusiness?.slug) {
-			router.replace(`/businesses/${businessSlug || selectedBusiness?.slug}/products` as never)
+		if (router.canGoBack()) {
+			router.back()
 		} else {
-			router.replace('/(home)/dashboard' as never)
+			if (businessSlug || selectedBusiness?.slug) {
+				router.replace(`/dashboard/business/${businessSlug || selectedBusiness?.slug}/products` as never)
+			} else {
+				router.replace('/(home)/dashboard' as never)
+			}
 		}
 	}
 
