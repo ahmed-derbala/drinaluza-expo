@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.3.22",
+  "version": "1.3.23",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -18,7 +18,7 @@
   "scripts": {
     "frl": "npm run i && npm run start:local",
     "cpapk2gdrive-local": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1XFIQ1YrZ8Utn1NoSHNKXHO8emM5oMthk",
-    "cpapk2gdrive-prod": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm",
+    "cpapk2gdrive-prod": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1imkwBuOkM01NSd7g-oOcjWP6YYjvkpQs/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW",
     "cpapk2phone": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/mtp:host=SAMSUNG_SAMSUNG_Android_RF8N213CCAT/Internal storage/Download",
     "env:prod": "cp envs/.env.prod .env",
     "env:local": "cp envs/.env.local .env",

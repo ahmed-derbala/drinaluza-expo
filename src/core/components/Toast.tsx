@@ -37,7 +37,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const insets = useSafeAreaInsets()
 	const timerRef = useRef<NodeJS.Timeout | null>(null)
 
-	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/toast.wav')) : null
+	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/notification.mp3')) : null
 
 	const hide = useCallback(() => {
 		Animated.parallel([Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }), Animated.timing(translateY, { toValue: -100, duration: 200, useNativeDriver: true })]).start(

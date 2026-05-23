@@ -186,8 +186,8 @@ export default function SettingsScreen() {
 					icon="cloud-download-outline"
 					title="APK Download"
 					subtitle="Google Drive"
-					onPress={() => Linking.openURL('https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm')}
-					copyValue="https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm"
+					onPress={() => Linking.openURL('https://drive.google.com/drive/u/1/folders/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW')}
+					copyValue="https://drive.google.com/drive/u/1/folders/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW"
 					color="#4285F4"
 				/>
 			</SettingSection>
