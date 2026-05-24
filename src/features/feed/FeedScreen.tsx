@@ -482,9 +482,11 @@ export default function FeedScreen() {
 
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8 }}>
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => setIsScannerVisible(true)}>
-				<MaterialIcons name="qr-code-scanner" size={20} color={colors.primary} />
-			</TouchableOpacity>
+			{!isWeb && (
+				<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => setIsScannerVisible(true)}>
+					<MaterialIcons name="qr-code-scanner" size={20} color={colors.primary} />
+				</TouchableOpacity>
+			)}
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/search')}>
 				<Ionicons name="search-outline" size={20} color={colors.primary} />
 			</TouchableOpacity>
