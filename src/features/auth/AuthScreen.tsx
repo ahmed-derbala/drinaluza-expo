@@ -3,7 +3,7 @@ import { View, TextInput, Button, Text, TouchableOpacity, Alert, useWindowDimens
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth } from './auth.api'
 import { secureGetItem } from '@/core/storage'
@@ -231,160 +231,158 @@ export default function AuthScreen() {
 	}
 
 	return (
-		<SafeAreaProvider>
-			<SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
-				<StatusBar style="light" />
-				<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-					<ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-						<View style={[styles.innerContainer, isWideScreen && { maxWidth }]}>
-							<View style={styles.topUtilityBar}>
-								<TouchableOpacity onPress={() => router.replace('/(home)/feed' as any)} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-									<Ionicons name="home-outline" size={20} color={colors.primary} />
-								</TouchableOpacity>
-								<TouchableOpacity onPress={handleResetApp} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-									<Ionicons name="refresh-outline" size={20} color={colors.primary} />
-								</TouchableOpacity>
-							</View>
-							<Text style={[styles.title, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
-							<Text style={[styles.subtitle, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
+		<SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
+			<StatusBar style="light" />
+			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+				<ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+					<View style={[styles.innerContainer, isWideScreen && { maxWidth }]}>
+						<View style={styles.topUtilityBar}>
+							<TouchableOpacity onPress={() => router.replace('/(home)/feed' as any)} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+								<Ionicons name="home-outline" size={20} color={colors.primary} />
+							</TouchableOpacity>
+							<TouchableOpacity onPress={handleResetApp} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+								<Ionicons name="refresh-outline" size={20} color={colors.primary} />
+							</TouchableOpacity>
+						</View>
+						<Text style={[styles.title, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
+						<Text style={[styles.subtitle, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
 
-							{/* Language and Currency Selection */}
-							<View style={styles.settingsSection}>
-								<View style={styles.settingsGroup}>
-									<Text style={[styles.settingsLabel, { color: colors.textTertiary }]}>{translate('app_lang', 'Language')}</Text>
-									<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsScroll}>
-										{LANGUAGES.map((lang) => (
-											<TouchableOpacity
-												key={lang.code}
-												style={[
-													styles.settingsOption,
-													{ backgroundColor: colors.surface, borderColor: colors.border },
-													appLang === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
-												]}
-												onPress={() => setAppLang(lang.code)}
-											>
-												<Text style={styles.flagText}>{lang.flag}</Text>
-												<Text style={[styles.optionLabel, { color: colors.text }, appLang === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
-											</TouchableOpacity>
-										))}
-									</ScrollView>
-								</View>
-
-								<View style={styles.settingsGroup}>
-									<Text style={[styles.settingsLabel, { color: colors.textTertiary }]}>{translate('currency_label', 'Currency')}</Text>
-									<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsScroll}>
-										{CURRENCIES.map((curr) => (
-											<TouchableOpacity
-												key={curr.code}
-												style={[
-													styles.settingsOption,
-													{ backgroundColor: colors.surface, borderColor: colors.border },
-													currency === curr.code && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
-												]}
-												onPress={() => setCurrency(curr.code)}
-											>
-												<View style={[styles.currencySymbolContainer, { backgroundColor: colors.card }]}>
-													<Text style={[styles.currencySymbol, { color: colors.primary }]}>{curr.symbol}</Text>
-												</View>
-												<Text style={[styles.optionLabel, { color: colors.text }, currency === curr.code && { color: colors.primary, fontWeight: '700' }]}>{curr.label}</Text>
-											</TouchableOpacity>
-										))}
-									</ScrollView>
-								</View>
-							</View>
-
-							{savedAuths.length > 0 && (
-								<View style={styles.savedAuthsSection}>
-									<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
-									<View style={[styles.savedAuthsContainer, { borderColor: colors.border }]}>
-										<ScrollView style={styles.savedAuthsScroll} nestedScrollEnabled={true}>
-											{savedAuths.map((auth) => (
-												<TouchableOpacity key={auth.slug} style={[styles.savedAuthItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => handleQuickSignIn(auth)}>
-													<View style={[styles.authAvatar, { backgroundColor: colors.primaryContainer }]}>
-														<Ionicons name="person" size={20} color={colors.primary} />
-													</View>
-													<View style={styles.savedAuthInfo}>
-														<Text style={[styles.savedAuthSlug, { color: colors.text }]}>@{auth.slug}</Text>
-														<Text style={[styles.savedAuthDate, { color: colors.textTertiary }]}>
-															{translate('last_signin', 'Last')}: {new Date(auth.lastSignIn).toLocaleDateString()}
-														</Text>
-													</View>
-													<TouchableOpacity style={styles.deleteIcon} onPress={() => handleDeleteSavedAuth(auth.slug)}>
-														<Ionicons name="trash-outline" size={20} color={colors.error} />
-													</TouchableOpacity>
-												</TouchableOpacity>
-											))}
-										</ScrollView>
-									</View>
-								</View>
-							)}
-
-							<View style={styles.inputContainer}>
-								<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-									<Ionicons name="person-outline" size={20} color={colors.textSecondary} />
-									<TextInput
-										style={[styles.input, { color: colors.text }]}
-										placeholder={translate('username', 'Username')}
-										placeholderTextColor={colors.textTertiary}
-										value={slug}
-										onChangeText={(text) => {
-											setSlug(text)
-											setStatusState('initial')
-										}}
-										autoCapitalize="none"
-										autoCorrect={false}
-									/>
-								</View>
-								<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-									<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
-									<TextInput
-										style={[styles.input, { color: colors.text }]}
-										placeholder={translate('password', 'Password')}
-										placeholderTextColor={colors.textTertiary}
-										value={password}
-										onChangeText={(text) => {
-											setPassword(text)
-											setStatusState('initial')
-										}}
-										secureTextEntry
-									/>
-								</View>
-							</View>
-
-							{(statusState === '404' || statusState === '409') && (
-								<Text
-									style={[
-										styles.errorText,
-										{
-											color: statusState === '404' ? colors.error : colors.warning
-										}
-									]}
-								>
-									{statusState === '404' ? errorMessage : translate('incorrect_password', 'Incorrect password. Try again')}
-								</Text>
-							)}
-
-							<View style={statusState === '404' ? styles.buttonContainer : { width: '100%', alignItems: 'center', marginTop: 16 }}>
-								{statusState === '404' ? (
-									<>
-										<TouchableOpacity style={[styles.primaryIconButton, { backgroundColor: colors.primary }]} onPress={handleSignIn}>
-											<Ionicons name="log-in-outline" size={24} color={colors.textOnPrimary} />
+						{/* Language and Currency Selection */}
+						<View style={styles.settingsSection}>
+							<View style={styles.settingsGroup}>
+								<Text style={[styles.settingsLabel, { color: colors.textTertiary }]}>{translate('app_lang', 'Language')}</Text>
+								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsScroll}>
+									{LANGUAGES.map((lang) => (
+										<TouchableOpacity
+											key={lang.code}
+											style={[
+												styles.settingsOption,
+												{ backgroundColor: colors.surface, borderColor: colors.border },
+												appLang === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
+											]}
+											onPress={() => setAppLang(lang.code)}
+										>
+											<Text style={styles.flagText}>{lang.flag}</Text>
+											<Text style={[styles.optionLabel, { color: colors.text }, appLang === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
 										</TouchableOpacity>
-										<TouchableOpacity style={[styles.secondaryIconButton, { borderColor: colors.primary }]} onPress={handleSignUp}>
-											<Ionicons name="person-add-outline" size={24} color={colors.primary} />
+									))}
+								</ScrollView>
+							</View>
+
+							<View style={styles.settingsGroup}>
+								<Text style={[styles.settingsLabel, { color: colors.textTertiary }]}>{translate('currency_label', 'Currency')}</Text>
+								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsScroll}>
+									{CURRENCIES.map((curr) => (
+										<TouchableOpacity
+											key={curr.code}
+											style={[
+												styles.settingsOption,
+												{ backgroundColor: colors.surface, borderColor: colors.border },
+												currency === curr.code && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
+											]}
+											onPress={() => setCurrency(curr.code)}
+										>
+											<View style={[styles.currencySymbolContainer, { backgroundColor: colors.card }]}>
+												<Text style={[styles.currencySymbol, { color: colors.primary }]}>{curr.symbol}</Text>
+											</View>
+											<Text style={[styles.optionLabel, { color: colors.text }, currency === curr.code && { color: colors.primary, fontWeight: '700' }]}>{curr.label}</Text>
 										</TouchableOpacity>
-									</>
-								) : (
-									<TouchableOpacity style={[styles.goIconButton, { backgroundColor: colors.primary }]} onPress={handleGo}>
-										<Ionicons name="arrow-forward" size={28} color={colors.textOnPrimary} />
-									</TouchableOpacity>
-								)}
+									))}
+								</ScrollView>
 							</View>
 						</View>
-					</ScrollView>
-				</KeyboardAvoidingView>
-			</SafeAreaView>
-		</SafeAreaProvider>
+
+						{savedAuths.length > 0 && (
+							<View style={styles.savedAuthsSection}>
+								<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
+								<View style={[styles.savedAuthsContainer, { borderColor: colors.border }]}>
+									<ScrollView style={styles.savedAuthsScroll} nestedScrollEnabled={true}>
+										{savedAuths.map((auth) => (
+											<TouchableOpacity key={auth.slug} style={[styles.savedAuthItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => handleQuickSignIn(auth)}>
+												<View style={[styles.authAvatar, { backgroundColor: colors.primaryContainer }]}>
+													<Ionicons name="person" size={20} color={colors.primary} />
+												</View>
+												<View style={styles.savedAuthInfo}>
+													<Text style={[styles.savedAuthSlug, { color: colors.text }]}>@{auth.slug}</Text>
+													<Text style={[styles.savedAuthDate, { color: colors.textTertiary }]}>
+														{translate('last_signin', 'Last')}: {new Date(auth.lastSignIn).toLocaleDateString()}
+													</Text>
+												</View>
+												<TouchableOpacity style={styles.deleteIcon} onPress={() => handleDeleteSavedAuth(auth.slug)}>
+													<Ionicons name="trash-outline" size={20} color={colors.error} />
+												</TouchableOpacity>
+											</TouchableOpacity>
+										))}
+									</ScrollView>
+								</View>
+							</View>
+						)}
+
+						<View style={styles.inputContainer}>
+							<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+								<Ionicons name="person-outline" size={20} color={colors.textSecondary} />
+								<TextInput
+									style={[styles.input, { color: colors.text }]}
+									placeholder={translate('username', 'Username')}
+									placeholderTextColor={colors.textTertiary}
+									value={slug}
+									onChangeText={(text) => {
+										setSlug(text)
+										setStatusState('initial')
+									}}
+									autoCapitalize="none"
+									autoCorrect={false}
+								/>
+							</View>
+							<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+								<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+								<TextInput
+									style={[styles.input, { color: colors.text }]}
+									placeholder={translate('password', 'Password')}
+									placeholderTextColor={colors.textTertiary}
+									value={password}
+									onChangeText={(text) => {
+										setPassword(text)
+										setStatusState('initial')
+									}}
+									secureTextEntry
+								/>
+							</View>
+						</View>
+
+						{(statusState === '404' || statusState === '409') && (
+							<Text
+								style={[
+									styles.errorText,
+									{
+										color: statusState === '404' ? colors.error : colors.warning
+									}
+								]}
+							>
+								{statusState === '404' ? errorMessage : translate('incorrect_password', 'Incorrect password. Try again')}
+							</Text>
+						)}
+
+						<View style={statusState === '404' ? styles.buttonContainer : { width: '100%', alignItems: 'center', marginTop: 16 }}>
+							{statusState === '404' ? (
+								<>
+									<TouchableOpacity style={[styles.primaryIconButton, { backgroundColor: colors.primary }]} onPress={handleSignIn}>
+										<Ionicons name="log-in-outline" size={24} color={colors.textOnPrimary} />
+									</TouchableOpacity>
+									<TouchableOpacity style={[styles.secondaryIconButton, { borderColor: colors.primary }]} onPress={handleSignUp}>
+										<Ionicons name="person-add-outline" size={24} color={colors.primary} />
+									</TouchableOpacity>
+								</>
+							) : (
+								<TouchableOpacity style={[styles.goIconButton, { backgroundColor: colors.primary }]} onPress={handleGo}>
+									<Ionicons name="arrow-forward" size={28} color={colors.textOnPrimary} />
+								</TouchableOpacity>
+							)}
+						</View>
+					</View>
+				</ScrollView>
+			</KeyboardAvoidingView>
+		</SafeAreaView>
 	)
 }
 

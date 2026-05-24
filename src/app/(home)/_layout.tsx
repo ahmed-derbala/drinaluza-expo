@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { Tabs, usePathname } from 'expo-router'
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
 import { useLayout, useUser } from '@/core/contexts'
@@ -39,136 +38,134 @@ export default function HomeLayout() {
 	const iconSize = Platform.select({ ios: 20, android: 22, web: 20 })
 
 	return (
-		<SafeAreaProvider>
-			<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
-				<StatusBar style="light" />
-				<Tabs
-					screenOptions={{
-						headerStyle: {
-							backgroundColor: colors.background
-						},
-						headerTintColor: colors.text,
-						headerTitleStyle: {
-							fontWeight: '600'
-						},
-						tabBarStyle: {
-							position: 'absolute',
-							bottom: 0,
-							left: 0,
-							right: 0,
-							backgroundColor: colors.background,
-							borderTopColor: colors.primary,
-							borderTopWidth: 1.5,
-							paddingVertical: Platform.select({
-								ios: 2,
-								android: 4,
-								web: 4
-							}),
-							height: Platform.select({
-								ios: 40,
-								android: 48,
-								web: 48
-							}),
-							transform: [{ translateY: isTabBarVisible ? 0 : 100 }],
-							opacity: isTabBarVisible ? 1 : 0,
-							...Platform.select({
-								ios: {
-									shadowColor: colors.primary,
-									shadowOffset: { width: 0, height: -3 },
-									shadowOpacity: 0.12,
-									shadowRadius: 6
-								},
-								android: {
-									elevation: 8
-								},
-								web: {
-									boxShadow: `0 -3px 10px ${colors.primary}18`
-								}
-							})
-						},
-						tabBarActiveTintColor: colors.primary,
-						tabBarInactiveTintColor: colors.textTertiary,
-						tabBarHideOnKeyboard: Platform.OS === 'android',
-						tabBarShowLabel: false,
-						tabBarIconStyle: {
-							marginTop: Platform.select({
-								ios: 0,
-								android: 1,
-								web: 0
-							})
-						}
-					}}
-				>
-					<Tabs.Screen
-						name="feed"
-						options={{
-							tabBarIcon: ({ color, focused }) => (
-								<View style={focused ? styles.activeIconContainer : undefined}>
-									<MaterialIcons name="home" size={iconSize} color={color} />
-								</View>
-							),
-							tabBarAccessibilityLabel: translate('feed', 'Feed')
-						}}
-					/>
-					<Tabs.Screen
-						name="dashboard"
-						options={{
-							href: isAuthenticated && user?.role === 'business_owner' ? '/dashboard' : null,
-							tabBarIcon: ({ color, focused }) => (
-								<View style={focused ? styles.activeIconContainer : undefined}>
-									<MaterialIcons name="dashboard" size={iconSize} color={color} />
-								</View>
-							),
-							tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
-						}}
-					/>
-					<Tabs.Screen
-						name="notifications"
-						options={{
-							href: isAuthenticated ? '/notifications' : null,
-							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
-							tabBarBadgeStyle: {
-								backgroundColor: colors.error,
-								color: '#fff',
-								fontSize: 10,
-								minWidth: 18,
-								height: 18,
-								borderRadius: 9,
-								lineHeight: 18
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<StatusBar style="light" />
+			<Tabs
+				screenOptions={{
+					headerStyle: {
+						backgroundColor: colors.background
+					},
+					headerTintColor: colors.text,
+					headerTitleStyle: {
+						fontWeight: '600'
+					},
+					tabBarStyle: {
+						position: 'absolute',
+						bottom: 0,
+						left: 0,
+						right: 0,
+						backgroundColor: colors.background,
+						borderTopColor: colors.primary,
+						borderTopWidth: 1.5,
+						paddingVertical: Platform.select({
+							ios: 2,
+							android: 4,
+							web: 4
+						}),
+						height: Platform.select({
+							ios: 40,
+							android: 48,
+							web: 48
+						}),
+						transform: [{ translateY: isTabBarVisible ? 0 : 100 }],
+						opacity: isTabBarVisible ? 1 : 0,
+						...Platform.select({
+							ios: {
+								shadowColor: colors.primary,
+								shadowOffset: { width: 0, height: -3 },
+								shadowOpacity: 0.12,
+								shadowRadius: 6
 							},
-							tabBarIcon: ({ color, focused }) => (
-								<View style={focused ? styles.activeIconContainer : undefined}>
-									<Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={iconSize} color={color} />
-								</View>
-							),
-							tabBarAccessibilityLabel: translate('notifications', 'Notifications')
-						}}
-					/>
-					<Tabs.Screen
-						name="profile"
-						options={{
-							tabBarIcon: ({ color, focused }) => (
-								<View style={focused ? styles.activeIconContainer : undefined}>
-									<MaterialIcons name={focused ? 'person' : 'person-outline'} size={iconSize} color={color} />
-								</View>
-							),
-							tabBarAccessibilityLabel: translate('profile', 'Profile')
-						}}
-					/>
-					<Tabs.Screen
-						name="settings"
-						options={{
-							tabBarIcon: ({ color, focused }) => (
-								<View style={focused ? styles.activeIconContainer : undefined}>
-									<Ionicons name={focused ? 'settings' : 'settings-outline'} size={iconSize} color={color} />
-								</View>
-							),
-							tabBarAccessibilityLabel: translate('settings', 'Settings')
-						}}
-					/>
-				</Tabs>
-			</SafeAreaView>
-		</SafeAreaProvider>
+							android: {
+								elevation: 8
+							},
+							web: {
+								boxShadow: `0 -3px 10px ${colors.primary}18`
+							}
+						})
+					},
+					tabBarActiveTintColor: colors.primary,
+					tabBarInactiveTintColor: colors.textTertiary,
+					tabBarHideOnKeyboard: Platform.OS === 'android',
+					tabBarShowLabel: false,
+					tabBarIconStyle: {
+						marginTop: Platform.select({
+							ios: 0,
+							android: 1,
+							web: 0
+						})
+					}
+				}}
+			>
+				<Tabs.Screen
+					name="feed"
+					options={{
+						tabBarIcon: ({ color, focused }) => (
+							<View style={focused ? styles.activeIconContainer : undefined}>
+								<MaterialIcons name="home" size={iconSize} color={color} />
+							</View>
+						),
+						tabBarAccessibilityLabel: translate('feed', 'Feed')
+					}}
+				/>
+				<Tabs.Screen
+					name="dashboard"
+					options={{
+						href: isAuthenticated && user?.role === 'business_owner' ? '/dashboard' : null,
+						tabBarIcon: ({ color, focused }) => (
+							<View style={focused ? styles.activeIconContainer : undefined}>
+								<MaterialIcons name="dashboard" size={iconSize} color={color} />
+							</View>
+						),
+						tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
+					}}
+				/>
+				<Tabs.Screen
+					name="notifications"
+					options={{
+						href: isAuthenticated ? '/notifications' : null,
+						tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
+						tabBarBadgeStyle: {
+							backgroundColor: colors.error,
+							color: '#fff',
+							fontSize: 10,
+							minWidth: 18,
+							height: 18,
+							borderRadius: 9,
+							lineHeight: 18
+						},
+						tabBarIcon: ({ color, focused }) => (
+							<View style={focused ? styles.activeIconContainer : undefined}>
+								<Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={iconSize} color={color} />
+							</View>
+						),
+						tabBarAccessibilityLabel: translate('notifications', 'Notifications')
+					}}
+				/>
+				<Tabs.Screen
+					name="profile"
+					options={{
+						tabBarIcon: ({ color, focused }) => (
+							<View style={focused ? styles.activeIconContainer : undefined}>
+								<MaterialIcons name={focused ? 'person' : 'person-outline'} size={iconSize} color={color} />
+							</View>
+						),
+						tabBarAccessibilityLabel: translate('profile', 'Profile')
+					}}
+				/>
+				<Tabs.Screen
+					name="settings"
+					options={{
+						tabBarIcon: ({ color, focused }) => (
+							<View style={focused ? styles.activeIconContainer : undefined}>
+								<Ionicons name={focused ? 'settings' : 'settings-outline'} size={iconSize} color={color} />
+							</View>
+						),
+						tabBarAccessibilityLabel: translate('settings', 'Settings')
+					}}
+				/>
+			</Tabs>
+		</View>
 	)
 }
 

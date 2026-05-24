@@ -77,12 +77,6 @@ const isTablet = width >= 768
 
 Always respect device safe areas.
 
-Use:
-
-```tsx
-import { SafeAreaView } from 'react-native-safe-area-context'
-```
-
 Avoid layouts that overlap:
 - Notches
 - Status bars

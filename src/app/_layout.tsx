@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router'
 import React from 'react'
+import { SafeAreaProvider } from 'react-native-safe-area-context'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -37,18 +38,20 @@ function RootLayoutContent() {
 
 export default function RootLayout() {
 	return (
-		<ToastProvider>
-			<VersionProvider>
-				<UserProvider>
-					<NotificationProvider>
-						<SocketProvider>
-							<LayoutProvider>
-								<RootLayoutContent />
-							</LayoutProvider>
-						</SocketProvider>
-					</NotificationProvider>
-				</UserProvider>
-			</VersionProvider>
-		</ToastProvider>
+		<SafeAreaProvider>
+			<ToastProvider>
+				<VersionProvider>
+					<UserProvider>
+						<NotificationProvider>
+							<SocketProvider>
+								<LayoutProvider>
+									<RootLayoutContent />
+								</LayoutProvider>
+							</SocketProvider>
+						</NotificationProvider>
+					</UserProvider>
+				</VersionProvider>
+			</ToastProvider>
+		</SafeAreaProvider>
 	)
 }
