@@ -15,19 +15,22 @@ import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
+import { AppThemeProvider } from '@/core/theme'
 
 function RootLayoutContent() {
 	return (
 		<ErrorBoundary>
-			<Stack>
-				<Stack.Screen name="index" options={{ headerShown: false }} />
-				<Stack.Screen name="(home)" options={{ headerShown: false }} />
-				<Stack.Screen name="businesses" options={{ headerShown: false }} />
-				<Stack.Screen name="dashboard" options={{ headerShown: false }} />
-				<Stack.Screen name="users" options={{ headerShown: false }} />
-				<Stack.Screen name="auth" options={{ headerShown: false }} />
-				<Stack.Screen name="search" options={{ headerShown: false }} />
-			</Stack>
+			<AppThemeProvider>
+				<Stack>
+					<Stack.Screen name="index" options={{ headerShown: false }} />
+					<Stack.Screen name="(home)" options={{ headerShown: false }} />
+					<Stack.Screen name="businesses" options={{ headerShown: false }} />
+					<Stack.Screen name="dashboard" options={{ headerShown: false }} />
+					<Stack.Screen name="users" options={{ headerShown: false }} />
+					<Stack.Screen name="auth" options={{ headerShown: false }} />
+					<Stack.Screen name="search" options={{ headerShown: false }} />
+				</Stack>
+			</AppThemeProvider>
 		</ErrorBoundary>
 	)
 }

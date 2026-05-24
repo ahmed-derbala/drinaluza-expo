@@ -2,7 +2,7 @@ import HeaderTitle from '@/features/common/HeaderTitle'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useRouter, Tabs, useFocusEffect } from 'expo-router'
+import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
 
@@ -126,6 +126,49 @@ const createStyles = (colors: any) =>
 		filterChipActive: {
 			backgroundColor: colors.primaryContainer,
 			borderColor: colors.primary
+		},
+		paginationContainer: {
+			flexDirection: 'row',
+			justifyContent: 'center',
+			alignItems: 'center',
+			paddingVertical: 24,
+			gap: 8,
+			backgroundColor: colors.background
+		},
+		pageButton: {
+			minWidth: 40,
+			height: 40,
+			borderRadius: 10,
+			backgroundColor: colors.surface,
+			justifyContent: 'center',
+			alignItems: 'center',
+			borderWidth: 1,
+			borderColor: colors.border
+		},
+		pageButtonActive: {
+			backgroundColor: colors.primary,
+			borderColor: colors.primary
+		},
+		pageButtonText: {
+			fontSize: 14,
+			fontWeight: '600',
+			color: colors.text
+		},
+		pageButtonTextActive: {
+			color: '#ffffff'
+		},
+		pageButtonDisabled: {
+			opacity: 0.5
+		},
+		pageDots: {
+			paddingHorizontal: 4,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		pageDotsText: {
+			fontSize: 14,
+			color: colors.textSecondary,
+			fontWeight: '600'
 		}
 	})
 
@@ -160,7 +203,28 @@ export default function FeedScreen() {
 	const itemWidth = (width - padding * 2 - gap * (numColumns - 1)) / numColumns
 
 	// Pagination state
-	const [page, setPage] = useState(1)
+	const isWeb = Platform.OS === 'web'
+	const { page: queryPage } = useLocalSearchParams<{ page?: string }>()
+	const urlPage = useMemo(() => {
+		if (!isWeb) return 1
+		return queryPage ? Math.max(1, parseInt(queryPage, 10)) : 1
+	}, [queryPage, isWeb])
+
+	const [mobilePage, setMobilePage] = useState(1)
+	const activePage = isWeb ? urlPage : mobilePage
+
+	const [pagination, setPagination] = useState<{
+		totalDocs: number
+		totalPages: number
+		page: number
+		limit: number
+		hasNextPage: boolean
+		nextPage: number | null
+		hasPrevPage: boolean
+		prevPage: number | null
+		returnedDocsCount: number
+	} | null>(null)
+
 	const [hasMore, setHasMore] = useState(true)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
 
@@ -197,10 +261,15 @@ export default function FeedScreen() {
 			const response = await getFeed(pageNum, 10)
 			const newItems = response.data.docs
 
-			if (newItems.length < 10) {
-				setHasMore(false)
+			if (response.data.pagination) {
+				setPagination(response.data.pagination)
+				setHasMore(response.data.pagination.hasNextPage)
 			} else {
-				setHasMore(true)
+				if (newItems.length < 10) {
+					setHasMore(false)
+				} else {
+					setHasMore(true)
+				}
 			}
 
 			if (shouldAppend) {
@@ -224,6 +293,14 @@ export default function FeedScreen() {
 		}
 	}
 
+	// Trigger data load on page parameter changes on Web
+	useEffect(() => {
+		if (isWeb) {
+			loadCart()
+			fetchFeed(urlPage, false)
+		}
+	}, [urlPage, isWeb])
+
 	const refreshData = useCallback(async () => {
 		// Animate rotation on press
 		Animated.timing(refreshSpinValue, {
@@ -236,24 +313,37 @@ export default function FeedScreen() {
 		})
 
 		setRefreshing(true)
-		setPage(1)
-		setHasMore(true)
-		await Promise.all([loadCart(), fetchFeed(1, false)])
+		if (isWeb) {
+			if (urlPage === 1) {
+				await Promise.all([loadCart(), fetchFeed(1, false)])
+			} else {
+				router.setParams({ page: '1' })
+			}
+		} else {
+			setMobilePage(1)
+			setHasMore(true)
+			await Promise.all([loadCart(), fetchFeed(1, false)])
+		}
 		setRefreshing(false)
-	}, [refreshSpinValue])
+	}, [refreshSpinValue, isWeb, urlPage])
 
 	const handleLoadMore = useCallback(() => {
+		if (isWeb) return
 		if (hasMore && !loading && !isLoadingMore) {
-			const nextPage = page + 1
-			setPage(nextPage)
+			const nextPage = mobilePage + 1
+			setMobilePage(nextPage)
 			fetchFeed(nextPage, true)
 		}
-	}, [hasMore, loading, isLoadingMore, page])
+	}, [hasMore, loading, isLoadingMore, mobilePage, isWeb])
 
 	useFocusEffect(
 		useCallback(() => {
-			refreshData()
-		}, [refreshData])
+			if (!isWeb) {
+				refreshData()
+			} else {
+				loadCart()
+			}
+		}, [refreshData, isWeb])
 	)
 
 	const addToCart = async (item: FeedItem, quantity: number) => {
@@ -288,7 +378,76 @@ export default function FeedScreen() {
 		}
 	}
 
+	const getPageNumbers = (current: number, total: number) => {
+		const pages: (number | string)[] = []
+		if (total <= 7) {
+			for (let i = 1; i <= total; i++) pages.push(i)
+		} else {
+			pages.push(1)
+			if (current > 3) {
+				pages.push('...')
+			}
+			const start = Math.max(2, current - 1)
+			const end = Math.min(total - 1, current + 1)
+			for (let i = start; i <= end; i++) {
+				pages.push(i)
+			}
+			if (current < total - 2) {
+				pages.push('...')
+			}
+			pages.push(total)
+		}
+		return pages
+	}
+
+	const renderWebPagination = () => {
+		if (!isWeb || !pagination || pagination.totalPages <= 1) return null
+
+		const { totalPages } = pagination
+		const pageNumbers = getPageNumbers(activePage, totalPages)
+
+		return (
+			<View style={styles.paginationContainer}>
+				<TouchableOpacity
+					style={[styles.pageButton, activePage === 1 && styles.pageButtonDisabled]}
+					disabled={activePage === 1}
+					onPress={() => router.setParams({ page: (activePage - 1).toString() })}
+				>
+					<Ionicons name="chevron-back" size={18} color={activePage === 1 ? colors.textSecondary : colors.primary} />
+				</TouchableOpacity>
+
+				{pageNumbers.map((num, idx) => {
+					if (num === '...') {
+						return (
+							<View key={`dots-${idx}`} style={styles.pageDots}>
+								<Text style={styles.pageDotsText}>...</Text>
+							</View>
+						)
+					}
+
+					const isPageActive = num === activePage
+					return (
+						<TouchableOpacity key={`page-${num}`} style={[styles.pageButton, isPageActive && styles.pageButtonActive]} onPress={() => router.setParams({ page: num.toString() })}>
+							<Text style={[styles.pageButtonText, isPageActive && styles.pageButtonTextActive]}>{num}</Text>
+						</TouchableOpacity>
+					)
+				})}
+
+				<TouchableOpacity
+					style={[styles.pageButton, activePage === totalPages && styles.pageButtonDisabled]}
+					disabled={activePage === totalPages}
+					onPress={() => router.setParams({ page: (activePage + 1).toString() })}
+				>
+					<Ionicons name="chevron-forward" size={18} color={activePage === totalPages ? colors.textSecondary : colors.primary} />
+				</TouchableOpacity>
+			</View>
+		)
+	}
+
 	const renderFooter = () => {
+		if (isWeb) {
+			return renderWebPagination()
+		}
 		if (!isLoadingMore) return null
 		return (
 			<View style={{ paddingVertical: 20 }}>

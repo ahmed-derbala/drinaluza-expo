@@ -644,8 +644,6 @@ const PurchasesScreen = () => {
 			<Stack.Screen
 				options={{
 					headerTitle: () => <HeaderTitle title={translate('purchases_title', 'Purchases')} subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`} />,
-					headerLeft: () => null,
-					headerBackVisible: false,
 					headerRight: () => (
 						<TouchableOpacity onPress={onRefresh}>
 							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
