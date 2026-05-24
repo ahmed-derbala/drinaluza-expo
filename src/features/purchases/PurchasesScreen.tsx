@@ -16,7 +16,7 @@ import { useBackButton } from '../../core/hooks/useBackButton'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useUser } from '../../core/contexts/UserContext'
-import { toast } from '../../core/components/Toast'
+import { toast } from '@/features/common/Toast'
 import { showConfirm } from '../../core/helpers/popup'
 
 type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled'

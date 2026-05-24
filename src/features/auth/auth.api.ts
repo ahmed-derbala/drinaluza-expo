@@ -1,9 +1,10 @@
-import { getApiClient } from '../api'
+import { getApiClient } from '@/core/api'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
-import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken } from '../storage'
-import { log } from '../log'
-import { registerForExpoPush, saveExpoPushTokenInSession } from '../../features/notifications/notifications.api'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken } from '@/core/storage'
+import { log } from '@/core/log'
+import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
+
 // Default settings
 const defaultAuthSettings = {
 	tokenStorageKey: 'auth_token',

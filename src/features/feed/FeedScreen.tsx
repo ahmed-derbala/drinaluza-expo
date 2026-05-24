@@ -9,24 +9,15 @@ import { FeedItem } from '@/features/feed/feed.interface'
 import FeedCard from '@/features/feed/feed.card'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
-import { toast } from '@/core/components/Toast'
-import SearchBar from '@/features/search/SearchBar'
-import { getCurrentUser } from '@/core/auth/auth.api'
+import { toast } from '@/features/common/Toast'
+import { getCurrentUser } from '@/features/auth/auth.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
-import { useUser, useLayout } from '@/core/contexts'
+import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
-
-type FilterKey = 'product' | 'business' | 'user'
-
-const FILTER_OPTIONS: { key: FilterKey; icon: string; iconSet: 'ionicons' | 'material' }[] = [
-	{ key: 'product', icon: 'fish-outline', iconSet: 'ionicons' },
-	{ key: 'business', icon: 'store', iconSet: 'material' },
-	{ key: 'user', icon: 'people-outline', iconSet: 'ionicons' }
-]
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
@@ -148,8 +139,6 @@ export default function FeedScreen() {
 	const [cart, setCart] = useState<CartItem[]>([])
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
-	const [isSearchActive, setIsSearchActive] = useState(false)
-	const [activeFilters, setActiveFilters] = useState<FilterKey[]>([])
 	const [isScannerVisible, setIsScannerVisible] = useState(false)
 
 	const { width } = useWindowDimensions()
@@ -177,8 +166,6 @@ export default function FeedScreen() {
 
 	// Animation state for search bar
 	const scrollY = useRef(new Animated.Value(0)).current
-	const searchBarHeight = 80
-
 	// Animation for refresh icon
 	const refreshSpinValue = useRef(new Animated.Value(0)).current
 
@@ -188,15 +175,8 @@ export default function FeedScreen() {
 	const { user, localize, translate } = useUser()
 
 	const { onScroll } = useScrollHandler()
-	const { isSearchBarVisible, setSearchBarVisible } = useLayout()
 	const insets = useSafeAreaInsets()
 	const styles = useMemo(() => createStyles(colors), [colors])
-
-	const getFilterParam = (filters: FilterKey[]): string | undefined => {
-		// No filter or all selected = show everything
-		if (filters.length === 0 || filters.length === FILTER_OPTIONS.length) return undefined
-		return filters.join(',')
-	}
 
 	const loadCart = async () => {
 		try {
@@ -209,12 +189,12 @@ export default function FeedScreen() {
 		}
 	}
 
-	const fetchFeed = async (pageNum: number = 1, shouldAppend: boolean = false, filters: FilterKey[] = activeFilters) => {
+	const fetchFeed = async (pageNum: number = 1, shouldAppend: boolean = false) => {
 		try {
 			if (pageNum === 1) setLoading(true)
 			else setIsLoadingMore(true)
 
-			const response = await getFeed(pageNum, 10, getFilterParam(filters))
+			const response = await getFeed(pageNum, 10)
 			const newItems = response.data.docs
 
 			if (newItems.length < 10) {
@@ -225,14 +205,10 @@ export default function FeedScreen() {
 
 			if (shouldAppend) {
 				setFeedItems((prev) => [...prev, ...newItems])
-				if (!isSearchActive) {
-					setDisplayedItems((prev) => [...prev, ...newItems])
-				}
+				setDisplayedItems((prev) => [...prev, ...newItems])
 			} else {
 				setFeedItems(newItems)
-				if (!isSearchActive) {
-					setDisplayedItems(newItems)
-				}
+				setDisplayedItems(newItems)
 			}
 			setError(null)
 		} catch (err) {
@@ -240,7 +216,7 @@ export default function FeedScreen() {
 			const errorInfo = parseError(err)
 			setError({
 				message: errorInfo.message,
-				retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend, filters) : undefined
+				retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend) : undefined
 			})
 		} finally {
 			setLoading(false)
@@ -262,28 +238,17 @@ export default function FeedScreen() {
 		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
-		await Promise.all([loadCart(), fetchFeed(1, false, activeFilters)])
+		await Promise.all([loadCart(), fetchFeed(1, false)])
 		setRefreshing(false)
-	}, [activeFilters, refreshSpinValue])
+	}, [refreshSpinValue])
 
 	const handleLoadMore = useCallback(() => {
-		if (!isSearchActive && hasMore && !loading && !isLoadingMore) {
+		if (hasMore && !loading && !isLoadingMore) {
 			const nextPage = page + 1
 			setPage(nextPage)
 			fetchFeed(nextPage, true)
 		}
-	}, [isSearchActive, hasMore, loading, isLoadingMore, page])
-
-	const handleFilterToggle = useCallback((key: FilterKey) => {
-		setActiveFilters((prev) => {
-			const newFilters = prev.includes(key) ? prev.filter((f) => f !== key) : [...prev, key]
-			setPage(1)
-			setHasMore(true)
-			setIsSearchActive(false)
-			fetchFeed(1, false, newFilters)
-			return newFilters
-		})
-	}, [])
+	}, [hasMore, loading, isLoadingMore, page])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -323,24 +288,6 @@ export default function FeedScreen() {
 		}
 	}
 
-	const handleSearchResults = useCallback((results: FeedItem[]) => {
-		setIsSearchActive(true)
-		setDisplayedItems(results)
-	}, [])
-
-	const handleSearchClear = useCallback(() => {
-		setIsSearchActive(false)
-		setDisplayedItems(feedItems)
-	}, [feedItems])
-
-	const handleSearchError = useCallback((message: string, retry?: () => void) => {
-		toast.show({ title: 'Error', message, color: '#EF4444' })
-	}, [])
-
-	const handleToggleSearch = useCallback(() => {
-		setSearchBarVisible(!isSearchBarVisible)
-	}, [isSearchBarVisible, setSearchBarVisible])
-
 	const renderFooter = () => {
 		if (!isLoadingMore) return null
 		return (
@@ -375,24 +322,13 @@ export default function FeedScreen() {
 		</View>
 	)
 
-	const renderFilterIcon = (option: (typeof FILTER_OPTIONS)[0]) => {
-		const isActive = activeFilters.includes(option.key)
-		const iconColor = isActive ? colors.primary : colors.textTertiary
-		const size = 22
-
-		if (option.iconSet === 'material') {
-			return <MaterialIcons name={option.icon as any} size={size} color={iconColor} />
-		}
-		return <Ionicons name={option.icon as any} size={size} color={iconColor} />
-	}
-
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8 }}>
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => setIsScannerVisible(true)}>
 				<MaterialIcons name="qr-code-scanner" size={20} color={colors.primary} />
 			</TouchableOpacity>
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={handleToggleSearch}>
-				<Ionicons name={isSearchBarVisible ? 'search' : 'search-outline'} size={20} color={colors.primary} />
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/search')}>
+				<Ionicons name="search-outline" size={20} color={colors.primary} />
 			</TouchableOpacity>
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/profile/purchases?status=cart')}>
 				<Ionicons name="cart-outline" size={20} color={colors.primary} />
@@ -434,55 +370,6 @@ export default function FeedScreen() {
 					headerRight: () => headerRightActions
 				}}
 			/>
-
-			{/* Backdrop to dismiss search bar when tapping outside */}
-			{isSearchBarVisible && (
-				<TouchableOpacity
-					style={{
-						position: 'absolute',
-						top: Platform.OS === 'web' ? 50 : insets.top + 60,
-						left: 0,
-						right: 0,
-						bottom: 0,
-						zIndex: 5
-					}}
-					activeOpacity={1}
-					onPress={handleToggleSearch}
-				/>
-			)}
-
-			{/* Search Bar and Filters - combined container */}
-			<View
-				style={{
-					position: 'absolute',
-					top: Platform.OS === 'web' ? 50 : insets.top + 60,
-					left: 0,
-					right: 0,
-					zIndex: 10,
-					display: isSearchBarVisible ? 'flex' : 'none',
-					backgroundColor: colors.background,
-					borderBottomWidth: 1,
-					borderBottomColor: colors.border
-				}}
-			>
-				<View style={{ paddingHorizontal: padding, paddingVertical: 10 }}>
-					<SearchBar onSearchResults={handleSearchResults} onSearchClear={handleSearchClear} onError={handleSearchError} />
-				</View>
-				<View style={{ ...styles.filterContainer, paddingTop: 12, paddingBottom: 12 }}>
-					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: 'center' }}>
-						{FILTER_OPTIONS.map((option) => (
-							<TouchableOpacity
-								key={option.key}
-								style={[styles.filterChip, activeFilters.includes(option.key) && styles.filterChipActive]}
-								onPress={() => handleFilterToggle(option.key)}
-								activeOpacity={0.7}
-							>
-								{renderFilterIcon(option)}
-							</TouchableOpacity>
-						))}
-					</ScrollView>
-				</View>
-			</View>
 
 			<Animated.FlatList
 				key={numColumns}

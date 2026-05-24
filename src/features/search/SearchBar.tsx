@@ -23,7 +23,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 	const performSearch = useCallback(
 		async (text: string) => {
 			try {
-				const apiLang = (appLang.startsWith('tn') ? 'tn' : 'en') as 'en' | 'tn'
+				const apiLang = ((appLang || 'en').startsWith('tn') ? 'tn' : 'en') as 'en' | 'tn'
 				const response = await searchFeed(text, apiLang, ['products'])
 				onSearchResults(response.data.docs)
 			} catch (err) {

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
-import { getCurrentUser } from '../auth/auth.api'
+import { getCurrentUser } from '@/features/auth/auth.api'
 import { UserData } from '../../features/profile/profile.interface'
 import { LocalizedName } from '../../features/businesses/businesses.interface'
 import { translate as translateHelper, setGlobalAppLang, localizeName } from '../translation'

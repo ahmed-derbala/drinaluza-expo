@@ -10,28 +10,23 @@ if (typeof setImmediate === 'undefined') {
 import { VersionProvider } from '@/core/contexts/VersionContext'
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
-import { ToastProvider } from '@/core/components/Toast'
+import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 
-import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
-import { useTheme } from '@/core/theme'
-
 function RootLayoutContent() {
-	const { colors } = useTheme()
-	const stackOptions = getPlatformStackOptions(withThemedHeader(colors))
-
 	return (
 		<ErrorBoundary>
-			<Stack screenOptions={stackOptions}>
+			<Stack>
 				<Stack.Screen name="index" options={{ headerShown: false }} />
 				<Stack.Screen name="(home)" options={{ headerShown: false }} />
 				<Stack.Screen name="businesses" options={{ headerShown: false }} />
 				<Stack.Screen name="dashboard" options={{ headerShown: false }} />
 				<Stack.Screen name="users" options={{ headerShown: false }} />
 				<Stack.Screen name="auth" options={{ headerShown: false }} />
+				<Stack.Screen name="search" options={{ headerShown: false }} />
 			</Stack>
 		</ErrorBoundary>
 	)

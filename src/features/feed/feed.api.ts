@@ -112,12 +112,14 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 	}
 }
 
-const normalizeResponse = (response: FeedResponse): NormalizedFeedResponse => {
+const normalizeResponse = (response: any): NormalizedFeedResponse => {
+	const docs = Array.isArray(response.data) ? response.data.map(normalizeFeedDoc) : Array.isArray(response.data?.docs) ? response.data.docs.map(normalizeFeedDoc) : []
+
 	return {
 		status: response.status,
 		data: {
-			pagination: response.data.pagination,
-			docs: response.data.docs.map(normalizeFeedDoc)
+			pagination: Array.isArray(response.data) ? undefined : response.data?.pagination,
+			docs
 		}
 	}
 }

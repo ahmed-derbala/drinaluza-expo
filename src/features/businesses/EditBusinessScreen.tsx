@@ -5,7 +5,7 @@ import { getBusinessBySlug, updateBusiness } from '@/features/businesses/busines
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import ErrorState from '@/features/common/ErrorState'
-import { toast } from '@/core/components/Toast'
+import { toast } from '@/features/common/Toast'
 import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 

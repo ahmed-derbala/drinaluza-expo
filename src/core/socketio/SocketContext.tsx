@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router'
 import { BACKEND_URL } from '@/config'
 import { useUser } from '../contexts/UserContext'
 import { useNotification } from '../../features/notifications/NotificationContext'
-import { toast } from '../components/Toast'
+import { toast } from '@/features/common/Toast'
 import { log } from '../log'
 import { getDashboardProfiles } from '../../features/dashboard/dashboard.api'
 

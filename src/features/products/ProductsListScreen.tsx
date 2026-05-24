@@ -13,7 +13,7 @@ import ErrorState from '@/features/common/ErrorState'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useTheme } from '@/core/theme'
-import { toast } from '@/core/components/Toast'
+import { toast } from '@/features/common/Toast'
 import { getToken } from '@/core/storage'
 
 export default function ProductsListScreen() {

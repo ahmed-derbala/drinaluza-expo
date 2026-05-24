@@ -8,7 +8,7 @@ import { orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
 import SmartImage from '../../core/helpers/SmartImage'
 import { useUser } from '../../core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
-import { toast } from '../../core/components/Toast'
+import { toast } from '@/features/common/Toast'
 import { orderStatusEnum as statuses } from '../../config/orderStatus'
 
 interface SaleCardProps {

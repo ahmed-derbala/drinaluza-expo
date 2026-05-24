@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '@/core/contexts'
-import { toast } from '@/core/components/Toast'
+import { toast } from '@/features/common/Toast'
 
 type ScannerModalProps = {
 	visible: boolean
