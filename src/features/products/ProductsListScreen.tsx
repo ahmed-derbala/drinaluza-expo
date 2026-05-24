@@ -144,8 +144,7 @@ export default function ProductsListScreen() {
 				options={{
 					title: translate('products', 'Products'),
 					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 							<TouchableOpacity
 								style={{
 									width: 40,
@@ -181,6 +180,7 @@ export default function ProductsListScreen() {
 									</View>
 								)}
 							</TouchableOpacity>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
 						</View>
 					)
 				}}

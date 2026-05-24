@@ -426,8 +426,7 @@ export default function BusinessProductsScreen() {
 				options={{
 					title: headerTitle,
 					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 							<TouchableOpacity
 								style={{
 									width: 40,
@@ -463,6 +462,7 @@ export default function BusinessProductsScreen() {
 									</View>
 								)}
 							</TouchableOpacity>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
 						</View>
 					)
 				}}

@@ -26,6 +26,7 @@ function RootLayoutContent() {
 	return (
 		<ErrorBoundary>
 			<Stack screenOptions={stackOptions}>
+				<Stack.Screen name="index" options={{ headerShown: false }} />
 				<Stack.Screen name="(home)" options={{ headerShown: false }} />
 				<Stack.Screen name="businesses" options={{ headerShown: false }} />
 				<Stack.Screen name="dashboard" options={{ headerShown: false }} />

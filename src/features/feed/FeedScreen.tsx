@@ -394,11 +394,6 @@ export default function FeedScreen() {
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={handleToggleSearch}>
 				<Ionicons name={isSearchBarVisible ? 'search' : 'search-outline'} size={20} color={colors.primary} />
 			</TouchableOpacity>
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={refreshData} disabled={refreshing}>
-				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
-					<MaterialIcons name="refresh" size={20} color={colors.primary} />
-				</Animated.View>
-			</TouchableOpacity>
 			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/profile/purchases?status=cart')}>
 				<Ionicons name="cart-outline" size={20} color={colors.primary} />
 				{cart.length > 0 && (
@@ -421,6 +416,11 @@ export default function FeedScreen() {
 						<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
 					</View>
 				)}
+			</TouchableOpacity>
+			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={refreshData} disabled={refreshing}>
+				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
+					<MaterialIcons name="refresh" size={20} color={colors.primary} />
+				</Animated.View>
 			</TouchableOpacity>
 		</View>
 	)

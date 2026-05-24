@@ -142,7 +142,21 @@ export default function ProfileScreen() {
 
 	const [loading, setLoading] = useState(false)
 	const [userData, setUserData] = useState<UserData | null>(null)
+	const [cart, setCart] = useState<any[]>([])
 	const [personalDashboard, setPersonalDashboard] = useState<PersonalDashboard | null>(null)
+
+	const loadCart = async () => {
+		try {
+			const storedCart = await AsyncStorage.getItem('cart')
+			if (storedCart) {
+				setCart(JSON.parse(storedCart))
+			} else {
+				setCart([])
+			}
+		} catch (error) {
+			console.error('Failed to load cart:', error)
+		}
+	}
 	const [editMode, setEditMode] = useState({
 		name: false,
 		basic: false,
@@ -235,6 +249,7 @@ export default function ProfileScreen() {
 	useFocusEffect(
 		useCallback(() => {
 			loadProfile()
+			loadCart()
 		}, [])
 	)
 
@@ -632,14 +647,34 @@ export default function ProfileScreen() {
 					<Ionicons name="briefcase" size={20} color={colors.primary} />
 				</TouchableOpacity>
 			)}
-			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.info + '15' }]} onPress={() => router.push('/profile/purchases')}>
-				<Ionicons name="receipt-outline" size={20} color={colors.info} />
-			</TouchableOpacity>
 			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.text + '05' }]} onPress={handleSwitchUser}>
 				<Ionicons name="people" size={20} color={colors.text} />
 			</TouchableOpacity>
 			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.error + '10' }]} onPress={handleSignOut}>
 				<Ionicons name="log-out" size={20} color={colors.error} />
+			</TouchableOpacity>
+			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.primary + '15' }]} onPress={() => router.push('/profile/purchases?status=cart')}>
+				<Ionicons name="cart-outline" size={20} color={colors.primary} />
+				{cart.length > 0 && (
+					<View
+						style={{
+							position: 'absolute',
+							top: -4,
+							right: -4,
+							backgroundColor: colors.error || '#ef4444',
+							borderRadius: 8,
+							minWidth: 16,
+							height: 16,
+							justifyContent: 'center',
+							alignItems: 'center',
+							paddingHorizontal: 3,
+							borderWidth: 1,
+							borderColor: colors.surface
+						}}
+					>
+						<Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>{cart.length}</Text>
+					</View>
+				)}
 			</TouchableOpacity>
 			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.surface }]} onPress={loadProfile} disabled={loading}>
 				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
@@ -1150,8 +1185,14 @@ export default function ProfileScreen() {
 										onPress={() => {
 											if (userData.location?.coordinates) {
 												const [longitude, latitude] = userData.location.coordinates
-												const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-												Linking.openURL(mapUrl).catch(() => {})
+												const mapUrl = Platform.select({
+													ios: `maps:?daddr=${latitude},${longitude}`,
+													android: `google.navigation:q=${latitude},${longitude}`,
+													default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+												})
+												if (mapUrl) {
+													Linking.openURL(mapUrl).catch(() => {})
+												}
 											}
 										}}
 										onCopy={async () => {
@@ -1167,8 +1208,14 @@ export default function ProfileScreen() {
 										onPress={() => {
 											if (userData.location?.coordinates) {
 												const [longitude, latitude] = userData.location.coordinates
-												const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-												Linking.openURL(mapUrl).catch(() => {})
+												const mapUrl = Platform.select({
+													ios: `maps:?daddr=${latitude},${longitude}`,
+													android: `google.navigation:q=${latitude},${longitude}`,
+													default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+												})
+												if (mapUrl) {
+													Linking.openURL(mapUrl).catch(() => {})
+												}
 											}
 										}}
 									>

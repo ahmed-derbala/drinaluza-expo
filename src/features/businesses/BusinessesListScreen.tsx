@@ -3,7 +3,7 @@ import HeaderTitle from '@/features/common/HeaderTitle'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
-import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle } from 'react-native'
+import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import { useState, useEffect } from 'react'
 import ErrorState from '@/features/common/ErrorState'
@@ -737,8 +737,14 @@ export default function BusinessesListScreen() {
 									// Open map with coordinates
 									if (item.location?.coordinates) {
 										const [longitude, latitude] = item.location.coordinates
-										const mapUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
-										Linking.openURL(mapUrl)
+										const mapUrl = Platform.select({
+											ios: `maps:?daddr=${latitude},${longitude}`,
+											android: `google.navigation:q=${latitude},${longitude}`,
+											default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+										})
+										if (mapUrl) {
+											Linking.openURL(mapUrl).catch(() => {})
+										}
 									}
 								}}
 							>

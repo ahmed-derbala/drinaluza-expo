@@ -107,8 +107,14 @@ export default function BusinessDetailsScreen() {
 	const handleOpenMap = () => {
 		if (!business?.location?.coordinates) return
 		const [lng, lat] = business.location.coordinates
-		const url = `https://www.google.com/maps?q=${lat},${lng}`
-		Linking.openURL(url).catch((err) => console.error('Failed to open map:', err))
+		const url = Platform.select({
+			ios: `maps:?daddr=${lat},${lng}`,
+			android: `google.navigation:q=${lat},${lng}`,
+			default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+		})
+		if (url) {
+			Linking.openURL(url).catch((err) => console.error('Failed to open map:', err))
+		}
 	}
 
 	if (loading) {

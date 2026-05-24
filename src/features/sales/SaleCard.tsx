@@ -106,9 +106,9 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		if (location?.coordinates && location.sharingEnabled) {
 			const [longitude, latitude] = location.coordinates
 			const url = Platform.select({
-				ios: `maps:0,0?q=${latitude},${longitude}`,
-				android: `geo:${latitude},${longitude}?q=${latitude},${longitude}`,
-				web: `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`
+				ios: `maps:?daddr=${latitude},${longitude}`,
+				android: `google.navigation:q=${latitude},${longitude}`,
+				web: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
 			})
 			if (url) {
 				try {
@@ -121,9 +121,9 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			const addressString = `${address.street}, ${address.city}, ${address.state}, ${address.country}`
 			const encodedAddress = encodeURIComponent(addressString)
 			const url = Platform.select({
-				ios: `maps:0,0?q=${encodedAddress}`,
-				android: `geo:0,0?q=${encodedAddress}`,
-				web: `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`
+				ios: `maps:?daddr=${encodedAddress}`,
+				android: `google.navigation:q=${encodedAddress}`,
+				web: `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`
 			})
 			if (url) {
 				try {

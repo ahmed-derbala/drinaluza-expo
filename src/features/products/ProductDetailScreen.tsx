@@ -206,9 +206,8 @@ export default function ProductDetailScreen() {
 				options={{
 					title: localize(product.name),
 					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-							<View style={{ flexDirection: 'row', gap: 8 }}>
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+							{isDashboard && (
 								<TouchableOpacity
 									style={{
 										width: 40,
@@ -220,48 +219,47 @@ export default function ProductDetailScreen() {
 										borderWidth: 1,
 										borderColor: colors.border || 'transparent'
 									}}
-									onPress={() => router.push('/profile/purchases?status=cart' as any)}
+									onPress={() => router.push(`${pathname}/edit` as any)}
 								>
-									<Ionicons name="cart-outline" size={20} color={colors.primary} />
-									{cart.length > 0 && (
-										<View
-											style={{
-												position: 'absolute',
-												top: -6,
-												right: -6,
-												backgroundColor: colors.error || '#ef4444',
-												borderRadius: 10,
-												minWidth: 20,
-												height: 20,
-												justifyContent: 'center',
-												alignItems: 'center',
-												paddingHorizontal: 4,
-												borderWidth: 1.5,
-												borderColor: colors.surface
-											}}
-										>
-											<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-										</View>
-									)}
+									<Ionicons name="pencil" size={20} color={colors.primary} />
 								</TouchableOpacity>
-								{isDashboard && (
-									<TouchableOpacity
+							)}
+							<TouchableOpacity
+								style={{
+									width: 40,
+									height: 40,
+									borderRadius: 10,
+									backgroundColor: colors.surface,
+									justifyContent: 'center',
+									alignItems: 'center',
+									borderWidth: 1,
+									borderColor: colors.border || 'transparent'
+								}}
+								onPress={() => router.push('/profile/purchases?status=cart' as any)}
+							>
+								<Ionicons name="cart-outline" size={20} color={colors.primary} />
+								{cart.length > 0 && (
+									<View
 										style={{
-											width: 40,
-											height: 40,
+											position: 'absolute',
+											top: -6,
+											right: -6,
+											backgroundColor: colors.error || '#ef4444',
 											borderRadius: 10,
-											backgroundColor: colors.surface,
+											minWidth: 20,
+											height: 20,
 											justifyContent: 'center',
 											alignItems: 'center',
-											borderWidth: 1,
-											borderColor: colors.border || 'transparent'
+											paddingHorizontal: 4,
+											borderWidth: 1.5,
+											borderColor: colors.surface
 										}}
-										onPress={() => router.push(`${pathname}/edit` as any)}
 									>
-										<Ionicons name="pencil" size={20} color={colors.primary} />
-									</TouchableOpacity>
+										<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
+									</View>
 								)}
-							</View>
+							</TouchableOpacity>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
 						</View>
 					)
 				}}

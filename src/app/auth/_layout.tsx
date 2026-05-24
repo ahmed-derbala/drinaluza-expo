@@ -4,14 +4,5 @@ import { useTheme } from '@/core/theme'
 import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
 
 export default function AuthLayout() {
-	const { colors } = useTheme()
-	const stackOptions = getPlatformStackOptions(
-		withThemedHeader(colors, {
-			headerTitleStyle: {
-				fontWeight: 'bold'
-			}
-		})
-	)
-
-	return <Stack screenOptions={stackOptions} />
+	return <Stack screenOptions={{ headerShown: false }} />
 }
