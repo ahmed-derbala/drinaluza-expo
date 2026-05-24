@@ -17,7 +17,6 @@ import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
-import ProductQRCode from './ProductQRCode'
 import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function ProductDetailScreen() {
@@ -456,9 +455,6 @@ export default function ProductDetailScreen() {
 					<Text style={[styles.slugLabel, { color: colors.textSecondary }]}>{translate('product_slug', 'Product ID')}</Text>
 					<Text style={[styles.slugValue, { color: colors.text }]}>{product.slug}</Text>
 				</View>
-
-				{/* Reviews Section */}
-				<ProductQRCode product={product} colors={colors} isDashboard={isDashboard} />
 
 				{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 
