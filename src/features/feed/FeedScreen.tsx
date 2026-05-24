@@ -1,13 +1,13 @@
+import HeaderTitle from '@/features/common/HeaderTitle'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { useRouter } from 'expo-router'
+import { useRouter, Tabs, useFocusEffect } from 'expo-router'
 import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
-import { useFocusEffect } from '@react-navigation/native'
+
 import FeedCard from '@/features/feed/feed.card'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import ScreenHeader from '@/features/common/ScreenHeader'
 import ErrorState from '@/features/common/ErrorState'
 import { toast } from '@/core/components/Toast'
 import SearchBar from '@/features/search/SearchBar'
@@ -427,7 +427,13 @@ export default function FeedScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} showBack={false} rightActions={headerRightActions} />
+			<Tabs.Screen
+				options={{
+					headerTitle: () => <HeaderTitle title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} />,
+					headerLeft: () => null,
+					headerRight: () => headerRightActions
+				}}
+			/>
 
 			{/* Backdrop to dismiss search bar when tapping outside */}
 			{isSearchBarVisible && (

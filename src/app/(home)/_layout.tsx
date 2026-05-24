@@ -44,7 +44,13 @@ export default function HomeLayout() {
 				<StatusBar style="light" />
 				<Tabs
 					screenOptions={{
-						headerShown: false,
+						headerStyle: {
+							backgroundColor: colors.background
+						},
+						headerTintColor: colors.text,
+						headerTitleStyle: {
+							fontWeight: '600'
+						},
 						tabBarStyle: {
 							position: 'absolute',
 							bottom: 0,

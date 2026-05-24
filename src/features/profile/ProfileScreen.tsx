@@ -20,13 +20,12 @@ import {
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/core/auth/auth.api'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme } from '@/core/theme'
-import ScreenHeader from '@/features/common/ScreenHeader'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/helpers/SmartImage'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
@@ -618,7 +617,7 @@ export default function ProfileScreen() {
 	if (error && !userData) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader title="Profile" showBack={false} />
+				<Tabs.Screen options={{ title: 'Profile', headerLeft: () => null }} />
 				<ErrorState title={error.title} message={error.message} onRetry={loadProfile} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
 			</View>
 		)
@@ -652,7 +651,7 @@ export default function ProfileScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('profile', 'Profile')} showBack={false} rightActions={headerRightActions} />
+			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerRight: () => headerRightActions }} />
 			<ScrollView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>

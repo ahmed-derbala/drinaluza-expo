@@ -7,7 +7,6 @@ export default function AuthLayout() {
 	const { colors } = useTheme()
 	const stackOptions = getPlatformStackOptions(
 		withThemedHeader(colors, {
-			headerShown: false,
 			headerTitleStyle: {
 				fontWeight: 'bold'
 			}

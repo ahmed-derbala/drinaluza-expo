@@ -13,6 +13,7 @@ import { orderStatusEnum as statuses } from '../../config/orderStatus'
 
 interface SaleCardProps {
 	sale: Sale
+	onStatusUpdate?: () => void
 }
 
 const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
@@ -47,7 +48,7 @@ const ProductItem = ({ product }: { product: Sale['products'][0] }) => {
 	)
 }
 
-const SaleCard = ({ sale }: SaleCardProps) => {
+const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const { colors } = useTheme()
 	const { localize, formatPrice, translate } = useUser()
 	const { width } = useWindowDimensions()

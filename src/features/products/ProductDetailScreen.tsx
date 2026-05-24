@@ -10,7 +10,8 @@ import { getProductBySlug } from '@/features/products/products.api'
 import { ProductType } from '@/features/products/products.type'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
-import ScreenHeader from '@/features/common/ScreenHeader'
+import { Stack } from 'expo-router'
+import HeaderRefreshButton from '../common/HeaderRefreshButton'
 import SmartImage from '@/core/helpers/SmartImage'
 import { toast } from '@/core/components/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -146,7 +147,7 @@ export default function ProductDetailScreen() {
 	if (loading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('product_details', 'Product Details')} showBack={true} />
+				<Stack.Screen options={{ title: translate('product_details', 'Product Details') }} />
 				<View style={styles.loadingContainer}>
 					<ActivityIndicator size="large" color={colors.primary} />
 					<Text style={[styles.loadingText, { color: colors.textSecondary }]}>{translate('loading', 'Loading...')}</Text>
@@ -158,7 +159,7 @@ export default function ProductDetailScreen() {
 	if (error && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('product_details', 'Product Details')} showBack={true} />
+				<Stack.Screen options={{ title: translate('product_details', 'Product Details') }} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -172,7 +173,7 @@ export default function ProductDetailScreen() {
 	if (!product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('product_details', 'Product Details')} showBack={true} />
+				<Stack.Screen options={{ title: translate('product_details', 'Product Details') }} />
 				<ErrorState
 					title={translate('product_not_found', 'Product Not Found')}
 					message={translate('product_not_found_desc', 'The product you are looking for could not be found.')}
@@ -201,67 +202,69 @@ export default function ProductDetailScreen() {
 
 	return (
 		<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader
-				title={localize(product.name)}
-				showBack={true}
-				onRefresh={handleRefresh}
-				isRefreshing={refreshing}
-				rightActions={
-					<View style={{ flexDirection: 'row', gap: 8 }}>
-						<TouchableOpacity
-							style={{
-								width: 40,
-								height: 40,
-								borderRadius: 10,
-								backgroundColor: colors.surface,
-								justifyContent: 'center',
-								alignItems: 'center',
-								borderWidth: 1,
-								borderColor: colors.border || 'transparent'
-							}}
-							onPress={() => router.push('/profile/purchases?status=cart' as any)}
-						>
-							<Ionicons name="cart-outline" size={20} color={colors.primary} />
-							{cart.length > 0 && (
-								<View
+			<Stack.Screen
+				options={{
+					title: localize(product.name),
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+							<View style={{ flexDirection: 'row', gap: 8 }}>
+								<TouchableOpacity
 									style={{
-										position: 'absolute',
-										top: -6,
-										right: -6,
-										backgroundColor: colors.error || '#ef4444',
+										width: 40,
+										height: 40,
 										borderRadius: 10,
-										minWidth: 20,
-										height: 20,
+										backgroundColor: colors.surface,
 										justifyContent: 'center',
 										alignItems: 'center',
-										paddingHorizontal: 4,
-										borderWidth: 1.5,
-										borderColor: colors.surface
+										borderWidth: 1,
+										borderColor: colors.border || 'transparent'
 									}}
+									onPress={() => router.push('/profile/purchases?status=cart' as any)}
 								>
-									<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-								</View>
-							)}
-						</TouchableOpacity>
-						{isDashboard && (
-							<TouchableOpacity
-								style={{
-									width: 40,
-									height: 40,
-									borderRadius: 10,
-									backgroundColor: colors.surface,
-									justifyContent: 'center',
-									alignItems: 'center',
-									borderWidth: 1,
-									borderColor: colors.border || 'transparent'
-								}}
-								onPress={() => router.push(`${pathname}/edit` as any)}
-							>
-								<Ionicons name="pencil" size={20} color={colors.primary} />
-							</TouchableOpacity>
-						)}
-					</View>
-				}
+									<Ionicons name="cart-outline" size={20} color={colors.primary} />
+									{cart.length > 0 && (
+										<View
+											style={{
+												position: 'absolute',
+												top: -6,
+												right: -6,
+												backgroundColor: colors.error || '#ef4444',
+												borderRadius: 10,
+												minWidth: 20,
+												height: 20,
+												justifyContent: 'center',
+												alignItems: 'center',
+												paddingHorizontal: 4,
+												borderWidth: 1.5,
+												borderColor: colors.surface
+											}}
+										>
+											<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
+										</View>
+									)}
+								</TouchableOpacity>
+								{isDashboard && (
+									<TouchableOpacity
+										style={{
+											width: 40,
+											height: 40,
+											borderRadius: 10,
+											backgroundColor: colors.surface,
+											justifyContent: 'center',
+											alignItems: 'center',
+											borderWidth: 1,
+											borderColor: colors.border || 'transparent'
+										}}
+										onPress={() => router.push(`${pathname}/edit` as any)}
+									>
+										<Ionicons name="pencil" size={20} color={colors.primary} />
+									</TouchableOpacity>
+								)}
+							</View>
+						</View>
+					)
+				}}
 			/>
 
 			<ScrollView

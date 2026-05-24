@@ -1,10 +1,11 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import HeaderTitle from '@/features/common/HeaderTitle'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useRouter } from 'expo-router'
+import { useRouter, Tabs } from 'expo-router'
 import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
 import { useTheme } from '../../core/theme'
-import ScreenHeader from '../common/ScreenHeader'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { useUser } from '../../core/contexts/UserContext'
@@ -140,7 +141,7 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 	if (error && !dashboardData) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('dashboard', 'Dashboard')} showBack={false} onRefresh={onRefresh} isRefreshing={refreshing} />
+				<Tabs.Screen options={{ title: translate('dashboard', 'Dashboard'), headerLeft: () => null, headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} /> }} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -156,12 +157,17 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader
-				title={translate('dashboard', 'Dashboard')}
-				subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
-				showBack={false}
-				onRefresh={onRefresh}
-				isRefreshing={refreshing}
+			<Tabs.Screen
+				options={{
+					headerTitle: () => (
+						<HeaderTitle
+							title={translate('dashboard', 'Dashboard')}
+							subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
+						/>
+					),
+					headerLeft: () => null,
+					headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+				}}
 			/>
 
 			<ScrollView

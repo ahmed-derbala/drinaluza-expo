@@ -1,10 +1,10 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Platform } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, Stack } from 'expo-router'
 import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
-import ScreenHeader from '../common/ScreenHeader'
 import ErrorState from '../common/ErrorState'
 import ProductCard from './products.card'
 import { getProducts } from './products.api'
@@ -87,7 +87,7 @@ export default function ProductsScreen() {
 	if (error && products.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('products', 'Products')} showBack={true} onRefresh={onRefresh} isRefreshing={refreshing} />
+				<Stack.Screen options={{ title: translate('products', 'Products'), headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} /> }} />
 				<ErrorState title={error.title} message={error.message} onRetry={() => loadProducts(1)} icon="alert-circle-outline" />
 			</View>
 		)
@@ -95,7 +95,7 @@ export default function ProductsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={translate('products', 'Products')} showBack={true} onRefresh={onRefresh} isRefreshing={refreshing} />
+			<Stack.Screen options={{ title: translate('products', 'Products'), headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} /> }} />
 
 			<FlatList
 				data={products}

@@ -24,28 +24,12 @@ export default function BusinessesLayout() {
 			<Stack.Screen
 				name="index"
 				options={{
-					headerTitle: 'Browse Businesses',
-					headerShown: false
+					headerTitle: 'Browse Businesses'
 				}}
 			/>
-			<Stack.Screen
-				name="[businessSlug]/index"
-				options={{
-					headerShown: false
-				}}
-			/>
-			<Stack.Screen
-				name="[businessSlug]/products/index"
-				options={{
-					headerShown: false
-				}}
-			/>
-			<Stack.Screen
-				name="[businessSlug]/products/[productSlug]"
-				options={{
-					headerShown: false
-				}}
-			/>
+			<Stack.Screen name="[businessSlug]/index" />
+			<Stack.Screen name="[businessSlug]/products/index" />
+			<Stack.Screen name="[businessSlug]/products/[productSlug]" />
 		</Stack>
 	)
 }

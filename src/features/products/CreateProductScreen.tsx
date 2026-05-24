@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform, Modal, FlatList } from 'react-native'
-import { useRouter, useLocalSearchParams } from 'expo-router'
+import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
-import ScreenHeader from '@/features/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 import { uploadFile } from '@/core/file'
 import { showAlert } from '@/core/helpers/popup'
@@ -305,7 +304,7 @@ export default function CreateProductScreen() {
 
 	return (
 		<View style={styles.container}>
-			<ScreenHeader title={translate('create_product', 'Create Product')} showBack={true} onBackPress={handleBack} />
+			<Stack.Screen options={{ title: translate('create_product', 'Create Product') }} />
 
 			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
 				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16}>

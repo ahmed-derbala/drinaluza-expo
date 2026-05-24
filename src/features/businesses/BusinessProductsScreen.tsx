@@ -7,7 +7,8 @@ import { Product } from '@/features/businesses/businesses.interface'
 import { useTheme } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
-import ScreenHeader from '@/features/common/ScreenHeader'
+import { Stack } from 'expo-router'
+import HeaderRefreshButton from '../common/HeaderRefreshButton'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/core/components/Toast'
@@ -409,7 +410,7 @@ export default function BusinessProductsScreen() {
 	if (loading && !refreshing) {
 		return (
 			<View style={[s.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={businessName || translate('business_products', 'Products')} showBack={true} />
+				<Stack.Screen options={{ title: businessName || translate('business_products', 'Products') }} />
 				<View style={s.centered}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
@@ -421,48 +422,50 @@ export default function BusinessProductsScreen() {
 
 	return (
 		<View style={[s.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader
-				title={headerTitle}
-				showBack={true}
-				onRefresh={handleRefresh}
-				isRefreshing={refreshing}
-				rightActions={
-					<TouchableOpacity
-						style={{
-							width: 40,
-							height: 40,
-							borderRadius: 10,
-							backgroundColor: colors.surface,
-							justifyContent: 'center',
-							alignItems: 'center',
-							borderWidth: 1,
-							borderColor: colors.border || 'transparent'
-						}}
-						onPress={() => router.push('/profile/purchases?status=cart' as any)}
-					>
-						<Ionicons name="cart-outline" size={20} color={colors.primary} />
-						{cart.length > 0 && (
-							<View
+			<Stack.Screen
+				options={{
+					title: headerTitle,
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', alignItems: 'center' }}>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+							<TouchableOpacity
 								style={{
-									position: 'absolute',
-									top: -6,
-									right: -6,
-									backgroundColor: colors.error || '#ef4444',
+									width: 40,
+									height: 40,
 									borderRadius: 10,
-									minWidth: 20,
-									height: 20,
+									backgroundColor: colors.surface,
 									justifyContent: 'center',
 									alignItems: 'center',
-									paddingHorizontal: 4,
-									borderWidth: 1.5,
-									borderColor: colors.surface
+									borderWidth: 1,
+									borderColor: colors.border || 'transparent'
 								}}
+								onPress={() => router.push('/profile/purchases?status=cart' as any)}
 							>
-								<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-							</View>
-						)}
-					</TouchableOpacity>
-				}
+								<Ionicons name="cart-outline" size={20} color={colors.primary} />
+								{cart.length > 0 && (
+									<View
+										style={{
+											position: 'absolute',
+											top: -6,
+											right: -6,
+											backgroundColor: colors.error || '#ef4444',
+											borderRadius: 10,
+											minWidth: 20,
+											height: 20,
+											justifyContent: 'center',
+											alignItems: 'center',
+											paddingHorizontal: 4,
+											borderWidth: 1.5,
+											borderColor: colors.surface
+										}}
+									>
+										<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
+									</View>
+								)}
+							</TouchableOpacity>
+						</View>
+					)
+				}}
 			/>
 
 			{/* Search bar */}

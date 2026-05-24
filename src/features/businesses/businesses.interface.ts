@@ -138,6 +138,7 @@ export interface Product {
 		measure: string
 		min: number
 		max: number
+		step?: number
 		updatedAt?: string
 	}
 	searchKeywords?: string[]

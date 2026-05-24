@@ -21,12 +21,7 @@ export default function UsersLayout() {
 
 	return (
 		<Stack screenOptions={stackOptions}>
-			<Stack.Screen
-				name="[userSlug]"
-				options={{
-					headerShown: false
-				}}
-			/>
+			<Stack.Screen name="[userSlug]" />
 		</Stack>
 	)
 }

@@ -4,7 +4,7 @@ import { APP_VERSION, BACKEND_URL } from '../../config'
 import { log } from '../log'
 
 // Google Drive / Google Play URLs for APK download
-const GOOGLE_DRIVE_URL = 'https://drive.google.com/drive/folders/1euN1ogdssvbiq4wJdxYQBYqMXWbwIpBm'
+const GOOGLE_DRIVE_URL = 'https://drive.google.com/drive/u/1/folders/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW'
 const GOOGLE_PLAY_URL = '' // TODO: set when published
 
 const VERSION_CHECK_KEY = 'version_last_check'

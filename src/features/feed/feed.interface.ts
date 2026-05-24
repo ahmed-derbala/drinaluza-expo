@@ -155,6 +155,7 @@ export interface ProductFeedItem extends FeedItem {
 	}
 	stock: Stock
 	rating?: Rating
+	isActive?: boolean
 }
 
 export interface BusinessFeedItem extends FeedItem {

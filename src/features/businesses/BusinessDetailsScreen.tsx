@@ -1,6 +1,7 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
-import { useLocalSearchParams, useRouter } from 'expo-router'
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
@@ -8,7 +9,6 @@ import { ProductType } from '@/features/products/products.type'
 import { useTheme } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
-import ScreenHeader from '@/features/common/ScreenHeader'
 import SmartImage from '@/core/helpers/SmartImage'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -114,7 +114,7 @@ export default function BusinessDetailsScreen() {
 	if (loading) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader title={translate('common.loading', 'Loading...')} showBack={true} />
+				<Stack.Screen options={{ title: translate('common.loading', 'Loading...') }} />
 				<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
@@ -125,7 +125,7 @@ export default function BusinessDetailsScreen() {
 	if (error) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader title={translate('common.error', 'Error')} showBack={true} />
+				<Stack.Screen options={{ title: translate('common.error', 'Error') }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<ErrorState
 						title={error.title}
@@ -141,7 +141,7 @@ export default function BusinessDetailsScreen() {
 	if (!business) {
 		return (
 			<View style={styles.container}>
-				<ScreenHeader title={translate('business_not_found', 'Business not found')} showBack={true} />
+				<Stack.Screen options={{ title: translate('business_not_found', 'Business not found') }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<Text style={[styles.errorText, { color: colors.text }]}>{translate('business_not_found', 'Business not found')}</Text>
 				</View>
@@ -159,7 +159,7 @@ export default function BusinessDetailsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(business.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<Stack.Screen options={{ title: localize(business.name), headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} /> }} />
 			<ScrollView
 				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}

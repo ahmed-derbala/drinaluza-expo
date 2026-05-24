@@ -1,11 +1,11 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
-import { useLocalSearchParams } from 'expo-router'
+import { useLocalSearchParams, Stack } from 'expo-router'
 import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getUserBySlug } from './users.api'
 import { UserProfile } from './users.interface'
-import ScreenHeader from '../common/ScreenHeader'
 import ErrorState from '../common/ErrorState'
 import SmartImage from '../../core/helpers/SmartImage'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
@@ -73,7 +73,7 @@ export default function UserDetailScreen() {
 	if (error || !user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('user_profile', 'User Profile')} showBack={true} />
+				<Stack.Screen options={{ title: translate('user_profile', 'User Profile') }} />
 				<ErrorState
 					title={error?.title || translate('not_found', 'Not Found')}
 					message={error?.message || translate('user_not_found', 'User not found')}
@@ -86,7 +86,7 @@ export default function UserDetailScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title={localize(user.name)} showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<Stack.Screen options={{ title: localize(user.name), headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} /> }} />
 
 			<ScrollView
 				contentContainerStyle={styles.scrollContent}

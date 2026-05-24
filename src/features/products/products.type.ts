@@ -88,6 +88,7 @@ export type ProductType = {
 	}
 	rating?: Rating
 	slug: string
+	qrcode?: string | { url: string }
 	createdAt: string
 	updatedAt: string
 }

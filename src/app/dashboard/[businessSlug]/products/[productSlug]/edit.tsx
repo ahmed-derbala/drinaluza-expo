@@ -1,6 +1,1 @@
-import React from 'react'
-import EditProductScreen from '@/features/products/EditProductScreen'
-
-export default function EditProductRoute() {
-	return <EditProductScreen />
-}
+export { default } from '@/features/products/EditProductScreen'

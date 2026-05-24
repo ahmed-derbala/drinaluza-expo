@@ -1,10 +1,11 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import HeaderTitle from '@/features/common/HeaderTitle'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, Stack } from 'expo-router'
 import { useState, useEffect } from 'react'
-import ScreenHeader from '@/features/common/ScreenHeader'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/helpers/SmartImage'
 import { getBusinesses } from '@/features/businesses/businesses.api'
@@ -791,12 +792,16 @@ export default function BusinessesListScreen() {
 	// Main render
 	return (
 		<View style={styles.container as ViewStyle}>
-			<ScreenHeader
-				title={translate('discover_businesses', 'Discover Businesses')}
-				subtitle={`${businesses.length} ${businesses.length === 1 ? translate('business_product', 'business') : translate('business_products_plural', 'businesses')} ${translate('businesses_available', 'available near you')}`}
-				showBack={true}
-				onRefresh={handleRefresh}
-				isRefreshing={refreshing}
+			<Stack.Screen
+				options={{
+					headerTitle: () => (
+						<HeaderTitle
+							title={translate('discover_businesses', 'Discover Businesses')}
+							subtitle={`${businesses.length} ${businesses.length === 1 ? translate('business_product', 'business') : translate('business_products_plural', 'businesses')} ${translate('businesses_available', 'available near you')}`}
+						/>
+					),
+					headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+				}}
 			/>
 			<FlatList
 				key={`cols-${numColumns}`}

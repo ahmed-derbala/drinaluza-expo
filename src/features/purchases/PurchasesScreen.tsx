@@ -5,7 +5,8 @@ import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '../../core/theme'
-import ScreenHeader from '../common/ScreenHeader'
+import { Stack } from 'expo-router'
+import HeaderTitle from '../common/HeaderTitle'
 import ErrorState from '../common/ErrorState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
@@ -16,6 +17,7 @@ import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useUser } from '../../core/contexts/UserContext'
 import { toast } from '../../core/components/Toast'
+import { showConfirm } from '../../core/helpers/popup'
 
 type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled'
 
@@ -119,30 +121,16 @@ const PurchasesScreen = () => {
 	)
 
 	const handleCancelOrder = (purchaseId: string) => {
-		toast.show({
-			message: translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'),
-			type: 'warning',
-			duration: 8000,
-			actions: [
-				{
-					label: translate('no', 'No'),
-					onPress: () => {}
-				},
-				{
-					label: translate('confirm', 'Confirm'),
-					onPress: async () => {
-						console.log('Cancelling purchase:', purchaseId)
-						try {
-							await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
-							loadPurchases()
-							toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
-						} catch (err) {
-							console.error('Failed to cancel order:', err)
-							toast.show({ title: translate('error', 'Error'), message: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), color: '#EF4444' })
-						}
-					}
-				}
-			]
+		showConfirm(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), async () => {
+			console.log('Cancelling purchase:', purchaseId)
+			try {
+				await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
+				loadPurchases()
+				toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
+			} catch (err) {
+				console.error('Failed to cancel order:', err)
+				toast.show({ title: translate('error', 'Error'), message: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), color: '#EF4444' })
+			}
 		})
 	}
 
@@ -637,7 +625,7 @@ const PurchasesScreen = () => {
 	if (error && purchases.length === 0 && filter !== 'cart') {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('purchases_title', 'Purchases')} showBack={true} />
+				<Stack.Screen options={{ title: translate('purchases_title', 'Purchases') }} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -653,15 +641,17 @@ const PurchasesScreen = () => {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader
-				title={translate('purchases_title', 'Purchases')}
-				subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`}
-				showBack={true}
-				rightActions={
-					<TouchableOpacity onPress={onRefresh}>
-						<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
-					</TouchableOpacity>
-				}
+			<Stack.Screen
+				options={{
+					headerTitle: () => <HeaderTitle title={translate('purchases_title', 'Purchases')} subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`} />,
+					headerLeft: () => null,
+					headerBackVisible: false,
+					headerRight: () => (
+						<TouchableOpacity onPress={onRefresh}>
+							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
+						</TouchableOpacity>
+					)
+				}}
 			/>
 
 			<Animated.View style={[styles.content, { opacity: fadeAnim }]}>

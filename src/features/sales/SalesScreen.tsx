@@ -1,11 +1,11 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useMemo, useState, useCallback } from 'react'
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/sales/sales.api'
-import ScreenHeader from '@/features/common/ScreenHeader'
 import SaleCard from '@/features/sales/SaleCard'
-import { useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/config/orderStatus'
 import { MaterialIcons } from '@expo/vector-icons'
@@ -182,7 +182,7 @@ export default function SalesScreen() {
 	if (error) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title="Sales" showBack={true} />
+				<Stack.Screen options={{ title: 'Sales' }} />
 				<ErrorState title={error.title} message={error.message} onRetry={() => loadSales(1, true)} />
 			</View>
 		)
@@ -190,7 +190,7 @@ export default function SalesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader title="Sales" showBack={true} onRefresh={handleRefresh} isRefreshing={refreshing} />
+			<Stack.Screen options={{ title: 'Sales', headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} /> }} />
 
 			{/* Status Filter */}
 			<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>

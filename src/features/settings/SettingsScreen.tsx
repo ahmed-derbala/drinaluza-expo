@@ -1,3 +1,5 @@
+import HeaderTitle from '@/features/common/HeaderTitle'
+import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -10,8 +12,6 @@ import { toast } from '@/core/components/Toast'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import ScreenHeader from '@/features/common/ScreenHeader'
-
 export default function SettingsScreen() {
 	const { colors } = useTheme()
 	const { translate } = useUser()
@@ -123,7 +123,7 @@ export default function SettingsScreen() {
 			onScroll={onScroll}
 			scrollEventThrottle={16}
 		>
-			<ScreenHeader title={translate('settings', 'Settings')} subtitle="Drinaluza - Business Manager" showBack={false} />
+			<Tabs.Screen options={{ headerTitle: () => <HeaderTitle title={translate('settings', 'Settings')} subtitle={'Drinaluza - Business Manager'} />, headerLeft: () => null }} />
 			<View style={{ height: 16 }} />
 
 			<SettingSection title={translate('social_media', 'Social Media')}>

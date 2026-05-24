@@ -16,16 +16,22 @@ import { LayoutProvider } from '@/core/contexts/LayoutContext'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 
-import { getPlatformStackOptions } from '@/config/navigation'
+import { getPlatformStackOptions, withThemedHeader } from '@/config/navigation'
+import { useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
-	const stackOptions = getPlatformStackOptions({
-		headerShown: false
-	})
+	const { colors } = useTheme()
+	const stackOptions = getPlatformStackOptions(withThemedHeader(colors))
 
 	return (
 		<ErrorBoundary>
-			<Stack screenOptions={stackOptions} />
+			<Stack screenOptions={stackOptions}>
+				<Stack.Screen name="(home)" options={{ headerShown: false }} />
+				<Stack.Screen name="businesses" options={{ headerShown: false }} />
+				<Stack.Screen name="dashboard" options={{ headerShown: false }} />
+				<Stack.Screen name="users" options={{ headerShown: false }} />
+				<Stack.Screen name="auth" options={{ headerShown: false }} />
+			</Stack>
 		</ErrorBoundary>
 	)
 }

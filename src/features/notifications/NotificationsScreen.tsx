@@ -1,16 +1,17 @@
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import HeaderTitle from '@/features/common/HeaderTitle'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, Tabs, useFocusEffect } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 
-import ScreenHeader from '../common/ScreenHeader'
 import ErrorState from '../common/ErrorState'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
-import { useFocusEffect } from '@react-navigation/native'
+
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
@@ -189,7 +190,7 @@ export default function NotificationsScreen() {
 	if (error && notifications.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<ScreenHeader title={translate('notifications_title', 'Notifications')} showBack={false} />
+				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -202,12 +203,17 @@ export default function NotificationsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<ScreenHeader
-				title={translate('notifications_title', 'Notifications')}
-				subtitle={`${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`}
-				showBack={false}
-				onRefresh={onRefresh}
-				isRefreshing={refreshing}
+			<Tabs.Screen
+				options={{
+					headerTitle: () => (
+						<HeaderTitle
+							title={translate('notifications_title', 'Notifications')}
+							subtitle={`${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`}
+						/>
+					),
+					headerLeft: () => null,
+					headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+				}}
 			/>
 
 			<FlatList
