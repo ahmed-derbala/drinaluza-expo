@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, Platform, FlatList, Keyboard } from 'react-native'
-import { useRouter } from 'expo-router'
+import { useRouter, useLocalSearchParams } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -27,6 +27,7 @@ type CartItem = FeedItem & { quantity: number }
 export default function SearchScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
+	const { q: queryQ, filter: queryFilter } = useLocalSearchParams<{ q?: string; filter?: string }>()
 	const { translate, appLang, localize } = useUser()
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
@@ -54,21 +55,6 @@ export default function SearchScreen() {
 	const gap = 14
 	const padding = 16
 
-	// Load cart and search history on mount
-	useEffect(() => {
-		const timer = setTimeout(() => {
-			inputRef.current?.focus()
-		}, 100)
-		loadCart()
-		loadHistory()
-		return () => {
-			clearTimeout(timer)
-			if (searchTimerRef.current) {
-				clearTimeout(searchTimerRef.current)
-			}
-		}
-	}, [])
-
 	const loadCart = async () => {
 		try {
 			const storedCart = await AsyncStorage.getItem('cart')
@@ -79,6 +65,23 @@ export default function SearchScreen() {
 			console.error('Failed to load cart in SearchScreen:', error)
 		}
 	}
+
+	// Synchronize URL parameters with local state on load / update
+	useEffect(() => {
+		let currentQ = queryQ || ''
+		let currentFilter = (queryFilter as SearchType) || 'all'
+
+		if (currentQ !== searchText) {
+			setSearchText(currentQ)
+		}
+		if (currentFilter !== activeFilter) {
+			setActiveFilter(currentFilter)
+		}
+
+		if (currentQ.trim()) {
+			performSearch(currentQ, currentFilter)
+		}
+	}, [queryQ, queryFilter])
 
 	const saveToHistory = useCallback(async (text: string) => {
 		const trimmedText = text.trim()
@@ -197,17 +200,18 @@ export default function SearchScreen() {
 				const parsedHistory = JSON.parse(storedHistory) as string[]
 				setHistory(parsedHistory)
 
-				// Automatically trigger search on last search term on mount
-				if (parsedHistory.length > 0) {
+				// Automatically trigger search on last search term on mount only if there is no URL query
+				if (parsedHistory.length > 0 && !queryQ) {
 					const lastSearch = parsedHistory[0]
 					setSearchText(lastSearch)
 					performSearch(lastSearch, activeFilter)
+					router.setParams({ q: lastSearch })
 				}
 			}
 		} catch (error) {
 			console.error('Failed to load search history:', error)
 		}
-	}, [performSearch, activeFilter])
+	}, [performSearch, activeFilter, queryQ, router])
 
 	const handleTextChange = useCallback(
 		(text: string) => {
@@ -217,36 +221,54 @@ export default function SearchScreen() {
 				clearTimeout(searchTimerRef.current)
 			}
 
-			if (!text.trim()) {
-				setResults([])
-				setLoading(false)
-				return
-			}
-
+			// Debounce search and URL sync to 400ms to prevent interface lagging
 			searchTimerRef.current = setTimeout(() => {
-				performSearch(text, activeFilter)
+				router.setParams({ q: text || '' })
+				if (text.trim()) {
+					performSearch(text, activeFilter)
+				} else {
+					setResults([])
+					setLoading(false)
+				}
 			}, 400) as unknown as NodeJS.Timeout
 		},
-		[performSearch, activeFilter]
+		[performSearch, activeFilter, router]
 	)
 
 	const handleFilterChange = useCallback(
 		(filterType: SearchType) => {
 			setActiveFilter(filterType)
+			router.setParams({ filter: filterType })
 			performSearch(searchText, filterType)
 		},
-		[searchText, performSearch]
+		[searchText, performSearch, router]
 	)
 
 	const handleClear = useCallback(() => {
 		setSearchText('')
 		setResults([])
 		setError(null)
+		router.setParams({ q: '' })
 		if (searchTimerRef.current) {
 			clearTimeout(searchTimerRef.current)
 		}
 		inputRef.current?.focus()
-	}, [])
+	}, [router])
+
+	// Load cart and search history on mount
+	useEffect(() => {
+		const timer = setTimeout(() => {
+			inputRef.current?.focus()
+		}, 100)
+		loadCart()
+		loadHistory()
+		return () => {
+			clearTimeout(timer)
+			if (searchTimerRef.current) {
+				clearTimeout(searchTimerRef.current)
+			}
+		}
+	}, [loadHistory])
 
 	const renderItem = ({ item }: { item: FeedItem }) => (
 		<View style={[styles.cardWrapper, { width: numColumns > 1 ? `${(100 - (numColumns - 1) * 1.5) / numColumns}%` : '100%' }]}>
@@ -296,6 +318,7 @@ export default function SearchScreen() {
 								style={styles.historyItemPressable}
 								onPress={() => {
 									setSearchText(item)
+									router.setParams({ q: item })
 									performSearch(item, activeFilter)
 								}}
 							>
@@ -325,10 +348,10 @@ export default function SearchScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'ios' ? insets.top : insets.top + 8 }]}>
-			{/* Custom Stack Header */}
+			{/* Custom Stack Header - aligned with standard navigation style */}
 			<View style={styles.header}>
-				<TouchableOpacity style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => router.back()}>
-					<Ionicons name="chevron-back" size={24} color={colors.text} />
+				<TouchableOpacity style={styles.backButton} onPress={() => router.back()} activeOpacity={0.7}>
+					<Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={26} color={colors.text} />
 				</TouchableOpacity>
 
 				<View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -424,12 +447,10 @@ const styles = StyleSheet.create({
 		gap: 12
 	},
 	backButton: {
-		width: 44,
+		width: 36,
 		height: 44,
-		borderRadius: 12,
 		justifyContent: 'center',
-		alignItems: 'center',
-		borderWidth: 1
+		alignItems: 'flex-start'
 	},
 	searchBox: {
 		flex: 1,
