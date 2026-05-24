@@ -285,9 +285,11 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 
 			<Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>Business Manager</Animated.Text>
 
-			<Animated.Text style={[styles.version, { opacity: subtitleOpacity }]}>
-				App v{APP_VERSION} • Server v{backendInfo?.app?.version || '...'} • {NODE_ENV}
-			</Animated.Text>
+			<Animated.View style={[styles.versionContainer, { opacity: subtitleOpacity }]}>
+				<Text style={styles.versionText}>App v{APP_VERSION}</Text>
+				<Text style={styles.versionText}>Server v{backendInfo?.app?.version || '...'}</Text>
+				<Text style={styles.versionText}>{NODE_ENV}</Text>
+			</Animated.View>
 
 			{/* Loading indicator */}
 			<View style={styles.loadingContainer}>
@@ -417,14 +419,20 @@ const styles = StyleSheet.create({
 		textTransform: 'uppercase',
 		marginBottom: 40
 	},
-	version: {
+	versionContainer: {
 		position: 'absolute',
-		bottom: SCREEN_HEIGHT * 0.05,
-		fontSize: 12,
+		bottom: SCREEN_HEIGHT * 0.03,
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 4
+	},
+	versionText: {
+		fontSize: 11,
 		fontWeight: '600',
 		color: colors.textSecondary,
-		opacity: 0.6,
-		letterSpacing: 1
+		opacity: 0.7,
+		letterSpacing: 1.2,
+		textAlign: 'center'
 	},
 	loadingContainer: {
 		flexDirection: 'row',

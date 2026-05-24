@@ -12,6 +12,17 @@ import { toast } from '@/core/components/Toast'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+
+const formatUptime = (uptime: string | undefined): string => {
+	if (!uptime) return ''
+	return uptime
+		.replace(/\s*days?,?\s*/gi, 'd ')
+		.replace(/\s*hours?,?\s*/gi, 'h ')
+		.replace(/\s*minutes?,?\s*/gi, 'm ')
+		.replace(/\s*seconds?,?\s*/gi, 's')
+		.trim()
+}
+
 export default function SettingsScreen() {
 	const { colors } = useTheme()
 	const { translate } = useUser()
@@ -217,7 +228,7 @@ export default function SettingsScreen() {
 					<SettingItem icon="information-circle-outline" title={translate('app_name', 'App Name')} value={serverInfo.app?.name} type="value" color={colors.textSecondary} />
 					<SettingItem icon="git-network-outline" title={translate('version', 'Version')} value={serverInfo.app?.version} type="value" color={colors.textSecondary} />
 					{serverInfo.NODE_VERSION && <SettingItem icon="logo-nodejs" title="Node.js" value={serverInfo.NODE_VERSION} type="value" color="#339933" />}
-					{serverInfo.uptime && <SettingItem icon="time-outline" title={translate('uptime', 'Uptime')} value={serverInfo.uptime} type="value" color={colors.textSecondary} />}
+					{serverInfo.uptime && <SettingItem icon="time-outline" title={translate('uptime', 'Uptime')} value={formatUptime(serverInfo.uptime)} type="value" color={colors.textSecondary} />}
 				</SettingSection>
 			)}
 
@@ -308,7 +319,8 @@ const createStyles = (colors: any) =>
 		itemRight: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 8
+			gap: 8,
+			flexShrink: 1
 		},
 		copyButton: {
 			padding: 10,
