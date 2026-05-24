@@ -3,8 +3,8 @@ import HeaderTitle from '@/features/common/HeaderTitle'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useRouter, Tabs } from 'expo-router'
-import { MaterialIcons, Ionicons, Feather } from '@expo/vector-icons'
+import { useRouter, Tabs, Stack } from 'expo-router'
+import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../core/theme'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
@@ -14,7 +14,8 @@ import SmartImage from '../../core/helpers/SmartImage'
 import { getDashboardProfiles, getBusinessDashboard } from './dashboard.api'
 import { isBusinessDashboard, DashboardData, DashboardProfile, DashboardRankItem, ProductStats, BusinessDashboard } from './dashboard.interface'
 import { LocalizedName } from '../businesses/businesses.interface'
-import BusinessQRCode from './BusinessQRCode'
+
+import QRCodeModal from '@/features/common/QRCodeModal'
 
 const { width } = Dimensions.get('window')
 const MEDALS = ['🥇', '🥈', '🥉']
@@ -226,7 +227,9 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 					</View>
 				)}
 
-				{dashboardData && isBusinessDashboard(dashboardData) && <BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} />}
+				{dashboardData && isBusinessDashboard(dashboardData) && (
+					<BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} onRefresh={onRefresh} refreshing={refreshing} />
+				)}
 			</ScrollView>
 		</View>
 	)
@@ -239,11 +242,15 @@ type ContentProps = {
 	styles: ReturnType<typeof createStyles>
 	colors: typeof import('../../core/theme').colors
 	router: ReturnType<typeof useRouter>
+	onRefresh: () => void
+	refreshing: boolean
 }
 
-const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps & { data: import('./dashboard.interface').BusinessDashboard }) => {
+const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, refreshing }: ContentProps & { data: import('./dashboard.interface').BusinessDashboard }) => {
 	const { localize, translate } = useUser()
 	const business = data.business
+
+	const [showQRCode, setShowQRCode] = useState(false)
 
 	const managementActions = useMemo(
 		() => [
@@ -332,7 +339,18 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				))}
 			</View>
 
-			<BusinessQRCode business={business} colors={colors} />
+			<Stack.Screen
+				options={{
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
+								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
+							</TouchableOpacity>
+							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+						</View>
+					)
+				}}
+			/>
 
 			<SectionTitle title={translate('dashboard.insights', 'Insights')} colors={colors} />
 
@@ -358,6 +376,16 @@ const BusinessDashboardContent = ({ data, styles, colors, router }: ContentProps
 				colors={colors}
 				entityType="user"
 				emptyHint={translate('dashboard.no_customers_yet', 'No customer data yet')}
+			/>
+
+			{/* QR Code Viewer Modal */}
+			<QRCodeModal
+				visible={showQRCode}
+				onClose={() => setShowQRCode(false)}
+				value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${business.slug}`}
+				title={localize(business.name)}
+				subtitle={`@${business.slug}`}
+				filenamePrefix={`business_${business.slug}`}
 			/>
 		</>
 	)
@@ -605,7 +633,12 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 		rankAvatar: { width: 36, height: 36, borderRadius: 10 },
 		rankName: { flex: 1, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
 		rankMetric: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-		rankMetricText: { fontSize: 11, fontWeight: '800' }
+		rankMetricText: { fontSize: 11, fontWeight: '800' },
+		headerIconBtn: {
+			padding: 4,
+			justifyContent: 'center',
+			alignItems: 'center'
+		}
 	})
 
 export default Dashboard

@@ -293,11 +293,14 @@ export default function FeedScreen() {
 		}
 	}
 
-	// Trigger data load on page parameter changes on Web
+	// Trigger data load on page parameter changes on Web, or initial load on Mobile
 	useEffect(() => {
 		if (isWeb) {
 			loadCart()
 			fetchFeed(urlPage, false)
+		} else {
+			loadCart()
+			fetchFeed(1, false)
 		}
 	}, [urlPage, isWeb])
 
@@ -338,12 +341,8 @@ export default function FeedScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
-			if (!isWeb) {
-				refreshData()
-			} else {
-				loadCart()
-			}
-		}, [refreshData, isWeb])
+			loadCart()
+		}, [])
 	)
 
 	const addToCart = async (item: FeedItem, quantity: number) => {

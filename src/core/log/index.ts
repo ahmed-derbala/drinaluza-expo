@@ -26,19 +26,28 @@ export const log = ({ level = 'info', label, error, message, req, data, user }: 
 	if (user) logObject.user = user
 	if (error) {
 		logObject.error = {
-			message: error.message || error,
+			message: error.message || String(error),
 			stack: error.stack,
-			...error
+			code: error.code,
+			status: error.status || error.response?.status
 		}
 	}
 	if (req) logObject.req = req
 	if (data) logObject.data = data
 
+	let serialized = ''
+	try {
+		serialized = JSON.stringify(logObject, null, 2)
+	} catch (e) {
+		// Fallback in case of stringify failures (e.g. cyclic references)
+		serialized = `[Serialization Error: ${e instanceof Error ? e.message : String(e)}]`
+	}
+
 	if (level === 'error') {
-		console.error(JSON.stringify(logObject, null, 2))
+		console.error(serialized)
 	} else if (level === 'warn') {
-		console.warn(JSON.stringify(logObject, null, 2))
+		console.warn(serialized)
 	} else {
-		console.log(JSON.stringify(logObject, null, 2))
+		console.log(serialized)
 	}
 }

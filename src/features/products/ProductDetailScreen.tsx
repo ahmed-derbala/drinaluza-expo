@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import ProductQRCode from './ProductQRCode'
+import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function ProductDetailScreen() {
 	const { productSlug } = useLocalSearchParams<{ productSlug: string }>()
@@ -36,6 +37,7 @@ export default function ProductDetailScreen() {
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [cart, setCart] = useState<any[]>([])
 	const [quantity, setQuantity] = useState(1)
+	const [showQRCode, setShowQRCode] = useState(false)
 
 	// effect to initialize quantity once product loads
 	useEffect(() => {
@@ -224,6 +226,22 @@ export default function ProductDetailScreen() {
 									<Ionicons name="pencil" size={20} color={colors.primary} />
 								</TouchableOpacity>
 							)}
+							<TouchableOpacity
+								style={{
+									width: 40,
+									height: 40,
+									borderRadius: 10,
+									backgroundColor: colors.surface,
+									justifyContent: 'center',
+									alignItems: 'center',
+									borderWidth: 1,
+									borderColor: colors.border || 'transparent'
+								}}
+								onPress={() => setShowQRCode(true)}
+								activeOpacity={0.7}
+							>
+								<Ionicons name="qr-code-outline" size={20} color={colors.primary} />
+							</TouchableOpacity>
 							<TouchableOpacity
 								style={{
 									width: 40,
@@ -447,6 +465,18 @@ export default function ProductDetailScreen() {
 				{/* Bottom Spacing */}
 				<View style={styles.bottomSpacing} />
 			</ScrollView>
+
+			{/* QR Code Viewer Modal */}
+			{product && (
+				<QRCodeModal
+					visible={showQRCode}
+					onClose={() => setShowQRCode(false)}
+					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/p/${product.slug}`}
+					title={localize(product.name)}
+					subtitle={`SKU: ${product.slug}`}
+					filenamePrefix={`product_${product.slug}`}
+				/>
+			)}
 		</View>
 	)
 }

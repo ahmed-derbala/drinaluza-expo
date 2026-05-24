@@ -10,6 +10,7 @@ import ErrorState from '../common/ErrorState'
 import SmartImage from '../../core/helpers/SmartImage'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
+import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function UserDetailScreen() {
 	const { userSlug } = useLocalSearchParams<{ userSlug: string }>()
@@ -20,6 +21,7 @@ export default function UserDetailScreen() {
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const [showQRCode, setShowQRCode] = useState(false)
 
 	const loadUser = useCallback(
 		async (isRefresh = false) => {
@@ -86,7 +88,19 @@ export default function UserDetailScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Stack.Screen options={{ title: localize(user.name), headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} /> }} />
+			<Stack.Screen
+				options={{
+					title: localize(user.name),
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7}>
+								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
+							</TouchableOpacity>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+						</View>
+					)
+				}}
+			/>
 
 			<ScrollView
 				contentContainerStyle={styles.scrollContent}
@@ -174,6 +188,18 @@ export default function UserDetailScreen() {
 					</View>
 				)}
 			</ScrollView>
+
+			{/* QR Code Viewer Modal */}
+			{user && (
+				<QRCodeModal
+					visible={showQRCode}
+					onClose={() => setShowQRCode(false)}
+					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/u/${user.slug || userSlug}`}
+					title={localize(user.name)}
+					subtitle={`@${user.slug || userSlug}`}
+					filenamePrefix={`user_${user.slug || userSlug}`}
+				/>
+			)}
 		</View>
 	)
 }

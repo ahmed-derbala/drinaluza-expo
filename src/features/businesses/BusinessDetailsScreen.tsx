@@ -2,7 +2,8 @@ import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
+import QRCodeModal from '@/features/common/QRCodeModal'
 import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
@@ -104,6 +105,9 @@ export default function BusinessDetailsScreen() {
 		loadBusinessDetails(true)
 	}, [loadBusinessDetails])
 
+	// QR Code state
+	const [showQRCode, setShowQRCode] = useState(false)
+
 	const handleOpenMap = () => {
 		if (!business?.location?.coordinates) return
 		const [lng, lat] = business.location.coordinates
@@ -165,7 +169,19 @@ export default function BusinessDetailsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Stack.Screen options={{ title: localize(business.name), headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} /> }} />
+			<Stack.Screen
+				options={{
+					title: localize(business.name),
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
+								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
+							</TouchableOpacity>
+							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+						</View>
+					)
+				}}
+			/>
 			<ScrollView
 				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -274,6 +290,18 @@ export default function BusinessDetailsScreen() {
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
 			</ScrollView>
+
+			{/* QR Code Viewer Modal */}
+			{business && (
+				<QRCodeModal
+					visible={showQRCode}
+					onClose={() => setShowQRCode(false)}
+					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${business.slug}`}
+					title={localize(business.name)}
+					subtitle={`@${business.slug}`}
+					filenamePrefix={`business_${business.slug}`}
+				/>
+			)}
 		</View>
 	)
 }
@@ -498,5 +526,10 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		textAlign: 'center',
 		padding: 20
+	},
+	headerIconBtn: {
+		padding: 4,
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })
