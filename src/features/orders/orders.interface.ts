@@ -2,6 +2,7 @@ import { LocalizedName } from '../businesses/businesses.interface'
 
 interface Product {
 	_id: string
+	slug: string
 	name: LocalizedName
 	price: {
 		total: {

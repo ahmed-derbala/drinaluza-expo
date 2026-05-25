@@ -1,48 +1,102 @@
 import React, { useRef, useEffect } from 'react'
-import { TouchableOpacity, Animated, Easing, StyleSheet, Platform } from 'react-native'
+import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 
-export default function HeaderRefreshButton({ onRefresh, isRefreshing = false }: { onRefresh?: () => void | Promise<void>; isRefreshing?: boolean }) {
+export interface HeaderRefreshButtonProps {
+	/**
+	 * Callback function triggered when the button is pressed.
+	 * Can be asynchronous.
+	 */
+	onRefresh: () => void | Promise<void>
+	/**
+	 * Boolean indicating whether the refreshing state is active.
+	 * When true, the button shows a spinning animation and is disabled.
+	 */
+	isRefreshing: boolean
+	/**
+	 * Optional custom color for the refresh icon.
+	 * Defaults to `colors.primary`.
+	 */
+	color?: string
+	/**
+	 * Optional custom size for the refresh icon.
+	 * Defaults to 22.
+	 */
+	size?: number
+	/**
+	 * Optional custom style for the container.
+	 */
+	style?: StyleProp<ViewStyle>
+}
+
+const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, color, size = 22, style }) => {
 	const { colors } = useTheme()
-	const spinValue = useRef(new Animated.Value(0)).current
-	const pressSpinValue = useRef(new Animated.Value(0)).current
+	const rotationValue = useRef(new Animated.Value(0)).current
+	const scaleValue = useRef(new Animated.Value(1)).current
 
 	useEffect(() => {
+		let animation: Animated.CompositeAnimation | null = null
 		if (isRefreshing) {
-			Animated.loop(
-				Animated.timing(spinValue, {
+			animation = Animated.loop(
+				Animated.timing(rotationValue, {
 					toValue: 1,
 					duration: 1000,
 					easing: Easing.linear,
 					useNativeDriver: true
 				})
-			).start()
+			)
+			animation.start()
 		} else {
-			spinValue.setValue(0)
+			Animated.timing(rotationValue, {
+				toValue: 0,
+				duration: 300,
+				easing: Easing.out(Easing.ease),
+				useNativeDriver: true
+			}).start()
 		}
-	}, [isRefreshing, spinValue])
 
-	const spin = spinValue.interpolate({
+		return () => {
+			if (animation) {
+				animation.stop()
+			}
+		}
+	}, [isRefreshing, rotationValue])
+
+	const spin = rotationValue.interpolate({
 		inputRange: [0, 1],
 		outputRange: ['0deg', '360deg']
 	})
 
-	const pressSpin = pressSpinValue.interpolate({
-		inputRange: [0, 1],
-		outputRange: ['0deg', '180deg']
-	})
-
 	const handleRefresh = async () => {
 		if (onRefresh && !isRefreshing) {
-			Animated.timing(pressSpinValue, {
+			// Trigger spring scale bounce
+			Animated.sequence([
+				Animated.timing(scaleValue, {
+					toValue: 0.85,
+					duration: 80,
+					useNativeDriver: true
+				}),
+				Animated.spring(scaleValue, {
+					toValue: 1,
+					friction: 4,
+					tension: 40,
+					useNativeDriver: true
+				})
+			]).start()
+
+			// Trigger rotation spin on press
+			Animated.timing(rotationValue, {
 				toValue: 1,
-				duration: 300,
-				easing: Easing.out(Easing.ease),
+				duration: 500,
+				easing: Easing.bezier(0.25, 1, 0.5, 1),
 				useNativeDriver: true
 			}).start(() => {
-				pressSpinValue.setValue(0)
+				if (!isRefreshing) {
+					rotationValue.setValue(0)
+				}
 			})
+
 			await onRefresh()
 		}
 	}
@@ -50,9 +104,17 @@ export default function HeaderRefreshButton({ onRefresh, isRefreshing = false }:
 	if (!onRefresh) return null
 
 	return (
-		<TouchableOpacity style={[styles.refreshButton, { backgroundColor: colors.surface }]} onPress={handleRefresh} disabled={isRefreshing} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-			<Animated.View style={{ transform: [{ rotate: isRefreshing ? spin : pressSpin }] }}>
-				<MaterialIcons name="refresh" size={22} color={colors.primary} />
+		<TouchableOpacity
+			style={[styles.refreshButton, { backgroundColor: colors.surface }, style]}
+			onPress={handleRefresh}
+			disabled={isRefreshing}
+			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+			accessibilityRole="button"
+			accessibilityLabel="Refresh"
+			accessibilityState={{ disabled: isRefreshing }}
+		>
+			<Animated.View style={{ transform: [{ rotate: spin }, { scale: scaleValue }] }}>
+				<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
 			</Animated.View>
 		</TouchableOpacity>
 	)
@@ -68,3 +130,5 @@ const styles = StyleSheet.create({
 		marginRight: Platform.OS === 'ios' ? 0 : 8
 	}
 })
+
+export default React.memo(HeaderRefreshButton)

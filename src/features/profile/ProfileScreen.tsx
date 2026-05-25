@@ -28,6 +28,11 @@ import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/helpers/SmartImage'
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import LocalizedFormInput from '@/features/common/LocalizedFormInput'
+import HeaderActionButton from '@/features/common/HeaderActionButton'
+import LoadingState from '@/features/common/LoadingState'
+import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { requestBusiness } from '@/features/businesses/business.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
@@ -177,20 +182,7 @@ export default function ProfileScreen() {
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
-	// Animation for refresh icon
-	const refreshSpinValue = useRef(new Animated.Value(0)).current
-
 	const loadProfile = async () => {
-		// Animate rotation on press
-		Animated.timing(refreshSpinValue, {
-			toValue: 1,
-			duration: 300,
-			easing: Easing.out(Easing.ease),
-			useNativeDriver: true
-		}).start(() => {
-			refreshSpinValue.setValue(0)
-		})
-
 		try {
 			setLoading(true)
 			setError(null)
@@ -642,45 +634,11 @@ export default function ProfileScreen() {
 
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8 }}>
-			{userData.role === 'customer' && (
-				<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.primary + '15' }]} onPress={handleRequestBusiness}>
-					<Ionicons name="briefcase" size={20} color={colors.primary} />
-				</TouchableOpacity>
-			)}
-			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.text + '05' }]} onPress={handleSwitchUser}>
-				<Ionicons name="people" size={20} color={colors.text} />
-			</TouchableOpacity>
-			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.error + '10' }]} onPress={handleSignOut}>
-				<Ionicons name="log-out" size={20} color={colors.error} />
-			</TouchableOpacity>
-			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.primary + '15' }]} onPress={() => router.push('/profile/purchases?status=cart')}>
-				<Ionicons name="cart-outline" size={20} color={colors.primary} />
-				{cart.length > 0 && (
-					<View
-						style={{
-							position: 'absolute',
-							top: -4,
-							right: -4,
-							backgroundColor: colors.error || '#ef4444',
-							borderRadius: 8,
-							minWidth: 16,
-							height: 16,
-							justifyContent: 'center',
-							alignItems: 'center',
-							paddingHorizontal: 3,
-							borderWidth: 1,
-							borderColor: colors.surface
-						}}
-					>
-						<Text style={{ color: '#fff', fontSize: 9, fontWeight: 'bold' }}>{cart.length}</Text>
-					</View>
-				)}
-			</TouchableOpacity>
-			<TouchableOpacity style={[styles.headerActionButton, { backgroundColor: colors.surface }]} onPress={loadProfile} disabled={loading}>
-				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
-					<MaterialIcons name="refresh" size={20} color={colors.primary} />
-				</Animated.View>
-			</TouchableOpacity>
+			{userData.role === 'customer' && <HeaderActionButton iconName="briefcase" onPress={handleRequestBusiness} accessibilityLabel="Request Business" />}
+			<HeaderActionButton iconName="people" iconColor={colors.text} backgroundColor={colors.text + '05'} onPress={handleSwitchUser} accessibilityLabel="Switch User Account" />
+			<HeaderActionButton iconName="log-out" iconColor={colors.error} backgroundColor={colors.error + '10'} onPress={handleSignOut} accessibilityLabel="Sign Out" />
+			<HeaderActionButton iconName="cart-outline" onPress={() => router.push('/profile/purchases?status=cart')} badgeCount={cart.length} accessibilityLabel="View Cart" />
+			<HeaderRefreshButton onRefresh={loadProfile} isRefreshing={loading} size={20} style={[styles.headerActionButton, { backgroundColor: colors.surface }]} />
 		</View>
 	)
 
@@ -756,65 +714,30 @@ export default function ProfileScreen() {
 				>
 					{editMode.name ? (
 						<>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Name (English)</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 48 }]}>
-										<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'en')?.flag}</Text>
-									</View>
-									<TextInput
-										style={[styles.socialInput, { color: colors.text }]}
-										value={userData.name?.en}
-										underlineColorAndroid="transparent"
-										onChangeText={(value) => updateField('en', value, 'name')}
-										placeholder="Name in English"
-										placeholderTextColor={colors.textTertiary}
-									/>
-								</View>
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Name (Tunisian Arabic)</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 48 }]}>
-										<View style={styles.flagContainer}>
-											<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
-											<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-												<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
-											</View>
-										</View>
-									</View>
-									<TextInput
-										style={[styles.socialInput, { color: colors.text, textAlign: 'right' }]}
-										value={userData.name?.tn_arab}
-										underlineColorAndroid="transparent"
-										onChangeText={(value) => updateField('tn_arab', value, 'name')}
-										placeholder="الاسم بالعربية"
-										placeholderTextColor={colors.textTertiary}
-									/>
-								</View>
-							</View>
-
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Name (Tunisian Latin)</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 48 }]}>
-										<View style={styles.flagContainer}>
-											<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
-											<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-												<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
-											</View>
-										</View>
-									</View>
-									<TextInput
-										style={[styles.socialInput, { color: colors.text }]}
-										value={userData.name?.tn_latn}
-										underlineColorAndroid="transparent"
-										onChangeText={(value) => updateField('tn_latn', value, 'name')}
-										placeholder="Name in Tunisian (Latin)"
-										placeholderTextColor={colors.textTertiary}
-									/>
-								</View>
-							</View>
+							<LocalizedFormInput
+								label="Name (English)"
+								value={userData.name?.en || ''}
+								onChangeText={(value) => updateField('en', value, 'name')}
+								lang="en"
+								placeholder="Name in English"
+								style={{ marginBottom: 0 }}
+							/>
+							<LocalizedFormInput
+								label="Name (Tunisian Arabic)"
+								value={userData.name?.tn_arab || ''}
+								onChangeText={(value) => updateField('tn_arab', value, 'name')}
+								lang="tn_arab"
+								placeholder="الاسم بالعربية"
+								style={{ marginBottom: 0 }}
+							/>
+							<LocalizedFormInput
+								label="Name (Tunisian Latin)"
+								value={userData.name?.tn_latn || ''}
+								onChangeText={(value) => updateField('tn_latn', value, 'name')}
+								lang="tn_latn"
+								placeholder="Name in Tunisian (Latin)"
+								style={{ marginBottom: 0 }}
+							/>
 						</>
 					) : (
 						<>

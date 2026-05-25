@@ -1,4 +1,6 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
+import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import HeaderActionButton from '@/features/common/HeaderActionButton'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -230,8 +232,6 @@ export default function FeedScreen() {
 
 	// Animation state for search bar
 	const scrollY = useRef(new Animated.Value(0)).current
-	// Animation for refresh icon
-	const refreshSpinValue = useRef(new Animated.Value(0)).current
 
 	// Error handling state
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
@@ -305,16 +305,6 @@ export default function FeedScreen() {
 	}, [urlPage, isWeb])
 
 	const refreshData = useCallback(async () => {
-		// Animate rotation on press
-		Animated.timing(refreshSpinValue, {
-			toValue: 1,
-			duration: 300,
-			easing: Easing.out(Easing.ease),
-			useNativeDriver: true
-		}).start(() => {
-			refreshSpinValue.setValue(0)
-		})
-
 		setRefreshing(true)
 		if (isWeb) {
 			if (urlPage === 1) {
@@ -328,7 +318,7 @@ export default function FeedScreen() {
 			await Promise.all([loadCart(), fetchFeed(1, false)])
 		}
 		setRefreshing(false)
-	}, [refreshSpinValue, isWeb, urlPage])
+	}, [isWeb, urlPage])
 
 	const handleLoadMore = useCallback(() => {
 		if (isWeb) return
@@ -483,41 +473,18 @@ export default function FeedScreen() {
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8 }}>
 			{!isWeb && (
-				<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => setIsScannerVisible(true)}>
-					<MaterialIcons name="qr-code-scanner" size={20} color={colors.primary} />
-				</TouchableOpacity>
+				<HeaderActionButton iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} backgroundColor={colors.surface} size={40} accessibilityLabel="Scan Barcode" />
 			)}
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/search')}>
-				<Ionicons name="search-outline" size={20} color={colors.primary} />
-			</TouchableOpacity>
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={() => router.push('/profile/purchases?status=cart')}>
-				<Ionicons name="cart-outline" size={20} color={colors.primary} />
-				{cart.length > 0 && (
-					<View
-						style={{
-							position: 'absolute',
-							top: -6,
-							right: -6,
-							backgroundColor: colors.error || '#ef4444',
-							borderRadius: 10,
-							minWidth: 20,
-							height: 20,
-							justifyContent: 'center',
-							alignItems: 'center',
-							paddingHorizontal: 4,
-							borderWidth: 1.5,
-							borderColor: colors.surface
-						}}
-					>
-						<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-					</View>
-				)}
-			</TouchableOpacity>
-			<TouchableOpacity style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} onPress={refreshData} disabled={refreshing}>
-				<Animated.View style={{ transform: [{ rotate: refreshSpinValue.interpolate({ inputRange: [0, 1], outputRange: ['0deg', '180deg'] }) }] }}>
-					<MaterialIcons name="refresh" size={20} color={colors.primary} />
-				</Animated.View>
-			</TouchableOpacity>
+			<HeaderActionButton iconName="search-outline" onPress={() => router.push('/search')} backgroundColor={colors.surface} size={40} accessibilityLabel="Search" />
+			<HeaderActionButton
+				iconName="cart-outline"
+				onPress={() => router.push('/profile/purchases?status=cart')}
+				badgeCount={cart.length}
+				backgroundColor={colors.surface}
+				size={40}
+				accessibilityLabel="View Cart"
+			/>
+			<HeaderRefreshButton onRefresh={refreshData} isRefreshing={refreshing} size={20} style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} />
 		</View>
 	)
 

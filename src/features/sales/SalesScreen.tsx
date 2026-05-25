@@ -1,5 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import React, { useMemo, useState, useCallback, useEffect } from 'react'
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -21,15 +21,21 @@ export default function SalesScreen() {
 	}>()
 	const router = useRouter()
 	const { colors } = useTheme()
-	const [sales, setSales] = useState<Sale[]>([])
+	const [salesState, setSalesState] = useState<Record<string, Sale[]>>({})
+	const salesStateRef = useRef(salesState)
+	useEffect(() => {
+		salesStateRef.current = salesState
+	}, [salesState])
+
 	const [allSales, setAllSales] = useState<Sale[]>([]) // Store all sales for counting
 	const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
-	const [loading, setLoading] = useState(true)
+	const [initialLoading, setInitialLoading] = useState(true)
+	const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({})
 	const [refreshing, setRefreshing] = useState(false)
 	const [filtering, setFiltering] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string } | null>(null)
-	const [page, setPage] = useState(1)
-	const [hasMore, setHasMore] = useState(true)
+	const [pageState, setPageState] = useState<Record<string, number>>({})
+	const [hasMoreState, setHasMoreState] = useState<Record<string, boolean>>({})
 	const [loadingMore, setLoadingMore] = useState(false)
 	const [selectedStatus, setSelectedStatus] = useState<string>(status || 'all')
 
@@ -86,13 +92,16 @@ export default function SalesScreen() {
 	}, [businessSlug, customerSlug, productSlug])
 
 	const loadSales = useCallback(
-		async (pageNum = 1, isRefreshing = false, status = selectedStatus, isFiltering = false) => {
+		async (pageNum = 1, isRefreshing = false, statusVal = selectedStatus, isFiltering = false) => {
 			try {
 				if (pageNum === 1) {
 					if (isFiltering) {
 						setFiltering(true)
 					} else {
-						setLoading(true)
+						// Only show loading spinner if we don't have data for this status yet
+						if (!isRefreshing && !salesStateRef.current[statusVal]?.length) {
+							setTabLoading((prev) => ({ ...prev, [statusVal]: true }))
+						}
 					}
 					setError(null)
 				} else {
@@ -101,32 +110,33 @@ export default function SalesScreen() {
 
 				if (!businessSlug) return
 
-				const response = await getSales(businessSlug as string, pageNum, ITEMS_PER_PAGE, status === 'all' ? undefined : status, customerSlug, productSlug)
+				const response = await getSales(businessSlug as string, pageNum, ITEMS_PER_PAGE, statusVal === 'all' ? undefined : statusVal, customerSlug, productSlug)
 
 				// Check if the response has the expected structure
 				if (response && response.data && Array.isArray(response.data.docs)) {
 					const newSales = response.data.docs
 
-					if (isRefreshing || pageNum === 1) {
-						setSales(newSales)
-					} else {
-						setSales((prev) => [...prev, ...newSales])
-					}
+					setSalesState((prev) => {
+						const currentSales = prev[statusVal] || []
+						const updatedSales = isRefreshing || pageNum === 1 ? newSales : [...currentSales, ...newSales]
+						return { ...prev, [statusVal]: updatedSales }
+					})
 
-					setHasMore(newSales.length === ITEMS_PER_PAGE && response.data.pagination?.hasNextPage !== false)
+					const hasMoreVal = newSales.length === ITEMS_PER_PAGE && response.data.pagination?.hasNextPage !== false
+					setHasMoreState((prev) => ({ ...prev, [statusVal]: hasMoreVal }))
 				} else {
 					if (pageNum === 1) {
-						setSales([])
+						setSalesState((prev) => ({ ...prev, [statusVal]: [] }))
 					}
-					setHasMore(false)
+					setHasMoreState((prev) => ({ ...prev, [statusVal]: false }))
 				}
 
-				setPage(pageNum)
+				setPageState((prev) => ({ ...prev, [statusVal]: pageNum }))
 			} catch (err: any) {
 				console.error('Error loading sales:', err)
 
 				if (err.statusCode === 404) {
-					setSales([])
+					setSalesState((prev) => ({ ...prev, [statusVal]: [] }))
 					setError({
 						title: 'No Sales Found',
 						message: 'No sales data is available at the moment.'
@@ -138,42 +148,54 @@ export default function SalesScreen() {
 					})
 				}
 			} finally {
-				setLoading(false)
+				setInitialLoading(false)
 				setRefreshing(false)
 				setLoadingMore(false)
 				setFiltering(false)
+				setTabLoading((prev) => ({ ...prev, [statusVal]: false }))
 			}
 		},
-		[businessSlug, customerSlug, productSlug, selectedStatus]
+		[businessSlug, customerSlug, productSlug]
 	)
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true)
 		await loadAllSalesForCounts()
-		loadSales(1, true, status || 'all')
-	}, [loadAllSalesForCounts, loadSales, status])
+		await loadSales(1, true, selectedStatus)
+	}, [loadAllSalesForCounts, loadSales, selectedStatus])
 
 	const handleLoadMore = useCallback(() => {
-		if (!loadingMore && hasMore) {
-			loadSales(page + 1, false, status || 'all')
+		const activeHasMore = hasMoreState[selectedStatus] !== false
+		const activePage = pageState[selectedStatus] || 1
+		if (!loadingMore && activeHasMore) {
+			loadSales(activePage + 1, false, selectedStatus)
 		}
-	}, [loadingMore, hasMore, page, loadSales, status])
+	}, [loadingMore, hasMoreState, pageState, loadSales, selectedStatus])
 
 	const handleStatusChange = useCallback(
 		(newStatus: string) => {
 			setSelectedStatus(newStatus)
-			setHasMore(true)
-			setPage(1)
 			router.setParams({ status: newStatus })
+			// Pre-fetch or fetch immediately on tab switch silently or with local loader
+			loadSales(1, false, newStatus)
 		},
-		[router]
+		[router, loadSales]
 	)
 
+	// Initial data loading on component mount
+	useEffect(() => {
+		const loadInitialData = async () => {
+			await Promise.all([loadAllSalesForCounts(), loadSales(1, false, selectedStatus)])
+		}
+		loadInitialData()
+	}, [])
+
+	// Focus effect triggers silent refresh in background
 	useFocusEffect(
 		useCallback(() => {
 			loadAllSalesForCounts()
-			loadSales(1, true, status || 'all')
-		}, [loadAllSalesForCounts, loadSales, status])
+			loadSales(1, true, selectedStatus)
+		}, [loadAllSalesForCounts, loadSales, selectedStatus])
 	)
 
 	const renderFooter = () => {
@@ -185,14 +207,16 @@ export default function SalesScreen() {
 		)
 	}
 
-	// Only show full-screen loading on initial load, not when filtering
-	if (loading && !refreshing && !filtering && sales.length === 0) {
+	// Only show full-screen loading on initial load
+	if (initialLoading) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
 			</View>
 		)
 	}
+
+	const displayData = salesState[selectedStatus] || []
 
 	if (error) {
 		return (
@@ -233,7 +257,7 @@ export default function SalesScreen() {
 									}
 								]}
 							>
-								{filtering && isSelected && <ActivityIndicator size="small" color={colors.textOnPrimary} style={styles.filterLoader} />}
+								{tabLoading[opt.value] && isSelected && <ActivityIndicator size="small" color={colors.textOnPrimary} style={styles.filterLoader} />}
 								<Text
 									style={[
 										styles.filterChipText,
@@ -303,7 +327,7 @@ export default function SalesScreen() {
 
 			{/* Sales List */}
 			<FlatList
-				data={sales}
+				data={displayData}
 				renderItem={({ item }) => (
 					<View style={numColumns > 1 ? styles.columnItem : styles.fullWidthItem}>
 						<SaleCard sale={item} onStatusUpdate={handleRefresh} />
@@ -321,13 +345,19 @@ export default function SalesScreen() {
 				onEndReachedThreshold={0.5}
 				ListFooterComponent={renderFooter}
 				ListEmptyComponent={
-					<View style={styles.emptyContainer}>
-						<MaterialIcons name="receipt-long" size={64} color={colors.textTertiary} style={{ opacity: 0.3 }} />
-						<Text style={[styles.emptyTitle, { color: colors.text }]}>No sales found</Text>
-						<Text style={[styles.emptyText, { color: colors.textSecondary }]}>
-							{selectedStatus !== 'all' ? `No sales with status "${orderStatusLabels[selectedStatus as keyof typeof orderStatusLabels] || selectedStatus}"` : 'Start making sales to see them here'}
-						</Text>
-					</View>
+					tabLoading[selectedStatus] ? (
+						<View style={styles.emptyContainer}>
+							<ActivityIndicator size="large" color={colors.primary} />
+						</View>
+					) : (
+						<View style={styles.emptyContainer}>
+							<MaterialIcons name="receipt-long" size={64} color={colors.textTertiary} style={{ opacity: 0.3 }} />
+							<Text style={[styles.emptyTitle, { color: colors.text }]}>No sales found</Text>
+							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>
+								{selectedStatus !== 'all' ? `No sales with status "${orderStatusLabels[selectedStatus as keyof typeof orderStatusLabels] || selectedStatus}"` : 'Start making sales to see them here'}
+							</Text>
+						</View>
+					)
 				}
 			/>
 		</View>

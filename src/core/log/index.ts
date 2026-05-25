@@ -1,3 +1,5 @@
+import { Platform } from 'react-native'
+
 export interface LogParams {
 	level: 'info' | 'warn' | 'error' | 'debug'
 	label: string
@@ -14,14 +16,16 @@ export const log = ({ level, label, message = '', error, data }: LogParams) => {
 	// Disable all logs in production
 	if (!__DEV__) return
 
+	const isWeb = Platform.OS === 'web'
+
 	// Premium ANSI colors for high terminal readability in Metro/Expo
 	const colors = {
-		info: '\x1b[36m', // Cyan
-		warn: '\x1b[33m', // Yellow
-		error: '\x1b[31m', // Red
-		debug: '\x1b[90m', // Dark Gray
-		reset: '\x1b[0m',
-		bold: '\x1b[1m'
+		info: isWeb ? '' : '\x1b[36m', // Cyan
+		warn: isWeb ? '' : '\x1b[33m', // Yellow
+		error: isWeb ? '' : '\x1b[31m', // Red
+		debug: isWeb ? '' : '\x1b[90m', // Dark Gray
+		reset: isWeb ? '' : '\x1b[0m',
+		bold: isWeb ? '' : '\x1b[1m'
 	}
 
 	const levelBadge = level.toUpperCase()

@@ -14,6 +14,7 @@ import { parseError, logError } from '@/core/helpers/errorHandler'
 import { Business } from '@/features/businesses/businesses.interface'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import BusinessCard from './BusinessCard'
 // Common themed styles removed as they're not needed
 
 // Responsive layout will be calculated inside the component
@@ -648,119 +649,18 @@ export default function BusinessesListScreen() {
 		router.push(`/businesses/${slug}` as any)
 	}
 
-	const renderBusinessCard = ({ item }: { item: Business }) => {
-		// Build address string
-		const addressParts = []
-		if (item.address?.street) addressParts.push(item.address.street)
-		if (item.address?.city) addressParts.push(item.address.city)
-		if (item.address?.region) addressParts.push(item.address.region)
-		if (item.address?.country) addressParts.push(item.address.country)
-		const fullAddress = addressParts.join(', ')
-
-		// Get business details from API response
-		const businessName = localize(item.name) || translate('unnamed_business', 'Unnamed Business')
-		const ownerSlug = item.owner?.slug || 'owner'
-		const ownerName = localize(item.owner?.name) || ''
-		const rating = item.rating?.average || 0
-		const ratingCount = item.rating?.count || 0
-
-		return (
-			<TouchableOpacity style={styles.businessCard as ViewStyle} onPress={() => handleBusinessPress(item.slug)}>
-				{/* Business Image */}
-				<View style={styles.businessImageContainer as ViewStyle}>
-					<SmartImage source={item.media?.thumbnail?.url} style={styles.businessImage as ImageStyle} resizeMode="cover" entityType="business" />
-				</View>
-
-				<View style={styles.businessCardContent as ViewStyle}>
-					{/* Business Name and Owner */}
-					<View style={styles.businessHeader as ViewStyle}>
-						<Text style={styles.businessName as TextStyle} numberOfLines={2}>
-							{businessName}
-						</Text>
-						{rating > 0 && (
-							<View style={styles.ratingContainer as ViewStyle}>
-								<Ionicons name="star" size={isExtraSmall ? 12 : 14} color="#FFD700" />
-								<Text style={styles.ratingText as TextStyle}>{rating.toFixed(1)}</Text>
-								<Text style={styles.ratingCount as TextStyle}>({ratingCount})</Text>
-							</View>
-						)}
-						{showExtended && ownerName && (
-							<Text style={styles.businessOwnerLabel as TextStyle} numberOfLines={1}>
-								{ownerName}
-							</Text>
-						)}
-						<Text style={styles.ownerName as TextStyle} numberOfLines={1}>
-							@{ownerSlug}
-						</Text>
-					</View>
-
-					{/* Address */}
-					{fullAddress && (
-						<View style={styles.addressContainer as ViewStyle}>
-							<Ionicons name="location-outline" size={isExtraSmall ? 12 : 14} color={colors.textSecondary} />
-							<Text style={styles.addressText as TextStyle} numberOfLines={2}>
-								{fullAddress}
-							</Text>
-						</View>
-					)}
-
-					{/* Contact Buttons */}
-					<View style={styles.contactButtons as ViewStyle}>
-						{item.contact?.phone?.fullNumber ? (
-							<TouchableOpacity
-								style={styles.contactButton as ViewStyle}
-								onPress={() => {
-									if (item.contact?.phone?.fullNumber) {
-										Linking.openURL(`tel:${item.contact.phone.fullNumber}`)
-									}
-								}}
-							>
-								<Ionicons name="call-outline" size={isExtraSmall ? 16 : 18} color={colors.primary} />
-							</TouchableOpacity>
-						) : null}
-						{item.contact?.whatsapp ? (
-							<TouchableOpacity
-								style={[styles.contactButton as ViewStyle, styles.whatsappButton as ViewStyle]}
-								onPress={() => {
-									if (item.contact?.whatsapp) {
-										Linking.openURL(`https://wa.me/${item.contact.whatsapp.replace(/[^0-9]/g, '')}`)
-									}
-								}}
-							>
-								<Ionicons name="logo-whatsapp" size={isExtraSmall ? 16 : 18} color="#fff" />
-							</TouchableOpacity>
-						) : null}
-						{item.location?.coordinates ? (
-							<TouchableOpacity
-								style={styles.contactButton as ViewStyle}
-								onPress={() => {
-									// Open map with coordinates
-									if (item.location?.coordinates) {
-										const [longitude, latitude] = item.location.coordinates
-										const mapUrl = Platform.select({
-											ios: `maps:?daddr=${latitude},${longitude}`,
-											android: `google.navigation:q=${latitude},${longitude}`,
-											default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-										})
-										if (mapUrl) {
-											Linking.openURL(mapUrl).catch(() => {})
-										}
-									}
-								}}
-							>
-								<Ionicons name="map-outline" size={isExtraSmall ? 16 : 18} color={colors.primary} />
-							</TouchableOpacity>
-						) : null}
-					</View>
-
-					{/* View Business Button */}
-					<TouchableOpacity style={styles.viewButton as ViewStyle} onPress={() => handleBusinessPress(item.slug)}>
-						<Ionicons name="storefront-outline" size={isExtraSmall ? 16 : 18} color="#fff" />
-					</TouchableOpacity>
-				</View>
-			</TouchableOpacity>
-		)
-	}
+	const renderBusinessCard = ({ item }: { item: Business }) => (
+		<BusinessCard
+			business={item}
+			width={cardWidth}
+			imageHeight={imageHeight}
+			showExtended={showExtended}
+			isExtraSmall={isExtraSmall}
+			fontSize={fontSize}
+			subtitleFontSize={subtitleFontSize}
+			smallFontSize={smallFontSize}
+		/>
+	)
 
 	const renderEmpty = () => {
 		if (error) {

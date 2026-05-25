@@ -5,6 +5,9 @@ import { useTheme } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getReviews, createReview } from './reviews.api'
 import { Review } from './reviews.interface'
+import RatingStars from '../common/RatingStars'
+import LoadingState from '../common/LoadingState'
+import EmptyState from '../common/EmptyState'
 
 type ReviewSectionProps = {
 	targetResource: 'businesses' | 'products' | 'users'
@@ -79,17 +82,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 		}
 	}
 
-	const renderStars = (stars: number, interactive: boolean = false) => {
-		return (
-			<View style={styles.starsContainer}>
-				{[1, 2, 3, 4, 5].map((star) => (
-					<TouchableOpacity key={star} onPress={() => interactive && handleStarPress(star)} disabled={!interactive} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-						<Ionicons name={star <= stars ? 'star' : 'star-outline'} size={interactive ? 28 : 16} color={star <= stars ? '#FFD700' : colors.textSecondary} />
-					</TouchableOpacity>
-				))}
-			</View>
-		)
-	}
+	const renderStars = (stars: number, interactive: boolean = false) => <RatingStars rating={stars} size={interactive ? 28 : 16} interactive={interactive} onRatingChange={handleStarPress} />
 
 	const renderReviewItem = (review: Review) => (
 		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
@@ -166,15 +159,9 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 
 			{/* Reviews List */}
 			{loading ? (
-				<View style={styles.loadingContainer}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+				<LoadingState style={styles.loadingContainer} />
 			) : reviews.length === 0 ? (
-				<View style={styles.emptyContainer}>
-					<Ionicons name="star-outline" size={48} color={colors.textTertiary} />
-					<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('no_reviews_yet', 'No reviews yet')}</Text>
-					<Text style={[styles.emptySubtext, { color: colors.textTertiary }]}>{translate('be_first_to_review', 'Be the first to review')}</Text>
-				</View>
+				<EmptyState title={translate('no_reviews_yet', 'No reviews yet')} subtitle={translate('be_first_to_review', 'Be the first to review')} iconName="star-outline" style={styles.emptyContainer} />
 			) : (
 				<ScrollView style={styles.reviewsList}>
 					{reviews.map(renderReviewItem)}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
 import SmartImage from '../../core/helpers/SmartImage'
 import { useRouter, useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '../../core/theme'
 import HeaderTitle from '../common/HeaderTitle'
+import HeaderRefreshButton from '../common/HeaderRefreshButton'
 import ErrorState from '../common/ErrorState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
@@ -39,9 +40,26 @@ const PurchasesScreen = () => {
 		}
 	}, [params.status])
 
-	const [purchases, setPurchases] = useState<OrderItem[]>([])
+	const [purchasesState, setPurchasesState] = useState<Record<Exclude<FilterStatus, 'cart'>, OrderItem[]>>({
+		pending: [],
+		processing: [],
+		completed: [],
+		cancelled: []
+	})
+	const purchasesStateRef = useRef(purchasesState)
+	useEffect(() => {
+		purchasesStateRef.current = purchasesState
+	}, [purchasesState])
+
 	const [cart, setCart] = useState<CartItem[]>([])
-	const [loading, setLoading] = useState(true)
+	const [initialLoading, setInitialLoading] = useState(true)
+	const [tabLoading, setTabLoading] = useState<Record<FilterStatus, boolean>>({
+		cart: false,
+		pending: false,
+		processing: false,
+		completed: false,
+		cancelled: false
+	})
 	const [refreshing, setRefreshing] = useState(false)
 	const [countsState, setCountsState] = useState<Record<string, number>>({ pending: 0, processing: 0, completed: 0, cancelled: 0 })
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
@@ -100,13 +118,17 @@ const PurchasesScreen = () => {
 	const fetchPurchases = useCallback(async (activeFilter: FilterStatus, isRefresh = false) => {
 		if (activeFilter === 'cart') {
 			await loadCart()
-			setLoading(false)
+			setTabLoading((prev) => ({ ...prev, cart: false }))
+			setInitialLoading(false)
 			setRefreshing(false)
 			return
 		}
 
 		try {
-			if (!isRefresh) setLoading(true)
+			// Only show loading spinner if we don't have data for this tab yet
+			if (!isRefresh && !purchasesStateRef.current[activeFilter]?.length) {
+				setTabLoading((prev) => ({ ...prev, [activeFilter]: true }))
+			}
 			setError(null)
 			let docs: OrderItem[] = []
 
@@ -134,7 +156,7 @@ const PurchasesScreen = () => {
 
 			// Sort by creation date descending
 			docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-			setPurchases(docs)
+			setPurchasesState((prev) => ({ ...prev, [activeFilter]: docs }))
 		} catch (err: any) {
 			logError(err, 'fetchPurchases')
 			const errorInfo = parseError(err)
@@ -144,7 +166,8 @@ const PurchasesScreen = () => {
 				type: errorInfo.type
 			})
 		} finally {
-			setLoading(false)
+			setTabLoading((prev) => ({ ...prev, [activeFilter]: false }))
+			setInitialLoading(false)
 			setRefreshing(false)
 		}
 	}, [])
@@ -154,10 +177,18 @@ const PurchasesScreen = () => {
 		await Promise.all([fetchPurchases(filter, true), loadStatusCounts(), loadCart()])
 	}, [filter, fetchPurchases, loadStatusCounts])
 
+	// Initial data loading on component mount
+	useEffect(() => {
+		const loadInitialData = async () => {
+			await Promise.all([fetchPurchases(filter), loadStatusCounts(), loadCart()])
+		}
+		loadInitialData()
+	}, [])
+
+	// Tab switching loads active tab data silently or with localized spinner if empty
 	useEffect(() => {
 		fetchPurchases(filter)
-		loadStatusCounts()
-	}, [filter, fetchPurchases, loadStatusCounts])
+	}, [filter, fetchPurchases])
 
 	// Refresh cart and counts when screen comes into focus
 	useFocusEffect(
@@ -268,7 +299,7 @@ const PurchasesScreen = () => {
 					<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
 						{/* Header */}
 						<View style={styles.cardHeader}>
-							<View style={styles.headerLeft}>
+							<TouchableOpacity style={styles.headerLeft} onPress={() => item.business.slug && router.push(`/businesses/${item.business.slug}` as any)}>
 								<SmartImage source={(item.business as any).media?.thumbnail?.url} style={styles.businessAvatar} entityType="business" />
 								<View style={styles.headerInfo}>
 									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
@@ -276,7 +307,7 @@ const PurchasesScreen = () => {
 									</Text>
 									<Text style={[styles.orderDate, { color: colors.textTertiary }]}>{new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
 								</View>
-							</View>
+							</TouchableOpacity>
 							<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
 								<Text style={[styles.statusText, { color: statusColor }]}>{orderStatusLabels[item.status] || item.status}</Text>
 							</View>
@@ -290,7 +321,7 @@ const PurchasesScreen = () => {
 							{item.products.map((p, idx) => {
 								const img = p.product.media?.thumbnail?.url || p.product.defaultProduct?.media?.thumbnail?.url
 								return (
-									<View key={`${p.product._id}-${idx}`} style={styles.productRow}>
+									<TouchableOpacity key={`${p.product._id}-${idx}`} style={styles.productRow} onPress={() => p.product.slug && router.push(`/products/${p.product.slug}` as any)}>
 										<SmartImage source={img} style={styles.productThumb} entityType="product" />
 										<View style={styles.productInfoWrap}>
 											<Text style={[styles.productNameText, { color: colors.text }]} numberOfLines={1}>
@@ -301,7 +332,7 @@ const PurchasesScreen = () => {
 											</Text>
 										</View>
 										<Text style={[styles.productPriceText, { color: colors.primary }]}>{(p.lineTotal?.tnd || 0).toFixed(2)} TND</Text>
-									</View>
+									</TouchableOpacity>
 								)
 							})}
 						</ScrollView>
@@ -423,7 +454,7 @@ const PurchasesScreen = () => {
 					<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
 						{/* Header */}
 						<View style={styles.cardHeader}>
-							<View style={styles.headerLeft}>
+							<TouchableOpacity style={styles.headerLeft} onPress={() => group.businessSlug && router.push(`/businesses/${group.businessSlug}` as any)}>
 								<Ionicons name="storefront-outline" size={24} color={colors.primary} />
 								<View style={styles.headerInfo}>
 									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
@@ -433,7 +464,7 @@ const PurchasesScreen = () => {
 										{group.items.length} {group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')}
 									</Text>
 								</View>
-							</View>
+							</TouchableOpacity>
 							<View style={[styles.statusBadge, { backgroundColor: colors.primary + '15' }]}>
 								<Text style={[styles.statusText, { color: colors.primary }]}>{translate('draft', 'DRAFT')}</Text>
 							</View>
@@ -449,12 +480,16 @@ const PurchasesScreen = () => {
 								const img = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 								return (
 									<View key={item._id} style={styles.cartItemRow}>
-										<SmartImage source={img} style={styles.productThumb} entityType="product" />
+										<TouchableOpacity onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}>
+											<SmartImage source={img} style={styles.productThumb} entityType="product" />
+										</TouchableOpacity>
 										<View style={styles.cartItemDetails}>
 											<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-												<Text style={[styles.productNameText, { color: colors.text, flex: 1, marginRight: 8 }]} numberOfLines={1}>
-													{localize(item.name)}
-												</Text>
+												<TouchableOpacity style={{ flex: 1, marginRight: 8 }} onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}>
+													<Text style={[styles.productNameText, { color: colors.text }]} numberOfLines={1}>
+														{localize(item.name)}
+													</Text>
+												</TouchableOpacity>
 												<TouchableOpacity onPress={() => removeFromCart(item._id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
 													<Ionicons name="trash-outline" size={16} color={colors.error} />
 												</TouchableOpacity>
@@ -501,6 +536,14 @@ const PurchasesScreen = () => {
 	)
 
 	const renderEmptyState = useCallback(() => {
+		if (tabLoading[filter]) {
+			return (
+				<View style={styles.emptyWrap}>
+					<ActivityIndicator size="large" color={colors.primary} />
+				</View>
+			)
+		}
+
 		const configs = {
 			cart: { icon: 'cart-outline', title: translate('empty_cart', 'Your cart is empty'), sub: translate('empty_cart_sub', 'Add delicious fresh seafood items to your cart!') },
 			pending: { icon: 'hourglass-outline', title: translate('empty_pending', 'No pending orders'), sub: translate('empty_pending_sub', 'Orders waiting for business confirmation will appear here') },
@@ -522,7 +565,7 @@ const PurchasesScreen = () => {
 				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{config.sub}</Text>
 			</View>
 		)
-	}, [filter, colors, translate, styles])
+	}, [filter, colors, translate, styles, tabLoading])
 
 	const FilterButton = ({ status, label, icon }: { status: FilterStatus; label: string; icon: string }) => {
 		const isActive = filter === status
@@ -557,7 +600,7 @@ const PurchasesScreen = () => {
 		)
 	}
 
-	if (loading && !refreshing) {
+	if (initialLoading) {
 		return (
 			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: translate('purchases_title', 'Purchases') }} />
@@ -566,7 +609,7 @@ const PurchasesScreen = () => {
 		)
 	}
 
-	const displayData = filter === 'cart' ? groupedCart : purchases
+	const displayData = filter === 'cart' ? groupedCart : purchasesState[filter]
 	const itemCount = displayData.length
 
 	return (
@@ -574,11 +617,7 @@ const PurchasesScreen = () => {
 			<Stack.Screen
 				options={{
 					headerTitle: () => <HeaderTitle title={translate('purchases_title', 'Purchases')} subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`} />,
-					headerRight: () => (
-						<TouchableOpacity onPress={onRefresh} style={{ marginRight: 8 }}>
-							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={22} color={colors.text} />
-						</TouchableOpacity>
-					)
+					headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
 				}}
 			/>
 

@@ -11,6 +11,8 @@ import SmartImage from '@/core/helpers/SmartImage'
 import { uploadFile } from '@/core/file'
 import { showAlert } from '@/core/helpers/popup'
 import { translate } from '@/core/translation'
+import LocalizedFormInput from '@/features/common/LocalizedFormInput'
+import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 
 export default function EditProductScreen() {
 	const router = useRouter()
@@ -468,53 +470,23 @@ export default function EditProductScreen() {
 					<View style={styles.card}>
 						<Text style={styles.cardTitle}>{translate('product_names', 'Product Names')}</Text>
 
-						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>
-								{translate('english_name', 'English Name')} <Text style={styles.required}>*</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: productNameEn ? colors.primary : colors.borderLight }]}>
-								<Text style={styles.inputFlag}>🇺🇸</Text>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={productNameEn}
-									onChangeText={setProductNameEn}
-									placeholder="e.g., Fresh Atlantic Salmon"
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
+						<LocalizedFormInput label={translate('english_name', 'English Name')} value={productNameEn} onChangeText={setProductNameEn} lang="en" placeholder="e.g., Fresh Atlantic Salmon" required />
 
-						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>
-								{translate('tunisian_latin_name', 'Tunisian Name (Latin)')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: productNameTnLatn ? colors.primary : colors.borderLight }]}>
-								<Text style={styles.inputFlag}>🇹🇳</Text>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={productNameTnLatn}
-									onChangeText={setProductNameTnLatn}
-									placeholder="e.g., Salmon Fresh"
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
+						<LocalizedFormInput
+							label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')}
+							value={productNameTnLatn}
+							onChangeText={setProductNameTnLatn}
+							lang="tn_latn"
+							placeholder="e.g., Salmon Fresh"
+						/>
 
-						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>
-								{translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: productNameTnArab ? colors.primary : colors.borderLight }]}>
-								<Text style={styles.inputFlag}>🇹🇳</Text>
-								<TextInput
-									style={[styles.textInput, { color: colors.text, textAlign: 'right' }]}
-									value={productNameTnArab}
-									onChangeText={setProductNameTnArab}
-									placeholder="مثلا: سالمون طازج"
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
+						<LocalizedFormInput
+							label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')}
+							value={productNameTnArab}
+							onChangeText={setProductNameTnArab}
+							lang="tn_arab"
+							placeholder="مثلا: سالمون طازج"
+						/>
 					</View>
 
 					{/* PRICING & UNITS CARD */}
@@ -672,88 +644,55 @@ export default function EditProductScreen() {
 			</KeyboardAvoidingView>
 
 			{/* Businesses Modal */}
-			<Modal visible={showBusinesses} animationType="slide" transparent onRequestClose={() => setShowBusinesses(false)}>
-				<View style={styles.modalOverlay}>
-					<View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-						<View style={styles.modalHeader}>
-							<Text style={[styles.modalTitle, { color: colors.text }]}>{translate('select_business', 'Select Business')}</Text>
-							<TouchableOpacity onPress={() => setShowBusinesses(false)} style={styles.closeBtn}>
-								<Ionicons name="close" size={24} color={colors.error || '#EF4444'} />
-							</TouchableOpacity>
+			<SearchableModalPicker
+				visible={showBusinesses}
+				title={translate('select_business', 'Select Business')}
+				data={businesses}
+				onSelect={handleSelectBusiness}
+				onClose={() => setShowBusinesses(false)}
+				selectedId={selectedBusiness?._id}
+				keyExtractor={(item) => item._id}
+				loading={loadingBusinesses}
+				renderItem={(item, isSelected) => (
+					<View style={[styles.listItem, { borderBottomColor: colors.border }]}>
+						<View style={{ flex: 1 }}>
+							<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
+							<Text style={[styles.listSubtitle, { color: colors.textSecondary }]}>{item.address?.city || 'No address'}</Text>
 						</View>
-
-						{loadingBusinesses ? (
-							<ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
-						) : (
-							<FlatList
-								data={businesses}
-								keyExtractor={(item) => item._id}
-								renderItem={({ item }) => (
-									<TouchableOpacity style={[styles.listItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectBusiness(item)}>
-										<View style={{ flex: 1 }}>
-											<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
-											<Text style={[styles.listSubtitle, { color: colors.textSecondary }]}>{item.address?.city || 'No address'}</Text>
-										</View>
-										{selectedBusiness?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
-									</TouchableOpacity>
-								)}
-								ListEmptyComponent={<Text style={[styles.emptyState, { color: colors.textSecondary }]}>{translate('no_businesses_found', 'No businesses found. Create a business first.')}</Text>}
-							/>
-						)}
+						{isSelected && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
 					</View>
-				</View>
-			</Modal>
+				)}
+			/>
 
 			{/* Default Products Modal */}
-			<Modal visible={showDefaultProducts} animationType="slide" transparent onRequestClose={() => setShowDefaultProducts(false)}>
-				<View style={styles.modalOverlay}>
-					<View style={[styles.modalContent, { backgroundColor: colors.surface }]}>
-						<View style={styles.modalHeader}>
-							<Text style={[styles.modalTitle, { color: colors.text }]}>{translate('select_default_product', 'Select Default Product')}</Text>
-							<TouchableOpacity onPress={() => setShowDefaultProducts(false)} style={styles.closeBtn}>
-								<Ionicons name="close" size={24} color={colors.error || '#EF4444'} />
-							</TouchableOpacity>
+			<SearchableModalPicker
+				visible={showDefaultProducts}
+				title={translate('select_default_product', 'Select Default Product')}
+				data={defaultProducts}
+				onSelect={handleSelectDefaultProduct}
+				onClose={() => setShowDefaultProducts(false)}
+				selectedId={selectedDefaultProduct?._id}
+				searchPlaceholder={translate('search_products', 'Search products...')}
+				searchKeyExtractor={(item) => item.name?.en || ''}
+				keyExtractor={(item) => item._id}
+				loading={loadingDefaults}
+				renderItem={(item, isSelected) => (
+					<View style={[styles.listItem, { borderBottomColor: colors.border }]}>
+						<View style={styles.listThumbContainer}>
+							<SmartImage source={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" entityType="product" />
 						</View>
-
-						<View style={[styles.searchContainer, { backgroundColor: colors.background, borderColor: colors.borderLight }]}>
-							<Ionicons name="search" size={20} color={colors.textSecondary} />
-							<TextInput
-								style={[styles.searchInput, { color: colors.text }]}
-								value={searchQuery}
-								onChangeText={setSearchQuery}
-								placeholder={translate('search_products', 'Search products...')}
-								placeholderTextColor={colors.textTertiary}
-							/>
+						<View style={{ flex: 1 }}>
+							<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
+							{item.searchKeywords && item.searchKeywords.length > 0 && (
+								<Text style={[styles.listSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+									{item.searchKeywords.join(', ')}
+								</Text>
+							)}
 						</View>
-
-						{loadingDefaults ? (
-							<ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
-						) : (
-							<FlatList
-								data={filteredDefaultProducts}
-								keyExtractor={(item) => item._id}
-								renderItem={({ item }) => (
-									<TouchableOpacity style={[styles.listItem, { borderBottomColor: colors.border }]} onPress={() => handleSelectDefaultProduct(item)}>
-										<View style={styles.listThumbContainer}>
-											<SmartImage source={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" entityType="product" />
-										</View>
-										<View style={{ flex: 1 }}>
-											<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
-											{item.searchKeywords && item.searchKeywords.length > 0 && (
-												<Text style={[styles.listSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
-													{item.searchKeywords.join(', ')}
-												</Text>
-											)}
-										</View>
-										{selectedDefaultProduct?._id === item._id && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
-									</TouchableOpacity>
-								)}
-								ListEmptyComponent={<Text style={[styles.emptyState, { color: colors.textSecondary }]}>{translate('no_products_found', 'No products found')}</Text>}
-							/>
-						)}
+						{isSelected && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
 					</View>
-				</View>
-			</Modal>
+				)}
+			/>
 
 			{/* Unit Picker Modal */}
 			<Modal visible={showUnitPicker} animationType="slide" transparent onRequestClose={() => setShowUnitPicker(false)}>
