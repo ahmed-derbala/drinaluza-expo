@@ -1,15 +1,15 @@
 import { translate } from '../core/translation'
 
 export const orderStatusEnum = {
-	PENDING_SHOP_CONFIRMATION: 'pending_shop_confirmation', //active
-	CONFIRMED_BY_SHOP: 'confirmed_by_shop', //active
-	RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER: 'reserved_by_shop_for_pickup_by_customer', //active
+	PENDING_SHOP_CONFIRMATION: 'pending_business_confirmation', //active
+	CONFIRMED_BY_SHOP: 'confirmed_by_business', //active
+	RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER: 'reserved_by_business_for_pickup_by_customer', //active
 	RESERVATION_EXPIRED: 'reservation_expired', //done
 	DELIVERING_TO_CUSTOMER: 'delivering_to_customer', //active
 	DELIVERED_TO_CUSTOMER: 'delivered_to_customer', //done
 	RECEIVED_BY_CUSTOMER: 'received_by_customer', //done
 	CANCELLED_BY_CUSTOMER: 'cancelled_by_customer', //cancelled
-	CANCELLED_BY_SHOP: 'cancelled_by_shop' //cancelled
+	CANCELLED_BY_SHOP: 'cancelled_by_business' //cancelled
 }
 
 // Alias for external usage (matches requested naming)

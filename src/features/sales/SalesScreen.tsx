@@ -1,5 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import React, { useMemo, useState, useCallback } from 'react'
+import React, { useMemo, useState, useCallback, useEffect } from 'react'
 import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -13,10 +13,11 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 const ITEMS_PER_PAGE = 10
 
 export default function SalesScreen() {
-	const { businessSlug, customerSlug, productSlug } = useLocalSearchParams<{
+	const { businessSlug, customerSlug, productSlug, status } = useLocalSearchParams<{
 		businessSlug: string
 		customerSlug?: string
 		productSlug?: string
+		status?: string
 	}>()
 	const router = useRouter()
 	const { colors } = useTheme()
@@ -30,7 +31,11 @@ export default function SalesScreen() {
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
 	const [loadingMore, setLoadingMore] = useState(false)
-	const [selectedStatus, setSelectedStatus] = useState<string>('all')
+	const [selectedStatus, setSelectedStatus] = useState<string>(status || 'all')
+
+	useEffect(() => {
+		setSelectedStatus(status || 'all')
+	}, [status])
 	const { width } = useWindowDimensions()
 	const { onScroll } = useScrollHandler()
 
@@ -145,31 +150,30 @@ export default function SalesScreen() {
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true)
 		await loadAllSalesForCounts()
-		loadSales(1, true)
-	}, [loadAllSalesForCounts, loadSales])
+		loadSales(1, true, status || 'all')
+	}, [loadAllSalesForCounts, loadSales, status])
 
 	const handleLoadMore = useCallback(() => {
 		if (!loadingMore && hasMore) {
-			loadSales(page + 1)
+			loadSales(page + 1, false, status || 'all')
 		}
-	}, [loadingMore, hasMore, page, loadSales])
+	}, [loadingMore, hasMore, page, loadSales, status])
 
 	const handleStatusChange = useCallback(
-		(status: string) => {
-			setSelectedStatus(status)
+		(newStatus: string) => {
+			setSelectedStatus(newStatus)
 			setHasMore(true)
 			setPage(1)
-			// Don't clear sales immediately - let them stay visible while loading new data
-			loadSales(1, false, status, true)
+			router.setParams({ status: newStatus })
 		},
-		[loadSales]
+		[router]
 	)
 
 	useFocusEffect(
 		useCallback(() => {
 			loadAllSalesForCounts()
-			loadSales(1, true)
-		}, [loadAllSalesForCounts, loadSales])
+			loadSales(1, true, status || 'all')
+		}, [loadAllSalesForCounts, loadSales, status])
 	)
 
 	const renderFooter = () => {
@@ -302,7 +306,7 @@ export default function SalesScreen() {
 				data={sales}
 				renderItem={({ item }) => (
 					<View style={numColumns > 1 ? styles.columnItem : styles.fullWidthItem}>
-						<SaleCard sale={item} />
+						<SaleCard sale={item} onStatusUpdate={handleRefresh} />
 					</View>
 				)}
 				keyExtractor={(item) => item._id}

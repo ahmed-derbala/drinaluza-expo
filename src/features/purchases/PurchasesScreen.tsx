@@ -1,42 +1,35 @@
-import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, Animated, Dimensions, useWindowDimensions, ScrollView, Alert, Platform } from 'react-native'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
 import SmartImage from '../../core/helpers/SmartImage'
-import { useRouter, useFocusEffect, useLocalSearchParams } from 'expo-router'
+import { useRouter, useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { useTheme } from '../../core/theme'
-import { Stack } from 'expo-router'
 import HeaderTitle from '../common/HeaderTitle'
 import ErrorState from '../common/ErrorState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
-import { FeedItem } from '../feed/feed.interface'
 import { useBackButton } from '../../core/hooks/useBackButton'
 import { useScrollHandler } from '../../core/hooks/useScrollHandler'
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useUser } from '../../core/contexts/UserContext'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '../../core/helpers/popup'
+import { FeedItem } from '../feed/feed.interface'
 
 type FilterStatus = 'cart' | 'pending' | 'processing' | 'completed' | 'cancelled'
-
 type CartItem = FeedItem & { quantity: number }
-
 type BusinessCartGroup = {
 	businessId: string
 	businessName: string
+	businessSlug: string
 	items: CartItem[]
 }
 
 const PurchasesScreen = () => {
 	const { colors } = useTheme()
-	const isDark = true
 	const router = useRouter()
-	const [refreshing, setRefreshing] = useState(false)
-	const [loading, setLoading] = useState(true)
-	const [purchases, setPurchases] = useState<OrderItem[]>([])
-	const [cart, setCart] = useState<CartItem[]>([])
 	const params = useLocalSearchParams<{ status?: FilterStatus }>()
 	const [filter, setFilter] = useState<FilterStatus>(params.status || 'cart')
 
@@ -46,122 +39,163 @@ const PurchasesScreen = () => {
 		}
 	}, [params.status])
 
+	const [purchases, setPurchases] = useState<OrderItem[]>([])
+	const [cart, setCart] = useState<CartItem[]>([])
+	const [loading, setLoading] = useState(true)
+	const [refreshing, setRefreshing] = useState(false)
+	const [countsState, setCountsState] = useState<Record<string, number>>({ pending: 0, processing: 0, completed: 0, cancelled: 0 })
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
-	const fadeAnim = React.useRef(new Animated.Value(0)).current
+
 	const { translate, localize } = useUser()
 	const { onScroll } = useScrollHandler()
+	const { width } = useWindowDimensions()
 
 	useBackButton()
 
-	const { width } = useWindowDimensions()
-
-	const numColumns = useMemo(() => {
-		if (width > 1400) return 4
-		if (width > 1100) return 3
-		if (width > 700) return 2
-		return 1
-	}, [width])
-
-	const styles = useMemo(() => createStyles(colors, isDark, width, numColumns, filter), [colors, isDark, width, numColumns, filter])
+	// Responsive Layout parameters
+	const isTablet = width >= 768
+	const isDesktop = width >= 1024
+	const numColumns = isDesktop ? 3 : isTablet ? 2 : 1
+	const cardGap = 16
+	const styles = useMemo(() => createStyles(colors, width, numColumns, cardGap), [colors, width, numColumns])
 
 	const loadCart = async () => {
 		try {
 			const storedCart = await AsyncStorage.getItem('cart')
 			if (storedCart) {
 				setCart(JSON.parse(storedCart))
+			} else {
+				setCart([])
 			}
-		} catch (error) {
-			console.error('Failed to load cart:', error)
+		} catch (err) {
+			console.error('Failed to load cart:', err)
 		}
 	}
 
-	const loadPurchases = async () => {
+	const loadStatusCounts = useCallback(async () => {
 		try {
-			setError(null)
-			const response = await getPurchases()
-			setPurchases(response.data.docs || [])
+			const res = await getPurchases()
+			const docs = res.data?.docs || []
+			const counts: Record<string, number> = { pending: 0, processing: 0, completed: 0, cancelled: 0 }
+
+			docs.forEach((item) => {
+				const status = item.status
+				if (status === 'pending_business_confirmation') {
+					counts.pending++
+				} else if (status === 'confirmed_by_business' || status === 'reserved_by_business_for_pickup_by_customer' || status === 'delivering_to_customer') {
+					counts.processing++
+				} else if (status === 'delivered_to_customer' || status === 'received_by_customer') {
+					counts.completed++
+				} else if (status === 'cancelled_by_customer' || status === 'cancelled_by_business' || status === 'reservation_expired') {
+					counts.cancelled++
+				}
+			})
+
+			setCountsState(counts)
+		} catch (err) {
+			console.error('Failed to load status counts:', err)
+		}
+	}, [])
+
+	const fetchPurchases = useCallback(async (activeFilter: FilterStatus, isRefresh = false) => {
+		if (activeFilter === 'cart') {
+			await loadCart()
 			setLoading(false)
 			setRefreshing(false)
+			return
+		}
 
-			// Fade in animation
-			Animated.timing(fadeAnim, {
-				toValue: 1,
-				duration: 400,
-				useNativeDriver: true
-			}).start()
+		try {
+			if (!isRefresh) setLoading(true)
+			setError(null)
+			let docs: OrderItem[] = []
+
+			if (activeFilter === 'pending') {
+				const res = await getPurchases('pending_business_confirmation')
+				docs = res.data?.docs || []
+			} else if (activeFilter === 'processing') {
+				const results = await Promise.all([
+					getPurchases('confirmed_by_business').catch(() => null),
+					getPurchases('reserved_by_business_for_pickup_by_customer').catch(() => null),
+					getPurchases('delivering_to_customer').catch(() => null)
+				])
+				docs = results.flatMap((res) => res?.data?.docs || [])
+			} else if (activeFilter === 'completed') {
+				const results = await Promise.all([getPurchases('delivered_to_customer').catch(() => null), getPurchases('received_by_customer').catch(() => null)])
+				docs = results.flatMap((res) => res?.data?.docs || [])
+			} else if (activeFilter === 'cancelled') {
+				const results = await Promise.all([
+					getPurchases('cancelled_by_customer').catch(() => null),
+					getPurchases('cancelled_by_business').catch(() => null),
+					getPurchases('reservation_expired').catch(() => null)
+				])
+				docs = results.flatMap((res) => res?.data?.docs || [])
+			}
+
+			// Sort by creation date descending
+			docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+			setPurchases(docs)
 		} catch (err: any) {
-			logError(err, 'loadPurchases')
+			logError(err, 'fetchPurchases')
 			const errorInfo = parseError(err)
 			setError({
 				title: errorInfo.title,
 				message: errorInfo.message,
 				type: errorInfo.type
 			})
+		} finally {
 			setLoading(false)
 			setRefreshing(false)
 		}
-	}
-
-	const onRefresh = () => {
-		setRefreshing(true)
-		loadPurchases()
-		loadCart()
-	}
-
-	useEffect(() => {
-		loadPurchases()
-		loadCart()
 	}, [])
 
-	// Refresh cart when screen comes into focus
+	const onRefresh = useCallback(async () => {
+		setRefreshing(true)
+		await Promise.all([fetchPurchases(filter, true), loadStatusCounts(), loadCart()])
+	}, [filter, fetchPurchases, loadStatusCounts])
+
+	useEffect(() => {
+		fetchPurchases(filter)
+		loadStatusCounts()
+	}, [filter, fetchPurchases, loadStatusCounts])
+
+	// Refresh cart and counts when screen comes into focus
 	useFocusEffect(
-		React.useCallback(() => {
+		useCallback(() => {
 			loadCart()
-		}, [])
+			loadStatusCounts()
+		}, [loadStatusCounts])
 	)
 
-	const handleCancelOrder = (purchaseId: string) => {
-		showConfirm(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), async () => {
-			console.log('Cancelling purchase:', purchaseId)
+	const handleCancelOrder = useCallback(
+		(purchaseId: string) => {
+			showConfirm(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), async () => {
+				try {
+					await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
+					await Promise.all([fetchPurchases(filter, true), loadStatusCounts()])
+					toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
+				} catch (err) {
+					console.error('Failed to cancel order:', err)
+					toast.show({ title: translate('error', 'Error'), message: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), color: '#EF4444' })
+				}
+			})
+		},
+		[filter, fetchPurchases, loadStatusCounts, translate]
+	)
+
+	const handleStatusUpdate = useCallback(
+		async (purchaseId: string, newStatus: string) => {
 			try {
-				await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
-				loadPurchases()
-				toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
+				await updatePurchaseStatus({ purchaseId, status: newStatus })
+				await Promise.all([fetchPurchases(filter, true), loadStatusCounts()])
+				toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Order status updated successfully'), color: '#10B981' })
 			} catch (err) {
-				console.error('Failed to cancel order:', err)
-				toast.show({ title: translate('error', 'Error'), message: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), color: '#EF4444' })
+				console.error('Failed to update order status:', err)
+				toast.show({ title: translate('error', 'Error'), message: translate('status_update_failed', 'Failed to update order status. Please try again.'), color: '#EF4444' })
 			}
-		})
-	}
-
-	const handleStatusUpdate = async (purchaseId: string, newStatus: string) => {
-		try {
-			await updatePurchaseStatus({ purchaseId, status: newStatus })
-			loadPurchases()
-			toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Order status updated successfully'), color: '#10B981' })
-		} catch (err) {
-			console.error('Failed to update order status:', err)
-			toast.show({ title: translate('error', 'Error'), message: translate('status_update_failed', 'Failed to update order status. Please try again.'), color: '#EF4444' })
-		}
-	}
-
-	// Filter purchases based on selected filter
-	const filteredPurchases = useMemo(() => {
-		switch (filter) {
-			case 'pending':
-				return purchases.filter((p) => p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION)
-			case 'processing':
-				return purchases.filter(
-					(p) => p.status === orderStatusEnum.CONFIRMED_BY_SHOP || p.status === orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER || p.status === orderStatusEnum.DELIVERING_TO_CUSTOMER
-				)
-			case 'completed':
-				return purchases.filter((p) => p.status === orderStatusEnum.DELIVERED_TO_CUSTOMER || p.status === orderStatusEnum.RECEIVED_BY_CUSTOMER)
-			case 'cancelled':
-				return purchases.filter((p) => p.status === orderStatusEnum.CANCELLED_BY_CUSTOMER || p.status === orderStatusEnum.CANCELLED_BY_SHOP || p.status === orderStatusEnum.RESERVATION_EXPIRED)
-			default:
-				return []
-		}
-	}, [purchases, filter])
+		},
+		[filter, fetchPurchases, loadStatusCounts, translate]
+	)
 
 	const groupedCart = useMemo(() => {
 		const groups: { [key: string]: BusinessCartGroup } = {}
@@ -171,166 +205,164 @@ const PurchasesScreen = () => {
 				groups[businessId] = {
 					businessId: businessId,
 					businessName: localize(item.business?.name) || translate('unnamed_business', 'Unnamed Business'),
+					businessSlug: item.business?.slug || 'unknown',
 					items: []
 				}
 			}
 			groups[businessId].items.push(item)
 		})
 		return Object.values(groups)
-	}, [cart])
+	}, [cart, localize, translate])
 
-	const getStatusIcon = (status: string) => {
-		switch (status) {
-			case orderStatusEnum.PENDING_SHOP_CONFIRMATION:
-				return 'time-outline'
-			case orderStatusEnum.CONFIRMED_BY_SHOP:
-			case orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER:
-				return 'storefront-outline'
-			case orderStatusEnum.DELIVERING_TO_CUSTOMER:
-				return 'bicycle-outline'
-			case orderStatusEnum.DELIVERED_TO_CUSTOMER:
-			case orderStatusEnum.RECEIVED_BY_CUSTOMER:
-				return 'checkmark-circle-outline'
-			case orderStatusEnum.CANCELLED_BY_CUSTOMER:
-			case orderStatusEnum.CANCELLED_BY_SHOP:
-			case orderStatusEnum.RESERVATION_EXPIRED:
-				return 'close-circle-outline'
-			default:
-				return 'receipt-outline'
-		}
+	const getStepIndex = (status: string) => {
+		if (status === 'pending_business_confirmation') return 0
+		if (status === 'confirmed_by_business') return 1
+		if (status === 'reserved_by_business_for_pickup_by_customer' || status === 'delivering_to_customer') return 2
+		if (status === 'delivered_to_customer' || status === 'received_by_customer') return 3
+		return -1
 	}
 
-	const canCancelOrder = (status: string) => {
-		return status === orderStatusEnum.PENDING_SHOP_CONFIRMATION
-	}
+	const renderStepTracker = (status: string) => {
+		const stepIndex = getStepIndex(status)
+		if (stepIndex === -1) return null
 
-	const formatDate = (dateString: string) => {
-		const date = new Date(dateString)
-		const now = new Date()
-		const diffTime = Math.abs(now.getTime() - date.getTime())
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-		if (diffDays === 0) return translate('today', 'Today')
-		if (diffDays === 1) return translate('yesterday', 'Yesterday')
-		if (diffDays < 7) return `${diffDays} ${translate('days_ago', 'days ago')}`
-		return date.toLocaleDateString()
-	}
-
-	const renderPurchaseItem = ({ item }: { item: OrderItem }) => {
-		const statusColor = orderStatusColors[item.status] || colors.textSecondary
-
-		// Calculate total price and get product info
-		const totalPrice =
-			item.price?.total?.tnd ||
-			item.products.reduce((sum, productItem) => {
-				const price = productItem.product.price.total.tnd || 0
-				const quantity = productItem.quantity || 0
-				return sum + price * quantity
-			}, 0)
-
-		const containerWidth = (width - 12) / numColumns
+		const steps = [translate('step_ordered', 'Ordered'), translate('step_confirmed', 'Confirmed'), translate('step_processing', 'Transit'), translate('step_delivered', 'Delivered')]
 
 		return (
-			<View style={{ width: containerWidth }}>
-				<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
-					{/* Header */}
-					<View style={styles.cardHeader}>
-						<View style={styles.headerLeft}>
-							<View style={[styles.iconContainer, { backgroundColor: statusColor + '15' }]}>
-								<Ionicons name={getStatusIcon(item.status) as any} size={24} color={statusColor} />
+			<View style={styles.stepTracker}>
+				<View style={[styles.stepLine, { backgroundColor: colors.border }]} />
+				<View style={[styles.stepLineProgress, { backgroundColor: colors.primary, width: `${(stepIndex / (steps.length - 1)) * 100}%` }]} />
+				<View style={styles.stepItemsRow}>
+					{steps.map((step, idx) => {
+						const active = idx <= stepIndex
+						const isCurrent = idx === stepIndex
+						return (
+							<View key={step} style={styles.stepItem}>
+								<View
+									style={[
+										styles.stepDot,
+										{
+											backgroundColor: active ? colors.primary : colors.surface,
+											borderColor: isCurrent ? colors.text : active ? colors.primary : colors.border
+										}
+									]}
+								>
+									{active && <Ionicons name="checkmark" size={10} color="#fff" />}
+								</View>
+								<Text style={[styles.stepLabel, { color: active ? colors.text : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>{step}</Text>
 							</View>
-							<View style={styles.headerInfo}>
-								<Text style={[styles.businessName, { color: colors.text }]}>{localize(item.business.name)}</Text>
-								<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
-							</View>
-						</View>
-						<View style={styles.headerRightGroup}>
-							<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
-								<Text style={[styles.statusText, { color: statusColor }]}>{translate(`status_${item.status.replace(/_/g, '_')}`, orderStatusLabels[item.status] || item.status)}</Text>
-							</View>
-							{canCancelOrder(item.status) && (
-								<TouchableOpacity onPress={() => handleCancelOrder(item._id)} style={styles.headerCancelBtn} activeOpacity={0.6} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-									<Ionicons name="close-circle" size={24} color={colors.error} />
-								</TouchableOpacity>
-							)}
-						</View>
-					</View>
-
-					{/* Divider */}
-					<View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
-
-					{/* Products Info */}
-					<View style={styles.scrollWithIndicator}>
-						<ScrollView
-							style={styles.productInfo}
-							nestedScrollEnabled
-							showsVerticalScrollIndicator={true}
-							persistentScrollbar={true}
-							contentContainerStyle={{ flexGrow: 1, paddingBottom: 8 }}
-							indicatorStyle={isDark ? 'white' : 'black'}
-						>
-							{item.products.map((productItem, index) => {
-								const imageUrl =
-									productItem.product.media?.thumbnail?.url ||
-									productItem.product.defaultProduct?.media?.thumbnail?.url ||
-									(productItem.product.photos && productItem.product.photos.length > 0 ? productItem.product.photos[0] : null)
-								return (
-									<View key={index} style={styles.productRow}>
-										<View style={styles.productThumbnailContainer}>
-											<SmartImage source={imageUrl} style={styles.productThumbnail} resizeMode="cover" entityType="product" />
-										</View>
-										<View style={styles.productDetailsInner}>
-											<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
-												{localize(productItem.product.name)}
-											</Text>
-											<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>×{productItem.quantity}</Text>
-										</View>
-									</View>
-								)
-							})}
-						</ScrollView>
-						<View style={[styles.scrollIndicatorTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]} />
-					</View>
-
-					{/* Footer with Actions */}
-					<View style={styles.cardFooter}>
-						<View style={styles.footerLeft}>
-							<Ionicons name="calendar-outline" size={14} color={colors.textTertiary} />
-							<Text style={[styles.footerText, { color: colors.textTertiary }]}>
-								{translate('order_number', 'Order')} #{item._id.slice(-6)}
-							</Text>
-						</View>
-						<View style={styles.footerRight}>
-							<Text style={[styles.totalPrice, { color: colors.text }]}>{totalPrice.toFixed(2)} TND</Text>
-						</View>
-					</View>
-
-					{/* Status Action Buttons */}
-					{item.status === orderStatusEnum.DELIVERED_TO_CUSTOMER && (
-						<View style={styles.actionButtonsContainer}>
-							<TouchableOpacity
-								style={[styles.actionButton, { backgroundColor: colors.success + '10', borderColor: colors.success + '40' }]}
-								onPress={() => handleStatusUpdate(item._id, orderStatusEnum.RECEIVED_BY_CUSTOMER)}
-							>
-								<Ionicons name="checkmark-circle-outline" size={18} color={colors.success} />
-								<Text style={[styles.actionButtonText, { color: colors.success }]}>{translate('mark_as_received', 'Mark as Received')}</Text>
-							</TouchableOpacity>
-						</View>
-					)}
+						)
+					})}
 				</View>
 			</View>
 		)
 	}
 
-	const updateCartQuantity = async (itemId: string, newQuantity: number) => {
-		try {
+	const renderPurchaseItem = useCallback(
+		({ item }: { item: OrderItem }) => {
+			const statusColor = orderStatusColors[item.status] || colors.textSecondary
+			const totalPrice = item.price?.total?.tnd || 0
+
+			return (
+				<View style={styles.cardContainer}>
+					<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						{/* Header */}
+						<View style={styles.cardHeader}>
+							<View style={styles.headerLeft}>
+								<SmartImage source={(item.business as any).media?.thumbnail?.url} style={styles.businessAvatar} entityType="business" />
+								<View style={styles.headerInfo}>
+									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+										{localize(item.business.name)}
+									</Text>
+									<Text style={[styles.orderDate, { color: colors.textTertiary }]}>{new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}</Text>
+								</View>
+							</View>
+							<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
+								<Text style={[styles.statusText, { color: statusColor }]}>{orderStatusLabels[item.status] || item.status}</Text>
+							</View>
+						</View>
+
+						{/* Divider */}
+						<View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+						{/* Product Details Inline Scroll */}
+						<ScrollView style={styles.productList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+							{item.products.map((p, idx) => {
+								const img = p.product.media?.thumbnail?.url || p.product.defaultProduct?.media?.thumbnail?.url
+								return (
+									<View key={`${p.product._id}-${idx}`} style={styles.productRow}>
+										<SmartImage source={img} style={styles.productThumb} entityType="product" />
+										<View style={styles.productInfoWrap}>
+											<Text style={[styles.productNameText, { color: colors.text }]} numberOfLines={1}>
+												{localize(p.product.name)}
+											</Text>
+											<Text style={[styles.productQtyText, { color: colors.textSecondary }]}>
+												{p.quantity} × {p.product.unit?.measure || translate('unit', 'unit')}
+											</Text>
+										</View>
+										<Text style={[styles.productPriceText, { color: colors.primary }]}>{(p.lineTotal?.tnd || 0).toFixed(2)} TND</Text>
+									</View>
+								)
+							})}
+						</ScrollView>
+
+						{/* Step Tracker */}
+						{renderStepTracker(item.status)}
+
+						{/* Divider */}
+						<View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+						{/* Footer */}
+						<View style={styles.cardFooter}>
+							<View>
+								<Text style={[styles.orderNumberLabel, { color: colors.textTertiary }]}>{translate('order_id', 'Order ID')}</Text>
+								<Text style={[styles.orderNumberValue, { color: colors.textSecondary }]}>#{item._id.slice(-8)}</Text>
+							</View>
+							<View style={{ alignItems: 'flex-end' }}>
+								<Text style={[styles.totalLabel, { color: colors.textTertiary }]}>{translate('total', 'Total')}</Text>
+								<Text style={[styles.totalPrice, { color: colors.primary }]}>{totalPrice.toFixed(2)} TND</Text>
+							</View>
+						</View>
+
+						{/* Action Buttons */}
+						<View style={styles.actionsRow}>
+							{item.status === 'pending_business_confirmation' && (
+								<TouchableOpacity style={[styles.actionBtn, { borderColor: colors.error, backgroundColor: colors.error + '10' }]} onPress={() => handleCancelOrder(item._id)} activeOpacity={0.8}>
+									<Ionicons name="close-circle-outline" size={18} color={colors.error} />
+									<Text style={[styles.actionBtnText, { color: colors.error }]}>{translate('cancel', 'Cancel')}</Text>
+								</TouchableOpacity>
+							)}
+							{item.status === 'delivered_to_customer' && (
+								<TouchableOpacity
+									style={[styles.actionBtn, { borderColor: colors.success, backgroundColor: colors.success + '10' }]}
+									onPress={() => handleStatusUpdate(item._id, 'received_by_customer')}
+									activeOpacity={0.8}
+								>
+									<Ionicons name="checkmark-circle-outline" size={18} color={colors.success} />
+									<Text style={[styles.actionBtnText, { color: colors.success }]}>{translate('mark_as_received', 'Mark Received')}</Text>
+								</TouchableOpacity>
+							)}
+						</View>
+					</View>
+				</View>
+			)
+		},
+		[colors, localize, translate, handleCancelOrder, handleStatusUpdate, styles]
+	)
+
+	const updateCartQuantity = useCallback(
+		async (itemId: string, newQuantity: number) => {
 			if (newQuantity < 1) {
 				Alert.alert(translate('remove_item', 'Remove Item'), translate('remove_item_confirm', 'Do you want to remove this item from your cart?'), [
 					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
 					{
 						text: translate('confirm', 'Confirm'),
 						style: 'destructive',
-						onPress: () => removeFromCart(itemId)
+						onPress: async () => {
+							const newCart = cart.filter((item) => item._id !== itemId)
+							setCart(newCart)
+							await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+						}
 					}
 				])
 				return
@@ -339,304 +371,202 @@ const PurchasesScreen = () => {
 			const newCart = cart.map((item) => (item._id === itemId ? { ...item, quantity: newQuantity } : item))
 			setCart(newCart)
 			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-		} catch (error) {
-			console.error('Error updating cart:', error)
-		}
-	}
+		},
+		[cart, translate]
+	)
 
-	const removeFromCart = async (itemId: string) => {
-		try {
+	const removeFromCart = useCallback(
+		async (itemId: string) => {
 			const newCart = cart.filter((item) => item._id !== itemId)
 			setCart(newCart)
 			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-		} catch (error) {
-			console.error('Error removing from cart:', error)
-		}
-	}
+		},
+		[cart]
+	)
 
-	const handleCheckout = async (group: BusinessCartGroup) => {
-		try {
-			const business = group.items[0]?.business
-			if (!business) throw new Error('Business not found')
-
-			// Map products for API
-			const products = group.items.map((item) => {
-				return {
-					product: {
-						_id: item._id,
-						slug: item.slug
-					},
+	const handleCheckout = useCallback(
+		async (group: BusinessCartGroup) => {
+			try {
+				const products = group.items.map((item) => ({
+					product: { _id: item._id, slug: item.slug },
 					quantity: item.quantity
-				}
-			})
+				}))
 
-			// Call createPurchase API
-			await createPurchase({
-				products,
-				business: {
-					slug: business.slug,
-					_id: business._id
-				}
-			})
+				await createPurchase({
+					products,
+					business: { slug: group.businessSlug, _id: group.businessId }
+				})
 
-			// On success, remove these items from cart
-			const purchasedItemIds = new Set(group.items.map((item) => item._id))
-			const newCart = cart.filter((item) => !purchasedItemIds.has(item._id))
+				const purchasedItemIds = new Set(group.items.map((item) => item._id))
+				const newCart = cart.filter((item) => !purchasedItemIds.has(item._id))
 
-			setCart(newCart)
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+				setCart(newCart)
+				await AsyncStorage.setItem('cart', JSON.stringify(newCart))
 
-			Alert.alert(translate('success', 'Success'), translate('checkout_success', 'Order placed successfully!'))
+				toast.show({ title: translate('success', 'Success'), message: translate('checkout_success', 'Order placed successfully!'), color: '#10B981' })
+				setFilter('pending')
+				router.setParams({ status: 'pending' })
+			} catch (err) {
+				console.error('Checkout failed:', err)
+				Alert.alert(translate('error', 'Error'), translate('checkout_failed', 'Failed to place order'))
+			}
+		},
+		[cart, translate, router]
+	)
 
-			// Refresh purchases list and switch tab
-			onRefresh()
-			setFilter('pending')
-		} catch (error: any) {
-			console.error('Checkout failed:', error?.response?.data || error)
-			Alert.alert(translate('error', 'Error'), error?.response?.data?.message || translate('checkout_failed', 'Failed to place order'))
-		}
-	}
+	const renderCartGroup = useCallback(
+		({ item: group }: { item: BusinessCartGroup }) => {
+			const groupTotal = group.items.reduce((sum, item) => sum + (item.price?.total?.tnd || 0) * (item.quantity || 1), 0)
 
-	const renderCartGroup = ({ item: group }: { item: BusinessCartGroup }) => {
-		const groupTotal = group.items.reduce((sum: number, item: CartItem) => {
-			const price = item.price?.total?.tnd || 0
-			const quantity = item.quantity || 1
-			return sum + price * quantity
-		}, 0)
-
-		const containerWidth = (width - 12) / numColumns
-
-		return (
-			<View style={{ width: containerWidth }}>
-				<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
-					<View style={{ flex: 1 }}>
+			return (
+				<View style={styles.cardContainer}>
+					<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
 						{/* Header */}
 						<View style={styles.cardHeader}>
 							<View style={styles.headerLeft}>
-								<View style={[styles.iconContainer, { backgroundColor: colors.primary + '15' }]}>
-									<Ionicons name="storefront-outline" size={24} color={colors.primary} />
-								</View>
+								<Ionicons name="storefront-outline" size={24} color={colors.primary} />
 								<View style={styles.headerInfo}>
-									<Text style={[styles.businessName, { color: colors.text }]}>{group.businessName}</Text>
+									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+										{group.businessName}
+									</Text>
 									<Text style={[styles.orderDate, { color: colors.textSecondary }]}>
 										{group.items.length} {group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')}
 									</Text>
 								</View>
 							</View>
 							<View style={[styles.statusBadge, { backgroundColor: colors.primary + '15' }]}>
-								<Text style={[styles.statusText, { color: colors.primary }]}>{translate('draft_order', 'DRAFT ORDER')}</Text>
+								<Text style={[styles.statusText, { color: colors.primary }]}>{translate('draft', 'DRAFT')}</Text>
 							</View>
 						</View>
 
-						{/* Items List */}
-						<View style={styles.scrollWithIndicator}>
-							<ScrollView
-								style={{ flex: 1, marginHorizontal: -6 }}
-								nestedScrollEnabled
-								showsVerticalScrollIndicator={true}
-								persistentScrollbar={true}
-								contentContainerStyle={{ flexGrow: 1, paddingBottom: 12 }}
-								indicatorStyle={isDark ? 'white' : 'black'}
-							>
-								<View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-									{group.items.map((item: CartItem, index: number) => {
-										const price = item.price?.total?.tnd || 0
-										const quantity = item.quantity || 1
-										const itemWidth = '100%'
-										const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos.length > 0 ? item.photos[0] : null)
+						{/* Divider */}
+						<View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-										return (
-											<View key={item._id} style={{ width: itemWidth, paddingHorizontal: 6, paddingVertical: 6 }}>
-												<View
-													style={[
-														styles.cartItemCard,
-														{
-															backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#fff',
-															borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-														}
-													]}
-												>
-													{/* Image Area */}
-													<View style={styles.cartItemImageContainer}>
-														<SmartImage source={imageUrl} style={styles.cartItemImage} resizeMode="cover" entityType="product" />
-													</View>
+						{/* Cart Items List */}
+						<ScrollView style={styles.productList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+							{group.items.map((item) => {
+								const price = item.price?.total?.tnd || 0
+								const img = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
+								return (
+									<View key={item._id} style={styles.cartItemRow}>
+										<SmartImage source={img} style={styles.productThumb} entityType="product" />
+										<View style={styles.cartItemDetails}>
+											<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+												<Text style={[styles.productNameText, { color: colors.text, flex: 1, marginRight: 8 }]} numberOfLines={1}>
+													{localize(item.name)}
+												</Text>
+												<TouchableOpacity onPress={() => removeFromCart(item._id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+													<Ionicons name="trash-outline" size={16} color={colors.error} />
+												</TouchableOpacity>
+											</View>
 
-													{/* Content Area */}
-													<View style={styles.cartItemContent}>
-														<View style={styles.itemTopRow}>
-															<Text style={[styles.cartItemName, { color: colors.text }]} numberOfLines={2}>
-																{localize(item.name)}
-															</Text>
-															<TouchableOpacity onPress={() => removeFromCart(item._id)} style={styles.deleteButton} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-																<Ionicons name="trash-outline" size={18} color={colors.error} />
-															</TouchableOpacity>
-														</View>
+											<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 4 }}>
+												<Text style={[styles.productPriceText, { color: colors.primary }]}>{(price * item.quantity).toFixed(2)} TND</Text>
 
-														<View style={styles.itemBottomRow}>
-															<Text style={[styles.cartItemPrice, { color: colors.primary }]}>
-																{(price * quantity).toFixed(2)} <Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>TND</Text>
-															</Text>
-
-															<View style={[styles.compactQuantityControl, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5' }]}>
-																<TouchableOpacity
-																	onPress={() => updateCartQuantity(item._id, quantity - 1)}
-																	style={[styles.compactQBtn, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#fff', shadowOpacity: isDark ? 0 : 0.1 }]}
-																	hitSlop={{ top: 10, bottom: 10, left: 10, right: 5 }}
-																>
-																	<Ionicons name="remove" size={16} color={colors.text} />
-																</TouchableOpacity>
-
-																<Text style={[styles.compactQText, { color: colors.text }]}>
-																	{quantity} {localize(item.unit?.measure as any) || ''}
-																</Text>
-
-																<TouchableOpacity
-																	onPress={() => updateCartQuantity(item._id, quantity + 1)}
-																	style={[styles.compactQBtn, { backgroundColor: colors.primary, shadowOpacity: 0.2 }]}
-																	hitSlop={{ top: 10, bottom: 10, left: 5, right: 10 }}
-																>
-																	<Ionicons name="add" size={16} color="#fff" />
-																</TouchableOpacity>
-															</View>
-														</View>
-													</View>
+												<View style={[styles.qtyRow, { backgroundColor: colors.surfaceVariant }]}>
+													<TouchableOpacity onPress={() => updateCartQuantity(item._id, item.quantity - 1)} style={styles.qtyBtn}>
+														<Ionicons name="remove" size={14} color={colors.text} />
+													</TouchableOpacity>
+													<Text style={[styles.qtyVal, { color: colors.text }]}>{item.quantity}</Text>
+													<TouchableOpacity onPress={() => updateCartQuantity(item._id, item.quantity + 1)} style={styles.qtyBtn}>
+														<Ionicons name="add" size={14} color={colors.text} />
+													</TouchableOpacity>
 												</View>
 											</View>
-										)
-									})}
-								</View>
-							</ScrollView>
-							<View style={[styles.scrollIndicatorTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]} />
-						</View>
+										</View>
+									</View>
+								)
+							})}
+						</ScrollView>
 
-						{/* Footer */}
-						<View style={[styles.divider, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }]} />
+						{/* Divider */}
+						<View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+						{/* Footer Checkout */}
 						<View style={styles.cardFooter}>
-							<View style={styles.footerLeft}>
-								<Ionicons name="pricetag-outline" size={14} color={colors.textTertiary} />
-								<Text style={[styles.footerText, { color: colors.textTertiary }]}>{translate('total_amount', 'Total Amount')}</Text>
+							<View>
+								<Text style={[styles.totalLabel, { color: colors.textTertiary }]}>{translate('total', 'Total')}</Text>
+								<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 							</View>
-							<View style={styles.footerRight}>
-								<Text style={[styles.totalPrice, { color: colors.text }]}>{groupTotal.toFixed(2)} TND</Text>
-								<TouchableOpacity style={[styles.checkoutButton, { backgroundColor: colors.primary }]} onPress={() => handleCheckout(group)} activeOpacity={0.8}>
-									<Ionicons name="card-outline" size={20} color="#fff" />
-								</TouchableOpacity>
-							</View>
+							<TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: colors.primary }]} onPress={() => handleCheckout(group)} activeOpacity={0.85}>
+								<Ionicons name="cart-outline" size={18} color="#fff" />
+								<Text style={styles.checkoutBtnText}>{translate('checkout', 'Checkout')}</Text>
+							</TouchableOpacity>
 						</View>
 					</View>
 				</View>
+			)
+		},
+		[colors, localize, translate, updateCartQuantity, removeFromCart, handleCheckout, styles]
+	)
+
+	const renderEmptyState = useCallback(() => {
+		const configs = {
+			cart: { icon: 'cart-outline', title: translate('empty_cart', 'Your cart is empty'), sub: translate('empty_cart_sub', 'Add delicious fresh seafood items to your cart!') },
+			pending: { icon: 'hourglass-outline', title: translate('empty_pending', 'No pending orders'), sub: translate('empty_pending_sub', 'Orders waiting for business confirmation will appear here') },
+			processing: { icon: 'sync-outline', title: translate('empty_processing', 'No active orders'), sub: translate('empty_processing_sub', 'Orders in transit or preparation appear here') },
+			completed: {
+				icon: 'checkmark-circle-outline',
+				title: translate('empty_completed', 'No completed orders'),
+				sub: translate('empty_completed_sub', 'Seafood orders you received safely appear here')
+			},
+			cancelled: { icon: 'close-circle-outline', title: translate('empty_cancelled', 'No cancelled orders'), sub: translate('empty_cancelled_sub', 'Cancelled or expired orders appear here') }
+		}
+		const config = configs[filter] || configs.cart
+		return (
+			<View style={styles.emptyWrap}>
+				<View style={[styles.emptyIconWrap, { backgroundColor: colors.primary + '12' }]}>
+					<Ionicons name={config.icon as any} size={48} color={colors.primary} />
+				</View>
+				<Text style={[styles.emptyTitle, { color: colors.text }]}>{config.title}</Text>
+				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{config.sub}</Text>
 			</View>
 		)
-	}
+	}, [filter, colors, translate, styles])
 
 	const FilterButton = ({ status, label, icon }: { status: FilterStatus; label: string; icon: string }) => {
 		const isActive = filter === status
 		const count = useMemo(() => {
-			switch (status) {
-				case 'cart':
-					return cart.length
-				case 'pending':
-					return purchases.filter((p) => p.status === orderStatusEnum.PENDING_SHOP_CONFIRMATION).length
-				case 'processing':
-					return purchases.filter(
-						(p) => p.status === orderStatusEnum.CONFIRMED_BY_SHOP || p.status === orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER || p.status === orderStatusEnum.DELIVERING_TO_CUSTOMER
-					).length
-				case 'completed':
-					return purchases.filter((p) => p.status === orderStatusEnum.DELIVERED_TO_CUSTOMER || p.status === orderStatusEnum.RECEIVED_BY_CUSTOMER).length
-				case 'cancelled':
-					return purchases.filter((p) => p.status === orderStatusEnum.CANCELLED_BY_CUSTOMER || p.status === orderStatusEnum.CANCELLED_BY_SHOP || p.status === orderStatusEnum.RESERVATION_EXPIRED)
-						.length
-				default:
-					return 0
-			}
-		}, [purchases, cart.length, status])
+			if (status === 'cart') return cart.length
+			return countsState[status] || 0
+		}, [status, cart.length])
 
 		return (
 			<TouchableOpacity
-				style={[styles.filterButton, isActive && { backgroundColor: colors.primary }, { borderColor: isActive ? colors.primary : colors.border }]}
+				style={[
+					styles.filterTabBtn,
+					{
+						backgroundColor: isActive ? colors.primary + '15' : colors.card,
+						borderColor: isActive ? colors.primary : colors.border
+					}
+				]}
 				onPress={() => {
 					setFilter(status)
 					router.setParams({ status })
 				}}
-				activeOpacity={0.7}
+				activeOpacity={0.8}
 			>
-				<Ionicons name={icon as any} size={24} color={isActive ? '#fff' : colors.text} />
+				<Ionicons name={icon as any} size={18} color={isActive ? colors.primary : colors.textSecondary} />
+				<Text style={[styles.filterTabText, { color: isActive ? colors.primary : colors.textSecondary, fontWeight: isActive ? '700' : '600' }]}>{label}</Text>
 				{count > 0 && (
-					<View style={[styles.countBadge, { backgroundColor: isActive ? 'rgba(255,255,255,0.25)' : colors.primary + '15' }]}>
-						<Text style={[styles.countText, { color: isActive ? '#fff' : colors.primary }]}>{count}</Text>
+					<View style={[styles.countBadge, { backgroundColor: isActive ? colors.primary : colors.surfaceVariant }]}>
+						<Text style={[styles.countText, { color: isActive ? '#fff' : colors.textSecondary }]}>{count}</Text>
 					</View>
 				)}
 			</TouchableOpacity>
 		)
 	}
 
-	const renderEmptyState = () => {
-		const emptyConfig = {
-			cart: {
-				icon: 'cart-outline',
-				title: 'Your cart is empty',
-				subtitle: 'Add items to your cart to see them here'
-			},
-
-			pending: {
-				icon: 'time-outline',
-				title: 'No pending orders',
-				subtitle: 'Orders waiting for business confirmation will appear here'
-			},
-			processing: {
-				icon: 'sync-outline',
-				title: 'No orders in process',
-				subtitle: 'Orders being prepared or delivered will appear here'
-			},
-			completed: {
-				icon: 'checkmark-circle-outline',
-				title: 'No completed orders',
-				subtitle: 'Your completed orders will appear here'
-			},
-			cancelled: {
-				icon: 'close-circle-outline',
-				title: 'No cancelled orders',
-				subtitle: 'You have no cancelled orders'
-			}
-		}
-
-		const config = emptyConfig[filter] || emptyConfig.cart
-
+	if (loading && !refreshing) {
 		return (
-			<View style={styles.emptyContainer}>
-				<View style={[styles.emptyIconContainer, { backgroundColor: colors.primary + '10' }]}>
-					<Ionicons name={config.icon as any} size={64} color={colors.primary} />
-				</View>
-				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate(`empty_${filter}`, config.title)}</Text>
-				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{translate(`empty_${filter}_sub`, config.subtitle)}</Text>
-			</View>
-		)
-	}
-
-	if (loading) {
-		return (
-			<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-				<ActivityIndicator size="large" color={colors.primary} />
-				<Text style={[styles.loadingText, { color: colors.textSecondary }]}>{translate('loading_purchases', 'Loading purchases...')}</Text>
-			</View>
-		)
-	}
-
-	if (error && purchases.length === 0 && filter !== 'cart') {
-		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
+			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: translate('purchases_title', 'Purchases') }} />
-				<ErrorState
-					title={error.title}
-					message={error.message}
-					onRetry={loadPurchases}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-				/>
+				<ActivityIndicator size="large" color={colors.primary} />
 			</View>
 		)
 	}
 
-	const displayData = filter === 'cart' ? groupedCart : filteredPurchases
+	const displayData = filter === 'cart' ? groupedCart : purchases
 	const itemCount = displayData.length
 
 	return (
@@ -645,419 +575,148 @@ const PurchasesScreen = () => {
 				options={{
 					headerTitle: () => <HeaderTitle title={translate('purchases_title', 'Purchases')} subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`} />,
 					headerRight: () => (
-						<TouchableOpacity onPress={onRefresh}>
-							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={24} color={colors.text} />
+						<TouchableOpacity onPress={onRefresh} style={{ marginRight: 8 }}>
+							<Ionicons name={refreshing ? 'hourglass-outline' : 'refresh-outline'} size={22} color={colors.text} />
 						</TouchableOpacity>
 					)
 				}}
 			/>
 
-			<Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-				{/* Filter Tabs */}
-				<View style={styles.filterContainer}>
+			{/* Filter horizontal tabs scroll */}
+			<View style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
+				<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.filterScrollRow}>
 					<FilterButton status="cart" label={translate('cart', 'Cart')} icon="cart-outline" />
 					<FilterButton status="pending" label={translate('pending', 'Pending')} icon="hourglass-outline" />
 					<FilterButton status="processing" label={translate('active', 'Active')} icon="sync-outline" />
 					<FilterButton status="completed" label={translate('done', 'Done')} icon="checkmark-circle-outline" />
 					<FilterButton status="cancelled" label={translate('cancelled', 'Cancelled')} icon="close-outline" />
-				</View>
+				</ScrollView>
+			</View>
 
-				{/* Purchases List */}
-				<FlatList
-					key={numColumns}
-					numColumns={numColumns}
-					data={displayData as any}
-					renderItem={filter === 'cart' ? (renderCartGroup as any) : renderPurchaseItem}
-					keyExtractor={(item: any) => (filter === 'cart' ? item.businessId : item._id)}
-					contentContainerStyle={styles.listContent}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-					ListEmptyComponent={renderEmptyState}
-					showsVerticalScrollIndicator={false}
-					onScroll={onScroll}
-					scrollEventThrottle={16}
-				/>
-			</Animated.View>
+			{/* Grid container */}
+			<FlatList
+				key={numColumns}
+				data={displayData}
+				numColumns={numColumns}
+				renderItem={filter === 'cart' ? (renderCartGroup as any) : renderPurchaseItem}
+				keyExtractor={(item: any) => (filter === 'cart' ? item.businessId : item._id)}
+				contentContainerStyle={styles.listContainer}
+				columnWrapperStyle={numColumns > 1 ? { gap: cardGap } : undefined}
+				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				ListEmptyComponent={renderEmptyState}
+				showsVerticalScrollIndicator={false}
+				onScroll={onScroll}
+				scrollEventThrottle={16}
+			/>
 		</View>
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean, width: number, numColumns: number, filter: string) => {
-	const isTablet = width > 700
+const createStyles = (colors: any, width: number, numColumns: number, cardGap: number) => {
+	const padding = 16
+	const containerWidth = (numColumns === 1 ? '100%' : `${(100 - (numColumns - 1) * (cardGap / (width - padding * 2)) * 100) / numColumns}%`) as any
 
 	return StyleSheet.create({
-		container: {
-			flex: 1
-		},
-		content: {
-			flex: 1
-		},
-		loadingContainer: {
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		loadingText: {
-			marginTop: 16,
-			fontSize: 15,
-			fontWeight: '500'
-		},
-		filterContainer: {
-			flexDirection: 'row',
-			padding: 16,
-			gap: 8
-		},
-		filterButton: {
-			flex: 1,
-			height: 48,
-			borderRadius: 16,
+		container: { flex: 1 },
+		centered: { justifyContent: 'center', alignItems: 'center' },
+		filterScrollRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 10, alignItems: 'center' },
+		filterTabBtn: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			justifyContent: 'center',
-			borderWidth: 1,
-			paddingHorizontal: 12
+			paddingHorizontal: 14,
+			paddingVertical: 9,
+			borderRadius: 20,
+			borderWidth: 1.5,
+			gap: 8,
+			...Platform.select({
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+				android: { elevation: 1 }
+			})
 		},
-		filterText: {
-			fontSize: 12,
-			fontWeight: '600'
-		},
+		filterTabText: { fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
 		countBadge: {
 			minWidth: 18,
 			height: 18,
 			borderRadius: 9,
-			justifyContent: 'center',
 			alignItems: 'center',
-			paddingHorizontal: 5
+			justifyContent: 'center',
+			paddingHorizontal: 4
 		},
-		countText: {
-			fontSize: 10,
-			fontWeight: '700'
-		},
-		listContent: {
-			padding: 6,
-			paddingTop: 8
-		},
+		countText: { fontSize: 10, fontWeight: '800' },
+		listContainer: { padding: padding, paddingBottom: 40, flexGrow: 1 },
+		cardContainer: { width: containerWidth, marginBottom: cardGap },
 		purchaseCard: {
-			height: 540,
 			borderRadius: 24,
+			borderWidth: 1.5,
 			padding: 20,
-			margin: 8,
-			borderWidth: 1,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 8 },
-			shadowOpacity: isDark ? 0.4 : 0.1,
-			shadowRadius: 12,
-			elevation: 6,
-			overflow: 'hidden'
-		},
-		cardHeader: {
-			flexDirection: 'row',
+			minHeight: 380,
 			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 12
+			...Platform.select({
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 12 },
+				android: { elevation: 3 },
+				web: { boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } as any
+			})
 		},
-		headerLeft: {
+		cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+		headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },
+		businessAvatar: { width: 44, height: 44, borderRadius: 14 },
+		headerInfo: { flex: 1, minWidth: 0 },
+		businessName: { fontSize: 16, fontWeight: '800', letterSpacing: -0.3 },
+		orderDate: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+		statusBadge: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+		statusText: { fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.3 },
+		divider: { height: 1, marginVertical: 16 },
+		productList: { maxHeight: 180, flexGrow: 0 },
+		productRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 12 },
+		productThumb: { width: 48, height: 48, borderRadius: 10, borderWidth: 1, borderColor: '#FFFFFF10' },
+		productInfoWrap: { flex: 1, minWidth: 0 },
+		productNameText: { fontSize: 14, fontWeight: '700', letterSpacing: -0.1 },
+		productQtyText: { fontSize: 12, fontWeight: '500', marginTop: 2 },
+		productPriceText: { fontSize: 14, fontWeight: '800' },
+		stepTracker: { marginVertical: 18, position: 'relative' },
+		stepLine: { position: 'absolute', top: 9, left: 16, right: 16, height: 2, borderRadius: 1 },
+		stepLineProgress: { position: 'absolute', top: 9, left: 16, height: 2, borderRadius: 1 },
+		stepItemsRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+		stepItem: { alignItems: 'center', width: 64 },
+		stepDot: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, justifyContent: 'center', alignItems: 'center' },
+		stepLabel: { fontSize: 9, textAlign: 'center', marginTop: 8, letterSpacing: -0.1 },
+		cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+		orderNumberLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
+		orderNumberValue: { fontSize: 13, fontWeight: '600', marginTop: 2 },
+		totalLabel: { fontSize: 10, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 },
+		totalPrice: { fontSize: 20, fontWeight: '800', marginTop: 2 },
+		actionsRow: { flexDirection: 'row', gap: 10, marginTop: 16 },
+		actionBtn: {
+			flex: 1,
 			flexDirection: 'row',
-			alignItems: 'center',
-			flex: 1
-		},
-		iconContainer: {
-			width: 48,
-			height: 48,
+			height: 42,
 			borderRadius: 12,
+			borderWidth: 1.5,
 			justifyContent: 'center',
-			alignItems: 'center',
-			marginRight: 12
-		},
-		headerInfo: {
-			flex: 1
-		},
-		businessName: {
-			fontSize: 16,
-			fontWeight: '700',
-			marginBottom: 2
-		},
-		orderDate: {
-			fontSize: 13,
-			fontWeight: '500'
-		},
-		statusBadge: {
-			paddingHorizontal: 12,
-			paddingVertical: 6,
-			borderRadius: 12
-		},
-		statusText: {
-			fontSize: 11,
-			fontWeight: '700',
-			textTransform: 'uppercase',
-			letterSpacing: 0.5
-		},
-		headerRightGroup: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 8
-		},
-		headerCancelBtn: {
-			padding: 2,
-			...(Platform.OS === 'web' && { cursor: 'pointer' })
-		},
-		divider: {
-			height: 1,
-			marginVertical: 12
-		},
-		productInfo: {
-			flex: 1,
-			marginBottom: 12
-		},
-		productRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 12,
-			marginBottom: 10
-		},
-		productThumbnailContainer: {
-			width: 44,
-			height: 44,
-			borderRadius: 8,
-			overflow: 'hidden',
-			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5',
-			borderWidth: 1,
-			borderColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-		},
-		productThumbnail: {
-			width: '100%',
-			height: '100%'
-		},
-		productDetailsInner: {
-			flex: 1,
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center'
-		},
-		productName: {
-			fontSize: 14,
-			fontWeight: '600',
-			flex: 1,
-			marginRight: 8
-		},
-		productQuantity: {
-			fontSize: 13,
-			fontWeight: '700'
-		},
-
-		productCount: {
-			fontSize: 12,
-			fontWeight: '500',
-			marginTop: 4,
-			marginLeft: 24
-		},
-
-		cardFooter: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center'
-		},
-		footerLeft: {
-			flexDirection: 'row',
 			alignItems: 'center',
 			gap: 6
 		},
-		footerRight: {
+		actionBtnText: { fontSize: 13, fontWeight: '700' },
+		cartItemRow: { flexDirection: 'row', gap: 12, marginBottom: 16 },
+		cartItemDetails: { flex: 1, minWidth: 0, justifyContent: 'space-between' },
+		qtyRow: { flexDirection: 'row', alignItems: 'center', padding: 2, borderRadius: 8 },
+		qtyBtn: { width: 24, height: 24, justifyContent: 'center', alignItems: 'center' },
+		qtyVal: { fontSize: 12, fontWeight: '700', minWidth: 20, textAlign: 'center' },
+		checkoutBtn: {
 			flexDirection: 'row',
-			alignItems: 'center'
-		},
-		footerText: {
-			fontSize: 12,
-			fontWeight: '500'
-		},
-		totalPrice: {
-			fontSize: 16,
-			fontWeight: '700'
-		},
-		cancelButtonContainer: {
-			marginTop: 12,
-			paddingTop: 12,
-			borderTopWidth: 1,
-			borderTopColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'
-		},
-		cancelButton: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 6,
+			height: 42,
 			paddingHorizontal: 16,
-			paddingVertical: 10,
-			borderRadius: 10
-		},
-		cancelText: {
-			fontSize: 12,
-			fontWeight: '600'
-		},
-		emptyContainer: {
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-			paddingVertical: 60,
-			paddingHorizontal: 40
-		},
-		emptyIconContainer: {
-			width: 120,
-			height: 120,
-			borderRadius: 60,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 24
-		},
-		emptyTitle: {
-			fontSize: 18,
-			fontWeight: '600',
-			marginBottom: 8
-		},
-		cartItemCard: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			borderRadius: 16,
-			padding: 12,
-			gap: 12,
-			// Keep subtle borders or shadows if desired, or make it flat
-			borderBottomWidth: 1,
-			borderBottomColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-			backgroundColor: 'transparent' // Override card bg if we want a clean list look
-		},
-		cartItemImageContainer: {
-			width: 80,
-			height: 80,
 			borderRadius: 12,
-			overflow: 'hidden',
-			backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : '#f5f5f5'
-		},
-		cartItemImage: {
-			width: '100%',
-			height: '100%'
-		},
-		cartItemContent: {
-			flex: 1,
-			justifyContent: 'center',
-			gap: 4
-		},
-		itemTopRow: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'flex-start',
-			gap: 8,
-			marginBottom: 4
-		},
-		itemBottomRow: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
 			alignItems: 'center',
-			marginTop: 4
+			gap: 6,
+			...Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.25)' } as any })
 		},
-		cartItemName: {
-			fontSize: 15,
-			fontWeight: '600',
-			flex: 1,
-			lineHeight: 20
-		},
-		deleteButton: {
-			padding: 4,
-			opacity: 0.8
-		},
-		cartItemPrice: {
-			fontSize: 16,
-			fontWeight: '700'
-		},
-		compactQuantityControl: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			borderRadius: 20,
-			padding: 3,
-			height: 36,
-			gap: 8
-		},
-		compactQBtn: {
-			width: 28,
-			height: 28,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderRadius: 14,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 1 },
-			shadowRadius: 2,
-			elevation: 1
-		},
-		compactQText: {
-			fontSize: 14,
-			fontWeight: '600',
-			minWidth: 20,
-			textAlign: 'center'
-		},
-		emptySubtitle: {
-			fontSize: 15,
-			textAlign: 'center',
-			lineHeight: 22,
-			marginBottom: 24
-		},
-		emptyAction: {
-			paddingHorizontal: 32,
-			paddingVertical: 14,
-			borderRadius: 12,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: 0.2,
-			shadowRadius: 8,
-			elevation: 4
-		},
-		emptyActionText: {
-			color: '#fff',
-			fontSize: 15,
-			fontWeight: '700'
-		},
-		actionButtonsContainer: {
-			flexDirection: 'row',
-			marginTop: 12,
-			gap: 8
-		},
-		actionButton: {
-			flex: 1,
-			flexDirection: 'row',
-			height: 44,
-			borderRadius: 12,
-			borderWidth: 1.5,
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 8
-		},
-		actionButtonText: {
-			fontSize: 13,
-			fontWeight: '700'
-		},
-		checkoutButton: {
-			width: 36,
-			height: 36,
-			borderRadius: 18,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginLeft: 12,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.15,
-			shadowRadius: 4,
-			elevation: 3
-		},
-		scrollWithIndicator: {
-			flex: 1,
-			flexDirection: 'row',
-			marginBottom: 12
-		},
-		scrollIndicatorTrack: {
-			width: 3,
-			borderRadius: 1.5,
-			marginVertical: 4,
-			marginLeft: 4,
-			opacity: 0.5
-		}
-	})
+		checkoutBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+		emptyWrap: { flex: 1, paddingVertical: 80, paddingHorizontal: 32, alignItems: 'center', gap: 14 },
+		emptyIconWrap: { width: 88, height: 88, borderRadius: 44, justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+		emptyTitle: { fontSize: 18, fontWeight: '800', textAlign: 'center', letterSpacing: -0.3 },
+		emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 22 }
+	}) as any
 }
 
 export default PurchasesScreen
