@@ -236,3 +236,36 @@ export type CreateBusinessResponse = {
 		}
 	}
 }
+
+export interface BusinessCustomerDoc {
+	_id: string
+	customer: {
+		_id: string
+		role: string
+		slug: string
+		name: LocalizedName
+		address?: {
+			street?: string
+			city: string
+			region: string
+			country: string
+		}
+		location?: GeoPoint
+		contact?: {
+			backupPhones?: any[]
+		}
+		media?: {
+			thumbnail?: {
+				url: string
+			}
+		}
+	}
+}
+
+export interface BusinessCustomersResponse {
+	status: number
+	data: {
+		pagination: Pagination
+		docs: BusinessCustomerDoc[]
+	}
+}

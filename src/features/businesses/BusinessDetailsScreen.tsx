@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import QRCodeModal from '@/features/common/QRCodeModal'
-import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
+import { getBusinessBySlug, getBusinessProductsBySlug, getBusinessCustomers } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
 import { useTheme } from '@/core/theme'
@@ -63,6 +63,7 @@ export default function BusinessDetailsScreen() {
 
 	const [business, setBusiness] = useState<Business | null>(null)
 	const [products, setProducts] = useState<any[]>([])
+	const [customers, setCustomers] = useState<any[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
@@ -76,10 +77,15 @@ export default function BusinessDetailsScreen() {
 				if (!isRefresh) setLoading(true)
 				setError(null)
 
-				const [businessResponse, productsResponse] = await Promise.all([getBusinessBySlug(businessSlug), getBusinessProductsBySlug(businessSlug).catch(() => null)])
+				const [businessResponse, productsResponse, customersResponse] = await Promise.all([
+					getBusinessBySlug(businessSlug),
+					getBusinessProductsBySlug(businessSlug).catch(() => null),
+					getBusinessCustomers(businessSlug).catch(() => null)
+				])
 
 				setBusiness(businessResponse.data)
 				setProducts(productsResponse?.data?.docs || [])
+				setCustomers(customersResponse?.data?.docs || [])
 			} catch (err: any) {
 				console.error('Failed to load business details:', err)
 				const errorInfo = parseError(err)
@@ -286,6 +292,44 @@ export default function BusinessDetailsScreen() {
 						</View>
 					)}
 				</View>
+
+				{/* Customers / Supporters Section */}
+				{customers.length > 0 && (
+					<View style={[styles.customersSection, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6', marginTop: 20 }]}>
+						<View style={styles.customersSectionHeader}>
+							<Ionicons name="people-outline" size={20} color={colors.primary} />
+							<Text style={[styles.customersSectionTitle, { color: colors.text }]}>{translate('business_customers', 'Customers')}</Text>
+							<View style={[styles.customersCountBadge, { backgroundColor: colors.primary + '15' }]}>
+								<Text style={[styles.customersCountText, { color: colors.primary }]}>{customers.length}</Text>
+							</View>
+						</View>
+
+						<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.customersScrollContent}>
+							{customers.map((doc) => {
+								const customer = doc.customer
+								const thumb = customer.media?.thumbnail?.url
+								return (
+									<TouchableOpacity
+										key={doc._id}
+										activeOpacity={0.8}
+										onPress={() => router.push(`/users/${customer.slug}` as any)}
+										style={[styles.customerChip, { backgroundColor: colors.surface, borderColor: colors.border }]}
+									>
+										<SmartImage source={thumb} style={styles.customerAvatar} entityType="user" />
+										<View style={styles.customerChipText}>
+											<Text style={[styles.customerNameText, { color: colors.text }]} numberOfLines={1}>
+												{localize(customer.name)}
+											</Text>
+											<Text style={[styles.customerSlugText, { color: colors.textSecondary }]} numberOfLines={1}>
+												@{customer.slug}
+											</Text>
+										</View>
+									</TouchableOpacity>
+								)
+							})}
+						</ScrollView>
+					</View>
+				)}
 
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
@@ -531,5 +575,73 @@ const styles = StyleSheet.create({
 		padding: 4,
 		justifyContent: 'center',
 		alignItems: 'center'
+	},
+	customersSection: {
+		borderRadius: 20,
+		padding: 20,
+		borderWidth: 1,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 2 },
+				shadowOpacity: 0.1,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 3
+			}
+		})
+	},
+	customersSectionHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16,
+		gap: 8
+	},
+	customersSectionTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		flex: 1
+	},
+	customersCountBadge: {
+		paddingHorizontal: 12,
+		paddingVertical: 4,
+		borderRadius: 12
+	},
+	customersCountText: {
+		fontSize: 14,
+		fontWeight: '700'
+	},
+	customersScrollContent: {
+		gap: 12,
+		paddingRight: 16
+	},
+	customerChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingVertical: 10,
+		paddingHorizontal: 12,
+		borderRadius: 16,
+		borderWidth: 1,
+		gap: 10,
+		width: 180
+	},
+	customerAvatar: {
+		width: 36,
+		height: 36,
+		borderRadius: 18
+	},
+	customerChipText: {
+		flex: 1,
+		minWidth: 0
+	},
+	customerNameText: {
+		fontSize: 13,
+		fontWeight: '700'
+	},
+	customerSlugText: {
+		fontSize: 11,
+		fontWeight: '500',
+		marginTop: 1
 	}
 })

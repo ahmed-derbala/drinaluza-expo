@@ -20,7 +20,7 @@ import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function ProductDetailScreen() {
-	const { productSlug } = useLocalSearchParams<{ productSlug: string }>()
+	const { productSlug, businessSlug } = useLocalSearchParams<{ productSlug: string; businessSlug?: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate, currency, formatPrice } = useUser()
@@ -209,21 +209,43 @@ export default function ProductDetailScreen() {
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 							{isDashboard && (
-								<TouchableOpacity
-									style={{
-										width: 40,
-										height: 40,
-										borderRadius: 10,
-										backgroundColor: colors.surface,
-										justifyContent: 'center',
-										alignItems: 'center',
-										borderWidth: 1,
-										borderColor: colors.border || 'transparent'
-									}}
-									onPress={() => router.push(`${pathname}/edit` as any)}
-								>
-									<Ionicons name="pencil" size={20} color={colors.primary} />
-								</TouchableOpacity>
+								<>
+									<TouchableOpacity
+										style={{
+											width: 40,
+											height: 40,
+											borderRadius: 10,
+											backgroundColor: colors.surface,
+											justifyContent: 'center',
+											alignItems: 'center',
+											borderWidth: 1,
+											borderColor: colors.border || 'transparent'
+										}}
+										onPress={() => {
+											const slug = businessSlug || product?.business?.slug
+											if (slug) {
+												router.push(`/dashboard/${slug}/sales?productSlug=${product?.slug || productSlug}` as any)
+											}
+										}}
+									>
+										<Ionicons name="trending-up" size={20} color={colors.primary} />
+									</TouchableOpacity>
+									<TouchableOpacity
+										style={{
+											width: 40,
+											height: 40,
+											borderRadius: 10,
+											backgroundColor: colors.surface,
+											justifyContent: 'center',
+											alignItems: 'center',
+											borderWidth: 1,
+											borderColor: colors.border || 'transparent'
+										}}
+										onPress={() => router.push(`${pathname}/edit` as any)}
+									>
+										<Ionicons name="pencil" size={20} color={colors.primary} />
+									</TouchableOpacity>
+								</>
 							)}
 							<TouchableOpacity
 								style={{
@@ -241,41 +263,43 @@ export default function ProductDetailScreen() {
 							>
 								<Ionicons name="qr-code-outline" size={20} color={colors.primary} />
 							</TouchableOpacity>
-							<TouchableOpacity
-								style={{
-									width: 40,
-									height: 40,
-									borderRadius: 10,
-									backgroundColor: colors.surface,
-									justifyContent: 'center',
-									alignItems: 'center',
-									borderWidth: 1,
-									borderColor: colors.border || 'transparent'
-								}}
-								onPress={() => router.push('/profile/purchases?status=cart' as any)}
-							>
-								<Ionicons name="cart-outline" size={20} color={colors.primary} />
-								{cart.length > 0 && (
-									<View
-										style={{
-											position: 'absolute',
-											top: -6,
-											right: -6,
-											backgroundColor: colors.error || '#ef4444',
-											borderRadius: 10,
-											minWidth: 20,
-											height: 20,
-											justifyContent: 'center',
-											alignItems: 'center',
-											paddingHorizontal: 4,
-											borderWidth: 1.5,
-											borderColor: colors.surface
-										}}
-									>
-										<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-									</View>
-								)}
-							</TouchableOpacity>
+							{!isDashboard && (
+								<TouchableOpacity
+									style={{
+										width: 40,
+										height: 40,
+										borderRadius: 10,
+										backgroundColor: colors.surface,
+										justifyContent: 'center',
+										alignItems: 'center',
+										borderWidth: 1,
+										borderColor: colors.border || 'transparent'
+									}}
+									onPress={() => router.push('/profile/purchases?status=cart' as any)}
+								>
+									<Ionicons name="cart-outline" size={20} color={colors.primary} />
+									{cart.length > 0 && (
+										<View
+											style={{
+												position: 'absolute',
+												top: -6,
+												right: -6,
+												backgroundColor: colors.error || '#ef4444',
+												borderRadius: 10,
+												minWidth: 20,
+												height: 20,
+												justifyContent: 'center',
+												alignItems: 'center',
+												paddingHorizontal: 4,
+												borderWidth: 1.5,
+												borderColor: colors.surface
+											}}
+										>
+											<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
+										</View>
+									)}
+								</TouchableOpacity>
+							)}
 							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
 						</View>
 					)
@@ -469,7 +493,7 @@ export default function ProductDetailScreen() {
 					onClose={() => setShowQRCode(false)}
 					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/p/${product.slug}`}
 					title={localize(product.name)}
-					subtitle={`SKU: ${product.slug}`}
+					subtitle={`${product.slug}`}
 					filenamePrefix={`product_${product.slug}`}
 				/>
 			)}

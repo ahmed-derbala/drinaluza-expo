@@ -14,6 +14,7 @@ import SmartImage from '../../core/helpers/SmartImage'
 import { getDashboardProfiles, getBusinessDashboard } from './dashboard.api'
 import { isBusinessDashboard, DashboardData, DashboardProfile, DashboardRankItem, ProductStats, BusinessDashboard } from './dashboard.interface'
 import { LocalizedName } from '../businesses/businesses.interface'
+import { getBusinessCustomers } from '../businesses/businesses.api'
 
 import QRCodeModal from '@/features/common/QRCodeModal'
 
@@ -251,6 +252,25 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 	const business = data.business
 
 	const [showQRCode, setShowQRCode] = useState(false)
+	const [customers, setCustomers] = useState<import('../businesses/businesses.interface').BusinessCustomerDoc[]>([])
+	const [loadingCustomers, setLoadingCustomers] = useState(true)
+
+	useEffect(() => {
+		const fetchCustomers = async () => {
+			try {
+				setLoadingCustomers(true)
+				const res = await getBusinessCustomers(business.slug)
+				setCustomers(res.data?.docs || [])
+			} catch (err) {
+				console.error('Failed to load business customers:', err)
+			} finally {
+				setLoadingCustomers(false)
+			}
+		}
+		if (business.slug) {
+			fetchCustomers()
+		}
+	}, [business.slug])
 
 	const managementActions = useMemo(
 		() => [
@@ -339,10 +359,55 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				))}
 			</View>
 
+			<SectionTitle title={translate('dashboard.customers', 'Customers')} colors={colors} />
+			{loadingCustomers ? (
+				<ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
+			) : customers.length === 0 ? (
+				<View style={[styles.centered, { paddingVertical: 20, backgroundColor: colors.card, borderRadius: 16 }]}>
+					<Ionicons name="people-outline" size={32} color={colors.textTertiary} style={{ opacity: 0.5, marginBottom: 8 }} />
+					<Text style={{ color: colors.textSecondary, fontSize: 13 }}>{translate('dashboard.no_customers', 'No customers found yet.')}</Text>
+				</View>
+			) : (
+				<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.customersRow}>
+					{customers.map((doc) => {
+						const customer = doc.customer
+						const thumb = customer.media?.thumbnail?.url
+						return (
+							<TouchableOpacity
+								key={doc._id}
+								activeOpacity={0.85}
+								onPress={() => router.push(`/dashboard/${business.slug}/sales?customerSlug=${customer.slug}` as never)}
+								style={[styles.customerChip, { backgroundColor: colors.card, borderColor: colors.border }]}
+							>
+								<SmartImage source={thumb} style={styles.customerAvatar} entityType="user" />
+								<View style={styles.customerChipText}>
+									<Text style={[styles.customerNameText, { color: colors.text }]} numberOfLines={1}>
+										{localize(customer.name)}
+									</Text>
+									<Text style={[styles.customerSlugText, { color: colors.textSecondary }]} numberOfLines={1}>
+										@{customer.slug}
+									</Text>
+									{customer.address?.city && (
+										<Text style={[styles.customerCityText, { color: colors.textTertiary }]} numberOfLines={1}>
+											{customer.address.city}
+										</Text>
+									)}
+								</View>
+							</TouchableOpacity>
+						)
+					})}
+				</ScrollView>
+			)}
+
 			<Stack.Screen
 				options={{
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+							{business.slug && (
+								<TouchableOpacity onPress={() => router.push(`/dashboard/${business.slug}/sales` as never)} activeOpacity={0.7} style={styles.headerIconBtn}>
+									<Ionicons name="trending-up" size={22} color={colors.primary} />
+								</TouchableOpacity>
+							)}
 							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
 								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
 							</TouchableOpacity>
@@ -638,6 +703,43 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 			padding: 4,
 			justifyContent: 'center',
 			alignItems: 'center'
+		},
+		customersRow: {
+			gap: 12,
+			paddingRight: 16
+		},
+		customerChip: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingVertical: 10,
+			paddingHorizontal: 12,
+			borderRadius: 16,
+			borderWidth: 1,
+			gap: 10,
+			width: 200
+		},
+		customerAvatar: {
+			width: 40,
+			height: 40,
+			borderRadius: 20
+		},
+		customerChipText: {
+			flex: 1,
+			minWidth: 0
+		},
+		customerNameText: {
+			fontSize: 13,
+			fontWeight: '700'
+		},
+		customerSlugText: {
+			fontSize: 11,
+			fontWeight: '500',
+			marginTop: 1
+		},
+		customerCityText: {
+			fontSize: 10,
+			fontWeight: '500',
+			marginTop: 2
 		}
 	})
 

@@ -5,15 +5,20 @@ import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
-import { useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, Stack, useRouter } from 'expo-router'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/config/orderStatus'
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 
 const ITEMS_PER_PAGE = 10
 
 export default function SalesScreen() {
-	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
+	const { businessSlug, customerSlug, productSlug } = useLocalSearchParams<{
+		businessSlug: string
+		customerSlug?: string
+		productSlug?: string
+	}>()
+	const router = useRouter()
 	const { colors } = useTheme()
 	const [sales, setSales] = useState<Sale[]>([])
 	const [allSales, setAllSales] = useState<Sale[]>([]) // Store all sales for counting
@@ -51,11 +56,11 @@ export default function SalesScreen() {
 	)
 
 	// Load all sales to get counts for each status
-	const loadAllSalesForCounts = async () => {
+	const loadAllSalesForCounts = useCallback(async () => {
 		if (!businessSlug) return
 		try {
 			// Load all sales without status filter to get counts
-			const response = await getSales(businessSlug as string, 1, 1000)
+			const response = await getSales(businessSlug as string, 1, 1000, undefined, customerSlug, productSlug)
 			if (response && response.data && Array.isArray(response.data.docs)) {
 				const allSalesData = response.data.docs
 				setAllSales(allSalesData)
@@ -73,92 +78,98 @@ export default function SalesScreen() {
 		} catch (err) {
 			console.error('Error loading sales for counts:', err)
 		}
-	}
+	}, [businessSlug, customerSlug, productSlug])
 
-	const loadSales = async (pageNum = 1, isRefreshing = false, status = selectedStatus, isFiltering = false) => {
-		try {
-			if (pageNum === 1) {
-				if (isFiltering) {
-					setFiltering(true)
-				} else {
-					setLoading(true)
-				}
-				setError(null)
-			} else {
-				setLoadingMore(true)
-			}
-
-			if (!businessSlug) return
-
-			const response = await getSales(businessSlug as string, pageNum, ITEMS_PER_PAGE, status === 'all' ? undefined : status)
-
-			// Check if the response has the expected structure
-			if (response && response.data && Array.isArray(response.data.docs)) {
-				const newSales = response.data.docs
-
-				if (isRefreshing || pageNum === 1) {
-					setSales(newSales)
-				} else {
-					setSales([...sales, ...newSales])
-				}
-
-				setHasMore(newSales.length === ITEMS_PER_PAGE && response.data.pagination?.hasNextPage !== false)
-			} else {
+	const loadSales = useCallback(
+		async (pageNum = 1, isRefreshing = false, status = selectedStatus, isFiltering = false) => {
+			try {
 				if (pageNum === 1) {
-					setSales([])
+					if (isFiltering) {
+						setFiltering(true)
+					} else {
+						setLoading(true)
+					}
+					setError(null)
+				} else {
+					setLoadingMore(true)
 				}
-				setHasMore(false)
+
+				if (!businessSlug) return
+
+				const response = await getSales(businessSlug as string, pageNum, ITEMS_PER_PAGE, status === 'all' ? undefined : status, customerSlug, productSlug)
+
+				// Check if the response has the expected structure
+				if (response && response.data && Array.isArray(response.data.docs)) {
+					const newSales = response.data.docs
+
+					if (isRefreshing || pageNum === 1) {
+						setSales(newSales)
+					} else {
+						setSales((prev) => [...prev, ...newSales])
+					}
+
+					setHasMore(newSales.length === ITEMS_PER_PAGE && response.data.pagination?.hasNextPage !== false)
+				} else {
+					if (pageNum === 1) {
+						setSales([])
+					}
+					setHasMore(false)
+				}
+
+				setPage(pageNum)
+			} catch (err: any) {
+				console.error('Error loading sales:', err)
+
+				if (err.statusCode === 404) {
+					setSales([])
+					setError({
+						title: 'No Sales Found',
+						message: 'No sales data is available at the moment.'
+					})
+				} else {
+					setError({
+						title: 'Error Loading Sales',
+						message: err.message || 'Failed to load sales. Please try again later.'
+					})
+				}
+			} finally {
+				setLoading(false)
+				setRefreshing(false)
+				setLoadingMore(false)
+				setFiltering(false)
 			}
+		},
+		[businessSlug, customerSlug, productSlug, selectedStatus]
+	)
 
-			setPage(pageNum)
-		} catch (err: any) {
-			console.error('Error loading sales:', err)
-
-			if (err.statusCode === 404) {
-				setSales([])
-				setError({
-					title: 'No Sales Found',
-					message: 'No sales data is available at the moment.'
-				})
-			} else {
-				setError({
-					title: 'Error Loading Sales',
-					message: err.message || 'Failed to load sales. Please try again later.'
-				})
-			}
-		} finally {
-			setLoading(false)
-			setRefreshing(false)
-			setLoadingMore(false)
-			setFiltering(false)
-		}
-	}
-
-	const handleRefresh = async () => {
+	const handleRefresh = useCallback(async () => {
 		setRefreshing(true)
 		await loadAllSalesForCounts()
 		loadSales(1, true)
-	}
+	}, [loadAllSalesForCounts, loadSales])
 
-	const handleLoadMore = () => {
+	const handleLoadMore = useCallback(() => {
 		if (!loadingMore && hasMore) {
 			loadSales(page + 1)
 		}
-	}
+	}, [loadingMore, hasMore, page, loadSales])
 
-	const handleStatusChange = (status: string) => {
-		setSelectedStatus(status)
-		setHasMore(true)
-		setPage(1)
-		// Don't clear sales immediately - let them stay visible while loading new data
-		loadSales(1, false, status, true)
-	}
+	const handleStatusChange = useCallback(
+		(status: string) => {
+			setSelectedStatus(status)
+			setHasMore(true)
+			setPage(1)
+			// Don't clear sales immediately - let them stay visible while loading new data
+			loadSales(1, false, status, true)
+		},
+		[loadSales]
+	)
 
 	useFocusEffect(
 		useCallback(() => {
 			loadAllSalesForCounts()
 			loadSales(1, true)
-		}, [])
+		}, [loadAllSalesForCounts, loadSales])
 	)
 
 	const renderFooter = () => {
@@ -258,6 +269,33 @@ export default function SalesScreen() {
 					})}
 				</ScrollView>
 			</View>
+
+			{/* Active Filters Info Banner */}
+			{(customerSlug || productSlug) && (
+				<View style={[styles.activeFiltersBanner, { backgroundColor: colors.primaryContainer, borderColor: colors.primary }]}>
+					<View style={styles.activeFiltersLeft}>
+						<Ionicons name="funnel-outline" size={18} color={colors.primary} />
+						<View style={{ flex: 1 }}>
+							<Text style={[styles.activeFiltersTitle, { color: colors.text }]}>Filtered Sales</Text>
+							<Text style={[styles.activeFiltersSubtitle, { color: colors.textSecondary }]}>
+								Showing sales for {customerSlug ? `Customer: @${customerSlug}` : ''}
+								{customerSlug && productSlug ? ' • ' : ''}
+								{productSlug ? `Product: @${productSlug}` : ''}
+							</Text>
+						</View>
+					</View>
+					<TouchableOpacity
+						onPress={() => {
+							router.setParams({ customerSlug: '', productSlug: '' })
+						}}
+						style={[styles.clearFilterBtn, { backgroundColor: colors.surface }]}
+						activeOpacity={0.7}
+					>
+						<Ionicons name="close" size={16} color={colors.primary} />
+						<Text style={[styles.clearFilterText, { color: colors.primary }]}>Clear</Text>
+					</TouchableOpacity>
+				</View>
+			)}
 
 			{/* Sales List */}
 			<FlatList
@@ -392,5 +430,46 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 		textAlign: 'center',
 		lineHeight: 22
+	},
+	activeFiltersBanner: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		paddingHorizontal: 16,
+		paddingVertical: 12,
+		marginHorizontal: 16,
+		marginTop: 14,
+		borderRadius: 14,
+		borderWidth: 1.5,
+		gap: 12
+	},
+	activeFiltersLeft: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 12,
+		flex: 1
+	},
+	activeFiltersTitle: {
+		fontSize: 14,
+		fontWeight: '700',
+		letterSpacing: -0.2
+	},
+	activeFiltersSubtitle: {
+		fontSize: 12,
+		marginTop: 2
+	},
+	clearFilterBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 10,
+		paddingVertical: 6,
+		borderRadius: 8,
+		gap: 4,
+		borderWidth: 1,
+		borderColor: 'transparent'
+	},
+	clearFilterText: {
+		fontSize: 12,
+		fontWeight: '700'
 	}
 })

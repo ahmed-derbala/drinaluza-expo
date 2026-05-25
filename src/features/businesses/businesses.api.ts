@@ -1,5 +1,5 @@
 import { getApiClient } from '../../core/api'
-import { BusinessesResponse, CreateBusinessRequest, CreateBusinessResponse, BusinessResponse, BusinessProductsResponse } from './businesses.interface'
+import { BusinessesResponse, CreateBusinessRequest, CreateBusinessResponse, BusinessResponse, BusinessProductsResponse, BusinessCustomersResponse } from './businesses.interface'
 import { log } from '../../core/log'
 
 export const getMyBusinesses = async (): Promise<BusinessesResponse> => {
@@ -171,6 +171,22 @@ export const getBusinessProductsBySlug = async (slug: string): Promise<BusinessP
 			level: 'error',
 			label: 'businesses.api',
 			message: 'Error fetching business products by slug',
+			error,
+			data: { slug }
+		})
+		throw error
+	}
+}
+
+export const getBusinessCustomers = async (slug: string): Promise<BusinessCustomersResponse> => {
+	try {
+		const response = await getApiClient().get(`/businesses/${slug}/customers`)
+		return response.data
+	} catch (error: any) {
+		log({
+			level: 'error',
+			label: 'businesses.api',
+			message: 'Error fetching business customers',
 			error,
 			data: { slug }
 		})

@@ -182,10 +182,17 @@ export interface Sale {
 	__v?: number
 }
 
-export const getSales = async (businessSlug: string, page = 1, limit = 10, status?: string): Promise<SalesResponse> => {
+export const getSales = async (businessSlug: string, page = 1, limit = 10, status?: string, customerSlug?: string, productSlug?: string): Promise<SalesResponse> => {
 	try {
 		const response = await apiClient.get('sales', {
-			params: { businessSlug, page, limit, ...(status ? { status } : {}) }
+			params: {
+				businessSlug,
+				page,
+				limit,
+				...(status ? { status } : {}),
+				...(customerSlug ? { customerSlug } : {}),
+				...(productSlug ? { productSlug } : {})
+			}
 		})
 		return response.data
 	} catch (error) {
