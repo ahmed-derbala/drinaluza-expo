@@ -22,7 +22,7 @@ const config: AppConfig = {
 }
 
 // App configuration
-const APP_NAME = config.app.name
+export const APP_NAME = config.app.name
 export const APP_VERSION = config.app.version
 export const API_TIMEOUT = config.app.timeout
 const RETRY_ATTEMPTS = config.app.retryAttempts

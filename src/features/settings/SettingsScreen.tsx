@@ -1,7 +1,7 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
@@ -9,7 +9,7 @@ import { useTheme } from '@/core/theme'
 import { useVersion } from '@/core/contexts/VersionContext'
 import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/features/common/Toast'
-import { log } from '@/core/log'
+import { log, listLogFiles, readLogFile, clearLogFile, shareLogFile, downloadLogFile, LogFileInfo } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
@@ -34,6 +34,79 @@ export default function SettingsScreen() {
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
+
+	// System Logs Management States
+	const [isLogsModalVisible, setIsLogsModalVisible] = useState(false)
+	const [logFiles, setLogFiles] = useState<LogFileInfo[]>([])
+	const [selectedLogFile, setSelectedLogFile] = useState<LogFileInfo | null>(null)
+	const [selectedLogContent, setSelectedLogContent] = useState('')
+	const [isViewingContent, setIsViewingContent] = useState(false)
+	const [isLoadingLogs, setIsLoadingLogs] = useState(false)
+
+	const loadLogFilesList = async () => {
+		try {
+			setIsLoadingLogs(true)
+			const list = await listLogFiles()
+			setLogFiles(list)
+		} catch (e) {
+			console.error('Failed to load log files list:', e)
+		} finally {
+			setIsLoadingLogs(false)
+		}
+	}
+
+	const handleOpenLogsManager = async () => {
+		setIsLogsModalVisible(true)
+		setIsViewingContent(false)
+		setSelectedLogFile(null)
+		setSelectedLogContent('')
+		await loadLogFilesList()
+	}
+
+	const handleSelectLogFile = async (file: LogFileInfo) => {
+		try {
+			setIsLoadingLogs(true)
+			const content = await readLogFile(file.name)
+			setSelectedLogContent(content)
+			setSelectedLogFile(file)
+			setIsViewingContent(true)
+		} catch (e) {
+			console.error('Failed to read log content:', e)
+		} finally {
+			setIsLoadingLogs(false)
+		}
+	}
+
+	const handleDeleteLogFile = async (name: string) => {
+		try {
+			setIsLoadingLogs(true)
+			await clearLogFile(name)
+			toast.show({ title: 'Success', message: translate('logs_cleared', 'Logs cleared successfully!'), color: '#10B981' })
+			if (isViewingContent && selectedLogFile?.name === name) {
+				setIsViewingContent(false)
+				setSelectedLogFile(null)
+				setSelectedLogContent('')
+			}
+			await loadLogFilesList()
+		} catch (e) {
+			console.error('Failed to clear logs:', e)
+		} finally {
+			setIsLoadingLogs(false)
+		}
+	}
+
+	const formatSize = (bytes: number): string => {
+		if (bytes === 0) return '0 Bytes'
+		const k = 1024
+		const sizes = ['Bytes', 'KB', 'MB', 'GB']
+		const i = Math.floor(Math.log(bytes) / Math.log(k))
+		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+	}
+
+	const formatTime = (mtime?: number): string => {
+		if (!mtime) return ''
+		return new Date(mtime).toLocaleString()
+	}
 
 	useEffect(() => {
 		// Trigger version check when settings screen opens
@@ -203,6 +276,16 @@ export default function SettingsScreen() {
 				/>
 			</SettingSection>
 
+			<SettingSection title={translate('diagnostic_logs', 'Diagnostic Logs')}>
+				<SettingItem
+					icon="document-text-outline"
+					title={translate('app_logs', 'App Logs')}
+					subtitle={translate('view_share_logs', 'List, view, share and download app logs')}
+					onPress={handleOpenLogsManager}
+					color={colors.primary}
+				/>
+			</SettingSection>
+
 			<SettingSection title={translate('developer', 'Developer')}>
 				<SettingItem
 					icon="logo-linkedin"
@@ -241,6 +324,89 @@ export default function SettingsScreen() {
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 			</View>
+
+			{/* Logs Manager Modal */}
+			<Modal visible={isLogsModalVisible} transparent animationType="fade" onRequestClose={() => setIsLogsModalVisible(false)}>
+				<View style={styles.modalOverlay}>
+					<View style={styles.modalCard}>
+						<View style={styles.modalHeader}>
+							<Text style={styles.modalTitle}>{isViewingContent ? translate('view_logs', 'View Log File') : translate('logs_manager', 'App Logs Manager')}</Text>
+							<TouchableOpacity style={styles.closeModalButton} onPress={() => setIsLogsModalVisible(false)} activeOpacity={0.7}>
+								<Ionicons name="close" size={20} color={colors.text} />
+							</TouchableOpacity>
+						</View>
+
+						<View style={styles.modalBody}>
+							{isLoadingLogs ? (
+								<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+									<ActivityIndicator size="large" color={colors.primary} />
+								</View>
+							) : isViewingContent && selectedLogFile ? (
+								<View style={{ flex: 1 }}>
+									<View style={styles.viewerSubheader}>
+										<TouchableOpacity style={styles.backButton} onPress={() => setIsViewingContent(false)} activeOpacity={0.7}>
+											<Ionicons name="arrow-back" size={18} color={colors.primary} />
+											<Text style={styles.backButtonText}>{translate('back', 'Back')}</Text>
+										</TouchableOpacity>
+
+										<View style={styles.logViewerActions}>
+											<TouchableOpacity style={[styles.logActionIconButton, { backgroundColor: colors.info + '20' }]} onPress={() => shareLogFile(selectedLogFile.name)} activeOpacity={0.7}>
+												<Ionicons name="share-social-outline" size={18} color={colors.info} />
+											</TouchableOpacity>
+											<TouchableOpacity style={[styles.logActionIconButton, { backgroundColor: colors.primaryContainer }]} onPress={() => downloadLogFile(selectedLogFile.name)} activeOpacity={0.7}>
+												<Ionicons name="download-outline" size={18} color={colors.primary} />
+											</TouchableOpacity>
+											<TouchableOpacity style={[styles.logActionIconButton, { backgroundColor: colors.error + '20' }]} onPress={() => handleDeleteLogFile(selectedLogFile.name)} activeOpacity={0.7}>
+												<Ionicons name="trash-outline" size={18} color={colors.error} />
+											</TouchableOpacity>
+										</View>
+									</View>
+
+									<ScrollView style={styles.logScrollView} showsVerticalScrollIndicator={true}>
+										<Text style={styles.logText}>{selectedLogContent || 'No log lines recorded.'}</Text>
+									</ScrollView>
+								</View>
+							) : (
+								<View style={{ flex: 1 }}>
+									{logFiles.length === 0 ? (
+										<View style={styles.emptyLogs}>
+											<Ionicons name="document-outline" size={48} color={colors.textTertiary} />
+											<Text style={styles.emptyLogsText}>{translate('no_logs_found', 'No log files recorded yet.')}</Text>
+										</View>
+									) : (
+										<ScrollView style={{ flex: 1 }}>
+											{logFiles.map((file) => (
+												<View key={file.name} style={styles.logFileItem}>
+													<TouchableOpacity style={styles.logFileInfo} onPress={() => handleSelectLogFile(file)} activeOpacity={0.7}>
+														<Text style={styles.logFileName} numberOfLines={1}>
+															{file.name}
+														</Text>
+														<Text style={styles.logFileMeta}>
+															{formatSize(file.size)} • {formatTime(file.mtime)}
+														</Text>
+													</TouchableOpacity>
+
+													<View style={styles.logFileActions}>
+														<TouchableOpacity style={[styles.logActionIconButton, { backgroundColor: colors.info + '15' }]} onPress={() => shareLogFile(file.name)} activeOpacity={0.7}>
+															<Ionicons name="share-social" size={16} color={colors.info} />
+														</TouchableOpacity>
+														<TouchableOpacity style={[styles.logActionIconButton, { backgroundColor: colors.primaryContainer }]} onPress={() => downloadLogFile(file.name)} activeOpacity={0.7}>
+															<Ionicons name="download" size={16} color={colors.primary} />
+														</TouchableOpacity>
+														<TouchableOpacity style={[styles.logActionIconButton, { backgroundColor: colors.error + '15' }]} onPress={() => handleDeleteLogFile(file.name)} activeOpacity={0.7}>
+															<Ionicons name="trash" size={16} color={colors.error} />
+														</TouchableOpacity>
+													</View>
+												</View>
+											))}
+										</ScrollView>
+									)}
+								</View>
+							)}
+						</View>
+					</View>
+				</View>
+			</Modal>
 		</ScrollView>
 	)
 }
@@ -356,5 +522,125 @@ const createStyles = (colors: any) =>
 		madeWith: {
 			fontSize: 12,
 			color: colors.textTertiary
+		},
+		modalOverlay: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+			padding: 20,
+			backgroundColor: colors.modalOverlay
+		},
+		modalCard: {
+			width: '100%',
+			maxWidth: 550,
+			height: '80%',
+			borderRadius: 24,
+			borderWidth: 1.5,
+			borderColor: colors.border,
+			backgroundColor: colors.card,
+			padding: 24,
+			display: 'flex',
+			flexDirection: 'column'
+		},
+		modalHeader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			marginBottom: 20
+		},
+		modalTitle: {
+			fontSize: 20,
+			fontWeight: '700',
+			color: colors.text
+		},
+		closeModalButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 18,
+			backgroundColor: colors.surfaceVariant,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		modalBody: {
+			flex: 1
+		},
+		logFileItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingVertical: 14,
+			borderBottomWidth: 1,
+			borderBottomColor: colors.border
+		},
+		logFileInfo: {
+			flex: 1,
+			marginRight: 12
+		},
+		logFileName: {
+			fontSize: 15,
+			fontWeight: '600',
+			color: colors.text
+		},
+		logFileMeta: {
+			fontSize: 12,
+			color: colors.textTertiary,
+			marginTop: 4
+		},
+		logFileActions: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8
+		},
+		logActionIconButton: {
+			width: 36,
+			height: 36,
+			borderRadius: 10,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		emptyLogs: {
+			flex: 1,
+			justifyContent: 'center',
+			alignItems: 'center',
+			paddingVertical: 40,
+			gap: 12
+		},
+		emptyLogsText: {
+			fontSize: 14,
+			color: colors.textSecondary
+		},
+		viewerSubheader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingBottom: 12,
+			borderBottomWidth: 1,
+			borderBottomColor: colors.border,
+			marginBottom: 16
+		},
+		backButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4
+		},
+		backButtonText: {
+			fontSize: 14,
+			fontWeight: '600',
+			color: colors.primary
+		},
+		logViewerActions: {
+			flexDirection: 'row',
+			gap: 8
+		},
+		logScrollView: {
+			flex: 1,
+			backgroundColor: '#0F172A',
+			borderRadius: 12,
+			padding: 12
+		},
+		logText: {
+			fontFamily: Platform.select({ ios: 'Courier', android: 'monospace', web: 'monospace' }),
+			fontSize: 11,
+			color: '#38BDF8',
+			lineHeight: 16
 		}
 	})
