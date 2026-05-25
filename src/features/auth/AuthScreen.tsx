@@ -124,94 +124,48 @@ export default function AuthScreen() {
 
 	const handleSignIn = async () => {
 		try {
-			log({
-				level: 'info',
-				label: 'auth',
-				message: 'Attempting to sign in',
-				data: { slug }
-			})
+			log({ level: 'info', label: 'auth', message: 'Attempting to sign in', data: { slug } })
 			const response = await signIn(slug, password)
-			log({
-				level: 'debug',
-				label: 'auth',
-				message: 'Sign in response received',
-				data: { status: response.status }
-			})
+			log({ level: 'debug', label: 'auth', message: 'Sign in response received', data: { status: response.status } })
 
 			const token = await secureGetItem('authToken')
-			log({
-				level: 'debug',
-				label: 'auth',
-				message: 'Token verification',
-				data: { hasToken: !!token }
-			})
+			log({ level: 'debug', label: 'auth', message: 'Token verification', data: { hasToken: !!token } })
 
 			if (token) {
-				log({
-					level: 'info',
-					label: 'auth',
-					message: 'Navigating to /home'
-				})
+				log({ level: 'info', label: 'auth', message: 'Navigating to /home' })
 				await refreshUser()
 				router.replace('/(home)/feed')
 			} else {
-				log({
-					level: 'error',
-					label: 'auth',
-					message: 'No token received after sign in'
-				})
+				log({ level: 'error', label: 'auth', message: 'No token received after sign in' })
 				showAlert(translate('error', 'Error'), translate('signin_failed', 'Sign in failed. Please try again.'))
 			}
 		} catch (error: any) {
-			log({
-				level: 'error',
-				label: 'auth',
-				message: 'Sign in failed',
-				error
-			})
+			log({ level: 'error', label: 'auth', message: 'Sign in failed', error })
 			const responseData = error.response?.data
 			const status = error.response?.status || responseData?.status || responseData?.statusCode
 			const message = responseData?.message || error.message
 
-			log({
-				level: 'debug',
-				label: 'auth',
-				message: 'Error details',
-				data: { status, message }
-			})
+			log({ level: 'debug', label: 'auth', message: 'Error details', data: { status, message } })
 
 			if (status === 404 || status === '404') {
 				setStatusState('404')
 				setErrorMessage(message)
 			} else if (status === 409 || status === '409') {
-				log({
-					level: 'warn',
-					label: 'auth',
-					message: 'Incorrect password attempt'
-				})
+				log({ level: 'warn', label: 'auth', message: 'Incorrect password attempt' })
 				setPassword('')
 				setStatusState('409')
 				setErrorMessage(translate('incorrect_password', 'Incorrect password. Try again'))
 			} else if (status === 401 || status === '401') {
 				showAlert(translate('unauthorized', 'Unauthorized'), message || translate('invalid_credentials', 'Invalid credentials. Please check your username and password.'))
 			} else {
-				log({
-					level: 'error',
-					label: 'auth',
-					message: 'Generic login error',
-					error
-				})
+				log({ level: 'error', label: 'auth', message: 'Generic login error', error })
 				showAlert(translate('error', 'Error'), message || translate('signin_failed', 'Sign in failed. Please check your credentials and try again.'))
 			}
 		}
 	}
 
 	const handleGo = async () => {
-		log({
-			level: 'debug',
-			label: 'auth',
-			message: 'Go pressed'
-		})
+		log({ level: 'debug', label: 'auth', message: 'Go pressed' })
 		await handleSignIn()
 	}
 
@@ -221,12 +175,7 @@ export default function AuthScreen() {
 			await refreshUser()
 			router.replace('/(home)/feed')
 		} catch (error) {
-			log({
-				level: 'error',
-				label: 'auth',
-				message: 'Sign up failed',
-				error
-			})
+			log({ level: 'error', label: 'auth', message: 'Sign up failed', error })
 		}
 	}
 

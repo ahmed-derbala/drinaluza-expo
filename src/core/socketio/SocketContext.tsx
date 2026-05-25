@@ -31,7 +31,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			return
 		}
 
-		console.log('[Socket] Initializing for user:', user.slug)
+		log({ level: 'info', label: 'socket', message: `Initializing for user: ${user.slug}` })
 
 		// Initialize socket with query for room auto-join
 		const socket = io(BACKEND_URL, {
@@ -47,17 +47,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		socketRef.current = socket
 
 		socket.on('connect', () => {
-			console.log('[Socket] Connected to server:', socket.id)
 			log({ level: 'info', label: 'socket', message: 'Connected to socket server', data: { id: socket.id, userSlug: user.slug } })
 		})
 
 		socket.on('connect_error', (error) => {
-			console.error('[Socket] Connection error:', error.message)
 			log({ level: 'error', label: 'socket', message: 'Socket connection error', error })
 		})
 
 		socket.on('new_notification', async (data: any) => {
-			console.log('[Socket] New notification received:', data)
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
 
 			const toastTitle = data.title || 'New notification'
@@ -96,12 +93,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		})
 
 		socket.on('disconnect', (reason) => {
-			console.log('[Socket] Disconnected:', reason)
 			log({ level: 'info', label: 'socket', message: 'Disconnected from socket server', data: { reason } })
 		})
 
 		return () => {
-			console.log('[Socket] Cleaning up connection')
+			log({ level: 'info', label: 'socket', message: 'Cleaning up connection' })
 			socket.disconnect()
 			socketRef.current = null
 		}

@@ -119,9 +119,6 @@ const showErrorAlert = (error: any, onRetry?: () => void) => {
 	showPopup(errorInfo.title, errorInfo.message, buttons)
 }
 
-/**
- * Log error details for debugging (only in development)
- */
 import { log } from '../log'
 
 /**

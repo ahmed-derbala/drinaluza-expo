@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Image, Platform, Alert } from 'react-native'
+import React, { useRef } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Platform, Alert } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Print from 'expo-print'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
-import QRCode from 'qrcode'
+import QRCode from 'react-native-qrcode-svg'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 
@@ -20,36 +20,69 @@ export interface QRCodeModalProps {
 export default function QRCodeModal({ visible, onClose, value, title, subtitle, filenamePrefix = 'qrcode' }: QRCodeModalProps) {
 	const { colors } = useTheme()
 	const { translate } = useUser()
-	const [qrCodeBase64, setQrCodeBase64] = useState<string | null>(null)
-	const [generatingQR, setGeneratingQR] = useState(false)
+	const qrRef = useRef<any>(null)
+	const containerRef = useRef<View>(null)
 
-	const generateQRCodeOnFly = useCallback(async () => {
-		if (!value) return
-		try {
-			setGeneratingQR(true)
-			const base64DataUrl = await QRCode.toDataURL(value, { width: 500, margin: 2 })
-			setQrCodeBase64(base64DataUrl)
-		} catch (err) {
-			console.error('Failed to generate QR code on fly:', err)
-		} finally {
-			setGeneratingQR(false)
-		}
-	}, [value])
+	// Get base64 representation of the QR code in a platform-resilient way
+	const getQrBase64 = (): Promise<string> => {
+		return new Promise((resolve, reject) => {
+			if (Platform.OS === 'web') {
+				try {
+					const container = containerRef.current as any
+					const svgElement = container?.querySelector ? container.querySelector('svg') : document.querySelector('svg')
+					if (!svgElement) {
+						reject(new Error('SVG element not found'))
+						return
+					}
+					const svgString = new XMLSerializer().serializeToString(svgElement)
+					const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
+					const blobUrl = (window.URL || window.webkitURL).createObjectURL(svgBlob)
 
-	useEffect(() => {
-		if (visible && (!qrCodeBase64 || value)) {
-			generateQRCodeOnFly()
-		}
-	}, [visible, value, generateQRCodeOnFly])
-
-	useEffect(() => {
-		if (!visible) {
-			setQrCodeBase64(null)
-		}
-	}, [visible])
+					const img = new window.Image()
+					img.onload = () => {
+						const canvas = document.createElement('canvas')
+						canvas.width = 300
+						canvas.height = 300
+						const ctx = canvas.getContext('2d')
+						if (ctx) {
+							ctx.drawImage(img, 0, 0, 300, 300)
+							const pngUrl = canvas.toDataURL('image/png')
+							;(window.URL || window.webkitURL).revokeObjectURL(blobUrl)
+							resolve(pngUrl)
+						} else {
+							reject(new Error('Failed to get canvas context'))
+						}
+					}
+					img.onerror = (e) => {
+						reject(e)
+					}
+					img.src = blobUrl
+				} catch (error) {
+					reject(error)
+				}
+			} else {
+				if (qrRef.current) {
+					qrRef.current.toDataURL((data: string) => {
+						resolve(`data:image/png;base64,${data}`)
+					})
+				} else {
+					reject(new Error('QR ref not ready'))
+				}
+			}
+		})
+	}
 
 	const handlePrint = async () => {
-		if (!qrCodeBase64) return
+		try {
+			const base64Url = await getQrBase64()
+			await printHtml(base64Url)
+		} catch (error) {
+			console.error('Print failed:', error)
+			Alert.alert(translate('error', 'Error'), 'Failed to generate printable QR')
+		}
+	}
+
+	const printHtml = async (base64Url: string) => {
 		try {
 			const html = `
 				<html>
@@ -58,7 +91,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 					</head>
 					<body style="text-align: center; margin-top: 50px; font-family: sans-serif;">
 						<h1>${title}</h1>
-						<img src="${qrCodeBase64}" style="width: 300px; height: 300px;" />
+						<img src="${base64Url}" style="width: 300px; height: 300px;" />
 						${subtitle ? `<h2 style="color: #666; margin-top: 20px;">${subtitle}</h2>` : ''}
 						<p style="color: #666; margin-top: 10px; font-size: 16px;">${value}</p>
 					</body>
@@ -101,19 +134,20 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 	}
 
 	const handleDownload = async () => {
-		if (!qrCodeBase64) return
 		try {
+			const base64Url = await getQrBase64()
 			const cleanPrefix = filenamePrefix.replace(/[^a-zA-Z0-9_-]/g, '_')
+			const filename = `${cleanPrefix}_qrcode.png`
+
 			if (Platform.OS === 'web') {
 				const link = document.createElement('a')
-				link.href = qrCodeBase64
-				link.download = `${cleanPrefix}_qrcode.png`
+				link.href = base64Url
+				link.download = filename
 				document.body.appendChild(link)
 				link.click()
 				document.body.removeChild(link)
 			} else {
-				const base64Data = qrCodeBase64.split(',')[1]
-				const filename = `${cleanPrefix}_qrcode.png`
+				const base64Data = base64Url.split(',')[1]
 				const fileUri = FileSystem.documentDirectory + filename
 				await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: FileSystem.EncodingType.Base64 })
 				if (await Sharing.isAvailableAsync()) {
@@ -124,6 +158,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 			}
 		} catch (error) {
 			console.error('Download failed:', error)
+			Alert.alert(translate('error', 'Error'), 'Failed to download/share QR')
 		}
 	}
 
@@ -147,19 +182,25 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 					) : null}
 
 					{/* QR Code Container */}
-					<View style={[styles.qrImageContainer, { borderColor: colors.primary + '30', backgroundColor: '#FFFFFF', marginTop: subtitle ? 0 : 16 }]}>
-						{generatingQR ? (
-							<ActivityIndicator size="large" color={colors.primary} />
-						) : qrCodeBase64 ? (
-							<Image source={{ uri: qrCodeBase64 }} style={styles.qrModalImage} />
+					<View ref={containerRef} style={[styles.qrImageContainer, { borderColor: colors.primary + '30', backgroundColor: '#FFFFFF', marginTop: subtitle ? 0 : 16 }]}>
+						{visible && value ? (
+							<QRCode
+								value={value}
+								size={190}
+								color="#0B132B"
+								backgroundColor="#FFFFFF"
+								getRef={(ref) => {
+									qrRef.current = ref
+								}}
+							/>
 						) : (
-							<Text style={{ color: colors.textSecondary }}>Failed to generate QR</Text>
+							<ActivityIndicator size="large" color={colors.primary} />
 						)}
 					</View>
 
 					{/* Action Buttons */}
 					<View style={styles.qrActions}>
-						<TouchableOpacity style={[styles.qrActionBtn, { backgroundColor: colors.primary }]} onPress={handleDownload} activeOpacity={0.8} disabled={generatingQR || !qrCodeBase64}>
+						<TouchableOpacity style={[styles.qrActionBtn, { backgroundColor: colors.primary }]} onPress={handleDownload} activeOpacity={0.8} disabled={!value}>
 							<MaterialIcons name="file-download" size={22} color="#FFFFFF" />
 							<Text style={styles.qrActionBtnText}>{translate('download', 'Download')}</Text>
 						</TouchableOpacity>
@@ -168,7 +209,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 							style={[styles.qrActionBtn, { backgroundColor: colors.primaryContainer, borderColor: colors.primary, borderWidth: 1 }]}
 							onPress={handlePrint}
 							activeOpacity={0.8}
-							disabled={generatingQR || !qrCodeBase64}
+							disabled={!value}
 						>
 							<MaterialIcons name="print" size={22} color={colors.primary} />
 							<Text style={[styles.qrActionBtnText, { color: colors.primary }]}>{translate('print', 'Print')}</Text>
@@ -253,11 +294,6 @@ const styles = StyleSheet.create({
 				elevation: 4
 			}
 		})
-	},
-	qrModalImage: {
-		width: '100%',
-		height: '100%',
-		borderRadius: 12
 	},
 	qrActions: {
 		flexDirection: 'row',
