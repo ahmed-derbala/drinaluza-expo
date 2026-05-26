@@ -47,5 +47,12 @@ export const fr = {
 	appearance: 'Apparence',
 	theme_system: 'Système',
 	theme_light: 'Clair',
-	theme_dark: 'Sombre'
+	theme_dark: 'Sombre',
+	username_invalid_chars: "Le nom d'utilisateur ne peut contenir que des lettres minuscules, des chiffres et des traits d'union.",
+	username_invalid_hyphen: "Le trait d'union (-) ne peut pas être le premier ou le dernier caractère du nom d'utilisateur.",
+	share_options_title: 'Options de partage',
+	share_options_msg: 'Choisissez comment vous souhaitez partager Drinaluza :',
+	share_version_url: "Partager l'URL de la dernière version",
+	share_apk_file: 'Partager le fichier APK le plus récent',
+	share_apk_not_downloaded: "Le fichier APK le plus récent n'a pas encore été téléchargé. Vous pouvez partager l'URL de la dernière version à la place."
 }

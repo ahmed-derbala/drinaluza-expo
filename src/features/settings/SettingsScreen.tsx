@@ -1,7 +1,7 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal, Share } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal, Share, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -46,26 +46,64 @@ export default function SettingsScreen() {
 		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
 		const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 
-		try {
-			if (Platform.OS !== 'web') {
-				const fileInfo = await FileSystem.getInfoAsync(localUri)
-				if (fileInfo.exists && (await Sharing.isAvailableAsync())) {
-					await Sharing.shareAsync(localUri, {
-						mimeType: 'application/vnd.android.package-archive',
-						dialogTitle: `Share Drinaluza v${version} APK`
-					})
-					return
-				}
+		const shareUrl = async () => {
+			try {
+				await Share.share({
+					message: translate('share_apk_url_msg', `Download Drinaluza v${version} APK: ${downloadUrl}`),
+					title: `Drinaluza v${version}`
+				})
+			} catch (error) {
+				console.warn('[settings] Failed to share URL:', error)
+				Linking.openURL(downloadUrl)
 			}
+		}
 
-			// Fallback: Share download link
-			await Share.share({
-				message: `Download Drinaluza v${version} APK: ${downloadUrl}`,
-				title: `Drinaluza v${version}`
-			})
+		const shareFile = async () => {
+			try {
+				if (Platform.OS !== 'web') {
+					if (await Sharing.isAvailableAsync()) {
+						await Sharing.shareAsync(localUri, {
+							mimeType: 'application/vnd.android.package-archive',
+							dialogTitle: translate('share_apk_file_title', `Share Drinaluza v${version} APK`)
+						})
+					}
+				}
+			} catch (error) {
+				console.warn('[settings] Failed to share file:', error)
+				toast.show({
+					title: translate('error', 'Error'),
+					message: translate('share_file_failed', 'Failed to share file. Please try again.'),
+					color: colors.error
+				})
+			}
+		}
+
+		if (Platform.OS === 'web') {
+			await shareUrl()
+			return
+		}
+
+		try {
+			const fileInfo = await FileSystem.getInfoAsync(localUri)
+			if (fileInfo.exists) {
+				Alert.alert(translate('share_options_title', 'Share Options'), translate('share_options_msg', 'Choose how you want to share Drinaluza:'), [
+					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
+					{ text: translate('share_version_url', 'Share Latest Version URL'), onPress: shareUrl },
+					{ text: translate('share_apk_file', 'Share Latest APK File'), onPress: shareFile }
+				])
+			} else {
+				Alert.alert(
+					translate('share_options_title', 'Share Options'),
+					translate('share_apk_not_downloaded', 'The latest APK file has not been downloaded yet. You can share the latest version URL instead.'),
+					[
+						{ text: translate('cancel', 'Cancel'), style: 'cancel' },
+						{ text: translate('share_version_url', 'Share Latest Version URL'), onPress: shareUrl }
+					]
+				)
+			}
 		} catch (error) {
-			console.warn('[settings] Failed to share:', error)
-			Linking.openURL(downloadUrl)
+			console.warn('[settings] Error checking APK for share:', error)
+			await shareUrl()
 		}
 	}
 

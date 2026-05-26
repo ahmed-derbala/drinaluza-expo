@@ -202,5 +202,12 @@ export const tn_latn = {
 	appearance: 'Appearance',
 	theme_system: 'System',
 	theme_light: 'Light',
-	theme_dark: 'Dark'
+	theme_dark: 'Dark',
+	username_invalid_chars: 'Username yestaqbel ken hrouf sghar, aadaad, w (-).',
+	username_invalid_hyphen: 'El alama (-) ma tjinich fel lwel wela fel lekher mtaal username.',
+	share_options_title: 'Khyarat el partage',
+	share_options_msg: 'Ekhtar kifach theb t-partagi Drinaluza:',
+	share_version_url: 'Partagi lien el version el jdida',
+	share_apk_file: 'Partagi fichier APK el lekhrani',
+	share_apk_not_downloaded: 'Fichier APK el lekhrani mouch masboub tawa. Tnajem t-partagi lien el version el jdida fi blastou.'
 }

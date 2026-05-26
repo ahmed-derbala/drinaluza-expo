@@ -47,5 +47,12 @@ export const ar = {
 	appearance: 'المظهر',
 	theme_system: 'النظام',
 	theme_light: 'فاتح',
-	theme_dark: 'داكن'
+	theme_dark: 'داكن',
+	username_invalid_chars: 'يمكن أن يحتوي اسم المستخدم فقط على أحرف لاتينية صغيرة وأرقام وعلامة (-).',
+	username_invalid_hyphen: 'لا يمكن أن تكون العلامة (-) الحرف الأول أو الأخير في اسم المستخدم.',
+	share_options_title: 'خيارات المشاركة',
+	share_options_msg: 'اختر طريقة مشاركة تطبيق درينالوزة:',
+	share_version_url: 'مشاركة رابط أحدث نسخة',
+	share_apk_file: 'مشاركة ملف APK الأخير',
+	share_apk_not_downloaded: 'لم يتم تنزيل ملف APK الأخير بعد. يمكنك مشاركة رابط أحدث نسخة بدلاً من ذلك.'
 }

@@ -220,5 +220,12 @@ export const en = {
 	appearance: 'Appearance',
 	theme_system: 'System',
 	theme_light: 'Light',
-	theme_dark: 'Dark'
+	theme_dark: 'Dark',
+	username_invalid_chars: 'Username can only contain lowercase letters, numbers, and hyphens.',
+	username_invalid_hyphen: 'Hyphen (-) cannot be the first or last character of the username.',
+	share_options_title: 'Share Options',
+	share_options_msg: 'Choose how you want to share Drinaluza:',
+	share_version_url: 'Share Latest Version URL',
+	share_apk_file: 'Share Latest APK File',
+	share_apk_not_downloaded: 'The latest APK file has not been downloaded yet. You can share the latest version URL instead.'
 }

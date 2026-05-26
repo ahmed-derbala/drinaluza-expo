@@ -202,5 +202,12 @@ export const tn_arab = {
 	appearance: 'المظهر',
 	theme_system: 'النظام',
 	theme_light: 'فاتح',
-	theme_dark: 'داكن'
+	theme_dark: 'داكن',
+	username_invalid_chars: 'اسم المستخدم ينجم يكون فيه كان حروف لاتينية صغيرة، أرقام و علامة (-).',
+	username_invalid_hyphen: 'العلامة (-) ما تجيش هي الحرف اللولاني وإلا اللخراني في اسم المستخدم.',
+	share_options_title: 'خيارات المشاركة',
+	share_options_msg: 'اختار كيفاش تحب تبارتاجي درينالوزة:',
+	share_version_url: 'بارتاجي ليان النسخة الجديدة',
+	share_apk_file: 'بارتاجي فيشي APK اللخراني',
+	share_apk_not_downloaded: 'فيشي APK اللخراني موش مسبوب توة. تنجم تبارتاجي ليان النسخة الجديدة في بلاصتو.'
 }

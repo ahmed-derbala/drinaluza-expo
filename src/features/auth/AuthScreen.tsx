@@ -30,6 +30,11 @@ export default function AuthScreen() {
 	const [saveAccount, setSaveAccount] = useState(true)
 	const [needPassword, setNeedPassword] = useState(false)
 
+	const handleSlugChange = (text: string) => {
+		const sanitized = text.toLowerCase().replace(/[^a-z0-9-]/g, '')
+		setSlug(sanitized)
+	}
+
 	// UI and loader states
 	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
 	const [isLoading, setIsLoading] = useState(false)
@@ -138,10 +143,26 @@ export default function AuthScreen() {
 
 	// Single Continue Button Logic
 	const handleContinue = async () => {
-		if (!slug.trim()) {
+		const trimmedSlug = slug.trim()
+		if (!trimmedSlug) {
 			showAlert(translate('error', 'Error'), translate('username_required', 'Username is required.'))
 			return
 		}
+
+		// Enforce slug validation
+		// lower case latin letters, numbers, and "-" only
+		const isValidSlugFormat = /^[a-z0-9-]+$/.test(trimmedSlug)
+		if (!isValidSlugFormat) {
+			showAlert(translate('error', 'Error'), translate('username_invalid_chars', 'Username can only contain lowercase letters, numbers, and hyphens.'))
+			return
+		}
+
+		// "-" must not be the first or last character
+		if (trimmedSlug.startsWith('-') || trimmedSlug.endsWith('-')) {
+			showAlert(translate('error', 'Error'), translate('username_invalid_hyphen', 'Hyphen (-) cannot be the first or last character of the username.'))
+			return
+		}
+
 		if (!password.trim()) {
 			showAlert(translate('error', 'Error'), translate('password_required', 'Password is required.'))
 			return
@@ -149,8 +170,8 @@ export default function AuthScreen() {
 
 		setIsLoading(true)
 		try {
-			log({ level: 'info', label: 'auth', message: 'Attempting to sign in via unified button', data: { slug } })
-			await signIn(slug.trim(), password.trim(), saveAccount, needPassword)
+			log({ level: 'info', label: 'auth', message: 'Attempting to sign in via unified button', data: { slug: trimmedSlug } })
+			await signIn(trimmedSlug, password.trim(), saveAccount, needPassword)
 
 			await refreshUser()
 			router.replace('/(home)/feed')
@@ -162,7 +183,7 @@ export default function AuthScreen() {
 				// User not found -> Prompt user if they want to Sign Up
 				setIsLoading(false)
 				const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
-				const profileUrl = `${frontendUrl}/u/${slug.trim()}`
+				const profileUrl = `${frontendUrl}/u/${trimmedSlug}`
 				const signupMessage = `${translate('user_not_found_signup', 'User not found. Do you want to sign up? Your public profile will be accessible at:')} ${profileUrl}`
 
 				if (Platform.OS === 'web') {
@@ -373,7 +394,7 @@ export default function AuthScreen() {
 									placeholder={translate('username', 'Username')}
 									placeholderTextColor={colors.textTertiary}
 									value={slug}
-									onChangeText={setSlug}
+									onChangeText={handleSlugChange}
 									autoCapitalize="none"
 									autoCorrect={false}
 									editable={!isLoading}
