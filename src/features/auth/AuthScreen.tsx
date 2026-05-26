@@ -1,37 +1,48 @@
-import React, { useState, useCallback } from 'react'
-import { View, TextInput, Button, Text, TouchableOpacity, Alert, useWindowDimensions, Platform, StyleSheet, ScrollView, KeyboardAvoidingView } from 'react-native'
+import React, { useState, useCallback, useRef } from 'react'
+import { View, TextInput, Text, TouchableOpacity, Alert, useWindowDimensions, Platform, StyleSheet, ScrollView, KeyboardAvoidingView, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useRouter, useFocusEffect } from 'expo-router'
+import { useRouter, useFocusEffect, Stack } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
+
 import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth } from './auth.api'
-import { secureGetItem } from '@/core/storage'
 import { useTheme } from '@/core/theme'
 import { showAlert } from '@/core/helpers/popup'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
-import { LANGUAGES, CURRENCIES } from '@/config/settings'
+import { LANGUAGES } from '@/config/settings'
+import SmartImage from '@/core/helpers/SmartImage'
 
 export default function AuthScreen() {
 	const { colors } = useTheme()
-	const { translate, setAppLang, setCurrency, appLang, currency, refreshUser } = useUser()
+	const { translate, setAppLang, setContentLang, appLang, refreshUser } = useUser()
 	useBackButton()
 	const { width } = useWindowDimensions()
-	const maxWidth = 600
+	const maxWidth = 520
 	const isWideScreen = width > maxWidth
-	const [slug, setSlug] = useState<string>('')
-	const [password, setPassword] = useState<string>('')
-	const [statusState, setStatusState] = useState<'initial' | '404' | '409'>('initial')
-	const [errorMessage, setErrorMessage] = useState('')
-	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
-	const [isLoading, setIsLoading] = useState(false)
 	const router = useRouter()
 
+	// Form fields
+	const [slug, setSlug] = useState('')
+	const [password, setPassword] = useState('')
+	const [saveAccount, setSaveAccount] = useState(true)
+	const [needPassword, setNeedPassword] = useState(false)
+
+	// UI and loader states
+	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
+	const [isLoading, setIsLoading] = useState(false)
+	const passwordRef = useRef<TextInput>(null)
+
+	// Load saved accounts from secure storage
 	const loadSavedAuths = async () => {
-		const auths = await getSavedAuthentications()
-		setSavedAuths(auths)
+		try {
+			const auths = await getSavedAuthentications()
+			setSavedAuths(auths)
+		} catch (error) {
+			log({ level: 'error', label: 'auth', message: 'Failed to load saved authentications', error })
+		}
 	}
 
 	useFocusEffect(
@@ -40,50 +51,159 @@ export default function AuthScreen() {
 		}, [])
 	)
 
-	const handleQuickSignIn = async (auth: SavedAuth) => {
-		try {
+	// Handles removing a saved account
+	const handleDeleteSavedAuth = async (authSlug: string) => {
+		await deleteSavedAuthentication(authSlug)
+		await loadSavedAuths()
+		toastSuccess(translate('account_removed', 'Account removed successfully!'))
+	}
+
+	const toastSuccess = (msg: string) => {
+		if (Platform.OS === 'web') {
+			console.log(msg)
+		}
+	}
+
+	// Handles switching or logging into a saved account
+	const handleSwitchAccount = async (auth: SavedAuth) => {
+		if (auth.needPassword) {
+			// Require password manually
+			setSlug(auth.slug)
+			setPassword('')
+			setNeedPassword(true)
+			// Small timeout to allow input focus
+			setTimeout(() => {
+				passwordRef.current?.focus()
+			}, 150)
+			showAlert(translate('switch_requires_password', 'Password Required'), translate('need_password_notice', 'Please enter your password to switch to this account.'))
+		} else {
+			// Try seamless quick sign-in using the saved token
 			setIsLoading(true)
-			const success = await signInWithToken(auth.token)
-			if (success) {
-				await refreshUser()
-				router.replace('/(home)/feed')
-			} else {
+			try {
+				const success = await signInWithToken(auth.token)
+				if (success) {
+					await refreshUser()
+					router.replace('/(home)/feed')
+				} else {
+					// Token expired or invalid
+					setSlug(auth.slug)
+					setPassword('')
+					setTimeout(() => {
+						passwordRef.current?.focus()
+					}, 150)
+					showAlert(translate('session_expired_title', 'Session Expired'), translate('token_expired_notice', 'Session token has expired. Please enter your password.'))
+					// Remove the stale authentication entry
+					await deleteSavedAuthentication(auth.slug)
+					await loadSavedAuths()
+				}
+			} catch (error) {
+				log({ level: 'error', label: 'auth', message: 'Quick sign in token failed', error })
 				setSlug(auth.slug)
 				setPassword('')
-				showAlert(translate('error', 'Error'), translate('session_expired', 'Session expired. Please sign in again with your password.'))
-				await deleteSavedAuthentication(auth.slug)
-				loadSavedAuths()
+				showAlert(translate('error', 'Error'), translate('token_expired_notice', 'Session token has expired. Please enter your password.'))
+			} finally {
+				setIsLoading(false)
 			}
-		} catch (error) {
-			showAlert(translate('error', 'Error'), translate('quick_signin_failed', 'Quick sign in failed.'))
+		}
+	}
+
+	// Sign Up workflow
+	const handleSignUp = async () => {
+		setIsLoading(true)
+		try {
+			const initialSettings = {
+				lang: {
+					app: appLang,
+					content: appLang
+				},
+				currency: 'tnd'
+			}
+
+			await signUp(slug.trim(), password.trim(), { settings: initialSettings }, saveAccount, needPassword)
+
+			// Update app & content languages in storage with the selected language
+			await setAppLang(appLang)
+			await setContentLang(appLang)
+
+			await refreshUser()
+			router.replace('/(home)/feed')
+		} catch (error: any) {
+			log({ level: 'error', label: 'auth', message: 'Sign up failed', error })
+			const errMsg = error.response?.data?.message || error.message || 'Signup failed. Please try again.'
+			showAlert(translate('error', 'Error'), errMsg)
 		} finally {
 			setIsLoading(false)
 		}
 	}
 
-	const handleDeleteSavedAuth = async (authSlug: string) => {
-		await deleteSavedAuthentication(authSlug)
-		loadSavedAuths()
+	// Single Continue Button Logic
+	const handleContinue = async () => {
+		if (!slug.trim()) {
+			showAlert(translate('error', 'Error'), translate('username_required', 'Username is required.'))
+			return
+		}
+		if (!password.trim()) {
+			showAlert(translate('error', 'Error'), translate('password_required', 'Password is required.'))
+			return
+		}
+
+		setIsLoading(true)
+		try {
+			log({ level: 'info', label: 'auth', message: 'Attempting to sign in via unified button', data: { slug } })
+			await signIn(slug.trim(), password.trim(), saveAccount, needPassword)
+
+			await refreshUser()
+			router.replace('/(home)/feed')
+		} catch (error: any) {
+			const responseData = error.response?.data
+			const status = error.response?.status || responseData?.status || responseData?.statusCode
+
+			if (status === 404 || status === '404') {
+				// User not found -> Prompt user if they want to Sign Up
+				setIsLoading(false)
+				const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
+				const profileUrl = `${frontendUrl}/u/${slug.trim()}`
+				const signupMessage = `${translate('user_not_found_signup', 'User not found. Do you want to sign up? Your public profile will be accessible at:')} ${profileUrl}`
+
+				if (Platform.OS === 'web') {
+					if (window.confirm(signupMessage)) {
+						await handleSignUp()
+					}
+				} else {
+					Alert.alert(translate('user_not_found', 'User Not Found'), signupMessage, [
+						{ text: translate('cancel', 'Cancel'), style: 'cancel' },
+						{ text: translate('sign_up', 'Sign Up'), onPress: handleSignUp }
+					])
+				}
+			} else if (status === 409 || status === '409') {
+				// Incorrect password -> Prompt user to verify it
+				setIsLoading(false)
+				setPassword('')
+				const verifyMessage = translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.')
+
+				if (Platform.OS === 'web') {
+					window.alert(verifyMessage)
+				} else {
+					Alert.alert(translate('error', 'Error'), verifyMessage)
+				}
+				passwordRef.current?.focus()
+			} else {
+				setIsLoading(false)
+				const errMsg = responseData?.message || error.message || 'Authentication failed.'
+				showAlert(translate('error', 'Error'), errMsg)
+			}
+		}
 	}
 
+	// Resets the app storage completely
 	const handleResetApp = async () => {
 		const performReset = async () => {
 			try {
-				// Clear AsyncStorage (works on both Android and web)
 				await AsyncStorage.clear()
 				setSavedAuths([])
-
-				// Clear web-specific storage
 				if (Platform.OS === 'web') {
-					// Clear localStorage
-					if (typeof localStorage !== 'undefined') {
-						localStorage.clear()
-					}
-					// Clear sessionStorage
-					if (typeof sessionStorage !== 'undefined') {
-						sessionStorage.clear()
-					}
-					// Clear all cookies
+					if (typeof localStorage !== 'undefined') localStorage.clear()
+					if (typeof sessionStorage !== 'undefined') sessionStorage.clear()
 					if (typeof document !== 'undefined' && document.cookie) {
 						document.cookie.split(';').forEach((cookie) => {
 							const eqPos = cookie.indexOf('=')
@@ -91,14 +211,9 @@ export default function AuthScreen() {
 							document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
 						})
 					}
-				}
-
-				log({ level: 'info', label: 'auth', message: 'App reset performed - all data cleared' })
-
-				if (Platform.OS === 'web') {
 					window.location.reload()
 				} else {
-					Alert.alert(translate('success', 'Success'), translate('reset_success', 'App reset successfully.'), [{ text: translate('ok', 'OK') }])
+					Alert.alert(translate('success', 'Success'), translate('reset_success', 'App reset successfully.'))
 				}
 			} catch (error) {
 				log({ level: 'error', label: 'auth', message: 'Failed to reset app', error })
@@ -106,228 +221,202 @@ export default function AuthScreen() {
 			}
 		}
 
+		const confirmMessage = translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.')
 		if (Platform.OS === 'web') {
-			if (window.confirm(translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'))) {
+			if (window.confirm(confirmMessage)) {
 				await performReset()
 			}
 		} else {
-			Alert.alert(translate('reset_app', 'Reset App'), translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'), [
+			Alert.alert(translate('reset_app', 'Reset App'), confirmMessage, [
 				{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-				{
-					text: translate('reset', 'Reset'),
-					style: 'destructive',
-					onPress: performReset
-				}
+				{ text: translate('reset', 'Reset'), style: 'destructive', onPress: performReset }
 			])
 		}
 	}
 
-	const handleSignIn = async () => {
-		try {
-			log({ level: 'info', label: 'auth', message: 'Attempting to sign in', data: { slug } })
-			const response = await signIn(slug, password)
-			log({ level: 'debug', label: 'auth', message: 'Sign in response received', data: { status: response.status } })
-
-			const token = await secureGetItem('authToken')
-			log({ level: 'debug', label: 'auth', message: 'Token verification', data: { hasToken: !!token } })
-
-			if (token) {
-				log({ level: 'info', label: 'auth', message: 'Navigating to /home' })
-				await refreshUser()
-				router.replace('/(home)/feed')
-			} else {
-				log({ level: 'error', label: 'auth', message: 'No token received after sign in' })
-				showAlert(translate('error', 'Error'), translate('signin_failed', 'Sign in failed. Please try again.'))
-			}
-		} catch (error: any) {
-			log({ level: 'error', label: 'auth', message: 'Sign in failed', error })
-			const responseData = error.response?.data
-			const status = error.response?.status || responseData?.status || responseData?.statusCode
-			const message = responseData?.message || error.message
-
-			log({ level: 'debug', label: 'auth', message: 'Error details', data: { status, message } })
-
-			if (status === 404 || status === '404') {
-				setStatusState('404')
-				setErrorMessage(message)
-			} else if (status === 409 || status === '409') {
-				log({ level: 'warn', label: 'auth', message: 'Incorrect password attempt' })
-				setPassword('')
-				setStatusState('409')
-				setErrorMessage(translate('incorrect_password', 'Incorrect password. Try again'))
-			} else if (status === 401 || status === '401') {
-				showAlert(translate('unauthorized', 'Unauthorized'), message || translate('invalid_credentials', 'Invalid credentials. Please check your username and password.'))
-			} else {
-				log({ level: 'error', label: 'auth', message: 'Generic login error', error })
-				showAlert(translate('error', 'Error'), message || translate('signin_failed', 'Sign in failed. Please check your credentials and try again.'))
-			}
-		}
-	}
-
-	const handleGo = async () => {
-		log({ level: 'debug', label: 'auth', message: 'Go pressed' })
-		await handleSignIn()
-	}
-
-	const handleSignUp = async () => {
-		try {
-			await signUp(slug, password)
-			await refreshUser()
-			router.replace('/(home)/feed')
-		} catch (error) {
-			log({ level: 'error', label: 'auth', message: 'Sign up failed', error })
-		}
-	}
-
 	return (
-		<SafeAreaView style={[styles.safeArea, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
+		<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
 			<StatusBar style="light" />
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-				<ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-					<View style={[styles.innerContainer, isWideScreen && { maxWidth }]}>
-						<View style={styles.topUtilityBar}>
-							<TouchableOpacity onPress={() => router.replace('/(home)/feed' as any)} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-								<Ionicons name="home-outline" size={20} color={colors.primary} />
-							</TouchableOpacity>
-							<TouchableOpacity onPress={handleResetApp} style={[styles.utilityButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-								<Ionicons name="refresh-outline" size={20} color={colors.primary} />
-							</TouchableOpacity>
-						</View>
-						<Text style={[styles.title, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
-						<Text style={[styles.subtitle, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
+			<Stack.Screen
+				options={{
+					headerShown: true,
+					headerTitle: translate('auth_title', 'Drinaluza'),
+					headerTitleAlign: 'center',
+					headerStyle: {
+						backgroundColor: colors.card
+					},
+					headerTintColor: colors.text,
+					headerLeft: () => (
+						<TouchableOpacity
+							onPress={() => router.replace('/(home)/feed')}
+							style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
+							accessibilityLabel="Go to Feed"
+						>
+							<Ionicons name="home-outline" size={20} color={colors.primary} />
+						</TouchableOpacity>
+					),
+					headerRight: () => (
+						<TouchableOpacity onPress={handleResetApp} style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} accessibilityLabel="Reset Storage">
+							<Ionicons name="refresh-outline" size={20} color={colors.error} />
+						</TouchableOpacity>
+					)
+				}}
+			/>
 
-						{/* Language and Currency Selection */}
-						<View style={styles.settingsSection}>
-							<View style={styles.settingsGroup}>
-								<Text style={[styles.settingsLabel, { color: colors.textTertiary }]}>{translate('app_lang', 'Language')}</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsScroll}>
-									{LANGUAGES.map((lang) => (
+			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+				<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+					<View style={[styles.innerContent, isWideScreen && { maxWidth }]}>
+						{/* Logo / Branding */}
+						<View style={styles.brandingContainer}>
+							<Text style={[styles.logoText, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
+							<Text style={[styles.subtitleText, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
+						</View>
+
+						{/* App Language Selection */}
+						<View style={styles.langSection}>
+							<Text style={[styles.langSectionTitle, { color: colors.textSecondary }]}>{translate('app_lang', 'App Language')}</Text>
+							<View style={styles.langSelectorRow}>
+								{LANGUAGES.map((lang) => {
+									const isSelected = appLang === lang.code
+									return (
 										<TouchableOpacity
 											key={lang.code}
+											onPress={() => {
+												setAppLang(lang.code)
+												setContentLang(lang.code)
+											}}
 											style={[
-												styles.settingsOption,
-												{ backgroundColor: colors.surface, borderColor: colors.border },
-												appLang === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
+												styles.langOptionCard,
+												{
+													backgroundColor: isSelected ? colors.primary + '15' : colors.card,
+													borderColor: isSelected ? colors.primary : colors.border
+												}
 											]}
-											onPress={() => setAppLang(lang.code)}
+											activeOpacity={0.8}
 										>
-											<Text style={styles.flagText}>{lang.flag}</Text>
-											<Text style={[styles.optionLabel, { color: colors.text }, appLang === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
+											<Text style={styles.langOptionFlag}>
+												{lang.flag}
+												{lang.icon ? ` ${lang.icon}` : ''}
+											</Text>
+											<Text
+												style={[
+													styles.langOptionLabel,
+													{
+														color: isSelected ? colors.primary : colors.text,
+														fontWeight: isSelected ? '700' : '500'
+													}
+												]}
+											>
+												{lang.label}
+											</Text>
 										</TouchableOpacity>
-									))}
-								</ScrollView>
-							</View>
-
-							<View style={styles.settingsGroup}>
-								<Text style={[styles.settingsLabel, { color: colors.textTertiary }]}>{translate('currency_label', 'Currency')}</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsScroll}>
-									{CURRENCIES.map((curr) => (
-										<TouchableOpacity
-											key={curr.code}
-											style={[
-												styles.settingsOption,
-												{ backgroundColor: colors.surface, borderColor: colors.border },
-												currency === curr.code && { borderColor: colors.primary, backgroundColor: colors.primary + '10' }
-											]}
-											onPress={() => setCurrency(curr.code)}
-										>
-											<View style={[styles.currencySymbolContainer, { backgroundColor: colors.card }]}>
-												<Text style={[styles.currencySymbol, { color: colors.primary }]}>{curr.symbol}</Text>
-											</View>
-											<Text style={[styles.optionLabel, { color: colors.text }, currency === curr.code && { color: colors.primary, fontWeight: '700' }]}>{curr.label}</Text>
-										</TouchableOpacity>
-									))}
-								</ScrollView>
+									)
+								})}
 							</View>
 						</View>
 
+						{/* Saved Accounts */}
 						{savedAuths.length > 0 && (
-							<View style={styles.savedAuthsSection}>
-								<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
-								<View style={[styles.savedAuthsContainer, { borderColor: colors.border }]}>
-									<ScrollView style={styles.savedAuthsScroll} nestedScrollEnabled={true}>
-										{savedAuths.map((auth) => (
-											<TouchableOpacity key={auth.slug} style={[styles.savedAuthItem, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={() => handleQuickSignIn(auth)}>
-												<View style={[styles.authAvatar, { backgroundColor: colors.primaryContainer }]}>
-													<Ionicons name="person" size={20} color={colors.primary} />
+							<View style={styles.savedSection}>
+								<Text style={[styles.savedSectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
+								<ScrollView style={styles.savedAccountsScroll} contentContainerStyle={styles.savedAccountsList} nestedScrollEnabled>
+									{savedAuths.map((auth) => (
+										<TouchableOpacity
+											key={auth.slug}
+											onPress={() => handleSwitchAccount(auth)}
+											style={[styles.savedAccountCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+											activeOpacity={0.7}
+										>
+											{auth.photoUrl ? (
+												<SmartImage source={auth.photoUrl} style={styles.accountAvatar} entityType="user" />
+											) : (
+												<View style={[styles.accountAvatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '20' }]}>
+													<Ionicons name="person" size={18} color={colors.primary} />
 												</View>
-												<View style={styles.savedAuthInfo}>
-													<Text style={[styles.savedAuthSlug, { color: colors.text }]}>@{auth.slug}</Text>
-													<Text style={[styles.savedAuthDate, { color: colors.textTertiary }]}>
-														{translate('last_signin', 'Last')}: {new Date(auth.lastSignIn).toLocaleDateString()}
-													</Text>
+											)}
+											<View style={styles.accountInfoContainer}>
+												<Text style={[styles.accountName, { color: colors.text }]} numberOfLines={1}>
+													{auth.name || auth.slug}
+												</Text>
+												<Text style={[styles.accountSlug, { color: colors.textSecondary }]}>@{auth.slug}</Text>
+												{auth.role && (
+													<View style={[styles.roleBadge, { backgroundColor: colors.primary + '10' }]}>
+														<Text style={[styles.roleBadgeText, { color: colors.primary }]}>{auth.role}</Text>
+													</View>
+												)}
+											</View>
+											{auth.needPassword && (
+												<View style={styles.passwordLockIndicator}>
+													<Ionicons name="lock-closed" size={16} color={colors.textSecondary} />
 												</View>
-												<TouchableOpacity style={styles.deleteIcon} onPress={() => handleDeleteSavedAuth(auth.slug)}>
-													<Ionicons name="trash-outline" size={20} color={colors.error} />
-												</TouchableOpacity>
+											)}
+											<TouchableOpacity
+												onPress={() => handleDeleteSavedAuth(auth.slug)}
+												style={[styles.removeAccountBtn, { backgroundColor: colors.error + '10' }]}
+												accessibilityLabel="Remove Saved Account"
+											>
+												<Ionicons name="trash-outline" size={18} color={colors.error} />
 											</TouchableOpacity>
-										))}
-									</ScrollView>
-								</View>
+										</TouchableOpacity>
+									))}
+								</ScrollView>
 							</View>
 						)}
 
-						<View style={styles.inputContainer}>
-							<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+						{/* Credentials inputs */}
+						<View style={styles.formSection}>
+							{/* Slug field */}
+							<View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
 								<Ionicons name="person-outline" size={20} color={colors.textSecondary} />
 								<TextInput
-									style={[styles.input, { color: colors.text }]}
+									style={[styles.textInput, { color: colors.text }]}
 									placeholder={translate('username', 'Username')}
 									placeholderTextColor={colors.textTertiary}
 									value={slug}
-									onChangeText={(text) => {
-										setSlug(text)
-										setStatusState('initial')
-									}}
+									onChangeText={setSlug}
 									autoCapitalize="none"
 									autoCorrect={false}
+									editable={!isLoading}
 								/>
 							</View>
-							<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+							{/* Save Account Checkbox */}
+							<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.8} disabled={isLoading}>
+								<Ionicons name={saveAccount ? 'checkbox' : 'square-outline'} size={20} color={saveAccount ? colors.primary : colors.textSecondary} />
+								<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
+							</TouchableOpacity>
+
+							{/* Password field */}
+							<View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
 								<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
 								<TextInput
-									style={[styles.input, { color: colors.text }]}
+									ref={passwordRef}
+									style={[styles.textInput, { color: colors.text }]}
 									placeholder={translate('password', 'Password')}
 									placeholderTextColor={colors.textTertiary}
 									value={password}
-									onChangeText={(text) => {
-										setPassword(text)
-										setStatusState('initial')
-									}}
+									onChangeText={setPassword}
 									secureTextEntry
+									editable={!isLoading}
 								/>
 							</View>
+							{/* Require Password Checkbox */}
+							<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setNeedPassword(!needPassword)} activeOpacity={0.8} disabled={isLoading}>
+								<Ionicons name={needPassword ? 'checkbox' : 'square-outline'} size={20} color={needPassword ? colors.primary : colors.textSecondary} />
+								<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
+							</TouchableOpacity>
 						</View>
 
-						{(statusState === '404' || statusState === '409') && (
-							<Text
-								style={[
-									styles.errorText,
-									{
-										color: statusState === '404' ? colors.error : colors.warning
-									}
-								]}
-							>
-								{statusState === '404' ? errorMessage : translate('incorrect_password', 'Incorrect password. Try again')}
-							</Text>
-						)}
-
-						<View style={statusState === '404' ? styles.buttonContainer : { width: '100%', alignItems: 'center', marginTop: 16 }}>
-							{statusState === '404' ? (
-								<>
-									<TouchableOpacity style={[styles.primaryIconButton, { backgroundColor: colors.primary }]} onPress={handleSignIn}>
-										<Ionicons name="log-in-outline" size={24} color={colors.textOnPrimary} />
-									</TouchableOpacity>
-									<TouchableOpacity style={[styles.secondaryIconButton, { borderColor: colors.primary }]} onPress={handleSignUp}>
-										<Ionicons name="person-add-outline" size={24} color={colors.primary} />
-									</TouchableOpacity>
-								</>
+						{/* Single Continue Button */}
+						<TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary }]} onPress={handleContinue} activeOpacity={0.85} disabled={isLoading}>
+							{isLoading ? (
+								<ActivityIndicator size="small" color="#fff" />
 							) : (
-								<TouchableOpacity style={[styles.goIconButton, { backgroundColor: colors.primary }]} onPress={handleGo}>
-									<Ionicons name="arrow-forward" size={28} color={colors.textOnPrimary} />
-								</TouchableOpacity>
+								<View style={styles.continueButtonContent}>
+									<Text style={styles.continueButtonText}>{translate('continue', 'Continue')}</Text>
+									<Ionicons name="arrow-forward" size={20} color="#fff" />
+								</View>
 							)}
-						</View>
+						</TouchableOpacity>
 					</View>
 				</ScrollView>
 			</KeyboardAvoidingView>
@@ -336,222 +425,197 @@ export default function AuthScreen() {
 }
 
 const styles = StyleSheet.create({
-	safeArea: {
+	container: {
 		flex: 1
 	},
-	scrollContainer: {
+	scrollContent: {
 		flexGrow: 1,
+		paddingHorizontal: 20,
+		paddingVertical: 24,
 		justifyContent: 'center',
-		padding: 24,
 		alignItems: 'center'
 	},
-	innerContainer: {
+	innerContent: {
 		width: '100%',
+		alignItems: 'stretch'
+	},
+	headerIconBtn: {
+		width: 38,
+		height: 38,
+		borderRadius: 10,
+		borderWidth: 1,
+		justifyContent: 'center',
 		alignItems: 'center'
 	},
-	title: {
+	brandingContainer: {
+		alignItems: 'center',
+		marginBottom: 28
+	},
+	logoText: {
 		fontSize: 32,
-		fontWeight: '700',
-		marginBottom: 4,
-		textAlign: 'center'
+		fontWeight: '800',
+		letterSpacing: -0.5
 	},
-	subtitle: {
+	subtitleText: {
 		fontSize: 14,
-		marginBottom: 32,
+		fontWeight: '500',
+		marginTop: 4
+	},
+	langSection: {
+		marginBottom: 24
+	},
+	langSectionTitle: {
+		fontSize: 13,
+		fontWeight: '600',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5,
+		marginBottom: 10,
+		marginLeft: 4
+	},
+	langSelectorRow: {
+		flexDirection: 'row',
+		gap: 8,
+		justifyContent: 'space-between'
+	},
+	langOptionCard: {
+		flex: 1,
+		borderWidth: 1.5,
+		borderRadius: 14,
+		paddingVertical: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 6
+	},
+	langOptionFlag: {
+		fontSize: 18,
+		fontWeight: '700'
+	},
+	langOptionLabel: {
+		fontSize: 11,
 		textAlign: 'center'
 	},
-	sectionTitle: {
-		fontSize: 12,
+	savedSection: {
+		marginBottom: 24
+	},
+	savedSectionTitle: {
+		fontSize: 13,
 		fontWeight: '600',
+		textTransform: 'uppercase',
 		letterSpacing: 0.5,
-		marginBottom: 12
+		marginBottom: 10,
+		marginLeft: 4
 	},
-	savedAuthsSection: {
-		width: '100%',
-		marginBottom: 32
+	savedAccountsScroll: {
+		maxHeight: 230
 	},
-	savedAuthsContainer: {
-		width: '100%',
-		maxHeight: 220,
-		borderRadius: 16,
-		overflow: 'hidden'
+	savedAccountsList: {
+		gap: 10
 	},
-	savedAuthsScroll: {
-		width: '100%'
-	},
-	savedAuthItem: {
+	savedAccountCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		padding: 14,
-		borderRadius: 14,
-		marginBottom: 10,
+		padding: 12,
+		borderRadius: 16,
 		borderWidth: 1
 	},
-	authAvatar: {
+	accountAvatar: {
 		width: 44,
 		height: 44,
-		borderRadius: 12,
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginRight: 14
+		borderRadius: 12
 	},
-	savedAuthInfo: {
-		flex: 1
-	},
-	savedAuthSlug: {
-		fontSize: 16,
-		fontWeight: '600'
-	},
-	savedAuthDate: {
-		fontSize: 12,
-		marginTop: 2
-	},
-	deleteIcon: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
+	avatarPlaceholder: {
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
-	inputContainer: {
-		width: '100%',
+	accountInfoContainer: {
+		flex: 1,
+		marginLeft: 12,
+		justifyContent: 'center'
+	},
+	accountName: {
+		fontSize: 15,
+		fontWeight: '700'
+	},
+	accountSlug: {
+		fontSize: 12,
+		marginTop: 1
+	},
+	roleBadge: {
+		alignSelf: 'flex-start',
+		paddingHorizontal: 6,
+		paddingVertical: 2,
+		borderRadius: 6,
+		marginTop: 4
+	},
+	roleBadgeText: {
+		fontSize: 10,
+		fontWeight: '700',
+		textTransform: 'capitalize'
+	},
+	passwordLockIndicator: {
+		marginHorizontal: 8
+	},
+	removeAccountBtn: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	formSection: {
 		gap: 12,
-		marginBottom: 16
+		marginBottom: 24
 	},
 	inputWrapper: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		borderWidth: 1,
-		borderRadius: 14,
+		borderWidth: 1.5,
+		borderRadius: 16,
 		paddingHorizontal: 16,
-		paddingVertical: 14,
+		paddingVertical: 12,
 		gap: 12
 	},
-	input: {
+	textInput: {
 		flex: 1,
-		fontSize: 16
-	},
-	buttonText: {
 		fontSize: 16,
-		fontWeight: '700',
-		marginRight: 8
+		padding: 0
 	},
-	errorText: {
-		marginBottom: 16,
-		textAlign: 'center',
-		fontWeight: '600',
-		fontSize: 13
-	},
-	buttonContainer: {
+	checkboxWrapper: {
 		flexDirection: 'row',
-		gap: 12,
-		width: '100%',
-		marginTop: 8
-	},
-	goIconButton: {
-		width: 64,
-		height: 64,
-		borderRadius: 32,
-		justifyContent: 'center',
 		alignItems: 'center',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.3,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 8
-			}
-		})
-	},
-	primaryIconButton: {
-		width: 56,
-		height: 56,
-		borderRadius: 28,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.2,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 6
-			}
-		})
-	},
-	secondaryIconButton: {
-		width: 56,
-		height: 56,
-		borderRadius: 28,
-		justifyContent: 'center',
-		alignItems: 'center',
-		borderWidth: 2
-	},
-	topUtilityBar: {
-		flexDirection: 'row',
-		justifyContent: 'flex-end',
-		width: '100%',
-		gap: 12,
-		marginBottom: 24
-	},
-	utilityButton: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
-		justifyContent: 'center',
-		alignItems: 'center',
-		borderWidth: 1
-	},
-	settingsSection: {
-		width: '100%',
-		marginBottom: 24,
-		gap: 16
-	},
-	settingsGroup: {
-		gap: 8
-	},
-	settingsLabel: {
-		fontSize: 12,
-		fontWeight: '600',
-		marginLeft: 4,
-		textTransform: 'uppercase',
-		letterSpacing: 0.5
-	},
-	settingsScroll: {
 		gap: 10,
-		paddingRight: 24
+		paddingVertical: 4,
+		paddingHorizontal: 6
 	},
-	settingsOption: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		gap: 8,
-		minWidth: 100
-	},
-	flagText: {
-		fontSize: 20
-	},
-	optionLabel: {
+	checkboxLabel: {
 		fontSize: 13,
 		fontWeight: '500'
 	},
-	currencySymbolContainer: {
-		width: 24,
-		height: 24,
-		borderRadius: 6,
+	continueButton: {
+		height: 52,
+		borderRadius: 16,
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
+		...Platform.select({
+			ios: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.15,
+				shadowRadius: 8
+			},
+			android: {
+				elevation: 4
+			}
+		})
 	},
-	currencySymbol: {
-		fontSize: 12,
+	continueButtonContent: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8
+	},
+	continueButtonText: {
+		color: '#fff',
+		fontSize: 16,
 		fontWeight: '700'
 	}
 })

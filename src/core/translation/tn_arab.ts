@@ -189,5 +189,14 @@ export const tn_arab = {
 	yesterday: 'البارح',
 	days_ago: 'أيام تالي',
 	ago: 'تالي',
-	scan_to_install_latest: 'امسح الكود باش تصب النسخة الجديدة'
+	scan_to_install_latest: 'امسح الكود باش تصب النسخة الجديدة',
+	user_not_found_signup: 'المستخدم ماهوش موجود. تحب تعمل كونط جديد؟ توة ملفك الشخصي تنجم تدخلّه على الرابط:',
+	user_not_found: 'المستخدم موش موجود',
+	password_incorrect_verify: 'كلمة السر موش صحيحة. ثبت منها وعاود جرب.',
+	save_account_checkbox: 'احفظ في قائمة الحسابات',
+	require_password_checkbox: 'اطلب كلمة السر كي نبدل',
+	switch_requires_password: 'لازم كلمة السر للحساب هذا.',
+	switch_account_confirm: 'هذا باش يقص الجلسة الحالية أما يخلي حساباتك المحفوظة.',
+	need_password_notice: 'أكتب كلمة السر باش تدخل للحساب هذا.',
+	token_expired_notice: 'أوفى وقت الجلسة. أكتب كلمة السر متاعك.'
 }

@@ -48,6 +48,10 @@ export interface SavedAuth {
 	slug: string
 	token: string
 	lastSignIn: string
+	name?: string
+	photoUrl?: string
+	role?: string
+	needPassword?: boolean
 }
 
 export const getSavedAuthentications = async (): Promise<SavedAuth[]> => {
@@ -55,18 +59,49 @@ export const getSavedAuthentications = async (): Promise<SavedAuth[]> => {
 	return saved ? JSON.parse(saved) : []
 }
 
-const saveAuthentication = async (slug: string, token: string) => {
+export const saveAuthentication = async (slug: string, token: string, user?: any, needPassword?: boolean) => {
 	const saved = await getSavedAuthentications()
 	const filtered = saved.filter((a) => a.slug !== slug)
-	const updated = [
+
+	const photoUrl = user?.media?.thumbnail?.url || user?.photoUrl || ''
+	const displayName = user?.name?.en || user?.name || slug
+	const role = user?.role || 'customer'
+
+	const updated: SavedAuth[] = [
 		{
 			slug,
 			token,
-			lastSignIn: new Date().toISOString()
+			lastSignIn: new Date().toISOString(),
+			name: displayName,
+			photoUrl,
+			role,
+			needPassword: !!needPassword
 		},
 		...filtered
 	]
 	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
+}
+
+export const updateSavedAuthUser = async (slug: string, updates: { name?: string; photoUrl?: string; role?: string }) => {
+	try {
+		const saved = await getSavedAuthentications()
+		let updated = false
+		const nextSaved = saved.map((a) => {
+			if (a.slug === slug) {
+				updated = true
+				return {
+					...a,
+					...updates
+				}
+			}
+			return a
+		})
+		if (updated) {
+			await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(nextSaved))
+		}
+	} catch (error) {
+		log({ level: 'error', label: 'auth.api', message: 'Failed to update saved auth user details', error })
+	}
 }
 
 export const deleteSavedAuthentication = async (slug: string) => {
@@ -138,7 +173,7 @@ interface SignInResponse {
 	}
 }
 
-export const signIn = async (slug: string, password: string): Promise<SignInResponse> => {
+export const signIn = async (slug: string, password: string, saveAccount?: boolean, needPassword?: boolean): Promise<SignInResponse> => {
 	try {
 		log({
 			level: 'info',
@@ -174,7 +209,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 		const { token, user } = response.data.data
 
 		// Store token and user data
-		await Promise.all([setToken(token), setUserData(user), saveAuthentication(user.slug, token)])
+		await Promise.all([setToken(token), setUserData(user), ...(saveAccount ? [saveAuthentication(user.slug, token, user, needPassword)] : [])])
 
 		log({
 			level: 'info',
@@ -242,7 +277,7 @@ export const signIn = async (slug: string, password: string): Promise<SignInResp
 	}
 }
 
-export const signUp = async (slug: string, password: string, userData: Partial<AuthResponse['data']['user']> = {}): Promise<AuthResponse> => {
+export const signUp = async (slug: string, password: string, userData: Partial<AuthResponse['data']['user']> = {}, saveAccount?: boolean, needPassword?: boolean): Promise<AuthResponse> => {
 	try {
 		const apiClient = getApiClient()
 		const response = await apiClient.post<AuthResponse>('/auth/signup', {
@@ -252,8 +287,9 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 		})
 
 		if (response.data?.data?.token) {
+			const token = response.data.data.token
 			// Store tokens securely
-			await setToken(response.data.data.token)
+			await setToken(token)
 
 			if (response.data.data.refreshToken) {
 				await secureSetItem('refreshToken', response.data.data.refreshToken)
@@ -265,6 +301,11 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 				await secureSetItem('userData', JSON.stringify(user))
 				await secureSetItem('user._id', user._id)
 				await secureSetItem('user.slug', user.slug)
+
+				// Save account to saved authenticity list if requested
+				if (saveAccount) {
+					await saveAuthentication(user.slug, token, user, needPassword)
+				}
 
 				// Start session timer if auto-signout is enabled
 				if (defaultAuthSettings.enableAutoSignOut) {
@@ -502,7 +543,15 @@ export const getMyProfile = async () => {
 export const updateMyProfile = async (data: any) => {
 	const response = await getApiClient().patch('/users/my-profile', data)
 	if (response.data?.data) {
-		await setUserData(response.data.data)
+		const user = response.data.data
+		await setUserData(user)
+		const photoUrl = user.media?.thumbnail?.url || user.photoUrl || ''
+		const displayName = user.name?.en || user.name || user.slug
+		await updateSavedAuthUser(user.slug, {
+			name: displayName,
+			photoUrl,
+			role: user.role
+		})
 	}
 	return response.data
 }

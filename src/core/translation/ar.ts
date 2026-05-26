@@ -34,5 +34,14 @@ export const ar = {
 	unknown_error_message: 'حدث خطأ غير متوقع.',
 	session_expired_title: 'انتهت الجلسة',
 	session_expired_message: 'يرجى تسجيل الدخول مرة أخرى للمتابعة.',
-	scan_to_install_latest: 'امسح الرمز لتثبيت أحدث نسخة'
+	scan_to_install_latest: 'امسح الرمز لتثبيت أحدث نسخة',
+	user_not_found_signup: 'المستخدم غير موجود. هل تريد إنشاء حساب؟ ملفك الشخصي سيكون متاحاً على الرابط التالي:',
+	user_not_found: 'المستخدم غير موجود',
+	password_incorrect_verify: 'كلمة المرور غير صحيحة. يرجى التحقق وإعادة المحاولة.',
+	save_account_checkbox: 'حفظ في قائمة الحسابات',
+	require_password_checkbox: 'طلب كلمة المرور عند التبديل',
+	switch_requires_password: 'مطلوب كلمة المرور لهذا الحساب.',
+	switch_account_confirm: 'سيؤدي هذا إلى إنهاء جلستك الحالية مع الحفاظ على حساباتك المحفوظة.',
+	need_password_notice: 'يرجى إدخال كلمة المرور للتبديل إلى هذا الحساب.',
+	token_expired_notice: 'انتهت صلاحية الجلسة. يرجى إدخال كلمة المرور.'
 }

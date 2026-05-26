@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
-import { getCurrentUser } from '@/features/auth/auth.api'
+import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
 import { UserData } from '../../features/profile/profile.interface'
 import { LocalizedName } from '../../features/businesses/businesses.interface'
 import { translate as translateHelper, setGlobalAppLang, localizeName } from '../translation'
@@ -19,8 +19,8 @@ interface UserContextType {
 	setCurrency: (currency: string) => void
 }
 
-const DEFAULT_APP_LANG = 'en'
-const DEFAULT_CONTENT_LANG = 'en'
+const DEFAULT_APP_LANG = 'tn_arab'
+const DEFAULT_CONTENT_LANG = 'tn_arab'
 const DEFAULT_CURRENCY = 'tnd'
 
 const UserContext = createContext<UserContextType>({
@@ -97,6 +97,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 		try {
 			const userData = await getCurrentUser()
 			setUser(userData)
+			if (userData) {
+				const photoUrl = userData.media?.thumbnail?.url || userData.photoUrl || ''
+				const displayName = userData.name?.en || userData.name || userData.slug
+				await updateSavedAuthUser(userData.slug, {
+					name: displayName,
+					photoUrl,
+					role: userData.role
+				})
+			}
 		} catch (error) {
 			console.error('Failed to load user:', error)
 		} finally {

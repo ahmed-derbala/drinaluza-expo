@@ -34,5 +34,14 @@ export const fr = {
 	unknown_error_message: 'Une erreur inattendue est survenue.',
 	session_expired_title: 'Session expirée',
 	session_expired_message: 'Veuillez vous reconnecter pour continuer.',
-	scan_to_install_latest: 'Scannez pour installer la dernière version'
+	scan_to_install_latest: 'Scannez pour installer la dernière version',
+	user_not_found_signup: "Utilisateur non trouvé. Voulez-vous vous inscrire ? Votre profil public sera accessible à l'adresse :",
+	user_not_found: 'Utilisateur non trouvé',
+	password_incorrect_verify: 'Mot de passe incorrect. Veuillez vérifier et réessayer.',
+	save_account_checkbox: 'Enregistrer dans la liste des comptes',
+	require_password_checkbox: 'Exiger le mot de passe pour changer',
+	switch_requires_password: 'Mot de passe requis pour ce compte.',
+	switch_account_confirm: 'Cela fermera votre session actuelle mais conservera vos comptes enregistrés.',
+	need_password_notice: 'Veuillez saisir votre mot de passe pour basculer vers ce compte.',
+	token_expired_notice: 'Le jeton de session a expiré. Veuillez saisir votre mot de passe.'
 }

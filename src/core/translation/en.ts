@@ -207,5 +207,14 @@ export const en = {
 	yesterday: 'Yesterday',
 	days_ago: 'days ago',
 	ago: 'ago',
-	scan_to_install_latest: 'Scan to install the latest version'
+	scan_to_install_latest: 'Scan to install the latest version',
+	user_not_found_signup: 'User not found. Do you want to sign up? Your public profile will be accessible at:',
+	user_not_found: 'User Not Found',
+	password_incorrect_verify: 'Incorrect password. Please verify and try again.',
+	save_account_checkbox: 'Save to accounts list',
+	require_password_checkbox: 'Require password on switch',
+	switch_requires_password: 'Password required for this account.',
+	switch_account_confirm: 'This will clear your current session but keep your saved accounts.',
+	need_password_notice: 'Please enter your password to switch to this account.',
+	token_expired_notice: 'Session token has expired. Please enter your password.'
 }

@@ -189,5 +189,14 @@ export const tn_latn = {
 	yesterday: 'El bareh',
 	days_ago: 'ayyam ltali',
 	ago: 'ltali',
-	scan_to_install_latest: 'Aml scann bech thabat el jdida'
+	scan_to_install_latest: 'Aml scann bech thabat el jdida',
+	user_not_found_signup: 'El mostakhdem mouch mawjoud. Theb taamel kont jdid? Tawa profil mtak tnajem todkhlolha al rabt:',
+	user_not_found: 'El mostakhdem mouch mawjoud',
+	password_incorrect_verify: "Kelmetsir mouch s'hih'a. Thabet menha w aawed jarreb.",
+	save_account_checkbox: 'Ahfedh fi qaimat el accounts',
+	require_password_checkbox: 'Otlob kelmetsir ki nbaddel',
+	switch_requires_password: 'Lazma kelmetsir lil kont hetha.',
+	switch_account_confirm: 'Hetha bech iqoss el jelsa el haliya ama ykhalli accounts mtak el mahfoudha.',
+	need_password_notice: 'Akteb kelmetsir bech todkhol lil kont hetha.',
+	token_expired_notice: 'Ofa waqt el jelsa. Akteb kelmetsir mtak.'
 }
