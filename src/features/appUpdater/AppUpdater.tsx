@@ -7,6 +7,9 @@ import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import axios from 'axios'
+import * as SplashScreen from 'expo-splash-screen'
+import * as FileSystem from 'expo-file-system/legacy'
+import * as IntentLauncher from 'expo-intent-launcher'
 
 export interface AppVersionConfig {
 	latest: string
@@ -78,14 +81,81 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [minVersion, setMinVersion] = useState<string | null>(null)
 	const [serverVersion, setServerVersion] = useState<string | null>(null)
 	const [destroyAppStorage, setDestroyAppStorage] = useState(false)
+	const [initialLoading, setInitialLoading] = useState(true)
 
 	const [showOptionalModal, setShowOptionalModal] = useState(false)
-	const [showMandatoryModal, setShowMandatoryModal] = useState(false)
+	const [isDownloading, setIsDownloading] = useState(false)
+	const [downloadProgress, setDownloadProgress] = useState(0)
+
+	const downloadAndInstallApk = async (version: string) => {
+		try {
+			setIsDownloading(true)
+			setDownloadProgress(0)
+
+			const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+			const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
+
+			// Delete existing file if it exists in cache
+			const fileInfo = await FileSystem.getInfoAsync(localUri)
+			if (fileInfo.exists) {
+				await FileSystem.deleteAsync(localUri, { idempotent: true })
+			}
+
+			log({ level: 'info', label: 'AppUpdater', message: `Starting download: ${downloadUrl} -> ${localUri}` })
+
+			const downloadResumable = FileSystem.createDownloadResumable(downloadUrl, localUri, {}, (progressData) => {
+				if (progressData.totalBytesExpectedToWrite > 0) {
+					const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
+					setDownloadProgress(progress)
+				}
+			})
+
+			const result = await downloadResumable.downloadAsync()
+
+			if (!result || !result.uri) {
+				throw new Error('Download failed: received empty download result.')
+			}
+
+			log({ level: 'info', label: 'AppUpdater', message: `Download complete. Launching installer for ${result.uri}` })
+			toast.show({ title: 'Download Complete', message: 'Opening installer...', color: '#10B981' })
+
+			// Convert local file path to Content URI
+			const contentUri = await FileSystem.getContentUriAsync(result.uri)
+
+			// Launch the Android installation intent
+			await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+				data: contentUri,
+				flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+			})
+		} catch (error) {
+			console.error('AppUpdater APK download/install error:', error)
+			log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
+
+			// Fallback: Try opening URL in browser if programmatic installation fails
+			try {
+				const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${version}/drinaluza-${version}.apk`
+				await Linking.openURL(downloadUrl)
+			} catch (linkError) {
+				console.error('Fallback Link failed:', linkError)
+			}
+
+			toast.show({
+				title: translate('error', 'Error'),
+				message: 'Failed to install update. Downloading via browser instead.',
+				color: '#EF4444'
+			})
+		} finally {
+			setIsDownloading(false)
+			setDownloadProgress(0)
+		}
+	}
 
 	const checkForUpdates = useCallback(
 		async (manual = false) => {
 			if (!BACKEND_URL) {
 				log({ level: 'warn', label: 'AppUpdater', message: 'BACKEND_URL is not configured.' })
+				setUpdateStatus('up_to_date')
+				setInitialLoading(false)
 				if (manual) {
 					toast.show({ title: translate('error', 'Error'), message: 'Update server unavailable.', color: '#EF4444' })
 				}
@@ -99,6 +169,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				const data = response.data?.data as BackendResponse | undefined
 
 				if (!data) {
+					setUpdateStatus('up_to_date')
+					setInitialLoading(false)
 					if (manual) {
 						toast.show({ title: translate('error', 'Error'), message: 'Failed to retrieve version information.', color: '#EF4444' })
 					}
@@ -117,7 +189,6 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// 1. Check Mandatory Minimum Version
 				if (config.min && compareVersions(currentVersion, config.min) < 0) {
 					setUpdateStatus('update_required')
-					setShowMandatoryModal(true)
 					setShowOptionalModal(false)
 					log({ level: 'info', label: 'AppUpdater', message: `Mandatory update required! Min required: ${config.min}, Active version: ${currentVersion}` })
 					return
@@ -127,7 +198,6 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				if (config.latest && compareVersions(currentVersion, config.latest) < 0) {
 					setUpdateStatus('update_available')
 					setShowOptionalModal(true)
-					setShowMandatoryModal(false)
 					log({ level: 'info', label: 'AppUpdater', message: `Optional update available! Latest: ${config.latest}, Active version: ${currentVersion}` })
 					return
 				}
@@ -135,29 +205,42 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// 3. Up to date
 				setUpdateStatus('up_to_date')
 				setShowOptionalModal(false)
-				setShowMandatoryModal(false)
 
 				if (manual) {
 					toast.show({ title: translate('up_to_date', 'Up to Date'), message: translate('already_latest', 'You are already running the latest version.'), color: '#10B981' })
 				}
 			} catch (error) {
 				console.error('AppUpdater check failed:', error)
+				// Catch network/offline errors gracefully so the app does not crash
+				setUpdateStatus('up_to_date')
+				setShowOptionalModal(false)
 				if (manual) {
 					toast.show({ title: translate('error', 'Error'), message: 'Failed to check for updates.', color: '#EF4444' })
 				}
 			} finally {
 				setIsChecking(false)
+				setInitialLoading(false)
 			}
 		},
 		[translate]
 	)
 
-	// Automatically run updater checks on Android start
+	// Automatically run updater checks on start
 	useEffect(() => {
-		if (Platform.OS === 'android') {
-			checkForUpdates(false)
-		}
+		checkForUpdates(false)
 	}, [checkForUpdates])
+
+	// Prevent auto-hiding of the native splash screen during startup
+	useEffect(() => {
+		SplashScreen.preventAutoHideAsync().catch(() => {})
+	}, [])
+
+	// Gracefully dismiss native splash screen once the initial update check completes (or fails)
+	useEffect(() => {
+		if (!initialLoading) {
+			SplashScreen.hideAsync().catch(() => {})
+		}
+	}, [initialLoading])
 
 	const handleConfirmUpdate = async () => {
 		try {
@@ -173,16 +256,11 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 			if (Platform.OS === 'web') {
 				setShowOptionalModal(false)
-				setShowMandatoryModal(false)
 				window.location.reload()
 			} else {
-				// Android: Trigger APK release download link
-				const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${latestVersion}/drinaluza-${latestVersion}.apk`
-				const supported = await Linking.canOpenURL(downloadUrl)
-				if (supported) {
-					await Linking.openURL(downloadUrl)
-				} else {
-					toast.show({ title: 'Download Error', message: 'Cannot open download URL.', color: '#EF4444' })
+				// Android: Trigger programmatic APK download and installation
+				if (latestVersion) {
+					await downloadAndInstallApk(latestVersion)
 				}
 			}
 		} catch (err) {
@@ -196,52 +274,18 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		}
 	}
 
-	return (
-		<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
-			{children}
+	if (initialLoading) {
+		return (
+			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
+				<View style={{ flex: 1, backgroundColor: colors.background }} />
+			</UpdaterContext.Provider>
+		)
+	}
 
-			{/* 1. Optional Update Modal Overlay */}
-			<Modal visible={showOptionalModal} transparent animationType="fade" statusBarTranslucent>
-				<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
-					<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-						<View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
-							<Text style={[styles.iconText, { color: colors.primary }]}>🚀</Text>
-						</View>
-						<Text style={[styles.title, { color: colors.text }]}>
-							{Platform.OS === 'web' ? translate('refresh_available', 'Refresh Available') : translate('update_available', 'Update Available')}
-						</Text>
-						<Text style={[styles.message, { color: colors.textSecondary }]}>
-							{Platform.OS === 'web'
-								? translate('optional_update_msg_web', 'A new web version is available. Would you like to refresh to load the latest optimizations?')
-								: translate('optional_update_msg_android', 'A new version of the application is available. Would you like to download and install it now?')}
-						</Text>
-
-						<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant }]}>
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Your Version</Text>
-								<Text style={[styles.infoValue, { color: colors.textSecondary }]}>{APP_VERSION}</Text>
-							</View>
-							<View style={[styles.infoRow, { marginTop: 8 }]}>
-								<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Latest Version</Text>
-								<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{latestVersion}</Text>
-							</View>
-						</View>
-
-						<View style={styles.buttonGroup}>
-							<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowOptionalModal(false)} activeOpacity={0.8}>
-								<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
-							</TouchableOpacity>
-							<TouchableOpacity style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.primary }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
-								<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('update', 'Update')}</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-			</Modal>
-
-			{/* 2. Mandatory Update Modal Overlay */}
-			<Modal visible={showMandatoryModal} transparent animationType="fade" statusBarTranslucent>
-				<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+	if (updateStatus === 'update_required') {
+		return (
+			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
+				<View style={[styles.overlay, { backgroundColor: colors.background, flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
 					<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 						<View style={[styles.iconWrap, { backgroundColor: colors.error + '15' }]}>
 							<Text style={[styles.iconText, { color: colors.error }]}>⚠️</Text>
@@ -264,23 +308,92 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							</View>
 						</View>
 
-						<View style={styles.buttonGroup}>
-							{Platform.OS === 'android' && (
-								<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.error + '50' }]} onPress={handleExitApp} activeOpacity={0.8}>
-									<Text style={[styles.cancelBtnText, { color: colors.error }]}>{translate('exit', 'Exit')}</Text>
+						{isDownloading ? (
+							<View style={styles.progressContainer}>
+								<Text style={[styles.progressText, { color: colors.textSecondary }]}>
+									{translate('downloading', 'Downloading')}... {Math.round(downloadProgress * 100)}%
+								</Text>
+								<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
+									<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
+								</View>
+							</View>
+						) : (
+							<View style={styles.buttonGroup}>
+								{Platform.OS === 'android' && (
+									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.error + '50' }]} onPress={handleExitApp} activeOpacity={0.8}>
+										<Text style={[styles.cancelBtnText, { color: colors.error }]}>{translate('exit', 'Exit')}</Text>
+									</TouchableOpacity>
+								)}
+								<TouchableOpacity
+									style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.primary, flex: Platform.OS === 'web' ? undefined : 1, width: Platform.OS === 'web' ? '100%' : undefined }]}
+									onPress={handleConfirmUpdate}
+									activeOpacity={0.8}
+								>
+									<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('download', 'Download')}</Text>
 								</TouchableOpacity>
-							)}
-							<TouchableOpacity
-								style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.primary, flex: Platform.OS === 'web' ? undefined : 1, width: Platform.OS === 'web' ? '100%' : undefined }]}
-								onPress={handleConfirmUpdate}
-								activeOpacity={0.8}
-							>
-								<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('download', 'Download')}</Text>
-							</TouchableOpacity>
-						</View>
+							</View>
+						)}
 					</View>
 				</View>
-			</Modal>
+			</UpdaterContext.Provider>
+		)
+	}
+
+	return (
+		<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
+			<View style={{ flex: 1, backgroundColor: colors.background }}>
+				{children}
+
+				{/* 1. Optional Update Modal Overlay */}
+				<Modal visible={showOptionalModal} transparent animationType="fade" statusBarTranslucent>
+					<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+						<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+							<View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
+								<Text style={[styles.iconText, { color: colors.primary }]}>🚀</Text>
+							</View>
+							<Text style={[styles.title, { color: colors.text }]}>
+								{Platform.OS === 'web' ? translate('refresh_available', 'Refresh Available') : translate('update_available', 'Update Available')}
+							</Text>
+							<Text style={[styles.message, { color: colors.textSecondary }]}>
+								{Platform.OS === 'web'
+									? translate('optional_update_msg_web', 'A new web version is available. Would you like to refresh to load the latest optimizations?')
+									: translate('optional_update_msg_android', 'A new version of the application is available. Would you like to download and install it now?')}
+							</Text>
+
+							<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant }]}>
+								<View style={styles.infoRow}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Your Version</Text>
+									<Text style={[styles.infoValue, { color: colors.textSecondary }]}>{APP_VERSION}</Text>
+								</View>
+								<View style={[styles.infoRow, { marginTop: 8 }]}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Latest Version</Text>
+									<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{latestVersion}</Text>
+								</View>
+							</View>
+
+							{isDownloading ? (
+								<View style={styles.progressContainer}>
+									<Text style={[styles.progressText, { color: colors.textSecondary }]}>
+										{translate('downloading', 'Downloading')}... {Math.round(downloadProgress * 100)}%
+									</Text>
+									<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
+										<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
+									</View>
+								</View>
+							) : (
+								<View style={styles.buttonGroup}>
+									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowOptionalModal(false)} activeOpacity={0.8}>
+										<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
+									</TouchableOpacity>
+									<TouchableOpacity style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.primary }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
+										<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('update', 'Update')}</Text>
+									</TouchableOpacity>
+								</View>
+							)}
+						</View>
+					</View>
+				</Modal>
+			</View>
 		</UpdaterContext.Provider>
 	)
 }
@@ -376,5 +489,26 @@ const styles = StyleSheet.create({
 		color: '#fff',
 		fontSize: 14,
 		fontWeight: '700'
+	},
+	progressContainer: {
+		width: '100%',
+		alignItems: 'center',
+		marginTop: 8,
+		marginBottom: 8
+	},
+	progressText: {
+		fontSize: 14,
+		fontWeight: '600',
+		marginBottom: 8
+	},
+	progressBarBg: {
+		width: '100%',
+		height: 8,
+		borderRadius: 4,
+		overflow: 'hidden'
+	},
+	progressBarFill: {
+		height: '100%',
+		borderRadius: 4
 	}
 })

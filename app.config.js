@@ -33,6 +33,9 @@ export default {
         },
         android: {
             googleServicesFile: "google-services.json",
+            permissions: [
+                "REQUEST_INSTALL_PACKAGES"
+            ],
             // Add this line to give Gradle 8GB of Heap and 2GB of Metaspace
             gradleArguments: ["-Dorg.gradle.jvmargs=-Xmx8192m -XX:MaxMetaspaceSize=2048m"],
             adaptiveIcon: {
