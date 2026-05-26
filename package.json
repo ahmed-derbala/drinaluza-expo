@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.3.44",
+  "version": "1.3.45",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -16,6 +16,7 @@
     "drinaluza"
   ],
   "scripts": {
+    "release": "gh release create v$npm_package_version ./builds/$npm_package_name-$npm_package_version.apk --generate-notes",
     "frl": "npm run i && npm run start:local",
     "cpapk2gdrive-local": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1XFIQ1YrZ8Utn1NoSHNKXHO8emM5oMthk",
     "cpapk2gdrive-prod": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1imkwBuOkM01NSd7g-oOcjWP6YYjvkpQs/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW",
@@ -24,7 +25,7 @@
     "env:local": "cp envs/.env.local .env",
     "ver": "npm version patch --no-git-tag-version",
     "build:apk-local": "npm run env:local && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive-local",
-    "build:apk-prod": "npm run fix && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run env:local && npm run cpapk2gdrive-prod",
+    "build:apk-prod": "npm run fix && npm run env:prod && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run env:local && npm run release && npm run cpapk2gdrive-prod",
     "build:web": "npm run clean:prod && NODE_ENV=production expo export -p web",
     "start": "expo start",
     "start:local": "rm -rf .expo && npm run env:local && expo start -c",
