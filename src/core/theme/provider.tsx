@@ -29,9 +29,9 @@ interface ThemeContextType {
 }
 
 const ThemeContext = createContext<ThemeContextType>({
-	themeMode: 'system',
+	themeMode: 'dark',
 	setThemeMode: async () => {},
-	isDark: false
+	isDark: true
 })
 
 export const useThemeContext = () => useContext(ThemeContext)
@@ -42,7 +42,7 @@ interface ThemeProviderProps {
 
 export function AppThemeProvider({ children }: ThemeProviderProps) {
 	const systemScheme = useColorScheme()
-	const [themeMode, setThemeModeState] = useState<ThemeMode>('system')
+	const [themeMode, setThemeModeState] = useState<ThemeMode>('dark')
 
 	useEffect(() => {
 		const loadThemeMode = async () => {
@@ -50,6 +50,8 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
 				const savedMode = await AsyncStorage.getItem('app_theme')
 				if (savedMode === 'light' || savedMode === 'dark' || savedMode === 'system') {
 					setThemeModeState(savedMode)
+				} else {
+					setThemeModeState('dark')
 				}
 			} catch (e) {
 				console.warn('Failed to load theme mode:', e)
