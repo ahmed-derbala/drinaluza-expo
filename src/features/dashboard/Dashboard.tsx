@@ -586,7 +586,7 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 	StyleSheet.create({
 		container: { flex: 1 },
 		centered: { justifyContent: 'center', alignItems: 'center' },
-		scrollContent: { paddingHorizontal: 16, paddingBottom: 40, paddingTop: 12, gap: 6 },
+		scrollContent: { paddingHorizontal: 16, paddingBottom: 90, paddingTop: 12, gap: 6 },
 		section: { marginBottom: 24 },
 		sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
 		profileRow: { gap: 10, paddingRight: 8 },

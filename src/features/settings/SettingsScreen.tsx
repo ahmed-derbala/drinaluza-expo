@@ -397,7 +397,7 @@ const createStyles = (colors: any) =>
 		},
 		contentContainer: {
 			padding: 20,
-			paddingBottom: 40
+			paddingBottom: 90
 		},
 		header: {
 			marginBottom: 28

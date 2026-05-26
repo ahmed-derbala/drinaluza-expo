@@ -1767,7 +1767,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		},
 		contentContainer: {
 			padding: 20,
-			paddingBottom: 40,
+			paddingBottom: 90,
 			maxWidth: isWideScreen ? 800 : '100%',
 			alignSelf: isWideScreen ? 'center' : undefined,
 			width: '100%'

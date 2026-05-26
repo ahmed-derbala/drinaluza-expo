@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme } from '@/core/theme'
@@ -17,6 +18,7 @@ export default function HomeLayout() {
 	useBackButton()
 	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
 	const { notificationCount } = useNotification()
+	const insets = useSafeAreaInsets()
 
 	useEffect(() => {
 		const loadAuthData = async () => {
@@ -57,17 +59,18 @@ export default function HomeLayout() {
 						backgroundColor: colors.background,
 						borderTopColor: colors.primary,
 						borderTopWidth: 1.5,
-						paddingVertical: Platform.select({
-							ios: 2,
-							android: 4,
-							web: 4
-						}),
 						height: Platform.select({
-							ios: 40,
-							android: 48,
-							web: 48
+							ios: 50 + insets.bottom,
+							android: 56 + insets.bottom,
+							web: 56
 						}),
-						transform: [{ translateY: isTabBarVisible ? 0 : 100 }],
+						paddingBottom: insets.bottom,
+						paddingTop: Platform.select({
+							ios: insets.bottom > 0 ? 4 : 0,
+							android: 0,
+							web: 0
+						}),
+						transform: [{ translateY: isTabBarVisible ? 0 : 120 }],
 						opacity: isTabBarVisible ? 1 : 0,
 						...Platform.select({
 							ios: {

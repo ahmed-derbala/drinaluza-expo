@@ -103,7 +103,7 @@ const createStyles = (colors: any) =>
 			zIndex: 10
 		},
 		list: {
-			paddingBottom: 20
+			paddingBottom: 90
 		},
 		cardWrapper: {
 			marginBottom: 16

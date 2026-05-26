@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
 	},
 	list: {
 		padding: 16,
-		paddingBottom: 32
+		paddingBottom: 90
 	},
 	card: {
 		padding: 16,
