@@ -207,7 +207,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 					<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
 						{localize(sale.business.name)}
 					</Text>
-					<Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(sale.createdAt), 'MMM d, yyyy • h:mm a')}</Text>
+					<Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(sale.createdAt), 'MMM d, yyyy • HH:mm')}</Text>
 				</View>
 				<View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
 					<View style={[styles.statusDot, { backgroundColor: statusColor }]} />

@@ -8,12 +8,12 @@ if (typeof setImmediate === 'undefined') {
 	global.setImmediate = (callback: (...args: any[]) => void) => setTimeout(callback, 0)
 }
 
-import { VersionProvider } from '@/core/contexts/VersionContext'
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
+import { UpdaterProvider } from '@/features/appUpdater/AppUpdater'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider } from '@/core/theme'
@@ -40,7 +40,7 @@ export default function RootLayout() {
 	return (
 		<SafeAreaProvider>
 			<ToastProvider>
-				<VersionProvider>
+				<UpdaterProvider>
 					<UserProvider>
 						<NotificationProvider>
 							<SocketProvider>
@@ -50,7 +50,7 @@ export default function RootLayout() {
 							</SocketProvider>
 						</NotificationProvider>
 					</UserProvider>
-				</VersionProvider>
+				</UpdaterProvider>
 			</ToastProvider>
 		</SafeAreaProvider>
 	)

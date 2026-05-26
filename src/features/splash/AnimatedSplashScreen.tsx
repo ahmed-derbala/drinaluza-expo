@@ -4,7 +4,6 @@ import { colors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import Constants from 'expo-constants'
-import { useVersion } from '@/core/contexts/VersionContext'
 import { NODE_ENV, APP_VERSION } from '@/config'
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window')
@@ -25,8 +24,6 @@ interface AnimatedSplashScreenProps {
 }
 
 export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplashScreenProps) {
-	const { backendInfo } = useVersion()
-
 	// Central icon animations
 	const centerScale = useRef(new Animated.Value(0.5)).current
 	const centerOpacity = useRef(new Animated.Value(0)).current
@@ -287,7 +284,6 @@ export default function AnimatedSplashScreen({ onAnimationReady }: AnimatedSplas
 
 			<Animated.View style={[styles.versionContainer, { opacity: subtitleOpacity }]}>
 				<Text style={styles.versionText}>App v{APP_VERSION}</Text>
-				<Text style={styles.versionText}>Server v{backendInfo?.app?.version || '...'}</Text>
 				<Text style={styles.versionText}>{NODE_ENV}</Text>
 			</Animated.View>
 

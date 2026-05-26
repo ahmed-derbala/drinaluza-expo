@@ -6,11 +6,11 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '@/core/theme'
-import { useVersion } from '@/core/contexts/VersionContext'
 import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useUpdater } from '@/features/appUpdater/AppUpdater'
 
 const formatUptime = (uptime: string | undefined): string => {
 	if (!uptime) return ''
@@ -25,18 +25,19 @@ const formatUptime = (uptime: string | undefined): string => {
 export default function SettingsScreen() {
 	const { colors } = useTheme()
 	const { translate } = useUser()
-	const { checkVersion } = useVersion()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
 
+	const { isChecking, updateStatus, latestVersion, minVersion, serverVersion, checkForUpdates } = useUpdater()
+
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
 
 	useEffect(() => {
-		// Trigger version check when settings screen opens
-		checkVersion()
+		// Silent check on mount
+		checkForUpdates(false)
 
 		if (!BACKEND_URL) return
 
@@ -53,7 +54,7 @@ export default function SettingsScreen() {
 			.catch((err) => {
 				console.warn('[settings] Failed to fetch server info:', err)
 			})
-	}, [])
+	}, [checkForUpdates])
 
 	const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
 		<View style={styles.section}>
@@ -125,6 +126,60 @@ export default function SettingsScreen() {
 		>
 			<Tabs.Screen options={{ headerTitle: () => <HeaderTitle title={translate('settings', 'Settings')} subtitle={'Drinaluza - Business Manager'} />, headerLeft: () => null }} />
 			<View style={{ height: 16 }} />
+
+			{/* Version Info & Update Center */}
+			<View style={[styles.updaterCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={styles.updaterHeader}>
+					<View style={[styles.updaterIconContainer, { backgroundColor: colors.primary + '15' }]}>
+						<Ionicons name="phone-portrait-outline" size={22} color={colors.primary} />
+					</View>
+					<View style={styles.updaterInfo}>
+						<Text style={[styles.updaterAppName, { color: colors.text }]}>Drinaluza Business</Text>
+						<Text style={[styles.updaterVersionText, { color: colors.textSecondary }]}>
+							Active: v{APP_VERSION} • {NODE_ENV}
+						</Text>
+						{latestVersion && (
+							<Text style={[styles.updaterLatestText, { color: updateStatus !== 'up_to_date' ? colors.primary : colors.success, fontWeight: '700' }]}>
+								{updateStatus === 'up_to_date' ? 'Running latest version' : `Latest: v${latestVersion}`}
+							</Text>
+						)}
+					</View>
+				</View>
+
+				<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
+
+				<TouchableOpacity
+					style={[
+						styles.updaterBtn,
+						{
+							backgroundColor: updateStatus !== 'up_to_date' ? colors.primary : colors.surfaceVariant,
+							borderColor: colors.border
+						}
+					]}
+					onPress={() => checkForUpdates(true)}
+					disabled={isChecking}
+					activeOpacity={0.8}
+				>
+					{isChecking ? (
+						<ActivityIndicator size="small" color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
+					) : (
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+							<Ionicons name={updateStatus !== 'up_to_date' ? 'download-outline' : 'sync-outline'} size={18} color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
+							<Text
+								style={[
+									styles.updaterBtnText,
+									{
+										color: updateStatus !== 'up_to_date' ? '#fff' : colors.text,
+										fontWeight: '700'
+									}
+								]}
+							>
+								{updateStatus === 'up_to_date' ? translate('check_for_updates', 'Check for Updates') : translate('update_now', 'Update Now')}
+							</Text>
+						</View>
+					)}
+				</TouchableOpacity>
+			</View>
 
 			<SettingSection title={translate('social_media', 'Social Media')}>
 				<SettingItem
@@ -345,5 +400,57 @@ const createStyles = (colors: any) =>
 		madeWith: {
 			fontSize: 12,
 			color: colors.textTertiary
+		},
+		updaterCard: {
+			borderRadius: 20,
+			borderWidth: 1.5,
+			padding: 20,
+			marginBottom: 20,
+			...Platform.select({
+				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 },
+				android: { elevation: 2 }
+			})
+		},
+		updaterHeader: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 16
+		},
+		updaterIconContainer: {
+			width: 48,
+			height: 48,
+			borderRadius: 14,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		updaterInfo: {
+			flex: 1
+		},
+		updaterAppName: {
+			fontSize: 16,
+			fontWeight: '800',
+			letterSpacing: -0.3
+		},
+		updaterVersionText: {
+			fontSize: 12,
+			marginTop: 2
+		},
+		updaterLatestText: {
+			fontSize: 12,
+			marginTop: 4
+		},
+		updaterDivider: {
+			height: 1,
+			marginVertical: 16
+		},
+		updaterBtn: {
+			height: 44,
+			borderRadius: 12,
+			borderWidth: 1,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		updaterBtnText: {
+			fontSize: 14
 		}
 	})
