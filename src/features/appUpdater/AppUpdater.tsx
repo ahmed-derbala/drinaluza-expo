@@ -71,8 +71,34 @@ export const compareVersions = (a: string, b: string): number => {
 	return 0
 }
 
+const DISMISSED_VERSION_KEY = 'drinaluza_dismissed_update_version'
+
 export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-	const { colors } = useTheme()
+	const theme = useTheme()
+	const isDark = theme.dark
+	const activeColors = theme.colors || {}
+
+	// Robust run-time color structure with fallback tokens for navigation context limits
+	const colors = {
+		primary: activeColors.primary || (isDark ? '#0EA5E9' : '#0284C7'),
+		background: activeColors.background || (isDark ? '#0B132B' : '#F8FAFC'),
+		card: activeColors.card || (isDark ? '#1C2541' : '#FFFFFF'),
+		text: activeColors.text || (isDark ? '#F8FAFC' : '#0F172A'),
+		border: activeColors.border || (isDark ? '#3A506B' : '#E2E8F0'),
+		notification: activeColors.notification || (isDark ? '#F43F5E' : '#E11D48'),
+
+		// Extended custom tokens with bullet-proof fallbacks
+		primaryContainer: (activeColors as any).primaryContainer || (isDark ? '#0EA5E920' : '#E0F2FE'),
+		surface: (activeColors as any).surface || activeColors.card || (isDark ? '#1C2541' : '#FFFFFF'),
+		surfaceVariant: (activeColors as any).surfaceVariant || (isDark ? '#3A506B30' : '#F1F5F9'),
+		modalOverlay: (activeColors as any).modalOverlay || (isDark ? 'rgba(3, 7, 18, 0.75)' : 'rgba(15, 23, 42, 0.5)'),
+		error: (activeColors as any).error || (isDark ? '#EF4444' : '#DC2626'),
+		success: (activeColors as any).success || (isDark ? '#10B981' : '#059669'),
+		warning: (activeColors as any).warning || (isDark ? '#F59E0B' : '#D97706'),
+		info: (activeColors as any).info || (isDark ? '#3B82F6' : '#2563EB'),
+		textSecondary: (activeColors as any).textSecondary || (isDark ? '#94A3B8' : '#475569'),
+		textTertiary: (activeColors as any).textTertiary || (isDark ? '#64748B' : '#94A3B8')
+	}
 	const { translate } = useUser()
 
 	const [isChecking, setIsChecking] = useState(false)
@@ -88,12 +114,12 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [downloadProgress, setDownloadProgress] = useState(0)
 
 	const downloadAndInstallApk = async (version: string) => {
+		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
 		try {
 			setIsDownloading(true)
 			setDownloadProgress(0)
 
 			const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
-			const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
 
 			// Delete existing file if it exists in cache
 			const fileInfo = await FileSystem.getInfoAsync(localUri)
@@ -113,7 +139,16 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			const result = await downloadResumable.downloadAsync()
 
 			if (!result || !result.uri) {
-				throw new Error('Download failed: received empty download result.')
+				const err = new Error('Download failed: empty download result.')
+				;(err as any).isDownloadError = true
+				throw err
+			}
+
+			// Validate HTTP Status Code (e.g. reject 404, 500, etc.)
+			if (result.status && (result.status < 200 || result.status >= 300)) {
+				const err = new Error(`Download failed with HTTP status ${result.status}`)
+				;(err as any).isDownloadError = true
+				throw err
 			}
 
 			log({ level: 'info', label: 'AppUpdater', message: `Download complete. Launching installer for ${result.uri}` })
@@ -127,23 +162,40 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				data: contentUri,
 				flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
 			})
-		} catch (error) {
+		} catch (error: any) {
 			console.error('AppUpdater APK download/install error:', error)
-			log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
 
-			// Fallback: Try opening URL in browser if programmatic installation fails
+			// Clean up cached file to prevent corrupt storage states
 			try {
-				const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${version}/drinaluza-${version}.apk`
-				await Linking.openURL(downloadUrl)
-			} catch (linkError) {
-				console.error('Fallback Link failed:', linkError)
+				await FileSystem.deleteAsync(localUri, { idempotent: true })
+			} catch (deleteError) {
+				// Silently catch
 			}
 
-			toast.show({
-				title: translate('error', 'Error'),
-				message: 'Failed to install update. Downloading via browser instead.',
-				color: '#EF4444'
-			})
+			if (error.isDownloadError || error.message?.includes('Download failed') || error.message?.includes('HTTP')) {
+				log({ level: 'error', label: 'AppUpdater', message: 'APK download failed or returned non-2xx status code.', error })
+				toast.show({
+					title: translate('error', 'Error'),
+					message: 'Update server error or link broken. Please try again later.',
+					color: '#EF4444'
+				})
+			} else {
+				log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
+
+				// Fallback: Try opening URL in browser if intent launch fails (e.g. permission limits)
+				try {
+					const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+					await Linking.openURL(downloadUrl)
+				} catch (linkError) {
+					console.error('Fallback Link failed:', linkError)
+				}
+
+				toast.show({
+					title: translate('error', 'Error'),
+					message: 'Failed to launch installer. Downloading via browser instead.',
+					color: '#EF4444'
+				})
+			}
 		} finally {
 			setIsDownloading(false)
 			setDownloadProgress(0)
@@ -197,8 +249,24 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// 2. Check Optional Latest Version
 				if (config.latest && compareVersions(currentVersion, config.latest) < 0) {
 					setUpdateStatus('update_available')
-					setShowOptionalModal(true)
-					log({ level: 'info', label: 'AppUpdater', message: `Optional update available! Latest: ${config.latest}, Active version: ${currentVersion}` })
+
+					let isDismissed = false
+					try {
+						const dismissed = Platform.OS === 'web' ? localStorage.getItem(DISMISSED_VERSION_KEY) : await AsyncStorage.getItem(DISMISSED_VERSION_KEY)
+						if (dismissed === config.latest) {
+							isDismissed = true
+						}
+					} catch (e) {
+						console.warn('Failed to read dismissed version:', e)
+					}
+
+					if (manual || !isDismissed) {
+						setShowOptionalModal(true)
+					} else {
+						setShowOptionalModal(false)
+					}
+
+					log({ level: 'info', label: 'AppUpdater', message: `Optional update available! Latest: ${config.latest}, Active version: ${currentVersion}, Auto-prompt: ${!isDismissed || manual}` })
 					return
 				}
 
@@ -271,6 +339,22 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const handleExitApp = () => {
 		if (Platform.OS === 'android') {
 			BackHandler.exitApp()
+		}
+	}
+
+	const handleDismissOptionalUpdate = async () => {
+		setShowOptionalModal(false)
+		if (latestVersion) {
+			try {
+				if (Platform.OS === 'web') {
+					localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
+				} else {
+					await AsyncStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
+				}
+				log({ level: 'info', label: 'AppUpdater', message: `Optional update version ${latestVersion} dismissed by user.` })
+			} catch (e) {
+				console.error('Failed to save dismissed version:', e)
+			}
 		}
 	}
 
@@ -382,7 +466,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 								</View>
 							) : (
 								<View style={styles.buttonGroup}>
-									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border }]} onPress={() => setShowOptionalModal(false)} activeOpacity={0.8}>
+									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
 										<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
 									</TouchableOpacity>
 									<TouchableOpacity style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.primary }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
