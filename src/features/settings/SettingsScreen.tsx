@@ -134,7 +134,7 @@ export default function SettingsScreen() {
 						<Ionicons name="phone-portrait-outline" size={22} color={colors.primary} />
 					</View>
 					<View style={styles.updaterInfo}>
-						<Text style={[styles.updaterAppName, { color: colors.text }]}>Drinaluza Business</Text>
+						<Text style={[styles.updaterAppName, { color: colors.text }]}>Drinaluza</Text>
 						<Text style={[styles.updaterVersionText, { color: colors.textSecondary }]}>
 							Active: v{APP_VERSION} • {NODE_ENV}
 						</Text>
