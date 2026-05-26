@@ -240,10 +240,13 @@ export default function SettingsScreen() {
 				<SettingItem
 					icon="cloud-download-outline"
 					title="APK Download"
-					subtitle="Google Drive"
-					onPress={() => Linking.openURL('https://drive.google.com/drive/u/1/folders/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW')}
-					copyValue="https://drive.google.com/drive/u/1/folders/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW"
-					color="#4285F4"
+					subtitle="GitHub"
+					onPress={() => {
+						const apkVersion = latestVersion || APP_VERSION
+						Linking.openURL(`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${apkVersion}/drinaluza-${apkVersion}.apk`)
+					}}
+					copyValue={`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
+					color="#24292F"
 				/>
 			</SettingSection>
 
