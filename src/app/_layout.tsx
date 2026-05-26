@@ -25,17 +25,15 @@ import { AppThemeProvider } from '@/core/theme'
 function RootLayoutContent() {
 	return (
 		<ErrorBoundary>
-			<AppThemeProvider>
-				<Stack>
-					<Stack.Screen name="index" options={{ headerShown: false }} />
-					<Stack.Screen name="(home)" options={{ headerShown: false }} />
-					<Stack.Screen name="businesses" options={{ headerShown: false }} />
-					<Stack.Screen name="dashboard" options={{ headerShown: false }} />
-					<Stack.Screen name="users" options={{ headerShown: false }} />
-					<Stack.Screen name="auth" options={{ headerShown: false }} />
-					<Stack.Screen name="search" options={{ headerShown: false }} />
-				</Stack>
-			</AppThemeProvider>
+			<Stack>
+				<Stack.Screen name="index" options={{ headerShown: false }} />
+				<Stack.Screen name="(home)" options={{ headerShown: false }} />
+				<Stack.Screen name="businesses" options={{ headerShown: false }} />
+				<Stack.Screen name="dashboard" options={{ headerShown: false }} />
+				<Stack.Screen name="users" options={{ headerShown: false }} />
+				<Stack.Screen name="auth" options={{ headerShown: false }} />
+				<Stack.Screen name="search" options={{ headerShown: false }} />
+			</Stack>
 		</ErrorBoundary>
 	)
 }
@@ -43,19 +41,21 @@ function RootLayoutContent() {
 export default function RootLayout() {
 	return (
 		<SafeAreaProvider>
-			<ToastProvider>
-				<UpdaterProvider>
-					<UserProvider>
-						<NotificationProvider>
-							<SocketProvider>
-								<LayoutProvider>
-									<RootLayoutContent />
-								</LayoutProvider>
-							</SocketProvider>
-						</NotificationProvider>
-					</UserProvider>
-				</UpdaterProvider>
-			</ToastProvider>
+			<AppThemeProvider>
+				<ToastProvider>
+					<UpdaterProvider>
+						<UserProvider>
+							<NotificationProvider>
+								<SocketProvider>
+									<LayoutProvider>
+										<RootLayoutContent />
+									</LayoutProvider>
+								</SocketProvider>
+							</NotificationProvider>
+						</UserProvider>
+					</UpdaterProvider>
+				</ToastProvider>
+			</AppThemeProvider>
 		</SafeAreaProvider>
 	)
 }
