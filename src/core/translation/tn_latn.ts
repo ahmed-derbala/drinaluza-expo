@@ -209,5 +209,7 @@ export const tn_latn = {
 	share_options_msg: 'Ekhtar kifach theb t-partagi Drinaluza:',
 	share_version_url: 'Partagi lien el version el jdida',
 	share_apk_file: 'Partagi fichier APK el lekhrani',
-	share_apk_not_downloaded: 'Fichier APK el lekhrani mouch masboub tawa. Tnajem t-partagi lien el version el jdida fi blastou.'
+	share_apk_not_downloaded: 'Fichier APK el lekhrani mouch masboub tawa. Tnajem t-partagi lien el version el jdida fi blastou.',
+	quickshare_advisory_title: 'Quick Share',
+	quickshare_advisory_msg: 'Bech t-partagi fichier APK maa telifoun Android qrib, ekhtar "Quick Share" (wela Bluetooth) fi qaimat el partage mtaal system elli bech todhhor tawa.'
 }

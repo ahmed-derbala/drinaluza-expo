@@ -14,7 +14,17 @@ import * as IntentLauncher from 'expo-intent-launcher'
 export interface AppVersionConfig {
 	latest: string
 	min: string
-	destroyAppStorage?: boolean
+	destroyAppStorage?: boolean | string
+}
+
+export interface GitHubReleaseAsset {
+	name: string
+	browser_download_url: string
+}
+
+export interface GitHubReleaseResponse {
+	tag_name: string
+	assets: GitHubReleaseAsset[]
 }
 
 export interface BackendResponse {
@@ -41,7 +51,8 @@ export interface UpdaterContextType {
 	latestVersion: string | null
 	minVersion: string | null
 	serverVersion: string | null
-	destroyAppStorage: boolean
+	destroyAppStorage: boolean | string
+	apkDownloadUrl: string | null
 	checkForUpdates: (manual?: boolean) => Promise<void>
 }
 
@@ -52,6 +63,7 @@ const UpdaterContext = createContext<UpdaterContextType>({
 	minVersion: null,
 	serverVersion: null,
 	destroyAppStorage: false,
+	apkDownloadUrl: null,
 	checkForUpdates: async () => {}
 })
 
@@ -106,7 +118,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [latestVersion, setLatestVersion] = useState<string | null>(null)
 	const [minVersion, setMinVersion] = useState<string | null>(null)
 	const [serverVersion, setServerVersion] = useState<string | null>(null)
-	const [destroyAppStorage, setDestroyAppStorage] = useState(false)
+	const [destroyAppStorage, setDestroyAppStorage] = useState<boolean | string>(false)
+	const [apkDownloadUrl, setApkDownloadUrl] = useState<string | null>(null)
 	const [initialLoading, setInitialLoading] = useState(true)
 
 	const [showOptionalModal, setShowOptionalModal] = useState(false)
@@ -119,7 +132,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			setIsDownloading(true)
 			setDownloadProgress(0)
 
-			const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+			const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 
 			// Delete existing file if it exists in cache
 			const fileInfo = await FileSystem.getInfoAsync(localUri)
@@ -184,7 +197,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 				// Fallback: Try opening URL in browser if intent launch fails (e.g. permission limits)
 				try {
-					const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+					const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 					await Linking.openURL(downloadUrl)
 				} catch (linkError) {
 					console.error('Fallback Link failed:', linkError)
@@ -204,56 +217,68 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const checkForUpdates = useCallback(
 		async (manual = false) => {
-			if (!BACKEND_URL) {
-				log({ level: 'warn', label: 'AppUpdater', message: 'BACKEND_URL is not configured.' })
-				setUpdateStatus('up_to_date')
-				setInitialLoading(false)
-				if (manual) {
-					toast.show({ title: translate('error', 'Error'), message: 'Update server unavailable.', color: '#EF4444' })
-				}
-				return
-			}
-
 			try {
 				setIsChecking(true)
-				const url = BACKEND_URL.replace(/\/$/, '')
-				const response = await axios.get(url, { timeout: 10000 })
-				const data = response.data?.data as BackendResponse | undefined
 
-				if (!data) {
-					setUpdateStatus('up_to_date')
-					setInitialLoading(false)
-					if (manual) {
-						toast.show({ title: translate('error', 'Error'), message: 'Failed to retrieve version information.', color: '#EF4444' })
-					}
-					return
+				// 1. Fetch latest version from GitHub Releases API
+				const githubRes = await axios.get<GitHubReleaseResponse>('https://api.github.com/repos/ahmed-derbala/drinaluza-expo/releases/latest', { timeout: 10000 })
+				const githubData = githubRes.data
+
+				if (!githubData || !githubData.tag_name) {
+					throw new Error('GitHub Releases API returned an invalid response or missing tag_name.')
 				}
 
-				setServerVersion(data.app.version)
+				const rawTag = githubData.tag_name
+				const cleanTag = rawTag.replace(/^v/, '') // e.g. "v1.0.3" -> "1.0.3"
 
-				const config = Platform.OS === 'web' ? data.frontend.web.version : data.frontend.android.version
-				setLatestVersion(config.latest)
-				setMinVersion(config.min)
-				setDestroyAppStorage(!!config.destroyAppStorage)
+				// Find APK asset
+				const apkAsset = githubData.assets?.find((asset) => asset.name.endsWith('.apk'))
+				const downloadUrl = apkAsset?.browser_download_url || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${rawTag}/drinaluza-${cleanTag}.apk`
+
+				setLatestVersion(cleanTag)
+				setApkDownloadUrl(downloadUrl)
+
+				// 2. Fetch minVersion and destroyAppStorage configurations from backend (if available)
+				let minReq = '1.0.0'
+				let wipeStorage: boolean | string = false
+
+				if (BACKEND_URL) {
+					try {
+						const url = BACKEND_URL.replace(/\/$/, '')
+						const response = await axios.get(url, { timeout: 5000 })
+						const data = response.data?.data as BackendResponse | undefined
+						if (data) {
+							setServerVersion(data.app.version)
+							const config = Platform.OS === 'web' ? data.frontend.web.version : data.frontend.android.version
+							minReq = config.min || '1.0.0'
+							wipeStorage = config.destroyAppStorage !== undefined ? config.destroyAppStorage : false
+						}
+					} catch (e) {
+						console.warn('Backend version check failed, using safe defaults.', e)
+					}
+				}
+
+				setMinVersion(minReq)
+				setDestroyAppStorage(wipeStorage)
 
 				const currentVersion = APP_VERSION
 
 				// 1. Check Mandatory Minimum Version
-				if (config.min && compareVersions(currentVersion, config.min) < 0) {
+				if (minReq && compareVersions(currentVersion, minReq) < 0) {
 					setUpdateStatus('update_required')
 					setShowOptionalModal(false)
-					log({ level: 'info', label: 'AppUpdater', message: `Mandatory update required! Min required: ${config.min}, Active version: ${currentVersion}` })
+					log({ level: 'info', label: 'AppUpdater', message: `Mandatory update required! Min required: ${minReq}, Active version: ${currentVersion}` })
 					return
 				}
 
 				// 2. Check Optional Latest Version
-				if (config.latest && compareVersions(currentVersion, config.latest) < 0) {
+				if (cleanTag && compareVersions(currentVersion, cleanTag) < 0) {
 					setUpdateStatus('update_available')
 
 					let isDismissed = false
 					try {
 						const dismissed = Platform.OS === 'web' ? localStorage.getItem(DISMISSED_VERSION_KEY) : await AsyncStorage.getItem(DISMISSED_VERSION_KEY)
-						if (dismissed === config.latest) {
+						if (dismissed === cleanTag) {
 							isDismissed = true
 						}
 					} catch (e) {
@@ -266,7 +291,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						setShowOptionalModal(false)
 					}
 
-					log({ level: 'info', label: 'AppUpdater', message: `Optional update available! Latest: ${config.latest}, Active version: ${currentVersion}, Auto-prompt: ${!isDismissed || manual}` })
+					log({ level: 'info', label: 'AppUpdater', message: `Optional update available! Latest: ${cleanTag}, Active version: ${currentVersion}, Auto-prompt: ${!isDismissed || manual}` })
 					return
 				}
 
@@ -312,7 +337,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const handleConfirmUpdate = async () => {
 		try {
-			if (destroyAppStorage) {
+			const shouldWipe = destroyAppStorage === true || String(destroyAppStorage).toLowerCase() === 'true'
+			if (shouldWipe) {
 				log({ level: 'info', label: 'AppUpdater', message: 'Wiping storage and cache as requested by backend.' })
 				if (Platform.OS === 'web') {
 					localStorage.clear()
@@ -360,7 +386,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	if (initialLoading) {
 		return (
-			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
+			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, apkDownloadUrl, checkForUpdates }}>
 				<View style={{ flex: 1, backgroundColor: colors.background }} />
 			</UpdaterContext.Provider>
 		)
@@ -368,7 +394,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	if (updateStatus === 'update_required') {
 		return (
-			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
+			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, apkDownloadUrl, checkForUpdates }}>
 				<View style={[styles.overlay, { backgroundColor: colors.background, flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
 					<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 						<View style={[styles.iconWrap, { backgroundColor: colors.error + '15' }]}>
@@ -424,7 +450,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	}
 
 	return (
-		<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, checkForUpdates }}>
+		<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, apkDownloadUrl, checkForUpdates }}>
 			<View style={{ flex: 1, backgroundColor: colors.background }}>
 				{children}
 

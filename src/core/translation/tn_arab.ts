@@ -209,5 +209,7 @@ export const tn_arab = {
 	share_options_msg: 'اختار كيفاش تحب تبارتاجي درينالوزة:',
 	share_version_url: 'بارتاجي ليان النسخة الجديدة',
 	share_apk_file: 'بارتاجي فيشي APK اللخراني',
-	share_apk_not_downloaded: 'فيشي APK اللخراني موش مسبوب توة. تنجم تبارتاجي ليان النسخة الجديدة في بلاصتو.'
+	share_apk_not_downloaded: 'فيشي APK اللخراني موش مسبوب توة. تنجم تبارتاجي ليان النسخة الجديدة في بلاصتو.',
+	quickshare_advisory_title: 'المشاركة السريعة (Quick Share)',
+	quickshare_advisory_msg: 'باش تبارتاجي فيشي APK مع تلفون أندرويد قريب، اختار "Quick Share" (وإلا البلوتوث) من قائمة المشاركة متاع السيستيم اللي باش تتحل.'
 }

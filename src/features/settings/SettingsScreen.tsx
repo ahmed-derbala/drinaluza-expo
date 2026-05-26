@@ -35,7 +35,7 @@ export default function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
 
-	const { isChecking, updateStatus, latestVersion, minVersion, serverVersion, checkForUpdates } = useUpdater()
+	const { isChecking, updateStatus, latestVersion, minVersion, serverVersion, checkForUpdates, apkDownloadUrl } = useUpdater()
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
@@ -44,7 +44,7 @@ export default function SettingsScreen() {
 	const handleShareApk = async () => {
 		const version = latestVersion || APP_VERSION
 		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
-		const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+		const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 
 		const shareUrl = async () => {
 			try {
@@ -78,6 +78,17 @@ export default function SettingsScreen() {
 			}
 		}
 
+		const handleShareFileWithAdvisory = () => {
+			Alert.alert(
+				translate('quickshare_advisory_title', 'Quick Share'),
+				translate('quickshare_advisory_msg', 'To share the APK file with a nearby Android phone, please select "Quick Share" (or Bluetooth) in the system sharing menu that opens next.'),
+				[
+					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
+					{ text: translate('ok', 'OK'), onPress: shareFile }
+				]
+			)
+		}
+
 		if (Platform.OS === 'web') {
 			await shareUrl()
 			return
@@ -89,7 +100,7 @@ export default function SettingsScreen() {
 				Alert.alert(translate('share_options_title', 'Share Options'), translate('share_options_msg', 'Choose how you want to share Drinaluza:'), [
 					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
 					{ text: translate('share_version_url', 'Share Latest Version URL'), onPress: shareUrl },
-					{ text: translate('share_apk_file', 'Share Latest APK File'), onPress: shareFile }
+					{ text: translate('share_apk_file', 'Share Latest APK File'), onPress: handleShareFileWithAdvisory }
 				])
 			} else {
 				Alert.alert(
@@ -380,7 +391,7 @@ export default function SettingsScreen() {
 			<QRCodeModal
 				visible={showApkQRCode}
 				onClose={() => setShowApkQRCode(false)}
-				value={`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
+				value={apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
 				title="APK Download"
 				subtitle={`v${latestVersion || APP_VERSION} • Android Package`}
 				filenamePrefix={`drinaluza-apk-v${latestVersion || APP_VERSION}`}

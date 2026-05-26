@@ -54,5 +54,7 @@ export const fr = {
 	share_options_msg: 'Choisissez comment vous souhaitez partager Drinaluza :',
 	share_version_url: "Partager l'URL de la dernière version",
 	share_apk_file: 'Partager le fichier APK le plus récent',
-	share_apk_not_downloaded: "Le fichier APK le plus récent n'a pas encore été téléchargé. Vous pouvez partager l'URL de la dernière version à la place."
+	share_apk_not_downloaded: "Le fichier APK le plus récent n'a pas encore été téléchargé. Vous pouvez partager l'URL de la dernière version à la place.",
+	quickshare_advisory_title: 'Quick Share (Partage rapide)',
+	quickshare_advisory_msg: 'Pour partager le fichier APK avec un téléphone Android à proximité, veuillez sélectionner "Quick Share" (ou Bluetooth) dans le menu de partage système qui va s\'ouvrir.'
 }
