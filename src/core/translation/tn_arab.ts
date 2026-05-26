@@ -188,5 +188,6 @@ export const tn_arab = {
 	today: 'اليوم',
 	yesterday: 'البارح',
 	days_ago: 'أيام تالي',
-	ago: 'تالي'
+	ago: 'تالي',
+	scan_to_install_latest: 'امسح الكود باش تصب النسخة الجديدة'
 }

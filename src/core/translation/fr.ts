@@ -33,5 +33,6 @@ export const fr = {
 	unknown_error_title: 'Erreur',
 	unknown_error_message: 'Une erreur inattendue est survenue.',
 	session_expired_title: 'Session expirée',
-	session_expired_message: 'Veuillez vous reconnecter pour continuer.'
+	session_expired_message: 'Veuillez vous reconnecter pour continuer.',
+	scan_to_install_latest: 'Scannez pour installer la dernière version'
 }

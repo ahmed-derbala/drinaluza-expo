@@ -33,5 +33,6 @@ export const ar = {
 	unknown_error_title: 'خطأ',
 	unknown_error_message: 'حدث خطأ غير متوقع.',
 	session_expired_title: 'انتهت الجلسة',
-	session_expired_message: 'يرجى تسجيل الدخول مرة أخرى للمتابعة.'
+	session_expired_message: 'يرجى تسجيل الدخول مرة أخرى للمتابعة.',
+	scan_to_install_latest: 'امسح الرمز لتثبيت أحدث نسخة'
 }

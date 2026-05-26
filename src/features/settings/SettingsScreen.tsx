@@ -11,6 +11,8 @@ import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useUpdater } from '@/features/appUpdater/AppUpdater'
+import QRCodeModal from '@/features/common/QRCodeModal'
+import HeaderActionButton from '@/features/common/HeaderActionButton'
 
 const formatUptime = (uptime: string | undefined): string => {
 	if (!uptime) return ''
@@ -34,6 +36,7 @@ export default function SettingsScreen() {
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
+	const [showApkQRCode, setShowApkQRCode] = useState(false)
 
 	useEffect(() => {
 		// Silent check on mount
@@ -124,7 +127,27 @@ export default function SettingsScreen() {
 			onScroll={onScroll}
 			scrollEventThrottle={16}
 		>
-			<Tabs.Screen options={{ headerTitle: () => <HeaderTitle title={translate('settings', 'Settings')} subtitle={'Drinaluza - Business Manager'} />, headerLeft: () => null }} />
+			<Tabs.Screen
+				options={{
+					headerTitle: () => <HeaderTitle title={translate('settings', 'Settings')} subtitle={'Drinaluza - Business Manager'} />,
+					headerLeft: () => null,
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', gap: 8, paddingRight: 16, alignItems: 'center' }}>
+							<HeaderActionButton
+								iconName="download-outline"
+								onPress={() => {
+									const apkVersion = latestVersion || APP_VERSION
+									Linking.openURL(`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${apkVersion}/drinaluza-${apkVersion}.apk`)
+								}}
+								accessibilityLabel="Download APK"
+								backgroundColor={colors.surface}
+								size={38}
+							/>
+							<HeaderActionButton iconName="qr-code-outline" onPress={() => setShowApkQRCode(true)} accessibilityLabel="APK QR Code" backgroundColor={colors.surface} size={38} />
+						</View>
+					)
+				}}
+			/>
 			<View style={{ height: 16 }} />
 
 			{/* Version Info & Update Center */}
@@ -214,14 +237,6 @@ export default function SettingsScreen() {
 
 			<SettingSection title={translate('downloads', 'Downloads')}>
 				<SettingItem
-					icon="logo-google-playstore"
-					title="Google Play"
-					subtitle="Download for Android"
-					onPress={() => Linking.openURL('https://play.google.com/store/apps/details?id=com.ahmedderbala.drinaluza')}
-					copyValue="https://play.google.com/store/apps/details?id=com.ahmedderbala.drinaluza"
-					color="#34A853"
-				/>
-				<SettingItem
 					icon="globe-outline"
 					title="Netlify"
 					subtitle="drinaluza.netlify.app"
@@ -237,17 +252,6 @@ export default function SettingsScreen() {
 					copyValue="https://drinaluza.vercel.app/"
 					color={colors.text}
 				/>
-				<SettingItem
-					icon="cloud-download-outline"
-					title="APK Download"
-					subtitle="GitHub"
-					onPress={() => {
-						const apkVersion = latestVersion || APP_VERSION
-						Linking.openURL(`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${apkVersion}/drinaluza-${apkVersion}.apk`)
-					}}
-					copyValue={`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
-					color="#24292F"
-				/>
 			</SettingSection>
 
 			<SettingSection title={translate('developer', 'Developer')}>
@@ -258,14 +262,6 @@ export default function SettingsScreen() {
 					onPress={() => Linking.openURL('https://www.linkedin.com/in/ahmed-derbala/')}
 					copyValue="https://www.linkedin.com/in/ahmed-derbala/"
 					color="#0077B5"
-				/>
-				<SettingItem
-					icon="logo-github"
-					title="Source Code"
-					subtitle="View on GitHub"
-					onPress={() => Linking.openURL('https://github.com/ahmed-derbala/')}
-					copyValue="https://github.com/ahmed-derbala/"
-					color={colors.text}
 				/>
 			</SettingSection>
 
@@ -288,6 +284,15 @@ export default function SettingsScreen() {
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 			</View>
+
+			<QRCodeModal
+				visible={showApkQRCode}
+				onClose={() => setShowApkQRCode(false)}
+				value={`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
+				title="APK Download"
+				subtitle={`v${latestVersion || APP_VERSION} • Android Package`}
+				filenamePrefix={`drinaluza-apk-v${latestVersion || APP_VERSION}`}
+			/>
 		</ScrollView>
 	)
 }

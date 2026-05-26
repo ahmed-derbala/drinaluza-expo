@@ -188,5 +188,6 @@ export const tn_latn = {
 	today: 'Elyom',
 	yesterday: 'El bareh',
 	days_ago: 'ayyam ltali',
-	ago: 'ltali'
+	ago: 'ltali',
+	scan_to_install_latest: 'Aml scann bech thabat el jdida'
 }

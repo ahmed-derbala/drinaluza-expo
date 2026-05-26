@@ -206,5 +206,6 @@ export const en = {
 	today: 'Today',
 	yesterday: 'Yesterday',
 	days_ago: 'days ago',
-	ago: 'ago'
+	ago: 'ago',
+	scan_to_install_latest: 'Scan to install the latest version'
 }
