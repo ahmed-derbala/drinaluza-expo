@@ -198,5 +198,9 @@ export const tn_arab = {
 	switch_requires_password: 'لازم كلمة السر للحساب هذا.',
 	switch_account_confirm: 'هذا باش يقص الجلسة الحالية أما يخلي حساباتك المحفوظة.',
 	need_password_notice: 'أكتب كلمة السر باش تدخل للحساب هذا.',
-	token_expired_notice: 'أوفى وقت الجلسة. أكتب كلمة السر متاعك.'
+	token_expired_notice: 'أوفى وقت الجلسة. أكتب كلمة السر متاعك.',
+	appearance: 'المظهر',
+	theme_system: 'النظام',
+	theme_light: 'فاتح',
+	theme_dark: 'داكن'
 }

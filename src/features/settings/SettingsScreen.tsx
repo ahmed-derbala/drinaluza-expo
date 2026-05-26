@@ -1,11 +1,13 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import * as FileSystem from 'expo-file-system/legacy'
+import * as Sharing from 'expo-sharing'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, useThemeContext } from '@/core/theme'
 import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
@@ -26,6 +28,7 @@ const formatUptime = (uptime: string | undefined): string => {
 
 export default function SettingsScreen() {
 	const { colors } = useTheme()
+	const { themeMode, setThemeMode } = useThemeContext()
 	const { translate } = useUser()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
@@ -37,6 +40,34 @@ export default function SettingsScreen() {
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
 	const [showApkQRCode, setShowApkQRCode] = useState(false)
+
+	const handleShareApk = async () => {
+		const version = latestVersion || APP_VERSION
+		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
+		const downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+
+		try {
+			if (Platform.OS !== 'web') {
+				const fileInfo = await FileSystem.getInfoAsync(localUri)
+				if (fileInfo.exists && (await Sharing.isAvailableAsync())) {
+					await Sharing.shareAsync(localUri, {
+						mimeType: 'application/vnd.android.package-archive',
+						dialogTitle: `Share Drinaluza v${version} APK`
+					})
+					return
+				}
+			}
+
+			// Fallback: Share download link
+			await Share.share({
+				message: `Download Drinaluza v${version} APK: ${downloadUrl}`,
+				title: `Drinaluza v${version}`
+			})
+		} catch (error) {
+			console.warn('[settings] Failed to share:', error)
+			Linking.openURL(downloadUrl)
+		}
+	}
 
 	useEffect(() => {
 		// Silent check on mount
@@ -133,16 +164,7 @@ export default function SettingsScreen() {
 					headerLeft: () => null,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', gap: 8, paddingRight: 16, alignItems: 'center' }}>
-							<HeaderActionButton
-								iconName="download-outline"
-								onPress={() => {
-									const apkVersion = latestVersion || APP_VERSION
-									Linking.openURL(`https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${apkVersion}/drinaluza-${apkVersion}.apk`)
-								}}
-								accessibilityLabel="Download APK"
-								backgroundColor={colors.surface}
-								size={38}
-							/>
+							<HeaderActionButton iconName="share-social-outline" onPress={handleShareApk} accessibilityLabel="Share APK" backgroundColor={colors.surface} size={38} />
 							<HeaderActionButton iconName="qr-code-outline" onPress={() => setShowApkQRCode(true)} accessibilityLabel="APK QR Code" backgroundColor={colors.surface} size={38} />
 						</View>
 					)
@@ -203,6 +225,38 @@ export default function SettingsScreen() {
 					)}
 				</TouchableOpacity>
 			</View>
+
+			<SettingSection title={translate('appearance', 'Appearance')}>
+				<View style={{ flexDirection: 'row', gap: 8, padding: 12 }}>
+					{(['system', 'light', 'dark'] as const).map((mode) => {
+						const isSelected = themeMode === mode
+						const label = mode === 'system' ? translate('theme_system', 'System') : mode === 'light' ? translate('theme_light', 'Light') : translate('theme_dark', 'Dark')
+						const icon = mode === 'system' ? 'options-outline' : mode === 'light' ? 'sunny-outline' : 'moon-outline'
+
+						return (
+							<TouchableOpacity
+								key={mode}
+								onPress={() => setThemeMode(mode)}
+								style={{
+									flex: 1,
+									borderWidth: 1.5,
+									borderRadius: 12,
+									paddingVertical: 10,
+									alignItems: 'center',
+									justifyContent: 'center',
+									gap: 6,
+									backgroundColor: isSelected ? colors.primary + '15' : colors.card,
+									borderColor: isSelected ? colors.primary : colors.border
+								}}
+								activeOpacity={0.8}
+							>
+								<Ionicons name={icon} size={20} color={isSelected ? colors.primary : colors.text} />
+								<Text style={{ fontSize: 12, color: isSelected ? colors.primary : colors.text, fontWeight: isSelected ? '700' : '500' }}>{label}</Text>
+							</TouchableOpacity>
+						)
+					})}
+				</View>
+			</SettingSection>
 
 			<SettingSection title={translate('social_media', 'Social Media')}>
 				<SettingItem

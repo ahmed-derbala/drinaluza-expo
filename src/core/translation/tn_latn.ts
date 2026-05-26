@@ -198,5 +198,9 @@ export const tn_latn = {
 	switch_requires_password: 'Lazma kelmetsir lil kont hetha.',
 	switch_account_confirm: 'Hetha bech iqoss el jelsa el haliya ama ykhalli accounts mtak el mahfoudha.',
 	need_password_notice: 'Akteb kelmetsir bech todkhol lil kont hetha.',
-	token_expired_notice: 'Ofa waqt el jelsa. Akteb kelmetsir mtak.'
+	token_expired_notice: 'Ofa waqt el jelsa. Akteb kelmetsir mtak.',
+	appearance: 'Appearance',
+	theme_system: 'System',
+	theme_light: 'Light',
+	theme_dark: 'Dark'
 }

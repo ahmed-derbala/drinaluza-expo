@@ -43,5 +43,9 @@ export const fr = {
 	switch_requires_password: 'Mot de passe requis pour ce compte.',
 	switch_account_confirm: 'Cela fermera votre session actuelle mais conservera vos comptes enregistrés.',
 	need_password_notice: 'Veuillez saisir votre mot de passe pour basculer vers ce compte.',
-	token_expired_notice: 'Le jeton de session a expiré. Veuillez saisir votre mot de passe.'
+	token_expired_notice: 'Le jeton de session a expiré. Veuillez saisir votre mot de passe.',
+	appearance: 'Apparence',
+	theme_system: 'Système',
+	theme_light: 'Clair',
+	theme_dark: 'Sombre'
 }

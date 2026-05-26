@@ -2,7 +2,7 @@ import { AppThemeColors } from './types'
 
 export const lightColors: AppThemeColors = {
 	primary: '#0284C7',
-	background: '#F8FAFC',
+	background: '#FFFFFF',
 	card: '#FFFFFF',
 	text: '#0F172A',
 	border: '#E2E8F0',
@@ -25,7 +25,7 @@ export const lightColors: AppThemeColors = {
 
 export const darkColors: AppThemeColors = {
 	primary: '#0EA5E9',
-	background: '#0B132B',
+	background: '#000000',
 	card: '#1C2541',
 	text: '#F8FAFC',
 	border: '#3A506B',

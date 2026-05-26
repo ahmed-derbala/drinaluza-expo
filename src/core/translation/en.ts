@@ -216,5 +216,9 @@ export const en = {
 	switch_requires_password: 'Password required for this account.',
 	switch_account_confirm: 'This will clear your current session but keep your saved accounts.',
 	need_password_notice: 'Please enter your password to switch to this account.',
-	token_expired_notice: 'Session token has expired. Please enter your password.'
+	token_expired_notice: 'Session token has expired. Please enter your password.',
+	appearance: 'Appearance',
+	theme_system: 'System',
+	theme_light: 'Light',
+	theme_dark: 'Dark'
 }

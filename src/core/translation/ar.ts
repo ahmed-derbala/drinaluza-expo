@@ -43,5 +43,9 @@ export const ar = {
 	switch_requires_password: 'مطلوب كلمة المرور لهذا الحساب.',
 	switch_account_confirm: 'سيؤدي هذا إلى إنهاء جلستك الحالية مع الحفاظ على حساباتك المحفوظة.',
 	need_password_notice: 'يرجى إدخال كلمة المرور للتبديل إلى هذا الحساب.',
-	token_expired_notice: 'انتهت صلاحية الجلسة. يرجى إدخال كلمة المرور.'
+	token_expired_notice: 'انتهت صلاحية الجلسة. يرجى إدخال كلمة المرور.',
+	appearance: 'المظهر',
+	theme_system: 'النظام',
+	theme_light: 'فاتح',
+	theme_dark: 'داكن'
 }

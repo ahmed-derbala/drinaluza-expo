@@ -1,6 +1,6 @@
 import { useTheme as useNavigationTheme } from '@react-navigation/native'
 
-export { AppThemeProvider, LightTheme, DarkTheme } from './provider'
+export { AppThemeProvider, LightTheme, DarkTheme, useThemeContext } from './provider'
 export { colors, lightColors, darkColors } from './colors'
 export type { AppThemeColors } from './types'
 
