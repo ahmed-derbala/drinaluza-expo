@@ -134,10 +134,21 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 			const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 
-			// Delete existing file if it exists in cache
-			const fileInfo = await FileSystem.getInfoAsync(localUri)
-			if (fileInfo.exists) {
-				await FileSystem.deleteAsync(localUri, { idempotent: true })
+			/*	// Delete existing file if it exists in cache
+				const fileInfo = await FileSystem.getInfoAsync(localUri)
+				if (fileInfo.exists) {
+					await FileSystem.deleteAsync(localUri, { idempotent: true })
+				}*/
+			// Delete ANY existing drinaluza APK files in the cache directory
+			try {
+				const cacheFiles = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory)
+				const oldApks = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk'))
+
+				for (const oldApk of oldApks) {
+					await FileSystem.deleteAsync(`${FileSystem.cacheDirectory}${oldApk}`, { idempotent: true })
+				}
+			} catch (cleanError) {
+				console.warn('Failed to scrub old APKs from cache:', cleanError)
 			}
 
 			log({ level: 'info', label: 'AppUpdater', message: `Starting download: ${downloadUrl} -> ${localUri}` })
