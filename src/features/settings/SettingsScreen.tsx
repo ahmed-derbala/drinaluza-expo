@@ -9,7 +9,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 
 import { useTheme, useThemeContext } from '@/core/theme'
-import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
+import { APP_VERSION, BACKEND_URL, NODE_ENV, UPDATE_DOWNLOAD_ROOT_URL } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -71,8 +71,8 @@ export default function SettingsScreen() {
 		const version = customVersion || latestVersion || APP_VERSION
 		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
 		const downloadUrl = customVersion
-			? `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${customVersion}/drinaluza-${customVersion}.apk`
-			: apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+			? `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${customVersion}/drinaluza-${customVersion}.apk`
+			: apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 
 		const shareUrl = async () => {
 			try {
@@ -478,7 +478,7 @@ export default function SettingsScreen() {
 			<QRCodeModal
 				visible={showApkQRCode}
 				onClose={() => setShowApkQRCode(false)}
-				value={apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
+				value={apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
 				title="APK Download"
 				subtitle={`v${latestVersion || APP_VERSION} • Android Package`}
 				filenamePrefix={`drinaluza-apk-v${latestVersion || APP_VERSION}`}
@@ -512,7 +512,7 @@ export default function SettingsScreen() {
 								onPress={async () => {
 									setShowWebShareModal(false)
 									const version = latestVersion || APP_VERSION
-									const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+									const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 									await Clipboard.setStringAsync(downloadUrl)
 									toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
 								}}
@@ -537,7 +537,7 @@ export default function SettingsScreen() {
 								onPress={() => {
 									setShowWebShareModal(false)
 									const version = latestVersion || APP_VERSION
-									const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+									const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 									Linking.openURL(downloadUrl)
 								}}
 								activeOpacity={0.8}

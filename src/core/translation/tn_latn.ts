@@ -229,5 +229,9 @@ export const tn_latn = {
 	refresh_available: 'Famma Version Jdida',
 	exit: 'Okhroj',
 	downloading: 'Qe3d yhabat',
-	cached_update_files: 'Fichiers update cached'
+	cached_update_files: 'Fichiers update cached',
+	dual_update_title: 'Updates jdod mofin',
+	dual_update_msg: 'Version {pending} hadra bech tsobha, ama famma version jdid {latest} m3a telechargement. Ekhtar chnoua t-heb taamel:',
+	install_ready_btn: 'Sob version eli hadra (v{version})',
+	download_new_btn: 'Habat version jdida (v{version})'
 }

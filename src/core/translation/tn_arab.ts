@@ -229,5 +229,9 @@ export const tn_arab = {
 	refresh_available: 'يوجد تحديث',
 	exit: 'اخرج',
 	downloading: 'قاعد يحمل',
-	cached_update_files: 'ملفات التحديث المخزنة'
+	cached_update_files: 'ملفات التحديث المخزنة',
+	dual_update_title: 'تحديثات جديدة متوفرة',
+	dual_update_msg: 'النسخة {pending} حاضرة للصب، أما فما نسخة أجدد {latest} متوفرة للتحميل. اختار خيار:',
+	install_ready_btn: 'صب النسخة الحاضرة (v{version})',
+	download_new_btn: 'حمل النسخة الجديدة (v{version})'
 }

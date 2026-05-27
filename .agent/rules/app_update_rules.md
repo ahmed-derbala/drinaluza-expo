@@ -39,7 +39,10 @@ Rules:
 Required updates should block app usage until updated.
 Optional updates should allow the user to continue using the app.
 
-check for updates only using this link
-https://api.github.com/repos/ahmed-derbala/drinaluza-expo/releases/latest
+check for updates using this link
+EXPO_PUBLIC_UPDATE_CHECK_URL
+
+download an update using this link
+EXPO_PUBLIC_UPDATE_DOWNLOAD_ROOT_URL
 
 keep the latest apk file only

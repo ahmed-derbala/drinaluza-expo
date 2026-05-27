@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Modal, BackHandler, Linking, ActivityIndicator, AppState, AppStateStatus, ScrollView } from 'react-native'
 import { useTheme } from '@/core/theme'
-import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
+import { APP_VERSION, BACKEND_URL, NODE_ENV, UPDATE_CHECK_URL, UPDATE_DOWNLOAD_ROOT_URL } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
@@ -157,6 +157,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [downloadProgress, setDownloadProgress] = useState(0)
 	const [isReadyToInstall, setIsReadyToInstall] = useState(false)
 	const [showReadyModal, setShowReadyModal] = useState(false)
+	const [pendingInstalledVersion, setPendingInstalledVersion] = useState<string | null>(null)
 
 	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
 
@@ -201,6 +202,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					if (pendingVersion && `drinaluza-${pendingVersion}.apk` === filename) {
 						await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
 						setIsReadyToInstall(false)
+						setPendingInstalledVersion(null)
 					}
 
 					toast.show({ title: 'File Deleted', message: 'Cached update file removed.', color: colors.primary })
@@ -249,7 +251,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			setDownloadProgress(0)
 			setIsReadyToInstall(false)
 
-			const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/v${version}/drinaluza-${version}.apk`
+			const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 
 			// Delete ANY existing drinaluza APK files in the cache directory
 			try {
@@ -329,7 +331,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
 
 				try {
-					const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/v${version}/drinaluza-${version}.apk`
+					const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 					await Linking.openURL(downloadUrl)
 				} catch (linkError) {
 					log({ level: 'error', label: 'AppUpdater', message: 'Fallback link open failed', error: linkError })
@@ -356,24 +358,24 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					toast.show({ title: translate('checking_for_updates', 'Checking for updates...'), message: '', color: colors.primary })
 				}
 
-				// 1. Fetch latest version strictly from GitHub Releases API
+				// 1. Fetch latest version strictly from Releases API
 				let githubData: GitHubReleaseResponse | null = null
 				try {
-					const githubRes = await axios.get<GitHubReleaseResponse>('https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest', { timeout: 8000 })
+					const githubRes = await axios.get<GitHubReleaseResponse>(UPDATE_CHECK_URL, { timeout: 8000 })
 					if (githubRes.data && githubRes.data.tag_name) {
 						githubData = githubRes.data
 					} else {
-						throw new Error('GitHub Releases API returned an invalid response.')
+						throw new Error('Releases API returned an invalid response.')
 					}
 				} catch (err) {
-					log({ level: 'warn', label: 'AppUpdater', message: 'GitHub API check failed (might be rate-limited or offline)', error: err })
+					log({ level: 'warn', label: 'AppUpdater', message: 'Update API check failed', error: err })
 					throw err
 				}
 
 				const rawTag = githubData.tag_name
 				const cleanTag = rawTag.replace(/^v/, '') // e.g. "v1.0.3" -> "1.0.3"
 				const apkAsset = githubData.assets?.find((asset) => asset.name.endsWith('.apk'))
-				const downloadUrl = apkAsset?.browser_download_url || `https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/${rawTag}/drinaluza-${cleanTag}.apk`
+				const downloadUrl = apkAsset?.browser_download_url || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/${rawTag}/drinaluza-${cleanTag}.apk`
 
 				if (githubData.body) {
 					setReleaseNotes(githubData.body)
@@ -470,6 +472,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						const fileInfo = await FileSystem.getInfoAsync(localUri)
 						if (fileInfo.exists) {
 							setIsReadyToInstall(true)
+							setPendingInstalledVersion(pendingVersion)
 							setLatestVersion(pendingVersion)
 
 							const updateType = getUpdateType(APP_VERSION, pendingVersion)
@@ -557,6 +560,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// Dismiss the modal immediately for optional update so the user can continue using the app
 				if (updateStatus !== 'update_required') {
 					setShowOptionalModal(false)
+					setShowReadyModal(false)
 				}
 				// Android: Trigger programmatic APK download in the background
 				if (latestVersion) {
@@ -576,6 +580,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const handleDismissOptionalUpdate = async () => {
 		setShowOptionalModal(false)
+		setShowReadyModal(false)
 		if (latestVersion) {
 			try {
 				if (Platform.OS === 'web') {
@@ -757,6 +762,10 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		)
 	}
 
+	const isDualUpdateAvailable = isReadyToInstall && pendingInstalledVersion !== null && latestVersion !== null && compareVersions(latestVersion, pendingInstalledVersion) > 0
+
+	const showDualModal = showReadyModal && showOptionalModal && isDualUpdateAvailable
+
 	return (
 		<UpdaterContext.Provider
 			value={{
@@ -781,116 +790,167 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			<View style={{ flex: 1, backgroundColor: colors.background }}>
 				{children}
 
-				{/* 1. Optional Update Modal Overlay */}
-				<Modal visible={showOptionalModal} transparent animationType="fade" statusBarTranslucent>
-					<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
-						<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
-							{/* Glossmorphic Ambient Top Accent */}
-							<LinearGradient colors={[colors.primary + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
+				{/* 1. Dual Update Modal Overlay (One modal only when both conditions are met) */}
+				{showDualModal && (
+					<Modal visible={true} transparent animationType="fade" statusBarTranslucent>
+						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
+								<LinearGradient colors={[colors.primary + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
 
-							<View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="rocket-sharp" size={32} color={colors.primary} />
-							</View>
-
-							<Text style={[styles.title, { color: colors.text }]}>
-								{Platform.OS === 'web' ? translate('refresh_available', 'Refresh Available') : translate('update_available', 'Update Available')}
-							</Text>
-
-							<Text style={[styles.message, { color: colors.textSecondary }]}>
-								{Platform.OS === 'web'
-									? translate('optional_update_msg_web', 'A new web version is available. Would you like to refresh to load the latest optimizations?')
-									: translate('optional_update_msg_android', 'A new version of the application is available. Would you like to download and install it now?')}
-							</Text>
-
-							{/* Version comparison chips */}
-							<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant }]}>
-								<View style={styles.infoRow}>
-									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Your Version</Text>
-									<View style={[styles.versionChip, { backgroundColor: colors.border + '40' }]}>
-										<Text style={[styles.infoValue, { color: colors.textSecondary }]}>{APP_VERSION}</Text>
-									</View>
+								<View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
+									<Ionicons name="git-merge-outline" size={32} color={colors.primary} />
 								</View>
-								<View style={[styles.infoRow, { marginTop: 10 }]}>
-									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Latest Version</Text>
-									<View style={[styles.versionChip, { backgroundColor: colors.primary + '20' }]}>
-										<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{latestVersion}</Text>
-									</View>
-								</View>
-							</View>
 
-							{/* Release Notes */}
-							{renderReleaseNotes()}
+								<Text style={[styles.title, { color: colors.text, textAlign: 'center' }]}>{translate('dual_update_title', 'Multiple Updates Available')}</Text>
 
-							{isDownloading ? (
-								<View style={styles.progressContainer}>
-									<View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 6 }}>
-										<Text style={[styles.progressText, { color: colors.textSecondary }]}>{translate('downloading', 'Downloading')}...</Text>
-										<Text style={[styles.progressText, { color: colors.primary }]}>{Math.round(downloadProgress * 100)}%</Text>
-									</View>
-									<View style={[styles.progressBarBg, { backgroundColor: colors.border + '40' }]}>
-										<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
-									</View>
-								</View>
-							) : (
-								<View style={styles.buttonGroup}>
-									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
+								<Text style={[styles.message, { color: colors.textSecondary, textAlign: 'center', marginVertical: 12 }]}>
+									{translate('dual_update_msg', 'Version {pending} is ready to install, but a newer version {latest} is available to download. Choose an option:')
+										.replace('{pending}', pendingInstalledVersion || '')
+										.replace('{latest}', latestVersion || '')}
+								</Text>
+
+								<View style={{ width: '100%', gap: 12, marginTop: 12 }}>
+									<TouchableOpacity
+										style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.success, borderColor: colors.success, width: '100%' }]}
+										onPress={async () => {
+											setShowReadyModal(false)
+											setShowOptionalModal(false)
+											await installDownloadedUpdate()
+										}}
+										activeOpacity={0.8}
+									>
+										<LinearGradient colors={[colors.success, colors.success + 'CC']} style={StyleSheet.absoluteFillObject} />
+										<Text style={styles.confirmBtnText}>{translate('install_ready_btn', 'Install Ready (v{version})').replace('{version}', pendingInstalledVersion || '')}</Text>
+									</TouchableOpacity>
+
+									<TouchableOpacity style={[styles.btn, styles.confirmBtn, { width: '100%' }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
+										<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
+										<Text style={styles.confirmBtnText}>{translate('download_new_btn', 'Download New (v{version})').replace('{version}', latestVersion || '')}</Text>
+									</TouchableOpacity>
+
+									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80', width: '100%' }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
 										<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
 									</TouchableOpacity>
-									<TouchableOpacity style={[styles.btn, styles.confirmBtn]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
-										<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
-										<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('update', 'Update')}</Text>
-									</TouchableOpacity>
 								</View>
-							)}
-						</View>
-					</View>
-				</Modal>
-
-				{/* 2. Startup Update Ready to Install Modal Overlay */}
-				<Modal visible={showReadyModal} transparent animationType="fade" statusBarTranslucent>
-					<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
-						<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
-							<LinearGradient colors={[colors.success + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
-
-							<View style={[styles.iconWrap, { backgroundColor: colors.success + '15' }]}>
-								<Ionicons name="refresh-circle-outline" size={36} color={colors.success} />
 							</View>
+						</View>
+					</Modal>
+				)}
 
-							<Text style={[styles.title, { color: colors.text }]}>{translate('update_ready', 'Update Ready')}</Text>
+				{/* 2. Optional Update Modal Overlay */}
+				{!showDualModal && (
+					<Modal visible={showOptionalModal} transparent animationType="fade" statusBarTranslucent>
+						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
+								{/* Glossmorphic Ambient Top Accent */}
+								<LinearGradient colors={[colors.primary + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
 
-							<Text style={[styles.message, { color: colors.textSecondary }]}>
-								{translate('ready_update_msg_android', "A downloaded update is ready to be installed! Let's install and restart the app to enjoy the latest features.")}
-							</Text>
+								<View style={[styles.iconWrap, { backgroundColor: colors.primary + '15' }]}>
+									<Ionicons name="rocket-sharp" size={32} color={colors.primary} />
+								</View>
 
-							{/* Version chip */}
-							<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant, marginBottom: 24 }]}>
-								<View style={styles.infoRow}>
-									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Pending Version</Text>
-									<View style={[styles.versionChip, { backgroundColor: colors.success + '20' }]}>
-										<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{latestVersion}</Text>
+								<Text style={[styles.title, { color: colors.text }]}>
+									{Platform.OS === 'web' ? translate('refresh_available', 'Refresh Available') : translate('update_available', 'Update Available')}
+								</Text>
+
+								<Text style={[styles.message, { color: colors.textSecondary }]}>
+									{Platform.OS === 'web'
+										? translate('optional_update_msg_web', 'A new web version is available. Would you like to refresh to load the latest optimizations?')
+										: translate('optional_update_msg_android', 'A new version of the application is available. Would you like to download and install it now?')}
+								</Text>
+
+								{/* Version comparison chips */}
+								<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant }]}>
+									<View style={styles.infoRow}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Your Version</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.border + '40' }]}>
+											<Text style={[styles.infoValue, { color: colors.textSecondary }]}>{APP_VERSION}</Text>
+										</View>
+									</View>
+									<View style={[styles.infoRow, { marginTop: 10 }]}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Latest Version</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.primary + '20' }]}>
+											<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{latestVersion}</Text>
+										</View>
 									</View>
 								</View>
-							</View>
 
-							<View style={styles.buttonGroup}>
-								<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={() => setShowReadyModal(false)} activeOpacity={0.8}>
-									<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
-								</TouchableOpacity>
-								<TouchableOpacity
-									style={[styles.btn, styles.confirmBtn]}
-									onPress={async () => {
-										setShowReadyModal(false)
-										await installDownloadedUpdate()
-									}}
-									activeOpacity={0.8}
-								>
-									<LinearGradient colors={[colors.success, colors.success + 'CC']} style={StyleSheet.absoluteFillObject} />
-									<Text style={styles.confirmBtnText}>{translate('install_now', 'Install Now')}</Text>
-								</TouchableOpacity>
+								{/* Release Notes */}
+								{renderReleaseNotes()}
+
+								{isDownloading ? (
+									<View style={styles.progressContainer}>
+										<View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 6 }}>
+											<Text style={[styles.progressText, { color: colors.textSecondary }]}>{translate('downloading', 'Downloading')}...</Text>
+											<Text style={[styles.progressText, { color: colors.primary }]}>{Math.round(downloadProgress * 100)}%</Text>
+										</View>
+										<View style={[styles.progressBarBg, { backgroundColor: colors.border + '40' }]}>
+											<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
+										</View>
+									</View>
+								) : (
+									<View style={styles.buttonGroup}>
+										<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
+											<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
+										</TouchableOpacity>
+										<TouchableOpacity style={[styles.btn, styles.confirmBtn]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
+											<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
+											<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('update', 'Update')}</Text>
+										</TouchableOpacity>
+									</View>
+								)}
 							</View>
 						</View>
-					</View>
-				</Modal>
+					</Modal>
+				)}
+
+				{/* 3. Startup Update Ready to Install Modal Overlay */}
+				{!showDualModal && (
+					<Modal visible={showReadyModal} transparent animationType="fade" statusBarTranslucent>
+						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
+								<LinearGradient colors={[colors.success + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
+
+								<View style={[styles.iconWrap, { backgroundColor: colors.success + '15' }]}>
+									<Ionicons name="refresh-circle-outline" size={36} color={colors.success} />
+								</View>
+
+								<Text style={[styles.title, { color: colors.text }]}>{translate('update_ready', 'Update Ready')}</Text>
+
+								<Text style={[styles.message, { color: colors.textSecondary }]}>
+									{translate('ready_update_msg_android', "A downloaded update is ready to be installed! Let's install and restart the app to enjoy the latest features.")}
+								</Text>
+
+								{/* Version chip */}
+								<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant, marginBottom: 24 }]}>
+									<View style={styles.infoRow}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Pending Version</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.success + '20' }]}>
+											<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{pendingInstalledVersion}</Text>
+										</View>
+									</View>
+								</View>
+
+								<View style={styles.buttonGroup}>
+									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={() => setShowReadyModal(false)} activeOpacity={0.8}>
+										<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
+									</TouchableOpacity>
+									<TouchableOpacity
+										style={[styles.btn, styles.confirmBtn]}
+										onPress={async () => {
+											setShowReadyModal(false)
+											await installDownloadedUpdate()
+										}}
+										activeOpacity={0.8}
+									>
+										<LinearGradient colors={[colors.success, colors.success + 'CC']} style={StyleSheet.absoluteFillObject} />
+										<Text style={styles.confirmBtnText}>{translate('install_now', 'Install Now')}</Text>
+									</TouchableOpacity>
+								</View>
+							</View>
+						</View>
+					</Modal>
+				)}
 			</View>
 		</UpdaterContext.Provider>
 	)
