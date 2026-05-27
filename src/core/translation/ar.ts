@@ -56,5 +56,9 @@ export const ar = {
 	share_apk_file: 'مشاركة ملف APK الأخير',
 	share_apk_not_downloaded: 'لم يتم تنزيل ملف APK الأخير بعد. يمكنك مشاركة رابط أحدث نسخة بدلاً من ذلك.',
 	quickshare_advisory_title: 'المشاركة السريعة (Quick Share)',
-	quickshare_advisory_msg: 'لمشاركة ملف APK مع هاتف أندرويد قريب، يرجى اختيار "Quick Share" (أو البلوتوث) من قائمة المشاركة التي ستظهر لك بعد قليل.'
+	quickshare_advisory_msg: 'لمشاركة ملف APK مع هاتف أندرويد قريب، يرجى اختيار "Quick Share" (أو البلوتوث) من قائمة المشاركة التي ستظهر لك بعد قليل.',
+	whats_new: 'ما الجديد',
+	release_notes: 'تفاصيل الإصدار',
+	checking_for_updates: 'جاري التحقق من وجود تحديثات...',
+	no_release_notes: 'لا توجد تفاصيل لهذا الإصدار.'
 }

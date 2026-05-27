@@ -211,5 +211,9 @@ export const tn_latn = {
 	share_apk_file: 'Partagi fichier APK el lekhrani',
 	share_apk_not_downloaded: 'Fichier APK el lekhrani mouch masboub tawa. Tnajem t-partagi lien el version el jdida fi blastou.',
 	quickshare_advisory_title: 'Quick Share',
-	quickshare_advisory_msg: 'Bech t-partagi fichier APK maa telifoun Android qrib, ekhtar "Quick Share" (wela Bluetooth) fi qaimat el partage mtaal system elli bech todhhor tawa.'
+	quickshare_advisory_msg: 'Bech t-partagi fichier APK maa telifoun Android qrib, ekhtar "Quick Share" (wela Bluetooth) fi qaimat el partage mtaal system elli bech todhhor tawa.',
+	whats_new: 'Chnoua el Jdid',
+	release_notes: 'Tafasil el Version',
+	checking_for_updates: 'Nlawjou ken famma jdid...',
+	no_release_notes: 'Ma famma hatta tafasil el hal version.'
 }

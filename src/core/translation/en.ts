@@ -229,5 +229,9 @@ export const en = {
 	share_apk_file: 'Share Latest APK File',
 	share_apk_not_downloaded: 'The latest APK file has not been downloaded yet. You can share the latest version URL instead.',
 	quickshare_advisory_title: 'Quick Share',
-	quickshare_advisory_msg: 'To share the APK file with a nearby Android phone, please select "Quick Share" (or Bluetooth) in the system sharing menu that opens next.'
+	quickshare_advisory_msg: 'To share the APK file with a nearby Android phone, please select "Quick Share" (or Bluetooth) in the system sharing menu that opens next.',
+	whats_new: "What's New",
+	release_notes: 'Release Notes',
+	checking_for_updates: 'Checking for updates...',
+	no_release_notes: 'No release notes available for this version.'
 }

@@ -56,5 +56,9 @@ export const fr = {
 	share_apk_file: 'Partager le fichier APK le plus récent',
 	share_apk_not_downloaded: "Le fichier APK le plus récent n'a pas encore été téléchargé. Vous pouvez partager l'URL de la dernière version à la place.",
 	quickshare_advisory_title: 'Quick Share (Partage rapide)',
-	quickshare_advisory_msg: 'Pour partager le fichier APK avec un téléphone Android à proximité, veuillez sélectionner "Quick Share" (ou Bluetooth) dans le menu de partage système qui va s\'ouvrir.'
+	quickshare_advisory_msg: 'Pour partager le fichier APK avec un téléphone Android à proximité, veuillez sélectionner "Quick Share" (ou Bluetooth) dans le menu de partage système qui va s\'ouvrir.',
+	whats_new: 'Quoi de neuf',
+	release_notes: 'Notes de version',
+	checking_for_updates: 'Recherche de mises à jour...',
+	no_release_notes: 'Aucune note disponible pour cette version.'
 }
