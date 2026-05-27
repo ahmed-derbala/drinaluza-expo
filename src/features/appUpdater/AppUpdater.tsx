@@ -61,6 +61,9 @@ export interface UpdaterContextType {
 	downloadProgress: number
 	isReadyToInstall: boolean
 	installDownloadedUpdate: () => Promise<void>
+	cachedApks: Array<{ name: string; size: number; version: string; localUri: string }>
+	deleteCachedApk: (filename: string) => Promise<void>
+	loadCachedApks: () => Promise<void>
 	checkForUpdates: (manual?: boolean) => Promise<void>
 }
 
@@ -77,6 +80,9 @@ const UpdaterContext = createContext<UpdaterContextType>({
 	downloadProgress: 0,
 	isReadyToInstall: false,
 	installDownloadedUpdate: async () => {},
+	cachedApks: [],
+	deleteCachedApk: async () => {},
+	loadCachedApks: async () => {},
 	checkForUpdates: async () => {}
 })
 
@@ -151,6 +157,66 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [downloadProgress, setDownloadProgress] = useState(0)
 	const [isReadyToInstall, setIsReadyToInstall] = useState(false)
 	const [showReadyModal, setShowReadyModal] = useState(false)
+
+	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
+
+	const loadCachedApks = useCallback(async () => {
+		if (Platform.OS !== 'android') return
+		try {
+			const cacheDir = FileSystem.cacheDirectory
+			if (cacheDir) {
+				const cacheFiles = await FileSystem.readDirectoryAsync(cacheDir)
+				const apkFiles = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk'))
+
+				const details = await Promise.all(
+					apkFiles.map(async (file) => {
+						const path = `${cacheDir}${file}`
+						const info = await FileSystem.getInfoAsync(path)
+						const version = file.replace(/^drinaluza-/, '').replace(/\.apk$/, '')
+						return {
+							name: file,
+							size: info.exists ? (info as any).size : 0,
+							version,
+							localUri: path
+						}
+					})
+				)
+				setCachedApks(details.filter((apk) => apk.size > 0))
+			}
+		} catch (e) {
+			log({ level: 'warn', label: 'AppUpdater', message: 'Failed to load cached APK list', error: e })
+		}
+	}, [])
+
+	const deleteCachedApk = useCallback(
+		async (filename: string) => {
+			try {
+				const cacheDir = FileSystem.cacheDirectory
+				if (cacheDir) {
+					const path = `${cacheDir}${filename}`
+					await FileSystem.deleteAsync(path, { idempotent: true })
+
+					// If the deleted APK matched the currently ready-to-install version, update context state!
+					const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
+					if (pendingVersion && `drinaluza-${pendingVersion}.apk` === filename) {
+						await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+						setIsReadyToInstall(false)
+					}
+
+					toast.show({ title: 'File Deleted', message: 'Cached update file removed.', color: colors.primary })
+					await loadCachedApks()
+				}
+			} catch (e) {
+				log({ level: 'error', label: 'AppUpdater', message: 'Failed to delete cached APK file', error: e })
+				toast.show({ title: 'Error', message: 'Failed to delete file.', color: '#EF4444' })
+			}
+		},
+		[loadCachedApks, colors.primary]
+	)
+
+	useEffect(() => {
+		loadCachedApks()
+	}, [loadCachedApks])
 
 	const installDownloadedUpdate = useCallback(async () => {
 		if (Platform.OS === 'web') {
@@ -278,6 +344,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		} finally {
 			setIsDownloading(false)
 			setDownloadProgress(0)
+			await loadCachedApks()
 		}
 	}
 
@@ -588,6 +655,9 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					downloadProgress,
 					isReadyToInstall,
 					installDownloadedUpdate,
+					cachedApks,
+					deleteCachedApk,
+					loadCachedApks,
 					checkForUpdates
 				}}
 			>
@@ -612,6 +682,9 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					downloadProgress,
 					isReadyToInstall,
 					installDownloadedUpdate,
+					cachedApks,
+					deleteCachedApk,
+					loadCachedApks,
 					checkForUpdates
 				}}
 			>
@@ -699,6 +772,9 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				downloadProgress,
 				isReadyToInstall,
 				installDownloadedUpdate,
+				cachedApks,
+				deleteCachedApk,
+				loadCachedApks,
 				checkForUpdates
 			}}
 		>

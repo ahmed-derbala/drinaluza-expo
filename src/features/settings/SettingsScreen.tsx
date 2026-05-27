@@ -1,6 +1,7 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
+import { LinearGradient } from 'expo-linear-gradient'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal, Share, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
@@ -27,6 +28,15 @@ const formatUptime = (uptime: string | undefined): string => {
 		.trim()
 }
 
+const formatBytes = (bytes: number): string => {
+	if (bytes === 0) return '0 B'
+	const k = 1024
+	const dm = 2
+	const sizes = ['B', 'KB', 'MB', 'GB']
+	const i = Math.floor(Math.log(bytes) / Math.log(k))
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
 export default function SettingsScreen() {
 	const { colors } = useTheme()
 	const { themeMode, setThemeMode } = useThemeContext()
@@ -36,12 +46,26 @@ export default function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
 
-	const { isChecking, updateStatus, latestVersion, minVersion, serverVersion, checkForUpdates, apkDownloadUrl, isDownloading, downloadProgress, isReadyToInstall, installDownloadedUpdate } =
-		useUpdater()
+	const {
+		isChecking,
+		updateStatus,
+		latestVersion,
+		minVersion,
+		serverVersion,
+		checkForUpdates,
+		apkDownloadUrl,
+		isDownloading,
+		downloadProgress,
+		isReadyToInstall,
+		installDownloadedUpdate,
+		cachedApks,
+		deleteCachedApk
+	} = useUpdater()
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
 	const [showApkQRCode, setShowApkQRCode] = useState(false)
+	const [showWebShareModal, setShowWebShareModal] = useState(false)
 
 	const handleShareApk = async () => {
 		const version = latestVersion || APP_VERSION
@@ -83,7 +107,10 @@ export default function SettingsScreen() {
 		const handleShareFileWithAdvisory = () => {
 			Alert.alert(
 				translate('quickshare_advisory_title', 'Quick Share'),
-				translate('quickshare_advisory_msg', 'To share the APK file with a nearby Android phone, please select "Quick Share" (or Bluetooth) in the system sharing menu that opens next.'),
+				translate(
+					'quickshare_advisory_msg',
+					"To share the APK with a nearby Android device:\n\n1. Pull down the Quick Settings shade on the receiving device, tap Quick Share, and set the visibility to 'Everyone' or 'Contacts'.\n2. Tap OK below, then select 'Quick Share' (or Bluetooth) in the system sharing menu that opens next."
+				),
 				[
 					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
 					{ text: translate('ok', 'OK'), onPress: shareFile }
@@ -92,7 +119,7 @@ export default function SettingsScreen() {
 		}
 
 		if (Platform.OS === 'web') {
-			await shareUrl()
+			setShowWebShareModal(true)
 			return
 		}
 
@@ -305,6 +332,29 @@ export default function SettingsScreen() {
 						)}
 					</TouchableOpacity>
 				)}
+
+				{Platform.OS === 'android' && cachedApks && cachedApks.length > 0 && (
+					<View style={{ marginTop: 16 }}>
+						<View style={[styles.updaterDivider, { backgroundColor: colors.border, marginVertical: 12 }]} />
+						<Text style={styles.cachedHeader}>{translate('cached_update_files', 'Cached Update Files')}</Text>
+						<View style={styles.cachedList}>
+							{cachedApks.map((file) => (
+								<View key={file.name} style={[styles.cachedItem, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
+									<View style={[styles.cachedItemIcon, { backgroundColor: colors.primary + '12' }]}>
+										<Ionicons name="cube-outline" size={20} color={colors.primary} />
+									</View>
+									<View style={styles.cachedItemInfo}>
+										<Text style={[styles.cachedItemName, { color: colors.text }]}>Drinaluza v{file.version}</Text>
+										<Text style={[styles.cachedItemSize, { color: colors.textSecondary }]}>{formatBytes(file.size)}</Text>
+									</View>
+									<TouchableOpacity style={[styles.cachedDeleteBtn, { backgroundColor: colors.error + '12' }]} onPress={() => deleteCachedApk(file.name)} activeOpacity={0.7}>
+										<Ionicons name="trash-outline" size={18} color={colors.error} />
+									</TouchableOpacity>
+								</View>
+							))}
+						</View>
+					</View>
+				)}
 			</View>
 
 			<SettingSection title={translate('appearance', 'Appearance')}>
@@ -428,6 +478,86 @@ export default function SettingsScreen() {
 				subtitle={`v${latestVersion || APP_VERSION} • Android Package`}
 				filenamePrefix={`drinaluza-apk-v${latestVersion || APP_VERSION}`}
 			/>
+
+			{/* Custom Web Share Options Modal */}
+			<Modal visible={showWebShareModal} transparent animationType="fade" onRequestClose={() => setShowWebShareModal(false)}>
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 }}>
+					<View style={{ width: '100%', maxWidth: 400, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, padding: 24, overflow: 'hidden' }}>
+						<LinearGradient colors={[colors.primary + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
+
+						<View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 16, alignSelf: 'center' }}>
+							<Ionicons name="share-social" size={24} color={colors.primary} />
+						</View>
+
+						<Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center', marginBottom: 8 }}>{translate('share_options_title', 'Share Options')}</Text>
+
+						<Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 24 }}>{translate('web_share_options_msg', 'Choose an action for Drinaluza APK:')}</Text>
+
+						<View style={{ gap: 12 }}>
+							<TouchableOpacity
+								style={{
+									height: 48,
+									borderRadius: 12,
+									backgroundColor: colors.primary,
+									justifyContent: 'center',
+									alignItems: 'center',
+									flexDirection: 'row',
+									gap: 8
+								}}
+								onPress={async () => {
+									setShowWebShareModal(false)
+									const version = latestVersion || APP_VERSION
+									const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+									await Clipboard.setStringAsync(downloadUrl)
+									toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
+								}}
+								activeOpacity={0.8}
+							>
+								<Ionicons name="copy-outline" size={18} color="#fff" />
+								<Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{translate('copy_download_link', 'Copy Download Link')}</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								style={{
+									height: 48,
+									borderRadius: 12,
+									backgroundColor: colors.surfaceVariant,
+									borderWidth: 1,
+									borderColor: colors.border,
+									justifyContent: 'center',
+									alignItems: 'center',
+									flexDirection: 'row',
+									gap: 8
+								}}
+								onPress={() => {
+									setShowWebShareModal(false)
+									const version = latestVersion || APP_VERSION
+									const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+									Linking.openURL(downloadUrl)
+								}}
+								activeOpacity={0.8}
+							>
+								<Ionicons name="download-outline" size={18} color={colors.text} />
+								<Text style={{ color: colors.text, fontSize: 14, fontWeight: '700' }}>{translate('download_apk_file', 'Download APK File')}</Text>
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								style={{
+									height: 44,
+									borderRadius: 12,
+									justifyContent: 'center',
+									alignItems: 'center',
+									marginTop: 8
+								}}
+								onPress={() => setShowWebShareModal(false)}
+								activeOpacity={0.7}
+							>
+								<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '600' }}>{translate('cancel', 'Cancel')}</Text>
+							</TouchableOpacity>
+						</View>
+					</View>
+				</View>
+			</Modal>
 		</ScrollView>
 	)
 }
@@ -595,5 +725,47 @@ const createStyles = (colors: any) =>
 		},
 		updaterBtnText: {
 			fontSize: 14
+		},
+		cachedHeader: {
+			fontSize: 13,
+			fontWeight: '700',
+			color: colors.textSecondary,
+			marginBottom: 10,
+			textTransform: 'uppercase',
+			letterSpacing: 0.5,
+			marginLeft: 2
+		},
+		cachedList: {
+			gap: 8
+		},
+		cachedItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			padding: 10,
+			borderRadius: 12,
+			borderWidth: 1
+		},
+		cachedItemIcon: {
+			width: 36,
+			height: 36,
+			borderRadius: 8,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginRight: 12
+		},
+		cachedItemInfo: {
+			flex: 1
+		},
+		cachedItemName: {
+			fontSize: 14,
+			fontWeight: '600'
+		},
+		cachedItemSize: {
+			fontSize: 12,
+			marginTop: 2
+		},
+		cachedDeleteBtn: {
+			padding: 8,
+			borderRadius: 8
 		}
 	})

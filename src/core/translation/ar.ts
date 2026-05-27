@@ -56,7 +56,11 @@ export const ar = {
 	share_apk_file: 'مشاركة ملف APK الأخير',
 	share_apk_not_downloaded: 'لم يتم تنزيل ملف APK الأخير بعد. يمكنك مشاركة رابط أحدث نسخة بدلاً من ذلك.',
 	quickshare_advisory_title: 'المشاركة السريعة (Quick Share)',
-	quickshare_advisory_msg: 'لمشاركة ملف APK مع هاتف أندرويد قريب، يرجى اختيار "Quick Share" (أو البلوتوث) من قائمة المشاركة التي ستظهر لك بعد قليل.',
+	web_share_options_msg: 'اختر إجراءً لملف APK درينالوزة:',
+	copy_download_link: 'نسخ رابط التنزيل',
+	download_apk_file: 'تنزيل ملف APK',
+	quickshare_advisory_msg:
+		'لمشاركة ملف APK مع جهاز أندرويد قريب:\n\n1. على الجهاز المستلم، اسحب لوحة الإعدادات السريعة لأسفل، واضغط على Quick Share، واضبط الرؤية على "الجميع" أو "جهات الاتصال".\n2. اضغط على موافق أدناه، ثم اختر "Quick Share" (أو البلوتوث) من قائمة المشاركة التي ستظهر.',
 	whats_new: 'ما الجديد',
 	release_notes: 'تفاصيل الإصدار',
 	checking_for_updates: 'جاري التحقق من وجود تحديثات...',
@@ -69,5 +73,6 @@ export const ar = {
 	mandatory_update_msg_android: 'هذا الإصدار قديم ولم يعد مدعوماً. يرجى تنزيل أحدث إصدار للمتابعة.',
 	refresh_available: 'يتوفر تحديث',
 	exit: 'خروج',
-	downloading: 'جاري التنزيل'
+	downloading: 'جاري التنزيل',
+	cached_update_files: 'ملفات التحديث المخزنة مؤقتاً'
 }

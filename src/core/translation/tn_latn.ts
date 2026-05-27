@@ -211,7 +211,11 @@ export const tn_latn = {
 	share_apk_file: 'Partagi fichier APK el lekhrani',
 	share_apk_not_downloaded: 'Fichier APK el lekhrani mouch masboub tawa. Tnajem t-partagi lien el version el jdida fi blastou.',
 	quickshare_advisory_title: 'Quick Share',
-	quickshare_advisory_msg: 'Bech t-partagi fichier APK maa telifoun Android qrib, ekhtar "Quick Share" (wela Bluetooth) fi qaimat el partage mtaal system elli bech todhhor tawa.',
+	web_share_options_msg: 'Ekhtar chniya theb taamel b-APK Drinaluza:',
+	copy_download_link: 'Copy lien el telechargement',
+	download_apk_file: 'Habat fichier APK',
+	quickshare_advisory_msg:
+		'Bech t-partagi fichier APK maa telifoun Android qrib:\n\n1. Fi talifoun elli bech yestaqbel, hbat el Quick Settings, enzel ala Quick Share w rad visibility "Everyone" wela "Contacts".\n2. Enzel ala OK louta, w ekhtar "Quick Share" (wela Bluetooth) fi qaimat el partage mtaal system.',
 	whats_new: 'Chnoua el Jdid',
 	release_notes: 'Tafasil el Version',
 	checking_for_updates: 'Nlawjou ken famma jdid...',
@@ -224,5 +228,6 @@ export const tn_latn = {
 	mandatory_update_msg_android: 'Hal version qdima barcha w mch mda3ouma. Habat el version el jdida bech tkammel.',
 	refresh_available: 'Famma Version Jdida',
 	exit: 'Okhroj',
-	downloading: 'Qe3d yhabat'
+	downloading: 'Qe3d yhabat',
+	cached_update_files: 'Fichiers update cached'
 }

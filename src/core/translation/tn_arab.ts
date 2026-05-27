@@ -211,7 +211,11 @@ export const tn_arab = {
 	share_apk_file: 'بارتاجي فيشي APK اللخراني',
 	share_apk_not_downloaded: 'فيشي APK اللخراني موش مسبوب توة. تنجم تبارتاجي ليان النسخة الجديدة في بلاصتو.',
 	quickshare_advisory_title: 'المشاركة السريعة (Quick Share)',
-	quickshare_advisory_msg: 'باش تبارتاجي فيشي APK مع تلفون أندرويد قريب، اختار "Quick Share" (وإلا البلوتوث) من قائمة المشاركة متاع السيستيم اللي باش تتحل.',
+	web_share_options_msg: 'اختار شنوة تحب تعمل بـ APK درينالوزة:',
+	copy_download_link: 'نسخ ليان التنزيل',
+	download_apk_file: 'تنزيل فيشي APK',
+	quickshare_advisory_msg:
+		'باش تبارتاجي فيشي APK مع تلفون أندرويد قريب:\n\n1. في التلفون اللي باش يستقبل، هبط الـ Quick Settings، انزل على Quick Share ورد الـ visibility لـ "الجميع" وإلا "جهات الاتصال".\n2. انزل على موافق لوطة، واختار "Quick Share" (وإلا البلوتوث) من قائمة المشاركة متاع السيستيم اللي باش تتحل.',
 	whats_new: 'شنوة الجديد',
 	release_notes: 'تفاصيل النسخة',
 	checking_for_updates: 'نلوجو كان فما جديد...',
@@ -224,5 +228,6 @@ export const tn_arab = {
 	mandatory_update_msg_android: 'هذه النسخة قديمة وما باقيتش مدعومة. حمل النسخة الجديدة باش تكمل.',
 	refresh_available: 'يوجد تحديث',
 	exit: 'اخرج',
-	downloading: 'قاعد يحمل'
+	downloading: 'قاعد يحمل',
+	cached_update_files: 'ملفات التحديث المخزنة'
 }

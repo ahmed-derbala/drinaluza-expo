@@ -229,7 +229,11 @@ export const en = {
 	share_apk_file: 'Share Latest APK File',
 	share_apk_not_downloaded: 'The latest APK file has not been downloaded yet. You can share the latest version URL instead.',
 	quickshare_advisory_title: 'Quick Share',
-	quickshare_advisory_msg: 'To share the APK file with a nearby Android phone, please select "Quick Share" (or Bluetooth) in the system sharing menu that opens next.',
+	web_share_options_msg: 'Choose an action for Drinaluza APK:',
+	copy_download_link: 'Copy Download Link',
+	download_apk_file: 'Download APK File',
+	quickshare_advisory_msg:
+		"To share the APK with a nearby Android device:\n\n1. Pull down the Quick Settings shade on the receiving device, tap Quick Share, and set the visibility to 'Everyone' or 'Contacts'.\n2. Tap OK below, then select 'Quick Share' (or Bluetooth) in the system sharing menu that opens next.",
 	whats_new: "What's New",
 	release_notes: 'Release Notes',
 	checking_for_updates: 'Checking for updates...',
@@ -242,5 +246,6 @@ export const en = {
 	mandatory_update_msg_android: 'This version of the application is outdated and no longer supported. Please download the latest version to continue.',
 	refresh_available: 'Refresh Available',
 	exit: 'Exit',
-	downloading: 'Downloading'
+	downloading: 'Downloading',
+	cached_update_files: 'Cached Update Files'
 }

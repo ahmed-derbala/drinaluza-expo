@@ -56,7 +56,11 @@ export const fr = {
 	share_apk_file: 'Partager le fichier APK le plus récent',
 	share_apk_not_downloaded: "Le fichier APK le plus récent n'a pas encore été téléchargé. Vous pouvez partager l'URL de la dernière version à la place.",
 	quickshare_advisory_title: 'Quick Share (Partage rapide)',
-	quickshare_advisory_msg: 'Pour partager le fichier APK avec un téléphone Android à proximité, veuillez sélectionner "Quick Share" (ou Bluetooth) dans le menu de partage système qui va s\'ouvrir.',
+	web_share_options_msg: "Choisissez une action pour l'APK Drinaluza :",
+	copy_download_link: 'Copier le lien de téléchargement',
+	download_apk_file: 'Télécharger le fichier APK',
+	quickshare_advisory_msg:
+		"Pour partager l'APK avec un appareil Android à proximité:\n\n1. Sur l'appareil récepteur, glissez vers le bas pour ouvrir les Paramètres rapides, appuyez sur Quick Share et réglez la visibilité sur 'Tout le monde' ou 'Contacts'.\n2. Appuyez sur OK ci-dessous, puis sélectionnez 'Quick Share' (ou Bluetooth) dans le menu de partage système.",
 	whats_new: 'Quoi de neuf',
 	release_notes: 'Notes de version',
 	checking_for_updates: 'Recherche de mises à jour...',
@@ -69,5 +73,6 @@ export const fr = {
 	mandatory_update_msg_android: "Cette version est obsolète et n'est plus prise en charge. Téléchargez la dernière version pour continuer.",
 	refresh_available: 'Actualisation disponible',
 	exit: 'Quitter',
-	downloading: 'Téléchargement'
+	downloading: 'Téléchargement',
+	cached_update_files: 'Fichiers de mise à jour en cache'
 }
