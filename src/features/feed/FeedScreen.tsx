@@ -1,6 +1,7 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
+import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -476,7 +477,8 @@ export default function FeedScreen() {
 	)
 
 	const headerRightActions = (
-		<View style={{ flexDirection: 'row', gap: 8 }}>
+		<View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+			<HeaderUpdaterWidget />
 			{!isWeb && (
 				<HeaderActionButton iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} backgroundColor={colors.surface} size={40} accessibilityLabel="Scan Barcode" />
 			)}

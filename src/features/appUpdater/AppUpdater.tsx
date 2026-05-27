@@ -57,6 +57,10 @@ export interface UpdaterContextType {
 	destroyAppStorage: boolean | string
 	apkDownloadUrl: string | null
 	releaseNotes: string | null
+	isDownloading: boolean
+	downloadProgress: number
+	isReadyToInstall: boolean
+	installDownloadedUpdate: () => Promise<void>
 	checkForUpdates: (manual?: boolean) => Promise<void>
 }
 
@@ -69,6 +73,10 @@ const UpdaterContext = createContext<UpdaterContextType>({
 	destroyAppStorage: false,
 	apkDownloadUrl: null,
 	releaseNotes: null,
+	isDownloading: false,
+	downloadProgress: 0,
+	isReadyToInstall: false,
+	installDownloadedUpdate: async () => {},
 	checkForUpdates: async () => {}
 })
 
@@ -107,12 +115,39 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [showOptionalModal, setShowOptionalModal] = useState(false)
 	const [isDownloading, setIsDownloading] = useState(false)
 	const [downloadProgress, setDownloadProgress] = useState(0)
+	const [isReadyToInstall, setIsReadyToInstall] = useState(false)
+	const [showReadyModal, setShowReadyModal] = useState(false)
+
+	const installDownloadedUpdate = useCallback(async () => {
+		if (Platform.OS === 'web') {
+			window.location.reload()
+			return
+		}
+		const version = latestVersion
+		if (!version) return
+		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
+		try {
+			const contentUri = await FileSystem.getContentUriAsync(localUri)
+			await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+				data: contentUri,
+				flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+			})
+		} catch (error) {
+			log({ level: 'error', label: 'AppUpdater', message: 'Failed to launch downloaded installer intent', error })
+			toast.show({
+				title: translate('error', 'Error'),
+				message: 'Failed to launch installer. Please check app permissions.',
+				color: '#EF4444'
+			})
+		}
+	}, [latestVersion, translate])
 
 	const downloadAndInstallApk = async (version: string) => {
 		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
 		try {
 			setIsDownloading(true)
 			setDownloadProgress(0)
+			setIsReadyToInstall(false)
 
 			const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 
@@ -155,21 +190,28 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				throw err
 			}
 
-			log({ level: 'info', label: 'AppUpdater', message: `Download complete. Launching installer for ${result.uri}` })
-			toast.show({ title: 'Download Complete', message: 'Opening installer...', color: '#10B981' })
+			log({ level: 'info', label: 'AppUpdater', message: `Download complete. Saving downloaded version state for v${version}` })
 
-			// Convert local file path to Content URI
-			const contentUri = await FileSystem.getContentUriAsync(result.uri)
+			await AsyncStorage.setItem('drinaluza_downloaded_update_version', version)
+			setIsReadyToInstall(true)
 
-			// Launch the Android installation intent
-			await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-				data: contentUri,
-				flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-			})
+			if (updateStatus === 'update_required') {
+				toast.show({ title: 'Download Complete', message: 'Opening installer...', color: '#10B981' })
+				const contentUri = await FileSystem.getContentUriAsync(result.uri)
+				await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+					data: contentUri,
+					flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+				})
+			} else {
+				toast.show({
+					title: 'Download Complete',
+					message: 'Update downloaded! Tap the restart icon in the header or Settings to install.',
+					color: '#10B981'
+				})
+			}
 		} catch (error: any) {
 			log({ level: 'error', label: 'AppUpdater', message: 'APK download/install error', error })
 
-			// Clean up cached file to prevent corrupt storage states
 			try {
 				await FileSystem.deleteAsync(localUri, { idempotent: true })
 			} catch (deleteError) {
@@ -186,7 +228,6 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			} else {
 				log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
 
-				// Fallback: Try opening URL in browser if intent launch fails (e.g. permission limits)
 				try {
 					const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 					await Linking.openURL(downloadUrl)
@@ -358,7 +399,41 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		}
 	}, [checkForUpdates])
 
-	// Storage cleanup of old downloaded APKs on app startup
+	// Startup Check: check if there is a downloaded update that needs to be installed
+	useEffect(() => {
+		const checkPendingUpdate = async () => {
+			if (Platform.OS !== 'android') return
+			try {
+				const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
+				if (pendingVersion) {
+					if (compareVersions(pendingVersion, APP_VERSION) > 0) {
+						const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
+						const fileInfo = await FileSystem.getInfoAsync(localUri)
+						if (fileInfo.exists) {
+							setIsReadyToInstall(true)
+							setLatestVersion(pendingVersion)
+							setUpdateStatus('update_available')
+							setShowReadyModal(true)
+							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install.` })
+						} else {
+							await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+						}
+					} else {
+						await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+						const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
+						await FileSystem.deleteAsync(localUri, { idempotent: true })
+						setIsReadyToInstall(false)
+						log({ level: 'info', label: 'AppUpdater', message: `Startup check: App updated to v${APP_VERSION}. Scrubbed v${pendingVersion} APK.` })
+					}
+				}
+			} catch (e) {
+				log({ level: 'error', label: 'AppUpdater', message: 'Startup pending update check failed', error: e })
+			}
+		}
+		checkPendingUpdate()
+	}, [])
+
+	// Storage cleanup of old downloaded APKs on app startup (preserving pending updates)
 	useEffect(() => {
 		if (Platform.OS === 'android') {
 			const cleanOldCachedApks = async () => {
@@ -366,12 +441,17 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					const cacheDir = FileSystem.cacheDirectory
 					if (cacheDir) {
 						const cacheFiles = await FileSystem.readDirectoryAsync(cacheDir)
-						const oldApks = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk'))
+						const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
+						const activeApkName = pendingVersion ? `drinaluza-${pendingVersion}.apk` : null
+
+						const oldApks = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk') && file !== activeApkName)
 
 						for (const oldApk of oldApks) {
 							await FileSystem.deleteAsync(`${cacheDir}${oldApk}`, { idempotent: true })
 						}
-						log({ level: 'info', label: 'AppUpdater', message: `Startup cache clean scrubbed ${oldApks.length} old APK files.` })
+						if (oldApks.length > 0) {
+							log({ level: 'info', label: 'AppUpdater', message: `Startup cache clean scrubbed ${oldApks.length} old APK files.` })
+						}
 					}
 				} catch (err) {
 					log({ level: 'warn', label: 'AppUpdater', message: 'Startup cache cleanup failed.', error: err })
@@ -410,7 +490,11 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				setShowOptionalModal(false)
 				window.location.reload()
 			} else {
-				// Android: Trigger programmatic APK download and installation
+				// Dismiss the modal immediately for optional update so the user can continue using the app
+				if (updateStatus !== 'update_required') {
+					setShowOptionalModal(false)
+				}
+				// Android: Trigger programmatic APK download in the background
 				if (latestVersion) {
 					await downloadAndInstallApk(latestVersion)
 				}
@@ -493,7 +577,23 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	if (initialLoading) {
 		return (
-			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, apkDownloadUrl, releaseNotes, checkForUpdates }}>
+			<UpdaterContext.Provider
+				value={{
+					isChecking,
+					updateStatus,
+					latestVersion,
+					minVersion,
+					serverVersion,
+					destroyAppStorage,
+					apkDownloadUrl,
+					releaseNotes,
+					isDownloading,
+					downloadProgress,
+					isReadyToInstall,
+					installDownloadedUpdate,
+					checkForUpdates
+				}}
+			>
 				<View style={{ flex: 1, backgroundColor: colors.background }} />
 			</UpdaterContext.Provider>
 		)
@@ -501,7 +601,23 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	if (updateStatus === 'update_required') {
 		return (
-			<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, apkDownloadUrl, releaseNotes, checkForUpdates }}>
+			<UpdaterContext.Provider
+				value={{
+					isChecking,
+					updateStatus,
+					latestVersion,
+					minVersion,
+					serverVersion,
+					destroyAppStorage,
+					apkDownloadUrl,
+					releaseNotes,
+					isDownloading,
+					downloadProgress,
+					isReadyToInstall,
+					installDownloadedUpdate,
+					checkForUpdates
+				}}
+			>
 				<View style={[styles.overlay, { backgroundColor: colors.background, flex: 1, justifyContent: 'center', alignItems: 'center' }]}>
 					<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
 						{/* Glossmorphic Ambient Top Accent */}
@@ -572,7 +688,23 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	}
 
 	return (
-		<UpdaterContext.Provider value={{ isChecking, updateStatus, latestVersion, minVersion, serverVersion, destroyAppStorage, apkDownloadUrl, releaseNotes, checkForUpdates }}>
+		<UpdaterContext.Provider
+			value={{
+				isChecking,
+				updateStatus,
+				latestVersion,
+				minVersion,
+				serverVersion,
+				destroyAppStorage,
+				apkDownloadUrl,
+				releaseNotes,
+				isDownloading,
+				downloadProgress,
+				isReadyToInstall,
+				installDownloadedUpdate,
+				checkForUpdates
+			}}
+		>
 			<View style={{ flex: 1, backgroundColor: colors.background }}>
 				{children}
 
@@ -637,6 +769,52 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 									</TouchableOpacity>
 								</View>
 							)}
+						</View>
+					</View>
+				</Modal>
+
+				{/* 2. Startup Update Ready to Install Modal Overlay */}
+				<Modal visible={showReadyModal} transparent animationType="fade" statusBarTranslucent>
+					<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+						<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
+							<LinearGradient colors={[colors.success + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
+
+							<View style={[styles.iconWrap, { backgroundColor: colors.success + '15' }]}>
+								<Ionicons name="refresh-circle-outline" size={36} color={colors.success} />
+							</View>
+
+							<Text style={[styles.title, { color: colors.text }]}>{translate('update_ready', 'Update Ready')}</Text>
+
+							<Text style={[styles.message, { color: colors.textSecondary }]}>
+								{translate('ready_update_msg_android', "A downloaded update is ready to be installed! Let's install and restart the app to enjoy the latest features.")}
+							</Text>
+
+							{/* Version chip */}
+							<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant, marginBottom: 24 }]}>
+								<View style={styles.infoRow}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Pending Version</Text>
+									<View style={[styles.versionChip, { backgroundColor: colors.success + '20' }]}>
+										<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{latestVersion}</Text>
+									</View>
+								</View>
+							</View>
+
+							<View style={styles.buttonGroup}>
+								<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={() => setShowReadyModal(false)} activeOpacity={0.8}>
+									<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={[styles.btn, styles.confirmBtn]}
+									onPress={async () => {
+										setShowReadyModal(false)
+										await installDownloadedUpdate()
+									}}
+									activeOpacity={0.8}
+								>
+									<LinearGradient colors={[colors.success, colors.success + 'CC']} style={StyleSheet.absoluteFillObject} />
+									<Text style={styles.confirmBtnText}>{translate('install_now', 'Install Now')}</Text>
+								</TouchableOpacity>
+							</View>
 						</View>
 					</View>
 				</Modal>

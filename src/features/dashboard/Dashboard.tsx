@@ -1,5 +1,6 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderTitle from '@/features/common/HeaderTitle'
+import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -143,7 +144,18 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 	if (error && !dashboardData) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Tabs.Screen options={{ title: translate('dashboard', 'Dashboard'), headerLeft: () => null, headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} /> }} />
+				<Tabs.Screen
+					options={{
+						title: translate('dashboard', 'Dashboard'),
+						headerLeft: () => null,
+						headerRight: () => (
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+								<HeaderUpdaterWidget />
+								<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+							</View>
+						)
+					}}
+				/>
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -168,7 +180,12 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 						/>
 					),
 					headerLeft: () => null,
-					headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+					headerRight: () => (
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+							<HeaderUpdaterWidget />
+							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+						</View>
+					)
 				}}
 			/>
 
@@ -403,6 +420,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				options={{
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+							<HeaderUpdaterWidget />
 							{business.slug && (
 								<TouchableOpacity onPress={() => router.push(`/dashboard/${business.slug}/sales` as never)} activeOpacity={0.7} style={styles.headerIconBtn}>
 									<Ionicons name="trending-up" size={22} color={colors.primary} />

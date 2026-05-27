@@ -32,6 +32,7 @@ import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
 import LoadingState from '@/features/common/LoadingState'
+import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { requestBusiness } from '@/features/businesses/business.api'
@@ -633,7 +634,8 @@ export default function ProfileScreen() {
 	if (!userData) return null
 
 	const headerRightActions = (
-		<View style={{ flexDirection: 'row', gap: 8 }}>
+		<View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+			<HeaderUpdaterWidget />
 			{userData.role === 'customer' && <HeaderActionButton iconName="briefcase" onPress={handleRequestBusiness} accessibilityLabel="Request Business" />}
 			<HeaderActionButton iconName="people" iconColor={colors.text} backgroundColor={colors.text + '05'} onPress={handleSwitchUser} accessibilityLabel="Switch User Account" />
 			<HeaderActionButton iconName="log-out" iconColor={colors.error} backgroundColor={colors.error + '10'} onPress={handleSignOut} accessibilityLabel="Sign Out" />

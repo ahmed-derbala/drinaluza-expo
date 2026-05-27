@@ -1,4 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
@@ -205,6 +206,7 @@ export default function BusinessDetailsScreen() {
 					},
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+							<HeaderUpdaterWidget />
 							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
 								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
 							</TouchableOpacity>

@@ -49,13 +49,13 @@ export default function HomeLayout() {
 						borderTopColor: colors.primary,
 						borderTopWidth: 1.5,
 						height: Platform.select({
-							ios: 50 + insets.bottom,
-							android: 56 + insets.bottom,
-							web: 56
+							ios: 44 + insets.bottom,
+							android: 36 + insets.bottom,
+							web: 48
 						}),
 						paddingBottom: insets.bottom,
 						paddingTop: Platform.select({
-							ios: insets.bottom > 0 ? 4 : 0,
+							ios: insets.bottom > 0 ? 2 : 0,
 							android: 0,
 							web: 0
 						}),

@@ -15,6 +15,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useUpdater } from '@/features/appUpdater/AppUpdater'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
+import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 
 const formatUptime = (uptime: string | undefined): string => {
 	if (!uptime) return ''
@@ -35,7 +36,8 @@ export default function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
 
-	const { isChecking, updateStatus, latestVersion, minVersion, serverVersion, checkForUpdates, apkDownloadUrl } = useUpdater()
+	const { isChecking, updateStatus, latestVersion, minVersion, serverVersion, checkForUpdates, apkDownloadUrl, isDownloading, downloadProgress, isReadyToInstall, installDownloadedUpdate } =
+		useUpdater()
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
@@ -213,6 +215,7 @@ export default function SettingsScreen() {
 					headerLeft: () => null,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', gap: 8, paddingRight: 16, alignItems: 'center' }}>
+							<HeaderUpdaterWidget />
 							<HeaderActionButton iconName="share-social-outline" onPress={handleShareApk} accessibilityLabel="Share APK" backgroundColor={colors.surface} size={38} />
 							<HeaderActionButton iconName="qr-code-outline" onPress={() => setShowApkQRCode(true)} accessibilityLabel="APK QR Code" backgroundColor={colors.surface} size={38} />
 						</View>
@@ -233,8 +236,8 @@ export default function SettingsScreen() {
 							Active: v{APP_VERSION} • {NODE_ENV}
 						</Text>
 						{latestVersion && (
-							<Text style={[styles.updaterLatestText, { color: updateStatus !== 'up_to_date' ? colors.primary : colors.success, fontWeight: '700' }]}>
-								{updateStatus === 'up_to_date' ? 'Running latest version' : `Latest: v${latestVersion}`}
+							<Text style={[styles.updaterLatestText, { color: isReadyToInstall ? colors.success : updateStatus !== 'up_to_date' ? colors.primary : colors.success, fontWeight: '700' }]}>
+								{isReadyToInstall ? 'Update downloaded & ready' : updateStatus === 'up_to_date' ? 'Running latest version' : `Latest: v${latestVersion}`}
 							</Text>
 						)}
 					</View>
@@ -242,37 +245,66 @@ export default function SettingsScreen() {
 
 				<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
 
-				<TouchableOpacity
-					style={[
-						styles.updaterBtn,
-						{
-							backgroundColor: updateStatus !== 'up_to_date' ? colors.primary : colors.surfaceVariant,
-							borderColor: colors.border
-						}
-					]}
-					onPress={() => checkForUpdates(true)}
-					disabled={isChecking}
-					activeOpacity={0.8}
-				>
-					{isChecking ? (
-						<ActivityIndicator size="small" color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
-					) : (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<Ionicons name={updateStatus !== 'up_to_date' ? 'download-outline' : 'sync-outline'} size={18} color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
-							<Text
-								style={[
-									styles.updaterBtnText,
-									{
-										color: updateStatus !== 'up_to_date' ? '#fff' : colors.text,
-										fontWeight: '700'
-									}
-								]}
-							>
-								{updateStatus === 'up_to_date' ? translate('check_for_updates', 'Check for Updates') : translate('update_now', 'Update Now')}
-							</Text>
+				{isDownloading ? (
+					<View style={{ width: '100%', gap: 8 }}>
+						<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+							<Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '600' }}>{translate('downloading', 'Downloading')}...</Text>
+							<Text style={{ fontSize: 13, color: colors.primary, fontWeight: '700' }}>{Math.round(downloadProgress * 100)}%</Text>
 						</View>
-					)}
-				</TouchableOpacity>
+						<View style={{ height: 8, backgroundColor: colors.border + '40', borderRadius: 4, overflow: 'hidden' }}>
+							<View style={{ height: '100%', backgroundColor: colors.primary, width: `${downloadProgress * 100}%`, borderRadius: 4 }} />
+						</View>
+					</View>
+				) : isReadyToInstall ? (
+					<TouchableOpacity
+						style={[
+							styles.updaterBtn,
+							{
+								backgroundColor: colors.success,
+								borderColor: colors.success
+							}
+						]}
+						onPress={installDownloadedUpdate}
+						activeOpacity={0.8}
+					>
+						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+							<Ionicons name="refresh-outline" size={18} color="#fff" />
+							<Text style={[styles.updaterBtnText, { color: '#fff', fontWeight: '700' }]}>{translate('restart_and_install', 'Restart & Install')}</Text>
+						</View>
+					</TouchableOpacity>
+				) : (
+					<TouchableOpacity
+						style={[
+							styles.updaterBtn,
+							{
+								backgroundColor: updateStatus !== 'up_to_date' ? colors.primary : colors.surfaceVariant,
+								borderColor: colors.border
+							}
+						]}
+						onPress={() => checkForUpdates(true)}
+						disabled={isChecking}
+						activeOpacity={0.8}
+					>
+						{isChecking ? (
+							<ActivityIndicator size="small" color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
+						) : (
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+								<Ionicons name={updateStatus !== 'up_to_date' ? 'download-outline' : 'sync-outline'} size={18} color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
+								<Text
+									style={[
+										styles.updaterBtnText,
+										{
+											color: updateStatus !== 'up_to_date' ? '#fff' : colors.text,
+											fontWeight: '700'
+										}
+									]}
+								>
+									{updateStatus === 'up_to_date' ? translate('check_for_updates', 'Check for Updates') : translate('update_now', 'Update Now')}
+								</Text>
+							</View>
+						)}
+					</TouchableOpacity>
+				)}
 			</View>
 
 			<SettingSection title={translate('appearance', 'Appearance')}>

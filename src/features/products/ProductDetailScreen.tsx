@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
+import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
@@ -254,6 +255,7 @@ export default function ProductDetailScreen() {
 					},
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+							<HeaderUpdaterWidget />
 							{isDashboard && (
 								<>
 									<TouchableOpacity
