@@ -170,8 +170,7 @@ const cardStyles = StyleSheet.create({
 	imageWrap: {
 		width: '100%',
 		aspectRatio: 1.35,
-		position: 'relative',
-		backgroundColor: '#1E293B'
+		position: 'relative'
 	},
 	image: { width: '100%', height: '100%' },
 	stockOverlay: {

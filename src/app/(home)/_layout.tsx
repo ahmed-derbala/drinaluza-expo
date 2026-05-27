@@ -38,6 +38,8 @@ export default function HomeLayout() {
 	}, [pathname, setTabBarVisible])
 
 	const iconSize = Platform.select({ ios: 20, android: 22, web: 20 })
+	const isDashboardVisible = isAuthenticated && user?.role === 'business_owner'
+	const isNotificationsVisible = isAuthenticated
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -114,7 +116,9 @@ export default function HomeLayout() {
 				<Tabs.Screen
 					name="dashboard"
 					options={{
-						href: isAuthenticated && user?.role === 'business_owner' ? '/dashboard' : null,
+						href: isDashboardVisible ? '/dashboard' : undefined,
+						tabBarButton: isDashboardVisible ? undefined : () => null,
+						tabBarItemStyle: isDashboardVisible ? undefined : { display: 'none' },
 						tabBarIcon: ({ color, focused }) => (
 							<View style={focused ? styles.activeIconContainer : undefined}>
 								<MaterialIcons name="dashboard" size={iconSize} color={color} />
@@ -126,7 +130,9 @@ export default function HomeLayout() {
 				<Tabs.Screen
 					name="notifications"
 					options={{
-						href: isAuthenticated ? '/notifications' : null,
+						href: isNotificationsVisible ? '/notifications' : undefined,
+						tabBarButton: isNotificationsVisible ? undefined : () => null,
+						tabBarItemStyle: isNotificationsVisible ? undefined : { display: 'none' },
 						tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
 						tabBarBadgeStyle: {
 							backgroundColor: colors.error,
@@ -165,6 +171,30 @@ export default function HomeLayout() {
 							</View>
 						),
 						tabBarAccessibilityLabel: translate('settings', 'Settings')
+					}}
+				/>
+				<Tabs.Screen
+					name="businesses"
+					options={{
+						headerShown: false,
+						tabBarButton: () => null,
+						tabBarItemStyle: { display: 'none' }
+					}}
+				/>
+				<Tabs.Screen
+					name="products"
+					options={{
+						headerShown: false,
+						tabBarButton: () => null,
+						tabBarItemStyle: { display: 'none' }
+					}}
+				/>
+				<Tabs.Screen
+					name="users"
+					options={{
+						headerShown: false,
+						tabBarButton: () => null,
+						tabBarItemStyle: { display: 'none' }
 					}}
 				/>
 			</Tabs>

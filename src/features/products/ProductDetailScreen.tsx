@@ -206,6 +206,30 @@ export default function ProductDetailScreen() {
 			<Stack.Screen
 				options={{
 					title: localize(product.name),
+					headerLeft: () => {
+						if (router.canGoBack()) return null
+						const fallbackRoute = `/businesses/${businessSlug || product?.business?.slug || ''}`
+						return (
+							<TouchableOpacity
+								style={{
+									flexDirection: 'row',
+									alignItems: 'center',
+									marginLeft: Platform.OS === 'ios' ? 8 : 0,
+									gap: 4
+								}}
+								onPress={() => {
+									if (businessSlug || product?.business?.slug) {
+										router.replace(fallbackRoute as any)
+									} else {
+										router.replace('/(home)/feed' as any)
+									}
+								}}
+							>
+								<Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={24} color={colors.primary} />
+								{Platform.OS === 'ios' && <Text style={{ color: colors.primary, fontSize: 17 }}>{translate('back', 'Back')}</Text>}
+							</TouchableOpacity>
+						)
+					},
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 							{isDashboard && (

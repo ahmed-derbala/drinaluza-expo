@@ -242,8 +242,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 		imageWrap: {
 			width: '100%',
 			aspectRatio: 1.35,
-			position: 'relative',
-			backgroundColor: '#1E293B'
+			position: 'relative'
 		},
 		productImage: { width: '100%', height: '100%' },
 		stockOverlay: {

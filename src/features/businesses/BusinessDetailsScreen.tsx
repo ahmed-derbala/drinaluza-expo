@@ -172,6 +172,23 @@ export default function BusinessDetailsScreen() {
 			<Stack.Screen
 				options={{
 					title: localize(business.name),
+					headerLeft: () => {
+						if (router.canGoBack()) return null
+						return (
+							<TouchableOpacity
+								style={{
+									flexDirection: 'row',
+									alignItems: 'center',
+									marginLeft: Platform.OS === 'ios' ? 8 : 0,
+									gap: 4
+								}}
+								onPress={() => router.replace('/(home)/feed' as any)}
+							>
+								<Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={24} color={colors.primary} />
+								{Platform.OS === 'ios' && <Text style={{ color: colors.primary, fontSize: 17 }}>{translate('back', 'Back')}</Text>}
+							</TouchableOpacity>
+						)
+					},
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
 							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
@@ -328,8 +345,7 @@ const styles = StyleSheet.create({
 		height: 200,
 		borderRadius: 20,
 		overflow: 'hidden',
-		marginBottom: 20,
-		backgroundColor: '#f0f0f0'
+		marginBottom: 20
 	},
 	businessImage: {
 		width: '100%',

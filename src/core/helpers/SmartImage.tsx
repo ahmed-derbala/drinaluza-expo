@@ -107,18 +107,24 @@ const SmartImage: React.FC<SmartImageProps> = ({ source, style, containerStyle, 
 	// Flatten style to get dimensions for container
 	const flatStyle = StyleSheet.flatten(style || {})
 
+	const isLoaded = !loadingRef.current && !errorRef.current && hasValidUri
+
+	const imageStyleClean = [styles.image, style, { backgroundColor: 'transparent' }]
+
+	const containerStyleClean = [styles.container, flatStyle, containerStyle, isLoaded ? { backgroundColor: 'transparent' } : null]
+
 	// If no valid URI or error occurred, show default image
 	if (!hasValidUri || errorRef.current) {
 		return (
-			<View style={[styles.container, flatStyle, containerStyle]}>
-				<Image {...props} source={DEFAULT_IMAGES[entityType]} style={[styles.image, style]} resizeMode={resizeMode} />
+			<View style={containerStyleClean}>
+				<Image {...props} source={DEFAULT_IMAGES[entityType]} style={imageStyleClean} resizeMode={resizeMode} />
 			</View>
 		)
 	}
 
 	return (
-		<View style={[styles.container, flatStyle, containerStyle]}>
-			<Image {...props} source={{ uri }} style={[styles.image, style]} resizeMode={resizeMode} onLoadStart={handleLoadStart} onLoadEnd={handleLoadEnd} onError={handleError} />
+		<View style={containerStyleClean}>
+			<Image {...props} source={{ uri }} style={imageStyleClean} resizeMode={resizeMode} onLoadStart={handleLoadStart} onLoadEnd={handleLoadEnd} onError={handleError} />
 			{loadingRef.current && (
 				<View style={[styles.loaderContainer, { backgroundColor: colors.surface }]}>
 					<ActivityIndicator size="small" color={colors.primary} />
