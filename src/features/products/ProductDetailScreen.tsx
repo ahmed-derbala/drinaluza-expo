@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -20,7 +20,7 @@ import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function ProductDetailScreen() {
-	const { productSlug, businessSlug } = useLocalSearchParams<{ productSlug: string; businessSlug?: string }>()
+	const { productSlug, businessSlug, name: initialNameParam } = useLocalSearchParams<{ productSlug: string; businessSlug?: string; name?: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate, currency, formatPrice } = useUser()
@@ -37,6 +37,20 @@ export default function ProductDetailScreen() {
 	const [cart, setCart] = useState<any[]>([])
 	const [quantity, setQuantity] = useState(1)
 	const [showQRCode, setShowQRCode] = useState(false)
+
+	const initialName = useMemo(() => {
+		if (!initialNameParam) return null
+		try {
+			if (initialNameParam.startsWith('{')) {
+				return localize(JSON.parse(initialNameParam))
+			}
+			return initialNameParam
+		} catch {
+			return initialNameParam
+		}
+	}, [initialNameParam, localize])
+
+	const displayTitle = product ? localize(product.name) : initialName || translate('product_details', 'Product Details')
 
 	// effect to initialize quantity once product loads
 	useEffect(() => {
@@ -135,20 +149,28 @@ export default function ProductDetailScreen() {
 
 	const handleBusinessNavPress = () => {
 		if (product?.business?.slug) {
-			router.push(`/businesses/${product.business.slug}` as any)
+			const nameParam = typeof product.business.name === 'string' ? product.business.name : JSON.stringify(product.business.name)
+			router.push({
+				pathname: `/businesses/${product.business.slug}`,
+				params: { name: nameParam }
+			} as any)
 		}
 	}
 
 	const handleOwnerPress = () => {
 		if (product?.business?.owner?.slug) {
-			router.push(`/users/${product.business.owner.slug}` as any)
+			const nameParam = typeof product.business.owner.name === 'string' ? product.business.owner.name : JSON.stringify(product.business.owner.name)
+			router.push({
+				pathname: `/users/${product.business.owner.slug}`,
+				params: { name: nameParam }
+			} as any)
 		}
 	}
 
 	if (loading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: translate('product_details', 'Product Details') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={styles.loadingContainer}>
 					<ActivityIndicator size="large" color={colors.primary} />
 					<Text style={[styles.loadingText, { color: colors.textSecondary }]}>{translate('loading', 'Loading...')}</Text>
@@ -160,7 +182,7 @@ export default function ProductDetailScreen() {
 	if (error && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: translate('product_details', 'Product Details') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -174,7 +196,7 @@ export default function ProductDetailScreen() {
 	if (!product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: translate('product_details', 'Product Details') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<ErrorState
 					title={translate('product_not_found', 'Product Not Found')}
 					message={translate('product_not_found_desc', 'The product you are looking for could not be found.')}
@@ -205,7 +227,7 @@ export default function ProductDetailScreen() {
 		<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
 				options={{
-					title: localize(product.name),
+					title: displayTitle,
 					headerLeft: () => {
 						if (router.canGoBack()) return null
 						const fallbackRoute = `/businesses/${businessSlug || product?.business?.slug || ''}`

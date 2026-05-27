@@ -3,6 +3,7 @@ import { useColorScheme } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { ThemeProvider as NavigationThemeProvider, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme, Theme } from '@react-navigation/native'
 import { lightColors, darkColors } from './colors'
+import { log } from '@/core/log'
 
 export const LightTheme: Theme = {
 	...NavigationDefaultTheme,
@@ -54,7 +55,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
 					setThemeModeState('dark')
 				}
 			} catch (e) {
-				console.warn('Failed to load theme mode:', e)
+				log({ level: 'warn', label: 'AppThemeProvider', message: 'Failed to load theme mode', error: e })
 			}
 		}
 		loadThemeMode()
@@ -65,7 +66,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
 		try {
 			await AsyncStorage.setItem('app_theme', mode)
 		} catch (e) {
-			console.warn('Failed to save theme mode:', e)
+			log({ level: 'warn', label: 'AppThemeProvider', message: 'Failed to save theme mode', error: e })
 		}
 	}
 

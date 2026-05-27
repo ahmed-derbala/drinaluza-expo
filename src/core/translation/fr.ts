@@ -60,5 +60,14 @@ export const fr = {
 	whats_new: 'Quoi de neuf',
 	release_notes: 'Notes de version',
 	checking_for_updates: 'Recherche de mises à jour...',
-	no_release_notes: 'Aucune note disponible pour cette version.'
+	no_release_notes: 'Aucune note disponible pour cette version.',
+	up_to_date: 'À jour',
+	already_latest: 'Vous utilisez déjà la dernière version.',
+	later: 'Plus tard',
+	checking_failed: 'Échec de la vérification des mises à jour.',
+	mandatory_update_msg_web: "Votre version est obsolète et n'est plus prise en charge. Actualisez pour continuer.",
+	mandatory_update_msg_android: "Cette version est obsolète et n'est plus prise en charge. Téléchargez la dernière version pour continuer.",
+	refresh_available: 'Actualisation disponible',
+	exit: 'Quitter',
+	downloading: 'Téléchargement'
 }

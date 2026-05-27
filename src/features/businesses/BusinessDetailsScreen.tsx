@@ -1,5 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -53,7 +53,7 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 }
 
 export default function BusinessDetailsScreen() {
-	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
+	const { businessSlug, name: initialNameParam } = useLocalSearchParams<{ businessSlug: string; name?: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
@@ -67,6 +67,20 @@ export default function BusinessDetailsScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { onScroll } = useScrollHandler()
+
+	const initialName = useMemo(() => {
+		if (!initialNameParam) return null
+		try {
+			if (initialNameParam.startsWith('{')) {
+				return localize(JSON.parse(initialNameParam))
+			}
+			return initialNameParam
+		} catch {
+			return initialNameParam
+		}
+	}, [initialNameParam, localize])
+
+	const displayTitle = business ? localize(business.name) : initialName || translate('common.loading', 'Loading...')
 
 	const loadBusinessDetails = useCallback(
 		async (isRefresh = false) => {
@@ -124,7 +138,7 @@ export default function BusinessDetailsScreen() {
 	if (loading) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: translate('common.loading', 'Loading...') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>
@@ -135,7 +149,7 @@ export default function BusinessDetailsScreen() {
 	if (error) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: translate('common.error', 'Error') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<ErrorState
 						title={error.title}
@@ -151,7 +165,7 @@ export default function BusinessDetailsScreen() {
 	if (!business) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: translate('business_not_found', 'Business not found') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<Text style={[styles.errorText, { color: colors.text }]}>{translate('business_not_found', 'Business not found')}</Text>
 				</View>
@@ -171,7 +185,7 @@ export default function BusinessDetailsScreen() {
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
 				options={{
-					title: localize(business.name),
+					title: displayTitle,
 					headerLeft: () => {
 						if (router.canGoBack()) return null
 						return (
@@ -216,7 +230,19 @@ export default function BusinessDetailsScreen() {
 
 					{/* Owner Info */}
 					{business.owner && (
-						<TouchableOpacity style={styles.infoRow} onPress={() => router.push(`/users/${business.owner!.slug}` as any)} activeOpacity={0.7}>
+						<TouchableOpacity
+							style={styles.infoRow}
+							onPress={() => {
+								if (business.owner?.slug) {
+									const nameParam = typeof business.owner.name === 'string' ? business.owner.name : JSON.stringify(business.owner.name)
+									router.push({
+										pathname: `/users/${business.owner.slug}`,
+										params: { name: nameParam }
+									} as any)
+								}
+							}}
+							activeOpacity={0.7}
+						>
 							<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_owner', 'Owner')}</Text>
@@ -292,7 +318,15 @@ export default function BusinessDetailsScreen() {
 									product={product}
 									colors={colors}
 									localize={localize}
-									onPress={() => product.slug && router.push(`/businesses/${businessSlug}/products/${product.slug}` as any)}
+									onPress={() => {
+										if (product.slug) {
+											const nameParam = typeof product.name === 'string' ? product.name : JSON.stringify(product.name)
+											router.push({
+												pathname: `/businesses/${businessSlug}/products/${product.slug}`,
+												params: { name: nameParam }
+											} as any)
+										}
+									}}
 								/>
 							))}
 						</View>

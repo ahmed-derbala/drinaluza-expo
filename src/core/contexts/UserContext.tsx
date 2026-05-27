@@ -1,8 +1,10 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
 import { UserData } from '../../features/profile/profile.interface'
 import { LocalizedName } from '../../features/businesses/businesses.interface'
 import { translate as translateHelper, setGlobalAppLang, localizeName } from '../translation'
+import { log } from '@/core/log'
 
 interface UserContextType {
 	user: UserData | null
@@ -58,9 +60,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 		const loadSettings = async () => {
 			try {
 				const [savedAppLang, savedContentLang, savedCurrency] = await Promise.all([
-					import('@react-native-async-storage/async-storage').then((m) => m.default.getItem('guest_appLang')),
-					import('@react-native-async-storage/async-storage').then((m) => m.default.getItem('guest_contentLang')),
-					import('@react-native-async-storage/async-storage').then((m) => m.default.getItem('guest_currency'))
+					AsyncStorage.getItem('guest_appLang'),
+					AsyncStorage.getItem('guest_contentLang'),
+					AsyncStorage.getItem('guest_currency')
 				])
 
 				setGuestSettings({
@@ -69,7 +71,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 					currency: savedCurrency || DEFAULT_CURRENCY
 				})
 			} catch (e) {
-				console.error('Failed to load guest settings', e)
+				log({ level: 'error', label: 'UserContext', message: 'Failed to load guest settings', error: e })
 			}
 		}
 		loadSettings()
@@ -77,19 +79,16 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
 	const setAppLang = useCallback(async (lang: string) => {
 		setGuestSettings((prev) => ({ ...prev, appLang: lang }))
-		const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
 		await AsyncStorage.setItem('guest_appLang', lang)
 	}, [])
 
 	const setContentLang = useCallback(async (lang: string) => {
 		setGuestSettings((prev) => ({ ...prev, contentLang: lang }))
-		const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
 		await AsyncStorage.setItem('guest_contentLang', lang)
 	}, [])
 
 	const setCurrency = useCallback(async (currency: string) => {
 		setGuestSettings((prev) => ({ ...prev, currency: currency }))
-		const AsyncStorage = (await import('@react-native-async-storage/async-storage')).default
 		await AsyncStorage.setItem('guest_currency', currency)
 	}, [])
 
@@ -107,7 +106,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 				})
 			}
 		} catch (error) {
-			console.error('Failed to load user:', error)
+			log({ level: 'error', label: 'UserContext', message: 'Failed to load user', error })
 		} finally {
 			setLoading(false)
 		}

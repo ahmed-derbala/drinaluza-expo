@@ -215,5 +215,14 @@ export const tn_latn = {
 	whats_new: 'Chnoua el Jdid',
 	release_notes: 'Tafasil el Version',
 	checking_for_updates: 'Nlawjou ken famma jdid...',
-	no_release_notes: 'Ma famma hatta tafasil el hal version.'
+	no_release_notes: 'Ma famma hatta tafasil el hal version.',
+	up_to_date: 'El Version Jdida',
+	already_latest: 'Enti m3a el version el lekhraniya.',
+	later: 'Mba3ed',
+	checking_failed: 'Ma najamnach nlawjou 3al jdid.',
+	mandatory_update_msg_web: 'El version mta3ek qdima w mch mda3ouma. 3awed charji bech tkammel.',
+	mandatory_update_msg_android: 'Hal version qdima barcha w mch mda3ouma. Habat el version el jdida bech tkammel.',
+	refresh_available: 'Famma Version Jdida',
+	exit: 'Okhroj',
+	downloading: 'Qe3d yhabat'
 }

@@ -77,7 +77,8 @@ export default {
             ],
             "@react-native-community/datetimepicker",
             "expo-audio",
-            "expo-sharing"
+            "expo-sharing",
+            "expo-image"
         ],
         experiments: {
             typedRoutes: true

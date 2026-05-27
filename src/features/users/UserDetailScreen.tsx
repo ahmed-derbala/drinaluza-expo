@@ -1,5 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { useTheme } from '../../core/theme'
@@ -13,7 +13,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function UserDetailScreen() {
-	const { userSlug } = useLocalSearchParams<{ userSlug: string }>()
+	const { userSlug, name: initialNameParam } = useLocalSearchParams<{ userSlug: string; name?: string }>()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 
@@ -22,6 +22,20 @@ export default function UserDetailScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [showQRCode, setShowQRCode] = useState(false)
+
+	const initialName = useMemo(() => {
+		if (!initialNameParam) return null
+		try {
+			if (initialNameParam.startsWith('{')) {
+				return localize(JSON.parse(initialNameParam))
+			}
+			return initialNameParam
+		} catch {
+			return initialNameParam
+		}
+	}, [initialNameParam, localize])
+
+	const displayTitle = user ? localize(user.name) : initialName || translate('user_profile', 'User Profile')
 
 	const loadUser = useCallback(
 		async (isRefresh = false) => {
@@ -64,9 +78,10 @@ export default function UserDetailScreen() {
 		Linking.openURL(`mailto:${email}`)
 	}
 
-	if (loading) {
+	if (loading && !user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+				<Stack.Screen options={{ title: displayTitle }} />
 				<ActivityIndicator size="large" color={colors.primary} />
 			</View>
 		)
@@ -75,7 +90,7 @@ export default function UserDetailScreen() {
 	if (error || !user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: translate('user_profile', 'User Profile') }} />
+				<Stack.Screen options={{ title: displayTitle }} />
 				<ErrorState
 					title={error?.title || translate('not_found', 'Not Found')}
 					message={error?.message || translate('user_not_found', 'User not found')}
@@ -90,7 +105,7 @@ export default function UserDetailScreen() {
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
 				options={{
-					title: localize(user.name),
+					title: displayTitle,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
 							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7}>

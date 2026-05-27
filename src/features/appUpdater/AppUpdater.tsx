@@ -91,31 +91,7 @@ export const compareVersions = (a: string, b: string): number => {
 const DISMISSED_VERSION_KEY = 'drinaluza_dismissed_update_version'
 
 export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-	const theme = useTheme()
-	const isDark = theme.dark
-	const activeColors = theme.colors || {}
-
-	// Robust run-time color structure with fallback tokens for navigation context limits
-	const colors = {
-		primary: activeColors.primary || (isDark ? '#0EA5E9' : '#0284C7'),
-		background: activeColors.background || (isDark ? '#0B132B' : '#F8FAFC'),
-		card: activeColors.card || (isDark ? '#1C2541' : '#FFFFFF'),
-		text: activeColors.text || (isDark ? '#F8FAFC' : '#0F172A'),
-		border: activeColors.border || (isDark ? '#3A506B' : '#E2E8F0'),
-		notification: activeColors.notification || (isDark ? '#F43F5E' : '#E11D48'),
-
-		// Extended custom tokens with bullet-proof fallbacks
-		primaryContainer: (activeColors as any).primaryContainer || (isDark ? '#0EA5E920' : '#E0F2FE'),
-		surface: (activeColors as any).surface || activeColors.card || (isDark ? '#1C2541' : '#FFFFFF'),
-		surfaceVariant: (activeColors as any).surfaceVariant || (isDark ? '#3A506B30' : '#F1F5F9'),
-		modalOverlay: (activeColors as any).modalOverlay || (isDark ? 'rgba(3, 7, 18, 0.75)' : 'rgba(15, 23, 42, 0.5)'),
-		error: (activeColors as any).error || (isDark ? '#EF4444' : '#DC2626'),
-		success: (activeColors as any).success || (isDark ? '#10B981' : '#059669'),
-		warning: (activeColors as any).warning || (isDark ? '#F59E0B' : '#D97706'),
-		info: (activeColors as any).info || (isDark ? '#3B82F6' : '#2563EB'),
-		textSecondary: (activeColors as any).textSecondary || (isDark ? '#94A3B8' : '#475569'),
-		textTertiary: (activeColors as any).textTertiary || (isDark ? '#64748B' : '#94A3B8')
-	}
+	const { colors } = useTheme()
 	const { translate } = useUser()
 
 	const [isChecking, setIsChecking] = useState(false)
@@ -191,7 +167,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
 			})
 		} catch (error: any) {
-			console.error('AppUpdater APK download/install error:', error)
+			log({ level: 'error', label: 'AppUpdater', message: 'APK download/install error', error })
 
 			// Clean up cached file to prevent corrupt storage states
 			try {
@@ -215,7 +191,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 					await Linking.openURL(downloadUrl)
 				} catch (linkError) {
-					console.error('Fallback Link failed:', linkError)
+					log({ level: 'error', label: 'AppUpdater', message: 'Fallback link open failed', error: linkError })
 				}
 
 				toast.show({
@@ -282,8 +258,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					throw githubError || backendError || new Error('Network error.')
 				}
 
-				let cleanTag = latestVersion
-				let downloadUrl = apkDownloadUrl
+				let cleanTag: string | null = null
+				let downloadUrl: string | null = null
 
 				if (githubData) {
 					const rawTag = githubData.tag_name
@@ -330,7 +306,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							isDismissed = true
 						}
 					} catch (e) {
-						console.warn('Failed to read dismissed version:', e)
+						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to read dismissed version', error: e })
 					}
 
 					if (manual || !isDismissed) {
@@ -351,7 +327,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					toast.show({ title: translate('up_to_date', 'Up to Date'), message: translate('already_latest', 'You are already running the latest version.'), color: '#10B981' })
 				}
 			} catch (error) {
-				console.error('AppUpdater check failed:', error)
+				log({ level: 'error', label: 'AppUpdater', message: 'AppUpdater check failed', error: error })
 				setUpdateStatus('up_to_date')
 				setShowOptionalModal(false)
 				if (manual) {
@@ -362,7 +338,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				setInitialLoading(false)
 			}
 		},
-		[translate, latestVersion, apkDownloadUrl, colors.primary]
+		[translate, colors.primary]
 	)
 
 	// Automatically run updater checks on start
@@ -440,7 +416,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				}
 			}
 		} catch (err) {
-			console.error('Failed to trigger update action:', err)
+			log({ level: 'error', label: 'AppUpdater', message: 'Failed to trigger update action', error: err })
 		}
 	}
 
@@ -461,7 +437,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				}
 				log({ level: 'info', label: 'AppUpdater', message: `Optional update version ${latestVersion} dismissed by user.` })
 			} catch (e) {
-				console.error('Failed to save dismissed version:', e)
+				log({ level: 'error', label: 'AppUpdater', message: 'Failed to save dismissed version', error: e })
 			}
 		}
 	}

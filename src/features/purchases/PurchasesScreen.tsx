@@ -299,7 +299,18 @@ const PurchasesScreen = () => {
 					<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
 						{/* Header */}
 						<View style={styles.cardHeader}>
-							<TouchableOpacity style={styles.headerLeft} onPress={() => item.business.slug && router.push(`/businesses/${item.business.slug}` as any)}>
+							<TouchableOpacity
+								style={styles.headerLeft}
+								onPress={() => {
+									if (item.business.slug) {
+										const nameParam = typeof item.business.name === 'string' ? item.business.name : JSON.stringify(item.business.name)
+										router.push({
+											pathname: `/businesses/${item.business.slug}`,
+											params: { name: nameParam }
+										} as any)
+									}
+								}}
+							>
 								<SmartImage source={(item.business as any).media?.thumbnail?.url} style={styles.businessAvatar} entityType="business" />
 								<View style={styles.headerInfo}>
 									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
@@ -321,7 +332,19 @@ const PurchasesScreen = () => {
 							{item.products.map((p, idx) => {
 								const img = p.product.media?.thumbnail?.url || p.product.defaultProduct?.media?.thumbnail?.url
 								return (
-									<TouchableOpacity key={`${p.product._id}-${idx}`} style={styles.productRow} onPress={() => p.product.slug && router.push(`/products/${p.product.slug}` as any)}>
+									<TouchableOpacity
+										key={`${p.product._id}-${idx}`}
+										style={styles.productRow}
+										onPress={() => {
+											if (p.product.slug) {
+												const nameParam = typeof p.product.name === 'string' ? p.product.name : JSON.stringify(p.product.name)
+												router.push({
+													pathname: `/products/${p.product.slug}`,
+													params: { name: nameParam }
+												} as any)
+											}
+										}}
+									>
 										<SmartImage source={img} style={styles.productThumb} entityType="product" />
 										<View style={styles.productInfoWrap}>
 											<Text style={[styles.productNameText, { color: colors.text }]} numberOfLines={1}>
@@ -454,7 +477,18 @@ const PurchasesScreen = () => {
 					<View style={[styles.purchaseCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
 						{/* Header */}
 						<View style={styles.cardHeader}>
-							<TouchableOpacity style={styles.headerLeft} onPress={() => group.businessSlug && router.push(`/businesses/${group.businessSlug}` as any)}>
+							<TouchableOpacity
+								style={styles.headerLeft}
+								onPress={() => {
+									if (group.businessSlug) {
+										const nameParam = typeof group.businessName === 'string' ? group.businessName : JSON.stringify(group.businessName)
+										router.push({
+											pathname: `/businesses/${group.businessSlug}`,
+											params: { name: nameParam }
+										} as any)
+									}
+								}}
+							>
 								<Ionicons name="storefront-outline" size={24} color={colors.primary} />
 								<View style={styles.headerInfo}>
 									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
@@ -480,12 +514,33 @@ const PurchasesScreen = () => {
 								const img = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 								return (
 									<View key={item._id} style={styles.cartItemRow}>
-										<TouchableOpacity onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}>
+										<TouchableOpacity
+											onPress={() => {
+												if (item.slug) {
+													const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
+													router.push({
+														pathname: `/products/${item.slug}`,
+														params: { name: nameParam }
+													} as any)
+												}
+											}}
+										>
 											<SmartImage source={img} style={styles.productThumb} entityType="product" />
 										</TouchableOpacity>
 										<View style={styles.cartItemDetails}>
 											<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-												<TouchableOpacity style={{ flex: 1, marginRight: 8 }} onPress={() => item.slug && router.push(`/products/${item.slug}` as any)}>
+												<TouchableOpacity
+													style={{ flex: 1, marginRight: 8 }}
+													onPress={() => {
+														if (item.slug) {
+															const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
+															router.push({
+																pathname: `/products/${item.slug}`,
+																params: { name: nameParam }
+															} as any)
+														}
+													}}
+												>
 													<Text style={[styles.productNameText, { color: colors.text }]} numberOfLines={1}>
 														{localize(item.name)}
 													</Text>

@@ -60,5 +60,14 @@ export const ar = {
 	whats_new: 'ما الجديد',
 	release_notes: 'تفاصيل الإصدار',
 	checking_for_updates: 'جاري التحقق من وجود تحديثات...',
-	no_release_notes: 'لا توجد تفاصيل لهذا الإصدار.'
+	no_release_notes: 'لا توجد تفاصيل لهذا الإصدار.',
+	up_to_date: 'محدّث',
+	already_latest: 'أنت تستخدم أحدث إصدار بالفعل.',
+	later: 'لاحقاً',
+	checking_failed: 'فشل التحقق من وجود تحديثات.',
+	mandatory_update_msg_web: 'نسختك الحالية قديمة ولم تعد مدعومة. يرجى التحديث للمتابعة.',
+	mandatory_update_msg_android: 'هذا الإصدار قديم ولم يعد مدعوماً. يرجى تنزيل أحدث إصدار للمتابعة.',
+	refresh_available: 'يتوفر تحديث',
+	exit: 'خروج',
+	downloading: 'جاري التنزيل'
 }

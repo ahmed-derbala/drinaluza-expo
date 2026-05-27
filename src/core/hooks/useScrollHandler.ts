@@ -12,6 +12,9 @@ export const useScrollHandler = (threshold: number = 50, debounceMs: number = 35
 	const { isTabBarVisible, setTabBarVisible } = useLayout()
 	const lastOffset = useRef(0)
 	const lastToggleTime = useRef(0)
+	// Track current visibility via ref to avoid stale closures without re-creating the handler
+	const isTabBarVisibleRef = useRef(isTabBarVisible)
+	isTabBarVisibleRef.current = isTabBarVisible
 
 	const onScroll = useCallback(
 		(event: NativeSyntheticEvent<NativeScrollEvent>) => {
@@ -22,7 +25,7 @@ export const useScrollHandler = (threshold: number = 50, debounceMs: number = 35
 
 			// Always show tab bar when at the top
 			if (currentOffset <= 0) {
-				if (!isTabBarVisible) {
+				if (!isTabBarVisibleRef.current) {
 					setTabBarVisible(true)
 					lastToggleTime.current = currentTime
 				}
@@ -34,13 +37,13 @@ export const useScrollHandler = (threshold: number = 50, debounceMs: number = 35
 			if (Math.abs(diff) >= threshold && timeSinceLastToggle >= debounceMs) {
 				if (diff > 0) {
 					// Scrolling down - hide tab bar
-					if (isTabBarVisible) {
+					if (isTabBarVisibleRef.current) {
 						setTabBarVisible(false)
 						lastToggleTime.current = currentTime
 					}
 				} else {
 					// Scrolling up - show tab bar
-					if (!isTabBarVisible) {
+					if (!isTabBarVisibleRef.current) {
 						setTabBarVisible(true)
 						lastToggleTime.current = currentTime
 					}
@@ -48,7 +51,9 @@ export const useScrollHandler = (threshold: number = 50, debounceMs: number = 35
 				lastOffset.current = currentOffset
 			}
 		},
-		[isTabBarVisible, setTabBarVisible, threshold, debounceMs]
+		// setTabBarVisible is stable; threshold/debounceMs rarely change. isTabBarVisible is
+		// intentionally NOT in deps — we read it via ref to keep the handler reference stable.
+		[setTabBarVisible, threshold, debounceMs]
 	)
 
 	return { onScroll }

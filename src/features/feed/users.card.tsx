@@ -20,8 +20,8 @@ const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string; 
 export default function UserCard({ item }: UserCardProps) {
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
-	const { width } = useWindowDimensions()
-	const styles = useMemo(() => createStyles(colors, width), [colors, width])
+	const { width, height: windowHeight } = useWindowDimensions()
+	const styles = useMemo(() => createStyles(colors, width, windowHeight), [colors, width, windowHeight])
 
 	const userName = localize(item.name) || item.slug || translate('user', 'User')
 	const roleConfig = ROLE_CONFIG[item.role] || ROLE_CONFIG.default
@@ -49,7 +49,11 @@ export default function UserCard({ item }: UserCardProps) {
 
 	const handlePress = () => {
 		if (item.slug) {
-			router.push(`/users/${item.slug}`)
+			const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
+			router.push({
+				pathname: `/users/${item.slug}`,
+				params: { name: nameParam }
+			} as any)
 		}
 	}
 
@@ -76,13 +80,15 @@ export default function UserCard({ item }: UserCardProps) {
 				</View>
 
 				{/* User type icon */}
-				<View style={styles.typeBadge}>
-					<Ionicons name="person" size={16} color={colors.primary} />
-				</View>
+				{windowHeight >= 450 && (
+					<View style={styles.typeBadge}>
+						<Ionicons name="person" size={16} color={colors.primary} />
+					</View>
+				)}
 			</View>
 
 			{/* Location info */}
-			{locationText ? (
+			{locationText && windowHeight >= 480 ? (
 				<View style={styles.locationRow}>
 					<Ionicons name="location-outline" size={14} color={colors.textTertiary} />
 					<Text style={styles.locationText} numberOfLines={1}>
@@ -128,8 +134,9 @@ export default function UserCard({ item }: UserCardProps) {
 	)
 }
 
-const createStyles = (colors: any, screenWidth: number) => {
+const createStyles = (colors: any, screenWidth: number, windowHeight: number) => {
 	const isSmall = screenWidth < 400
+	const isCompact = windowHeight < 550
 	return StyleSheet.create({
 		card: {
 			flex: 1,
@@ -138,9 +145,10 @@ const createStyles = (colors: any, screenWidth: number) => {
 			overflow: 'hidden',
 			borderWidth: 1.5,
 			borderColor: colors.info || '#3B82F6',
-			padding: 16,
-			gap: 12,
+			padding: isCompact ? 10 : 16,
+			gap: isCompact ? 6 : 12,
 			justifyContent: 'space-between',
+			maxHeight: Math.max(160, windowHeight - 140),
 			...Platform.select({
 				ios: {
 					shadowColor: colors.primary,
@@ -155,15 +163,15 @@ const createStyles = (colors: any, screenWidth: number) => {
 		header: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 12
+			gap: isCompact ? 8 : 12
 		},
 		avatarContainer: {
 			position: 'relative'
 		},
 		avatar: {
-			width: isSmall ? 52 : 58,
-			height: isSmall ? 52 : 58,
-			borderRadius: isSmall ? 16 : 18,
+			width: isCompact ? 44 : isSmall ? 52 : 58,
+			height: isCompact ? 44 : isSmall ? 52 : 58,
+			borderRadius: isCompact ? 12 : isSmall ? 16 : 18,
 			backgroundColor: colors.surface
 		},
 		statusDot: {

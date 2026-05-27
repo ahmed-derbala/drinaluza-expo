@@ -215,5 +215,14 @@ export const tn_arab = {
 	whats_new: 'شنوة الجديد',
 	release_notes: 'تفاصيل النسخة',
 	checking_for_updates: 'نلوجو كان فما جديد...',
-	no_release_notes: 'ما فما حتى تفاصيل للنسخة هذه.'
+	no_release_notes: 'ما فما حتى تفاصيل للنسخة هذه.',
+	up_to_date: 'النسخة حديثة',
+	already_latest: 'أنت على آخر نسخة متوفرة.',
+	later: 'مبعد',
+	checking_failed: 'فشل في البحث على تحديث.',
+	mandatory_update_msg_web: 'نسختك القديمة ما باقيتش مدعومة. عمل تحديث باش تكمل.',
+	mandatory_update_msg_android: 'هذه النسخة قديمة وما باقيتش مدعومة. حمل النسخة الجديدة باش تكمل.',
+	refresh_available: 'يوجد تحديث',
+	exit: 'اخرج',
+	downloading: 'قاعد يحمل'
 }

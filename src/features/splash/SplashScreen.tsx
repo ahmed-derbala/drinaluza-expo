@@ -73,7 +73,7 @@ export default function SplashScreen() {
 	}, [])
 
 	if (isReady) {
-		return <Redirect href="/feed" />
+		return <Redirect href="/(home)/feed" />
 	}
 
 	return (

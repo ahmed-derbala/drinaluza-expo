@@ -15,8 +15,8 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 	const router = useRouter()
-	const { width } = useWindowDimensions()
-	const styles = useMemo(() => createStyles(colors, width), [colors, width])
+	const { width, height: windowHeight } = useWindowDimensions()
+	const styles = useMemo(() => createStyles(colors, width, windowHeight), [colors, width, windowHeight])
 
 	const businessName = localize(item.name) || localize(item.business?.name) || translate('business', 'Business')
 	const ownerName = localize(item.business?.owner?.name)
@@ -29,7 +29,11 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	const handlePress = () => {
 		const slug = item.business?.slug || item.slug
 		if (slug) {
-			router.push(`/businesses/${slug}` as any)
+			const nameParam = typeof businessName === 'string' ? businessName : JSON.stringify(businessName)
+			router.push({
+				pathname: `/businesses/${slug}`,
+				params: { name: nameParam }
+			} as any)
 		}
 	}
 
@@ -96,7 +100,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 					</View>
 				)}
 
-				{ownerName ? (
+				{ownerName && windowHeight >= 460 ? (
 					<View style={styles.ownerRow}>
 						<Ionicons name="person-outline" size={12} color={colors.textTertiary} />
 						<Text style={styles.ownerText} numberOfLines={1}>
@@ -105,7 +109,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 					</View>
 				) : null}
 
-				{locationText ? (
+				{locationText && windowHeight >= 490 ? (
 					<View style={styles.locationRow}>
 						<Ionicons name="location-outline" size={12} color={colors.textTertiary} />
 						<Text style={styles.locationText} numberOfLines={1}>
@@ -114,7 +118,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 					</View>
 				) : null}
 
-				{streetText ? (
+				{streetText && windowHeight >= 520 ? (
 					<Text style={styles.streetText} numberOfLines={1}>
 						{streetText}
 					</Text>
@@ -162,8 +166,9 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	)
 }
 
-const createStyles = (colors: any, screenWidth: number) => {
+const createStyles = (colors: any, screenWidth: number, windowHeight: number) => {
 	const isSmall = screenWidth < 400
+	const isCompact = windowHeight < 550
 	return StyleSheet.create({
 		card: {
 			flex: 1,
@@ -172,6 +177,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 			overflow: 'hidden',
 			borderWidth: 1.5,
 			borderColor: colors.info || '#3B82F6',
+			maxHeight: Math.max(180, windowHeight - 140),
 			...Platform.select({
 				ios: {
 					shadowColor: colors.primary,
@@ -186,6 +192,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 		imageContainer: {
 			width: '100%',
 			aspectRatio: 2.2,
+			maxHeight: Math.min(130, windowHeight * 0.18),
 			backgroundColor: colors.surface,
 			position: 'relative'
 		},
@@ -199,23 +206,23 @@ const createStyles = (colors: any, screenWidth: number) => {
 		},
 		badge: {
 			position: 'absolute',
-			top: 10,
-			right: 10,
-			width: 32,
-			height: 32,
-			borderRadius: 10,
+			top: isCompact ? 5 : 10,
+			right: isCompact ? 5 : 10,
+			width: isCompact ? 24 : 32,
+			height: isCompact ? 24 : 32,
+			borderRadius: isCompact ? 7 : 10,
 			backgroundColor: colors.primaryContainer,
 			justifyContent: 'center',
 			alignItems: 'center'
 		},
 		info: {
 			flex: 1,
-			padding: 14,
-			gap: 6,
+			padding: isCompact ? 8 : 14,
+			gap: isCompact ? 3 : 6,
 			justifyContent: 'space-between'
 		},
 		businessName: {
-			fontSize: isSmall ? 17 : 19,
+			fontSize: isCompact ? 14 : isSmall ? 17 : 19,
 			fontWeight: '700',
 			color: colors.text
 		},
@@ -262,9 +269,9 @@ const createStyles = (colors: any, screenWidth: number) => {
 			flexDirection: 'row',
 			alignItems: 'center',
 			gap: 8,
-			marginTop: 6,
-			paddingTop: 10,
-			borderTopWidth: 1,
+			marginTop: isCompact ? 3 : 6,
+			paddingTop: isCompact ? 4 : 10,
+			borderTopWidth: isCompact ? 0.5 : 1,
 			borderTopColor: colors.border
 		},
 		actionBtn: {

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet } from 'react-native'
 import { StatusBar } from 'expo-status-bar'
@@ -7,7 +7,6 @@ import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { secureGetItem } from '@/core/storage'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
 export default function HomeLayout() {
@@ -16,22 +15,10 @@ export default function HomeLayout() {
 	const { translate, user } = useUser()
 	const pathname = usePathname()
 	useBackButton()
-	const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
+	// Derive auth state from UserContext — single source of truth, no extra token read
+	const isAuthenticated = !!user
 	const { notificationCount } = useNotification()
 	const insets = useSafeAreaInsets()
-
-	useEffect(() => {
-		const loadAuthData = async () => {
-			try {
-				const token = await secureGetItem('authToken')
-				setIsAuthenticated(!!token)
-			} catch (error) {
-				console.error('Failed to load auth data:', error)
-				setIsAuthenticated(false)
-			}
-		}
-		loadAuthData()
-	}, [])
 
 	useEffect(() => {
 		setTabBarVisible(true)
@@ -171,30 +158,6 @@ export default function HomeLayout() {
 							</View>
 						),
 						tabBarAccessibilityLabel: translate('settings', 'Settings')
-					}}
-				/>
-				<Tabs.Screen
-					name="businesses"
-					options={{
-						headerShown: false,
-						tabBarButton: () => null,
-						tabBarItemStyle: { display: 'none' }
-					}}
-				/>
-				<Tabs.Screen
-					name="products"
-					options={{
-						headerShown: false,
-						tabBarButton: () => null,
-						tabBarItemStyle: { display: 'none' }
-					}}
-				/>
-				<Tabs.Screen
-					name="users"
-					options={{
-						headerShown: false,
-						tabBarButton: () => null,
-						tabBarItemStyle: { display: 'none' }
 					}}
 				/>
 			</Tabs>

@@ -17,8 +17,8 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const { localize, currency, formatPrice, translate } = useUser()
 	const router = useRouter()
 	const pathname = usePathname()
-	const { width } = useWindowDimensions()
-	const styles = useMemo(() => createStyles(colors, width), [colors, width])
+	const { width, height: windowHeight } = useWindowDimensions()
+	const styles = useMemo(() => createStyles(colors, width, windowHeight), [colors, width, windowHeight])
 
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
@@ -64,10 +64,17 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 	const handleProductPress = () => {
 		if (item.slug) {
+			const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
 			if (pathname.startsWith('/products')) {
-				router.push(`/products/${item.slug}` as any)
+				router.push({
+					pathname: `/products/${item.slug}`,
+					params: { name: nameParam }
+				} as any)
 			} else if (item.business?.slug) {
-				router.push(`/businesses/${item.business.slug}/products/${item.slug}` as any)
+				router.push({
+					pathname: `/businesses/${item.business.slug}/products/${item.slug}`,
+					params: { name: nameParam }
+				} as any)
 			}
 		}
 	}
@@ -85,30 +92,37 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0]
 
+	const showBusinessHeader = windowHeight >= 450
+	const showRatingRow = windowHeight >= 500 && rating > 0
+	const showSecondaryNames = windowHeight >= 550 && secondaryNames.length > 0
+	const showFooter = windowHeight >= 480
+
 	return (
 		<Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] }]} onPress={handleProductPress}>
 			{/* Business Header */}
-			<TouchableOpacity onPress={handleBusinessPress} style={styles.businessHeader} activeOpacity={0.8}>
-				<View style={styles.businessInfoWithImage}>
-					{item.business?.media?.thumbnail?.url ? (
-						<SmartImage source={item.business.media.thumbnail.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
-					) : (
-						<View style={styles.businessIconContainer}>
-							<MaterialIcons name="store" size={16} color={colors.primary} />
-						</View>
-					)}
-					<View style={styles.businessInfo}>
-						<Text style={styles.businessName} numberOfLines={1}>
-							{localize(item.business?.name)}
-						</Text>
-						{item.business?.address?.city && (
-							<Text style={styles.businessLocation} numberOfLines={1}>
-								{item.business.address.city}
-							</Text>
+			{showBusinessHeader && (
+				<TouchableOpacity onPress={handleBusinessPress} style={styles.businessHeader} activeOpacity={0.8}>
+					<View style={styles.businessInfoWithImage}>
+						{item.business?.media?.thumbnail?.url ? (
+							<SmartImage source={item.business.media.thumbnail.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
+						) : (
+							<View style={styles.businessIconContainer}>
+								<MaterialIcons name="store" size={16} color={colors.primary} />
+							</View>
 						)}
+						<View style={styles.businessInfo}>
+							<Text style={styles.businessName} numberOfLines={1}>
+								{localize(item.business?.name)}
+							</Text>
+							{item.business?.address?.city && (
+								<Text style={styles.businessLocation} numberOfLines={1}>
+									{item.business.address.city}
+								</Text>
+							)}
+						</View>
 					</View>
-				</View>
-			</TouchableOpacity>
+				</TouchableOpacity>
+			)}
 
 			{/* Image */}
 			<View style={styles.imageWrap}>
@@ -136,12 +150,12 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 				<Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
 					{mainName}
 				</Text>
-				{secondaryNames.length > 0 && (
+				{showSecondaryNames && (
 					<Text style={[styles.nameAlt, { color: colors.textTertiary }]} numberOfLines={1}>
 						{secondaryNames.join(' • ')}
 					</Text>
 				)}
-				{rating > 0 && (
+				{showRatingRow && (
 					<View style={styles.ratingRow}>
 						<MaterialIcons name="star" size={12} color="#F59E0B" />
 						<Text style={[styles.ratingText, { color: colors.text }]}>{rating.toFixed(1)}</Text>
@@ -158,7 +172,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 				{/* Quantity & Actions (Bottom of Price) */}
 				{purchaseAllowed && isActive && !isOutOfStock && (
-					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, zIndex: 10 }}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: windowHeight < 550 ? 4 : 8, zIndex: 10 }}>
 						<View style={[styles.quantityControlOuter, { backgroundColor: colors.surfaceVariant }]}>
 							<TouchableOpacity onPress={decrement} style={styles.quantityBtn} activeOpacity={0.7}>
 								<MaterialIcons name="remove" size={16} color={colors.text} />
@@ -182,18 +196,21 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 				)}
 
 				{/* Footer with wrapping */}
-				<View style={styles.footer}>
-					<View style={[styles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
-						<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
-						<Text style={[styles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
+				{showFooter && (
+					<View style={styles.footer}>
+						<View style={[styles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
+							<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
+							<Text style={[styles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
+						</View>
 					</View>
-				</View>
+				)}
 			</View>
 		</Pressable>
 	)
 }
 
-const createStyles = (colors: any, screenWidth: number) => {
+const createStyles = (colors: any, screenWidth: number, windowHeight: number) => {
+	const isCompact = windowHeight < 550
 	return StyleSheet.create({
 		card: {
 			flex: 1,
@@ -202,6 +219,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 			backgroundColor: colors.card,
 			borderColor: colors.info || '#3B82F6',
 			overflow: 'hidden',
+			maxHeight: Math.max(220, windowHeight - 140),
 			...Platform.select({
 				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8 },
 				android: { elevation: 3 },
@@ -212,7 +230,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 			flexDirection: 'row',
 			alignItems: 'center',
 			paddingHorizontal: 12,
-			paddingVertical: 10,
+			paddingVertical: isCompact ? 6 : 10,
 			borderBottomWidth: 1,
 			borderBottomColor: colors.border
 		},
@@ -242,6 +260,7 @@ const createStyles = (colors: any, screenWidth: number) => {
 		imageWrap: {
 			width: '100%',
 			aspectRatio: 1.35,
+			maxHeight: Math.min(180, windowHeight * 0.22),
 			position: 'relative'
 		},
 		productImage: { width: '100%', height: '100%' },
@@ -273,8 +292,8 @@ const createStyles = (colors: any, screenWidth: number) => {
 			borderWidth: 1
 		},
 		inStockText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
-		body: { padding: 14, gap: 6 },
-		name: { fontSize: 15, fontWeight: '700', lineHeight: 20, letterSpacing: -0.2 },
+		body: { padding: isCompact ? 8 : 14, gap: isCompact ? 3 : 6 },
+		name: { fontSize: isCompact ? 13 : 15, fontWeight: '700', lineHeight: isCompact ? 17 : 20, letterSpacing: -0.2 },
 		nameAlt: { fontSize: 12, fontWeight: '500' },
 		ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 		ratingText: { fontSize: 12, fontWeight: '600' },

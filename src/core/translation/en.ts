@@ -233,5 +233,14 @@ export const en = {
 	whats_new: "What's New",
 	release_notes: 'Release Notes',
 	checking_for_updates: 'Checking for updates...',
-	no_release_notes: 'No release notes available for this version.'
+	no_release_notes: 'No release notes available for this version.',
+	up_to_date: 'Up to Date',
+	already_latest: 'You are already running the latest version.',
+	later: 'Later',
+	checking_failed: 'Failed to check for updates.',
+	mandatory_update_msg_web: 'Your active web session is outdated and no longer supported. Please refresh to load the latest changes.',
+	mandatory_update_msg_android: 'This version of the application is outdated and no longer supported. Please download the latest version to continue.',
+	refresh_available: 'Refresh Available',
+	exit: 'Exit',
+	downloading: 'Downloading'
 }

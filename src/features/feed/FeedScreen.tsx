@@ -20,6 +20,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
+import { log } from '@/core/log'
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
@@ -242,56 +243,60 @@ export default function FeedScreen() {
 	const insets = useSafeAreaInsets()
 	const styles = useMemo(() => createStyles(colors), [colors])
 
-	const loadCart = async () => {
+	const loadCart = useCallback(async () => {
 		try {
 			const storedCart = await AsyncStorage.getItem('cart')
 			if (storedCart) {
 				setCart(JSON.parse(storedCart))
 			}
 		} catch (error) {
-			console.error('Failed to load cart:', error)
+			log({ level: 'error', label: 'FeedScreen', message: 'Failed to load cart', error })
 		}
-	}
+	}, [])
 
-	const fetchFeed = async (pageNum: number = 1, shouldAppend: boolean = false) => {
-		try {
-			if (pageNum === 1) setLoading(true)
-			else setIsLoadingMore(true)
+	const fetchFeed = useCallback(
+		async (pageNum: number = 1, shouldAppend: boolean = false) => {
+			try {
+				if (pageNum === 1) setLoading(true)
+				else setIsLoadingMore(true)
 
-			const response = await getFeed(pageNum, 10)
-			const newItems = response.data.docs
+				const response = await getFeed(pageNum, 10)
+				const newItems = response.data.docs
 
-			if (response.data.pagination) {
-				setPagination(response.data.pagination)
-				setHasMore(response.data.pagination.hasNextPage)
-			} else {
-				if (newItems.length < 10) {
-					setHasMore(false)
+				if (response.data.pagination) {
+					setPagination(response.data.pagination)
+					setHasMore(response.data.pagination.hasNextPage)
 				} else {
-					setHasMore(true)
+					if (newItems.length < 10) {
+						setHasMore(false)
+					} else {
+						setHasMore(true)
+					}
 				}
-			}
 
-			if (shouldAppend) {
-				setFeedItems((prev) => [...prev, ...newItems])
-				setDisplayedItems((prev) => [...prev, ...newItems])
-			} else {
-				setFeedItems(newItems)
-				setDisplayedItems(newItems)
+				if (shouldAppend) {
+					setFeedItems((prev) => [...prev, ...newItems])
+					setDisplayedItems((prev) => [...prev, ...newItems])
+				} else {
+					setFeedItems(newItems)
+					setDisplayedItems(newItems)
+				}
+				setError(null)
+			} catch (err) {
+				logError(err, 'fetchFeed')
+				const errorInfo = parseError(err)
+				setError({
+					message: errorInfo.message,
+					retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend) : undefined
+				})
+			} finally {
+				setLoading(false)
+				setIsLoadingMore(false)
 			}
-			setError(null)
-		} catch (err) {
-			logError(err, 'fetchFeed')
-			const errorInfo = parseError(err)
-			setError({
-				message: errorInfo.message,
-				retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend) : undefined
-			})
-		} finally {
-			setLoading(false)
-			setIsLoadingMore(false)
-		}
-	}
+		},
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[]
+	)
 
 	// Trigger data load on page parameter changes on Web, or initial load on Mobile
 	useEffect(() => {
@@ -362,7 +367,7 @@ export default function FeedScreen() {
 			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
 			toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
 		} catch (err) {
-			console.error('Failed to add to cart:', err)
+			log({ level: 'error', label: 'FeedScreen', message: 'Failed to add to cart', error: err })
 			toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 		}
 	}

@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, TextStyle, ViewStyle, ImageStyle } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -22,10 +22,15 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 	const { colors } = useTheme()
 	const { translate, localize } = useUser()
 	const router = useRouter()
+	const { height: windowHeight } = useWindowDimensions()
 	const isDark = true
 
 	const handleBusinessPress = (slug: string) => {
-		router.push(`/businesses/${slug}` as any)
+		const nameParam = typeof businessName === 'string' ? businessName : JSON.stringify(businessName)
+		router.push({
+			pathname: `/businesses/${slug}`,
+			params: { name: nameParam }
+		} as any)
 	}
 
 	// Build address string
@@ -48,8 +53,13 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 		isExtraSmall,
 		fontSize,
 		subtitleFontSize,
-		smallFontSize
+		smallFontSize,
+		windowHeight
 	})
+
+	const showRating = windowHeight >= 500 && rating > 0
+	const showOwner = windowHeight >= 460
+	const showAddress = windowHeight >= 520 && fullAddress
 
 	return (
 		<TouchableOpacity style={styles.businessCard as ViewStyle} onPress={() => handleBusinessPress(business.slug)}>
@@ -64,25 +74,27 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 					<Text style={styles.businessName as TextStyle} numberOfLines={2}>
 						{businessName}
 					</Text>
-					{rating > 0 && (
+					{showRating && (
 						<View style={styles.ratingContainer as ViewStyle}>
 							<Ionicons name="star" size={isExtraSmall ? 12 : 14} color="#FFD700" />
 							<Text style={styles.ratingText as TextStyle}>{rating.toFixed(1)}</Text>
 							<Text style={styles.ratingCount as TextStyle}>({ratingCount})</Text>
 						</View>
 					)}
-					{showExtended && ownerName && (
+					{showOwner && showExtended && ownerName && (
 						<Text style={styles.businessOwnerLabel as TextStyle} numberOfLines={1}>
 							{ownerName}
 						</Text>
 					)}
-					<Text style={styles.ownerName as TextStyle} numberOfLines={1}>
-						@{ownerSlug}
-					</Text>
+					{showOwner && (
+						<Text style={styles.ownerName as TextStyle} numberOfLines={1}>
+							@{ownerSlug}
+						</Text>
+					)}
 				</View>
 
 				{/* Address */}
-				{fullAddress ? (
+				{showAddress ? (
 					<View style={styles.addressContainer as ViewStyle}>
 						<Ionicons name="location-outline" size={isExtraSmall ? 12 : 14} color={colors.textSecondary} />
 						<Text style={styles.addressText as TextStyle} numberOfLines={2}>
@@ -158,9 +170,12 @@ const createStyles = (
 		fontSize: number
 		subtitleFontSize: number
 		smallFontSize: number
+		windowHeight: number
 	}
-) =>
-	StyleSheet.create({
+) => {
+	const isCompact = opts.windowHeight < 550
+	const maxCardHeight = Math.max(180, opts.windowHeight - 140)
+	return StyleSheet.create({
 		businessCard: {
 			flex: 1,
 			margin: opts.isExtraSmall ? 4 : 6,
@@ -176,7 +191,8 @@ const createStyles = (
 			elevation: 2,
 			width: opts.width - (opts.isExtraSmall ? 8 : 12),
 			maxWidth: opts.width - (opts.isExtraSmall ? 8 : 12),
-			minHeight: opts.isExtraSmall ? 240 : 300,
+			minHeight: Math.min(opts.isExtraSmall ? 220 : 280, maxCardHeight),
+			maxHeight: maxCardHeight,
 			alignSelf: 'flex-start',
 			flexDirection: 'column',
 			justifyContent: 'space-between'
@@ -184,7 +200,7 @@ const createStyles = (
 		businessImageContainer: {
 			position: 'relative',
 			width: '100%',
-			height: opts.imageHeight,
+			height: Math.min(opts.imageHeight, opts.windowHeight * 0.18),
 			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
 		},
 		businessImage: {
@@ -193,11 +209,11 @@ const createStyles = (
 		},
 		businessCardContent: {
 			flex: 1,
-			padding: opts.isExtraSmall ? 10 : 16,
+			padding: isCompact ? 8 : opts.isExtraSmall ? 10 : 16,
 			justifyContent: 'space-between'
 		},
 		businessHeader: {
-			marginBottom: opts.isExtraSmall ? 8 : 12
+			marginBottom: isCompact ? 4 : opts.isExtraSmall ? 8 : 12
 		},
 		businessOwnerLabel: {
 			fontSize: opts.smallFontSize,
@@ -236,7 +252,7 @@ const createStyles = (
 		contactButtons: {
 			flexDirection: 'row',
 			justifyContent: 'space-between',
-			marginTop: opts.isExtraSmall ? 8 : 12,
+			marginTop: isCompact ? 4 : opts.isExtraSmall ? 8 : 12,
 			gap: opts.isExtraSmall ? 6 : 8
 		},
 		contactButton: {
@@ -244,7 +260,7 @@ const createStyles = (
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
-			paddingVertical: opts.isExtraSmall ? 8 : 10,
+			paddingVertical: isCompact ? 4 : opts.isExtraSmall ? 8 : 10,
 			paddingHorizontal: opts.isExtraSmall ? 10 : 12,
 			borderRadius: opts.isExtraSmall ? 6 : 8,
 			backgroundColor: colors.backgroundSecondary || 'rgba(0,0,0,0.05)',
@@ -258,12 +274,12 @@ const createStyles = (
 		viewButton: {
 			backgroundColor: colors.primary,
 			borderRadius: opts.isExtraSmall ? 6 : 10,
-			paddingVertical: opts.isExtraSmall ? 10 : 12,
+			paddingVertical: isCompact ? 6 : opts.isExtraSmall ? 10 : 12,
 			paddingHorizontal: opts.isExtraSmall ? 14 : 18,
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
-			marginTop: opts.isExtraSmall ? 8 : 12
+			marginTop: isCompact ? 4 : opts.isExtraSmall ? 8 : 12
 		},
 		addressContainer: {
 			flexDirection: 'row',
@@ -279,5 +295,6 @@ const createStyles = (
 			lineHeight: opts.smallFontSize * 1.3
 		}
 	})
+}
 
 export default React.memo(BusinessCard)

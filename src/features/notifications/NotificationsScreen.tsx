@@ -1,12 +1,12 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderTitle from '@/features/common/HeaderTitle'
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, FlatList, RefreshControl, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
-
+import { FlashList } from '@shopify/flash-list'
 import ErrorState from '../common/ErrorState'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { log } from '@/core/log'
 
 // Priority color mapping
 const PRIORITY_COLORS = {
@@ -25,6 +26,7 @@ const PRIORITY_COLORS = {
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
+	const { height: windowHeight } = useWindowDimensions()
 	const [notifications, setNotifications] = useState<NotificationItem[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
@@ -34,7 +36,7 @@ export default function NotificationsScreen() {
 	const { translate, localize } = useUser()
 	const { onScroll } = useScrollHandler()
 
-	const loadNotifications = async (pageNum: number = 1, isRefresh: boolean = false) => {
+	const loadNotifications = useCallback(async (pageNum: number = 1, isRefresh: boolean = false) => {
 		try {
 			if (pageNum === 1 && !isRefresh) setLoading(true)
 			setError(null)
@@ -62,7 +64,7 @@ export default function NotificationsScreen() {
 			setLoading(false)
 			setRefreshing(false)
 		}
-	}
+	}, [])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -107,7 +109,7 @@ export default function NotificationsScreen() {
 
 				await markNotificationSeen(item._id)
 			} catch (error) {
-				console.error('Failed to mark notification as seen:', error)
+				log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to mark notification as seen', error })
 			}
 		}
 	}
@@ -129,6 +131,9 @@ export default function NotificationsScreen() {
 		const priorityStyles = getPriorityStyles(item.priority)
 		const isHighPriority = item.priority === 'high'
 
+		const isCompact = windowHeight < 550
+		const maxCardHeight = Math.max(100, windowHeight - 140)
+
 		return (
 			<TouchableOpacity
 				style={[
@@ -136,14 +141,17 @@ export default function NotificationsScreen() {
 					{
 						backgroundColor: priorityStyles ? priorityStyles.backgroundColor : isUnseen ? colors.primary + '08' : colors.card,
 						borderColor: priorityStyles ? priorityStyles.borderColor : isUnseen ? colors.primary : colors.info || '#3B82F6',
-						borderLeftWidth: isUnseen || priorityStyles ? 4 : 1
+						borderLeftWidth: isUnseen || priorityStyles ? 4 : 1,
+						maxHeight: maxCardHeight,
+						padding: isCompact ? 10 : 16,
+						marginBottom: isCompact ? 8 : 12
 					}
 				]}
 				activeOpacity={0.7}
 				onPress={() => handleNotificationPress(item)}
 			>
 				{/* Priority Badge */}
-				{item.priority && (
+				{item.priority && windowHeight >= 520 && (
 					<View style={[styles.priorityBadge, { backgroundColor: priorityStyles?.borderColor + '20' }]}>
 						<Ionicons name={priorityStyles?.iconName || 'information-circle'} size={14} color={priorityStyles?.textColor} />
 						<Text style={[styles.priorityText, { color: priorityStyles?.textColor }]}>{translate(`priority_${item.priority}`, item.priority.charAt(0).toUpperCase() + item.priority.slice(1))}</Text>
@@ -151,18 +159,33 @@ export default function NotificationsScreen() {
 				)}
 
 				{/* Header */}
-				<View style={styles.cardHeader}>
+				<View style={[styles.cardHeader, { marginBottom: isCompact ? 4 : 8 }]}>
 					<View style={styles.headerTitleContainer}>
 						{isUnseen && !priorityStyles && <View style={[styles.dot, { backgroundColor: colors.primary }]} />}
 						{isHighPriority && <Ionicons name="warning" size={18} color={priorityStyles?.textColor} style={styles.urgentIcon} />}
-						<Text style={[styles.title, { color: priorityStyles?.textColor || colors.text, fontWeight: isUnseen ? '700' : '600' }]} numberOfLines={2}>
+						<Text
+							style={[styles.title, { color: priorityStyles?.textColor || colors.text, fontWeight: isUnseen ? '700' : '600', fontSize: isCompact ? 14 : 16, lineHeight: isCompact ? 18 : 22 }]}
+							numberOfLines={windowHeight < 500 ? 1 : 2}
+						>
 							{localize(item.title as any)}
 						</Text>
 					</View>
 				</View>
 
 				{/* Content */}
-				<Text style={[styles.content, { color: isUnseen ? colors.text : colors.textSecondary, fontWeight: isUnseen ? '500' : '400' }]} numberOfLines={3}>
+				<Text
+					style={[
+						styles.content,
+						{
+							color: isUnseen ? colors.text : colors.textSecondary,
+							fontWeight: isUnseen ? '500' : '400',
+							fontSize: isCompact ? 12 : 14,
+							lineHeight: isCompact ? 17 : 21,
+							marginBottom: isCompact ? 6 : 12
+						}
+					]}
+					numberOfLines={windowHeight < 500 ? 1 : windowHeight < 650 ? 2 : 3}
+				>
 					{localize(item.content as any)}
 				</Text>
 
@@ -216,7 +239,7 @@ export default function NotificationsScreen() {
 				}}
 			/>
 
-			<FlatList
+			<FlashList
 				data={notifications}
 				renderItem={renderItem}
 				keyExtractor={(item) => item._id}

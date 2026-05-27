@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
 import { secureGetItem } from '@/core/storage'
 import { getNotifications } from './notifications.api'
+import { log } from '@/core/log'
 
 interface NotificationContextType {
 	notificationCount: number
@@ -23,7 +24,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 			const unseen = response.data.docs.filter((n) => !n.seenAt).length
 			setNotificationCount(unseen)
 		} catch (error) {
-			console.error('Failed to fetch notifications count:', error)
+			log({ level: 'error', label: 'NotificationContext', message: 'Failed to fetch notifications count', error })
 		}
 	}, [])
 
