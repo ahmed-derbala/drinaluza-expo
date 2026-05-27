@@ -635,12 +635,12 @@ export default function ProfileScreen() {
 
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-			<HeaderUpdaterWidget />
 			{userData.role === 'customer' && <HeaderActionButton iconName="briefcase" onPress={handleRequestBusiness} accessibilityLabel="Request Business" />}
 			<HeaderActionButton iconName="people" iconColor={colors.text} backgroundColor={colors.text + '05'} onPress={handleSwitchUser} accessibilityLabel="Switch User Account" />
 			<HeaderActionButton iconName="log-out" iconColor={colors.error} backgroundColor={colors.error + '10'} onPress={handleSignOut} accessibilityLabel="Sign Out" />
 			<HeaderActionButton iconName="cart-outline" onPress={() => router.push('/profile/purchases?status=cart')} badgeCount={cart.length} accessibilityLabel="View Cart" />
 			<HeaderRefreshButton onRefresh={loadProfile} isRefreshing={loading} size={20} style={[styles.headerActionButton, { backgroundColor: colors.surface }]} />
+			<HeaderUpdaterWidget />
 		</View>
 	)
 

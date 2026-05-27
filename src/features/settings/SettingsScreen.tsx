@@ -215,9 +215,9 @@ export default function SettingsScreen() {
 					headerLeft: () => null,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', gap: 8, paddingRight: 16, alignItems: 'center' }}>
-							<HeaderUpdaterWidget />
 							<HeaderActionButton iconName="share-social-outline" onPress={handleShareApk} accessibilityLabel="Share APK" backgroundColor={colors.surface} size={38} />
 							<HeaderActionButton iconName="qr-code-outline" onPress={() => setShowApkQRCode(true)} accessibilityLabel="APK QR Code" backgroundColor={colors.surface} size={38} />
+							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

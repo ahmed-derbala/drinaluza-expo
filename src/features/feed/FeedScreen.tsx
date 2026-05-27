@@ -478,7 +478,6 @@ export default function FeedScreen() {
 
 	const headerRightActions = (
 		<View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-			<HeaderUpdaterWidget />
 			{!isWeb && (
 				<HeaderActionButton iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} backgroundColor={colors.surface} size={40} accessibilityLabel="Scan Barcode" />
 			)}
@@ -492,6 +491,7 @@ export default function FeedScreen() {
 				accessibilityLabel="View Cart"
 			/>
 			<HeaderRefreshButton onRefresh={refreshData} isRefreshing={refreshing} size={20} style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} />
+			<HeaderUpdaterWidget />
 		</View>
 	)
 

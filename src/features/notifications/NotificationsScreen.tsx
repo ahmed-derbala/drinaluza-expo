@@ -238,8 +238,8 @@ export default function NotificationsScreen() {
 					headerLeft: () => null,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<HeaderUpdaterWidget />
 							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

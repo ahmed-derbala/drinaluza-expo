@@ -418,10 +418,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						}
 					} else {
 						await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
-						const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
-						await FileSystem.deleteAsync(localUri, { idempotent: true })
 						setIsReadyToInstall(false)
-						log({ level: 'info', label: 'AppUpdater', message: `Startup check: App updated to v${APP_VERSION}. Scrubbed v${pendingVersion} APK.` })
+						log({ level: 'info', label: 'AppUpdater', message: `Startup check: App updated to v${APP_VERSION}. Kept v${pendingVersion} APK for sharing.` })
 					}
 				}
 			} catch (e) {
@@ -440,7 +438,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					if (cacheDir) {
 						const cacheFiles = await FileSystem.readDirectoryAsync(cacheDir)
 						const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
-						const activeApkName = pendingVersion ? `drinaluza-${pendingVersion}.apk` : null
+						const versionToKeep = pendingVersion || APP_VERSION
+						const activeApkName = `drinaluza-${versionToKeep}.apk`
 
 						const oldApks = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk') && file !== activeApkName)
 

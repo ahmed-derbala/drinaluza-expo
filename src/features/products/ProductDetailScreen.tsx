@@ -255,7 +255,6 @@ export default function ProductDetailScreen() {
 					},
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<HeaderUpdaterWidget />
 							{isDashboard && (
 								<>
 									<TouchableOpacity
@@ -349,6 +348,7 @@ export default function ProductDetailScreen() {
 								</TouchableOpacity>
 							)}
 							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

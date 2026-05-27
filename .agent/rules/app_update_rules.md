@@ -41,3 +41,5 @@ Optional updates should allow the user to continue using the app.
 
 check for updates only using this link
 https://api.github.com/repos/ahmed-derbala/drinaluza-expo/releases/latest
+
+keep the latest apk file only

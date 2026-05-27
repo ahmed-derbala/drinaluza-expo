@@ -150,8 +150,8 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 						headerLeft: () => null,
 						headerRight: () => (
 							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<HeaderUpdaterWidget />
 								<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+								<HeaderUpdaterWidget />
 							</View>
 						)
 					}}
@@ -182,8 +182,8 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 					headerLeft: () => null,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<HeaderUpdaterWidget />
 							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}
@@ -420,7 +420,6 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				options={{
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-							<HeaderUpdaterWidget />
 							{business.slug && (
 								<TouchableOpacity onPress={() => router.push(`/dashboard/${business.slug}/sales` as never)} activeOpacity={0.7} style={styles.headerIconBtn}>
 									<Ionicons name="trending-up" size={22} color={colors.primary} />
@@ -430,6 +429,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
 							</TouchableOpacity>
 							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

@@ -109,11 +109,11 @@ export default function UserDetailScreen() {
 					title: displayTitle,
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-							<HeaderUpdaterWidget />
 							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7}>
 								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
 							</TouchableOpacity>
 							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
+							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}
