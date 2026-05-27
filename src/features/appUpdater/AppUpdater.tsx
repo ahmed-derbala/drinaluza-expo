@@ -96,6 +96,40 @@ export const compareVersions = (a: string, b: string): number => {
 	return 0
 }
 
+export const getUpdateType = (current: string, latest: string): 'none' | 'optional' | 'required' => {
+	const cParts = current.split('.').map(Number)
+	const lParts = latest.split('.').map(Number)
+
+	const currentMajor = cParts[0] || 0
+	const currentMinor = cParts[1] || 0
+	const currentPatch = cParts[2] || 0
+
+	const latestMajor = lParts[0] || 0
+	const latestMinor = lParts[1] || 0
+	const latestPatch = lParts[2] || 0
+
+	if (compareVersions(latest, current) <= 0) {
+		return 'none'
+	}
+
+	// 1. If MAJOR version is different
+	if (latestMajor !== currentMajor) {
+		return 'required'
+	}
+
+	// 2. If same MAJOR, but higher MINOR
+	if (latestMinor > currentMinor) {
+		return 'required'
+	}
+
+	// 3. If only PATCH is higher
+	if (latestPatch > currentPatch) {
+		return 'optional'
+	}
+
+	return 'none'
+}
+
 const DISMISSED_VERSION_KEY = 'drinaluza_dismissed_update_version'
 
 export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
@@ -255,9 +289,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					toast.show({ title: translate('checking_for_updates', 'Checking for updates...'), message: '', color: colors.primary })
 				}
 
-				// 1. Fetch latest version from GitHub Releases API
+				// 1. Fetch latest version strictly from GitHub Releases API
 				let githubData: GitHubReleaseResponse | null = null
-				let githubError: any = null
 				try {
 					const githubRes = await axios.get<GitHubReleaseResponse>('https://api.github.com/repos/ahmed-derbala/drinaluza-expo/releases/latest', { timeout: 8000 })
 					if (githubRes.data && githubRes.data.tag_name) {
@@ -266,78 +299,37 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						throw new Error('GitHub Releases API returned an invalid response.')
 					}
 				} catch (err) {
-					githubError = err
 					log({ level: 'warn', label: 'AppUpdater', message: 'GitHub API check failed (might be rate-limited or offline)', error: err })
+					throw err
 				}
 
-				// 2. Fetch minVersion and destroyAppStorage configurations from backend (if available)
-				let minReq = '1.0.0'
-				let wipeStorage: boolean | string = false
-				let backendLatest: string | null = null
-				let backendError: any = null
+				const rawTag = githubData.tag_name
+				const cleanTag = rawTag.replace(/^v/, '') // e.g. "v1.0.3" -> "1.0.3"
+				const apkAsset = githubData.assets?.find((asset) => asset.name.endsWith('.apk'))
+				const downloadUrl = apkAsset?.browser_download_url || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${rawTag}/drinaluza-${cleanTag}.apk`
 
-				if (BACKEND_URL) {
-					try {
-						const url = BACKEND_URL.replace(/\/$/, '')
-						const response = await axios.get(url, { timeout: 5000 })
-						const data = response.data?.data as BackendResponse | undefined
-						if (data) {
-							setServerVersion(data.app.version)
-							const config = Platform.OS === 'web' ? data.frontend.web.version : data.frontend.android.version
-							minReq = config.min || '1.0.0'
-							wipeStorage = config.destroyAppStorage !== undefined ? config.destroyAppStorage : false
-							backendLatest = config.latest || null
-						}
-					} catch (e) {
-						backendError = e
-						log({ level: 'warn', label: 'AppUpdater', message: 'Backend configuration fetch failed', error: e })
-					}
-				}
-
-				// If both endpoints failed, throw error in manual mode
-				if (!githubData && !backendLatest) {
-					throw githubError || backendError || new Error('Network error.')
-				}
-
-				let cleanTag: string | null = null
-				let downloadUrl: string | null = null
-
-				if (githubData) {
-					const rawTag = githubData.tag_name
-					cleanTag = rawTag.replace(/^v/, '') // e.g. "v1.0.3" -> "1.0.3"
-					const apkAsset = githubData.assets?.find((asset) => asset.name.endsWith('.apk'))
-					downloadUrl = apkAsset?.browser_download_url || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${rawTag}/drinaluza-${cleanTag}.apk`
-
-					// Set release notes body
-					if (githubData.body) {
-						setReleaseNotes(githubData.body)
-					} else {
-						setReleaseNotes(null)
-					}
-				} else if (backendLatest) {
-					// Fallback to backend latest tag if GitHub failed/rate-limited
-					cleanTag = backendLatest
-					downloadUrl = `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${cleanTag}/drinaluza-${cleanTag}.apk`
+				if (githubData.body) {
+					setReleaseNotes(githubData.body)
+				} else {
 					setReleaseNotes(null)
 				}
 
-				if (cleanTag) setLatestVersion(cleanTag)
-				if (downloadUrl) setApkDownloadUrl(downloadUrl)
-				setMinVersion(minReq)
-				setDestroyAppStorage(wipeStorage)
+				setLatestVersion(cleanTag)
+				setApkDownloadUrl(downloadUrl)
 
 				const currentVersion = APP_VERSION
+				const updateType = getUpdateType(currentVersion, cleanTag)
 
-				// 1. Check Mandatory Minimum Version
-				if (minReq && compareVersions(currentVersion, minReq) < 0) {
+				// 1. Check Required Update (different MAJOR or same MAJOR with higher MINOR)
+				if (updateType === 'required') {
 					setUpdateStatus('update_required')
 					setShowOptionalModal(false)
-					log({ level: 'info', label: 'AppUpdater', message: `Mandatory update required! Min required: ${minReq}, Active version: ${currentVersion}` })
+					log({ level: 'info', label: 'AppUpdater', message: `Required update available! Latest: ${cleanTag}, Active version: ${currentVersion}` })
 					return
 				}
 
-				// 2. Check Optional Latest Version
-				if (cleanTag && compareVersions(currentVersion, cleanTag) < 0) {
+				// 2. Check Optional Update (higher PATCH version only)
+				if (updateType === 'optional') {
 					setUpdateStatus('update_available')
 
 					let isDismissed = false
@@ -412,9 +404,15 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						if (fileInfo.exists) {
 							setIsReadyToInstall(true)
 							setLatestVersion(pendingVersion)
-							setUpdateStatus('update_available')
-							setShowReadyModal(true)
-							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install.` })
+
+							const updateType = getUpdateType(APP_VERSION, pendingVersion)
+							if (updateType === 'required') {
+								setUpdateStatus('update_required')
+							} else {
+								setUpdateStatus('update_available')
+								setShowReadyModal(true)
+							}
+							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install (type: ${updateType}).` })
 						} else {
 							await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
 						}
