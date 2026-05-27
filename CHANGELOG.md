@@ -1,6 +1,14 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+## [1.4.1] - 2026-05-27
+### Added
+- Automatic promptless installer launch for required update packages on startup when the file exists in the cache folder.
+- Dynamic check and trigger for immediate installation of ready-to-install required update packages during updates transition checks.
+
+### Fixed
+- Redundant confirmation prompt displays when a mandatory update's package has already been successfully downloaded.
+- Missing version string in the Required Minimum version chip inside the blocking Required Update modal.
+- A minor script syntax merging issue in package.json.
 
 ## [1.3.81] - 2026-05-27
 ### Added

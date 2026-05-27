@@ -392,7 +392,30 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// 1. Check Required Update (different MAJOR or same MAJOR with higher MINOR)
 				if (updateType === 'required') {
 					setUpdateStatus('update_required')
+					setMinVersion(cleanTag)
 					setShowOptionalModal(false)
+
+					if (Platform.OS === 'android') {
+						const localUri = `${FileSystem.cacheDirectory}drinaluza-${cleanTag}.apk`
+						const fileInfo = await FileSystem.getInfoAsync(localUri)
+						if (fileInfo.exists) {
+							setIsReadyToInstall(true)
+							setPendingInstalledVersion(cleanTag)
+							setLatestVersion(cleanTag)
+							log({ level: 'info', label: 'AppUpdater', message: `Check updates: Required update v${cleanTag} is already downloaded. Installing immediately without confirmation.` })
+							try {
+								const contentUri = await FileSystem.getContentUriAsync(localUri)
+								await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+									data: contentUri,
+									flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+								})
+							} catch (installErr) {
+								log({ level: 'error', label: 'AppUpdater', message: 'Failed immediate required update installation from check updates', error: installErr })
+							}
+							return
+						}
+					}
+
 					log({ level: 'info', label: 'AppUpdater', message: `Required update available! Latest: ${cleanTag}, Active version: ${currentVersion}` })
 					return
 				}
@@ -478,6 +501,17 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							const updateType = getUpdateType(APP_VERSION, pendingVersion)
 							if (updateType === 'required') {
 								setUpdateStatus('update_required')
+								setMinVersion(pendingVersion)
+								log({ level: 'info', label: 'AppUpdater', message: `Startup check: Required update v${pendingVersion} is already downloaded. Installing immediately without confirmation.` })
+								try {
+									const contentUri = await FileSystem.getContentUriAsync(localUri)
+									await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+										data: contentUri,
+										flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+									})
+								} catch (installErr) {
+									log({ level: 'error', label: 'AppUpdater', message: 'Failed immediate required update installation from startup', error: installErr })
+								}
 							} else {
 								setUpdateStatus('update_available')
 								setShowReadyModal(true)
@@ -721,7 +755,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							<View style={[styles.infoRow, { marginTop: 10 }]}>
 								<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Required Minimum</Text>
 								<View style={[styles.versionChip, { backgroundColor: colors.success + '15' }]}>
-									<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{minVersion}</Text>
+									<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{minVersion || latestVersion || '1.0.0'}</Text>
 								</View>
 							</View>
 						</View>
