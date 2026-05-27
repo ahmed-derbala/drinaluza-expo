@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.3.74",
+  "version": "1.3.76",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -16,7 +16,8 @@
     "drinaluza"
   ],
   "scripts": {
-    "release": "gh release create v$npm_package_version ./builds/$npm_package_name-$npm_package_version.apk --generate-notes",
+    "release1": "gh release create v$npm_package_version ./builds/$npm_package_name-$npm_package_version.apk --generate-notes",
+    "release": "gh release create v$npm_package_version ./builds/$npm_package_name-$npm_package_version.apk --repo ahmed-derbala/drinaluza-expo-releases --title \"Release v$npm_package_version\"",
     "frl": "npm run i && npm run start:local",
     "cpapk2gdrive-local": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1XFIQ1YrZ8Utn1NoSHNKXHO8emM5oMthk",
     "cpapk2gdrive-prod": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1imkwBuOkM01NSd7g-oOcjWP6YYjvkpQs/18qrVyyTbe4-nXcTlyDyqoB1jAbwAzOzW",

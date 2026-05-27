@@ -249,7 +249,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			setDownloadProgress(0)
 			setIsReadyToInstall(false)
 
-			const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+			const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/v${version}/drinaluza-${version}.apk`
 
 			// Delete ANY existing drinaluza APK files in the cache directory
 			try {
@@ -329,7 +329,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
 
 				try {
-					const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+					const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/v${version}/drinaluza-${version}.apk`
 					await Linking.openURL(downloadUrl)
 				} catch (linkError) {
 					log({ level: 'error', label: 'AppUpdater', message: 'Fallback link open failed', error: linkError })
@@ -359,7 +359,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// 1. Fetch latest version strictly from GitHub Releases API
 				let githubData: GitHubReleaseResponse | null = null
 				try {
-					const githubRes = await axios.get<GitHubReleaseResponse>('https://api.github.com/repos/ahmed-derbala/drinaluza-expo/releases/latest', { timeout: 8000 })
+					const githubRes = await axios.get<GitHubReleaseResponse>('https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest', { timeout: 8000 })
 					if (githubRes.data && githubRes.data.tag_name) {
 						githubData = githubRes.data
 					} else {
@@ -373,7 +373,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				const rawTag = githubData.tag_name
 				const cleanTag = rawTag.replace(/^v/, '') // e.g. "v1.0.3" -> "1.0.3"
 				const apkAsset = githubData.assets?.find((asset) => asset.name.endsWith('.apk'))
-				const downloadUrl = apkAsset?.browser_download_url || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/${rawTag}/drinaluza-${cleanTag}.apk`
+				const downloadUrl = apkAsset?.browser_download_url || `https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/${rawTag}/drinaluza-${cleanTag}.apk`
 
 				if (githubData.body) {
 					setReleaseNotes(githubData.body)
