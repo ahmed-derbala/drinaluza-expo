@@ -66,87 +66,12 @@ export default function SettingsScreen() {
 	const [serverInfo, setServerInfo] = useState<any>(null)
 	const [showApkQRCode, setShowApkQRCode] = useState(false)
 	const [showWebShareModal, setShowWebShareModal] = useState(false)
+	const [shareVersion, setShareVersion] = useState<string | null>(null)
 
 	const handleShareApk = async (customVersion?: string) => {
 		const version = customVersion || latestVersion || APP_VERSION
-		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
-		const downloadUrl = customVersion
-			? `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${customVersion}/drinaluza-${customVersion}.apk`
-			: apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-
-		const shareUrl = async () => {
-			try {
-				await Share.share({
-					message: translate('share_apk_url_msg', `Download Drinaluza v${version} APK: ${downloadUrl}`),
-					title: `Drinaluza v${version}`
-				})
-			} catch (error) {
-				console.warn('[settings] Failed to share URL:', error)
-				Linking.openURL(downloadUrl)
-			}
-		}
-
-		const shareFile = async () => {
-			try {
-				if (Platform.OS !== 'web') {
-					if (await Sharing.isAvailableAsync()) {
-						await Sharing.shareAsync(localUri, {
-							mimeType: 'application/vnd.android.package-archive',
-							dialogTitle: translate('share_apk_file_title', `Share Drinaluza v${version} APK`)
-						})
-					}
-				}
-			} catch (error) {
-				console.warn('[settings] Failed to share file:', error)
-				toast.show({
-					title: translate('error', 'Error'),
-					message: translate('share_file_failed', 'Failed to share file. Please try again.'),
-					color: colors.error
-				})
-			}
-		}
-
-		const handleShareFileWithAdvisory = () => {
-			Alert.alert(
-				translate('quickshare_advisory_title', 'Quick Share'),
-				translate(
-					'quickshare_advisory_msg',
-					"To share the APK with a nearby Android device:\n\n1. Pull down the Quick Settings shade on the receiving device, tap Quick Share, and set the visibility to 'Everyone' or 'Contacts'.\n2. Tap OK below, then select 'Quick Share' (or Bluetooth) in the system sharing menu that opens next."
-				),
-				[
-					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-					{ text: translate('ok', 'OK'), onPress: shareFile }
-				]
-			)
-		}
-
-		if (Platform.OS === 'web') {
-			setShowWebShareModal(true)
-			return
-		}
-
-		try {
-			const fileInfo = await FileSystem.getInfoAsync(localUri)
-			if (fileInfo.exists) {
-				Alert.alert(translate('share_options_title', 'Share Options'), translate('share_options_msg', 'Choose how you want to share Drinaluza:'), [
-					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-					{ text: translate('share_version_url', 'Share Latest Version URL'), onPress: shareUrl },
-					{ text: translate('share_apk_file', 'Share Latest APK File'), onPress: handleShareFileWithAdvisory }
-				])
-			} else {
-				Alert.alert(
-					translate('share_options_title', 'Share Options'),
-					translate('share_apk_not_downloaded', 'The latest APK file has not been downloaded yet. You can share the latest version URL instead.'),
-					[
-						{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-						{ text: translate('share_version_url', 'Share Latest Version URL'), onPress: shareUrl }
-					]
-				)
-			}
-		} catch (error) {
-			console.warn('[settings] Error checking APK for share:', error)
-			await shareUrl()
-		}
+		setShareVersion(version)
+		setShowWebShareModal(true)
 	}
 
 	useEffect(() => {
@@ -484,7 +409,7 @@ export default function SettingsScreen() {
 				filenamePrefix={`drinaluza-apk-v${latestVersion || APP_VERSION}`}
 			/>
 
-			{/* Custom Web Share Options Modal */}
+			{/* Custom Share Options Modal (Copy URL or download APK package) */}
 			<Modal visible={showWebShareModal} transparent animationType="fade" onRequestClose={() => setShowWebShareModal(false)}>
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 }}>
 					<View style={{ width: '100%', maxWidth: 400, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, padding: 24, overflow: 'hidden' }}>
@@ -494,7 +419,12 @@ export default function SettingsScreen() {
 							<Ionicons name="share-social" size={24} color={colors.primary} />
 						</View>
 
-						<Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center', marginBottom: 8 }}>{translate('share_options_title', 'Share Options')}</Text>
+						<Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center', marginBottom: 4 }}>{translate('share_options_title', 'Share Options')}</Text>
+
+						{/* Version info chip */}
+						<View style={{ alignSelf: 'center', backgroundColor: colors.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginBottom: 16, marginTop: 4 }}>
+							<Text style={{ fontSize: 13, color: colors.primary, fontWeight: '700' }}>Version v{shareVersion || latestVersion || APP_VERSION}</Text>
+						</View>
 
 						<Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 24 }}>{translate('web_share_options_msg', 'Choose an action for Drinaluza APK:')}</Text>
 
@@ -511,8 +441,11 @@ export default function SettingsScreen() {
 								}}
 								onPress={async () => {
 									setShowWebShareModal(false)
-									const version = latestVersion || APP_VERSION
-									const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
+									const version = shareVersion || latestVersion || APP_VERSION
+									const downloadUrl =
+										shareVersion && shareVersion !== latestVersion
+											? `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
+											: apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 									await Clipboard.setStringAsync(downloadUrl)
 									toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
 								}}
@@ -536,8 +469,11 @@ export default function SettingsScreen() {
 								}}
 								onPress={() => {
 									setShowWebShareModal(false)
-									const version = latestVersion || APP_VERSION
-									const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
+									const version = shareVersion || latestVersion || APP_VERSION
+									const downloadUrl =
+										shareVersion && shareVersion !== latestVersion
+											? `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
+											: apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 									Linking.openURL(downloadUrl)
 								}}
 								activeOpacity={0.8}
