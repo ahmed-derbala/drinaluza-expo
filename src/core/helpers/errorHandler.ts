@@ -1,5 +1,5 @@
-import { showPopup } from './popup'
 import { translate } from '../translation'
+import { log } from '../log'
 
 export interface ErrorInfo {
 	title: string
@@ -101,25 +101,6 @@ export const parseError = (error: any): ErrorInfo => {
 		canRetry: true
 	}
 }
-
-/**
- * Show an alert dialog for an error
- */
-const showErrorAlert = (error: any, onRetry?: () => void) => {
-	const errorInfo = parseError(error)
-
-	const buttons =
-		errorInfo.canRetry && onRetry
-			? [
-					{ text: translate('cancel', 'Cancel'), style: 'cancel' as const },
-					{ text: translate('retry', 'Retry'), onPress: onRetry }
-				]
-			: [{ text: translate('ok', 'OK') }]
-
-	showPopup(errorInfo.title, errorInfo.message, buttons)
-}
-
-import { log } from '../log'
 
 /**
  * Log error details for debugging (only in development)
