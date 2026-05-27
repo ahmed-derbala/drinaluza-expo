@@ -67,10 +67,12 @@ export default function SettingsScreen() {
 	const [showApkQRCode, setShowApkQRCode] = useState(false)
 	const [showWebShareModal, setShowWebShareModal] = useState(false)
 
-	const handleShareApk = async () => {
-		const version = latestVersion || APP_VERSION
+	const handleShareApk = async (customVersion?: string) => {
+		const version = customVersion || latestVersion || APP_VERSION
 		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
-		const downloadUrl = apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
+		const downloadUrl = customVersion
+			? `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${customVersion}/drinaluza-${customVersion}.apk`
+			: apkDownloadUrl || `https://github.com/ahmed-derbala/drinaluza-expo/releases/download/v${version}/drinaluza-${version}.apk`
 
 		const shareUrl = async () => {
 			try {
@@ -347,6 +349,9 @@ export default function SettingsScreen() {
 										<Text style={[styles.cachedItemName, { color: colors.text }]}>Drinaluza v{file.version}</Text>
 										<Text style={[styles.cachedItemSize, { color: colors.textSecondary }]}>{formatBytes(file.size)}</Text>
 									</View>
+									<TouchableOpacity style={[styles.cachedShareBtn, { backgroundColor: colors.primary + '12', marginRight: 8 }]} onPress={() => handleShareApk(file.version)} activeOpacity={0.7}>
+										<Ionicons name="share-social-outline" size={18} color={colors.primary} />
+									</TouchableOpacity>
 									<TouchableOpacity style={[styles.cachedDeleteBtn, { backgroundColor: colors.error + '12' }]} onPress={() => deleteCachedApk(file.name)} activeOpacity={0.7}>
 										<Ionicons name="trash-outline" size={18} color={colors.error} />
 									</TouchableOpacity>
@@ -763,6 +768,10 @@ const createStyles = (colors: any) =>
 		cachedItemSize: {
 			fontSize: 12,
 			marginTop: 2
+		},
+		cachedShareBtn: {
+			padding: 8,
+			borderRadius: 8
 		},
 		cachedDeleteBtn: {
 			padding: 8,
