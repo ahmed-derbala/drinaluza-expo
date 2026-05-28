@@ -185,6 +185,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
 	const [freeDiskStorage, setFreeDiskStorage] = useState<number | null>(null)
 	const activeDownloadRef = React.useRef<FileSystem.DownloadResumable | null>(null)
+	const progressRef = React.useRef(0)
 	const [wasDownloadingBeforeBackground, setWasDownloadingBeforeBackground] = useState(false)
 
 	const [releaseName, setReleaseName] = useState<string | null>(null)
@@ -282,14 +283,25 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		async (version: string) => {
 			const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
 			const resumeDataKey = `drinaluza_download_resume_data_${version}`
+			const progressKey = `drinaluza_download_progress_${version}`
 			try {
 				setIsDownloading(true)
-				setDownloadProgress(0)
 				setIsReadyToInstall(false)
 
 				const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
 
 				const savedResumeData = await AsyncStorage.getItem(resumeDataKey)
+				const savedProgress = await AsyncStorage.getItem(progressKey)
+
+				if (savedResumeData && savedProgress) {
+					const parsedProgress = parseFloat(savedProgress)
+					setDownloadProgress(parsedProgress)
+					progressRef.current = parsedProgress
+					log({ level: 'info', label: 'AppUpdater', message: `Pre-populated download progress to ${parsedProgress * 100}%` })
+				} else {
+					setDownloadProgress(0)
+					progressRef.current = 0
+				}
 
 				// Scrub old APKs only if we are starting a FRESH download (no resume data exists)
 				if (!savedResumeData) {
@@ -319,6 +331,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							if (progressData.totalBytesExpectedToWrite > 0) {
 								const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
 								setDownloadProgress(progress)
+								progressRef.current = progress
 							}
 						},
 						savedResumeData
@@ -329,6 +342,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						if (progressData.totalBytesExpectedToWrite > 0) {
 							const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
 							setDownloadProgress(progress)
+							progressRef.current = progress
 						}
 					})
 				}
@@ -342,6 +356,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to resume download. Retrying with a fresh download...', error: downloadErr })
 						// Clear resume data and delete any partial file
 						await AsyncStorage.removeItem(resumeDataKey)
+						await AsyncStorage.removeItem(progressKey)
 						try {
 							await FileSystem.deleteAsync(localUri, { idempotent: true })
 						} catch (e) {}
@@ -351,6 +366,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							if (progressData.totalBytesExpectedToWrite > 0) {
 								const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
 								setDownloadProgress(progress)
+								progressRef.current = progress
 							}
 						})
 						activeDownloadRef.current = downloadResumable
@@ -375,9 +391,12 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 				log({ level: 'info', label: 'AppUpdater', message: `Download complete. Saving downloaded version state for v${version}` })
 
-				// Download successful! Clear resume data
+				// Download successful! Clear resume data and progress key
 				await AsyncStorage.removeItem(resumeDataKey)
+				await AsyncStorage.removeItem(progressKey)
 				activeDownloadRef.current = null
+				setDownloadProgress(0)
+				progressRef.current = 0
 
 				await AsyncStorage.setItem('drinaluza_downloaded_update_version', version)
 				setIsReadyToInstall(true)
@@ -405,7 +424,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						const savable = activeDownloadRef.current.savable()
 						if (savable && savable.resumeData) {
 							await AsyncStorage.setItem(resumeDataKey, savable.resumeData)
-							log({ level: 'info', label: 'AppUpdater', message: 'Saved interrupted download resume data to AsyncStorage.' })
+							await AsyncStorage.setItem(progressKey, String(progressRef.current))
+							log({ level: 'info', label: 'AppUpdater', message: `Saved interrupted download resume data and progress (${progressRef.current}) to AsyncStorage.` })
 						}
 					} catch (savableErr) {
 						// Delete partial file on unresumable errors
@@ -447,6 +467,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			} finally {
 				setIsDownloading(false)
 				setDownloadProgress(0)
+				progressRef.current = 0
 				await loadCachedApks()
 			}
 		},
@@ -712,8 +733,10 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						const pauseResult = await downloadResumable.pauseAsync()
 						if (pauseResult && pauseResult.resumeData) {
 							const resumeDataKey = `drinaluza_download_resume_data_${latestVersion}`
+							const progressKey = `drinaluza_download_progress_${latestVersion}`
 							await AsyncStorage.setItem(resumeDataKey, pauseResult.resumeData)
-							log({ level: 'info', label: 'AppUpdater', message: 'Saved download resume data to AsyncStorage.' })
+							await AsyncStorage.setItem(progressKey, String(progressRef.current))
+							log({ level: 'info', label: 'AppUpdater', message: `Saved download resume data and progress (${progressRef.current}) to AsyncStorage.` })
 						}
 					} catch (pauseErr) {
 						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to pause active download on background transition', error: pauseErr })
