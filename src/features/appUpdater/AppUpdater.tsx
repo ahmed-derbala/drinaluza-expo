@@ -186,6 +186,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [freeDiskStorage, setFreeDiskStorage] = useState<number | null>(null)
 	const activeDownloadRef = React.useRef<FileSystem.DownloadResumable | null>(null)
 	const progressRef = React.useRef(0)
+	const isPausingRef = React.useRef(false)
 	const [wasDownloadingBeforeBackground, setWasDownloadingBeforeBackground] = useState(false)
 
 	const [releaseName, setReleaseName] = useState<string | null>(null)
@@ -421,6 +422,11 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					})
 				}
 			} catch (error: any) {
+				if (isPausingRef.current) {
+					log({ level: 'info', label: 'AppUpdater', message: 'Deliberate background pause detected. Skipping fallback error actions.' })
+					isPausingRef.current = false
+					return
+				}
 				log({ level: 'error', label: 'AppUpdater', message: 'APK download/install error', error })
 
 				// If the download was interrupted (and not paused deliberately), save the resume data if possible
@@ -637,18 +643,46 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							log({ level: 'info', label: 'AppUpdater', message: `Dual Update Optional - Ready: v${pendingVersion}, Latest: v${cleanTag}` })
 						}
 					} else {
-						// Rule 3: ready to install and no other newer version available to download
-						// Install the ready update without waiting for user confirmation!
-						log({ level: 'info', label: 'AppUpdater', message: `Ready update v${pendingVersion} is latest. Installing immediately without confirmation.` })
-						const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
-						try {
-							const contentUri = await FileSystem.getContentUriAsync(localUri)
-							await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-								data: contentUri,
-								flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-							})
-						} catch (installErr) {
-							log({ level: 'error', label: 'AppUpdater', message: 'Failed automatic installation of latest ready update', error: installErr })
+						// Rule 3: ready to install and no other newer version available to download.
+						// Instead of auto-installing immediately (which can cause infinite installer loops if corrupted),
+						// we prompt the user appropriately depending on the update severity.
+						const pendingUpdateType = getUpdateType(currentVersion, pendingVersion)
+						if (pendingUpdateType === 'required') {
+							setUpdateStatus('update_required')
+							setMinVersion(pendingVersion)
+							setShowOptionalModal(false)
+							setShowReadyModal(false)
+							setShowDualOptionalModal(false)
+							setShowDualRequiredModal(false)
+							log({ level: 'info', label: 'AppUpdater', message: `Required update v${pendingVersion} is ready to install. Showing required update blocked UI.` })
+						} else if (pendingUpdateType === 'optional') {
+							setUpdateStatus('update_available')
+							setShowOptionalModal(false)
+							setShowDualOptionalModal(false)
+							setShowDualRequiredModal(false)
+
+							let isDismissed = false
+							try {
+								const dismissed = Platform.OS === 'web' ? localStorage.getItem(DISMISSED_VERSION_KEY) : await AsyncStorage.getItem(DISMISSED_VERSION_KEY)
+								if (dismissed === pendingVersion) {
+									isDismissed = true
+								}
+							} catch (e) {
+								log({ level: 'warn', label: 'AppUpdater', message: 'Failed to read dismissed version for ready update', error: e })
+							}
+
+							if (manual || !isDismissed) {
+								setShowReadyModal(true)
+							} else {
+								setShowReadyModal(false)
+							}
+							log({ level: 'info', label: 'AppUpdater', message: `Optional update v${pendingVersion} is ready to install. Prompting user: ${!isDismissed || manual}` })
+						} else {
+							setUpdateStatus('up_to_date')
+							setShowOptionalModal(false)
+							setShowReadyModal(false)
+							setShowDualOptionalModal(false)
+							setShowDualRequiredModal(false)
 						}
 					}
 					return
@@ -715,25 +749,33 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			} catch (error) {
 				log({ level: 'error', label: 'AppUpdater', message: 'AppUpdater check failed', error: error })
 
-				// Rule 3 Fallback: if check failed but ready update exists, install immediately
+				// Rule 3 Fallback: if check failed but ready update exists, show installation UI instead of auto-installing
 				if (Platform.OS === 'android') {
 					try {
 						const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
 						if (pendingVersion && compareVersions(pendingVersion, APP_VERSION) > 0) {
 							const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
 							const fileInfo = await FileSystem.getInfoAsync(localUri)
-							if (fileInfo.exists) {
-								log({ level: 'info', label: 'AppUpdater', message: `Check failed but ready update v${pendingVersion} is available. Installing automatically.` })
+							if (fileInfo.exists && (fileInfo as any).size > 0) {
 								setIsReadyToInstall(true)
 								setPendingInstalledVersion(pendingVersion)
-								try {
-									const contentUri = await FileSystem.getContentUriAsync(localUri)
-									await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-										data: contentUri,
-										flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-									})
-								} catch (installErr) {
-									log({ level: 'error', label: 'AppUpdater', message: 'Failed automatic ready update installation on check failure', error: installErr })
+
+								const pendingUpdateType = getUpdateType(APP_VERSION, pendingVersion)
+								if (pendingUpdateType === 'required') {
+									setUpdateStatus('update_required')
+									setMinVersion(pendingVersion)
+									setShowOptionalModal(false)
+									setShowReadyModal(false)
+									setShowDualOptionalModal(false)
+									setShowDualRequiredModal(false)
+									log({ level: 'info', label: 'AppUpdater', message: `Check failed. Required update v${pendingVersion} is ready. Showing required update blocked UI.` })
+								} else {
+									setUpdateStatus('update_available')
+									setShowOptionalModal(false)
+									setShowReadyModal(true)
+									setShowDualOptionalModal(false)
+									setShowDualRequiredModal(false)
+									log({ level: 'info', label: 'AppUpdater', message: `Check failed. Optional update v${pendingVersion} is ready. Showing ready modal.` })
 								}
 								return
 							}
@@ -778,6 +820,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					try {
 						log({ level: 'info', label: 'AppUpdater', message: 'App going to background. Pausing active download to preserve resume data...' })
 						setWasDownloadingBeforeBackground(true)
+						isPausingRef.current = true
 						const pauseResult = await downloadResumable.pauseAsync()
 						if (pauseResult && pauseResult.resumeData) {
 							const resumeDataKey = `drinaluza_download_resume_data_${latestVersion}`
@@ -787,6 +830,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							log({ level: 'info', label: 'AppUpdater', message: `Saved download resume data and progress (${progressRef.current}) to AsyncStorage.` })
 						}
 					} catch (pauseErr) {
+						isPausingRef.current = false
 						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to pause active download on background transition', error: pauseErr })
 					}
 				}
@@ -926,14 +970,15 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		setShowReadyModal(false)
 		setShowDualOptionalModal(false)
 		setShowDualRequiredModal(false)
-		if (latestVersion) {
+		const versionToDismiss = latestVersion || pendingInstalledVersion
+		if (versionToDismiss) {
 			try {
 				if (Platform.OS === 'web') {
-					localStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
+					localStorage.setItem(DISMISSED_VERSION_KEY, versionToDismiss)
 				} else {
-					await AsyncStorage.setItem(DISMISSED_VERSION_KEY, latestVersion)
+					await AsyncStorage.setItem(DISMISSED_VERSION_KEY, versionToDismiss)
 				}
-				log({ level: 'info', label: 'AppUpdater', message: `Optional update version ${latestVersion} dismissed by user.` })
+				log({ level: 'info', label: 'AppUpdater', message: `Optional update version ${versionToDismiss} dismissed by user.` })
 			} catch (e) {
 				log({ level: 'error', label: 'AppUpdater', message: 'Failed to save dismissed version', error: e })
 			}
@@ -1112,20 +1157,54 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 								</View>
 							</View>
 						) : (
-							<View style={styles.buttonGroup}>
-								{Platform.OS === 'android' && (
-									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.error + '40' }]} onPress={handleExitApp} activeOpacity={0.8}>
-										<Text style={[styles.cancelBtnText, { color: colors.error }]}>{translate('exit', 'Exit')}</Text>
+							<View style={[styles.buttonGroup, { flexDirection: 'column', gap: 10 }]}>
+								<View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
+									{Platform.OS === 'android' && (
+										<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.error + '40' }]} onPress={handleExitApp} activeOpacity={0.8}>
+											<Text style={[styles.cancelBtnText, { color: colors.error }]}>{translate('exit', 'Exit')}</Text>
+										</TouchableOpacity>
+									)}
+									<TouchableOpacity
+										style={[styles.btn, styles.confirmBtn, { flex: Platform.OS === 'web' ? undefined : 1, width: Platform.OS === 'web' ? '100%' : undefined }]}
+										onPress={isReadyToInstall && Platform.OS === 'android' ? installDownloadedUpdate : handleConfirmUpdate}
+										activeOpacity={0.8}
+									>
+										<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
+										<Text style={styles.confirmBtnText}>
+											{Platform.OS === 'web' ? translate('refresh', 'Refresh') : isReadyToInstall ? translate('install_now', 'Install Now') : translate('download', 'Download')}
+										</Text>
+									</TouchableOpacity>
+								</View>
+
+								{isReadyToInstall && Platform.OS === 'android' && (
+									<TouchableOpacity
+										style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80', width: '100%' }]}
+										onPress={async () => {
+											const versionToDelete = pendingInstalledVersion || latestVersion
+											if (versionToDelete) {
+												try {
+													const localUri = `${FileSystem.cacheDirectory}drinaluza-${versionToDelete}.apk`
+													await FileSystem.deleteAsync(localUri, { idempotent: true })
+													await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+													await AsyncStorage.removeItem(`drinaluza_downloaded_update_size_${versionToDelete}`)
+													setIsReadyToInstall(false)
+													setPendingInstalledVersion(null)
+													toast.show({ title: 'Cache Cleared', message: 'Ready to re-download update.', color: colors.primary })
+													if (latestVersion) {
+														await downloadAndInstallApk(latestVersion)
+													} else {
+														await checkForUpdates(false)
+													}
+												} catch (err) {
+													log({ level: 'error', label: 'AppUpdater', message: 'Failed to delete ready update and redownload', error: err })
+												}
+											}
+										}}
+										activeOpacity={0.8}
+									>
+										<Text style={[styles.cancelBtnText, { color: colors.textSecondary }]}>{translate('redownload_update', 'Delete & Re-download')}</Text>
 									</TouchableOpacity>
 								)}
-								<TouchableOpacity
-									style={[styles.btn, styles.confirmBtn, { flex: Platform.OS === 'web' ? undefined : 1, width: Platform.OS === 'web' ? '100%' : undefined }]}
-									onPress={handleConfirmUpdate}
-									activeOpacity={0.8}
-								>
-									<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
-									<Text style={styles.confirmBtnText}>{Platform.OS === 'web' ? translate('refresh', 'Refresh') : translate('download', 'Download')}</Text>
-								</TouchableOpacity>
 							</View>
 						)}
 					</View>
@@ -1482,7 +1561,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 								</View>
 
 								<View style={styles.buttonGroup}>
-									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={() => setShowReadyModal(false)} activeOpacity={0.8}>
+									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80' }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
 										<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
 									</TouchableOpacity>
 									<TouchableOpacity
