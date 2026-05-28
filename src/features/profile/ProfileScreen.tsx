@@ -41,6 +41,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import { uploadFile } from '@/core/file'
+import { log } from '@/core/log'
 
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
@@ -500,7 +501,7 @@ export default function ProfileScreen() {
 				await refreshUser()
 				router.replace('/auth')
 			} catch (error) {
-				console.error('Sign out failed:', error)
+				log({ level: 'error', label: 'profile', message: 'Sign out failed', error })
 				await refreshUser()
 				router.replace('/auth')
 			}
@@ -513,7 +514,7 @@ export default function ProfileScreen() {
 				await refreshUser()
 				router.replace('/auth')
 			} catch (error) {
-				console.error('Switch user failed:', error)
+				log({ level: 'error', label: 'profile', message: 'Switch user failed', error })
 				await refreshUser()
 				router.replace('/auth')
 			}

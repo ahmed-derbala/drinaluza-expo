@@ -71,7 +71,7 @@ export default function AuthScreen() {
 
 	const toastSuccess = (msg: string) => {
 		if (Platform.OS === 'web') {
-			console.log(msg)
+			log({ level: 'info', label: 'auth', message: msg })
 		}
 	}
 

@@ -398,6 +398,11 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				setDownloadProgress(0)
 				progressRef.current = 0
 
+				// Fetch actual file size and store it to enable strict size verification checks
+				const fileInfo = await FileSystem.getInfoAsync(result.uri)
+				const fileSize = fileInfo.exists ? (fileInfo as any).size : 0
+				await AsyncStorage.setItem(`drinaluza_downloaded_update_size_${version}`, String(fileSize))
+
 				await AsyncStorage.setItem('drinaluza_downloaded_update_version', version)
 				setIsReadyToInstall(true)
 
@@ -511,6 +516,29 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				const apkAsset = githubData.assets?.find((asset) => asset.name.endsWith('.apk'))
 				const downloadUrl = apkAsset?.browser_download_url || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/${rawTag}/drinaluza-${cleanTag}.apk`
 
+				// Scrub older unfinished download resume states if a newer version is available on the server
+				if (Platform.OS === 'android') {
+					try {
+						const allKeys = await AsyncStorage.getAllKeys()
+						const resumeKeys = allKeys.filter((key) => key.startsWith('drinaluza_download_resume_data_'))
+
+						for (const key of resumeKeys) {
+							const versionInKey = key.replace('drinaluza_download_resume_data_', '')
+							if (compareVersions(cleanTag, versionInKey) > 0) {
+								log({ level: 'info', label: 'AppUpdater', message: `Scrubbing older unfinished download state for v${versionInKey} as newer v${cleanTag} is available.` })
+								await AsyncStorage.removeItem(key)
+								await AsyncStorage.removeItem(`drinaluza_download_progress_${versionInKey}`)
+
+								// Delete its partial APK file if it exists
+								const partialApkUri = `${FileSystem.cacheDirectory}drinaluza-${versionInKey}.apk`
+								await FileSystem.deleteAsync(partialApkUri, { idempotent: true })
+							}
+						}
+					} catch (scrubErr) {
+						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to scrub older unfinished download states', error: scrubErr })
+					}
+				}
+
 				if (githubData.body) {
 					setReleaseNotes(githubData.body)
 				} else {
@@ -553,15 +581,25 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						if (pendingVersion && compareVersions(pendingVersion, currentVersion) > 0) {
 							const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
 							const fileInfo = await FileSystem.getInfoAsync(localUri)
-							if (fileInfo.exists) {
+
+							const savedSizeStr = await AsyncStorage.getItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
+							const expectedSize = savedSizeStr ? parseInt(savedSizeStr) : pendingVersion === cleanTag && apkAsset?.size ? apkAsset.size : 0
+
+							if (fileInfo.exists && (fileInfo as any).size > 0 && (expectedSize === 0 || (fileInfo as any).size === expectedSize)) {
 								localUriExists = true
 							} else {
+								log({ level: 'error', label: 'AppUpdater', message: `Local APK size mismatch or corrupted file. Expected: ${expectedSize}, Actual: ${(fileInfo as any).size}. Scrubbing...` })
+								try {
+									await FileSystem.deleteAsync(localUri, { idempotent: true })
+								} catch (e) {}
 								await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+								await AsyncStorage.removeItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
 								pendingVersion = null
 							}
 						} else {
 							if (pendingVersion) {
 								await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+								await AsyncStorage.removeItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
 							}
 							pendingVersion = null
 						}
@@ -664,6 +702,16 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				if (manual) {
 					toast.show({ title: translate('up_to_date', 'Up to Date'), message: translate('already_latest', 'You are already running the latest version.'), color: '#10B981' })
 				}
+
+				// Automated Resume Guard: if there is an unfinished download session for the newer version, resume it immediately!
+				if (Platform.OS === 'android' && compareVersions(cleanTag, currentVersion) > 0) {
+					const resumeDataKey = `drinaluza_download_resume_data_${cleanTag}`
+					const savedResumeData = await AsyncStorage.getItem(resumeDataKey)
+					if (savedResumeData && !isDownloading && !isReadyToInstall) {
+						log({ level: 'info', label: 'AppUpdater', message: `Found unfinished download session for v${cleanTag}. Automatically resuming...` })
+						downloadAndInstallApk(cleanTag)
+					}
+				}
 			} catch (error) {
 				log({ level: 'error', label: 'AppUpdater', message: 'AppUpdater check failed', error: error })
 
@@ -764,15 +812,25 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					if (compareVersions(pendingVersion, APP_VERSION) > 0) {
 						const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
 						const fileInfo = await FileSystem.getInfoAsync(localUri)
-						if (fileInfo.exists) {
+						const savedSizeStr = await AsyncStorage.getItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
+						const expectedSize = savedSizeStr ? parseInt(savedSizeStr) : 0
+
+						if (fileInfo.exists && (fileInfo as any).size > 0 && (expectedSize === 0 || (fileInfo as any).size === expectedSize)) {
 							setIsReadyToInstall(true)
 							setPendingInstalledVersion(pendingVersion)
-							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install.` })
+							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install and size validated.` })
 						} else {
+							log({ level: 'error', label: 'AppUpdater', message: `Startup check: Local APK for v${pendingVersion} is corrupted or incomplete. Deleting...` })
+							try {
+								await FileSystem.deleteAsync(localUri, { idempotent: true })
+							} catch (e) {}
 							await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+							await AsyncStorage.removeItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
+							setIsReadyToInstall(false)
 						}
 					} else {
 						await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+						await AsyncStorage.removeItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
 						setIsReadyToInstall(false)
 						log({ level: 'info', label: 'AppUpdater', message: `Startup check: App updated to v${APP_VERSION}. Kept v${pendingVersion} APK for sharing.` })
 					}
