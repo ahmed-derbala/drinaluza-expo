@@ -234,5 +234,9 @@ export const tn_latn = {
 	dual_update_msg: 'Version {pending} hadra bech tsobha, ama famma version jdid {latest} m3a telechargement. Ekhtar chnoua t-heb taamel:',
 	install_ready_btn: 'Sob version eli hadra (v{version})',
 	download_new_btn: 'Habat version jdida (v{version})',
-	free_storage: 'Espace de stockage farregh'
+	free_storage: 'Espace de stockage farregh',
+	published_at: 'Tsayvet fi',
+	download_size: 'Kobr el fichier',
+	downloads_count: 'Downloads',
+	dual_required_msg: 'Famma update lazmek t-habbto v{latest} bech t-kamel.'
 }

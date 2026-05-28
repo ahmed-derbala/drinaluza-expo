@@ -234,5 +234,9 @@ export const tn_arab = {
 	dual_update_msg: 'النسخة {pending} حاضرة للصب، أما فما نسخة أجدد {latest} متوفرة للتحميل. اختار خيار:',
 	install_ready_btn: 'صب النسخة الحاضرة (v{version})',
 	download_new_btn: 'حمل النسخة الجديدة (v{version})',
-	free_storage: 'مساحة تخزين فارغة'
+	free_storage: 'مساحة تخزين فارغة',
+	published_at: 'تاريخ الصب',
+	download_size: 'حجم الفيشي',
+	downloads_count: 'التحميلات',
+	dual_required_msg: 'فمة تحديث إجباري v{latest} لازم تصبو باش تكمل.'
 }

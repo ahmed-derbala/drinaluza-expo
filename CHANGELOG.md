@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.6] - 2026-05-28
+### Added
+- Configured dynamic startup check workflows:
+  - If a ready-to-install update exists alongside a newer optional download, prompt the user to download the latest version or install the ready one.
+  - If a ready-to-install update exists alongside a newer required download, display a blocking modal asking the user to download the latest version or exit the application.
+  - If a ready-to-install update exists with no newer download version available, launch the installer automatically on startup without requiring user confirmation.
+- Integrated rich GitHub release metadata details into the update modals, displaying the release name, published date (beautifully parsed and localized), download file size, and total download count.
+- Localized the new metadata labels and dual required message strings across English, French, Arabic, Tunisian Latin, and Tunisian Arabic.
+
 ## [1.10.1] - 2026-05-28
 ### Added
 - Integrated free device storage space display dynamically inside the Update Available, Update Required, Update Ready, and Multiple Updates (Dual Update) modal overlays.

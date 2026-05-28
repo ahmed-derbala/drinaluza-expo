@@ -79,5 +79,9 @@ export const ar = {
 	dual_update_msg: 'الإصدار {pending} جاهز للتثبيت، ولكن يتوفر إصدار أحدث {latest} للتنزيل. اختر أحد الخيارات:',
 	install_ready_btn: 'تثبيت النسخة الجاهزة (v{version})',
 	download_new_btn: 'تنزيل النسخة الجديدة (v{version})',
-	free_storage: 'مساحة التخزين المتوفرة'
+	free_storage: 'مساحة التخزين المتوفرة',
+	published_at: 'تاريخ النشر',
+	download_size: 'حجم التنزيل',
+	downloads_count: 'التنزيلات',
+	dual_required_msg: 'يتوفر تحديث إجباري v{latest}. يرجى تحميله للمتابعة.'
 }

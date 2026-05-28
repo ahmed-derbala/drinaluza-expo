@@ -79,5 +79,9 @@ export const fr = {
 	dual_update_msg: 'La version {pending} est prête à être installée, mais une version plus récente {latest} est disponible au téléchargement. Choisissez une option :',
 	install_ready_btn: 'Installer la version prête (v{version})',
 	download_new_btn: 'Télécharger la nouvelle (v{version})',
-	free_storage: 'Espace de stockage libre'
+	free_storage: 'Espace de stockage libre',
+	published_at: 'Publié le',
+	download_size: 'Taille du téléchargement',
+	downloads_count: 'Téléchargements',
+	dual_required_msg: 'Une mise à jour obligatoire v{latest} est disponible. Veuillez la télécharger pour continuer.'
 }

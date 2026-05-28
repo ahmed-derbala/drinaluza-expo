@@ -22,12 +22,16 @@ export interface AppVersionConfig {
 export interface GitHubReleaseAsset {
 	name: string
 	browser_download_url: string
+	size?: number
+	download_count?: number
 }
 
 export interface GitHubReleaseResponse {
 	tag_name: string
 	assets: GitHubReleaseAsset[]
 	body?: string
+	name?: string
+	published_at?: string
 }
 
 export interface BackendResponse {
@@ -111,6 +115,16 @@ export const formatBytes = (bytes: number): string => {
 	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
+export const formatDate = (dateStr: string | null): string => {
+	if (!dateStr) return ''
+	try {
+		const date = new Date(dateStr)
+		return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+	} catch (e) {
+		return dateStr
+	}
+}
+
 export const getUpdateType = (current: string, latest: string): 'none' | 'optional' | 'required' => {
 	const cParts = current.split('.').map(Number)
 	const lParts = latest.split('.').map(Number)
@@ -170,6 +184,14 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
 	const [freeDiskStorage, setFreeDiskStorage] = useState<number | null>(null)
+
+	const [releaseName, setReleaseName] = useState<string | null>(null)
+	const [publishedAt, setPublishedAt] = useState<string | null>(null)
+	const [apkSize, setApkSize] = useState<number | null>(null)
+	const [downloadCount, setDownloadCount] = useState<number | null>(null)
+
+	const [showDualOptionalModal, setShowDualOptionalModal] = useState(false)
+	const [showDualRequiredModal, setShowDualRequiredModal] = useState(false)
 
 	const loadCachedApks = useCallback(async () => {
 		if (Platform.OS !== 'android') return
@@ -403,46 +425,122 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					setReleaseNotes(null)
 				}
 
+				// Parse and save the release info
+				if (githubData.name) {
+					setReleaseName(githubData.name)
+				} else {
+					setReleaseName(`Release v${cleanTag}`)
+				}
+
+				if (githubData.published_at) {
+					setPublishedAt(githubData.published_at)
+				} else {
+					setPublishedAt(null)
+				}
+
+				if (apkAsset) {
+					setApkSize(apkAsset.size || null)
+					setDownloadCount(apkAsset.download_count !== undefined ? apkAsset.download_count : null)
+				} else {
+					setApkSize(null)
+					setDownloadCount(null)
+				}
+
 				setLatestVersion(cleanTag)
 				setApkDownloadUrl(downloadUrl)
 
 				const currentVersion = APP_VERSION
 				const updateType = getUpdateType(currentVersion, cleanTag)
 
-				// 1. Check Required Update (different MAJOR or same MAJOR with higher MINOR)
+				// Read pending version from AsyncStorage to avoid any state race conditions
+				let pendingVersion: string | null = null
+				let localUriExists = false
+				if (Platform.OS === 'android') {
+					try {
+						pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
+						if (pendingVersion && compareVersions(pendingVersion, currentVersion) > 0) {
+							const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
+							const fileInfo = await FileSystem.getInfoAsync(localUri)
+							if (fileInfo.exists) {
+								localUriExists = true
+							} else {
+								await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+								pendingVersion = null
+							}
+						} else {
+							if (pendingVersion) {
+								await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
+							}
+							pendingVersion = null
+						}
+					} catch (e) {
+						log({ level: 'error', label: 'AppUpdater', message: 'Failed to read pending version from AsyncStorage', error: e })
+					}
+				}
+
+				// If there is an update ready to install
+				if (pendingVersion && localUriExists) {
+					setIsReadyToInstall(true)
+					setPendingInstalledVersion(pendingVersion)
+
+					// Compare the ready version with the latest version from server
+					if (compareVersions(cleanTag, pendingVersion) > 0) {
+						// There is a newer version available to download on the server!
+						if (updateType === 'required') {
+							// Rule 2: ready to install AND another required update available for download
+							// Ask user to download latest version or exit
+							setUpdateStatus('update_required')
+							setMinVersion(cleanTag)
+							setShowOptionalModal(false)
+							setShowReadyModal(false)
+							setShowDualOptionalModal(false)
+							setShowDualRequiredModal(true)
+							log({ level: 'info', label: 'AppUpdater', message: `Dual Update Required - Ready: v${pendingVersion}, Latest: v${cleanTag}` })
+						} else {
+							// Rule 1: ready to install AND another optional update available for download
+							// Ask user to download latest version or install ready one
+							setUpdateStatus('update_available')
+							setShowOptionalModal(false)
+							setShowReadyModal(false)
+							setShowDualRequiredModal(false)
+							setShowDualOptionalModal(true)
+							log({ level: 'info', label: 'AppUpdater', message: `Dual Update Optional - Ready: v${pendingVersion}, Latest: v${cleanTag}` })
+						}
+					} else {
+						// Rule 3: ready to install and no other newer version available to download
+						// Install the ready update without waiting for user confirmation!
+						log({ level: 'info', label: 'AppUpdater', message: `Ready update v${pendingVersion} is latest. Installing immediately without confirmation.` })
+						const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
+						try {
+							const contentUri = await FileSystem.getContentUriAsync(localUri)
+							await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+								data: contentUri,
+								flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+							})
+						} catch (installErr) {
+							log({ level: 'error', label: 'AppUpdater', message: 'Failed automatic installation of latest ready update', error: installErr })
+						}
+					}
+					return
+				}
+
+				// Normal updates logic (no ready update exists)
 				if (updateType === 'required') {
 					setUpdateStatus('update_required')
 					setMinVersion(cleanTag)
 					setShowOptionalModal(false)
-
-					if (Platform.OS === 'android') {
-						const localUri = `${FileSystem.cacheDirectory}drinaluza-${cleanTag}.apk`
-						const fileInfo = await FileSystem.getInfoAsync(localUri)
-						if (fileInfo.exists) {
-							setIsReadyToInstall(true)
-							setPendingInstalledVersion(cleanTag)
-							setLatestVersion(cleanTag)
-							log({ level: 'info', label: 'AppUpdater', message: `Check updates: Required update v${cleanTag} is already downloaded. Installing immediately without confirmation.` })
-							try {
-								const contentUri = await FileSystem.getContentUriAsync(localUri)
-								await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-									data: contentUri,
-									flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-								})
-							} catch (installErr) {
-								log({ level: 'error', label: 'AppUpdater', message: 'Failed immediate required update installation from check updates', error: installErr })
-							}
-							return
-						}
-					}
-
-					log({ level: 'info', label: 'AppUpdater', message: `Required update available! Latest: ${cleanTag}, Active version: ${currentVersion}` })
+					setShowReadyModal(false)
+					setShowDualOptionalModal(false)
+					setShowDualRequiredModal(false)
+					log({ level: 'info', label: 'AppUpdater', message: `Required update available! Latest: ${cleanTag}` })
 					return
 				}
 
-				// 2. Check Optional Update (higher PATCH version only)
 				if (updateType === 'optional') {
 					setUpdateStatus('update_available')
+					setShowReadyModal(false)
+					setShowDualOptionalModal(false)
+					setShowDualRequiredModal(false)
 
 					let isDismissed = false
 					try {
@@ -467,12 +565,42 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				// 3. Up to date
 				setUpdateStatus('up_to_date')
 				setShowOptionalModal(false)
+				setShowReadyModal(false)
+				setShowDualOptionalModal(false)
+				setShowDualRequiredModal(false)
 
 				if (manual) {
 					toast.show({ title: translate('up_to_date', 'Up to Date'), message: translate('already_latest', 'You are already running the latest version.'), color: '#10B981' })
 				}
 			} catch (error) {
 				log({ level: 'error', label: 'AppUpdater', message: 'AppUpdater check failed', error: error })
+
+				// Rule 3 Fallback: if check failed but ready update exists, install immediately
+				if (Platform.OS === 'android') {
+					try {
+						const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
+						if (pendingVersion && compareVersions(pendingVersion, APP_VERSION) > 0) {
+							const localUri = `${FileSystem.cacheDirectory}drinaluza-${pendingVersion}.apk`
+							const fileInfo = await FileSystem.getInfoAsync(localUri)
+							if (fileInfo.exists) {
+								log({ level: 'info', label: 'AppUpdater', message: `Check failed but ready update v${pendingVersion} is available. Installing automatically.` })
+								setIsReadyToInstall(true)
+								setPendingInstalledVersion(pendingVersion)
+								try {
+									const contentUri = await FileSystem.getContentUriAsync(localUri)
+									await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+										data: contentUri,
+										flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+									})
+								} catch (installErr) {
+									log({ level: 'error', label: 'AppUpdater', message: 'Failed automatic ready update installation on check failure', error: installErr })
+								}
+								return
+							}
+						}
+					} catch (storageErr) {}
+				}
+
 				setUpdateStatus('up_to_date')
 				setShowOptionalModal(false)
 				if (manual) {
@@ -521,27 +649,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						if (fileInfo.exists) {
 							setIsReadyToInstall(true)
 							setPendingInstalledVersion(pendingVersion)
-							setLatestVersion(pendingVersion)
-
-							const updateType = getUpdateType(APP_VERSION, pendingVersion)
-							if (updateType === 'required') {
-								setUpdateStatus('update_required')
-								setMinVersion(pendingVersion)
-								log({ level: 'info', label: 'AppUpdater', message: `Startup check: Required update v${pendingVersion} is already downloaded. Installing immediately without confirmation.` })
-								try {
-									const contentUri = await FileSystem.getContentUriAsync(localUri)
-									await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-										data: contentUri,
-										flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-									})
-								} catch (installErr) {
-									log({ level: 'error', label: 'AppUpdater', message: 'Failed immediate required update installation from startup', error: installErr })
-								}
-							} else {
-								setUpdateStatus('update_available')
-								setShowReadyModal(true)
-							}
-							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install (type: ${updateType}).` })
+							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install.` })
 						} else {
 							await AsyncStorage.removeItem('drinaluza_downloaded_update_version')
 						}
@@ -640,6 +748,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const handleDismissOptionalUpdate = async () => {
 		setShowOptionalModal(false)
 		setShowReadyModal(false)
+		setShowDualOptionalModal(false)
+		setShowDualRequiredModal(false)
 		if (latestVersion) {
 			try {
 				if (Platform.OS === 'web') {
@@ -791,6 +901,25 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 									</View>
 								</View>
 							)}
+							{/* Release Details */}
+							{releaseName && (
+								<View style={[styles.infoRow, { marginTop: 10 }]}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('published_at', 'Published')}</Text>
+									<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatDate(publishedAt)}</Text>
+								</View>
+							)}
+							{apkSize !== null && (
+								<View style={[styles.infoRow, { marginTop: 10 }]}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('download_size', 'Download Size')}</Text>
+									<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatBytes(apkSize)}</Text>
+								</View>
+							)}
+							{downloadCount !== null && (
+								<View style={[styles.infoRow, { marginTop: 10 }]}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('downloads_count', 'Downloads')}</Text>
+									<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{downloadCount}</Text>
+								</View>
+							)}
 						</View>
 
 						{/* Release Notes */}
@@ -829,10 +958,6 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		)
 	}
 
-	const isDualUpdateAvailable = isReadyToInstall && pendingInstalledVersion !== null && latestVersion !== null && compareVersions(latestVersion, pendingInstalledVersion) > 0
-
-	const showDualModal = showReadyModal && showOptionalModal && isDualUpdateAvailable
-
 	return (
 		<UpdaterContext.Provider
 			value={{
@@ -857,8 +982,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 			<View style={{ flex: 1, backgroundColor: colors.background }}>
 				{children}
 
-				{/* 1. Dual Update Modal Overlay (One modal only when both conditions are met) */}
-				{showDualModal && (
+				{/* 1a. Dual Optional Update Modal Overlay */}
+				{showDualOptionalModal && (
 					<Modal visible={true} transparent animationType="fade" statusBarTranslucent>
 						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
 							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
@@ -898,38 +1023,161 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 											</View>
 										</View>
 									)}
+									{/* Release Details */}
+									{releaseName && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('published_at', 'Published')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatDate(publishedAt)}</Text>
+										</View>
+									)}
+									{apkSize !== null && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('download_size', 'Download Size')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatBytes(apkSize)}</Text>
+										</View>
+									)}
+									{downloadCount !== null && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('downloads_count', 'Downloads')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{downloadCount}</Text>
+										</View>
+									)}
 								</View>
 
-								<View style={{ width: '100%', gap: 12, marginTop: 12 }}>
-									<TouchableOpacity
-										style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.success, borderColor: colors.success, width: '100%' }]}
-										onPress={async () => {
-											setShowReadyModal(false)
-											setShowOptionalModal(false)
-											await installDownloadedUpdate()
-										}}
-										activeOpacity={0.8}
-									>
-										<LinearGradient colors={[colors.success, colors.success + 'CC']} style={StyleSheet.absoluteFillObject} />
-										<Text style={styles.confirmBtnText}>{translate('install_ready_btn', 'Install Ready (v{version})').replace('{version}', pendingInstalledVersion || '')}</Text>
-									</TouchableOpacity>
+								{/* Release Notes */}
+								{renderReleaseNotes()}
 
-									<TouchableOpacity style={[styles.btn, styles.confirmBtn, { width: '100%' }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
-										<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
-										<Text style={styles.confirmBtnText}>{translate('download_new_btn', 'Download New (v{version})').replace('{version}', latestVersion || '')}</Text>
-									</TouchableOpacity>
+								{isDownloading ? (
+									<View style={styles.progressContainer}>
+										<View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 6 }}>
+											<Text style={[styles.progressText, { color: colors.textSecondary }]}>{translate('downloading', 'Downloading')}...</Text>
+											<Text style={[styles.progressText, { color: colors.primary }]}>{Math.round(downloadProgress * 100)}%</Text>
+										</View>
+										<View style={[styles.progressBarBg, { backgroundColor: colors.border + '40' }]}>
+											<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
+										</View>
+									</View>
+								) : (
+									<View style={{ width: '100%', gap: 12, marginTop: 12 }}>
+										<TouchableOpacity
+											style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.success, borderColor: colors.success, width: '100%' }]}
+											onPress={async () => {
+												setShowDualOptionalModal(false)
+												await installDownloadedUpdate()
+											}}
+											activeOpacity={0.8}
+										>
+											<LinearGradient colors={[colors.success, colors.success + 'CC']} style={StyleSheet.absoluteFillObject} />
+											<Text style={styles.confirmBtnText}>{translate('install_ready_btn', 'Install Ready (v{version})').replace('{version}', pendingInstalledVersion || '')}</Text>
+										</TouchableOpacity>
 
-									<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80', width: '100%' }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
-										<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
-									</TouchableOpacity>
+										<TouchableOpacity style={[styles.btn, styles.confirmBtn, { width: '100%' }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
+											<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
+											<Text style={styles.confirmBtnText}>{translate('download_new_btn', 'Download New (v{version})').replace('{version}', latestVersion || '')}</Text>
+										</TouchableOpacity>
+
+										<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.border + '80', width: '100%' }]} onPress={handleDismissOptionalUpdate} activeOpacity={0.8}>
+											<Text style={[styles.cancelBtnText, { color: colors.text }]}>{translate('later', 'Later')}</Text>
+										</TouchableOpacity>
+									</View>
+								)}
+							</View>
+						</View>
+					</Modal>
+				)}
+
+				{/* 1b. Dual Required Update Modal Overlay */}
+				{showDualRequiredModal && (
+					<Modal visible={true} transparent animationType="fade" statusBarTranslucent>
+						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
+							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
+								<LinearGradient colors={[colors.error + '18', 'transparent']} style={StyleSheet.absoluteFillObject} />
+
+								<View style={[styles.iconWrap, { backgroundColor: colors.error + '15' }]}>
+									<Ionicons name="warning" size={32} color={colors.error} />
 								</View>
+
+								<Text style={[styles.title, { color: colors.text, textAlign: 'center' }]}>{translate('update_required', 'Update Required')}</Text>
+
+								<Text style={[styles.message, { color: colors.textSecondary, textAlign: 'center', marginVertical: 12 }]}>
+									{translate('dual_required_msg', 'A required update v{latest} is available. Please download it to continue.').replace('{latest}', latestVersion || '')}
+								</Text>
+
+								{/* Version info chips for Dual Required Modal */}
+								<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant, width: '100%', marginBottom: 12 }]}>
+									<View style={styles.infoRow}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Ready to Install</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.success + '15' }]}>
+											<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{pendingInstalledVersion}</Text>
+										</View>
+									</View>
+									<View style={[styles.infoRow, { marginTop: 10 }]}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Latest Available</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.error + '15' }]}>
+											<Text style={[styles.infoValue, { color: colors.error, fontWeight: '700' }]}>{latestVersion}</Text>
+										</View>
+									</View>
+									{freeDiskStorage !== null && Platform.OS !== 'web' && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+											<View style={[styles.versionChip, { backgroundColor: colors.info + '15' }]}>
+												<Text style={[styles.infoValue, { color: colors.info || '#3B82F6', fontWeight: '700' }]}>{formatBytes(freeDiskStorage)}</Text>
+											</View>
+										</View>
+									)}
+									{/* Release Details */}
+									{releaseName && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('published_at', 'Published')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatDate(publishedAt)}</Text>
+										</View>
+									)}
+									{apkSize !== null && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('download_size', 'Download Size')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatBytes(apkSize)}</Text>
+										</View>
+									)}
+									{downloadCount !== null && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('downloads_count', 'Downloads')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{downloadCount}</Text>
+										</View>
+									)}
+								</View>
+
+								{/* Release Notes */}
+								{renderReleaseNotes()}
+
+								{isDownloading ? (
+									<View style={styles.progressContainer}>
+										<View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%', marginBottom: 6 }}>
+											<Text style={[styles.progressText, { color: colors.textSecondary }]}>{translate('downloading', 'Downloading')}...</Text>
+											<Text style={[styles.progressText, { color: colors.primary }]}>{Math.round(downloadProgress * 100)}%</Text>
+										</View>
+										<View style={[styles.progressBarBg, { backgroundColor: colors.border + '40' }]}>
+											<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
+										</View>
+									</View>
+								) : (
+									<View style={{ width: '100%', gap: 12, marginTop: 12 }}>
+										<TouchableOpacity style={[styles.btn, styles.confirmBtn, { width: '100%' }]} onPress={handleConfirmUpdate} activeOpacity={0.8}>
+											<LinearGradient colors={[colors.primary, colors.primary + 'CC']} style={StyleSheet.absoluteFillObject} />
+											<Text style={styles.confirmBtnText}>{translate('download_new_btn', 'Download New (v{version})').replace('{version}', latestVersion || '')}</Text>
+										</TouchableOpacity>
+
+										<TouchableOpacity style={[styles.btn, styles.cancelBtn, { borderColor: colors.error + '40', width: '100%' }]} onPress={handleExitApp} activeOpacity={0.8}>
+											<Text style={[styles.cancelBtnText, { color: colors.error }]}>{translate('exit', 'Exit')}</Text>
+										</TouchableOpacity>
+									</View>
+								)}
 							</View>
 						</View>
 					</Modal>
 				)}
 
 				{/* 2. Optional Update Modal Overlay */}
-				{!showDualModal && (
+				{!(showDualOptionalModal || showDualRequiredModal) && (
 					<Modal visible={showOptionalModal} transparent animationType="fade" statusBarTranslucent>
 						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
 							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
@@ -972,6 +1220,25 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 											</View>
 										</View>
 									)}
+									{/* Release Details */}
+									{releaseName && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('published_at', 'Published')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatDate(publishedAt)}</Text>
+										</View>
+									)}
+									{apkSize !== null && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('download_size', 'Download Size')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{formatBytes(apkSize)}</Text>
+										</View>
+									)}
+									{downloadCount !== null && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('downloads_count', 'Downloads')}</Text>
+											<Text style={[styles.infoValue, { color: colors.textSecondary, fontSize: 12, fontWeight: '600' }]}>{downloadCount}</Text>
+										</View>
+									)}
 								</View>
 
 								{/* Release Notes */}
@@ -1004,7 +1271,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				)}
 
 				{/* 3. Startup Update Ready to Install Modal Overlay */}
-				{!showDualModal && (
+				{!(showDualOptionalModal || showDualRequiredModal) && (
 					<Modal visible={showReadyModal} transparent animationType="fade" statusBarTranslucent>
 						<View style={[styles.overlay, { backgroundColor: colors.modalOverlay }]}>
 							<View style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.border + '50' }]}>
