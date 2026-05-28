@@ -303,11 +303,7 @@ const PurchasesScreen = () => {
 								style={styles.headerLeft}
 								onPress={() => {
 									if (item.business.slug) {
-										const nameParam = typeof item.business.name === 'string' ? item.business.name : JSON.stringify(item.business.name)
-										router.push({
-											pathname: `/businesses/${item.business.slug}`,
-											params: { name: nameParam }
-										} as any)
+										router.push(`/businesses/${item.business.slug}` as any)
 									}
 								}}
 							>
@@ -337,11 +333,7 @@ const PurchasesScreen = () => {
 										style={styles.productRow}
 										onPress={() => {
 											if (p.product.slug) {
-												const nameParam = typeof p.product.name === 'string' ? p.product.name : JSON.stringify(p.product.name)
-												router.push({
-													pathname: `/products/${p.product.slug}`,
-													params: { name: nameParam }
-												} as any)
+												router.push(`/products/${p.product.slug}` as any)
 											}
 										}}
 									>
@@ -481,11 +473,7 @@ const PurchasesScreen = () => {
 								style={styles.headerLeft}
 								onPress={() => {
 									if (group.businessSlug) {
-										const nameParam = typeof group.businessName === 'string' ? group.businessName : JSON.stringify(group.businessName)
-										router.push({
-											pathname: `/businesses/${group.businessSlug}`,
-											params: { name: nameParam }
-										} as any)
+										router.push(`/businesses/${group.businessSlug}` as any)
 									}
 								}}
 							>
@@ -517,11 +505,7 @@ const PurchasesScreen = () => {
 										<TouchableOpacity
 											onPress={() => {
 												if (item.slug) {
-													const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
-													router.push({
-														pathname: `/products/${item.slug}`,
-														params: { name: nameParam }
-													} as any)
+													router.push(`/products/${item.slug}` as any)
 												}
 											}}
 										>
@@ -533,11 +517,7 @@ const PurchasesScreen = () => {
 													style={{ flex: 1, marginRight: 8 }}
 													onPress={() => {
 														if (item.slug) {
-															const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
-															router.push({
-																pathname: `/products/${item.slug}`,
-																params: { name: nameParam }
-															} as any)
+															router.push(`/products/${item.slug}` as any)
 														}
 													}}
 												>

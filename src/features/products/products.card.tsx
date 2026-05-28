@@ -64,17 +64,10 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 	const handleProductPress = () => {
 		if (item.slug) {
-			const nameParam = typeof item.name === 'string' ? item.name : JSON.stringify(item.name)
 			if (pathname.startsWith('/products')) {
-				router.push({
-					pathname: `/products/${item.slug}`,
-					params: { name: nameParam }
-				} as any)
+				router.push(`/products/${item.slug}` as any)
 			} else if (item.business?.slug) {
-				router.push({
-					pathname: `/businesses/${item.business.slug}/products/${item.slug}`,
-					params: { name: nameParam }
-				} as any)
+				router.push(`/businesses/${item.business.slug}/products/${item.slug}` as any)
 			}
 		}
 	}

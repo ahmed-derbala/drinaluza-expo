@@ -13,6 +13,7 @@ import { APP_VERSION, BACKEND_URL, NODE_ENV, UPDATE_DOWNLOAD_ROOT_URL } from '@/
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { log } from '@/core/log'
 import { useUpdater } from '@/features/appUpdater/AppUpdater'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
@@ -72,6 +73,44 @@ export default function SettingsScreen() {
 		const version = customVersion || latestVersion || APP_VERSION
 		setShareVersion(version)
 		setShowWebShareModal(true)
+	}
+
+	const handleShareCachedApk = async (file: { version: string; localUri: string }) => {
+		try {
+			if (Platform.OS !== 'android') return
+
+			const isSharingAvailable = await Sharing.isAvailableAsync()
+			if (!isSharingAvailable) {
+				Alert.alert(translate('error', 'Error'), 'Sharing is not available on this device.')
+				return
+			}
+
+			Alert.alert(
+				translate('quickshare_advisory_title', 'Quick Share'),
+				translate(
+					'quickshare_advisory_msg',
+					"To share the APK with a nearby Android device:\n\n1. Pull down the Quick Settings shade on the receiving device, tap Quick Share, and set the visibility to 'Everyone' or 'Contacts'.\n2. Tap OK below, then select 'Quick Share' (or Bluetooth) in the system sharing menu that opens next."
+				),
+				[
+					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
+					{
+						text: 'OK',
+						onPress: async () => {
+							try {
+								await Sharing.shareAsync(file.localUri, {
+									mimeType: 'application/vnd.android.package-archive',
+									dialogTitle: `Share Drinaluza v${file.version}`
+								})
+							} catch (shareErr) {
+								log({ level: 'error', label: 'Settings', message: 'Failed to share cached APK', error: shareErr })
+							}
+						}
+					}
+				]
+			)
+		} catch (err) {
+			log({ level: 'error', label: 'Settings', message: 'Failed to initialize share advisory', error: err })
+		}
 	}
 
 	useEffect(() => {
@@ -274,7 +313,7 @@ export default function SettingsScreen() {
 										<Text style={[styles.cachedItemName, { color: colors.text }]}>Drinaluza v{file.version}</Text>
 										<Text style={[styles.cachedItemSize, { color: colors.textSecondary }]}>{formatBytes(file.size)}</Text>
 									</View>
-									<TouchableOpacity style={[styles.cachedShareBtn, { backgroundColor: colors.primary + '12', marginRight: 8 }]} onPress={() => handleShareApk(file.version)} activeOpacity={0.7}>
+									<TouchableOpacity style={[styles.cachedShareBtn, { backgroundColor: colors.primary + '12', marginRight: 8 }]} onPress={() => handleShareCachedApk(file)} activeOpacity={0.7}>
 										<Ionicons name="share-social-outline" size={18} color={colors.primary} />
 									</TouchableOpacity>
 									<TouchableOpacity style={[styles.cachedDeleteBtn, { backgroundColor: colors.error + '12' }]} onPress={() => deleteCachedApk(file.name)} activeOpacity={0.7}>

@@ -29,11 +29,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	const handlePress = () => {
 		const slug = item.business?.slug || item.slug
 		if (slug) {
-			const nameParam = typeof businessName === 'string' ? businessName : JSON.stringify(businessName)
-			router.push({
-				pathname: `/businesses/${slug}`,
-				params: { name: nameParam }
-			} as any)
+			router.push(`/businesses/${slug}` as any)
 		}
 	}
 

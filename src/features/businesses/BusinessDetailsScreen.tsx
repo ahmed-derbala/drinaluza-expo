@@ -54,7 +54,7 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 }
 
 export default function BusinessDetailsScreen() {
-	const { businessSlug, name: initialNameParam } = useLocalSearchParams<{ businessSlug: string; name?: string }>()
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
@@ -69,19 +69,7 @@ export default function BusinessDetailsScreen() {
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { onScroll } = useScrollHandler()
 
-	const initialName = useMemo(() => {
-		if (!initialNameParam) return null
-		try {
-			if (initialNameParam.startsWith('{')) {
-				return localize(JSON.parse(initialNameParam))
-			}
-			return initialNameParam
-		} catch {
-			return initialNameParam
-		}
-	}, [initialNameParam, localize])
-
-	const displayTitle = business ? localize(business.name) : initialName || translate('common.loading', 'Loading...')
+	const displayTitle = business ? localize(business.name) : translate('loading', 'Loading...')
 
 	const loadBusinessDetails = useCallback(
 		async (isRefresh = false) => {
@@ -236,11 +224,7 @@ export default function BusinessDetailsScreen() {
 							style={styles.infoRow}
 							onPress={() => {
 								if (business.owner?.slug) {
-									const nameParam = typeof business.owner.name === 'string' ? business.owner.name : JSON.stringify(business.owner.name)
-									router.push({
-										pathname: `/users/${business.owner.slug}`,
-										params: { name: nameParam }
-									} as any)
+									router.push(`/users/${business.owner.slug}` as any)
 								}
 							}}
 							activeOpacity={0.7}
@@ -322,11 +306,7 @@ export default function BusinessDetailsScreen() {
 									localize={localize}
 									onPress={() => {
 										if (product.slug) {
-											const nameParam = typeof product.name === 'string' ? product.name : JSON.stringify(product.name)
-											router.push({
-												pathname: `/businesses/${businessSlug}/products/${product.slug}`,
-												params: { name: nameParam }
-											} as any)
+											router.push(`/businesses/${businessSlug}/products/${product.slug}` as any)
 										}
 									}}
 								/>

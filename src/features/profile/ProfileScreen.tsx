@@ -694,8 +694,8 @@ export default function ProfileScreen() {
 					<Text style={styles.profileName}>@{userData.slug}</Text>
 
 					<View style={styles.roleStateContainer}>
-						<View style={[styles.roleBadge, userData.role === 'shop_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
-							<Text style={styles.roleBadgeText}>{userData.role === 'shop_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+						<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+							<Text style={styles.roleBadgeText}>{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
 						</View>
 						{userData.state?.code && (
 							<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>

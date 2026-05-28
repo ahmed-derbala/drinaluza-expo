@@ -103,9 +103,7 @@ export default function HomeLayout() {
 				<Tabs.Screen
 					name="dashboard"
 					options={{
-						href: isDashboardVisible ? '/dashboard' : undefined,
-						tabBarButton: isDashboardVisible ? undefined : () => null,
-						tabBarItemStyle: isDashboardVisible ? undefined : { display: 'none' },
+						href: isDashboardVisible ? '/dashboard' : null,
 						tabBarIcon: ({ color, focused }) => (
 							<View style={focused ? styles.activeIconContainer : undefined}>
 								<MaterialIcons name="dashboard" size={iconSize} color={color} />
@@ -117,9 +115,7 @@ export default function HomeLayout() {
 				<Tabs.Screen
 					name="notifications"
 					options={{
-						href: isNotificationsVisible ? '/notifications' : undefined,
-						tabBarButton: isNotificationsVisible ? undefined : () => null,
-						tabBarItemStyle: isNotificationsVisible ? undefined : { display: 'none' },
+						href: isNotificationsVisible ? '/notifications' : null,
 						tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
 						tabBarBadgeStyle: {
 							backgroundColor: colors.error,

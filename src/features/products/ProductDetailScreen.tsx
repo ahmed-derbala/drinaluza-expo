@@ -21,7 +21,7 @@ import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
 
 export default function ProductDetailScreen() {
-	const { productSlug, businessSlug, name: initialNameParam } = useLocalSearchParams<{ productSlug: string; businessSlug?: string; name?: string }>()
+	const { productSlug, businessSlug } = useLocalSearchParams<{ productSlug: string; businessSlug?: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate, currency, formatPrice } = useUser()
@@ -39,19 +39,7 @@ export default function ProductDetailScreen() {
 	const [quantity, setQuantity] = useState(1)
 	const [showQRCode, setShowQRCode] = useState(false)
 
-	const initialName = useMemo(() => {
-		if (!initialNameParam) return null
-		try {
-			if (initialNameParam.startsWith('{')) {
-				return localize(JSON.parse(initialNameParam))
-			}
-			return initialNameParam
-		} catch {
-			return initialNameParam
-		}
-	}, [initialNameParam, localize])
-
-	const displayTitle = product ? localize(product.name) : initialName || translate('product_details', 'Product Details')
+	const displayTitle = product ? localize(product.name) : translate('loading', 'Loading...')
 
 	// effect to initialize quantity once product loads
 	useEffect(() => {
@@ -150,21 +138,13 @@ export default function ProductDetailScreen() {
 
 	const handleBusinessNavPress = () => {
 		if (product?.business?.slug) {
-			const nameParam = typeof product.business.name === 'string' ? product.business.name : JSON.stringify(product.business.name)
-			router.push({
-				pathname: `/businesses/${product.business.slug}`,
-				params: { name: nameParam }
-			} as any)
+			router.push(`/businesses/${product.business.slug}` as any)
 		}
 	}
 
 	const handleOwnerPress = () => {
 		if (product?.business?.owner?.slug) {
-			const nameParam = typeof product.business.owner.name === 'string' ? product.business.owner.name : JSON.stringify(product.business.owner.name)
-			router.push({
-				pathname: `/users/${product.business.owner.slug}`,
-				params: { name: nameParam }
-			} as any)
+			router.push(`/users/${product.business.owner.slug}` as any)
 		}
 	}
 

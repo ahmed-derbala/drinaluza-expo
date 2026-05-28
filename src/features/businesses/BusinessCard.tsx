@@ -26,11 +26,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 	const isDark = true
 
 	const handleBusinessPress = (slug: string) => {
-		const nameParam = typeof businessName === 'string' ? businessName : JSON.stringify(businessName)
-		router.push({
-			pathname: `/businesses/${slug}`,
-			params: { name: nameParam }
-		} as any)
+		router.push(`/businesses/${slug}` as any)
 	}
 
 	// Build address string

@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.8.0] - 2026-05-28
+### Added
+- Completely removed all name query parameters (`?name=...`) from navigation routes across the codebase to adhere to clean routing and official `expo-router` best practices.
+- Configured the product and business detail screens to gracefully display a localized loading state in their headers while fetching data from the API.
+- Configured the Home Layout to hide the dashboard bottom tab bar icon unless there is an authenticated user whose role matches 'business_owner' (the database equivalent for business owners) to prevent unauthorized views.
+
+### Fixed
+- Missing version string in the Required Minimum version chip inside the blocking Required Update modal.
+- A minor script syntax merging issue in package.json.
+- Navigation Error Boundary crash on startup due to conflicting `href` and `tabBarButton` options inside the Home Layout tabs configuration.
+
+## [1.7.6] - 2026-05-28
+### Added
+- Configured the share icon next to each cached update item row in the Settings Update Center to show the Quick Share advisory instructions dialog and launch the system sharing sheet upon confirmation.
+
 ## [1.4.1] - 2026-05-27
 ### Added
 - Automatic promptless installer launch for required update packages on startup when the file exists in the cache folder.
@@ -7,8 +22,6 @@
 
 ### Fixed
 - Redundant confirmation prompt displays when a mandatory update's package has already been successfully downloaded.
-- Missing version string in the Required Minimum version chip inside the blocking Required Update modal.
-- A minor script syntax merging issue in package.json.
 
 ## [1.3.81] - 2026-05-27
 ### Added
