@@ -184,6 +184,8 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
 	const [freeDiskStorage, setFreeDiskStorage] = useState<number | null>(null)
+	const activeDownloadRef = React.useRef<FileSystem.DownloadResumable | null>(null)
+	const [wasDownloadingBeforeBackground, setWasDownloadingBeforeBackground] = useState(false)
 
 	const [releaseName, setReleaseName] = useState<string | null>(null)
 	const [publishedAt, setPublishedAt] = useState<string | null>(null)
@@ -276,111 +278,180 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		}
 	}, [latestVersion, translate])
 
-	const downloadAndInstallApk = async (version: string) => {
-		const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
-		try {
-			setIsDownloading(true)
-			setDownloadProgress(0)
-			setIsReadyToInstall(false)
-
-			const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-
-			// Delete ANY existing drinaluza APK files in the cache directory
+	const downloadAndInstallApk = useCallback(
+		async (version: string) => {
+			const localUri = `${FileSystem.cacheDirectory}drinaluza-${version}.apk`
+			const resumeDataKey = `drinaluza_download_resume_data_${version}`
 			try {
-				const cacheDir = FileSystem.cacheDirectory
-				if (cacheDir) {
-					const cacheFiles = await FileSystem.readDirectoryAsync(cacheDir)
-					const oldApks = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk'))
+				setIsDownloading(true)
+				setDownloadProgress(0)
+				setIsReadyToInstall(false)
 
-					for (const oldApk of oldApks) {
-						await FileSystem.deleteAsync(`${cacheDir}${oldApk}`, { idempotent: true })
+				const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
+
+				const savedResumeData = await AsyncStorage.getItem(resumeDataKey)
+
+				// Scrub old APKs only if we are starting a FRESH download (no resume data exists)
+				if (!savedResumeData) {
+					try {
+						const cacheDir = FileSystem.cacheDirectory
+						if (cacheDir) {
+							const cacheFiles = await FileSystem.readDirectoryAsync(cacheDir)
+							const oldApks = cacheFiles.filter((file) => file.startsWith('drinaluza-') && file.endsWith('.apk'))
+
+							for (const oldApk of oldApks) {
+								await FileSystem.deleteAsync(`${cacheDir}${oldApk}`, { idempotent: true })
+							}
+						}
+					} catch (cleanError) {
+						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to scrub old APKs from cache', error: cleanError })
 					}
 				}
-			} catch (cleanError) {
-				log({ level: 'warn', label: 'AppUpdater', message: 'Failed to scrub old APKs from cache', error: cleanError })
-			}
 
-			log({ level: 'info', label: 'AppUpdater', message: `Starting download: ${downloadUrl} -> ${localUri}` })
-
-			const downloadResumable = FileSystem.createDownloadResumable(downloadUrl, localUri, {}, (progressData) => {
-				if (progressData.totalBytesExpectedToWrite > 0) {
-					const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
-					setDownloadProgress(progress)
+				let downloadResumable: FileSystem.DownloadResumable
+				if (savedResumeData) {
+					log({ level: 'info', label: 'AppUpdater', message: `Resuming download for v${version} using saved resume data...` })
+					downloadResumable = FileSystem.createDownloadResumable(
+						downloadUrl,
+						localUri,
+						{},
+						(progressData) => {
+							if (progressData.totalBytesExpectedToWrite > 0) {
+								const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
+								setDownloadProgress(progress)
+							}
+						},
+						savedResumeData
+					)
+				} else {
+					log({ level: 'info', label: 'AppUpdater', message: `Starting fresh download for v${version}...` })
+					downloadResumable = FileSystem.createDownloadResumable(downloadUrl, localUri, {}, (progressData) => {
+						if (progressData.totalBytesExpectedToWrite > 0) {
+							const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
+							setDownloadProgress(progress)
+						}
+					})
 				}
-			})
+				activeDownloadRef.current = downloadResumable
 
-			const result = await downloadResumable.downloadAsync()
-
-			if (!result || !result.uri) {
-				const err = new Error('Download failed: empty download result.')
-				;(err as any).isDownloadError = true
-				throw err
-			}
-
-			// Validate HTTP Status Code (e.g. reject 404, 500, etc.)
-			if (result.status && (result.status < 200 || result.status >= 300)) {
-				const err = new Error(`Download failed with HTTP status ${result.status}`)
-				;(err as any).isDownloadError = true
-				throw err
-			}
-
-			log({ level: 'info', label: 'AppUpdater', message: `Download complete. Saving downloaded version state for v${version}` })
-
-			await AsyncStorage.setItem('drinaluza_downloaded_update_version', version)
-			setIsReadyToInstall(true)
-
-			if (updateStatus === 'update_required') {
-				toast.show({ title: 'Download Complete', message: 'Opening installer...', color: '#10B981' })
-				const contentUri = await FileSystem.getContentUriAsync(result.uri)
-				await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-					data: contentUri,
-					flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-				})
-			} else {
-				toast.show({
-					title: 'Download Complete',
-					message: 'Update downloaded! Tap the restart icon in the header or Settings to install.',
-					color: '#10B981'
-				})
-			}
-		} catch (error: any) {
-			log({ level: 'error', label: 'AppUpdater', message: 'APK download/install error', error })
-
-			try {
-				await FileSystem.deleteAsync(localUri, { idempotent: true })
-			} catch (deleteError) {
-				// Silently catch
-			}
-
-			if (error.isDownloadError || error.message?.includes('Download failed') || error.message?.includes('HTTP')) {
-				log({ level: 'error', label: 'AppUpdater', message: 'APK download failed or returned non-2xx status code.', error })
-				toast.show({
-					title: translate('error', 'Error'),
-					message: 'Update server error or link broken. Please try again later.',
-					color: '#EF4444'
-				})
-			} else {
-				log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
-
+				let result: FileSystem.DownloadResult | undefined = undefined
 				try {
-					const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-					await Linking.openURL(downloadUrl)
-				} catch (linkError) {
-					log({ level: 'error', label: 'AppUpdater', message: 'Fallback link open failed', error: linkError })
+					result = await downloadResumable.downloadAsync()
+				} catch (downloadErr) {
+					if (savedResumeData) {
+						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to resume download. Retrying with a fresh download...', error: downloadErr })
+						// Clear resume data and delete any partial file
+						await AsyncStorage.removeItem(resumeDataKey)
+						try {
+							await FileSystem.deleteAsync(localUri, { idempotent: true })
+						} catch (e) {}
+
+						// Start a fresh download resumable
+						downloadResumable = FileSystem.createDownloadResumable(downloadUrl, localUri, {}, (progressData) => {
+							if (progressData.totalBytesExpectedToWrite > 0) {
+								const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
+								setDownloadProgress(progress)
+							}
+						})
+						activeDownloadRef.current = downloadResumable
+						result = await downloadResumable.downloadAsync()
+					} else {
+						throw downloadErr
+					}
 				}
 
-				toast.show({
-					title: translate('error', 'Error'),
-					message: 'Failed to launch installer. Downloading via browser instead.',
-					color: '#EF4444'
-				})
+				if (!result || !result.uri) {
+					const err = new Error('Download failed: empty download result.')
+					;(err as any).isDownloadError = true
+					throw err
+				}
+
+				// Validate HTTP Status Code (e.g. reject 404, 500, etc.)
+				if (result.status && (result.status < 200 || result.status >= 300)) {
+					const err = new Error(`Download failed with HTTP status ${result.status}`)
+					;(err as any).isDownloadError = true
+					throw err
+				}
+
+				log({ level: 'info', label: 'AppUpdater', message: `Download complete. Saving downloaded version state for v${version}` })
+
+				// Download successful! Clear resume data
+				await AsyncStorage.removeItem(resumeDataKey)
+				activeDownloadRef.current = null
+
+				await AsyncStorage.setItem('drinaluza_downloaded_update_version', version)
+				setIsReadyToInstall(true)
+
+				if (updateStatus === 'update_required') {
+					toast.show({ title: 'Download Complete', message: 'Opening installer...', color: '#10B981' })
+					const contentUri = await FileSystem.getContentUriAsync(result.uri)
+					await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+						data: contentUri,
+						flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
+					})
+				} else {
+					toast.show({
+						title: 'Download Complete',
+						message: 'Update downloaded! Tap the restart icon in the header or Settings to install.',
+						color: '#10B981'
+					})
+				}
+			} catch (error: any) {
+				log({ level: 'error', label: 'AppUpdater', message: 'APK download/install error', error })
+
+				// If the download was interrupted (and not paused deliberately), save the resume data if possible
+				if (activeDownloadRef.current) {
+					try {
+						const savable = activeDownloadRef.current.savable()
+						if (savable && savable.resumeData) {
+							await AsyncStorage.setItem(resumeDataKey, savable.resumeData)
+							log({ level: 'info', label: 'AppUpdater', message: 'Saved interrupted download resume data to AsyncStorage.' })
+						}
+					} catch (savableErr) {
+						// Delete partial file on unresumable errors
+						try {
+							await FileSystem.deleteAsync(localUri, { idempotent: true })
+						} catch (e) {}
+					}
+				} else {
+					try {
+						await FileSystem.deleteAsync(localUri, { idempotent: true })
+					} catch (deleteError) {
+						// Silently catch
+					}
+				}
+
+				if (error.isDownloadError || error.message?.includes('Download failed') || error.message?.includes('HTTP')) {
+					log({ level: 'error', label: 'AppUpdater', message: 'APK download failed or returned non-2xx status code.', error })
+					toast.show({
+						title: translate('error', 'Error'),
+						message: 'Update server error or link broken. Please try again later.',
+						color: '#EF4444'
+					})
+				} else {
+					log({ level: 'error', label: 'AppUpdater', message: 'Programmatic installation failed, trying browser fallback.', error })
+
+					try {
+						const downloadUrl = apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
+						await Linking.openURL(downloadUrl)
+					} catch (linkError) {
+						log({ level: 'error', label: 'AppUpdater', message: 'Fallback link open failed', error: linkError })
+					}
+
+					toast.show({
+						title: translate('error', 'Error'),
+						message: 'Failed to launch installer. Downloading via browser instead.',
+						color: '#EF4444'
+					})
+				}
+			} finally {
+				setIsDownloading(false)
+				setDownloadProgress(0)
+				await loadCachedApks()
 			}
-		} finally {
-			setIsDownloading(false)
-			setDownloadProgress(0)
-			await loadCachedApks()
-		}
-	}
+		},
+		[apkDownloadUrl, updateStatus, translate, loadCachedApks]
+	)
 
 	const checkForUpdates = useCallback(
 		async (manual = false) => {
@@ -619,17 +690,41 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		checkForUpdates(false)
 	}, [checkForUpdates])
 
-	// Automatically run updater checks when app returns from background
+	// Automatically run updater checks and pause/resume active downloads when app returns from background/foreground
 	useEffect(() => {
-		const subscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+		const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
 			if (nextAppState === 'active') {
 				checkForUpdates(false)
+
+				// Automatically resume download if it was in progress before going to background
+				if (wasDownloadingBeforeBackground && latestVersion) {
+					setWasDownloadingBeforeBackground(false)
+					log({ level: 'info', label: 'AppUpdater', message: 'App returned to foreground. Automatically resuming update download...' })
+					downloadAndInstallApk(latestVersion)
+				}
+			} else if (nextAppState === 'background' || nextAppState === 'inactive') {
+				// Save active download state and pause download to preserve resume data
+				const downloadResumable = activeDownloadRef.current
+				if (downloadResumable && isDownloading && latestVersion) {
+					try {
+						log({ level: 'info', label: 'AppUpdater', message: 'App going to background. Pausing active download to preserve resume data...' })
+						setWasDownloadingBeforeBackground(true)
+						const pauseResult = await downloadResumable.pauseAsync()
+						if (pauseResult && pauseResult.resumeData) {
+							const resumeDataKey = `drinaluza_download_resume_data_${latestVersion}`
+							await AsyncStorage.setItem(resumeDataKey, pauseResult.resumeData)
+							log({ level: 'info', label: 'AppUpdater', message: 'Saved download resume data to AsyncStorage.' })
+						}
+					} catch (pauseErr) {
+						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to pause active download on background transition', error: pauseErr })
+					}
+				}
 			}
 		})
 		return () => {
 			subscription.remove()
 		}
-	}, [checkForUpdates])
+	}, [checkForUpdates, wasDownloadingBeforeBackground, isDownloading, latestVersion, downloadAndInstallApk])
 
 	// Startup Check: check if there is a downloaded update that needs to be installed
 	useEffect(() => {

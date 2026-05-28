@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.11.0] - 2026-05-28
+### Added
+- Implemented robust resumable download capability for update packages. Download resume data is saved persistently in `AsyncStorage` when a download is interrupted or paused.
+- Integrated automatic AppState background/foreground synchronization:
+  - When the app is switched or goes to the background, any active update download is automatically paused and its progress is securely saved.
+  - When the app returns to the foreground, the paused download automatically resumes from the exact percentage where it was left.
+- Added self-healing capability that falls back to starting a fresh download if the saved resume data is corrupted or outdated.
+- Solved the Android package parser error ("there was a problem parsing the package") caused by corrupted or partial APK files after app switching.
+
 ## [1.10.6] - 2026-05-28
 ### Added
 - Configured dynamic startup check workflows:
