@@ -16,7 +16,7 @@
     "drinaluza"
   ],
   "scripts": {
-    "changelog": "cp CHANGELOG.md ../drinaluza-expo-releases/ && cd ../drinaluza-expo-releases && git add CHANGELOG.md && git commit -m 'Update changelog' && git push",
+    "changelog": "cp CHANGELOG.md ../drinaluza-expo-releases/ && cd ../drinaluza-expo-releases && npm version patch --no-git-tag-version && git add CHANGELOG.md && git commit -m 'Update changelog' && git push",
     "release": "gh release create v$npm_package_version ./builds/$npm_package_name-$npm_package_version.apk --repo ahmed-derbala/drinaluza-expo-releases --title \"Release v$npm_package_version\" --notes-file CHANGELOG.md",
     "frl": "npm run i && npm run start:local",
     "cpapk2gdrive-local": "cp ./builds/$npm_package_name-$npm_package_version.apk /run/user/1000/gvfs/google-drive:host=gmail.com,user=drinaluza/0APGN7fnb5BgmUk9PVA/1XFIQ1YrZ8Utn1NoSHNKXHO8emM5oMthk",
