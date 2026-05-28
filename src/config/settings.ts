@@ -1,7 +1,9 @@
 export const LANGUAGES = [
 	{ code: 'en', label: 'English', flag: '🇺🇸' },
 	{ code: 'tn_latn', label: 'Tunisian (Latin)', flag: '🇹🇳', icon: 'A' },
-	{ code: 'tn_arab', label: 'Tunisian (Arabic)', flag: '🇹🇳', icon: 'ع' }
+	{ code: 'tn_arab', label: 'Tunisian (Arabic)', flag: '🇹🇳', icon: 'ع' },
+	{ code: 'fr', label: 'French', flag: '🇫🇷' },
+	{ code: 'ar', label: 'Arabic', flag: '🇸🇦' }
 ]
 
 export const CURRENCIES = [

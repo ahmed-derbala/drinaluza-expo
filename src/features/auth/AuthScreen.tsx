@@ -3,7 +3,7 @@ import { View, TextInput, Text, TouchableOpacity, Alert, useWindowDimensions, Pl
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect, Stack } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { SafeAreaView } from 'react-native-safe-area-context'
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 
 import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth } from './auth.api'
@@ -16,11 +16,12 @@ import { LANGUAGES } from '@/config/settings'
 import SmartImage from '@/core/SmartImageViewer'
 
 export default function AuthScreen() {
-	const { colors } = useTheme()
+	const { colors, dark } = useTheme()
+	const insets = useSafeAreaInsets()
 	const { translate, setAppLang, setContentLang, appLang, refreshUser } = useUser()
 	useBackButton()
 	const { width } = useWindowDimensions()
-	const maxWidth = 520
+	const maxWidth = 500
 	const isWideScreen = width > maxWidth
 	const router = useRouter()
 
@@ -29,6 +30,10 @@ export default function AuthScreen() {
 	const [password, setPassword] = useState('')
 	const [saveAccount, setSaveAccount] = useState(true)
 	const [needPassword, setNeedPassword] = useState(false)
+
+	// Input focus states for high-fidelity active border glowing effects
+	const [slugFocused, setSlugFocused] = useState(false)
+	const [passwordFocused, setPasswordFocused] = useState(false)
 
 	const handleSlugChange = (text: string) => {
 		const sanitized = text.toLowerCase().replace(/[^a-z0-9-]/g, '')
@@ -52,8 +57,9 @@ export default function AuthScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
+			refreshUser()
 			loadSavedAuths()
-		}, [])
+		}, [refreshUser])
 	)
 
 	// Handles removing a saved account
@@ -150,14 +156,12 @@ export default function AuthScreen() {
 		}
 
 		// Enforce slug validation
-		// lower case latin letters, numbers, and "-" only
 		const isValidSlugFormat = /^[a-z0-9-]+$/.test(trimmedSlug)
 		if (!isValidSlugFormat) {
 			showAlert(translate('error', 'Error'), translate('username_invalid_chars', 'Username can only contain lowercase letters, numbers, and hyphens.'))
 			return
 		}
 
-		// "-" must not be the first or last character
 		if (trimmedSlug.startsWith('-') || trimmedSlug.endsWith('-')) {
 			showAlert(translate('error', 'Error'), translate('username_invalid_hyphen', 'Hyphen (-) cannot be the first or last character of the username.'))
 			return
@@ -180,7 +184,6 @@ export default function AuthScreen() {
 			const status = error.response?.status || responseData?.status || responseData?.statusCode
 
 			if (status === 404 || status === '404') {
-				// User not found -> Prompt user if they want to Sign Up
 				setIsLoading(false)
 				const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
 				const profileUrl = `${frontendUrl}/u/${trimmedSlug}`
@@ -197,7 +200,6 @@ export default function AuthScreen() {
 					])
 				}
 			} else if (status === 409 || status === '409') {
-				// Incorrect password -> Prompt user to verify it
 				setIsLoading(false)
 				setPassword('')
 				const verifyMessage = translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.')
@@ -255,6 +257,8 @@ export default function AuthScreen() {
 		}
 	}
 
+	const styles = createStyles(colors, dark, isWideScreen)
+
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
 			<StatusBar style="light" />
@@ -273,22 +277,25 @@ export default function AuthScreen() {
 							style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
 							accessibilityLabel="Go to Feed"
 						>
-							<Ionicons name="home-outline" size={20} color={colors.primary} />
+							<Ionicons name="home-outline" size={18} color={colors.primary} />
 						</TouchableOpacity>
 					),
 					headerRight: () => (
 						<TouchableOpacity onPress={handleResetApp} style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} accessibilityLabel="Reset Storage">
-							<Ionicons name="refresh-outline" size={20} color={colors.error} />
+							<Ionicons name="refresh-outline" size={18} color={colors.error} />
 						</TouchableOpacity>
 					)
 				}}
 			/>
 
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
-				<ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-					<View style={[styles.innerContent, isWideScreen && { maxWidth }]}>
+			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
+				<ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 20, 24) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+					<View style={[styles.innerContent, isWideScreen && styles.desktopCard]}>
 						{/* Logo / Branding */}
 						<View style={styles.brandingContainer}>
+							<View style={[styles.logoIconFrame, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}>
+								<Ionicons name="shield-checkmark" size={36} color={colors.primary} />
+							</View>
 							<Text style={[styles.logoText, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
 							<Text style={[styles.subtitleText, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
 						</View>
@@ -309,16 +316,13 @@ export default function AuthScreen() {
 											style={[
 												styles.langOptionCard,
 												{
-													backgroundColor: isSelected ? colors.primary + '15' : colors.card,
+													backgroundColor: isSelected ? colors.primary + '12' : colors.surfaceVariant,
 													borderColor: isSelected ? colors.primary : colors.border
 												}
 											]}
 											activeOpacity={0.8}
 										>
-											<Text style={styles.langOptionFlag}>
-												{lang.flag}
-												{lang.icon ? ` ${lang.icon}` : ''}
-											</Text>
+											<Text style={styles.langOptionFlag}>{lang.flag}</Text>
 											<Text
 												style={[
 													styles.langOptionLabel,
@@ -345,14 +349,14 @@ export default function AuthScreen() {
 										<TouchableOpacity
 											key={auth.slug}
 											onPress={() => handleSwitchAccount(auth)}
-											style={[styles.savedAccountCard, { backgroundColor: colors.card, borderColor: colors.border }]}
+											style={[styles.savedAccountCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
 											activeOpacity={0.7}
 										>
 											{auth.photoUrl ? (
 												<SmartImage source={auth.photoUrl} style={styles.accountAvatar} entityType="user" />
 											) : (
-												<View style={[styles.accountAvatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '20' }]}>
-													<Ionicons name="person" size={18} color={colors.primary} />
+												<View style={[styles.accountAvatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '18' }]}>
+													<Ionicons name="person" size={16} color={colors.primary} />
 												</View>
 											)}
 											<View style={styles.accountInfoContainer}>
@@ -361,14 +365,14 @@ export default function AuthScreen() {
 												</Text>
 												<Text style={[styles.accountSlug, { color: colors.textSecondary }]}>@{auth.slug}</Text>
 												{auth.role && (
-													<View style={[styles.roleBadge, { backgroundColor: colors.primary + '10' }]}>
+													<View style={[styles.roleBadge, { backgroundColor: colors.primary + '12' }]}>
 														<Text style={[styles.roleBadgeText, { color: colors.primary }]}>{auth.role}</Text>
 													</View>
 												)}
 											</View>
 											{auth.needPassword && (
 												<View style={styles.passwordLockIndicator}>
-													<Ionicons name="lock-closed" size={16} color={colors.textSecondary} />
+													<Ionicons name="lock-closed" size={15} color={colors.textSecondary} />
 												</View>
 											)}
 											<TouchableOpacity
@@ -376,7 +380,7 @@ export default function AuthScreen() {
 												style={[styles.removeAccountBtn, { backgroundColor: colors.error + '10' }]}
 												accessibilityLabel="Remove Saved Account"
 											>
-												<Ionicons name="trash-outline" size={18} color={colors.error} />
+												<Ionicons name="trash-outline" size={16} color={colors.error} />
 											</TouchableOpacity>
 										</TouchableOpacity>
 									))}
@@ -386,9 +390,9 @@ export default function AuthScreen() {
 
 						{/* Credentials inputs */}
 						<View style={styles.formSection}>
-							{/* Slug field */}
-							<View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-								<Ionicons name="person-outline" size={20} color={colors.textSecondary} />
+							{/* Username field */}
+							<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: slugFocused ? colors.primary : colors.border }]}>
+								<Ionicons name="person-outline" size={18} color={slugFocused ? colors.primary : colors.textSecondary} />
 								<TextInput
 									style={[styles.textInput, { color: colors.text }]}
 									placeholder={translate('username', 'Username')}
@@ -398,17 +402,21 @@ export default function AuthScreen() {
 									autoCapitalize="none"
 									autoCorrect={false}
 									editable={!isLoading}
+									onFocus={() => setSlugFocused(true)}
+									onBlur={() => setSlugFocused(false)}
 								/>
 							</View>
 							{/* Save Account Checkbox */}
 							<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.8} disabled={isLoading}>
-								<Ionicons name={saveAccount ? 'checkbox' : 'square-outline'} size={20} color={saveAccount ? colors.primary : colors.textSecondary} />
+								<View style={[styles.customCheckbox, { borderColor: saveAccount ? colors.primary : colors.textSecondary, backgroundColor: saveAccount ? colors.primary : 'transparent' }]}>
+									{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}
+								</View>
 								<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
 							</TouchableOpacity>
 
 							{/* Password field */}
-							<View style={[styles.inputWrapper, { backgroundColor: colors.card, borderColor: colors.border }]}>
-								<Ionicons name="lock-closed-outline" size={20} color={colors.textSecondary} />
+							<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: passwordFocused ? colors.primary : colors.border }]}>
+								<Ionicons name="lock-closed-outline" size={18} color={passwordFocused ? colors.primary : colors.textSecondary} />
 								<TextInput
 									ref={passwordRef}
 									style={[styles.textInput, { color: colors.text }]}
@@ -418,23 +426,32 @@ export default function AuthScreen() {
 									onChangeText={setPassword}
 									secureTextEntry
 									editable={!isLoading}
+									onFocus={() => setPasswordFocused(true)}
+									onBlur={() => setPasswordFocused(false)}
 								/>
 							</View>
 							{/* Require Password Checkbox */}
 							<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setNeedPassword(!needPassword)} activeOpacity={0.8} disabled={isLoading}>
-								<Ionicons name={needPassword ? 'checkbox' : 'square-outline'} size={20} color={needPassword ? colors.primary : colors.textSecondary} />
+								<View style={[styles.customCheckbox, { borderColor: needPassword ? colors.primary : colors.textSecondary, backgroundColor: needPassword ? colors.primary : 'transparent' }]}>
+									{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}
+								</View>
 								<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
 							</TouchableOpacity>
 						</View>
 
 						{/* Single Continue Button */}
-						<TouchableOpacity style={[styles.continueButton, { backgroundColor: colors.primary }]} onPress={handleContinue} activeOpacity={0.85} disabled={isLoading}>
+						<TouchableOpacity
+							style={[styles.continueButton, { backgroundColor: slug.trim() && password.trim() ? colors.primary : colors.primary + '50' }]}
+							onPress={handleContinue}
+							activeOpacity={0.85}
+							disabled={isLoading}
+						>
 							{isLoading ? (
 								<ActivityIndicator size="small" color="#fff" />
 							) : (
 								<View style={styles.continueButtonContent}>
 									<Text style={styles.continueButtonText}>{translate('continue', 'Continue')}</Text>
-									<Ionicons name="arrow-forward" size={20} color="#fff" />
+									<Ionicons name="arrow-forward" size={18} color="#fff" />
 								</View>
 							)}
 						</TouchableOpacity>
@@ -445,198 +462,270 @@ export default function AuthScreen() {
 	)
 }
 
-const styles = StyleSheet.create({
-	container: {
-		flex: 1
-	},
-	scrollContent: {
-		flexGrow: 1,
-		paddingHorizontal: 20,
-		paddingVertical: 24,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	innerContent: {
-		width: '100%',
-		alignItems: 'stretch'
-	},
-	headerIconBtn: {
-		width: 38,
-		height: 38,
-		borderRadius: 10,
-		borderWidth: 1,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	brandingContainer: {
-		alignItems: 'center',
-		marginBottom: 28
-	},
-	logoText: {
-		fontSize: 32,
-		fontWeight: '800',
-		letterSpacing: -0.5
-	},
-	subtitleText: {
-		fontSize: 14,
-		fontWeight: '500',
-		marginTop: 4
-	},
-	langSection: {
-		marginBottom: 24
-	},
-	langSectionTitle: {
-		fontSize: 13,
-		fontWeight: '600',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5,
-		marginBottom: 10,
-		marginLeft: 4
-	},
-	langSelectorRow: {
-		flexDirection: 'row',
-		gap: 8,
-		justifyContent: 'space-between'
-	},
-	langOptionCard: {
-		flex: 1,
-		borderWidth: 1.5,
-		borderRadius: 14,
-		paddingVertical: 12,
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 6
-	},
-	langOptionFlag: {
-		fontSize: 18,
-		fontWeight: '700'
-	},
-	langOptionLabel: {
-		fontSize: 11,
-		textAlign: 'center'
-	},
-	savedSection: {
-		marginBottom: 24
-	},
-	savedSectionTitle: {
-		fontSize: 13,
-		fontWeight: '600',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5,
-		marginBottom: 10,
-		marginLeft: 4
-	},
-	savedAccountsScroll: {
-		maxHeight: 230
-	},
-	savedAccountsList: {
-		gap: 10
-	},
-	savedAccountCard: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		padding: 12,
-		borderRadius: 16,
-		borderWidth: 1
-	},
-	accountAvatar: {
-		width: 44,
-		height: 44,
-		borderRadius: 12
-	},
-	avatarPlaceholder: {
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	accountInfoContainer: {
-		flex: 1,
-		marginLeft: 12,
-		justifyContent: 'center'
-	},
-	accountName: {
-		fontSize: 15,
-		fontWeight: '700'
-	},
-	accountSlug: {
-		fontSize: 12,
-		marginTop: 1
-	},
-	roleBadge: {
-		alignSelf: 'flex-start',
-		paddingHorizontal: 6,
-		paddingVertical: 2,
-		borderRadius: 6,
-		marginTop: 4
-	},
-	roleBadgeText: {
-		fontSize: 10,
-		fontWeight: '700',
-		textTransform: 'capitalize'
-	},
-	passwordLockIndicator: {
-		marginHorizontal: 8
-	},
-	removeAccountBtn: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	formSection: {
-		gap: 12,
-		marginBottom: 24
-	},
-	inputWrapper: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		borderWidth: 1.5,
-		borderRadius: 16,
-		paddingHorizontal: 16,
-		paddingVertical: 12,
-		gap: 12
-	},
-	textInput: {
-		flex: 1,
-		fontSize: 16,
-		padding: 0
-	},
-	checkboxWrapper: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 10,
-		paddingVertical: 4,
-		paddingHorizontal: 6
-	},
-	checkboxLabel: {
-		fontSize: 13,
-		fontWeight: '500'
-	},
-	continueButton: {
-		height: 52,
-		borderRadius: 16,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.15,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 4
-			}
-		})
-	},
-	continueButtonContent: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8
-	},
-	continueButtonText: {
-		color: '#fff',
-		fontSize: 16,
-		fontWeight: '700'
-	}
-})
+const createStyles = (colors: any, dark: boolean, isWideScreen: boolean) =>
+	StyleSheet.create({
+		container: {
+			flex: 1
+		},
+		scrollContent: {
+			flexGrow: 1,
+			paddingHorizontal: isWideScreen ? 40 : 20,
+			paddingVertical: isWideScreen ? 50 : 24,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		innerContent: {
+			width: '100%',
+			alignItems: 'stretch'
+		},
+		desktopCard: {
+			maxWidth: 480,
+			backgroundColor: colors.card,
+			borderRadius: 24,
+			padding: 40,
+			borderWidth: 1.5,
+			borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+			...Platform.select({
+				web: {
+					boxShadow: dark ? '0px 16px 48px rgba(0, 0, 0, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.05)' : '0px 16px 48px rgba(0, 0, 0, 0.06), inset 0px 1px 1px rgba(255, 255, 255, 0.9)'
+				} as any,
+				default: {
+					shadowColor: '#000',
+					shadowOffset: { width: 0, height: 8 },
+					shadowOpacity: dark ? 0.35 : 0.08,
+					shadowRadius: 16,
+					elevation: 6
+				}
+			})
+		},
+		headerIconBtn: {
+			width: 36,
+			height: 36,
+			borderRadius: 10,
+			borderWidth: 1.5,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		brandingContainer: {
+			alignItems: 'center',
+			marginBottom: 32
+		},
+		logoIconFrame: {
+			width: 72,
+			height: 72,
+			borderRadius: 22,
+			borderWidth: 2,
+			justifyContent: 'center',
+			alignItems: 'center',
+			marginBottom: 16,
+			...Platform.select({
+				web: {
+					transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+				} as any,
+				default: {}
+			})
+		},
+		logoText: {
+			fontSize: 30,
+			fontWeight: '800',
+			letterSpacing: -0.5
+		},
+		subtitleText: {
+			fontSize: 13,
+			fontWeight: '600',
+			marginTop: 6,
+			textTransform: 'uppercase',
+			letterSpacing: 1,
+			opacity: 0.8
+		},
+		langSection: {
+			marginBottom: 28
+		},
+		langSectionTitle: {
+			fontSize: 12,
+			fontWeight: '700',
+			textTransform: 'uppercase',
+			letterSpacing: 0.8,
+			marginBottom: 12,
+			marginLeft: 4,
+			opacity: 0.9
+		},
+		langSelectorRow: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			gap: 8
+		},
+		langOptionCard: {
+			flexGrow: 1,
+			flexShrink: 0,
+			flexBasis: '30%',
+			minWidth: 100,
+			borderWidth: 1.5,
+			borderRadius: 14,
+			paddingVertical: 12,
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: 6,
+			...Platform.select({
+				web: {
+					transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+				} as any,
+				default: {}
+			})
+		},
+		langOptionFlag: {
+			fontSize: 22,
+			fontWeight: '700'
+		},
+		langOptionLabel: {
+			fontSize: 11,
+			textAlign: 'center'
+		},
+		savedSection: {
+			marginBottom: 28
+		},
+		savedSectionTitle: {
+			fontSize: 12,
+			fontWeight: '700',
+			textTransform: 'uppercase',
+			letterSpacing: 0.8,
+			marginBottom: 12,
+			marginLeft: 4,
+			opacity: 0.9
+		},
+		savedAccountsScroll: {
+			maxHeight: 230
+		},
+		savedAccountsList: {
+			gap: 10
+		},
+		savedAccountCard: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			padding: 12,
+			borderRadius: 16,
+			borderWidth: 1.5
+		},
+		accountAvatar: {
+			width: 42,
+			height: 42,
+			borderRadius: 12
+		},
+		avatarPlaceholder: {
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		accountInfoContainer: {
+			flex: 1,
+			marginLeft: 12,
+			justifyContent: 'center'
+		},
+		accountName: {
+			fontSize: 14,
+			fontWeight: '700'
+		},
+		accountSlug: {
+			fontSize: 12,
+			marginTop: 1,
+			opacity: 0.8
+		},
+		roleBadge: {
+			alignSelf: 'flex-start',
+			paddingHorizontal: 6,
+			paddingVertical: 2,
+			borderRadius: 6,
+			marginTop: 4
+		},
+		roleBadgeText: {
+			fontSize: 9,
+			fontWeight: '700',
+			textTransform: 'capitalize'
+		},
+		passwordLockIndicator: {
+			marginHorizontal: 8
+		},
+		removeAccountBtn: {
+			width: 32,
+			height: 32,
+			borderRadius: 8,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		formSection: {
+			gap: 14,
+			marginBottom: 28
+		},
+		inputWrapper: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			borderWidth: 1.5,
+			borderRadius: 16,
+			paddingHorizontal: 16,
+			height: 52,
+			gap: 12,
+			...Platform.select({
+				web: {
+					transition: 'all 0.2s ease-in-out'
+				} as any,
+				default: {}
+			})
+		},
+		textInput: {
+			flex: 1,
+			fontSize: 15,
+			height: '100%',
+			paddingVertical: 0
+		},
+		checkboxWrapper: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 10,
+			paddingVertical: 4,
+			paddingHorizontal: 4
+		},
+		customCheckbox: {
+			width: 18,
+			height: 18,
+			borderRadius: 5,
+			borderWidth: 1.5,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		checkboxLabel: {
+			fontSize: 13,
+			fontWeight: '500'
+		},
+		continueButton: {
+			height: 52,
+			borderRadius: 16,
+			justifyContent: 'center',
+			alignItems: 'center',
+			...Platform.select({
+				web: {
+					transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+				} as any,
+				default: {}
+			}),
+			...Platform.select({
+				ios: {
+					shadowColor: '#000',
+					shadowOffset: { width: 0, height: 4 },
+					shadowOpacity: 0.15,
+					shadowRadius: 8
+				},
+				android: {
+					elevation: 4
+				}
+			})
+		},
+		continueButtonContent: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8
+		},
+		continueButtonText: {
+			color: '#fff',
+			fontSize: 16,
+			fontWeight: '700'
+		}
+	})

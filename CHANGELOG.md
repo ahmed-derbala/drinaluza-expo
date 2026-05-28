@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.12.0] - 2026-05-28
+### Added
+- Added Arabic (`ar`) and French (`fr`) as officially supported options inside the global `LANGUAGES` configuration array.
+- Enabled native language selection for Arabic and French across the authentication dropdown selectors, settings menus, profile details screens, and localization contexts.
+
 ## [1.11.0] - 2026-05-28
 ### Added
 - Implemented robust resumable download capability for update packages. Download resume data is saved persistently in `AsyncStorage` when a download is interrupted or paused.

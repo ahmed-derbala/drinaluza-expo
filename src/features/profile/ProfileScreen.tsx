@@ -497,9 +497,11 @@ export default function ProfileScreen() {
 		showConfirm(translate('sign_out', 'Sign Out'), 'Are you sure you want to sign out?', async () => {
 			try {
 				await signOut()
+				await refreshUser()
 				router.replace('/auth')
 			} catch (error) {
 				console.error('Sign out failed:', error)
+				await refreshUser()
 				router.replace('/auth')
 			}
 		})
@@ -508,9 +510,11 @@ export default function ProfileScreen() {
 		showConfirm(translate('switch_account', 'Switch User'), 'This will clear your current session but keep your saved accounts.', async () => {
 			try {
 				await switchUser()
+				await refreshUser()
 				router.replace('/auth')
 			} catch (error) {
 				console.error('Switch user failed:', error)
+				await refreshUser()
 				router.replace('/auth')
 			}
 		})
@@ -1486,7 +1490,7 @@ export default function ProfileScreen() {
 						<>
 							<View style={styles.inputGroup}>
 								<Text style={styles.inputLabel}>{translate('app_lang', 'App Language (UI)')}</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
+								<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
 									{LANGUAGES.map((lang) => (
 										<TouchableOpacity
 											key={lang.code}
@@ -1511,11 +1515,11 @@ export default function ProfileScreen() {
 											<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.app === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
 										</TouchableOpacity>
 									))}
-								</ScrollView>
+								</View>
 							</View>
 							<View style={styles.inputGroup}>
 								<Text style={styles.inputLabel}>{translate('content_lang', 'Content Language (Products/Businesses)')}</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
+								<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
 									{LANGUAGES.map((lang) => (
 										<TouchableOpacity
 											key={lang.code}
@@ -1540,11 +1544,11 @@ export default function ProfileScreen() {
 											<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.content === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
 										</TouchableOpacity>
 									))}
-								</ScrollView>
+								</View>
 							</View>
 							<View style={styles.inputGroup}>
 								<Text style={styles.inputLabel}>{translate('currency_label', 'Currency')}</Text>
-								<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingVertical: 4 }}>
+								<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
 									{CURRENCIES.map((currency) => (
 										<TouchableOpacity
 											key={currency.code}
@@ -1564,7 +1568,7 @@ export default function ProfileScreen() {
 											<Text style={styles.langLabel}>{currency.label}</Text>
 										</TouchableOpacity>
 									))}
-								</ScrollView>
+								</View>
 							</View>
 						</>
 					) : (
