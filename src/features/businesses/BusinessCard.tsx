@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, TextStyle,
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import SmartImage from '@/core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 import { Business } from './businesses.interface'
 import { useRouter } from 'expo-router'
 

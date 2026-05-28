@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform, Linking, useWindowDimensions } from 'react-native'
-import SmartImage from '../../core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { UserFeedItem } from './feed.interface'
 import { useTheme } from '../../core/theme'

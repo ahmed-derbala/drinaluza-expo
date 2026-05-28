@@ -27,7 +27,7 @@ import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
-import SmartImage from '@/core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import HeaderActionButton from '@/features/common/HeaderActionButton'

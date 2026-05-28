@@ -12,7 +12,7 @@ import HeaderRefreshButton from '../common/HeaderRefreshButton'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
-import SmartImage from '@/core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 

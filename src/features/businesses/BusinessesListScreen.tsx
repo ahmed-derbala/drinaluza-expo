@@ -7,7 +7,7 @@ import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, Act
 import { useRouter, Stack } from 'expo-router'
 import { useState, useEffect } from 'react'
 import ErrorState from '@/features/common/ErrorState'
-import SmartImage from '@/core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 import { getBusinesses } from '@/features/businesses/businesses.api'
 import { showPopup, showAlert } from '@/core/helpers/popup'
 import { parseError, logError } from '@/core/helpers/errorHandler'

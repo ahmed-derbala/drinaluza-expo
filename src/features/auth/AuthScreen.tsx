@@ -13,7 +13,7 @@ import { useBackButton } from '@/core/hooks/useBackButton'
 import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import { LANGUAGES } from '@/config/settings'
-import SmartImage from '@/core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 
 export default function AuthScreen() {
 	const { colors } = useTheme()

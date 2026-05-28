@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
-import SmartImage from '../../core/helpers/SmartImage'
+import SmartImage from '@/core/SmartImageViewer'
 import { useRouter, useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import AsyncStorage from '@react-native-async-storage/async-storage'
