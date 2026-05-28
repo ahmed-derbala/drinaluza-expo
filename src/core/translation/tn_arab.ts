@@ -233,5 +233,6 @@ export const tn_arab = {
 	dual_update_title: 'تحديثات جديدة متوفرة',
 	dual_update_msg: 'النسخة {pending} حاضرة للصب، أما فما نسخة أجدد {latest} متوفرة للتحميل. اختار خيار:',
 	install_ready_btn: 'صب النسخة الحاضرة (v{version})',
-	download_new_btn: 'حمل النسخة الجديدة (v{version})'
+	download_new_btn: 'حمل النسخة الجديدة (v{version})',
+	free_storage: 'مساحة تخزين فارغة'
 }

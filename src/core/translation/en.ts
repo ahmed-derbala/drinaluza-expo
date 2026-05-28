@@ -251,5 +251,6 @@ export const en = {
 	dual_update_title: 'Multiple Updates Available',
 	dual_update_msg: 'Version {pending} is ready to install, but a newer version {latest} is available to download. Choose an option:',
 	install_ready_btn: 'Install Ready (v{version})',
-	download_new_btn: 'Download New (v{version})'
+	download_new_btn: 'Download New (v{version})',
+	free_storage: 'Free Storage'
 }

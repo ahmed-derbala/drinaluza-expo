@@ -102,6 +102,15 @@ export const compareVersions = (a: string, b: string): number => {
 	return 0
 }
 
+export const formatBytes = (bytes: number): string => {
+	if (bytes === 0) return '0 B'
+	const k = 1024
+	const dm = 2
+	const sizes = ['B', 'KB', 'MB', 'GB']
+	const i = Math.floor(Math.log(bytes) / Math.log(k))
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
 export const getUpdateType = (current: string, latest: string): 'none' | 'optional' | 'required' => {
 	const cParts = current.split('.').map(Number)
 	const lParts = latest.split('.').map(Number)
@@ -160,6 +169,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 	const [pendingInstalledVersion, setPendingInstalledVersion] = useState<string | null>(null)
 
 	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
+	const [freeDiskStorage, setFreeDiskStorage] = useState<number | null>(null)
 
 	const loadCachedApks = useCallback(async () => {
 		if (Platform.OS !== 'android') return
@@ -358,6 +368,16 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					toast.show({ title: translate('checking_for_updates', 'Checking for updates...'), message: '', color: colors.primary })
 				}
 
+				// Fetch free disk storage space
+				if (Platform.OS !== 'web') {
+					try {
+						const freeSpace = await FileSystem.getFreeDiskStorageAsync()
+						setFreeDiskStorage(freeSpace)
+					} catch (storageErr) {
+						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to fetch free storage during update check', error: storageErr })
+					}
+				}
+
 				// 1. Fetch latest version strictly from Releases API
 				let githubData: GitHubReleaseResponse | null = null
 				try {
@@ -488,6 +508,11 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		const checkPendingUpdate = async () => {
 			if (Platform.OS !== 'android') return
 			try {
+				try {
+					const freeSpace = await FileSystem.getFreeDiskStorageAsync()
+					setFreeDiskStorage(freeSpace)
+				} catch (storageErr) {}
+
 				const pendingVersion = await AsyncStorage.getItem('drinaluza_downloaded_update_version')
 				if (pendingVersion) {
 					if (compareVersions(pendingVersion, APP_VERSION) > 0) {
@@ -758,6 +783,14 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 									<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{minVersion || latestVersion || '1.0.0'}</Text>
 								</View>
 							</View>
+							{freeDiskStorage !== null && Platform.OS !== 'web' && (
+								<View style={[styles.infoRow, { marginTop: 10 }]}>
+									<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+									<View style={[styles.versionChip, { backgroundColor: colors.primary + '15' }]}>
+										<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{formatBytes(freeDiskStorage)}</Text>
+									</View>
+								</View>
+							)}
 						</View>
 
 						{/* Release Notes */}
@@ -843,6 +876,30 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 										.replace('{latest}', latestVersion || '')}
 								</Text>
 
+								{/* Version info chips for Dual Modal */}
+								<View style={[styles.infoCard, { backgroundColor: colors.surfaceVariant, width: '100%', marginBottom: 12 }]}>
+									<View style={styles.infoRow}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Ready to Install</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.success + '15' }]}>
+											<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{pendingInstalledVersion}</Text>
+										</View>
+									</View>
+									<View style={[styles.infoRow, { marginTop: 10 }]}>
+										<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>Latest Available</Text>
+										<View style={[styles.versionChip, { backgroundColor: colors.primary + '15' }]}>
+											<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{latestVersion}</Text>
+										</View>
+									</View>
+									{freeDiskStorage !== null && Platform.OS !== 'web' && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+											<View style={[styles.versionChip, { backgroundColor: colors.info + '15' }]}>
+												<Text style={[styles.infoValue, { color: colors.info || '#3B82F6', fontWeight: '700' }]}>{formatBytes(freeDiskStorage)}</Text>
+											</View>
+										</View>
+									)}
+								</View>
+
 								<View style={{ width: '100%', gap: 12, marginTop: 12 }}>
 									<TouchableOpacity
 										style={[styles.btn, styles.confirmBtn, { backgroundColor: colors.success, borderColor: colors.success, width: '100%' }]}
@@ -907,6 +964,14 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 											<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{latestVersion}</Text>
 										</View>
 									</View>
+									{freeDiskStorage !== null && Platform.OS !== 'web' && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+											<View style={[styles.versionChip, { backgroundColor: colors.primary + '15' }]}>
+												<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{formatBytes(freeDiskStorage)}</Text>
+											</View>
+										</View>
+									)}
 								</View>
 
 								{/* Release Notes */}
@@ -963,6 +1028,14 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 											<Text style={[styles.infoValue, { color: colors.success, fontWeight: '700' }]}>{pendingInstalledVersion}</Text>
 										</View>
 									</View>
+									{freeDiskStorage !== null && Platform.OS !== 'web' && (
+										<View style={[styles.infoRow, { marginTop: 10 }]}>
+											<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+											<View style={[styles.versionChip, { backgroundColor: colors.primary + '15' }]}>
+												<Text style={[styles.infoValue, { color: colors.primary, fontWeight: '700' }]}>{formatBytes(freeDiskStorage)}</Text>
+											</View>
+										</View>
+									)}
 								</View>
 
 								<View style={styles.buttonGroup}>

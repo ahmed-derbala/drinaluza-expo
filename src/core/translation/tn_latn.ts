@@ -233,5 +233,6 @@ export const tn_latn = {
 	dual_update_title: 'Updates jdod mofin',
 	dual_update_msg: 'Version {pending} hadra bech tsobha, ama famma version jdid {latest} m3a telechargement. Ekhtar chnoua t-heb taamel:',
 	install_ready_btn: 'Sob version eli hadra (v{version})',
-	download_new_btn: 'Habat version jdida (v{version})'
+	download_new_btn: 'Habat version jdida (v{version})',
+	free_storage: 'Espace de stockage farregh'
 }

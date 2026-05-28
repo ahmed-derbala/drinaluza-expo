@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.9.1",
+  "version": "1.10.1",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -47,6 +47,8 @@
     "format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
     "push": "npm run format && git add . && git commit -m",
     "postpush": "git push && npm run changelog",
+    "push:deploy": "npm run format && git add . && git commit -m",
+    "postpush:deply": "git push && npm run changelog && npm run build:apk-prod",
     "pull": "git pull origin main && npm run i && npm run start:local"
   },
   "dependencies": {

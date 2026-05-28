@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.10.1] - 2026-05-28
+### Added
+- Integrated free device storage space display dynamically inside the Update Available, Update Required, Update Ready, and Multiple Updates (Dual Update) modal overlays.
+- Added localized translations for the new "Free Storage" status across English, Arabic, French, Tunisian Latin, and Tunisian Arabic locales.
+
 ## [1.8.0] - 2026-05-28
 ### Added
 - Completely removed all name query parameters (`?name=...`) from navigation routes across the codebase to adhere to clean routing and official `expo-router` best practices.
