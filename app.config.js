@@ -33,6 +33,7 @@ export default {
         },
         android: {
             googleServicesFile: "google-services.json",
+            softwareKeyboardLayoutMode: "resize",
             permissions: [
                 "REQUEST_INSTALL_PACKAGES"
             ],

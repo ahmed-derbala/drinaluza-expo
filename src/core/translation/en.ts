@@ -256,5 +256,6 @@ export const en = {
 	published_at: 'Published',
 	download_size: 'Download Size',
 	downloads_count: 'Downloads',
-	dual_required_msg: 'A required update v{latest} is available. Please download it to continue.'
+	dual_required_msg: 'A required update v{latest} is available. Please download it to continue.',
+	redownload_update: 'Delete & Re-download'
 }

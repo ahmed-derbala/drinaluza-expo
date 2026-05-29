@@ -83,5 +83,6 @@ export const fr = {
 	published_at: 'Publié le',
 	download_size: 'Taille du téléchargement',
 	downloads_count: 'Téléchargements',
-	dual_required_msg: 'Une mise à jour obligatoire v{latest} est disponible. Veuillez la télécharger pour continuer.'
+	dual_required_msg: 'Une mise à jour obligatoire v{latest} est disponible. Veuillez la télécharger pour continuer.',
+	redownload_update: 'Supprimer & Télécharger de nouveau'
 }

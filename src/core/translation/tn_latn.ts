@@ -238,5 +238,6 @@ export const tn_latn = {
 	published_at: 'Tsayvet fi',
 	download_size: 'Kobr el fichier',
 	downloads_count: 'Downloads',
-	dual_required_msg: 'Famma update lazmek t-habbto v{latest} bech t-kamel.'
+	dual_required_msg: 'Famma update lazmek t-habbto v{latest} bech t-kamel.',
+	redownload_update: 'Fassakh & 3awed sab'
 }

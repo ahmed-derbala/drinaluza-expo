@@ -83,5 +83,6 @@ export const ar = {
 	published_at: 'تاريخ النشر',
 	download_size: 'حجم التنزيل',
 	downloads_count: 'التنزيلات',
-	dual_required_msg: 'يتوفر تحديث إجباري v{latest}. يرجى تحميله للمتابعة.'
+	dual_required_msg: 'يتوفر تحديث إجباري v{latest}. يرجى تحميله للمتابعة.',
+	redownload_update: 'حذف وإعادة التحميل'
 }

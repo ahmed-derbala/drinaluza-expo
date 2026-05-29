@@ -238,5 +238,6 @@ export const tn_arab = {
 	published_at: 'تاريخ الصب',
 	download_size: 'حجم الفيشي',
 	downloads_count: 'التحميلات',
-	dual_required_msg: 'فمة تحديث إجباري v{latest} لازم تصبو باش تكمل.'
+	dual_required_msg: 'فمة تحديث إجباري v{latest} لازم تصبو باش تكمل.',
+	redownload_update: 'فسخ وعاود صبّ'
 }
