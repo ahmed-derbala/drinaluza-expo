@@ -1,5 +1,4 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
@@ -113,7 +112,6 @@ export default function UserDetailScreen() {
 								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
 							</TouchableOpacity>
 							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

@@ -1,7 +1,6 @@
 import HeaderTitle from '@/features/common/HeaderTitle'
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
-import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -491,7 +490,6 @@ export default function FeedScreen() {
 				accessibilityLabel="View Cart"
 			/>
 			<HeaderRefreshButton onRefresh={refreshData} isRefreshing={refreshing} size={20} style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} />
-			<HeaderUpdaterWidget />
 		</View>
 	)
 

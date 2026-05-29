@@ -1,6 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderTitle from '@/features/common/HeaderTitle'
-import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
@@ -214,7 +213,7 @@ export default function NotificationsScreen() {
 	if (error && notifications.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null, headerRight: () => <HeaderUpdaterWidget /> }} />
+				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
 				<ErrorState
 					title={error.title}
 					message={error.message}
@@ -239,7 +238,6 @@ export default function NotificationsScreen() {
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

@@ -37,5 +37,4 @@ export const API_URL = BACKEND_URL ? `${BACKEND_URL.replace(/\/$/, '')}${API_PRE
 
 export const UPDATE_CHECK_URL =
 	process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest'
-export const UPDATE_DOWNLOAD_ROOT_URL =
-	process.env.EXPO_PUBLIC_UPDATE_DOWNLOAD_ROOT_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_DOWNLOAD_ROOT_URL || 'https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download'
+export const TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_TIMEOUT_MS || Constants.expoConfig?.extra?.TIMEOUT_MS || 60000)

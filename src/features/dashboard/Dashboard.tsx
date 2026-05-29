@@ -1,6 +1,5 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderTitle from '@/features/common/HeaderTitle'
-import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -151,7 +150,6 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 						headerRight: () => (
 							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 								<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-								<HeaderUpdaterWidget />
 							</View>
 						)
 					}}
@@ -183,7 +181,6 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 					headerRight: () => (
 						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}
@@ -429,7 +426,6 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
 							</TouchableOpacity>
 							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-							<HeaderUpdaterWidget />
 						</View>
 					)
 				}}

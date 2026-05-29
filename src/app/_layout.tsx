@@ -17,10 +17,11 @@ import { UserProvider } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
-import { UpdaterProvider } from '@/features/appUpdater/AppUpdater'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider } from '@/core/theme'
+import { AppUpdaterProvider } from '@/core/app-updater/AppUpdaterContext'
+import { AppUpdater } from '@/core/app-updater/AppUpdater'
 
 function RootLayoutContent() {
 	return (
@@ -35,6 +36,7 @@ function RootLayoutContent() {
 				<Stack.Screen name="products" options={{ headerShown: false }} />
 				<Stack.Screen name="users" options={{ headerShown: false }} />
 			</Stack>
+			<AppUpdater />
 		</ErrorBoundary>
 	)
 }
@@ -44,17 +46,17 @@ export default function RootLayout() {
 		<SafeAreaProvider>
 			<AppThemeProvider>
 				<ToastProvider>
-					<UpdaterProvider>
-						<UserProvider>
-							<NotificationProvider>
-								<SocketProvider>
-									<LayoutProvider>
+					<UserProvider>
+						<NotificationProvider>
+							<SocketProvider>
+								<LayoutProvider>
+									<AppUpdaterProvider>
 										<RootLayoutContent />
-									</LayoutProvider>
-								</SocketProvider>
-							</NotificationProvider>
-						</UserProvider>
-					</UpdaterProvider>
+									</AppUpdaterProvider>
+								</LayoutProvider>
+							</SocketProvider>
+						</NotificationProvider>
+					</UserProvider>
 				</ToastProvider>
 			</AppThemeProvider>
 		</SafeAreaProvider>

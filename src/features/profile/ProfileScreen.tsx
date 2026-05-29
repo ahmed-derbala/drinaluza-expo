@@ -15,7 +15,6 @@ import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
 import LoadingState from '@/features/common/LoadingState'
-import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { requestBusiness } from '@/features/businesses/business.api'
@@ -629,7 +628,6 @@ export default function ProfileScreen() {
 			<HeaderActionButton iconName="log-out" iconColor={colors.error} backgroundColor={colors.error + '10'} onPress={handleSignOut} accessibilityLabel="Sign Out" />
 			<HeaderActionButton iconName="cart-outline" onPress={() => router.push('/profile/purchases?status=cart')} badgeCount={cart.length} accessibilityLabel="View Cart" />
 			<HeaderRefreshButton onRefresh={loadProfile} isRefreshing={loading} size={20} style={[styles.headerActionButton, { backgroundColor: colors.surface }]} />
-			<HeaderUpdaterWidget />
 		</View>
 	)
 

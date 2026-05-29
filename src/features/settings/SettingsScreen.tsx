@@ -2,22 +2,16 @@ import HeaderTitle from '@/features/common/HeaderTitle'
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Modal, Share, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
-import * as FileSystem from 'expo-file-system/legacy'
-import * as Sharing from 'expo-sharing'
 
 import { useTheme, useThemeContext } from '@/core/theme'
-import { APP_VERSION, BACKEND_URL, NODE_ENV, UPDATE_DOWNLOAD_ROOT_URL } from '@/config'
+import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { log } from '@/core/log'
-import { useUpdater } from '@/features/appUpdater/AppUpdater'
-import QRCodeModal from '@/features/common/QRCodeModal'
-import HeaderActionButton from '@/features/common/HeaderActionButton'
-import HeaderUpdaterWidget from '@/features/appUpdater/HeaderUpdaterWidget'
+import { useAppUpdater } from '@/core/app-updater/AppUpdaterContext'
 
 const formatUptime = (uptime: string | undefined): string => {
 	if (!uptime) return ''
@@ -47,76 +41,12 @@ export default function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
 
-	const {
-		isChecking,
-		updateStatus,
-		latestVersion,
-		minVersion,
-		serverVersion,
-		checkForUpdates,
-		apkDownloadUrl,
-		isDownloading,
-		downloadProgress,
-		isReadyToInstall,
-		installDownloadedUpdate,
-		cachedApks,
-		deleteCachedApk
-	} = useUpdater()
+	const { checkForUpdates, isChecking, updateInfo, cachedApkPath, cachedApkSize, shareCachedApk, deleteCachedApk } = useAppUpdater()
 
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const [serverInfo, setServerInfo] = useState<any>(null)
-	const [showApkQRCode, setShowApkQRCode] = useState(false)
-	const [showWebShareModal, setShowWebShareModal] = useState(false)
-	const [shareVersion, setShareVersion] = useState<string | null>(null)
-
-	const handleShareApk = async (customVersion?: string) => {
-		const version = customVersion || latestVersion || APP_VERSION
-		setShareVersion(version)
-		setShowWebShareModal(true)
-	}
-
-	const handleShareCachedApk = async (file: { version: string; localUri: string }) => {
-		try {
-			if (Platform.OS !== 'android') return
-
-			const isSharingAvailable = await Sharing.isAvailableAsync()
-			if (!isSharingAvailable) {
-				Alert.alert(translate('error', 'Error'), 'Sharing is not available on this device.')
-				return
-			}
-
-			Alert.alert(
-				translate('quickshare_advisory_title', 'Quick Share'),
-				translate(
-					'quickshare_advisory_msg',
-					"To share the APK with a nearby Android device:\n\n1. Pull down the Quick Settings shade on the receiving device, tap Quick Share, and set the visibility to 'Everyone' or 'Contacts'.\n2. Tap OK below, then select 'Quick Share' (or Bluetooth) in the system sharing menu that opens next."
-				),
-				[
-					{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-					{
-						text: 'OK',
-						onPress: async () => {
-							try {
-								await Sharing.shareAsync(file.localUri, {
-									mimeType: 'application/vnd.android.package-archive',
-									dialogTitle: `Share Drinaluza v${file.version}`
-								})
-							} catch (shareErr) {
-								log({ level: 'error', label: 'Settings', message: 'Failed to share cached APK', error: shareErr })
-							}
-						}
-					}
-				]
-			)
-		} catch (err) {
-			log({ level: 'error', label: 'Settings', message: 'Failed to initialize share advisory', error: err })
-		}
-	}
 
 	useEffect(() => {
-		// Silent check on mount
-		checkForUpdates(false)
-
 		if (!BACKEND_URL) return
 
 		fetch(BACKEND_URL)
@@ -132,7 +62,7 @@ export default function SettingsScreen() {
 			.catch((err) => {
 				console.warn('[settings] Failed to fetch server info:', err)
 			})
-	}, [checkForUpdates])
+	}, [])
 
 	const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
 		<View style={styles.section}>
@@ -205,126 +135,73 @@ export default function SettingsScreen() {
 			<Tabs.Screen
 				options={{
 					headerTitle: () => <HeaderTitle title={translate('settings', 'Settings')} subtitle={'Drinaluza - Business Manager'} />,
-					headerLeft: () => null,
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', gap: 8, paddingRight: 16, alignItems: 'center' }}>
-							<HeaderActionButton iconName="share-social-outline" onPress={handleShareApk} accessibilityLabel="Share APK" backgroundColor={colors.surface} size={38} />
-							<HeaderActionButton iconName="qr-code-outline" onPress={() => setShowApkQRCode(true)} accessibilityLabel="APK QR Code" backgroundColor={colors.surface} size={38} />
-							<HeaderUpdaterWidget />
-						</View>
-					)
+					headerLeft: () => null
 				}}
 			/>
 			<View style={{ height: 16 }} />
 
-			{/* Version Info & Update Center */}
-			<View style={[styles.updaterCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-				<View style={styles.updaterHeader}>
-					<View style={[styles.updaterIconContainer, { backgroundColor: colors.primary + '15' }]}>
-						<Ionicons name="phone-portrait-outline" size={22} color={colors.primary} />
-					</View>
-					<View style={styles.updaterInfo}>
-						<Text style={[styles.updaterAppName, { color: colors.text }]}>Drinaluza</Text>
-						<Text style={[styles.updaterVersionText, { color: colors.textSecondary }]}>
-							Active: v{APP_VERSION} • {NODE_ENV}
-						</Text>
-						{latestVersion && (
-							<Text style={[styles.updaterLatestText, { color: isReadyToInstall ? colors.success : updateStatus !== 'up_to_date' ? colors.primary : colors.success, fontWeight: '700' }]}>
-								{isReadyToInstall ? 'Update downloaded & ready' : updateStatus === 'up_to_date' ? 'Running latest version' : `Latest: v${latestVersion}`}
+			<SettingSection title={translate('app_updates', 'App Updates')}>
+				<View style={[styles.updaterCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={styles.updaterHeader}>
+						<View style={[styles.updaterIconContainer, { backgroundColor: colors.primary + '15' }]}>
+							<Ionicons name="cloud-download-outline" size={24} color={colors.primary} />
+						</View>
+						<View style={styles.updaterInfo}>
+							<Text style={[styles.updaterAppName, { color: colors.text }]}>Drinaluza App Updates</Text>
+							<Text style={[styles.updaterVersionText, { color: colors.textSecondary }]}>
+								{translate('current_version', 'You are on version')} v{APP_VERSION}
 							</Text>
-						)}
+							{updateInfo ? (
+								<Text style={[styles.updaterLatestText, { color: colors.primary, fontWeight: '600' }]}>
+									Latest: {updateInfo.latest_version} {updateInfo.size ? `(${(updateInfo.size / (1024 * 1024)).toFixed(1)} MB)` : ''}
+								</Text>
+							) : (
+								<Text style={[styles.updaterLatestText, { color: colors.textTertiary }]}>Latest version info loaded on startup</Text>
+							)}
+						</View>
 					</View>
+
+					<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
+
+					<TouchableOpacity style={[styles.updaterBtn, { borderColor: colors.primary, backgroundColor: colors.primary + '10' }]} onPress={() => checkForUpdates(true)} disabled={isChecking}>
+						{isChecking ? (
+							<ActivityIndicator size="small" color={colors.primary} />
+						) : (
+							<Text style={[styles.updaterBtnText, { color: colors.primary, fontWeight: '600' }]}>{translate('checking_for_updates', 'Check for updates')}</Text>
+						)}
+					</TouchableOpacity>
 				</View>
 
-				<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
-
-				{isDownloading ? (
-					<View style={{ width: '100%', gap: 8 }}>
-						<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-							<Text style={{ fontSize: 13, color: colors.textSecondary, fontWeight: '600' }}>{translate('downloading', 'Downloading')}...</Text>
-							<Text style={{ fontSize: 13, color: colors.primary, fontWeight: '700' }}>{Math.round(downloadProgress * 100)}%</Text>
-						</View>
-						<View style={{ height: 8, backgroundColor: colors.border + '40', borderRadius: 4, overflow: 'hidden' }}>
-							<View style={{ height: '100%', backgroundColor: colors.primary, width: `${downloadProgress * 100}%`, borderRadius: 4 }} />
-						</View>
-					</View>
-				) : isReadyToInstall ? (
-					<TouchableOpacity
-						style={[
-							styles.updaterBtn,
-							{
-								backgroundColor: colors.success,
-								borderColor: colors.success
-							}
-						]}
-						onPress={installDownloadedUpdate}
-						activeOpacity={0.8}
-					>
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<Ionicons name="refresh-outline" size={18} color="#fff" />
-							<Text style={[styles.updaterBtnText, { color: '#fff', fontWeight: '700' }]}>{translate('restart_and_install', 'Restart & Install')}</Text>
-						</View>
-					</TouchableOpacity>
-				) : (
-					<TouchableOpacity
-						style={[
-							styles.updaterBtn,
-							{
-								backgroundColor: updateStatus !== 'up_to_date' ? colors.primary : colors.surfaceVariant,
-								borderColor: colors.border
-							}
-						]}
-						onPress={() => checkForUpdates(true)}
-						disabled={isChecking}
-						activeOpacity={0.8}
-					>
-						{isChecking ? (
-							<ActivityIndicator size="small" color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
-						) : (
-							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<Ionicons name={updateStatus !== 'up_to_date' ? 'download-outline' : 'sync-outline'} size={18} color={updateStatus !== 'up_to_date' ? '#fff' : colors.text} />
-								<Text
-									style={[
-										styles.updaterBtnText,
-										{
-											color: updateStatus !== 'up_to_date' ? '#fff' : colors.text,
-											fontWeight: '700'
-										}
-									]}
-								>
-									{updateStatus === 'up_to_date' ? translate('check_for_updates', 'Check for Updates') : translate('update_now', 'Update Now')}
-								</Text>
-							</View>
-						)}
-					</TouchableOpacity>
-				)}
-
-				{Platform.OS === 'android' && cachedApks && cachedApks.length > 0 && (
-					<View style={{ marginTop: 16 }}>
-						<View style={[styles.updaterDivider, { backgroundColor: colors.border, marginVertical: 12 }]} />
+				{cachedApkPath && (
+					<View style={{ padding: 12 }}>
 						<Text style={styles.cachedHeader}>{translate('cached_update_files', 'Cached Update Files')}</Text>
 						<View style={styles.cachedList}>
-							{cachedApks.map((file) => (
-								<View key={file.name} style={[styles.cachedItem, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-									<View style={[styles.cachedItemIcon, { backgroundColor: colors.primary + '12' }]}>
-										<Ionicons name="cube-outline" size={20} color={colors.primary} />
-									</View>
-									<View style={styles.cachedItemInfo}>
-										<Text style={[styles.cachedItemName, { color: colors.text }]}>Drinaluza v{file.version}</Text>
-										<Text style={[styles.cachedItemSize, { color: colors.textSecondary }]}>{formatBytes(file.size)}</Text>
-									</View>
-									<TouchableOpacity style={[styles.cachedShareBtn, { backgroundColor: colors.primary + '12', marginRight: 8 }]} onPress={() => handleShareCachedApk(file)} activeOpacity={0.7}>
-										<Ionicons name="share-social-outline" size={18} color={colors.primary} />
-									</TouchableOpacity>
-									<TouchableOpacity style={[styles.cachedDeleteBtn, { backgroundColor: colors.error + '12' }]} onPress={() => deleteCachedApk(file.name)} activeOpacity={0.7}>
-										<Ionicons name="trash-outline" size={18} color={colors.error} />
-									</TouchableOpacity>
+							<View style={[styles.cachedItem, { borderColor: colors.border, backgroundColor: colors.background + '20' }]}>
+								<View style={[styles.cachedItemIcon, { backgroundColor: colors.info + '15' }]}>
+									<Ionicons name="logo-android" size={20} color={colors.info || '#3B82F6'} />
 								</View>
-							))}
+								<View style={styles.cachedItemInfo}>
+									<Text style={[styles.cachedItemName, { color: colors.text }]} numberOfLines={1}>
+										drinaluza-{updateInfo?.latest_version || 'update'}.apk
+									</Text>
+									<Text style={[styles.cachedItemSize, { color: colors.textSecondary }]}>
+										{translate('download_size', 'Size')}: {(cachedApkSize / (1024 * 1024)).toFixed(1)} MB
+									</Text>
+								</View>
+								<TouchableOpacity style={[styles.cachedShareBtn, { backgroundColor: colors.primary + '15' }]} onPress={shareCachedApk}>
+									<Ionicons name="share-social-outline" size={18} color={colors.primary} />
+								</TouchableOpacity>
+								<TouchableOpacity style={[styles.cachedDeleteBtn, { backgroundColor: '#EF4444' + '15' }]} onPress={deleteCachedApk}>
+									<Ionicons name="trash-outline" size={18} color="#EF4444" />
+								</TouchableOpacity>
+							</View>
+							<Text style={{ fontSize: 11, color: colors.textTertiary, fontStyle: 'italic', marginTop: 4, paddingHorizontal: 4 }}>
+								* Advice: Use Quick Share for fast sharing with other nearby Android devices.
+							</Text>
 						</View>
 					</View>
 				)}
-			</View>
+			</SettingSection>
 
 			<SettingSection title={translate('appearance', 'Appearance')}>
 				<View style={{ flexDirection: 'row', gap: 8, padding: 12 }}>
@@ -438,106 +315,6 @@ export default function SettingsScreen() {
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 			</View>
-
-			<QRCodeModal
-				visible={showApkQRCode}
-				onClose={() => setShowApkQRCode(false)}
-				value={apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${latestVersion || APP_VERSION}/drinaluza-${latestVersion || APP_VERSION}.apk`}
-				title="APK Download"
-				subtitle={`v${latestVersion || APP_VERSION} • Android Package`}
-				filenamePrefix={`drinaluza-apk-v${latestVersion || APP_VERSION}`}
-			/>
-
-			{/* Custom Share Options Modal (Copy URL or download APK package) */}
-			<Modal visible={showWebShareModal} transparent animationType="fade" onRequestClose={() => setShowWebShareModal(false)}>
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.5)', padding: 20 }}>
-					<View style={{ width: '100%', maxWidth: 400, backgroundColor: colors.surface, borderRadius: 20, borderWidth: 1.5, borderColor: colors.border, padding: 24, overflow: 'hidden' }}>
-						<LinearGradient colors={[colors.primary + '12', 'transparent']} style={StyleSheet.absoluteFillObject} />
-
-						<View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary + '15', justifyContent: 'center', alignItems: 'center', marginBottom: 16, alignSelf: 'center' }}>
-							<Ionicons name="share-social" size={24} color={colors.primary} />
-						</View>
-
-						<Text style={{ fontSize: 18, fontWeight: '700', color: colors.text, textAlign: 'center', marginBottom: 4 }}>{translate('share_options_title', 'Share Options')}</Text>
-
-						{/* Version info chip */}
-						<View style={{ alignSelf: 'center', backgroundColor: colors.primary + '15', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginBottom: 16, marginTop: 4 }}>
-							<Text style={{ fontSize: 13, color: colors.primary, fontWeight: '700' }}>Version v{shareVersion || latestVersion || APP_VERSION}</Text>
-						</View>
-
-						<Text style={{ fontSize: 14, color: colors.textSecondary, textAlign: 'center', marginBottom: 24 }}>{translate('web_share_options_msg', 'Choose an action for Drinaluza APK:')}</Text>
-
-						<View style={{ gap: 12 }}>
-							<TouchableOpacity
-								style={{
-									height: 48,
-									borderRadius: 12,
-									backgroundColor: colors.primary,
-									justifyContent: 'center',
-									alignItems: 'center',
-									flexDirection: 'row',
-									gap: 8
-								}}
-								onPress={async () => {
-									setShowWebShareModal(false)
-									const version = shareVersion || latestVersion || APP_VERSION
-									const downloadUrl =
-										shareVersion && shareVersion !== latestVersion
-											? `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-											: apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-									await Clipboard.setStringAsync(downloadUrl)
-									toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
-								}}
-								activeOpacity={0.8}
-							>
-								<Ionicons name="copy-outline" size={18} color="#fff" />
-								<Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{translate('copy_download_link', 'Copy Download Link')}</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={{
-									height: 48,
-									borderRadius: 12,
-									backgroundColor: colors.surfaceVariant,
-									borderWidth: 1,
-									borderColor: colors.border,
-									justifyContent: 'center',
-									alignItems: 'center',
-									flexDirection: 'row',
-									gap: 8
-								}}
-								onPress={() => {
-									setShowWebShareModal(false)
-									const version = shareVersion || latestVersion || APP_VERSION
-									const downloadUrl =
-										shareVersion && shareVersion !== latestVersion
-											? `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-											: apkDownloadUrl || `${UPDATE_DOWNLOAD_ROOT_URL.replace(/\/$/, '')}/v${version}/drinaluza-${version}.apk`
-									Linking.openURL(downloadUrl)
-								}}
-								activeOpacity={0.8}
-							>
-								<Ionicons name="download-outline" size={18} color={colors.text} />
-								<Text style={{ color: colors.text, fontSize: 14, fontWeight: '700' }}>{translate('download_apk_file', 'Download APK File')}</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={{
-									height: 44,
-									borderRadius: 12,
-									justifyContent: 'center',
-									alignItems: 'center',
-									marginTop: 8
-								}}
-								onPress={() => setShowWebShareModal(false)}
-								activeOpacity={0.7}
-							>
-								<Text style={{ color: colors.textSecondary, fontSize: 14, fontWeight: '600' }}>{translate('cancel', 'Cancel')}</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-			</Modal>
 		</ScrollView>
 	)
 }
