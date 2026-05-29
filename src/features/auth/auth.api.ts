@@ -7,14 +7,11 @@ import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/noti
 
 // Default settings
 const defaultAuthSettings = {
-	tokenStorageKey: 'auth_token',
-	refreshTokenStorageKey: 'refresh_token',
+	tokenStorageKey: 'authToken',
+	refreshTokenStorageKey: 'refreshToken',
 	enableAutoSignOut: false,
-	sessionTimeout: 30 * 60 * 1000, // 30 minutes
-	refreshTokenEndpoint: '/auth/refresh'
+	sessionTimeout: 30 * 60 * 1000 // 30 minutes
 }
-
-// Secure storage functions
 
 // Helper to set user data
 const setUserData = async (user: any): Promise<boolean> => {
@@ -37,7 +34,7 @@ const setUserData = async (user: any): Promise<boolean> => {
 	}
 }
 
-// Session timer functions
+// Session timer
 type Timer = ReturnType<typeof setTimeout>
 let sessionTimer: Timer | null = null
 
@@ -48,7 +45,7 @@ export interface SavedAuth {
 	slug: string
 	token: string
 	lastSignIn: string
-	name?: string
+	name?: any // Can be object {en, tn_arab, etc} or string
 	photoUrl?: string
 	role?: string
 	needPassword?: boolean
@@ -64,7 +61,7 @@ export const saveAuthentication = async (slug: string, token: string, user?: any
 	const filtered = saved.filter((a) => a.slug !== slug)
 
 	const photoUrl = user?.media?.thumbnail?.url || user?.photoUrl || ''
-	const displayName = user?.name?.en || user?.name || slug
+	const displayName = user?.name || slug // Keep the full name object if present
 	const role = user?.role || 'customer'
 
 	const updated: SavedAuth[] = [
@@ -82,7 +79,7 @@ export const saveAuthentication = async (slug: string, token: string, user?: any
 	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
 }
 
-export const updateSavedAuthUser = async (slug: string, updates: { name?: string; photoUrl?: string; role?: string }) => {
+export const updateSavedAuthUser = async (slug: string, updates: { name?: any; photoUrl?: string; role?: string }) => {
 	try {
 		const saved = await getSavedAuthentications()
 		let updated = false
@@ -117,11 +114,6 @@ const startSessionTimer = (callback: () => void, timeout: number): Timer => {
 	return timer
 }
 
-const resetSessionTimer = (callback: () => void, timeout: number): void => {
-	if (sessionTimer) clearTimeout(sessionTimer)
-	sessionTimer = startSessionTimer(callback, timeout)
-}
-
 // Token expiration check
 const isTokenExpired = (token: string): boolean => {
 	try {
@@ -146,7 +138,8 @@ interface AuthResponse {
 			_id: string
 			slug: string
 			email?: string
-			name?: string
+			name?: any
+			role: string
 			[key: string]: any
 		}
 	}
@@ -160,15 +153,15 @@ interface SignInResponse {
 		user: {
 			_id: string
 			slug: string
-			name: string
+			name: any
 			role: string
 			settings?: {
-				lang: string
+				lang: any
 				currency: string
 			}
 		}
 	}
-	req: {
+	req?: {
 		headers: Record<string, string>
 	}
 }
@@ -183,6 +176,7 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 		})
 
 		const apiClient = getApiClient()
+		// Endpoint: /auth/signin
 		const response = await apiClient.post<SignInResponse>('/auth/signin', { slug, password })
 
 		log({
@@ -217,35 +211,33 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 			message: 'Authentication data stored successfully'
 		})
 
-		//expo push notification
-		const expoPushToken = await registerForExpoPush()
-		log({
-			level: 'info',
-			label: 'auth.api',
-			message: 'Expo push token',
-			data: expoPushToken
-		})
-		if (expoPushToken) {
-			await saveExpoPushTokenInSession(expoPushToken, token)
-			await secureSetItem('expoPushToken', expoPushToken)
+		// Expo push notification
+		try {
+			const expoPushToken = await registerForExpoPush()
+			log({
+				level: 'info',
+				label: 'auth.api',
+				message: 'Expo push token',
+				data: expoPushToken
+			})
+			if (expoPushToken) {
+				await saveExpoPushTokenInSession(expoPushToken, token)
+				await secureSetItem('expoPushToken', expoPushToken)
+			}
+		} catch (pushErr) {
+			log({
+				level: 'warn',
+				label: 'auth.api',
+				message: 'Failed to configure push notification during login',
+				error: pushErr
+			})
 		}
 
 		// Start session timer if auto-signout is enabled
 		if (defaultAuthSettings.enableAutoSignOut) {
 			if (sessionTimer) {
 				clearTimeout(sessionTimer)
-				log({
-					level: 'debug',
-					label: 'auth.api',
-					message: 'Cleared existing session timer'
-				})
 			}
-
-			log({
-				level: 'debug',
-				label: 'auth.api',
-				message: 'Starting new session timer'
-			})
 			sessionTimer = startSessionTimer(() => {
 				log({
 					level: 'info',
@@ -280,7 +272,8 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 export const signUp = async (slug: string, password: string, userData: Partial<AuthResponse['data']['user']> = {}, saveAccount?: boolean, needPassword?: boolean): Promise<AuthResponse> => {
 	try {
 		const apiClient = getApiClient()
-		const response = await apiClient.post<AuthResponse>('/auth/signup', {
+		// Endpoint: /auth/singup
+		const response = await apiClient.post<AuthResponse>('/auth/singup', {
 			slug,
 			password,
 			...userData
@@ -288,14 +281,12 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 
 		if (response.data?.data?.token) {
 			const token = response.data.data.token
-			// Store tokens securely
 			await setToken(token)
 
 			if (response.data.data.refreshToken) {
 				await secureSetItem('refreshToken', response.data.data.refreshToken)
 			}
 
-			// Store user data
 			if (response.data.data.user) {
 				const user = response.data.data.user
 				await secureSetItem('userData', JSON.stringify(user))
@@ -351,7 +342,6 @@ export const signInWithToken = async (token: string): Promise<boolean> => {
 
 export const signOut = async (): Promise<boolean> => {
 	try {
-		// Clear session timer
 		if (sessionTimer) {
 			clearTimeout(sessionTimer)
 			sessionTimer = null
@@ -361,8 +351,10 @@ export const signOut = async (): Promise<boolean> => {
 		try {
 			const token = await getToken()
 			if (token) {
-				await getApiClient().post(
-					'/auth/signout',
+				const apiClient = getApiClient()
+				// Endpoint: /auth/singout
+				await apiClient.post(
+					'/auth/singout',
 					{},
 					{
 						headers: { Authorization: `Bearer ${token}` }
@@ -385,7 +377,6 @@ export const signOut = async (): Promise<boolean> => {
 			secureRemoveItem('userData'),
 			secureRemoveItem('user._id'),
 			secureRemoveItem('user.slug'),
-			// Clear any other auth-related data
 			AsyncStorage.multiRemove(['authToken', 'userData', 'user._id', 'user.slug', 'lastActiveTime']),
 			secureRemoveItem('authToken'),
 			secureRemoveItem('userData'),
@@ -413,15 +404,11 @@ export const switchUser = async (): Promise<boolean> => {
 		}
 
 		if (Platform.OS === 'web') {
-			// On web, SecureStorage is actually AsyncStorage.
-			// We must be surgical to keep the saved_authentications.
 			const allKeys = await AsyncStorage.getAllKeys()
 			const keysToRemove = allKeys.filter((key) => key !== SAVED_AUTHS_KEY)
 			await AsyncStorage.multiRemove(keysToRemove)
 		} else {
-			// On mobile, they are separate. We can clear AsyncStorage completely.
 			await AsyncStorage.clear()
-			// And remove specific session keys from SecureStore
 			await Promise.all([removeToken(), secureRemoveItem('refreshToken'), secureRemoveItem('userData'), secureRemoveItem('user._id'), secureRemoveItem('user.slug')])
 		}
 
@@ -437,81 +424,7 @@ export const switchUser = async (): Promise<boolean> => {
 	}
 }
 
-// Token refresh functionality
-const refreshAuthToken = async (): Promise<string | null> => {
-	try {
-		const storedRefreshToken = await secureGetItem(defaultAuthSettings.refreshTokenStorageKey)
-
-		if (!storedRefreshToken) {
-			log({
-				level: 'debug',
-				label: 'auth.api',
-				message: 'No refresh token found during refresh'
-			})
-			return null
-		}
-
-		log({
-			level: 'debug',
-			label: 'auth.api',
-			message: 'Refreshing auth token...'
-		})
-
-		const apiClient = getApiClient()
-		const response = await apiClient.post<{ token: string; refreshToken?: string }>(defaultAuthSettings.refreshTokenEndpoint, { refreshToken: storedRefreshToken })
-
-		if (response.data?.token) {
-			await setToken(response.data.token)
-
-			// If a new refresh token is provided, store it
-			if (response.data.refreshToken) {
-				await secureSetItem(defaultAuthSettings.refreshTokenStorageKey, response.data.refreshToken)
-				await secureSetItem('refreshToken', response.data.refreshToken)
-			}
-
-			return response.data.token
-		}
-
-		return null
-	} catch (error) {
-		log({
-			level: 'error',
-			label: 'auth.api',
-			message: 'Error refreshing token',
-			error
-		})
-		// If refresh fails, sign out the user
-		await signOut()
-		return null
-	}
-}
-
-// Check if user is authenticated
-const isAuthenticated = async (): Promise<boolean> => {
-	try {
-		const token = await getToken()
-		if (!token) return false
-
-		// Check if token is expired
-		if (isTokenExpired(token)) {
-			// Try to refresh the token
-			const newToken = await refreshAuthToken()
-			return !!newToken
-		}
-
-		return true
-	} catch (error) {
-		log({
-			level: 'error',
-			label: 'auth.api',
-			message: 'Authentication check failed',
-			error
-		})
-		return false
-	}
-}
-
-// Get current user data
+// Get current cached user data
 export const getCurrentUser = async (): Promise<any> => {
 	try {
 		const userData = await secureGetItem('userData')
@@ -546,7 +459,7 @@ export const updateMyProfile = async (data: any) => {
 		const user = response.data.data
 		await setUserData(user)
 		const photoUrl = user.media?.thumbnail?.url || user.photoUrl || ''
-		const displayName = user.name?.en || user.name || user.slug
+		const displayName = user.name || user.slug
 		await updateSavedAuthUser(user.slug, {
 			name: displayName,
 			photoUrl,

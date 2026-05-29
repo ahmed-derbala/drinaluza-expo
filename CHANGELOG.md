@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.16.1] - 2026-05-29
+### Added
+- Completely rewrote `KeyboardSafeView` and `KeyboardSafeFlatList` from scratch as highly robust, cross-platform, layout-aware containers.
+- Integrated automatic scroll-to-focused-input automation leveraging standard host measurements relative to viewport wrapping containers on Native and Web.
+- Added configurable `bottomOffset` and `dismissKeyboardOnTap` properties to customize padding and background tap dismiss behavior.
+- Supported seamless landscape and portrait orientation transitions with automatic layout recalculation when keyboard height changes.
+- Completely rewrote the authentication route (`/auth`) from scratch to provide a stunning premium-tier interface with advanced saved accounts lists, flag selector buttons, strict validation sanitizers, custom checkbox components, and complete storage destruction buttons.
+
+### Fixed
+- Fixed layout overlap, flickering, and jumps when virtual keyboards are triggered inside nested navigators, modals, and tab views across Android and iOS.
+
 ## [1.15.0] - 2026-05-29
 ### Added
 - Created a reusable `KeyboardSafeView` layout component under `src/core/KeyboardSafeView/` to handle keyboard-aware scroll container layouts cross-platform.

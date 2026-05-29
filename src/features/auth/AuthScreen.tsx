@@ -1,741 +1,779 @@
-import React, { useState, useCallback, useRef } from 'react'
-import { View, TextInput, Text, TouchableOpacity, Alert, useWindowDimensions, Platform, StyleSheet, ActivityIndicator, ScrollView } from 'react-native'
+import React, { useState, useEffect, useRef } from 'react'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions } from 'react-native'
+import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useRouter, useFocusEffect, Stack } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
-import { StatusBar } from 'expo-status-bar'
 
-import { signIn, signUp, getSavedAuthentications, deleteSavedAuthentication, signInWithToken, SavedAuth } from './auth.api'
 import { useTheme } from '@/core/theme'
-import { showAlert } from '@/core/helpers/popup'
-import { useBackButton } from '@/core/hooks/useBackButton'
-import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
-import { LANGUAGES } from '@/config/settings'
-import SmartImage from '@/core/SmartImageViewer'
 import { KeyboardSafeView } from '@/core/KeyboardSafeView'
+import SmartImage from '@/core/SmartImageViewer'
+import { toast } from '@/features/common/Toast'
+import { showConfirm, showAlert } from '@/core/helpers/popup'
+import { FRONTEND_URL } from '@/config'
+import { log } from '@/core/log'
+
+import { getSavedAuthentications, saveAuthentication, deleteSavedAuthentication, signIn, signUp, signInWithToken, SavedAuth } from './auth.api'
+
+// Available languages details
+interface LanguageConfig {
+	code: 'tn_arab' | 'tn_latn' | 'en' | 'fr' | 'ar'
+	flag: string
+	badge?: string
+	label: string
+}
+
+const LANGUAGES_LIST: LanguageConfig[] = [
+	{ code: 'tn_arab', flag: '🇹🇳', badge: 'ع', label: 'Tunisian Arabic' },
+	{ code: 'tn_latn', flag: '🇹🇳', badge: 'A', label: 'Tunisian Latin' },
+	{ code: 'en', flag: '🇺🇸', label: 'English' },
+	{ code: 'fr', flag: '🇫🇷', label: 'French' },
+	{ code: 'ar', flag: '🇸🇦', label: 'Arabic' }
+]
 
 export default function AuthScreen() {
-	const { colors, dark } = useTheme()
-	const insets = useSafeAreaInsets()
-	const { translate, setAppLang, setContentLang, appLang, refreshUser } = useUser()
-	useBackButton()
-	const { width } = useWindowDimensions()
-	const maxWidth = 500
-	const isWideScreen = width > maxWidth
 	const router = useRouter()
+	const { colors } = useTheme()
+	const { width, height } = useWindowDimensions()
+	const { appLang, setAppLang, translate, refreshUser } = useUser()
 
-	// Form fields
+	// State variables
+	const [savedAccounts, setSavedAccounts] = useState<SavedAuth[]>([])
 	const [slug, setSlug] = useState('')
 	const [password, setPassword] = useState('')
 	const [saveAccount, setSaveAccount] = useState(true)
 	const [needPassword, setNeedPassword] = useState(false)
+	const [showPassword, setShowPassword] = useState(false)
+	const [loading, setLoading] = useState(false)
+	const [slugError, setSlugError] = useState<string | null>(null)
 
-	// Input focus states for high-fidelity active border glowing effects
-	const [slugFocused, setSlugFocused] = useState(false)
-	const [passwordFocused, setPasswordFocused] = useState(false)
+	// Refs for focus management
+	const passwordInputRef = useRef<TextInput>(null)
 
+	// Load saved authentications from local storage
+	const loadSavedAccounts = async () => {
+		try {
+			const accounts = await getSavedAuthentications()
+			setSavedAccounts(accounts)
+		} catch (err) {
+			log({
+				level: 'error',
+				label: 'AuthScreen',
+				message: 'Failed to load saved accounts',
+				error: err
+			})
+		}
+	}
+
+	useEffect(() => {
+		loadSavedAccounts()
+	}, [])
+
+	// Determine if layout is wide (tablet or desktop browser)
+	const isTablet = width >= 768
+	const styles = createStyles(colors, isTablet, width, height)
+
+	// Custom slug sanitization and checking
 	const handleSlugChange = (text: string) => {
+		// Only allow lowercase latin, latin numbers, and dashes
 		const sanitized = text.toLowerCase().replace(/[^a-z0-9-]/g, '')
 		setSlug(sanitized)
-	}
 
-	// UI and loader states
-	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
-	const [isLoading, setIsLoading] = useState(false)
-	const [parentScrollEnabled, setParentScrollEnabled] = useState(true)
-	const passwordRef = useRef<TextInput>(null)
-
-	// Load saved accounts from secure storage
-	const loadSavedAuths = async () => {
-		try {
-			const auths = await getSavedAuthentications()
-			setSavedAuths(auths)
-		} catch (error) {
-			log({ level: 'error', label: 'auth', message: 'Failed to load saved authentications', error })
-		}
-	}
-
-	useFocusEffect(
-		useCallback(() => {
-			refreshUser()
-			loadSavedAuths()
-		}, [refreshUser])
-	)
-
-	// Handles removing a saved account
-	const handleDeleteSavedAuth = async (authSlug: string) => {
-		await deleteSavedAuthentication(authSlug)
-		await loadSavedAuths()
-		toastSuccess(translate('account_removed', 'Account removed successfully!'))
-	}
-
-	const toastSuccess = (msg: string) => {
-		if (Platform.OS === 'web') {
-			log({ level: 'info', label: 'auth', message: msg })
-		}
-	}
-
-	// Handles switching or logging into a saved account
-	const handleSwitchAccount = async (auth: SavedAuth) => {
-		if (auth.needPassword) {
-			// Require password manually
-			setSlug(auth.slug)
-			setPassword('')
-			setNeedPassword(true)
-			// Small timeout to allow input focus
-			setTimeout(() => {
-				passwordRef.current?.focus()
-			}, 150)
-			showAlert(translate('switch_requires_password', 'Password Required'), translate('need_password_notice', 'Please enter your password to switch to this account.'))
+		// Basic reactive validation
+		if (sanitized.length > 20) {
+			setSlugError(translate('username_invalid_len', 'Length cannot exceed 20 characters.'))
+		} else if (sanitized.startsWith('-') || sanitized.endsWith('-')) {
+			setSlugError(translate('username_invalid_hyphen', 'Hyphen (-) cannot be the first or last character.'))
 		} else {
-			// Try seamless quick sign-in using the saved token
-			setIsLoading(true)
+			setSlugError(null)
+		}
+	}
+
+	// Validate slug strictly before form submission
+	const validateSlug = (val: string): boolean => {
+		if (val.length < 1) {
+			setSlugError(translate('username_required', 'Username is required.'))
+			return false
+		}
+		if (val.length > 20) {
+			setSlugError(translate('username_invalid_len', 'Length must be between 1 and 20 characters.'))
+			return false
+		}
+		if (val.startsWith('-') || val.endsWith('-')) {
+			setSlugError(translate('username_invalid_hyphen', 'Hyphen (-) cannot be the first or last character of the username.'))
+			return false
+		}
+		const regex = /^[a-z0-9-]+$/
+		if (!regex.test(val)) {
+			setSlugError(translate('username_invalid_chars', 'Username can only contain lowercase letters, numbers, and hyphens.'))
+			return false
+		}
+		setSlugError(null)
+		return true
+	}
+
+	// Handle Submit (Sign In / Authenticate)
+	const handleSignInSubmit = async () => {
+		if (!validateSlug(slug)) {
+			toast.show({
+				title: translate('invalid_request_title', 'Validation Error'),
+				message: slugError || translate('username_invalid_chars'),
+				color: '#EF4444'
+			})
+			return
+		}
+
+		if (password.length < 1) {
+			toast.show({
+				title: translate('invalid_request_title', 'Validation Error'),
+				message: translate('password_required', 'Password is required.'),
+				color: '#EF4444'
+			})
+			passwordInputRef.current?.focus()
+			return
+		}
+
+		if (password.length > 20) {
+			toast.show({
+				title: translate('invalid_request_title', 'Validation Error'),
+				message: translate('password_too_long', 'Password must not exceed 20 characters.'),
+				color: '#EF4444'
+			})
+			passwordInputRef.current?.focus()
+			return
+		}
+
+		try {
+			setLoading(true)
+
+			// Trigger API signin request
+			await signIn(slug, password, saveAccount, needPassword)
+
+			// Set active user state in context
+			await refreshUser()
+
+			toast.show({
+				title: translate('success', 'Welcome!'),
+				message: translate('signin_success_msg', 'Successfully logged in.'),
+				color: '#10B981'
+			})
+
+			// Redirect to feed page
+			router.replace('/(home)/feed')
+		} catch (err: any) {
+			const status = err.response?.status
+			if (status === 404) {
+				// No user found - Ask if they want to sign up
+				setLoading(false)
+				const signupTitle = translate('signup_title', 'Create Account?')
+				const signupMessage = `${translate('user_not_found_signup', 'User not found. Do you want to sign up?')}\n\nURL: ${FRONTEND_URL}/u/${slug}`
+
+				showConfirm(signupTitle, signupMessage, async () => {
+					try {
+						setLoading(true)
+						// Trigger signup
+						await signUp(slug, password, {}, saveAccount, needPassword)
+						await refreshUser()
+
+						toast.show({
+							title: translate('success', 'Account Created!'),
+							message: translate('signup_success_msg', 'Your account has been registered.'),
+							color: '#10B981'
+						})
+
+						router.replace('/(home)/feed')
+					} catch (signUpErr: any) {
+						const msg = signUpErr.response?.data?.message || signUpErr.message || 'Signup failed'
+						toast.show({
+							title: translate('error', 'Signup Failed'),
+							message: msg,
+							color: '#EF4444'
+						})
+					} finally {
+						setLoading(false)
+					}
+				})
+			} else if (status === 409) {
+				// Password incorrect - Inform user and focus on password field
+				toast.show({
+					title: translate('error', 'Authentication Failed'),
+					message: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'),
+					color: '#EF4444'
+				})
+				passwordInputRef.current?.focus()
+			} else {
+				// Any other errors
+				const errMsg = err.response?.data?.message || err.message || 'Unable to connect to server.'
+				toast.show({
+					title: translate('error', 'Error'),
+					message: errMsg,
+					color: '#EF4444'
+				})
+			}
+		} finally {
+			setLoading(false)
+		}
+	}
+
+	// Trigger quick-switch account instantly
+	const handleSelectSavedAccount = async (account: SavedAuth) => {
+		if (loading) return
+
+		if (account.needPassword || !account.token) {
+			// Populate welcome form and focus password input
+			setSlug(account.slug)
+			setSaveAccount(true)
+			setNeedPassword(true)
+			toast.show({
+				title: translate('switch_requires_password', 'Password Required'),
+				message: translate('need_password_notice', 'Please enter your password to switch to this account.'),
+				color: colors.primary
+			})
+			passwordInputRef.current?.focus()
+		} else {
+			// Instant switch via stored token
 			try {
-				const success = await signInWithToken(auth.token)
+				setLoading(true)
+				const success = await signInWithToken(account.token)
 				if (success) {
 					await refreshUser()
+					toast.show({
+						title: translate('success', 'Account Switched'),
+						message: `@${account.slug} logged in.`,
+						color: '#10B981'
+					})
 					router.replace('/(home)/feed')
 				} else {
-					// Token expired or invalid
-					setSlug(auth.slug)
-					setPassword('')
-					setTimeout(() => {
-						passwordRef.current?.focus()
-					}, 150)
-					showAlert(translate('session_expired_title', 'Session Expired'), translate('token_expired_notice', 'Session token has expired. Please enter your password.'))
-					// Remove the stale authentication entry
-					await deleteSavedAuthentication(auth.slug)
-					await loadSavedAuths()
+					throw new Error('Quick sign in token failed')
 				}
-			} catch (error) {
-				log({ level: 'error', label: 'auth', message: 'Quick sign in token failed', error })
-				setSlug(auth.slug)
-				setPassword('')
-				showAlert(translate('error', 'Error'), translate('token_expired_notice', 'Session token has expired. Please enter your password.'))
+			} catch (err) {
+				log({
+					level: 'error',
+					label: 'AuthScreen',
+					message: 'Quick sign in token error',
+					error: err
+				})
+				toast.show({
+					title: translate('error', 'Switch Failed'),
+					message: translate('quick_signin_failed', 'Quick sign in failed.'),
+					color: '#EF4444'
+				})
+				// Require password instead
+				setSlug(account.slug)
+				setNeedPassword(true)
+				passwordInputRef.current?.focus()
 			} finally {
-				setIsLoading(false)
+				setLoading(false)
 			}
 		}
 	}
 
-	// Sign Up workflow
-	const handleSignUp = async () => {
-		setIsLoading(true)
+	// Remove account from saved authenticator list
+	const handleRemoveSavedAccount = async (slugToRemove: string) => {
 		try {
-			const initialSettings = {
-				lang: {
-					app: appLang,
-					content: appLang
-				},
-				currency: 'tnd'
-			}
-
-			await signUp(slug.trim(), password.trim(), { settings: initialSettings }, saveAccount, needPassword)
-
-			// Update app & content languages in storage with the selected language
-			await setAppLang(appLang)
-			await setContentLang(appLang)
-
-			await refreshUser()
-			router.replace('/(home)/feed')
-		} catch (error: any) {
-			log({ level: 'error', label: 'auth', message: 'Sign up failed', error })
-			const errMsg = error.response?.data?.message || error.message || 'Signup failed. Please try again.'
-			showAlert(translate('error', 'Error'), errMsg)
-		} finally {
-			setIsLoading(false)
-		}
-	}
-
-	// Single Continue Button Logic
-	const handleContinue = async () => {
-		const trimmedSlug = slug.trim()
-		if (!trimmedSlug) {
-			showAlert(translate('error', 'Error'), translate('username_required', 'Username is required.'))
-			return
-		}
-
-		// Enforce slug validation
-		const isValidSlugFormat = /^[a-z0-9-]+$/.test(trimmedSlug)
-		if (!isValidSlugFormat) {
-			showAlert(translate('error', 'Error'), translate('username_invalid_chars', 'Username can only contain lowercase letters, numbers, and hyphens.'))
-			return
-		}
-
-		if (trimmedSlug.startsWith('-') || trimmedSlug.endsWith('-')) {
-			showAlert(translate('error', 'Error'), translate('username_invalid_hyphen', 'Hyphen (-) cannot be the first or last character of the username.'))
-			return
-		}
-
-		if (!password.trim()) {
-			showAlert(translate('error', 'Error'), translate('password_required', 'Password is required.'))
-			return
-		}
-
-		setIsLoading(true)
-		try {
-			log({ level: 'info', label: 'auth', message: 'Attempting to sign in via unified button', data: { slug: trimmedSlug } })
-			await signIn(trimmedSlug, password.trim(), saveAccount, needPassword)
-
-			await refreshUser()
-			router.replace('/(home)/feed')
-		} catch (error: any) {
-			const responseData = error.response?.data
-			const status = error.response?.status || responseData?.status || responseData?.statusCode
-
-			if (status === 404 || status === '404') {
-				setIsLoading(false)
-				const frontendUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
-				const profileUrl = `${frontendUrl}/u/${trimmedSlug}`
-				const signupMessage = `${translate('user_not_found_signup', 'User not found. Do you want to sign up? Your public profile will be accessible at:')} ${profileUrl}`
-
-				if (Platform.OS === 'web') {
-					if (window.confirm(signupMessage)) {
-						await handleSignUp()
-					}
-				} else {
-					Alert.alert(translate('user_not_found', 'User Not Found'), signupMessage, [
-						{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-						{ text: translate('sign_up', 'Sign Up'), onPress: handleSignUp }
-					])
-				}
-			} else if (status === 409 || status === '409') {
-				setIsLoading(false)
+			await deleteSavedAuthentication(slugToRemove)
+			await loadSavedAccounts()
+			toast.show({
+				title: translate('success', 'Success'),
+				message: `@${slugToRemove} removed from accounts list.`,
+				color: '#10B981'
+			})
+			// Clear fields if removing currently populated slug
+			if (slug === slugToRemove) {
+				setSlug('')
 				setPassword('')
-				const verifyMessage = translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.')
-
-				if (Platform.OS === 'web') {
-					window.alert(verifyMessage)
-				} else {
-					Alert.alert(translate('error', 'Error'), verifyMessage)
-				}
-				passwordRef.current?.focus()
-			} else {
-				setIsLoading(false)
-				const errMsg = responseData?.message || error.message || 'Authentication failed.'
-				showAlert(translate('error', 'Error'), errMsg)
 			}
+		} catch (err) {
+			toast.show({
+				title: translate('error', 'Error'),
+				message: 'Failed to remove saved account.',
+				color: '#EF4444'
+			})
 		}
 	}
 
-	// Resets the app storage completely
-	const handleResetApp = async () => {
-		const performReset = async () => {
+	// Destroy app storage (Reset application)
+	const handleDestroyStorage = () => {
+		showConfirm(translate('reset_app', 'Reset App'), translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'), async () => {
 			try {
+				setLoading(true)
 				await AsyncStorage.clear()
-				setSavedAuths([])
 				if (Platform.OS === 'web') {
-					if (typeof localStorage !== 'undefined') localStorage.clear()
-					if (typeof sessionStorage !== 'undefined') sessionStorage.clear()
-					if (typeof document !== 'undefined' && document.cookie) {
-						document.cookie.split(';').forEach((cookie) => {
-							const eqPos = cookie.indexOf('=')
-							const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim()
-							document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/'
-						})
-					}
-					window.location.reload()
-				} else {
-					Alert.alert(translate('success', 'Success'), translate('reset_success', 'App reset successfully.'))
+					localStorage.clear()
+					sessionStorage.clear()
 				}
-			} catch (error) {
-				log({ level: 'error', label: 'auth', message: 'Failed to reset app', error })
-				Alert.alert(translate('error', 'Error'), translate('reset_failed', 'Failed to reset app.'))
+				await refreshUser()
+				await loadSavedAccounts()
+				setSlug('')
+				setPassword('')
+				toast.show({
+					title: translate('reset_success', 'App reset successfully.'),
+					message: '',
+					color: '#10B981'
+				})
+			} catch (err) {
+				toast.show({
+					title: translate('error', 'Reset Failed'),
+					message: translate('reset_failed', 'Failed to reset app.'),
+					color: '#EF4444'
+				})
+			} finally {
+				setLoading(false)
 			}
-		}
-
-		const confirmMessage = translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.')
-		if (Platform.OS === 'web') {
-			if (window.confirm(confirmMessage)) {
-				await performReset()
-			}
-		} else {
-			Alert.alert(translate('reset_app', 'Reset App'), confirmMessage, [
-				{ text: translate('cancel', 'Cancel'), style: 'cancel' },
-				{ text: translate('reset', 'Reset'), style: 'destructive', onPress: performReset }
-			])
-		}
+		})
 	}
 
-	const styles = createStyles(colors, dark, isWideScreen)
+	// Localized name helper
+	const getAccountDisplayName = (account: SavedAuth) => {
+		if (!account.name) return `@${account.slug}`
+		if (typeof account.name === 'string') return account.name
+		return account.name[appLang] || account.name['en'] || `@${account.slug}`
+	}
+
+	// Simple date formatter
+	const formatLastAccessedDate = (isoString: string) => {
+		try {
+			const date = new Date(isoString)
+			return date.toLocaleDateString(undefined, {
+				month: 'short',
+				day: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit'
+			})
+		} catch (e) {
+			return isoString
+		}
+	}
 
 	return (
-		<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'right', 'left']}>
-			<StatusBar style="light" />
-			<Stack.Screen
-				options={{
-					headerShown: true,
-					headerTitle: translate('auth_title', 'Drinaluza'),
-					headerTitleAlign: 'center',
-					headerStyle: {
-						backgroundColor: colors.card
-					},
-					headerTintColor: colors.text,
-					headerLeft: () => (
-						<TouchableOpacity
-							onPress={() => router.replace('/(home)/feed')}
-							style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]}
-							accessibilityLabel="Go to Feed"
-						>
-							<Ionicons name="home-outline" size={18} color={colors.primary} />
-						</TouchableOpacity>
-					),
-					headerRight: () => (
-						<TouchableOpacity onPress={handleResetApp} style={[styles.headerIconBtn, { backgroundColor: colors.surface, borderColor: colors.border }]} accessibilityLabel="Reset Storage">
-							<Ionicons name="refresh-outline" size={18} color={colors.error} />
-						</TouchableOpacity>
-					)
-				}}
-			/>
+		<View style={styles.outerContainer}>
+			{/* Top Header Bar */}
+			<View style={styles.header}>
+				<TouchableOpacity style={styles.headerBtn} onPress={() => router.replace('/(home)/feed')} accessibilityLabel="Navigate to Feed Screen">
+					<Ionicons name="home-outline" size={22} color={colors.text} />
+				</TouchableOpacity>
+				<Text style={styles.headerTitle}>{translate('auth_title', 'Drinaluza')}</Text>
+				<TouchableOpacity style={styles.headerBtn} onPress={handleDestroyStorage} accessibilityLabel="Destroy and Reset App Storage">
+					<Ionicons name="trash-outline" size={22} color={colors.error} />
+				</TouchableOpacity>
+			</View>
 
-			<KeyboardSafeView contentContainerStyle={styles.scrollContent} bottomOffset={20} scrollEnabled={parentScrollEnabled}>
-				<View style={[styles.innerContent, isWideScreen && styles.desktopCard]}>
-					{/* Logo / Branding */}
-					<View style={styles.brandingContainer}>
-						<View style={[styles.logoIconFrame, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}>
-							<Ionicons name="shield-checkmark" size={36} color={colors.primary} />
-						</View>
-						<Text style={[styles.logoText, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
-						<Text style={[styles.subtitleText, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
-					</View>
+			<KeyboardSafeView style={styles.flex} contentContainerStyle={styles.scrollContent} extraScrollHeight={120} dismissKeyboardOnTap>
+				{/* Glassmorphic Auth Panel Container */}
+				<View style={styles.authCard}>
+					<Text style={styles.cardTitle}>{translate('welcome_back', 'Welcome back 👋')}</Text>
+					<Text style={styles.cardSubtitle}>{translate('auth_subtitle', 'Business Manager')}</Text>
 
-					{/* App Language Selection */}
-					<View style={styles.langSection}>
-						<Text style={[styles.langSectionTitle, { color: colors.textSecondary }]}>{translate('app_lang', 'App Language')}</Text>
-						<View style={styles.langSelectorRow}>
-							{LANGUAGES.map((lang) => {
+					{/* Languages Flag Selector */}
+					<View style={styles.sectionContainer}>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.languagesScroll}>
+							{LANGUAGES_LIST.map((lang) => {
 								const isSelected = appLang === lang.code
 								return (
-									<TouchableOpacity
-										key={lang.code}
-										onPress={() => {
-											setAppLang(lang.code)
-											setContentLang(lang.code)
-										}}
-										style={[
-											styles.langOptionCard,
-											{
-												backgroundColor: isSelected ? colors.primary + '12' : colors.surfaceVariant,
-												borderColor: isSelected ? colors.primary : colors.border
-											}
-										]}
-										activeOpacity={0.8}
-									>
-										<Text style={styles.langOptionFlag}>{lang.flag}</Text>
-										<Text
-											style={[
-												styles.langOptionLabel,
-												{
-													color: isSelected ? colors.primary : colors.text,
-													fontWeight: isSelected ? '700' : '500'
-												}
-											]}
-										>
-											{lang.label}
-										</Text>
-									</TouchableOpacity>
-								)
-							})}
-						</View>
-					</View>
-
-					{/* Saved Accounts */}
-					{savedAuths.length > 0 && (
-						<View style={styles.savedSection}>
-							<Text style={[styles.savedSectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
-							<ScrollView
-								style={styles.savedAccountsScroll}
-								contentContainerStyle={styles.savedAccountsList}
-								nestedScrollEnabled
-								showsVerticalScrollIndicator={true}
-								persistentScrollbar={true}
-								onTouchStart={() => setParentScrollEnabled(false)}
-								onTouchEnd={() => setParentScrollEnabled(true)}
-								onScrollEndDrag={() => setParentScrollEnabled(true)}
-								onMomentumScrollEnd={() => setParentScrollEnabled(true)}
-							>
-								{savedAuths.map((auth) => (
-									<TouchableOpacity
-										key={auth.slug}
-										onPress={() => handleSwitchAccount(auth)}
-										style={[styles.savedAccountCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
-										activeOpacity={0.7}
-									>
-										{auth.photoUrl ? (
-											<SmartImage source={auth.photoUrl} style={styles.accountAvatar} entityType="user" />
-										) : (
-											<View style={[styles.accountAvatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '18' }]}>
-												<Ionicons name="person" size={16} color={colors.primary} />
-											</View>
-										)}
-										<View style={styles.accountInfoContainer}>
-											<Text style={[styles.accountName, { color: colors.text }]} numberOfLines={1}>
-												{auth.name || auth.slug}
-											</Text>
-											<Text style={[styles.accountSlug, { color: colors.textSecondary }]}>@{auth.slug}</Text>
-											{auth.role && (
-												<View style={[styles.roleBadge, { backgroundColor: colors.primary + '12' }]}>
-													<Text style={[styles.roleBadgeText, { color: colors.primary }]}>{auth.role}</Text>
+									<TouchableOpacity key={lang.code} style={[styles.langBadge, isSelected && styles.langBadgeSelected]} onPress={() => setAppLang(lang.code)} activeOpacity={0.8}>
+										<View style={styles.flagWrapper}>
+											<Text style={styles.flagEmoji}>{lang.flag}</Text>
+											{lang.badge && (
+												<View style={styles.flagTextBadge}>
+													<Text style={styles.flagTextBadgeText}>{lang.badge}</Text>
 												</View>
 											)}
 										</View>
-										{auth.needPassword && (
-											<View style={styles.passwordLockIndicator}>
-												<Ionicons name="lock-closed" size={15} color={colors.textSecondary} />
-											</View>
-										)}
-										<TouchableOpacity
-											onPress={() => handleDeleteSavedAuth(auth.slug)}
-											style={[styles.removeAccountBtn, { backgroundColor: colors.error + '10' }]}
-											accessibilityLabel="Remove Saved Account"
-										>
-											<Ionicons name="trash-outline" size={16} color={colors.error} />
-										</TouchableOpacity>
 									</TouchableOpacity>
-								))}
-							</ScrollView>
+								)
+							})}
+						</ScrollView>
+					</View>
+
+					{/* Saved Accounts Vertical Scroll Area */}
+					{savedAccounts.length > 0 && (
+						<View style={[styles.sectionContainer, styles.accountsSection]}>
+							<Text style={styles.sectionLabel}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
+							<View style={styles.accountsScrollContainer}>
+								<ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true} contentContainerStyle={styles.accountsVerticalList}>
+									{savedAccounts.map((account) => (
+										<View key={account.slug} style={styles.accountItem}>
+											<TouchableOpacity style={styles.accountPressable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.7}>
+												<View style={styles.accountPhotoWrapper}>
+													<SmartImage source={account.photoUrl} style={styles.accountPhoto} entityType="user" />
+												</View>
+												<View style={styles.accountDetails}>
+													<Text style={styles.accountName} numberOfLines={1}>
+														{getAccountDisplayName(account)}
+													</Text>
+													<Text style={styles.accountSlug} numberOfLines={1}>
+														@{account.slug}
+													</Text>
+													<Text style={styles.accountDate} numberOfLines={1}>
+														{translate('last_signin', 'Last')}: {formatLastAccessedDate(account.lastSignIn)}
+													</Text>
+												</View>
+											</TouchableOpacity>
+
+											<TouchableOpacity style={styles.accountRemoveBtn} onPress={() => handleRemoveSavedAccount(account.slug)} accessibilityLabel={`Remove account ${account.slug}`}>
+												<Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+											</TouchableOpacity>
+										</View>
+									))}
+								</ScrollView>
+							</View>
 						</View>
 					)}
 
-					{/* Credentials inputs */}
-					<View style={styles.formSection}>
-						{/* Username field */}
-						<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: slugFocused ? colors.primary : colors.border }]}>
-							<Ionicons name="person-outline" size={18} color={slugFocused ? colors.primary : colors.textSecondary} />
+					{/* Welcome Credentials Form */}
+					<View style={styles.formContainer}>
+						{/* Username (Slug) Textfield */}
+						<View style={styles.inputWrapper}>
+							<View style={styles.inputIconContainer}>
+								<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+							</View>
 							<TextInput
-								style={[styles.textInput, { color: colors.text }]}
-								placeholder={translate('username', 'Username')}
-								placeholderTextColor={colors.textTertiary}
+								style={styles.inputField}
 								value={slug}
 								onChangeText={handleSlugChange}
+								placeholder={translate('username', 'Username')}
+								placeholderTextColor={colors.textTertiary}
 								autoCapitalize="none"
 								autoCorrect={false}
-								editable={!isLoading}
-								onFocus={() => setSlugFocused(true)}
-								onBlur={() => setSlugFocused(false)}
+								maxLength={25}
+								editable={!loading}
 							/>
 						</View>
-						{/* Save Account Checkbox */}
-						<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.8} disabled={isLoading}>
-							<View style={[styles.customCheckbox, { borderColor: saveAccount ? colors.primary : colors.textSecondary, backgroundColor: saveAccount ? colors.primary : 'transparent' }]}>
-								{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}
-							</View>
-							<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
+						{slugError && <Text style={styles.errorText}>{slugError}</Text>}
+
+						{/* Checkbox: Save account */}
+						<TouchableOpacity style={styles.checkboxRow} onPress={() => !loading && setSaveAccount(!saveAccount)} activeOpacity={0.8}>
+							<Ionicons name={saveAccount ? 'checkbox' : 'square-outline'} size={20} color={saveAccount ? colors.primary : colors.textSecondary} />
+							<Text style={styles.checkboxLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
 						</TouchableOpacity>
 
-						{/* Password field */}
-						<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: passwordFocused ? colors.primary : colors.border }]}>
-							<Ionicons name="lock-closed-outline" size={18} color={passwordFocused ? colors.primary : colors.textSecondary} />
+						{/* Password Textfield */}
+						<View style={[styles.inputWrapper, { marginTop: 12 }]}>
+							<View style={styles.inputIconContainer}>
+								<Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+							</View>
 							<TextInput
-								ref={passwordRef}
-								style={[styles.textInput, { color: colors.text }]}
-								placeholder={translate('password', 'Password')}
-								placeholderTextColor={colors.textTertiary}
+								ref={passwordInputRef}
+								style={styles.inputField}
 								value={password}
 								onChangeText={setPassword}
-								secureTextEntry
-								editable={!isLoading}
-								onFocus={() => setPasswordFocused(true)}
-								onBlur={() => setPasswordFocused(false)}
+								placeholder={translate('password', 'Password')}
+								placeholderTextColor={colors.textTertiary}
+								secureTextEntry={!showPassword}
+								autoCapitalize="none"
+								autoCorrect={false}
+								maxLength={20}
+								editable={!loading}
 							/>
+							<TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+								<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textSecondary} />
+							</TouchableOpacity>
 						</View>
-						{/* Require Password Checkbox */}
-						<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setNeedPassword(!needPassword)} activeOpacity={0.8} disabled={isLoading}>
-							<View style={[styles.customCheckbox, { borderColor: needPassword ? colors.primary : colors.textSecondary, backgroundColor: needPassword ? colors.primary : 'transparent' }]}>
-								{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}
-							</View>
-							<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
+
+						{/* Checkbox: Require password switch */}
+						<TouchableOpacity style={styles.checkboxRow} onPress={() => !loading && setNeedPassword(!needPassword)} activeOpacity={0.8}>
+							<Ionicons name={needPassword ? 'checkbox' : 'square-outline'} size={20} color={needPassword ? colors.primary : colors.textSecondary} />
+							<Text style={styles.checkboxLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
+						</TouchableOpacity>
+
+						{/* Continue / Sign In Action Button */}
+						<TouchableOpacity style={[styles.continueBtn, loading && styles.continueBtnDisabled]} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.8}>
+							{loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.continueBtnText}>{translate('continue', 'Continue')}</Text>}
 						</TouchableOpacity>
 					</View>
-
-					{/* Single Continue Button */}
-					<TouchableOpacity
-						style={[styles.continueButton, { backgroundColor: slug.trim() && password.trim() ? colors.primary : colors.primary + '50' }]}
-						onPress={handleContinue}
-						activeOpacity={0.85}
-						disabled={isLoading}
-					>
-						{isLoading ? (
-							<ActivityIndicator size="small" color="#fff" />
-						) : (
-							<View style={styles.continueButtonContent}>
-								<Text style={styles.continueButtonText}>{translate('continue', 'Continue')}</Text>
-								<Ionicons name="arrow-forward" size={18} color="#fff" />
-							</View>
-						)}
-					</TouchableOpacity>
 				</View>
 			</KeyboardSafeView>
-		</SafeAreaView>
+		</View>
 	)
 }
 
-const createStyles = (colors: any, dark: boolean, isWideScreen: boolean) =>
-	StyleSheet.create({
-		container: {
+// Generate premium responsive stylesheet
+const createStyles = (colors: any, isTablet: boolean, width: number, height: number) => {
+	const cardMaxWidth = 450
+	const cardWidth = isTablet ? cardMaxWidth : '100%'
+
+	return StyleSheet.create({
+		outerContainer: {
+			flex: 1,
+			backgroundColor: colors.background
+		},
+		flex: {
 			flex: 1
+		},
+		header: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingHorizontal: 16,
+			height: 56,
+			borderBottomWidth: 1,
+			borderBottomColor: colors.borderLight,
+			backgroundColor: colors.background
+		},
+		headerBtn: {
+			padding: 8,
+			borderRadius: 8
+		},
+		headerTitle: {
+			fontSize: 18,
+			fontWeight: '700',
+			color: colors.text,
+			letterSpacing: 0.5
 		},
 		scrollContent: {
 			flexGrow: 1,
-			paddingHorizontal: isWideScreen ? 40 : 20,
-			paddingVertical: isWideScreen ? 50 : 24,
+			alignItems: 'center',
 			justifyContent: 'center',
-			alignItems: 'center'
+			padding: 16,
+			paddingBottom: 40
 		},
-		innerContent: {
-			width: '100%',
-			alignItems: 'stretch'
-		},
-		desktopCard: {
-			maxWidth: 480,
-			backgroundColor: colors.card,
+		authCard: {
+			width: cardWidth,
 			borderRadius: 24,
-			padding: 40,
-			borderWidth: 1.5,
-			borderColor: dark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
-			...Platform.select({
-				web: {
-					boxShadow: dark ? '0px 16px 48px rgba(0, 0, 0, 0.4), inset 0px 1px 1px rgba(255, 255, 255, 0.05)' : '0px 16px 48px rgba(0, 0, 0, 0.06), inset 0px 1px 1px rgba(255, 255, 255, 0.9)'
-				} as any,
-				default: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 8 },
-					shadowOpacity: dark ? 0.35 : 0.08,
-					shadowRadius: 16,
-					elevation: 6
-				}
-			})
+			padding: 24,
+			backgroundColor: colors.card,
+			borderWidth: 1,
+			borderColor: colors.borderLight,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 12 },
+			shadowOpacity: 0.25,
+			shadowRadius: 16,
+			elevation: 8,
+			marginVertical: isTablet ? 30 : 0
 		},
-		headerIconBtn: {
-			width: 36,
-			height: 36,
-			borderRadius: 10,
-			borderWidth: 1.5,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		brandingContainer: {
-			alignItems: 'center',
-			marginBottom: 32
-		},
-		logoIconFrame: {
-			width: 72,
-			height: 72,
-			borderRadius: 22,
-			borderWidth: 2,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 16,
-			...Platform.select({
-				web: {
-					transition: 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
-				} as any,
-				default: {}
-			})
-		},
-		logoText: {
-			fontSize: 30,
+		cardTitle: {
+			fontSize: 24,
 			fontWeight: '800',
-			letterSpacing: -0.5
+			color: colors.text,
+			textAlign: 'center',
+			marginBottom: 4
 		},
-		subtitleText: {
-			fontSize: 13,
-			fontWeight: '600',
-			marginTop: 6,
-			textTransform: 'uppercase',
-			letterSpacing: 1,
-			opacity: 0.8
+		cardSubtitle: {
+			fontSize: 14,
+			color: colors.textSecondary,
+			textAlign: 'center',
+			fontWeight: '500',
+			marginBottom: 20
 		},
-		langSection: {
-			marginBottom: 28
+		sectionContainer: {
+			width: '100%',
+			marginBottom: 16
 		},
-		langSectionTitle: {
-			fontSize: 12,
-			fontWeight: '700',
-			textTransform: 'uppercase',
-			letterSpacing: 0.8,
-			marginBottom: 12,
-			marginLeft: 4,
-			opacity: 0.9
-		},
-		langSelectorRow: {
+		languagesScroll: {
 			flexDirection: 'row',
-			flexWrap: 'wrap',
-			gap: 8
+			justifyContent: 'center',
+			alignItems: 'center',
+			width: '100%',
+			gap: 14,
+			paddingVertical: 4
 		},
-		langOptionCard: {
-			flexGrow: 1,
-			flexShrink: 0,
-			flexBasis: '30%',
-			minWidth: 100,
-			borderWidth: 1.5,
-			borderRadius: 14,
-			paddingVertical: 12,
+		langBadge: {
+			width: 48,
+			height: 48,
+			borderRadius: 24,
+			backgroundColor: colors.background,
+			borderWidth: 2,
+			borderColor: colors.borderLight,
 			alignItems: 'center',
 			justifyContent: 'center',
-			gap: 6,
-			...Platform.select({
-				web: {
-					transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-				} as any,
-				default: {}
-			})
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.1,
+			shadowRadius: 4,
+			elevation: 2
 		},
-		langOptionFlag: {
-			fontSize: 22,
-			fontWeight: '700'
+		langBadgeSelected: {
+			borderColor: colors.primary,
+			backgroundColor: colors.primaryContainer,
+			transform: [{ scale: 1.05 }]
 		},
-		langOptionLabel: {
-			fontSize: 11,
+		flagWrapper: {
+			position: 'relative',
+			width: '100%',
+			height: '100%',
+			alignItems: 'center',
+			justifyContent: 'center'
+		},
+		flagEmoji: {
+			fontSize: 26,
+			lineHeight: 28,
 			textAlign: 'center'
 		},
-		savedSection: {
-			marginBottom: 28
+		flagTextBadge: {
+			position: 'absolute',
+			bottom: -2,
+			right: -2,
+			backgroundColor: colors.surface,
+			borderWidth: 1,
+			borderColor: colors.border,
+			width: 16,
+			height: 16,
+			borderRadius: 8,
+			alignItems: 'center',
+			justifyContent: 'center',
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 1 },
+			shadowOpacity: 0.2,
+			shadowRadius: 1,
+			elevation: 1
 		},
-		savedSectionTitle: {
-			fontSize: 12,
+		flagTextBadgeText: {
+			fontSize: 8,
 			fontWeight: '700',
-			textTransform: 'uppercase',
-			letterSpacing: 0.8,
-			marginBottom: 12,
-			marginLeft: 4,
-			opacity: 0.9
+			color: colors.text,
+			textAlign: 'center'
 		},
-		savedAccountsScroll: {
-			maxHeight: 230
+		accountsSection: {
+			marginTop: 4
 		},
-		savedAccountsList: {
-			gap: 10
+		sectionLabel: {
+			fontSize: 11,
+			fontWeight: '700',
+			color: colors.textSecondary,
+			letterSpacing: 1,
+			marginBottom: 8,
+			textTransform: 'uppercase'
 		},
-		savedAccountCard: {
+		accountsScrollContainer: {
+			maxHeight: 210,
+			borderWidth: 1,
+			borderColor: colors.borderLight,
+			borderRadius: 16,
+			backgroundColor: colors.background,
+			padding: 4
+		},
+		accountsVerticalList: {
+			paddingHorizontal: 8,
+			paddingVertical: 6,
+			gap: 8
+		},
+		accountItem: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			padding: 12,
-			borderRadius: 16,
-			borderWidth: 1.5
+			justifyContent: 'space-between',
+			padding: 10,
+			borderRadius: 12,
+			backgroundColor: colors.card,
+			borderWidth: 1,
+			borderColor: colors.borderLight,
+			shadowColor: '#000',
+			shadowOffset: { width: 0, height: 2 },
+			shadowOpacity: 0.05,
+			shadowRadius: 3,
+			elevation: 1
 		},
-		accountAvatar: {
-			width: 42,
-			height: 42,
-			borderRadius: 12
-		},
-		avatarPlaceholder: {
-			justifyContent: 'center',
+		accountPressable: {
+			flex: 1,
+			flexDirection: 'row',
 			alignItems: 'center'
 		},
-		accountInfoContainer: {
+		accountPhotoWrapper: {
+			width: 42,
+			height: 42,
+			borderRadius: 21,
+			overflow: 'hidden',
+			marginRight: 12,
+			backgroundColor: colors.background,
+			borderWidth: 1,
+			borderColor: colors.borderLight
+		},
+		accountPhoto: {
+			width: '100%',
+			height: '100%'
+		},
+		accountDetails: {
 			flex: 1,
-			marginLeft: 12,
 			justifyContent: 'center'
 		},
 		accountName: {
 			fontSize: 14,
-			fontWeight: '700'
+			fontWeight: '700',
+			color: colors.text,
+			lineHeight: 16
 		},
 		accountSlug: {
 			fontSize: 12,
-			marginTop: 1,
-			opacity: 0.8
+			color: colors.textSecondary,
+			lineHeight: 14,
+			marginTop: 1
 		},
-		roleBadge: {
-			alignSelf: 'flex-start',
-			paddingHorizontal: 6,
-			paddingVertical: 2,
-			borderRadius: 6,
-			marginTop: 4
+		accountDate: {
+			fontSize: 10,
+			color: colors.textTertiary,
+			lineHeight: 12,
+			marginTop: 2
 		},
-		roleBadgeText: {
-			fontSize: 9,
-			fontWeight: '700',
-			textTransform: 'capitalize'
+		accountRemoveBtn: {
+			padding: 4,
+			marginLeft: 6
 		},
-		passwordLockIndicator: {
-			marginHorizontal: 8
-		},
-		removeAccountBtn: {
-			width: 32,
-			height: 32,
-			borderRadius: 8,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		formSection: {
-			gap: 14,
-			marginBottom: 28
+		formContainer: {
+			width: '100%',
+			marginTop: 8
 		},
 		inputWrapper: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			borderWidth: 1.5,
-			borderRadius: 16,
-			paddingHorizontal: 16,
-			height: 52,
-			gap: 12,
-			...Platform.select({
-				web: {
-					transition: 'all 0.2s ease-in-out'
-				} as any,
-				default: {}
-			})
+			height: 48,
+			borderRadius: 12,
+			borderWidth: 1,
+			borderColor: colors.inputBorder,
+			backgroundColor: colors.background,
+			paddingHorizontal: 12
 		},
-		textInput: {
+		inputIconContainer: {
+			marginRight: 10
+		},
+		inputField: {
 			flex: 1,
 			fontSize: 15,
-			height: '100%',
+			color: colors.text,
 			paddingVertical: 0
 		},
-		checkboxWrapper: {
+		eyeBtn: {
+			padding: 6
+		},
+		errorText: {
+			fontSize: 12,
+			color: colors.error,
+			marginTop: 4,
+			marginLeft: 4,
+			fontWeight: '500'
+		},
+		checkboxRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			gap: 10,
-			paddingVertical: 4,
-			paddingHorizontal: 4
-		},
-		customCheckbox: {
-			width: 18,
-			height: 18,
-			borderRadius: 5,
-			borderWidth: 1.5,
-			justifyContent: 'center',
-			alignItems: 'center'
+			marginTop: 10,
+			paddingVertical: 4
 		},
 		checkboxLabel: {
 			fontSize: 13,
+			color: colors.textSecondary,
+			marginLeft: 8,
 			fontWeight: '500'
 		},
-		continueButton: {
-			height: 52,
-			borderRadius: 16,
+		continueBtn: {
+			height: 48,
+			borderRadius: 12,
+			backgroundColor: colors.primary,
+			alignItems: 'center',
 			justifyContent: 'center',
-			alignItems: 'center',
-			...Platform.select({
-				web: {
-					transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-				} as any,
-				default: {}
-			}),
-			...Platform.select({
-				ios: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 4 },
-					shadowOpacity: 0.15,
-					shadowRadius: 8
-				},
-				android: {
-					elevation: 4
-				}
-			})
+			marginTop: 24,
+			shadowColor: colors.primary,
+			shadowOffset: { width: 0, height: 4 },
+			shadowOpacity: 0.3,
+			shadowRadius: 8,
+			elevation: 4
 		},
-		continueButtonContent: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 8
+		continueBtnDisabled: {
+			backgroundColor: colors.borderLight,
+			shadowOpacity: 0,
+			elevation: 0
 		},
-		continueButtonText: {
-			color: '#fff',
+		continueBtnText: {
 			fontSize: 16,
-			fontWeight: '700'
+			fontWeight: '700',
+			color: '#FFFFFF'
 		}
 	})
+}
