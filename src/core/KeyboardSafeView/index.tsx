@@ -75,20 +75,11 @@ export const KeyboardSafeView = forwardRef<ScrollView, KeyboardSafeViewProps>(
 
 		// Web fallback: optimized standard ScrollView to minimize footprint
 		if (Platform.OS === 'web') {
-			const webContent = (
+			return (
 				<ScrollView ref={ref} style={[styles.container, style]} contentContainerStyle={contentContainerStyle} keyboardShouldPersistTaps="handled" {...props}>
 					{children}
 				</ScrollView>
 			)
-
-			if (shouldDismissOnTap) {
-				return (
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-						{webContent}
-					</TouchableWithoutFeedback>
-				)
-			}
-			return webContent
 		}
 
 		// Dynamic calculation to scroll focused input into comfortable viewport area
@@ -249,16 +240,7 @@ export const KeyboardSafeFlatList = forwardRef<FlatList<any>, KeyboardSafeFlatLi
 
 		// Web fallback
 		if (Platform.OS === 'web') {
-			const webContent = <FlatList ref={ref} style={[styles.container, style]} contentContainerStyle={contentContainerStyle} keyboardShouldPersistTaps="handled" {...props} />
-
-			if (shouldDismissOnTap) {
-				return (
-					<TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-						{webContent}
-					</TouchableWithoutFeedback>
-				)
-			}
-			return webContent
+			return <FlatList ref={ref} style={[styles.container, style]} contentContainerStyle={contentContainerStyle} keyboardShouldPersistTaps="handled" {...props} />
 		}
 
 		const scrollToFocusedInput = () => {
