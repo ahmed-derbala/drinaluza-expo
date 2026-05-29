@@ -162,9 +162,11 @@ in /settings add a section for app updates with this UI:
 - latest version
 - size
 - download count
-- cached apk file if available with share and delete buttons next to it. the share button opens the expo-sharing interface to share the apk file. advice the user to use quick share for fast sharing with other devices.
-- the share button should open the share interface with the apk file ready to be shared.
-- the delete button should delete 
+- cached apk file if available with delete button next to it.
+- share button:
+  - on android: use expo-sharing
+    - opt to share download url or cached apk file. advice the user to use quick share for fast sharing with other devices.
+  - on web: copy download url to clipboard  
 
 
 Implement app update checking in parallel with the splash screen lifecycle.
