@@ -15,6 +15,7 @@ import { toast } from '@/features/common/Toast'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { KeyboardSafeFlatList } from '@/core/KeyboardSafeView'
 
 // ─── Breakpoints ────────────────────────────────────────────────────────────
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
@@ -558,11 +559,11 @@ export default function BusinessProductsScreen() {
 			)}
 
 			{/* Grid */}
-			<FlatList
+			<KeyboardSafeFlatList
 				key={`grid-${numColumns}`}
 				data={filteredProducts}
 				renderItem={renderItem}
-				keyExtractor={(item) => item._id}
+				keyExtractor={(item: any) => item._id}
 				numColumns={numColumns}
 				contentContainerStyle={{
 					paddingHorizontal: horizontalPadding,
@@ -574,7 +575,6 @@ export default function BusinessProductsScreen() {
 				}}
 				columnWrapperStyle={numColumns > 1 ? { gap: cardGap * 0.6, justifyContent: 'flex-start' } : undefined}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-				showsVerticalScrollIndicator={false}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 				ListEmptyComponent={

@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.15.0] - 2026-05-29
+### Added
+- Created a reusable `KeyboardSafeView` layout component under `src/core/KeyboardSafeView/` to handle keyboard-aware scroll container layouts cross-platform.
+- Added `softwareKeyboardLayoutMode: "resize"` configuration in `app.config.js` to ensure the Android window viewport scales properly when the virtual keyboard is open.
+- Added strict pre-flight HEAD checks to validate `.apk` extension, MIME type, and remote file size before starting update package downloads.
+- Integrated a transactional download buffer (`.apk.tmp`) to ensure cached updates are never overwritten during active download sessions.
+- Added localized translations for the `redownload_update` recovery label across English, Arabic, French, Tunisian Arabic, and Tunisian Latin dictionaries.
+
+### Fixed
+- Fixed an infinite update installation loop on Android by replacing automatic programmatic installer triggers with user-facing modal confirmations.
+- Fixed a corrupted update recovery issue by providing manual "Install Now" and "Delete & Re-download" action handlers on the Required Update blocked screen.
+- Fixed a background transition error where deliberate download pauses played the `notification.mp3` error sound and triggered the browser fallback.
+- Removed legacy `DownloadResumable` resume logic to prevent failures caused by GitHub redirect structures.
+
 ## [1.12.0] - 2026-05-28
 ### Added
 - Added Arabic (`ar`) and French (`fr`) as officially supported options inside the global `LANGUAGES` configuration array.

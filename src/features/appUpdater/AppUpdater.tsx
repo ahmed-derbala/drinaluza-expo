@@ -184,7 +184,6 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 
 	const [cachedApks, setCachedApks] = useState<Array<{ name: string; size: number; version: string; localUri: string }>>([])
 	const [freeDiskStorage, setFreeDiskStorage] = useState<number | null>(null)
-	const activeDownloadRef = React.useRef<FileSystem.DownloadResumable | null>(null)
 	const progressRef = React.useRef(0)
 
 	const [releaseName, setReleaseName] = useState<string | null>(null)
@@ -332,16 +331,11 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 				} catch (e) {}
 
 				log({ level: 'info', label: 'AppUpdater', message: `Starting fresh download for v${version} at ${tempUri}...` })
-				const downloadResumable = FileSystem.createDownloadResumable(downloadUrl, tempUri, {}, (progressData) => {
-					if (progressData.totalBytesExpectedToWrite > 0) {
-						const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
-						setDownloadProgress(progress)
-						progressRef.current = progress
-					}
-				})
-				activeDownloadRef.current = downloadResumable
 
-				const result = await downloadResumable.downloadAsync()
+				// Simulating indeterminate progress since downloadAsync doesn't provide progress callbacks
+				setDownloadProgress(0.5)
+
+				const result = await FileSystem.downloadAsync(downloadUrl, tempUri)
 
 				if (!result || !result.uri) {
 					throw new Error('Download failed: empty download result.')
@@ -422,7 +416,6 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 					color: '#EF4444'
 				})
 			} finally {
-				activeDownloadRef.current = null
 				setIsDownloading(false)
 				setDownloadProgress(0)
 				progressRef.current = 0
@@ -537,7 +530,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 							const savedSizeStr = await AsyncStorage.getItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
 							const expectedSize = savedSizeStr ? parseInt(savedSizeStr) : pendingVersion === cleanTag && apkAsset?.size ? apkAsset.size : 0
 
-							if (fileInfo.exists && (fileInfo as any).size > 0 && (expectedSize === 0 || (fileInfo as any).size === expectedSize)) {
+							if (fileInfo.exists && (fileInfo as any).size > 0 && expectedSize > 0 && (fileInfo as any).size === expectedSize) {
 								localUriExists = true
 							} else {
 								log({ level: 'error', label: 'AppUpdater', message: `Local APK size mismatch or corrupted file. Expected: ${expectedSize}, Actual: ${(fileInfo as any).size}. Scrubbing...` })
@@ -739,28 +732,17 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 		checkForUpdates(false)
 	}, [checkForUpdates])
 
-	// Automatically run updater checks and cancel active downloads when app returns from background/foreground
+	// Automatically run updater checks when app returns from background
 	useEffect(() => {
 		const subscription = AppState.addEventListener('change', async (nextAppState: AppStateStatus) => {
 			if (nextAppState === 'active') {
 				checkForUpdates(false)
-			} else if (nextAppState === 'background' || nextAppState === 'inactive') {
-				// Cancel active download on background transition to prevent partial or corrupted files
-				const downloadResumable = activeDownloadRef.current
-				if (downloadResumable && isDownloading) {
-					try {
-						log({ level: 'info', label: 'AppUpdater', message: 'App going to background. Cancelling active download to prevent partial or corrupted files.' })
-						await downloadResumable.cancelAsync()
-					} catch (cancelErr) {
-						log({ level: 'warn', label: 'AppUpdater', message: 'Failed to cancel active download on background transition', error: cancelErr })
-					}
-				}
 			}
 		})
 		return () => {
 			subscription.remove()
 		}
-	}, [checkForUpdates, isDownloading])
+	}, [checkForUpdates])
 
 	// Startup Check: check if there is a downloaded update that needs to be installed
 	useEffect(() => {
@@ -780,7 +762,7 @@ export const UpdaterProvider: React.FC<{ children: ReactNode }> = ({ children })
 						const savedSizeStr = await AsyncStorage.getItem(`drinaluza_downloaded_update_size_${pendingVersion}`)
 						const expectedSize = savedSizeStr ? parseInt(savedSizeStr) : 0
 
-						if (fileInfo.exists && (fileInfo as any).size > 0 && (expectedSize === 0 || (fileInfo as any).size === expectedSize)) {
+						if (fileInfo.exists && (fileInfo as any).size > 0 && expectedSize > 0 && (fileInfo as any).size === expectedSize) {
 							setIsReadyToInstall(true)
 							setPendingInstalledVersion(pendingVersion)
 							log({ level: 'info', label: 'AppUpdater', message: `Startup check: Pending update v${pendingVersion} is ready to install and size validated.` })

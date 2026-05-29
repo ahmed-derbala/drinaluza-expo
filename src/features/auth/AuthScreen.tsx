@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react'
-import { View, TextInput, Text, TouchableOpacity, Alert, useWindowDimensions, Platform, StyleSheet, ScrollView, KeyboardAvoidingView, ActivityIndicator } from 'react-native'
+import { View, TextInput, Text, TouchableOpacity, Alert, useWindowDimensions, Platform, StyleSheet, ActivityIndicator, ScrollView } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter, useFocusEffect, Stack } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -14,6 +14,7 @@ import { log } from '@/core/log'
 import { useUser } from '@/core/contexts/UserContext'
 import { LANGUAGES } from '@/config/settings'
 import SmartImage from '@/core/SmartImageViewer'
+import { KeyboardSafeView } from '@/core/KeyboardSafeView'
 
 export default function AuthScreen() {
 	const { colors, dark } = useTheme()
@@ -43,6 +44,7 @@ export default function AuthScreen() {
 	// UI and loader states
 	const [savedAuths, setSavedAuths] = useState<SavedAuth[]>([])
 	const [isLoading, setIsLoading] = useState(false)
+	const [parentScrollEnabled, setParentScrollEnabled] = useState(true)
 	const passwordRef = useRef<TextInput>(null)
 
 	// Load saved accounts from secure storage
@@ -288,176 +290,184 @@ export default function AuthScreen() {
 				}}
 			/>
 
-			<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }} keyboardVerticalOffset={Platform.OS === 'ios' ? 80 : 0}>
-				<ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: Math.max(insets.bottom + 20, 24) }]} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-					<View style={[styles.innerContent, isWideScreen && styles.desktopCard]}>
-						{/* Logo / Branding */}
-						<View style={styles.brandingContainer}>
-							<View style={[styles.logoIconFrame, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}>
-								<Ionicons name="shield-checkmark" size={36} color={colors.primary} />
-							</View>
-							<Text style={[styles.logoText, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
-							<Text style={[styles.subtitleText, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
+			<KeyboardSafeView contentContainerStyle={styles.scrollContent} bottomOffset={20} scrollEnabled={parentScrollEnabled}>
+				<View style={[styles.innerContent, isWideScreen && styles.desktopCard]}>
+					{/* Logo / Branding */}
+					<View style={styles.brandingContainer}>
+						<View style={[styles.logoIconFrame, { backgroundColor: colors.primary + '12', borderColor: colors.primary + '30' }]}>
+							<Ionicons name="shield-checkmark" size={36} color={colors.primary} />
 						</View>
+						<Text style={[styles.logoText, { color: colors.text }]}>{translate('auth_title', 'Drinaluza')}</Text>
+						<Text style={[styles.subtitleText, { color: colors.textSecondary }]}>{translate('auth_subtitle', 'Business Manager')}</Text>
+					</View>
 
-						{/* App Language Selection */}
-						<View style={styles.langSection}>
-							<Text style={[styles.langSectionTitle, { color: colors.textSecondary }]}>{translate('app_lang', 'App Language')}</Text>
-							<View style={styles.langSelectorRow}>
-								{LANGUAGES.map((lang) => {
-									const isSelected = appLang === lang.code
-									return (
-										<TouchableOpacity
-											key={lang.code}
-											onPress={() => {
-												setAppLang(lang.code)
-												setContentLang(lang.code)
-											}}
+					{/* App Language Selection */}
+					<View style={styles.langSection}>
+						<Text style={[styles.langSectionTitle, { color: colors.textSecondary }]}>{translate('app_lang', 'App Language')}</Text>
+						<View style={styles.langSelectorRow}>
+							{LANGUAGES.map((lang) => {
+								const isSelected = appLang === lang.code
+								return (
+									<TouchableOpacity
+										key={lang.code}
+										onPress={() => {
+											setAppLang(lang.code)
+											setContentLang(lang.code)
+										}}
+										style={[
+											styles.langOptionCard,
+											{
+												backgroundColor: isSelected ? colors.primary + '12' : colors.surfaceVariant,
+												borderColor: isSelected ? colors.primary : colors.border
+											}
+										]}
+										activeOpacity={0.8}
+									>
+										<Text style={styles.langOptionFlag}>{lang.flag}</Text>
+										<Text
 											style={[
-												styles.langOptionCard,
+												styles.langOptionLabel,
 												{
-													backgroundColor: isSelected ? colors.primary + '12' : colors.surfaceVariant,
-													borderColor: isSelected ? colors.primary : colors.border
+													color: isSelected ? colors.primary : colors.text,
+													fontWeight: isSelected ? '700' : '500'
 												}
 											]}
-											activeOpacity={0.8}
 										>
-											<Text style={styles.langOptionFlag}>{lang.flag}</Text>
-											<Text
-												style={[
-													styles.langOptionLabel,
-													{
-														color: isSelected ? colors.primary : colors.text,
-														fontWeight: isSelected ? '700' : '500'
-													}
-												]}
-											>
-												{lang.label}
-											</Text>
-										</TouchableOpacity>
-									)
-								})}
-							</View>
+											{lang.label}
+										</Text>
+									</TouchableOpacity>
+								)
+							})}
 						</View>
+					</View>
 
-						{/* Saved Accounts */}
-						{savedAuths.length > 0 && (
-							<View style={styles.savedSection}>
-								<Text style={[styles.savedSectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
-								<ScrollView style={styles.savedAccountsScroll} contentContainerStyle={styles.savedAccountsList} nestedScrollEnabled>
-									{savedAuths.map((auth) => (
-										<TouchableOpacity
-											key={auth.slug}
-											onPress={() => handleSwitchAccount(auth)}
-											style={[styles.savedAccountCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
-											activeOpacity={0.7}
-										>
-											{auth.photoUrl ? (
-												<SmartImage source={auth.photoUrl} style={styles.accountAvatar} entityType="user" />
-											) : (
-												<View style={[styles.accountAvatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '18' }]}>
-													<Ionicons name="person" size={16} color={colors.primary} />
-												</View>
-											)}
-											<View style={styles.accountInfoContainer}>
-												<Text style={[styles.accountName, { color: colors.text }]} numberOfLines={1}>
-													{auth.name || auth.slug}
-												</Text>
-												<Text style={[styles.accountSlug, { color: colors.textSecondary }]}>@{auth.slug}</Text>
-												{auth.role && (
-													<View style={[styles.roleBadge, { backgroundColor: colors.primary + '12' }]}>
-														<Text style={[styles.roleBadgeText, { color: colors.primary }]}>{auth.role}</Text>
-													</View>
-												)}
+					{/* Saved Accounts */}
+					{savedAuths.length > 0 && (
+						<View style={styles.savedSection}>
+							<Text style={[styles.savedSectionTitle, { color: colors.textSecondary }]}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
+							<ScrollView
+								style={styles.savedAccountsScroll}
+								contentContainerStyle={styles.savedAccountsList}
+								nestedScrollEnabled
+								showsVerticalScrollIndicator={true}
+								persistentScrollbar={true}
+								onTouchStart={() => setParentScrollEnabled(false)}
+								onTouchEnd={() => setParentScrollEnabled(true)}
+								onScrollEndDrag={() => setParentScrollEnabled(true)}
+								onMomentumScrollEnd={() => setParentScrollEnabled(true)}
+							>
+								{savedAuths.map((auth) => (
+									<TouchableOpacity
+										key={auth.slug}
+										onPress={() => handleSwitchAccount(auth)}
+										style={[styles.savedAccountCard, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}
+										activeOpacity={0.7}
+									>
+										{auth.photoUrl ? (
+											<SmartImage source={auth.photoUrl} style={styles.accountAvatar} entityType="user" />
+										) : (
+											<View style={[styles.accountAvatar, styles.avatarPlaceholder, { backgroundColor: colors.primary + '18' }]}>
+												<Ionicons name="person" size={16} color={colors.primary} />
 											</View>
-											{auth.needPassword && (
-												<View style={styles.passwordLockIndicator}>
-													<Ionicons name="lock-closed" size={15} color={colors.textSecondary} />
+										)}
+										<View style={styles.accountInfoContainer}>
+											<Text style={[styles.accountName, { color: colors.text }]} numberOfLines={1}>
+												{auth.name || auth.slug}
+											</Text>
+											<Text style={[styles.accountSlug, { color: colors.textSecondary }]}>@{auth.slug}</Text>
+											{auth.role && (
+												<View style={[styles.roleBadge, { backgroundColor: colors.primary + '12' }]}>
+													<Text style={[styles.roleBadgeText, { color: colors.primary }]}>{auth.role}</Text>
 												</View>
 											)}
-											<TouchableOpacity
-												onPress={() => handleDeleteSavedAuth(auth.slug)}
-												style={[styles.removeAccountBtn, { backgroundColor: colors.error + '10' }]}
-												accessibilityLabel="Remove Saved Account"
-											>
-												<Ionicons name="trash-outline" size={16} color={colors.error} />
-											</TouchableOpacity>
+										</View>
+										{auth.needPassword && (
+											<View style={styles.passwordLockIndicator}>
+												<Ionicons name="lock-closed" size={15} color={colors.textSecondary} />
+											</View>
+										)}
+										<TouchableOpacity
+											onPress={() => handleDeleteSavedAuth(auth.slug)}
+											style={[styles.removeAccountBtn, { backgroundColor: colors.error + '10' }]}
+											accessibilityLabel="Remove Saved Account"
+										>
+											<Ionicons name="trash-outline" size={16} color={colors.error} />
 										</TouchableOpacity>
-									))}
-								</ScrollView>
-							</View>
-						)}
-
-						{/* Credentials inputs */}
-						<View style={styles.formSection}>
-							{/* Username field */}
-							<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: slugFocused ? colors.primary : colors.border }]}>
-								<Ionicons name="person-outline" size={18} color={slugFocused ? colors.primary : colors.textSecondary} />
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									placeholder={translate('username', 'Username')}
-									placeholderTextColor={colors.textTertiary}
-									value={slug}
-									onChangeText={handleSlugChange}
-									autoCapitalize="none"
-									autoCorrect={false}
-									editable={!isLoading}
-									onFocus={() => setSlugFocused(true)}
-									onBlur={() => setSlugFocused(false)}
-								/>
-							</View>
-							{/* Save Account Checkbox */}
-							<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.8} disabled={isLoading}>
-								<View style={[styles.customCheckbox, { borderColor: saveAccount ? colors.primary : colors.textSecondary, backgroundColor: saveAccount ? colors.primary : 'transparent' }]}>
-									{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}
-								</View>
-								<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
-							</TouchableOpacity>
-
-							{/* Password field */}
-							<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: passwordFocused ? colors.primary : colors.border }]}>
-								<Ionicons name="lock-closed-outline" size={18} color={passwordFocused ? colors.primary : colors.textSecondary} />
-								<TextInput
-									ref={passwordRef}
-									style={[styles.textInput, { color: colors.text }]}
-									placeholder={translate('password', 'Password')}
-									placeholderTextColor={colors.textTertiary}
-									value={password}
-									onChangeText={setPassword}
-									secureTextEntry
-									editable={!isLoading}
-									onFocus={() => setPasswordFocused(true)}
-									onBlur={() => setPasswordFocused(false)}
-								/>
-							</View>
-							{/* Require Password Checkbox */}
-							<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setNeedPassword(!needPassword)} activeOpacity={0.8} disabled={isLoading}>
-								<View style={[styles.customCheckbox, { borderColor: needPassword ? colors.primary : colors.textSecondary, backgroundColor: needPassword ? colors.primary : 'transparent' }]}>
-									{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}
-								</View>
-								<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
-							</TouchableOpacity>
+									</TouchableOpacity>
+								))}
+							</ScrollView>
 						</View>
+					)}
 
-						{/* Single Continue Button */}
-						<TouchableOpacity
-							style={[styles.continueButton, { backgroundColor: slug.trim() && password.trim() ? colors.primary : colors.primary + '50' }]}
-							onPress={handleContinue}
-							activeOpacity={0.85}
-							disabled={isLoading}
-						>
-							{isLoading ? (
-								<ActivityIndicator size="small" color="#fff" />
-							) : (
-								<View style={styles.continueButtonContent}>
-									<Text style={styles.continueButtonText}>{translate('continue', 'Continue')}</Text>
-									<Ionicons name="arrow-forward" size={18} color="#fff" />
-								</View>
-							)}
+					{/* Credentials inputs */}
+					<View style={styles.formSection}>
+						{/* Username field */}
+						<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: slugFocused ? colors.primary : colors.border }]}>
+							<Ionicons name="person-outline" size={18} color={slugFocused ? colors.primary : colors.textSecondary} />
+							<TextInput
+								style={[styles.textInput, { color: colors.text }]}
+								placeholder={translate('username', 'Username')}
+								placeholderTextColor={colors.textTertiary}
+								value={slug}
+								onChangeText={handleSlugChange}
+								autoCapitalize="none"
+								autoCorrect={false}
+								editable={!isLoading}
+								onFocus={() => setSlugFocused(true)}
+								onBlur={() => setSlugFocused(false)}
+							/>
+						</View>
+						{/* Save Account Checkbox */}
+						<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.8} disabled={isLoading}>
+							<View style={[styles.customCheckbox, { borderColor: saveAccount ? colors.primary : colors.textSecondary, backgroundColor: saveAccount ? colors.primary : 'transparent' }]}>
+								{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}
+							</View>
+							<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
+						</TouchableOpacity>
+
+						{/* Password field */}
+						<View style={[styles.inputWrapper, { backgroundColor: colors.surfaceVariant, borderColor: passwordFocused ? colors.primary : colors.border }]}>
+							<Ionicons name="lock-closed-outline" size={18} color={passwordFocused ? colors.primary : colors.textSecondary} />
+							<TextInput
+								ref={passwordRef}
+								style={[styles.textInput, { color: colors.text }]}
+								placeholder={translate('password', 'Password')}
+								placeholderTextColor={colors.textTertiary}
+								value={password}
+								onChangeText={setPassword}
+								secureTextEntry
+								editable={!isLoading}
+								onFocus={() => setPasswordFocused(true)}
+								onBlur={() => setPasswordFocused(false)}
+							/>
+						</View>
+						{/* Require Password Checkbox */}
+						<TouchableOpacity style={styles.checkboxWrapper} onPress={() => setNeedPassword(!needPassword)} activeOpacity={0.8} disabled={isLoading}>
+							<View style={[styles.customCheckbox, { borderColor: needPassword ? colors.primary : colors.textSecondary, backgroundColor: needPassword ? colors.primary : 'transparent' }]}>
+								{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}
+							</View>
+							<Text style={[styles.checkboxLabel, { color: colors.textSecondary }]}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
 						</TouchableOpacity>
 					</View>
-				</ScrollView>
-			</KeyboardAvoidingView>
+
+					{/* Single Continue Button */}
+					<TouchableOpacity
+						style={[styles.continueButton, { backgroundColor: slug.trim() && password.trim() ? colors.primary : colors.primary + '50' }]}
+						onPress={handleContinue}
+						activeOpacity={0.85}
+						disabled={isLoading}
+					>
+						{isLoading ? (
+							<ActivityIndicator size="small" color="#fff" />
+						) : (
+							<View style={styles.continueButtonContent}>
+								<Text style={styles.continueButtonText}>{translate('continue', 'Continue')}</Text>
+								<Ionicons name="arrow-forward" size={18} color="#fff" />
+							</View>
+						)}
+					</TouchableOpacity>
+				</View>
+			</KeyboardSafeView>
 		</SafeAreaView>
 	)
 }

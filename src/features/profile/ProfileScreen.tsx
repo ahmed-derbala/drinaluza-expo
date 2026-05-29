@@ -1,22 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import {
-	View,
-	Text,
-	StyleSheet,
-	ScrollView,
-	TextInput,
-	TouchableOpacity,
-	Image,
-	Alert,
-	Platform,
-	useWindowDimensions,
-	ActivityIndicator,
-	Linking,
-	Modal,
-	KeyboardAvoidingView,
-	Animated,
-	Easing
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator, Linking, Modal, Animated, Easing } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -42,6 +25,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import { uploadFile } from '@/core/file'
 import { log } from '@/core/log'
+import { KeyboardSafeView } from '@/core/KeyboardSafeView'
 
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
@@ -652,7 +636,7 @@ export default function ProfileScreen() {
 	return (
 		<View style={styles.container}>
 			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerRight: () => headerRightActions }} />
-			<ScrollView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16}>
+			<KeyboardSafeView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
 					<View style={styles.photoContainer}>
@@ -1650,114 +1634,116 @@ export default function ProfileScreen() {
 
 				{/* Reviews Section */}
 				{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
-			</ScrollView>
+			</KeyboardSafeView>
 
 			{/* Business Name Modal */}
-			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => setShowBusinessModal(false)}>
-				<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={styles.modalOverlay}>
+			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => !businessLoading && setShowBusinessModal(false)}>
+				<View style={styles.modalOverlay}>
 					<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => !businessLoading && setShowBusinessModal(false)} />
-					<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
-						<View style={styles.businessModalHeader}>
-							<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="briefcase" size={32} color={colors.primary} />
-							</View>
-							<Text style={[styles.businessModalTitle, { color: colors.text }]}>{translate('create_business', 'Create Business')}</Text>
-							<Text style={[styles.businessModalSubtitle, { color: colors.textSecondary }]}>{translate('enter_business_name', 'Enter a name for your business in multiple languages')}</Text>
-						</View>
-						<ScrollView style={styles.businessInputContainer} showsVerticalScrollIndicator={false}>
-							{/* English Name (Required) */}
-							<View style={styles.languageInputGroup}>
-								<View style={styles.inputLabelRow}>
-									<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
-									<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+					<KeyboardSafeView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }} style={{ width: '100%' }}>
+						<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
+							<View style={styles.businessModalHeader}>
+								<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
+									<Ionicons name="briefcase" size={32} color={colors.primary} />
 								</View>
-								<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-									<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-										<Text style={styles.flagText}>🇺🇸</Text>
+								<Text style={[styles.businessModalTitle, { color: colors.text }]}>{translate('create_business', 'Create Business')}</Text>
+								<Text style={[styles.businessModalSubtitle, { color: colors.textSecondary }]}>{translate('enter_business_name', 'Enter a name for your business in multiple languages')}</Text>
+							</View>
+							<View style={styles.businessInputContainer}>
+								{/* English Name (Required) */}
+								<View style={styles.languageInputGroup}>
+									<View style={styles.inputLabelRow}>
+										<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
+										<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
 									</View>
-									<TextInput
-										style={[styles.languageInput, { color: colors.text }]}
-										value={businessName.en}
-										onChangeText={(text) => updateBusinessName('en', text)}
-										placeholder="e.g., Fresh Seafood Market"
-										placeholderTextColor={colors.textSecondary}
-										autoFocus
-										maxLength={50}
-										editable={!businessLoading}
-										returnKeyType="next"
-										onSubmitEditing={() => tnLatnInputRef.current?.focus()}
-									/>
+									<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+										<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+											<Text style={styles.flagText}>🇺🇸</Text>
+										</View>
+										<TextInput
+											style={[styles.languageInput, { color: colors.text }]}
+											value={businessName.en}
+											onChangeText={(text) => updateBusinessName('en', text)}
+											placeholder="e.g., Fresh Seafood Market"
+											placeholderTextColor={colors.textSecondary}
+											autoFocus
+											maxLength={50}
+											editable={!businessLoading}
+											returnKeyType="next"
+											onSubmitEditing={() => tnLatnInputRef.current?.focus()}
+										/>
+									</View>
 								</View>
-							</View>
 
-							{/* Tunisian Latin (Optional) */}
-							<View style={styles.languageInputGroup}>
-								<View style={styles.inputLabelRow}>
-									<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Latin)</Text>
-									<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
-								</View>
-								<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_latn ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-									<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-										<Text style={styles.flagText}>🇹🇳</Text>
+								{/* Tunisian Latin (Optional) */}
+								<View style={styles.languageInputGroup}>
+									<View style={styles.inputLabelRow}>
+										<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Latin)</Text>
+										<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
 									</View>
-									<TextInput
-										ref={tnLatnInputRef}
-										style={[styles.languageInput, { color: colors.text }]}
-										value={businessName.tn_latn}
-										onChangeText={(text) => updateBusinessName('tn_latn', text)}
-										placeholder="e.g., Souk el 7out"
-										placeholderTextColor={colors.textSecondary}
-										maxLength={50}
-										editable={!businessLoading}
-										returnKeyType="next"
-										onSubmitEditing={() => tnArabInputRef.current?.focus()}
-									/>
+									<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_latn ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+										<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+											<Text style={styles.flagText}>🇹🇳</Text>
+										</View>
+										<TextInput
+											ref={tnLatnInputRef}
+											style={[styles.languageInput, { color: colors.text }]}
+											value={businessName.tn_latn}
+											onChangeText={(text) => updateBusinessName('tn_latn', text)}
+											placeholder="e.g., Souk el 7out"
+											placeholderTextColor={colors.textSecondary}
+											maxLength={50}
+											editable={!businessLoading}
+											returnKeyType="next"
+											onSubmitEditing={() => tnArabInputRef.current?.focus()}
+										/>
+									</View>
 								</View>
-							</View>
 
-							{/* Tunisian Arabic (Optional) */}
-							<View style={styles.languageInputGroup}>
-								<View style={styles.inputLabelRow}>
-									<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Arabic)</Text>
-									<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
-								</View>
-								<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_arab ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-									<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-										<Text style={styles.flagText}>🇹🇳</Text>
+								{/* Tunisian Arabic (Optional) */}
+								<View style={styles.languageInputGroup}>
+									<View style={styles.inputLabelRow}>
+										<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Arabic)</Text>
+										<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
 									</View>
-									<TextInput
-										ref={tnArabInputRef}
-										style={[styles.languageInput, { color: colors.text, textAlign: 'right' }]}
-										value={businessName.tn_arab}
-										onChangeText={(text) => updateBusinessName('tn_arab', text)}
-										placeholder="مثال: سوق الحوت"
-										placeholderTextColor={colors.textSecondary}
-										maxLength={50}
-										editable={!businessLoading}
-										returnKeyType="done"
-										onSubmitEditing={handleSubmitBusinessRequest}
-									/>
+									<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_arab ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+										<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+											<Text style={styles.flagText}>🇹🇳</Text>
+										</View>
+										<TextInput
+											ref={tnArabInputRef}
+											style={[styles.languageInput, { color: colors.text, textAlign: 'right' }]}
+											value={businessName.tn_arab}
+											onChangeText={(text) => updateBusinessName('tn_arab', text)}
+											placeholder="مثال: سوق الحوت"
+											placeholderTextColor={colors.textSecondary}
+											maxLength={50}
+											editable={!businessLoading}
+											returnKeyType="done"
+											onSubmitEditing={handleSubmitBusinessRequest}
+										/>
+									</View>
 								</View>
 							</View>
-						</ScrollView>
-						<View style={styles.businessModalActions}>
-							<TouchableOpacity
-								style={[styles.businessModalButton, styles.businessModalCancelButton, { borderColor: colors.border }]}
-								onPress={() => setShowBusinessModal(false)}
-								disabled={businessLoading}
-							>
-								<Text style={[styles.businessModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
-							</TouchableOpacity>
-							<TouchableOpacity
-								style={[styles.businessModalButton, styles.businessModalSubmitButton, { backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }]}
-								onPress={handleSubmitBusinessRequest}
-								disabled={businessLoading || !businessName.en.trim()}
-							>
-								{businessLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.businessModalButtonText, { color: '#fff' }]}>{translate('submit', 'Submit')}</Text>}
-							</TouchableOpacity>
+							<View style={styles.businessModalActions}>
+								<TouchableOpacity
+									style={[styles.businessModalButton, styles.businessModalCancelButton, { borderColor: colors.border }]}
+									onPress={() => setShowBusinessModal(false)}
+									disabled={businessLoading}
+								>
+									<Text style={[styles.businessModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={[styles.businessModalButton, styles.businessModalSubmitButton, { backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }]}
+									onPress={handleSubmitBusinessRequest}
+									disabled={businessLoading || !businessName.en.trim()}
+								>
+									{businessLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.businessModalButtonText, { color: '#fff' }]}>{translate('submit', 'Submit')}</Text>}
+								</TouchableOpacity>
+							</View>
 						</View>
-					</View>
-				</KeyboardAvoidingView>
+					</KeyboardSafeView>
+				</View>
 			</Modal>
 		</View>
 	)
