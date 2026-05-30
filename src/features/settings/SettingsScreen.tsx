@@ -44,7 +44,7 @@ export default function SettingsScreen() {
 	const [serverInfo, setServerInfo] = useState<any>(null)
 	const [loading, setLoading] = useState(false)
 
-	const { isChecking, isDownloading, downloadProgress, updateInfo, cachedApkPath, cachedApkSize, startupState, checkForUpdates, deleteCachedApk, shareCachedApk } = useAppUpdater()
+	const { isChecking, isDownloading, downloadProgress, updateInfo, cachedApkPath, cachedApkSize, startupState, checkForUpdates, deleteCachedApk, shareCachedApk, installApk } = useAppUpdater()
 
 	const handleShare = async () => {
 		if (!updateInfo) return
@@ -203,9 +203,11 @@ export default function SettingsScreen() {
 							headerRight={
 								isDownloading && (startupState === 'ready' || startupState === 'updateAvailable') ? (
 									<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 14 }}>
-										<ActivityIndicator size="small" color={colors.primary} />
+										<Ionicons name="cloud-download-outline" size={16} color={colors.primary} />
 										<Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>{Math.round(downloadProgress * 100)}%</Text>
 									</View>
+								) : cachedApkPath && updateInfo && cachedApkPath.includes(updateInfo.latest_version) ? (
+									<SmartScreenHeader.Action iconName="arrow-down-circle-outline" onPress={() => installApk(cachedApkPath)} disabled={loading} accessibilityLabel="Install downloaded update" />
 								) : (
 									<SmartScreenHeader.Action iconName="refresh" onPress={fetchServerInfo} disabled={loading} accessibilityLabel="Refresh settings info" />
 								)
@@ -215,56 +217,6 @@ export default function SettingsScreen() {
 				}}
 			/>
 			<View style={{ height: 16 }} />
-
-			<SettingSection title={translate('social_media', 'Social Media')}>
-				<SettingItem
-					icon="logo-facebook"
-					title="Facebook"
-					subtitle="Follow us on Facebook"
-					onPress={() => Linking.openURL('https://www.facebook.com/Drinaluza')}
-					copyValue="https://www.facebook.com/Drinaluza"
-					color="#1877F2"
-				/>
-				<SettingItem
-					icon="logo-instagram"
-					title="Instagram"
-					subtitle={translate('follow_on_instagram', 'Follow us on Instagram')}
-					onPress={() => Linking.openURL('https://www.instagram.com/drinaluza/')}
-					copyValue="https://www.instagram.com/drinaluza/"
-					color="#E4405F"
-				/>
-				<SettingItem
-					icon="logo-tiktok"
-					title="TikTok"
-					subtitle="Follow us on TikTok"
-					onPress={() => Linking.openURL('https://www.tiktok.com/@drinaluza')}
-					copyValue="https://www.tiktok.com/@drinaluza"
-					color="#000000"
-				/>
-			</SettingSection>
-
-			<SettingSection title={translate('contact', 'Contact')}>
-				<SettingItem icon="mail" title="Email" subtitle="drinaluza@gmail.com" onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')} copyValue="drinaluza@gmail.com" color="#EA4335" />
-			</SettingSection>
-
-			<SettingSection title={translate('downloads', 'Downloads')}>
-				<SettingItem
-					icon="globe-outline"
-					title="Netlify"
-					subtitle="drinaluza.netlify.app"
-					onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
-					copyValue="https://drinaluza.netlify.app/"
-					color="#00C7B7"
-				/>
-				<SettingItem
-					icon="globe-outline"
-					title="Vercel"
-					subtitle="drinaluza.vercel.app"
-					onPress={() => Linking.openURL('https://drinaluza.vercel.app/')}
-					copyValue="https://drinaluza.vercel.app/"
-					color={colors.text}
-				/>
-			</SettingSection>
 
 			<SettingSection title={translate('app_updates', 'App Updates')}>
 				<View style={[styles.updaterCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -341,6 +293,56 @@ export default function SettingsScreen() {
 						)}
 					</View>
 				</View>
+			</SettingSection>
+
+			<SettingSection title={translate('social_media', 'Social Media')}>
+				<SettingItem
+					icon="logo-facebook"
+					title="Facebook"
+					subtitle="Follow us on Facebook"
+					onPress={() => Linking.openURL('https://www.facebook.com/Drinaluza')}
+					copyValue="https://www.facebook.com/Drinaluza"
+					color="#1877F2"
+				/>
+				<SettingItem
+					icon="logo-instagram"
+					title="Instagram"
+					subtitle={translate('follow_on_instagram', 'Follow us on Instagram')}
+					onPress={() => Linking.openURL('https://www.instagram.com/drinaluza/')}
+					copyValue="https://www.instagram.com/drinaluza/"
+					color="#E4405F"
+				/>
+				<SettingItem
+					icon="logo-tiktok"
+					title="TikTok"
+					subtitle="Follow us on TikTok"
+					onPress={() => Linking.openURL('https://www.tiktok.com/@drinaluza')}
+					copyValue="https://www.tiktok.com/@drinaluza"
+					color="#000000"
+				/>
+			</SettingSection>
+
+			<SettingSection title={translate('contact', 'Contact')}>
+				<SettingItem icon="mail" title="Email" subtitle="drinaluza@gmail.com" onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')} copyValue="drinaluza@gmail.com" color="#EA4335" />
+			</SettingSection>
+
+			<SettingSection title={translate('downloads', 'Downloads')}>
+				<SettingItem
+					icon="globe-outline"
+					title="Netlify"
+					subtitle="drinaluza.netlify.app"
+					onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
+					copyValue="https://drinaluza.netlify.app/"
+					color="#00C7B7"
+				/>
+				<SettingItem
+					icon="globe-outline"
+					title="Vercel"
+					subtitle="drinaluza.vercel.app"
+					onPress={() => Linking.openURL('https://drinaluza.vercel.app/')}
+					copyValue="https://drinaluza.vercel.app/"
+					color={colors.text}
+				/>
 			</SettingSection>
 
 			<SettingSection title={translate('developer', 'Developer')}>

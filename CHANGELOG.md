@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.18.1] - 2026-05-30
+### Added
+- Implemented advanced app startup cached APK flows:
+  - If no remote update is available and a cached APK version > `APP_VERSION` is found, the app automatically launches the system package installer.
+  - If an optional remote update exists alongside a cached APK, the user is natively prompted to download the remote release, install the cached version, or continue to the app.
+  - If a required remote update exists, the user is natively prompted to confirm downloading the remote release or exit the app.
+- Repositioned the "App Updates" control panel in `SettingsScreen.tsx` to the very top of the scroll layout.
+- Upgraded the `SmartScreenHeader`'s `headerRight` action in `SettingsScreen.tsx` to transition dynamically from a download progress indicator to a clickable **Install** action button upon download completion.
+- Re-architected code in `AppUpdaterContext.tsx` to share installer launcher subroutines under a unified `installApk` helper.
+
 ## [1.17.1] - 2026-05-30
 ### Added
 - Re-created a premium, cross-platform `AppUpdater` suite under `src/core/app-updater/` coordinating startup checks, downloads, installations, disk storage queries, and cache cleans.

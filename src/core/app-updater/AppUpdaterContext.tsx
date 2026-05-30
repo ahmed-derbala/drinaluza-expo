@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef, useMemo } from 'react'
-import { Platform, Linking, Alert } from 'react-native'
+import { Platform, Linking, Alert, BackHandler } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import * as IntentLauncher from 'expo-intent-launcher'
@@ -24,6 +24,7 @@ interface AppUpdaterContextType {
 	setAppFullyLoaded: (loaded: boolean) => void
 	checkForUpdates: (manual?: boolean) => Promise<void>
 	downloadUpdate: () => Promise<void>
+	installApk: (apkPath: string) => Promise<void>
 	dismissUpdate: () => void
 	deleteCachedApk: () => Promise<void>
 	shareCachedApk: () => Promise<void>
@@ -53,6 +54,66 @@ export const AppUpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 	const isCheckingRef = useRef(false)
 
 	const cacheDir = useMemo(() => FileSystem.cacheDirectory + 'apk_cache/', [])
+
+	interface CachedApkInfo {
+		path: string
+		version: string
+		size: number
+	}
+
+	const findAnyCachedApk = async (): Promise<CachedApkInfo | null> => {
+		if (Platform.OS === 'web') return null
+		try {
+			const dirInfo = await FileSystem.getInfoAsync(cacheDir)
+			if (!dirInfo.exists) return null
+
+			const files = await FileSystem.readDirectoryAsync(cacheDir)
+			const apkFiles = files.filter((f) => f.startsWith('drinaluza-') && f.endsWith('.apk'))
+			if (apkFiles.length === 0) return null
+
+			// Get the first APK file
+			const fileName = apkFiles[0]
+			const filePath = cacheDir + fileName
+			const fileInfo = await FileSystem.getInfoAsync(filePath)
+
+			const match = fileName.match(/drinaluza-(.+)\.apk/)
+			const version = match ? match[1] : ''
+
+			if (fileInfo.exists && version) {
+				return {
+					path: filePath,
+					version,
+					size: fileInfo.size || 0
+				}
+			}
+			return null
+		} catch (e) {
+			log({ level: 'error', label: 'updater', message: 'Failed to find cached APK', error: e })
+			return null
+		}
+	}
+
+	const installApk = async (apkPath: string) => {
+		if (Platform.OS !== 'android') {
+			Linking.openURL(UPDATE_CHECK_URL)
+			return
+		}
+		try {
+			log({ level: 'info', label: 'updater', message: `Installing APK from ${apkPath}` })
+			const contentUri = await FileSystem.getContentUriAsync(apkPath)
+			await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+				data: contentUri,
+				flags: 1 // Intent.FLAG_GRANT_READ_URI_PERMISSION
+			})
+		} catch (e) {
+			log({ level: 'error', label: 'updater', message: 'Failed to run installer', error: e })
+			toast.show({
+				title: 'Installation Failed',
+				message: 'Could not open the system package installer.',
+				color: '#EF4444'
+			})
+		}
+	}
 
 	// Helper to check for a cached APK and update local state
 	const updateCachedApkState = async (latestVersion: string) => {
@@ -129,9 +190,108 @@ export const AppUpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 				message: `Update comparison: Current=${APP_VERSION}, Latest=${latestInfo.latest_version}, Result=${comparison}`
 			})
 
+			// Check for any cached APK first
+			const cachedApk = await findAnyCachedApk()
+
 			// Manage cache and check if file exists
 			await cleanupApkCache(latestInfo.latest_version)
 			await updateCachedApkState(latestInfo.latest_version)
+
+			// Startup cached APK flows
+			if (!manual && cachedApk) {
+				if (comparison === 'none') {
+					const cachedComparison = compareVersions(APP_VERSION, cachedApk.version)
+					if (cachedComparison !== 'none') {
+						log({
+							level: 'info',
+							label: 'updater',
+							message: `Startup cache trigger: No new remote version, but cached version ${cachedApk.version} > APP_VERSION. Launching installation.`
+						})
+						setStartupState('ready')
+						setIsChecking(false)
+						isCheckingRef.current = false
+						await installApk(cachedApk.path)
+						return
+					}
+				} else {
+					if (comparison === 'optional') {
+						// Optional remote update exists. Ask user to download new remote, install cached (if valid), or continue.
+						setStartupState('ready')
+						setIsChecking(false)
+						isCheckingRef.current = false
+
+						const cachedVsRemote = compareVersions(cachedApk.version, latestInfo.latest_version)
+						const cachedVsCurrent = compareVersions(APP_VERSION, cachedApk.version)
+
+						const buttons: any[] = []
+
+						// 1. Download newer version
+						if (cachedVsRemote !== 'none') {
+							buttons.push({
+								text: `Download v${latestInfo.latest_version}`,
+								onPress: () => {
+									setStartupState('updateAvailable')
+									setShowModal(true)
+									downloadUpdate()
+								}
+							})
+						}
+
+						// 2. Install cached version
+						if (cachedVsCurrent !== 'none') {
+							buttons.push({
+								text: `Install Cached v${cachedApk.version}`,
+								onPress: () => {
+									installApk(cachedApk.path)
+								}
+							})
+						}
+
+						// 3. Continue to app without update
+						buttons.push({
+							text: 'Continue to App',
+							style: 'cancel'
+						})
+
+						Alert.alert('Update Available', `A new version v${latestInfo.latest_version} is available. You also have a previously downloaded version v${cachedApk.version} ready.`, buttons, {
+							cancelable: true
+						})
+						return
+					} else if (comparison === 'required') {
+						// Required remote update exists. Ask user to download remote or exit app.
+						setStartupState('updateRequired')
+						setShowModal(true)
+						setIsChecking(false)
+						isCheckingRef.current = false
+
+						Alert.alert(
+							'Required Update',
+							`A mandatory update v${latestInfo.latest_version} is available. You must download this version to continue.`,
+							[
+								{
+									text: 'Confirm Download',
+									onPress: () => {
+										downloadUpdate()
+									}
+								},
+								{
+									text: 'Exit App',
+									style: 'destructive',
+									onPress: () => {
+										if (Platform.OS === 'android') {
+											BackHandler.exitApp()
+										} else {
+											setShowModal(false)
+										}
+									}
+								}
+							],
+							{ cancelable: false }
+						)
+						return
+					}
+				}
+			}
 
 			if (comparison === 'required') {
 				if (Platform.OS === 'web') {
@@ -209,15 +369,7 @@ export const AppUpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 					label: 'updater',
 					message: 'APK already downloaded. Launching installation.'
 				})
-				if (Platform.OS === 'android') {
-					const contentUri = await FileSystem.getContentUriAsync(apkPath)
-					await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-						data: contentUri,
-						flags: 1 // Intent.FLAG_GRANT_READ_URI_PERMISSION
-					})
-				} else {
-					Linking.openURL(updateInfo.download_url)
-				}
+				await installApk(apkPath)
 				return
 			}
 
@@ -251,16 +403,7 @@ export const AppUpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 					message: `Download complete: ${result.uri}`
 				})
 				await updateCachedApkState(updateInfo.latest_version)
-
-				if (Platform.OS === 'android') {
-					const contentUri = await FileSystem.getContentUriAsync(result.uri)
-					await IntentLauncher.startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-						data: contentUri,
-						flags: 1 // Intent.FLAG_GRANT_READ_URI_PERMISSION
-					})
-				} else {
-					Linking.openURL(updateInfo.download_url)
-				}
+				await installApk(result.uri)
 			}
 		} catch (e) {
 			setIsDownloading(false)
@@ -376,6 +519,7 @@ export const AppUpdaterProvider: React.FC<{ children: React.ReactNode }> = ({ ch
 				setAppFullyLoaded: setIsAppFullyLoaded,
 				checkForUpdates,
 				downloadUpdate,
+				installApk,
 				dismissUpdate,
 				deleteCachedApk,
 				shareCachedApk

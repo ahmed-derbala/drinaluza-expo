@@ -163,14 +163,14 @@ in update modal show:
 
 
 in /settings:
-use SmartScreenHeader to show download progress in the headerRight for OPTIONAL update 
-add a section for app updates with this UI:
+use SmartScreenHeader to show and icon with download progress in the headerRight, when download is complete change to an install icon
+add a section in the top of /settingsfor app updates with this UI:
 - check for updates button
 - current version
 - latest version
 - size
 - download count
-- cached apk file if available with delete button next to it.
+- cached downloaded apk file if available with delete button next to it.
 - share button:
   - on android: use expo-sharing
     - opt to share the download url or cached apk file (if available). if sharing apk file is choosen: show a dialog to the user recommending using quick share for faster share with other devices
@@ -179,7 +179,19 @@ add a section for app updates with this UI:
 
 
 Behavior requirements:
-
+-in app startup:
+  -if there is a cached apk file:
+    -if there is no new version available:
+      -if cached apk version is higher than current version:
+        -install the cached apk file
+    -if there is new version available:
+      -if the new version is optional: 
+        -ask the user if he wants to download the newer version or install the cached apk file or continue to the app without update
+      -if the new version is required: 
+        -ask the user to confirm downloading the new version or exit the app
+    
+     
+- keep only one apk file in the cache
 - Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
 - Prevent navigation race conditions
