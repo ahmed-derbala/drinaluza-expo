@@ -2,8 +2,8 @@ Create a reusable shared screen header component named `SmartScreenHeader` that 
 
 Requirements:
 
-- Component path:
-  src/core/SmartScreenHeader/
+- Create reusable component in:
+  src/core/smart-screen-header/
 
 - Must use:
   - expo-router compatible patterns
@@ -28,18 +28,14 @@ Features:
   - hover effects on web
   - proper touch targets on mobile
 
-- Props should include:
+- Core Props to support:
   - title
   - subtitle
-  - leftContent
-  - rightContent
+  - headerLeft
+  - headerRight
   - onBackPress
   - showBackButton
   - loading
-  - transparent
-  - sticky
-  - className
-  - style
 
 - Header height and spacing must be consistent across the app.
 
@@ -51,21 +47,7 @@ Features:
   - handle long titles gracefully
   - avoid layout shift when right actions differ between screens
 
-- Create reusable shared header action components:
-  - `SmartHeaderIconButton`
-  - `SmartBackButton`
-
-`SmartHeaderIconButton` requirements:
-- supports any icon library
-- hover effect on web
-- ripple/press feedback on mobile
-- accessibility label
-- loading/disabled state
-- badge count support
-- configurable size
-- proper hitSlop
-
-- Do not hardcode icons directly inside screens.
+- Do not hardcode header icons directly inside screens.
 - Header actions must be reusable across screens.
 
 - Use composition instead of massive prop-based configuration.

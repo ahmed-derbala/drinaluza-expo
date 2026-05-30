@@ -1,5 +1,34 @@
 # Changelog
 
+## [1.17.1] - 2026-05-30
+### Added
+- Re-created a premium, cross-platform `AppUpdater` suite under `src/core/app-updater/` coordinating startup checks, downloads, installations, disk storage queries, and cache cleans.
+- Integrated a solid black `#000000` **Startup Gate** screen inside `src/app/_layout.tsx` to handle parallel checks and completely eliminate startup flickering or navigation race conditions.
+- Added an "App Updates" control panel in `SettingsScreen.tsx` with checking controls, versions display, cached files tracking, and system sharing wrappers.
+- Integrated download progress scaling dynamically in `SmartScreenHeader` right-action button during optional updates.
+
+### Changed
+- Refactored the API client in `src/core/api/index.ts` to import the centralized `config` namespace and use `config.TIMEOUT_MS` for its request timeout instead of legacy named exports.
+- Capped Socket.io client reconnection attempts to `RETRY_ATTEMPTS` (3) instead of 10 and implemented a robust `reconnect_failed` handler to disconnect and release connection resources when the backend server is unreachable.
+
+## [1.16.9] - 2026-05-29
+### Added
+- Created a highly premium, reusable, and type-safe screen header component named `SmartScreenHeader` supporting Android, iOS, and Web under `src/core/smart-screen-header/`.
+- Exported modular sub-components `SmartScreenHeader.BackButton` and `SmartScreenHeader.Action` to enable flexible and clean composition layouts without hardcoding icons inside screens.
+- Added a premium loop-animated linear loading bar running along the bottom border of the header using native-driver scaling, preventing layout shifts.
+- Implemented mathematically centered title/subtitle alignments that truncate gracefully and prevent overlapping with left/right actions.
+- Integrated `useSafeAreaInsets` to provide precise status bar top padding adjustments.
+- Added Web-native focus outline rings for keyboard accessibility navigation and background overlays on hover.
+- Replaced the legacy header in `SettingsScreen.tsx` with a custom `SmartScreenHeader` composition rendering, complete with a refresh action and loading progress bar synchronization.
+- Mounted global status bar styling (`<StatusBar style="light" />`) at the root layout of the application.
+
+### Changed
+- Removed the light theme entirely from the codebase by mapping lightColors directly to darkColors in `colors.ts` and locking `isDark = true` / `theme = DarkTheme` inside `AppThemeProvider`.
+- Completely removed the Appearance theme toggle menu section from `SettingsScreen.tsx` to streamline the Strictly Dark Mode experience.
+
+### Fixed
+- Fixed a white flash on screen transitions when navigating back or pushing routes (like returning to `/feed` from details) by hardcoding the stack navigator `contentStyle`, tab `sceneContainerStyle`, and screen wrappers directly to `#000000` (black) and styling stack headers to `#1C2541` natively across layout stacks. Enforced native dark mode configuration (`userInterfaceStyle: "dark"`, `backgroundColor: "#000000"`) by default across platforms in `app.config.js`.
+
 ## [1.16.1] - 2026-05-29
 ### Added
 - Completely rewrote `KeyboardSafeView` and `KeyboardSafeFlatList` from scratch as highly robust, cross-platform, layout-aware containers.

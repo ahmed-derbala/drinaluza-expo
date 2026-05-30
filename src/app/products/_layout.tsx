@@ -1,5 +1,6 @@
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
+import { useTheme } from '@/core/theme'
 
 export default function ProductsLayout() {
 	return (
@@ -13,7 +14,14 @@ export default function ProductsLayout() {
 					ios: 'Back',
 					android: undefined,
 					web: 'Back'
-				})
+				}),
+				headerStyle: {
+					backgroundColor: '#1C2541'
+				},
+				headerTintColor: '#F8FAFC',
+				contentStyle: {
+					backgroundColor: '#000000'
+				}
 			}}
 		>
 			<Stack.Screen name="index" />

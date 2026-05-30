@@ -1,6 +1,6 @@
 import React from 'react'
-import SplashScreen from '@/features/splash/SplashScreen'
+import { Redirect } from 'expo-router'
 
 export default function Index() {
-	return <SplashScreen />
+	return <Redirect href="/(home)/feed" />
 }

@@ -70,11 +70,11 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
 		}
 	}
 
-	const isDark = themeMode === 'system' ? systemScheme === 'dark' : themeMode === 'dark'
-	const theme = isDark ? DarkTheme : LightTheme
+	const isDark = true
+	const theme = DarkTheme
 
 	return (
-		<ThemeContext.Provider value={{ themeMode, setThemeMode, isDark }}>
+		<ThemeContext.Provider value={{ themeMode: 'dark', setThemeMode: async () => {}, isDark }}>
 			<NavigationThemeProvider value={theme}>{children}</NavigationThemeProvider>
 		</ThemeContext.Provider>
 	)

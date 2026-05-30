@@ -26,7 +26,7 @@ const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
-			backgroundColor: colors.background
+			backgroundColor: '#000000'
 		},
 		headerContainer: {
 			padding: 20,
@@ -504,6 +504,7 @@ export default function FeedScreen() {
 			/>
 
 			<Animated.FlatList
+				style={{ backgroundColor: colors.background }}
 				key={numColumns}
 				data={displayedItems}
 				renderItem={renderItem}

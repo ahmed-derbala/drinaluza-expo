@@ -15,7 +15,8 @@ export default {
         orientation: "default",
         icon: "./assets/images/icon.png",
         scheme: "drinaluza",
-        userInterfaceStyle: "automatic",
+        userInterfaceStyle: "dark",
+        backgroundColor: "#000000",
         newArchEnabled: true,
         splash: {
             image: "./assets/images/splash-icon.png",
@@ -32,6 +33,7 @@ export default {
             bundleIdentifier: "com.ahmedderbala.drinaluza"
         },
         android: {
+            backgroundColor: "#000000",
             googleServicesFile: "google-services.json",
             softwareKeyboardLayoutMode: "resize",
             permissions: [

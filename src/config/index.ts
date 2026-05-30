@@ -25,7 +25,7 @@ const config: AppConfig = {
 export const APP_NAME = config.app.name
 export const APP_VERSION = config.app.version
 export const API_TIMEOUT = config.app.timeout
-const RETRY_ATTEMPTS = config.app.retryAttempts
+export const RETRY_ATTEMPTS = config.app.retryAttempts
 
 // API URL from environment variables
 export const API_PREFIX = '/api'
@@ -37,4 +37,5 @@ export const API_URL = BACKEND_URL ? `${BACKEND_URL.replace(/\/$/, '')}${API_PRE
 
 export const UPDATE_CHECK_URL =
 	process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest'
-export const TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_TIMEOUT_MS || Constants.expoConfig?.extra?.TIMEOUT_MS || 60000)
+
+export const TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000

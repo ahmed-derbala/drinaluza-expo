@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { io, Socket } from 'socket.io-client'
 import { View, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
-import { BACKEND_URL } from '@/config'
+import { BACKEND_URL, RETRY_ATTEMPTS } from '@/config'
 import { useUser } from '../contexts/UserContext'
 import { useNotification } from '../../features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
@@ -38,7 +38,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			transports: ['websocket'],
 			autoConnect: true,
 			reconnection: true,
-			reconnectionAttempts: 10,
+			reconnectionAttempts: RETRY_ATTEMPTS || 3,
 			query: {
 				userSlug: user.slug
 			}
@@ -52,6 +52,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 		socket.on('connect_error', (error) => {
 			log({ level: 'error', label: 'socket', message: 'Socket connection error', error })
+		})
+
+		socket.on('reconnect_failed', () => {
+			log({ level: 'warn', label: 'socket', message: 'Socket reconnection failed after maximum attempts. Stopping reconnect tries.' })
+			socket.disconnect()
 		})
 
 		socket.on('new_notification', async (data: any) => {

@@ -1,6 +1,4 @@
----
-trigger: always_on
----
+
 rewrite from scratch KeyboardSafeView
 Create reusable component in src/core/KeyboardSafeView/ and use it on all screens containing input fields.
 

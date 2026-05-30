@@ -1,6 +1,8 @@
 ## AppUpdater
 
-in src/core/app-updater/ create AppUpdater component wich is responsible for checking and downloading updates.
+in src/core/app-updater/ create AppUpdater component wich is responsible for checking, downloading and installing updates.
+
+check for updates on app startup
 
 Use semantic version comparison for update behavior.
 
@@ -34,9 +36,14 @@ Rules:
 
   → This is an OPTIONAL update.
 
-  - If the latest version is lower than the current version do nothing
+- If the latest version is lower than the current version do nothing
 
-Required updates should block app usage until updated. except for web version you should just refresh the page.
+on android:
+Required updates should block app usage until updated.
+Optional updates should allow the user to continue using the app.
+
+on web:
+Required updates should block app usage until refreshed. 
 Optional updates should allow the user to continue using the app.
 
 check for updates using config.UPDATE_CHECK_URL link
@@ -150,13 +157,14 @@ in update modal show:
 - device free storage size
 - download count
 - whats new (changelog)
-- exit button (exit app) for required update and later button (closes the modal or continue app loading) for optional update that close the modal
+- exit button (exit app) for required update and later button (closes the modal to continue app usage) for optional update
 - update button that downloads the update
+- download progress bar
 
-check for updates on app startup
-use SmartScreenHeader to show download progress in the rightContent for OPTIONAL update 
 
-in /settings add a section for app updates with this UI:
+in /settings:
+use SmartScreenHeader to show download progress in the headerRight for OPTIONAL update 
+add a section for app updates with this UI:
 - check for updates button
 - current version
 - latest version
@@ -165,65 +173,24 @@ in /settings add a section for app updates with this UI:
 - cached apk file if available with delete button next to it.
 - share button:
   - on android: use expo-sharing
-    - opt to share download url or cached apk file. advice the user to use quick share for fast sharing with other devices.
+    - opt to share the download url or cached apk file (if available). if sharing apk file is choosen: show a dialog to the user recommending using quick share for faster share with other devices
   - on web: copy download url to clipboard  
 
 
-Implement app update checking in parallel with the splash screen lifecycle.
-
-Requirements:
-
-- App startup flow:
-  1. Splash screen appears immediately on app launch
-  2. Update check starts immediately in parallel
-  3. Do NOT navigate to the main app yet
-  4. Keep splash screen visible while checking for updates
-  5. If update exists:
-     - hide splash screen
-     - display update modal
-     - block access to app if update is required
-  6. If no update exists:
-     - hide splash screen
-     - render the normal app/home screen
 
 Behavior requirements:
 
 - Avoid white screen or flickering during startup
-- Prevent rendering home screen before update check completes
+- when app starts prevent rendering home screen before update check completes
 - Prevent navigation race conditions
-- Ensure splash screen remains smooth during async operations
 - Update check must have timeout protection, use config.TIMEOUT_MS
 - Handle offline/network failure gracefully
 - If update check fails:
   - continue to app normally
 
-Architecture requirements:
-
-- Update checking logic must be centralized in:
-  `src/core/app-updater/`
-
-- Startup state should include:
-  - initializing
-  - checkingUpdate
-  - updateAvailable
-  - updateRequired
-  - ready
-  - error
-
-- Use a startup gate pattern:
-  - splash screen acts as startup gate
-  - app content renders only after startup resolution
 
 - The update modal must:
   - appear above navigation
-  - work on Android, iOS
   - support optional and required updates
-  - support loading/progress state
 
 - Use proper async cancellation and cleanup to avoid memory leaks.
-
-- Optimize startup performance:
-  - run update check concurrently with other startup tasks
-  - avoid unnecessary rerenders
-  - memoize provider values where appropriate
-

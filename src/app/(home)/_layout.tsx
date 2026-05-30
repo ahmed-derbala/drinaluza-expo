@@ -1,6 +1,8 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet } from 'react-native'
+
+const TabsComponent = Tabs as any
 import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLayout, useUser } from '@/core/contexts'
@@ -29,12 +31,15 @@ export default function HomeLayout() {
 	const isNotificationsVisible = isAuthenticated
 
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background }]}>
+		<View style={[styles.container, { backgroundColor: '#000000' }]}>
 			<StatusBar style="light" />
-			<Tabs
+			<TabsComponent
+				sceneContainerStyle={{
+					backgroundColor: '#000000'
+				}}
 				screenOptions={{
 					headerStyle: {
-						backgroundColor: colors.background
+						backgroundColor: '#000000'
 					},
 					headerTintColor: colors.text,
 					headerTitleStyle: {
@@ -156,7 +161,7 @@ export default function HomeLayout() {
 						tabBarAccessibilityLabel: translate('settings', 'Settings')
 					}}
 				/>
-			</Tabs>
+			</TabsComponent>
 		</View>
 	)
 }

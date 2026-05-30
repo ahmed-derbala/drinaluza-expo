@@ -1,7 +1,7 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { router } from 'expo-router'
 import { secureGetItem, secureRemoveItem } from '../storage'
-import { API_TIMEOUT, API_URL, API_PREFIX } from '../../config'
+import * as config from '../../config'
 import { logError } from '../../core/helpers/errorHandler'
 import { log } from '../log'
 
@@ -12,7 +12,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 		headers: {
 			'Content-Type': 'application/json'
 		},
-		timeout: API_TIMEOUT
+		timeout: config.TIMEOUT_MS
 	})
 
 	client.interceptors.request.use(async (config: InternalAxiosRequestConfig) => {
@@ -86,7 +86,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 // If EXPO_PUBLIC_BACKEND_URL is not set, this might fail or default to undefined which axios handles strictly?
 // Axios defaults to current origin if baseURL is undefined. That might be okay for web, but not for mobile.
 // For now, allow undefined, but user said "use EXPO_PUBLIC_BACKEND_URL".
-const apiClient = createApiClient(API_URL || `http://192.168.1.11:5001${API_PREFIX}`)
+const apiClient = createApiClient(config.API_URL || `http://192.168.1.11:5001${config.API_PREFIX}`)
 
 // Function to get the current API client
 export const getApiClient = (): AxiosInstance => apiClient

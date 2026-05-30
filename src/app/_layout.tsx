@@ -1,10 +1,10 @@
 import { Stack } from 'expo-router'
 import React from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import * as SplashScreen from 'expo-splash-screen'
-
-// Prevent native splash screen from hiding automatically
-SplashScreen.preventAutoHideAsync().catch(() => {})
+import { StatusBar } from 'expo-status-bar'
+import { View, ActivityIndicator } from 'react-native'
+import { AppUpdaterProvider, useAppUpdater } from '@/core/app-updater/AppUpdaterContext'
+import { AppUpdater } from '@/core/app-updater/AppUpdater'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -19,14 +19,37 @@ import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
-import { AppThemeProvider } from '@/core/theme'
-import { AppUpdaterProvider } from '@/core/app-updater/AppUpdaterContext'
-import { AppUpdater } from '@/core/app-updater/AppUpdater'
+import { AppThemeProvider, useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
+	const { startupState } = useAppUpdater()
+
+	if (startupState === 'initializing' || startupState === 'checkingUpdate') {
+		return (
+			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+				<ActivityIndicator size="large" color="#3B82F6" />
+			</View>
+		)
+	}
+
+	if (startupState === 'updateRequired') {
+		return (
+			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+				<AppUpdater />
+			</View>
+		)
+	}
+
 	return (
 		<ErrorBoundary>
-			<Stack>
+			<StatusBar style="light" />
+			<Stack
+				screenOptions={{
+					contentStyle: {
+						backgroundColor: '#000000'
+					}
+				}}
+			>
 				<Stack.Screen name="index" options={{ headerShown: false }} />
 				<Stack.Screen name="(home)" options={{ headerShown: false }} />
 				<Stack.Screen name="dashboard" options={{ headerShown: false }} />

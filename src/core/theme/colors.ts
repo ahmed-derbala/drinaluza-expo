@@ -1,28 +1,5 @@
 import { AppThemeColors } from './types'
 
-export const lightColors: AppThemeColors = {
-	primary: '#0284C7',
-	background: '#FFFFFF',
-	card: '#FFFFFF',
-	text: '#0F172A',
-	border: '#E2E8F0',
-	notification: '#E11D48',
-	primaryContainer: '#E0F2FE',
-	surface: '#FFFFFF',
-	surfaceVariant: '#F1F5F9',
-	modalOverlay: 'rgba(15, 23, 42, 0.5)',
-	error: '#DC2626',
-	success: '#059669',
-	warning: '#D97706',
-	info: '#2563EB',
-	buttonText: '#FFFFFF',
-	textSecondary: '#475569',
-	textTertiary: '#94A3B8',
-	borderLight: '#F1F5F9',
-	textOnPrimary: '#FFFFFF',
-	inputBorder: '#CBD5E1'
-}
-
 export const darkColors: AppThemeColors = {
 	primary: '#0EA5E9',
 	background: '#000000',
@@ -45,6 +22,8 @@ export const darkColors: AppThemeColors = {
 	textOnPrimary: '#FFFFFF',
 	inputBorder: '#334155'
 }
+
+export const lightColors: AppThemeColors = darkColors
 
 // Static export for legacy compatibility or background splash styling
 export const colors = darkColors
