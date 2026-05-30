@@ -5,6 +5,7 @@ export const ar = {
 	notifications: 'الإشعارات',
 	profile: 'الملف الشخصي',
 	settings: 'الإعدادات',
+	updates: 'التحديثات',
 	ok: 'موافق',
 	cancel: 'إلغاء',
 	confirm: 'تأكيد',

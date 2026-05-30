@@ -1,8 +1,11 @@
-## AppUpdater
+## Updates screen
+using expo-router best practices, create updates screen in:
+src/app/updates/
+src/core/updates/
 
-in src/core/app-updater/ create AppUpdater component wich is responsible for checking, downloading and installing updates.
+its responsible for checking, downloading and installing updates.
 
-check for updates on app startup
+check for updates on app startup and once a week, use storage to track last update check time.
 
 Use semantic version comparison for update behavior.
 
@@ -141,10 +144,10 @@ create a function that takes config.UPDATE_CHECK_URL as input and returns from t
   download_url (browser_download_url)
 }
 
-
 keep only the latest version apk file in cache
 
-in update modal show:
+in updates screen show:
+- check for updates button
 - update type (required/optional)
 - message text based on update type:
   REQUIRED → "a new update is available, please update your app to continue using it"
@@ -157,41 +160,41 @@ in update modal show:
 - device free storage size
 - download count
 - whats new (changelog)
-- exit button (exit app) for required update and later button (closes the modal to continue app usage) for optional update
-- update button that downloads the update
-- download progress bar
-
-
-in /settings:
-use SmartScreenHeader to show and icon with download progress in the headerRight, when download is complete change to an install icon
-add a section in the top of /settingsfor app updates with this UI:
-- check for updates button
-- current version
-- latest version
-- size
-- download count
+- download button that downloads the update (a refresh button on web)
+- download progress bar when downloading
+- install button when update is downloaded or there is a cached apk file ready to install
+- share button, use expo-sharing:
+  - on android: 
+    - ask the user if he wants to share the download url or cached apk file (if available). if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
+  - on web: ask the user if he wants to copy download url to clipboard or download the apk file
 - cached downloaded apk file if available with delete button next to it.
-- share button:
-  - on android: use expo-sharing
-    - opt to share the download url or cached apk file (if available). if sharing apk file is choosen: show a dialog to the user recommending using quick share for faster share with other devices
-  - on web: copy download url to clipboard  
 
+use SmartScreenHeader to show an update HeaderAction in the headerRight in all screens with downlaod progress, when download is complete change to an install icon. the press on update HeaderAction will open /updates screen if it is not already open.
 
 
 Behavior requirements:
--in app startup:
-  -if there is a cached apk file:
+-when app starts:
+on android:
+  -if there is a cached apk file ready to install:
     -if there is no new version available:
       -if cached apk version is higher than current version:
         -install the cached apk file
-    -if there is new version available:
+      -if cached apk version is lower than current version:
+        -continue to the app without update
+    -if there is new version available, open /updates:
       -if the new version is optional: 
-        -ask the user if he wants to download the newer version or install the cached apk file or continue to the app without update
+        -ask the user if he wants to download the newer version or install the cached apk file or continue to use the app
       -if the new version is required: 
         -ask the user to confirm downloading the new version or exit the app
-    
-     
-- keep only one apk file in the cache
+  -if there is no cached apk file:
+    -if there is new version available, open /updates:
+      -if the new version is optional: 
+        -ask the user if he wants to download the newer version or continue to use the app
+      -if the new version is required: 
+        -ask the user to confirm downloading the new version or exit the app
+on web: do not check for updates when app starts
+
+- keep only the latest version apk file in cache
 - Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
 - Prevent navigation race conditions
@@ -199,10 +202,5 @@ Behavior requirements:
 - Handle offline/network failure gracefully
 - If update check fails:
   - continue to app normally
-
-
-- The update modal must:
-  - appear above navigation
-  - support optional and required updates
 
 - Use proper async cancellation and cleanup to avoid memory leaks.

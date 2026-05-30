@@ -4,12 +4,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/core/theme'
 import { BackButton } from './BackButton'
 import HeaderAction from './HeaderAction'
+import { useUpdates } from '@/core/updates'
+import { usePathname, useRouter } from 'expo-router'
+import { SmartKebabMenu } from '@/core/smart-kebab-menu'
 
 export interface SmartScreenHeaderProps {
 	/**
-	 * Main title text.
+	 * Main title text or custom component node.
 	 */
-	title?: string
+	title?: string | React.ReactNode
 	/**
 	 * Secondary subtitle text.
 	 */
@@ -49,7 +52,11 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 } = ({ title, subtitle, headerLeft, headerRight, onBackPress, showBackButton = false, loading = false }) => {
 	const { colors } = useTheme()
 	const insets = useSafeAreaInsets()
-	const { width } = useWindowDimensions()
+	const width = useWindowDimensions().width
+	const pathname = usePathname()
+	const router = useRouter()
+
+	const { updateAvailable, downloading, downloadProgress, cachedApk } = useUpdates()
 
 	const loadingAnim = useRef(new Animated.Value(-100)).current
 
@@ -80,6 +87,41 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 
 	const leftSection = headerLeft ? headerLeft : showBackButton ? <BackButton onPress={onBackPress} /> : null
 
+	// Determine if we should show the global update header action
+	const renderHeaderRight = () => {
+		const showUpdateIcon = updateAvailable || downloading || !!cachedApk
+
+		let updateElement: React.ReactNode = null
+
+		if (showUpdateIcon) {
+			let iconName = 'arrow-down-circle-outline'
+			let badgeCount = 0
+
+			if (downloading) {
+				iconName = 'cloud-download-outline'
+				badgeCount = downloadProgress > 0 ? Math.round(downloadProgress * 100) : 0
+			} else if (cachedApk) {
+				iconName = 'cube-outline'
+			}
+
+			const handlePress = () => {
+				if (pathname !== '/updates') {
+					router.push('/updates')
+				}
+			}
+
+			updateElement = <HeaderAction iconName={iconName} onPress={handlePress} badgeCount={badgeCount} accessibilityLabel="Application update available" iconColor={colors.primary} />
+		}
+
+		return (
+			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+				{updateElement}
+				{headerRight}
+				<SmartKebabMenu />
+			</View>
+		)
+	}
+
 	return (
 		<View
 			style={[
@@ -102,11 +144,13 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 
 				{/* Mathematically Centered Title Container (uses marginHorizontal to avoid button overlaps) */}
 				<View style={styles.centerContainer} pointerEvents="box-none">
-					{title ? (
+					{typeof title === 'string' ? (
 						<Text style={[styles.title, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
 							{title}
 						</Text>
-					) : null}
+					) : (
+						title
+					)}
 					{subtitle ? (
 						<Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
 							{subtitle}
@@ -116,7 +160,7 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 
 				{/* Right Section */}
 				<View style={[styles.sideContainer, styles.rightContainer]} pointerEvents="box-none">
-					{headerRight}
+					{renderHeaderRight()}
 				</View>
 			</View>
 

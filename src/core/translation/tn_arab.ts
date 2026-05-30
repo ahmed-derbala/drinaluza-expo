@@ -5,6 +5,7 @@ export const tn_arab = {
 	notifications: 'الإشعارات',
 	profile: 'الملف الشخصي',
 	settings: 'الإعدادات',
+	updates: 'التحديثات',
 	ok: 'باهي',
 	cancel: 'بطل',
 	confirm: 'أكيد',

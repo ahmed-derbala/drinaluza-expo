@@ -3,9 +3,6 @@ import React from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
 import { View, ActivityIndicator } from 'react-native'
-import { AppUpdaterProvider, useAppUpdater } from '@/core/app-updater/AppUpdaterContext'
-import { AppUpdater } from '@/core/app-updater/AppUpdater'
-
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
 	// @ts-ignore
@@ -17,29 +14,13 @@ import { UserProvider } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
+import { UpdatesProvider } from '@/core/updates'
+import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
-	const { startupState } = useAppUpdater()
-
-	if (startupState === 'initializing' || startupState === 'checkingUpdate') {
-		return (
-			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
-				<ActivityIndicator size="large" color="#3B82F6" />
-			</View>
-		)
-	}
-
-	if (startupState === 'updateRequired') {
-		return (
-			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
-				<AppUpdater />
-			</View>
-		)
-	}
-
 	return (
 		<ErrorBoundary>
 			<StatusBar style="light" />
@@ -58,8 +39,8 @@ function RootLayoutContent() {
 				<Stack.Screen name="businesses" options={{ headerShown: false }} />
 				<Stack.Screen name="products" options={{ headerShown: false }} />
 				<Stack.Screen name="users" options={{ headerShown: false }} />
+				<Stack.Screen name="updates/index" options={{ headerShown: false }} />
 			</Stack>
-			<AppUpdater />
 		</ErrorBoundary>
 	)
 }
@@ -73,9 +54,11 @@ export default function RootLayout() {
 						<NotificationProvider>
 							<SocketProvider>
 								<LayoutProvider>
-									<AppUpdaterProvider>
-										<RootLayoutContent />
-									</AppUpdaterProvider>
+									<UpdatesProvider>
+										<SmartKebabMenuProvider>
+											<RootLayoutContent />
+										</SmartKebabMenuProvider>
+									</UpdatesProvider>
 								</LayoutProvider>
 							</SocketProvider>
 						</NotificationProvider>

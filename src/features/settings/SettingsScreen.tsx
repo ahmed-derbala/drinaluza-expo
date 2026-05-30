@@ -11,7 +11,7 @@ import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { useAppUpdater } from '@/core/app-updater/AppUpdaterContext'
+import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 
 const formatUptime = (uptime: string | undefined): string => {
 	if (!uptime) return ''
@@ -44,62 +44,6 @@ export default function SettingsScreen() {
 	const [serverInfo, setServerInfo] = useState<any>(null)
 	const [loading, setLoading] = useState(false)
 
-	const { isChecking, isDownloading, downloadProgress, updateInfo, cachedApkPath, cachedApkSize, startupState, checkForUpdates, deleteCachedApk, shareCachedApk, installApk } = useAppUpdater()
-
-	const handleShare = async () => {
-		if (!updateInfo) return
-
-		if (Platform.OS === 'web') {
-			if (updateInfo.download_url) {
-				await Clipboard.setStringAsync(updateInfo.download_url)
-				toast.show({
-					title: 'Success',
-					message: translate('download_url_copied', 'Download URL copied to clipboard!'),
-					color: '#10B981'
-				})
-			}
-			return
-		}
-
-		if (!cachedApkPath) {
-			if (updateInfo.download_url) {
-				await Clipboard.setStringAsync(updateInfo.download_url)
-				toast.show({
-					title: 'URL Copied',
-					message: translate('download_url_copied', 'Download URL copied to clipboard!'),
-					color: '#3B82F6'
-				})
-			}
-			return
-		}
-
-		Alert.alert(translate('share_options', 'Share Options'), translate('share_options_message', 'Would you like to share the Download URL or the actual APK installer file?'), [
-			{
-				text: translate('share_download_url', 'Share Download URL'),
-				onPress: async () => {
-					if (updateInfo.download_url) {
-						await Clipboard.setStringAsync(updateInfo.download_url)
-						toast.show({
-							title: 'Copied',
-							message: translate('download_url_copied', 'Download URL copied!'),
-							color: '#3B82F6'
-						})
-					}
-				}
-			},
-			{
-				text: translate('share_apk_file', 'Share APK File'),
-				onPress: () => {
-					shareCachedApk()
-				}
-			},
-			{
-				text: translate('cancel', 'Cancel'),
-				style: 'cancel'
-			}
-		])
-	}
-
 	const fetchServerInfo = () => {
 		if (!BACKEND_URL) return
 		setLoading(true)
@@ -120,6 +64,17 @@ export default function SettingsScreen() {
 				setLoading(false)
 			})
 	}
+
+	useSmartKebabMenu([
+		{
+			key: 'refresh-info',
+			label: translate('refresh', 'Refresh'),
+			icon: 'refresh-outline',
+			onPress: fetchServerInfo,
+			disabled: loading,
+			loading: loading
+		}
+	])
 
 	useEffect(() => {
 		fetchServerInfo()
@@ -200,100 +155,12 @@ export default function SettingsScreen() {
 							title={translate('settings', 'Settings')}
 							subtitle="Drinaluza - Business Manager"
 							loading={loading}
-							headerRight={
-								isDownloading && (startupState === 'ready' || startupState === 'updateAvailable') ? (
-									<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginRight: 14 }}>
-										<Ionicons name="cloud-download-outline" size={16} color={colors.primary} />
-										<Text style={{ fontSize: 12, fontWeight: '700', color: colors.primary }}>{Math.round(downloadProgress * 100)}%</Text>
-									</View>
-								) : cachedApkPath && updateInfo && cachedApkPath.includes(updateInfo.latest_version) ? (
-									<SmartScreenHeader.Action iconName="arrow-down-circle-outline" onPress={() => installApk(cachedApkPath)} disabled={loading} accessibilityLabel="Install downloaded update" />
-								) : (
-									<SmartScreenHeader.Action iconName="refresh" onPress={fetchServerInfo} disabled={loading} accessibilityLabel="Refresh settings info" />
-								)
-							}
+							headerRight={<SmartScreenHeader.Action iconName="refresh" onPress={fetchServerInfo} disabled={loading} accessibilityLabel="Refresh settings info" />}
 						/>
 					)
 				}}
 			/>
 			<View style={{ height: 16 }} />
-
-			<SettingSection title={translate('app_updates', 'App Updates')}>
-				<View style={[styles.updaterCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-					<View style={styles.updaterHeader}>
-						<View style={[styles.updaterIconContainer, { backgroundColor: colors.primary + '20' }]}>
-							<Ionicons name="cloud-download-outline" size={24} color={colors.primary} />
-						</View>
-						<View style={styles.updaterInfo}>
-							<Text style={[styles.updaterAppName, { color: colors.text }]}>{translate('drinaluza', 'Drinaluza')}</Text>
-							<Text style={[styles.updaterVersionText, { color: colors.textSecondary }]}>
-								{translate('current_version', 'Current')}: <Text style={{ fontWeight: '700', color: colors.text }}>v{APP_VERSION}</Text>
-							</Text>
-							{updateInfo && (
-								<Text style={[styles.updaterLatestText, { color: colors.textSecondary }]}>
-									{translate('latest_version', 'Latest')}: <Text style={{ fontWeight: '700', color: isDownloading ? colors.textSecondary : colors.primary }}>{updateInfo.latest_version}</Text>
-								</Text>
-							)}
-						</View>
-					</View>
-
-					{updateInfo && (
-						<>
-							<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
-							<View style={{ gap: 8 }}>
-								{updateInfo.size > 0 && (
-									<Text style={{ fontSize: 13, color: colors.textSecondary }}>
-										{translate('size', 'Size')}: <Text style={{ fontWeight: '700', color: colors.text }}>{(updateInfo.size / (1024 * 1024)).toFixed(1)} MB</Text>
-									</Text>
-								)}
-								{updateInfo.download_count > 0 && (
-									<Text style={{ fontSize: 13, color: colors.textSecondary }}>
-										{translate('downloads_count', 'Downloads')}: <Text style={{ fontWeight: '700', color: colors.text }}>{updateInfo.download_count}</Text>
-									</Text>
-								)}
-							</View>
-						</>
-					)}
-
-					{cachedApkPath && (
-						<>
-							<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
-							<Text style={[styles.cachedHeader, { color: colors.textSecondary }]}>{translate('cached_file', 'Cached APK File')}</Text>
-							<View style={[styles.cachedItem, { backgroundColor: colors.background + '60', borderColor: colors.border }]}>
-								<Ionicons name="document-text-outline" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-								<View style={{ flex: 1 }}>
-									<Text style={{ fontSize: 13, fontWeight: '600', color: colors.text }} numberOfLines={1}>
-										{cachedApkPath.split('/').pop()}
-									</Text>
-									<Text style={{ fontSize: 11, color: colors.textTertiary }}>{(cachedApkSize / (1024 * 1024)).toFixed(1)} MB</Text>
-								</View>
-								<TouchableOpacity onPress={deleteCachedApk} style={{ padding: 8 }}>
-									<Ionicons name="trash-outline" size={20} color="#EF4444" />
-								</TouchableOpacity>
-							</View>
-						</>
-					)}
-
-					<View style={[styles.updaterDivider, { backgroundColor: colors.border }]} />
-
-					<View style={{ flexDirection: 'row', gap: 10 }}>
-						<TouchableOpacity style={[styles.updaterBtn, { flex: 1, borderColor: colors.border, backgroundColor: colors.surface }]} onPress={() => checkForUpdates(true)} disabled={isChecking}>
-							{isChecking ? (
-								<ActivityIndicator size="small" color={colors.primary} />
-							) : (
-								<Text style={[styles.updaterBtnText, { color: colors.text }]}>{translate('check_for_updates', 'Check for Updates')}</Text>
-							)}
-						</TouchableOpacity>
-
-						{updateInfo && (
-							<TouchableOpacity style={[styles.updaterBtn, { flex: 1, borderColor: colors.primary, backgroundColor: colors.primary + '15' }]} onPress={handleShare}>
-								<Ionicons name="share-social-outline" size={16} color={colors.primary} style={{ marginRight: 4 }} />
-								<Text style={[styles.updaterBtnText, { color: colors.primary }]}>{translate('share', 'Share')}</Text>
-							</TouchableOpacity>
-						)}
-					</View>
-				</View>
-			</SettingSection>
 
 			<SettingSection title={translate('social_media', 'Social Media')}>
 				<SettingItem
@@ -490,103 +357,5 @@ const createStyles = (colors: any) =>
 		madeWith: {
 			fontSize: 12,
 			color: colors.textTertiary
-		},
-		updaterCard: {
-			borderRadius: 20,
-			borderWidth: 1.5,
-			padding: 20,
-			marginBottom: 20,
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 8 },
-				android: { elevation: 2 }
-			})
-		},
-		updaterHeader: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 16
-		},
-		updaterIconContainer: {
-			width: 48,
-			height: 48,
-			borderRadius: 14,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		updaterInfo: {
-			flex: 1
-		},
-		updaterAppName: {
-			fontSize: 16,
-			fontWeight: '800',
-			letterSpacing: -0.3
-		},
-		updaterVersionText: {
-			fontSize: 12,
-			marginTop: 2
-		},
-		updaterLatestText: {
-			fontSize: 12,
-			marginTop: 4
-		},
-		updaterDivider: {
-			height: 1,
-			marginVertical: 16
-		},
-		updaterBtn: {
-			height: 44,
-			borderRadius: 12,
-			borderWidth: 1,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		updaterBtnText: {
-			fontSize: 14
-		},
-		cachedHeader: {
-			fontSize: 13,
-			fontWeight: '700',
-			color: colors.textSecondary,
-			marginBottom: 10,
-			textTransform: 'uppercase',
-			letterSpacing: 0.5,
-			marginLeft: 2
-		},
-		cachedList: {
-			gap: 8
-		},
-		cachedItem: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			padding: 10,
-			borderRadius: 12,
-			borderWidth: 1
-		},
-		cachedItemIcon: {
-			width: 36,
-			height: 36,
-			borderRadius: 8,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginRight: 12
-		},
-		cachedItemInfo: {
-			flex: 1
-		},
-		cachedItemName: {
-			fontSize: 14,
-			fontWeight: '600'
-		},
-		cachedItemSize: {
-			fontSize: 12,
-			marginTop: 2
-		},
-		cachedShareBtn: {
-			padding: 8,
-			borderRadius: 8
-		},
-		cachedDeleteBtn: {
-			padding: 8,
-			borderRadius: 8
 		}
 	})

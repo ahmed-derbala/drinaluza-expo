@@ -5,6 +5,7 @@ export const tn_latn = {
 	notifications: 'Notifications',
 	profile: 'Profil',
 	settings: 'Settings',
+	updates: 'Updates',
 	ok: 'Behi',
 	cancel: 'Battal',
 	confirm: 'Akid',

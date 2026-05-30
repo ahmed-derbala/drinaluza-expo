@@ -5,6 +5,7 @@ export const fr = {
 	notifications: 'Notifications',
 	profile: 'Profil',
 	settings: 'Paramètres',
+	updates: 'Mises à jour',
 	ok: 'OK',
 	cancel: 'Annuler',
 	confirm: 'Confirmer',
