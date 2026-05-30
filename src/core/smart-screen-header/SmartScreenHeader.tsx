@@ -4,9 +4,9 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/core/theme'
 import { BackButton } from './BackButton'
 import HeaderAction from './HeaderAction'
-import { useUpdates } from '@/core/updates'
 import { usePathname, useRouter } from 'expo-router'
 import { SmartKebabMenu } from '@/core/smart-kebab-menu'
+import { useUpdates } from '@/core/updates/UpdatesContext'
 
 export interface SmartScreenHeaderProps {
 	/**
@@ -56,8 +56,6 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 	const pathname = usePathname()
 	const router = useRouter()
 
-	const { updateAvailable, downloading, downloadProgress, cachedApk } = useUpdates()
-
 	const loadingAnim = useRef(new Animated.Value(-100)).current
 
 	useEffect(() => {
@@ -89,33 +87,26 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 
 	// Determine if we should show the global update header action
 	const renderHeaderRight = () => {
-		const showUpdateIcon = updateAvailable || downloading || !!cachedApk
+		const { updateType, status, downloadProgress, cachedApk } = useUpdates()
+		const showUpdateIcon = updateType !== 'none' || status === 'downloading' || status === 'completed' || !!cachedApk
 
-		let updateElement: React.ReactNode = null
-
-		if (showUpdateIcon) {
-			let iconName = 'arrow-down-circle-outline'
-			let badgeCount = 0
-
-			if (downloading) {
-				iconName = 'cloud-download-outline'
-				badgeCount = downloadProgress > 0 ? Math.round(downloadProgress * 100) : 0
-			} else if (cachedApk) {
-				iconName = 'cube-outline'
+		const handleUpdatePress = () => {
+			if (pathname !== '/updates') {
+				router.push('/updates')
 			}
-
-			const handlePress = () => {
-				if (pathname !== '/updates') {
-					router.push('/updates')
-				}
-			}
-
-			updateElement = <HeaderAction iconName={iconName} onPress={handlePress} badgeCount={badgeCount} accessibilityLabel="Application update available" iconColor={colors.primary} />
 		}
 
 		return (
 			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-				{updateElement}
+				{showUpdateIcon && (
+					<HeaderAction
+						iconName={status === 'completed' || !!cachedApk ? 'checkmark-circle-outline' : status === 'downloading' ? 'download-outline' : 'arrow-down-circle-outline'}
+						onPress={handleUpdatePress}
+						accessibilityLabel="App Update Available"
+						badgeCount={status === 'downloading' ? Math.round(downloadProgress * 100) : undefined}
+						iconColor={status === 'completed' || !!cachedApk ? '#10B981' : colors.primary}
+					/>
+				)}
 				{headerRight}
 				<SmartKebabMenu />
 			</View>

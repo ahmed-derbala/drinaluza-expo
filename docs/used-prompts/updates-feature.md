@@ -1,11 +1,10 @@
 ## Updates screen
 using expo-router best practices, create updates screen in:
-src/app/updates/
-src/core/updates/
+src/app/updates/ : expo-router
+src/features/updates/ : screen and ui
+src/core/updates/ : core logic
 
-its responsible for checking, downloading and installing updates.
-
-check for updates on app startup and once a week, use storage to track last update check time.
+updates is responsible for checking, downloading and installing updates.
 
 Use semantic version comparison for update behavior.
 
@@ -43,11 +42,11 @@ Rules:
 
 on android:
 Required updates should block app usage until updated.
-Optional updates should allow the user to continue using the app.
+Optional updates should allow the user to continue using the app
 
 on web:
 Required updates should block app usage until refreshed. 
-Optional updates should allow the user to continue using the app.
+Optional updates should allow the user to continue using the app regardless of user choose to refresh or not
 
 check for updates using config.UPDATE_CHECK_URL link
 example responce of config.UPDATE_CHECK_URL:
@@ -147,6 +146,7 @@ create a function that takes config.UPDATE_CHECK_URL as input and returns from t
 keep only the latest version apk file in cache
 
 in updates screen show:
+on android:
 - check for updates button
 - update type (required/optional)
 - message text based on update type:
@@ -160,17 +160,32 @@ in updates screen show:
 - device free storage size
 - download count
 - whats new (changelog)
-- download button that downloads the update (a refresh button on web)
-- download progress bar when downloading
-- install button when update is downloaded or there is a cached apk file ready to install
+- cached apk file details if exists with delete button next to it.
+- download button
+- download progress
+- install button when download is completed or there is a cached apk file ready to install
 - share button, use expo-sharing:
-  - on android: 
-    - ask the user if he wants to share the download url or cached apk file (if available). if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
-  - on web: ask the user if he wants to copy download url to clipboard or download the apk file
-- cached downloaded apk file if available with delete button next to it.
+    - ask the user if he wants to share the download url or cached apk file (if exists).
+    - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
 
-use SmartScreenHeader to show an update HeaderAction in the headerRight in all screens with downlaod progress, when download is complete change to an install icon. the press on update HeaderAction will open /updates screen if it is not already open.
+use SmartScreenHeader to show an update HeaderAction in the headerRight in all screens with download progress, when download is complete change to an install icon. the press on update HeaderAction opens /updates screen if it is not already open.
 
+on web:
+- check for updates button
+- update type (required/optional)
+- message text based on update type:
+  REQUIRED → "a new update is available, please update your app to continue using it"
+  OPTIONAL → "a new update is available, you can update your app to continue using it"
+- name 
+- published date
+- current version 
+- latest version
+- size: size in MB
+- download count
+- whats new (changelog)
+- download button
+- refresh button that refreshes the page
+- copy button: copy download url to clipboard
 
 Behavior requirements:
 -when app starts:
@@ -194,6 +209,10 @@ on android:
         -ask the user to confirm downloading the new version or exit the app
 on web: do not check for updates when app starts
 
+- when app is in use, check for updates in background:
+  - inform the user once per optional update version using Toast
+  - open /updates screen automatically if the new version is required
+
 - keep only the latest version apk file in cache
 - Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
@@ -204,3 +223,4 @@ on web: do not check for updates when app starts
   - continue to app normally
 
 - Use proper async cancellation and cleanup to avoid memory leaks.
+

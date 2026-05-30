@@ -5,7 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, usePathname } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { useUpdates } from '@/core/updates'
 import { useSmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
 import HeaderAction from '../smart-screen-header/HeaderAction'
@@ -24,7 +23,6 @@ export const SmartKebabMenu: React.FC = () => {
 	const { width: windowWidth } = useWindowDimensions()
 
 	const { isOpen, setIsOpen, menuItems } = useSmartKebabMenuContext()
-	const { updateAvailable, downloading, downloadProgress, cachedApk } = useUpdates()
 
 	// Automatically close the menu on Web when pressing Escape key
 	useEffect(() => {
@@ -42,20 +40,6 @@ export const SmartKebabMenu: React.FC = () => {
 		}
 	}, [isOpen, setIsOpen])
 
-	// Compute update badge status reactively
-	const updatesBadge = useMemo(() => {
-		if (downloading) {
-			return downloadProgress > 0 ? `${Math.round(downloadProgress * 100)}%` : '...'
-		}
-		if (cachedApk) {
-			return 'READY'
-		}
-		if (updateAvailable) {
-			return 'NEW'
-		}
-		return undefined
-	}, [updateAvailable, downloading, downloadProgress, cachedApk])
-
 	const defaultSettingsItem: SmartKebabMenuItem = {
 		key: 'settings',
 		label: translate('settings', 'Settings'),
@@ -67,21 +51,39 @@ export const SmartKebabMenu: React.FC = () => {
 		key: 'updates',
 		label: translate('updates', 'Updates'),
 		icon: 'cloud-download-outline',
-		badge: updatesBadge,
 		onPress: () => router.push('/updates')
 	}
 
-	// Filter out invisible dynamic items
-	const visibleDynamicItems = menuItems.filter((item) => item.visible !== false)
+	// Filter out invisible dynamic items, and also filter out 'refresh' key if registered by the screen
+	// (so that it doesn't get rendered twice, since we'll render it as a default item at the end of the list)
+	const visibleDynamicItems = menuItems.filter((item) => item.visible !== false && item.key !== 'refresh')
+
+	// Locate the screen-registered custom refresh handler
+	const screenRefreshItem = menuItems.find((item) => item.key === 'refresh')
+
+	const defaultRefreshItem: SmartKebabMenuItem = {
+		key: 'refresh',
+		label: translate('refresh', 'Refresh'),
+		icon: 'refresh-outline',
+		disabled: screenRefreshItem?.disabled,
+		loading: screenRefreshItem?.loading,
+		onPress: () => {
+			if (screenRefreshItem) {
+				screenRefreshItem.onPress()
+			} else if (Platform.OS === 'web') {
+				window.location.reload()
+			}
+		}
+	}
 
 	// Build default items, filtering out the current screen's route to prevent redundant self-navigation
-	const defaultItems: SmartKebabMenuItem[] = []
+	const defaultItems: SmartKebabMenuItem[] = [defaultRefreshItem]
 	const activePathname = pathname || ''
-	if (!activePathname.includes('/settings')) {
-		defaultItems.push(defaultSettingsItem)
-	}
 	if (!activePathname.includes('/updates')) {
 		defaultItems.push(defaultUpdatesItem)
+	}
+	if (!activePathname.includes('/settings')) {
+		defaultItems.push(defaultSettingsItem)
 	}
 
 	// Combine dynamic items, separator (if applicable), and default items

@@ -14,13 +14,36 @@ import { UserProvider } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
-import { UpdatesProvider } from '@/core/updates'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme } from '@/core/theme'
+import { UpdatesProvider, useUpdates } from '@/core/updates/UpdatesContext'
+import { UpdatesScreen } from '@/features/updates/UpdatesScreen'
 
 function RootLayoutContent() {
+	const { isCheckingStartup, updateType } = useUpdates()
+
+	// Avoid white screen or flickering during startup.
+	// While the initial update check is in progress, prevent rendering any app screens.
+	if (isCheckingStartup) {
+		return (
+			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
+				<ActivityIndicator size="large" color="#0EA5E9" />
+			</View>
+		)
+	}
+
+	// Required updates completely block app usage until updated (Android) or refreshed (Web)
+	if (updateType === 'required') {
+		return (
+			<ErrorBoundary>
+				<StatusBar style="light" />
+				<UpdatesScreen />
+			</ErrorBoundary>
+		)
+	}
+
 	return (
 		<ErrorBoundary>
 			<StatusBar style="light" />
@@ -50,19 +73,19 @@ export default function RootLayout() {
 		<SafeAreaProvider>
 			<AppThemeProvider>
 				<ToastProvider>
-					<UserProvider>
-						<NotificationProvider>
-							<SocketProvider>
-								<LayoutProvider>
-									<UpdatesProvider>
+					<UpdatesProvider>
+						<UserProvider>
+							<NotificationProvider>
+								<SocketProvider>
+									<LayoutProvider>
 										<SmartKebabMenuProvider>
 											<RootLayoutContent />
 										</SmartKebabMenuProvider>
-									</UpdatesProvider>
-								</LayoutProvider>
-							</SocketProvider>
-						</NotificationProvider>
-					</UserProvider>
+									</LayoutProvider>
+								</SocketProvider>
+							</NotificationProvider>
+						</UserProvider>
+					</UpdatesProvider>
 				</ToastProvider>
 			</AppThemeProvider>
 		</SafeAreaProvider>

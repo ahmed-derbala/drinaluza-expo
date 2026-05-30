@@ -36,9 +36,6 @@ export default {
             backgroundColor: "#000000",
             googleServicesFile: "google-services.json",
             softwareKeyboardLayoutMode: "resize",
-            permissions: [
-                "REQUEST_INSTALL_PACKAGES"
-            ],
             // Add this line to give Gradle 8GB of Heap and 2GB of Metaspace
             gradleArguments: ["-Dorg.gradle.jvmargs=-Xmx8192m -XX:MaxMetaspaceSize=2048m"],
             adaptiveIcon: {
@@ -98,9 +95,6 @@ export default {
         jsEngine: "hermes",
         runtimeVersion: {
             policy: "appVersion"
-        },
-        updates: {
-            url: "https://u.expo.dev/cf16d9ec-c8c7-457f-b2a2-6d5eacf535d1"
         },
         buildCacheProvider: "eas"
     }

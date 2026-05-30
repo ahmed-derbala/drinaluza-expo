@@ -67,7 +67,7 @@ export default function SettingsScreen() {
 
 	useSmartKebabMenu([
 		{
-			key: 'refresh-info',
+			key: 'refresh',
 			label: translate('refresh', 'Refresh'),
 			icon: 'refresh-outline',
 			onPress: fetchServerInfo,
