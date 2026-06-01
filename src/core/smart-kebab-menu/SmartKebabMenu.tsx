@@ -8,6 +8,7 @@ import { translate } from '@/core/translation'
 import { useSmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
 import HeaderAction from '../smart-screen-header/HeaderAction'
+import { useUpdates } from '@/core/updates/UpdatesContext'
 
 const HEADER_HEIGHT = Platform.select({
 	ios: 44,
@@ -23,6 +24,7 @@ export const SmartKebabMenu: React.FC = () => {
 	const { width: windowWidth } = useWindowDimensions()
 
 	const { isOpen, setIsOpen, menuItems } = useSmartKebabMenuContext()
+	const { status, downloadProgress, cachedApk } = useUpdates()
 
 	// Automatically close the menu on Web when pressing Escape key
 	useEffect(() => {
@@ -50,7 +52,8 @@ export const SmartKebabMenu: React.FC = () => {
 	const defaultUpdatesItem: SmartKebabMenuItem = {
 		key: 'updates',
 		label: translate('updates', 'Updates'),
-		icon: 'cloud-download-outline',
+		icon: status === 'completed' || !!cachedApk ? 'arrow-down-circle-outline' : status === 'downloading' ? 'download-outline' : 'cloud-download-outline',
+		badge: status === 'downloading' ? `${Math.round(downloadProgress * 100)}%` : undefined,
 		onPress: () => router.push('/updates' as any)
 	}
 

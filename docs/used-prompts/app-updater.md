@@ -1,9 +1,10 @@
-## AppUpdater
-based on the rules from .agent/rules/, create AppUpdater component:
-src/app/updates/ (expo-router)
-src/core/app-updater/
+## updates
+apply rules from .agent/rules/
 
-AppUpdater is responsible for checking, downloading and installing updates.
+updates feature is responsible for checking, downloading and installing updates.
+recommended directories to use:
+src/app/updates/ (expo-router)
+src/features/updates/
 
 check for updates using config.UPDATE_CHECK_URL link
 example responce of config.UPDATE_CHECK_URL:
@@ -84,7 +85,7 @@ example responce of config.UPDATE_CHECK_URL:
   ],
   "tarball_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/tarball/v1.16.2",
   "zipball_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/zipball/v1.16.2",
-  "body": "# Changelog\n\n## [1.16.1] - 2026-05-29\n### various bug fixes"
+  "body": "Changelog"
 }
 ```
 
@@ -109,16 +110,16 @@ on android:
 - size
 - device free storage size
 - download count
-- whats new (changelog)
-- list of downloaded apk files details with delete button next to each one. 
-- download button. disable if the current version is higher than the latest version
+- whats new (body)
+- list of downloaded apk files details with delete and install buttons next to each one. 
+- download button. disable if the current version is equal or higher than the latest version
 - download progress
-- install button when download is completed or if there is a downloaded apk file ready to install
-- share button, use expo-sharing:
-    - ask the user if he wants to share the download url or cached apk file (if exists).
+- share button. use expo-sharing:
+    - ask the user if he wants to share the download url or downloaded apk file if exists.
     - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
 
-use SmartScreenHeader to show an update HeaderAction in the headerRight in all screens with download progress, when download is complete change to an install icon. the press on update HeaderAction opens /updates screen if it is not already open.
+use SmartKebabMenu to show download progress next to updates menu item, when download is complete show an install icon instead.
+when download is complete trigger an install.
 
 on web:
 - check for updates button
@@ -128,10 +129,10 @@ on web:
 - latest version
 - size
 - download count
-- whats new (changelog)
+- whats new (body)
 - download button
-- refresh button that refreshes the page. if current version is higher than latest version disable the refresh button
-- copy button: copy download url to clipboard
+- refresh button. disable if the current version is equal or higher than the latest version
+- share button: copy download url to clipboard
 
 
 ### Behavior requirements:
