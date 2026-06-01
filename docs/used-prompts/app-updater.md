@@ -99,21 +99,21 @@ create a function that takes config.UPDATE_CHECK_URL as input and returns from t
   download_url (browser_download_url)
 }
 
-in updates screen show:
+### in updates screen show:
 on android:
 - check for updates button
 - name 
 - published date
-- current version (version installed on device)
+- current version
 - latest version
-- size: size in MB
+- size
 - device free storage size
 - download count
 - whats new (changelog)
-- cached apk file details if exists with delete button next to it. keep only the latest version apk file in cache
-- download button
+- list of downloaded apk files details with delete button next to each one. 
+- download button. disable if the current version is higher than the latest version
 - download progress
-- install button when download is completed or if there is a cached apk file ready to install
+- install button when download is completed or if there is a downloaded apk file ready to install
 - share button, use expo-sharing:
     - ask the user if he wants to share the download url or cached apk file (if exists).
     - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
@@ -126,32 +126,28 @@ on web:
 - published date
 - current version 
 - latest version
-- size: size in MB
+- size
 - download count
 - whats new (changelog)
 - download button
-- refresh button that refreshes the page
+- refresh button that refreshes the page. if current version is higher than latest version disable the refresh button
 - copy button: copy download url to clipboard
 
-Behavior requirements:
+
+### Behavior requirements:
 -when app starts:
-on android:
-  -if there is a cached apk file ready to install:
-    -if there is no new version available:
-      -if cached apk version is higher than current version:
-        -install the cached apk file
-      -if cached apk version is lower than current version:
-        -continue to the app without updating
-    -if there is new version available, open /updates:
-      -ask the user if he wants to download the newer version or install the cached apk file or continue to use the app without updating
-  -if there is no cached apk file:
-    -if there is new version available, open /updates:
-      -ask the user if he wants to download the newer version or continue to use the app
+  - on android:
+    - check for updates:
+      - if current version is equal or higher than latest version:
+        - check if there is a downloaded apk file ready to install (apk file version is higher than current version):
+          - if yes: install the apk file
+          - if no: continue to the app
+      - if current version is lower than latest version:
+        - open /updates
 
-on web: do not check for updates when app starts
+  - on web: do not check for updates when app starts
 
-- when app is in use, check for updates in background once a day:
-  - inform the user once per version update using Toast
+- keep only the latest version apk file
 - Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
 - Prevent navigation race conditions

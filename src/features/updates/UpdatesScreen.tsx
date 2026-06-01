@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Modal, Dimensions, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useUpdates } from '@/core/updates/UpdatesContext'
+import { useUpdates, isVersionHigher } from '@/core/updates/UpdatesContext'
 import { SmartScreenHeader } from '@/core/smart-screen-header'
 import { useTheme } from '@/core/theme'
 import { useRouter } from 'expo-router'
@@ -22,6 +22,7 @@ export const UpdatesScreen: React.FC = () => {
 		error,
 		updateInfo,
 		cachedApk,
+		downloadedApks,
 		downloadProgress,
 		freeStorageSize,
 		checkForUpdates,
@@ -36,6 +37,9 @@ export const UpdatesScreen: React.FC = () => {
 	const [isCheckingManual, setIsCheckingManual] = useState(false)
 	const [showChoiceModal, setShowChoiceModal] = useState(false)
 	const [showQuickShareModal, setShowQuickShareModal] = useState(false)
+
+	// Semver condition check: is current installed version strictly higher than latest release version?
+	const isCurrentHigher = updateInfo ? isVersionHigher(APP_VERSION, updateInfo.latest_version) : false
 
 	// Format helpers
 	const formatMB = (bytes?: number) => {
@@ -109,23 +113,10 @@ export const UpdatesScreen: React.FC = () => {
 	// Handle sharing popup on Android
 	const handleSharePress = () => {
 		if (!cachedApk) {
-			// Share link directly if no cached APK exists
 			shareUpdate('link')
 			return
 		}
 
-		// Ask user if they want link or file
-		toast.show({
-			title: 'Share Options',
-			message: 'Select Link to share the download URL, or APK to share the downloaded package.',
-			color: colors.primary,
-			onPress: () => {
-				// We trigger dialog choices
-			}
-		})
-
-		// For high premium aesthetics, we trigger a native confirmation or alert flow
-		// Let's call share with options:
 		import('react-native').then(({ Alert }) => {
 			Alert.alert('Share App Update', 'Would you like to share the download link or the cached APK installation file?', [
 				{
@@ -139,7 +130,6 @@ export const UpdatesScreen: React.FC = () => {
 				{
 					text: 'Share APK File',
 					onPress: () => {
-						// Show recommendation for Quick Share first
 						setShowQuickShareModal(true)
 					}
 				}
@@ -183,9 +173,9 @@ export const UpdatesScreen: React.FC = () => {
 			return (
 				<View style={styles.actionBlock}>
 					<TouchableOpacity
-						style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+						style={[styles.primaryButton, { backgroundColor: isCurrentHigher ? colors.borderLight : colors.primary, opacity: isCurrentHigher ? 0.6 : 1 }]}
 						onPress={() => updateInfo?.download_url && import('react-native').then(({ Linking }) => Linking.openURL(updateInfo.download_url))}
-						disabled={!updateInfo?.download_url}
+						disabled={!updateInfo?.download_url || isCurrentHigher}
 					>
 						<Ionicons name="download" size={18} color="#FFFFFF" />
 						<Text style={styles.primaryButtonText}>Download APK</Text>
@@ -197,9 +187,9 @@ export const UpdatesScreen: React.FC = () => {
 							<Text style={[styles.secondaryButtonText, { color: colors.text }]}>Copy Link</Text>
 						</TouchableOpacity>
 
-						<TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleWebRefresh}>
-							<Ionicons name="refresh-outline" size={16} color={colors.text} />
-							<Text style={[styles.secondaryButtonText, { color: colors.text }]}>Refresh</Text>
+						<TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border, opacity: isCurrentHigher ? 0.5 : 1 }]} onPress={handleWebRefresh} disabled={isCurrentHigher}>
+							<Ionicons name="refresh-outline" size={16} color={isCurrentHigher ? colors.textTertiary : colors.text} />
+							<Text style={[styles.secondaryButtonText, { color: isCurrentHigher ? colors.textTertiary : colors.text }]}>Refresh</Text>
 						</TouchableOpacity>
 					</View>
 				</View>
@@ -234,12 +224,16 @@ export const UpdatesScreen: React.FC = () => {
 				return (
 					<View style={styles.actionBlock}>
 						{isCacheReady ? (
-							<TouchableOpacity style={[styles.primaryButton, { backgroundColor: '#10B981' }]} onPress={installUpdate}>
+							<TouchableOpacity style={[styles.primaryButton, { backgroundColor: '#10B981' }]} onPress={() => installUpdate()}>
 								<Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
 								<Text style={styles.primaryButtonText}>Install Update</Text>
 							</TouchableOpacity>
 						) : (
-							<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={downloadUpdate} disabled={!updateInfo}>
+							<TouchableOpacity
+								style={[styles.primaryButton, { backgroundColor: isCurrentHigher ? colors.borderLight : colors.primary, opacity: isCurrentHigher ? 0.6 : 1 }]}
+								onPress={downloadUpdate}
+								disabled={!updateInfo || isCurrentHigher}
+							>
 								<Ionicons name="download-outline" size={18} color="#FFFFFF" />
 								<Text style={styles.primaryButtonText}>Download & Install</Text>
 							</TouchableOpacity>
@@ -252,7 +246,7 @@ export const UpdatesScreen: React.FC = () => {
 							</TouchableOpacity>
 
 							{isCacheReady && (
-								<TouchableOpacity style={[styles.secondaryButton, { borderColor: '#EF444420' }]} onPress={deleteCache}>
+								<TouchableOpacity style={[styles.secondaryButton, { borderColor: '#EF444420' }]} onPress={() => deleteCache()}>
 									<Ionicons name="trash-outline" size={16} color="#EF4444" />
 									<Text style={[styles.secondaryButtonText, { color: '#EF4444' }]}>Delete Cache</Text>
 								</TouchableOpacity>
@@ -351,21 +345,32 @@ export const UpdatesScreen: React.FC = () => {
 							{/* Actions Block */}
 							{renderActionSection()}
 
-							{/* Cached APK section if exists on Android */}
-							{Platform.OS === 'android' && cachedApk && (
-								<View style={[styles.cacheCard, { backgroundColor: colors.card, borderColor: '#10B98130' }]}>
-									<View style={styles.cacheHeader}>
-										<Ionicons name="cube-outline" size={20} color="#10B981" />
-										<View style={styles.cacheInfo}>
-											<Text style={[styles.cacheTitle, { color: colors.text }]}>Cached APK Ready</Text>
-											<Text style={[styles.cacheSubtitle, { color: colors.textSecondary }]}>
-												{cachedApk.filename} • {formatMB(cachedApk.size)}
-											</Text>
+							{/* Cache List Section (Downloaded APK Files with delete buttons) */}
+							{Platform.OS === 'android' && downloadedApks.length > 0 && (
+								<View style={styles.downloadedList}>
+									<Text style={[styles.sectionTitle, { color: colors.textSecondary, marginTop: 12 }]}>Downloaded APK files</Text>
+
+									{downloadedApks.map((apk) => (
+										<View key={apk.uri} style={[styles.cacheCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+											<View style={styles.cacheHeader}>
+												<Ionicons name="cube-outline" size={20} color={colors.primary} />
+												<View style={styles.cacheInfo}>
+													<Text style={[styles.cacheTitle, { color: colors.text }]}>{apk.filename}</Text>
+													<Text style={[styles.cacheSubtitle, { color: colors.textSecondary }]}>
+														{formatMB(apk.size)} • Version {apk.version}
+													</Text>
+												</View>
+												<View style={styles.cacheActions}>
+													<TouchableOpacity style={[styles.cacheDeleteBtn, { backgroundColor: '#10B98115', marginRight: 8 }]} onPress={() => installUpdate(apk.uri)}>
+														<Ionicons name="checkmark-circle-outline" size={18} color="#10B981" />
+													</TouchableOpacity>
+													<TouchableOpacity style={styles.cacheDeleteBtn} onPress={() => deleteCache(apk.uri)}>
+														<Ionicons name="trash-outline" size={18} color="#EF4444" />
+													</TouchableOpacity>
+												</View>
+											</View>
 										</View>
-										<TouchableOpacity style={styles.cacheDeleteBtn} onPress={deleteCache}>
-											<Ionicons name="trash-outline" size={18} color="#EF4444" />
-										</TouchableOpacity>
-									</View>
+									))}
 								</View>
 							)}
 						</View>
@@ -671,6 +676,11 @@ const styles = StyleSheet.create({
 		height: '100%',
 		borderRadius: 3
 	},
+	downloadedList: {
+		width: '100%',
+		gap: 8,
+		marginBottom: 16
+	},
 	cacheCard: {
 		borderRadius: 12,
 		borderWidth: 1,
@@ -679,11 +689,13 @@ const styles = StyleSheet.create({
 	},
 	cacheHeader: {
 		flexDirection: 'row',
-		alignItems: 'center'
+		alignItems: 'center',
+		justifyContent: 'space-between'
 	},
 	cacheInfo: {
 		flex: 1,
-		marginLeft: 10
+		marginLeft: 10,
+		marginRight: 10
 	},
 	cacheTitle: {
 		fontSize: 13,
@@ -692,6 +704,10 @@ const styles = StyleSheet.create({
 	cacheSubtitle: {
 		fontSize: 11,
 		marginTop: 2
+	},
+	cacheActions: {
+		flexDirection: 'row',
+		alignItems: 'center'
 	},
 	cacheDeleteBtn: {
 		width: 32,
