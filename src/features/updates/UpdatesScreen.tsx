@@ -1,414 +1,472 @@
 import React, { useEffect, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, ActivityIndicator, BackHandler, Modal, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Modal, Dimensions, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import * as Clipboard from 'expo-clipboard'
-import * as Sharing from 'expo-sharing'
-
-import { useTheme } from '@/core/theme'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
 import { useUpdates } from '@/core/updates/UpdatesContext'
-import { APP_VERSION } from '@/config'
+import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { useTheme } from '@/core/theme'
+import { useRouter } from 'expo-router'
 import { toast } from '@/features/common/Toast'
+import * as Clipboard from 'expo-clipboard'
+import { log } from '@/core/log'
+import { APP_VERSION } from '@/config'
 
 export const UpdatesScreen: React.FC = () => {
+	const router = useRouter()
 	const { colors } = useTheme()
-	const insets = useSafeAreaInsets()
-	const { status, updateInfo, updateType, cachedApk, downloadProgress, freeStorage, error, checkForUpdates, downloadUpdate, installUpdate, deleteCachedApk } = useUpdates()
+	const { width } = useWindowDimensions()
+	const isTablet = width >= 768
+
+	const {
+		startupRedirect,
+		status,
+		error,
+		updateInfo,
+		cachedApk,
+		downloadProgress,
+		freeStorageSize,
+		checkForUpdates,
+		downloadUpdate,
+		cancelDownload,
+		installUpdate,
+		deleteCache,
+		shareUpdate,
+		skipStartupRedirect
+	} = useUpdates()
 
 	const [isCheckingManual, setIsCheckingManual] = useState(false)
-	const [shareModalVisible, setShareModalVisible] = useState(false)
-	const [quickShareDialogVisible, setQuickShareDialogVisible] = useState(false)
+	const [showChoiceModal, setShowChoiceModal] = useState(false)
+	const [showQuickShareModal, setShowQuickShareModal] = useState(false)
 
-	// Block hardware back button on Android if the update is REQUIRED
-	useEffect(() => {
-		if (Platform.OS === 'android' && updateType === 'required') {
-			const backAction = () => {
-				// Block back navigation
-				return true
-			}
-			const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction)
-			return () => backHandler.remove()
-		}
-	}, [updateType])
-
-	const formatSize = (bytes: number) => {
-		if (!bytes) return '0 MB'
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+	// Format helpers
+	const formatMB = (bytes?: number) => {
+		if (!bytes) return '0.00 MB'
+		return `${(bytes / (1024 * 1024)).toFixed(2)} MB`
 	}
 
-	const formatDate = (dateStr: string) => {
-		if (!dateStr) return ''
+	const formatDate = (isoString?: string) => {
+		if (!isoString) return 'N/A'
 		try {
-			const date = new Date(dateStr)
-			return date.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
-		} catch {
-			return dateStr
+			return new Date(isoString).toLocaleDateString(undefined, {
+				year: 'numeric',
+				month: 'long',
+				day: 'numeric'
+			})
+		} catch (e) {
+			return isoString
 		}
 	}
 
-	const handleManualCheck = async () => {
+	// Trigger update checking manually
+	const handleCheckForUpdates = async () => {
 		setIsCheckingManual(true)
 		try {
-			const res = await checkForUpdates(false)
-			if (res) {
-				const hasNew = updateType !== 'none'
+			const info = await checkForUpdates(true)
+			if (info) {
 				toast.show({
-					title: hasNew ? 'Update Available' : 'Up to Date',
-					message: hasNew ? `Version ${res.latest_version} is now available.` : 'You are running the latest version of Drinaluza.',
-					color: hasNew ? '#0EA5E9' : '#10B981'
+					title: 'Check Complete',
+					message: 'Fetched latest release details.',
+					color: '#10B981'
 				})
 			} else {
 				toast.show({
-					title: 'Check Failed',
-					message: 'Unable to fetch update information. Please try again.',
+					title: 'Offline',
+					message: 'Could not connect to server.',
 					color: '#EF4444'
 				})
 			}
-		} catch {
-			// handled inside checkForUpdates
+		} catch (e) {
+			log({ level: 'error', label: 'UpdatesScreen', message: 'Manual check failed', error: e })
 		} finally {
 			setIsCheckingManual(false)
 		}
 	}
 
-	const handleWebDownload = () => {
+	// Web specific copy URL
+	const handleCopyUrl = async () => {
 		if (updateInfo?.download_url) {
-			if (Platform.OS === 'web') {
-				window.open(updateInfo.download_url, '_blank')
-			}
+			await Clipboard.setStringAsync(updateInfo.download_url)
+			toast.show({
+				title: 'Copied',
+				message: 'Download URL copied to clipboard!',
+				color: '#10B981'
+			})
+		} else {
+			toast.show({
+				title: 'Error',
+				message: 'No download URL available to copy.',
+				color: '#EF4444'
+			})
 		}
 	}
 
+	// Web specific page refresh
 	const handleWebRefresh = () => {
 		if (Platform.OS === 'web') {
 			window.location.reload()
 		}
 	}
 
-	const handleCopyUrl = async () => {
-		if (updateInfo?.download_url) {
-			await Clipboard.setStringAsync(updateInfo.download_url)
-			toast.show({
-				title: 'Copied!',
-				message: 'Download link copied to clipboard.',
-				color: '#10B981'
-			})
-		}
-	}
-
-	const handleAndroidExit = () => {
-		if (Platform.OS === 'android') {
-			BackHandler.exitApp()
-		}
-	}
-
+	// Handle sharing popup on Android
 	const handleSharePress = () => {
-		setShareModalVisible(true)
+		if (!cachedApk) {
+			// Share link directly if no cached APK exists
+			shareUpdate('link')
+			return
+		}
+
+		// Ask user if they want link or file
+		toast.show({
+			title: 'Share Options',
+			message: 'Select Link to share the download URL, or APK to share the downloaded package.',
+			color: colors.primary,
+			onPress: () => {
+				// We trigger dialog choices
+			}
+		})
+
+		// For high premium aesthetics, we trigger a native confirmation or alert flow
+		// Let's call share with options:
+		import('react-native').then(({ Alert }) => {
+			Alert.alert('Share App Update', 'Would you like to share the download link or the cached APK installation file?', [
+				{
+					text: 'Cancel',
+					style: 'cancel'
+				},
+				{
+					text: 'Share Download Link',
+					onPress: () => shareUpdate('link')
+				},
+				{
+					text: 'Share APK File',
+					onPress: () => {
+						// Show recommendation for Quick Share first
+						setShowQuickShareModal(true)
+					}
+				}
+			])
+		})
 	}
 
-	const handleShareUrl = async () => {
-		setShareModalVisible(false)
-		if (!updateInfo?.download_url) return
-		try {
-			await Sharing.shareAsync(updateInfo.download_url)
-		} catch (e) {
-			toast.show({
-				title: 'Share Failed',
-				message: 'Could not share the download URL.',
-				color: '#EF4444'
-			})
+	const confirmQuickShareAndShare = () => {
+		setShowQuickShareModal(false)
+		shareUpdate('file')
+	}
+
+	// Show startup choice modal if opened via startup redirect
+	useEffect(() => {
+		if (startupRedirect === '/updates' && updateInfo) {
+			setShowChoiceModal(true)
+		}
+	}, [startupRedirect, updateInfo])
+
+	const handleStartupInstallCache = async () => {
+		setShowChoiceModal(false)
+		skipStartupRedirect()
+		await installUpdate()
+	}
+
+	const handleStartupDownloadNew = async () => {
+		setShowChoiceModal(false)
+		skipStartupRedirect()
+		await downloadUpdate()
+	}
+
+	const handleStartupContinue = () => {
+		setShowChoiceModal(false)
+		skipStartupRedirect()
+		router.replace('/(home)/feed')
+	}
+
+	// Dynamic action section based on platform & status
+	const renderActionSection = () => {
+		if (Platform.OS === 'web') {
+			return (
+				<View style={styles.actionBlock}>
+					<TouchableOpacity
+						style={[styles.primaryButton, { backgroundColor: colors.primary }]}
+						onPress={() => updateInfo?.download_url && import('react-native').then(({ Linking }) => Linking.openURL(updateInfo.download_url))}
+						disabled={!updateInfo?.download_url}
+					>
+						<Ionicons name="download" size={18} color="#FFFFFF" />
+						<Text style={styles.primaryButtonText}>Download APK</Text>
+					</TouchableOpacity>
+
+					<View style={styles.buttonRow}>
+						<TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleCopyUrl}>
+							<Ionicons name="copy-outline" size={16} color={colors.text} />
+							<Text style={[styles.secondaryButtonText, { color: colors.text }]}>Copy Link</Text>
+						</TouchableOpacity>
+
+						<TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleWebRefresh}>
+							<Ionicons name="refresh-outline" size={16} color={colors.text} />
+							<Text style={[styles.secondaryButtonText, { color: colors.text }]}>Refresh</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+			)
+		}
+
+		// Android specific actions
+		switch (status) {
+			case 'downloading':
+				return (
+					<View style={styles.actionBlock}>
+						<View style={styles.progressContainer}>
+							<View style={styles.progressHeader}>
+								<Text style={[styles.progressText, { color: colors.textSecondary }]}>Downloading update package...</Text>
+								<Text style={[styles.percentText, { color: colors.primary }]}>{Math.round(downloadProgress * 100)}%</Text>
+							</View>
+							<View style={[styles.progressBarTrack, { backgroundColor: colors.borderLight }]}>
+								<View style={[styles.progressBarFill, { backgroundColor: colors.primary, width: `${downloadProgress * 100}%` }]} />
+							</View>
+						</View>
+
+						<TouchableOpacity style={styles.cancelButton} onPress={cancelDownload}>
+							<Ionicons name="close-circle-outline" size={18} color="#EF4444" />
+							<Text style={styles.cancelButtonText}>Cancel Download</Text>
+						</TouchableOpacity>
+					</View>
+				)
+
+			case 'completed':
+			default:
+				const isCacheReady = !!cachedApk
+				return (
+					<View style={styles.actionBlock}>
+						{isCacheReady ? (
+							<TouchableOpacity style={[styles.primaryButton, { backgroundColor: '#10B981' }]} onPress={installUpdate}>
+								<Ionicons name="checkmark-circle" size={20} color="#FFFFFF" />
+								<Text style={styles.primaryButtonText}>Install Update</Text>
+							</TouchableOpacity>
+						) : (
+							<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={downloadUpdate} disabled={!updateInfo}>
+								<Ionicons name="download-outline" size={18} color="#FFFFFF" />
+								<Text style={styles.primaryButtonText}>Download & Install</Text>
+							</TouchableOpacity>
+						)}
+
+						<View style={styles.buttonRow}>
+							<TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleSharePress} disabled={!updateInfo}>
+								<Ionicons name="share-social-outline" size={16} color={colors.text} />
+								<Text style={[styles.secondaryButtonText, { color: colors.text }]}>Share</Text>
+							</TouchableOpacity>
+
+							{isCacheReady && (
+								<TouchableOpacity style={[styles.secondaryButton, { borderColor: '#EF444420' }]} onPress={deleteCache}>
+									<Ionicons name="trash-outline" size={16} color="#EF4444" />
+									<Text style={[styles.secondaryButtonText, { color: '#EF4444' }]}>Delete Cache</Text>
+								</TouchableOpacity>
+							)}
+						</View>
+					</View>
+				)
 		}
 	}
-
-	const handleShareApk = async () => {
-		setShareModalVisible(false)
-		if (!cachedApk?.localUri) return
-
-		// Show quick share recommendation dialog first
-		setQuickShareDialogVisible(true)
-	}
-
-	const triggerApkFileShare = async () => {
-		setQuickShareDialogVisible(false)
-		if (!cachedApk?.localUri) return
-		try {
-			await Sharing.shareAsync(cachedApk.localUri, {
-				mimeType: 'application/vnd.android.package-archive',
-				dialogTitle: 'Share Drinaluza APK File'
-			})
-		} catch (e) {
-			toast.show({
-				title: 'Share Failed',
-				message: 'Could not share the APK file.',
-				color: '#EF4444'
-			})
-		}
-	}
-
-	const isDownloading = status === 'downloading'
-	const isCompleted = status === 'completed' || !!cachedApk
-	const isChecking = status === 'checking' || isCheckingManual
 
 	return (
-		<View style={[styles.container, { backgroundColor: '#000000' }]}>
-			<SmartScreenHeader title="Software Updates" showBackButton={updateType !== 'required'} loading={isChecking || isDownloading} />
+		<View style={styles.container}>
+			<SmartScreenHeader title="Software Updates" showBackButton={Platform.OS !== 'android' || startupRedirect !== '/updates'} onBackPress={() => router.back()} />
 
-			<ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 32 }]} showsVerticalScrollIndicator={false}>
-				{/* Top status card */}
-				<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-					<View style={styles.statusHeader}>
-						<View style={[styles.iconCircle, { backgroundColor: colors.primaryContainer }]}>
-							<Ionicons name={updateType !== 'none' ? 'cloud-download-outline' : 'checkmark-circle-outline'} size={32} color={colors.primary} />
+			<ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+				{/* Top Hero Section */}
+				<View style={[styles.heroCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={styles.heroHeader}>
+						<View style={[styles.iconWrapper, { backgroundColor: colors.primaryContainer }]}>
+							<Ionicons name="cloud-download-outline" size={28} color={colors.primary} />
 						</View>
-						<View style={styles.statusInfo}>
-							<Text style={[styles.statusTitle, { color: colors.text }]}>{updateType !== 'none' ? 'Update Available' : 'App is Up to Date'}</Text>
-							<Text style={[styles.versionLabel, { color: colors.textSecondary }]}>Installed Version: v{APP_VERSION}</Text>
+						<View style={styles.heroTextContainer}>
+							<Text style={[styles.appName, { color: colors.text }]}>Drinaluza</Text>
+							<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Keep your business operations secure</Text>
 						</View>
 					</View>
 
-					{updateType !== 'none' && updateInfo && (
-						<View style={[styles.typeBadgeContainer, { borderTopColor: colors.borderLight }]}>
-							<View
-								style={[
-									styles.badge,
-									{
-										backgroundColor: updateType === 'required' ? `${colors.error}20` : `${colors.warning}20`,
-										borderColor: updateType === 'required' ? colors.error : colors.warning
-									}
-								]}
-							>
-								<Text style={[styles.badgeText, { color: updateType === 'required' ? colors.error : colors.warning }]}>{updateType.toUpperCase()} UPDATE</Text>
-							</View>
-							<Text style={[styles.messageText, { color: colors.text }]}>
-								{updateType === 'required' ? 'A new update is available, please update your app to continue using it.' : 'A new update is available, you can update your app to continue using it.'}
-							</Text>
+					{/* Versions grid */}
+					<View style={[styles.versionGrid, { borderTopColor: colors.borderLight }]}>
+						<View style={styles.versionCol}>
+							<Text style={[styles.versionLabel, { color: colors.textTertiary }]}>Installed Version</Text>
+							<Text style={[styles.versionValue, { color: colors.text }]}>v{Platform.OS === 'web' ? '1.18.6' : APP_VERSION}</Text>
 						</View>
-					)}
+						<View style={[styles.versionCol, { borderLeftColor: colors.borderLight, borderLeftWidth: 1 }]}>
+							<Text style={[styles.versionLabel, { color: colors.textTertiary }]}>Latest Available</Text>
+							<Text style={[styles.versionValue, { color: updateInfo ? colors.primary : colors.text }]}>{updateInfo ? updateInfo.latest_version : 'Checking...'}</Text>
+						</View>
+					</View>
 				</View>
 
-				{/* Version details card */}
-				{updateType !== 'none' && updateInfo && (
-					<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						<Text style={[styles.cardTitle, { color: colors.text }]}>Release Details</Text>
-						<View style={styles.detailRow}>
-							<Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Release Name</Text>
-							<Text style={[styles.detailValue, { color: colors.text }]}>{updateInfo.name}</Text>
-						</View>
-						<View style={[styles.detailRow, { borderTopColor: colors.borderLight }]}>
-							<Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Latest Version</Text>
-							<Text style={[styles.detailValue, { color: colors.text }]}>v{updateInfo.latest_version}</Text>
-						</View>
-						<View style={[styles.detailRow, { borderTopColor: colors.borderLight }]}>
-							<Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Release Size</Text>
-							<Text style={[styles.detailValue, { color: colors.text }]}>{formatSize(updateInfo.size)}</Text>
-						</View>
-						<View style={[styles.detailRow, { borderTopColor: colors.borderLight }]}>
-							<Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Download Count</Text>
-							<Text style={[styles.detailValue, { color: colors.text }]}>{updateInfo.download_count.toLocaleString()}</Text>
-						</View>
-						<View style={[styles.detailRow, { borderTopColor: colors.borderLight }]}>
-							<Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Published Date</Text>
-							<Text style={[styles.detailValue, { color: colors.text }]}>{formatDate(updateInfo.published_at)}</Text>
-						</View>
-
-						{Platform.OS === 'android' && freeStorage !== null && (
-							<View style={[styles.detailRow, { borderTopColor: colors.borderLight }]}>
-								<Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Free Storage Size</Text>
-								<Text style={[styles.detailValue, { color: freeStorage < updateInfo.size ? colors.error : colors.text }]}>{formatSize(freeStorage)}</Text>
-							</View>
-						)}
-					</View>
-				)}
-
-				{/* Cache/Offline APK Card (Android only) */}
-				{Platform.OS === 'android' && cachedApk && (
-					<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						<Text style={[styles.cardTitle, { color: colors.text }]}>Cached Update File</Text>
-						<Text style={[styles.cachedDescription, { color: colors.textSecondary }]}>An installer package for version v{cachedApk.version} is saved locally on this device.</Text>
-						<View style={styles.cachedActions}>
-							<TouchableOpacity style={[styles.cachedButton, { backgroundColor: colors.primaryContainer }]} onPress={installUpdate} activeOpacity={0.8}>
-								<Ionicons name="build-outline" size={18} color={colors.primary} />
-								<Text style={[styles.cachedButtonText, { color: colors.primary }]}>Install APK</Text>
-							</TouchableOpacity>
-
-							<TouchableOpacity style={[styles.cachedButton, { backgroundColor: `${colors.error}15` }]} onPress={deleteCachedApk} activeOpacity={0.8}>
-								<Ionicons name="trash-outline" size={18} color={colors.error} />
-								<Text style={[styles.cachedButtonText, { color: colors.error }]}>Delete Cache</Text>
-							</TouchableOpacity>
-						</View>
-					</View>
-				)}
-
-				{/* Release Notes Changelog */}
-				{updateInfo && updateInfo.changelog ? (
-					<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						<Text style={[styles.cardTitle, { color: colors.text }]}>What's New</Text>
-						<View style={[styles.changelogBox, { backgroundColor: colors.background }]}>
-							<ScrollView nestedScrollEnabled style={styles.changelogScroll} showsVerticalScrollIndicator>
-								<Text style={[styles.changelogText, { color: colors.textSecondary }]}>{updateInfo.changelog}</Text>
-							</ScrollView>
-						</View>
-					</View>
-				) : null}
-
-				{/* Error display */}
-				{error && (
-					<View style={[styles.card, styles.errorCard, { borderColor: colors.error }]}>
-						<Ionicons name="alert-circle-outline" size={24} color={colors.error} style={styles.errorIcon} />
-						<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-					</View>
-				)}
-
-				{/* Dynamic Action Buttons Section */}
-				<View style={styles.actionContainer}>
-					{/* Download Progress Bar */}
-					{isDownloading && (
-						<View style={styles.progressContainer}>
-							<Text style={[styles.progressLabel, { color: colors.text }]}>Downloading Update... {Math.round(downloadProgress * 100)}%</Text>
-							<View style={[styles.progressBarBg, { backgroundColor: colors.borderLight }]}>
-								<View
-									style={[
-										styles.progressBarFill,
-										{
-											backgroundColor: colors.primary,
-											width: `${Math.round(downloadProgress * 100)}%`
-										}
-									]}
-								/>
-							</View>
-						</View>
+				{/* Check for updates button */}
+				<TouchableOpacity style={[styles.checkButton, { borderColor: colors.border }]} onPress={handleCheckForUpdates} disabled={isCheckingManual || status === 'downloading'}>
+					{isCheckingManual ? (
+						<ActivityIndicator size="small" color={colors.primary} />
+					) : (
+						<>
+							<Ionicons name="sync-outline" size={16} color={colors.primary} />
+							<Text style={[styles.checkButtonText, { color: colors.text }]}>Check for Updates</Text>
+						</>
 					)}
+				</TouchableOpacity>
 
-					{/* Manual Check Button */}
-					{!isDownloading && !isCompleted && updateType === 'none' && (
-						<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={handleManualCheck} disabled={isChecking} activeOpacity={0.8}>
-							{isChecking ? (
-								<ActivityIndicator size="small" color="#FFFFFF" />
-							) : (
-								<>
-									<Ionicons name="refresh-outline" size={20} color="#FFFFFF" />
-									<Text style={styles.primaryButtonText}>Check for Updates</Text>
-								</>
+				{/* Main Info Blocks */}
+				{updateInfo ? (
+					<View style={[styles.layoutWrapper, { flexDirection: isTablet ? 'row' : 'column', gap: 16 }]}>
+						{/* Stats & Actions Area */}
+						<View style={[styles.detailsSection, { flex: isTablet ? 1.2 : undefined }]}>
+							<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>Release Details</Text>
+
+							<View style={styles.statsGrid}>
+								<View style={[styles.statItem, { backgroundColor: colors.card }]}>
+									<Ionicons name="document-text-outline" size={16} color={colors.primary} />
+									<Text style={[styles.statVal, { color: colors.text }]} numberOfLines={1}>
+										{updateInfo.name}
+									</Text>
+									<Text style={[styles.statLbl, { color: colors.textTertiary }]}>Release Name</Text>
+								</View>
+
+								<View style={[styles.statItem, { backgroundColor: colors.card }]}>
+									<Ionicons name="calendar-outline" size={16} color={colors.primary} />
+									<Text style={[styles.statVal, { color: colors.text }]}>{formatDate(updateInfo.published_at)}</Text>
+									<Text style={[styles.statLbl, { color: colors.textTertiary }]}>Published Date</Text>
+								</View>
+
+								<View style={[styles.statItem, { backgroundColor: colors.card }]}>
+									<Ionicons name="save-outline" size={16} color={colors.primary} />
+									<Text style={[styles.statVal, { color: colors.text }]}>{formatMB(updateInfo.size)}</Text>
+									<Text style={[styles.statLbl, { color: colors.textTertiary }]}>File Size</Text>
+								</View>
+
+								{Platform.OS === 'android' && (
+									<View style={[styles.statItem, { backgroundColor: colors.card }]}>
+										<Ionicons name="disc-outline" size={16} color={colors.primary} />
+										<Text style={[styles.statVal, { color: colors.text }]}>{freeStorageSize !== null ? `${freeStorageSize} MB` : 'N/A'}</Text>
+										<Text style={[styles.statLbl, { color: colors.textTertiary }]}>Free Space</Text>
+									</View>
+								)}
+
+								<View style={[styles.statItem, { backgroundColor: colors.card }]}>
+									<Ionicons name="stats-chart-outline" size={16} color={colors.primary} />
+									<Text style={[styles.statVal, { color: colors.text }]}>{updateInfo.download_count}</Text>
+									<Text style={[styles.statLbl, { color: colors.textTertiary }]}>Downloads</Text>
+								</View>
+							</View>
+
+							{/* Actions Block */}
+							{renderActionSection()}
+
+							{/* Cached APK section if exists on Android */}
+							{Platform.OS === 'android' && cachedApk && (
+								<View style={[styles.cacheCard, { backgroundColor: colors.card, borderColor: '#10B98130' }]}>
+									<View style={styles.cacheHeader}>
+										<Ionicons name="cube-outline" size={20} color="#10B981" />
+										<View style={styles.cacheInfo}>
+											<Text style={[styles.cacheTitle, { color: colors.text }]}>Cached APK Ready</Text>
+											<Text style={[styles.cacheSubtitle, { color: colors.textSecondary }]}>
+												{cachedApk.filename} • {formatMB(cachedApk.size)}
+											</Text>
+										</View>
+										<TouchableOpacity style={styles.cacheDeleteBtn} onPress={deleteCache}>
+											<Ionicons name="trash-outline" size={18} color="#EF4444" />
+										</TouchableOpacity>
+									</View>
+								</View>
 							)}
+						</View>
+
+						{/* Whats New (Changelog) Area */}
+						<View style={[styles.changelogSection, { flex: isTablet ? 1.8 : undefined }]}>
+							<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>What's New</Text>
+							<View style={[styles.changelogCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+								<ScrollView style={styles.changelogScroll} nestedScrollEnabled>
+									<Text style={[styles.changelogText, { color: colors.text }]}>{updateInfo.changelog || 'No release notes provided for this release.'}</Text>
+								</ScrollView>
+							</View>
+						</View>
+					</View>
+				) : error ? (
+					<View style={styles.errorContainer}>
+						<Ionicons name="alert-circle-outline" size={48} color="#EF4444" />
+						<Text style={[styles.errorTitle, { color: colors.text }]}>Failed to check updates</Text>
+						<Text style={[styles.errorText, { color: colors.textSecondary }]}>{error}</Text>
+						<TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={handleCheckForUpdates}>
+							<Text style={styles.retryButtonText}>Retry</Text>
 						</TouchableOpacity>
-					)}
-
-					{/* Android Actions */}
-					{Platform.OS === 'android' && updateType !== 'none' && (
-						<View style={styles.buttonStack}>
-							{/* Required/Optional custom block actions */}
-							{updateType === 'required' && !isDownloading && !isCompleted && (
-								<View style={styles.startupActions}>
-									<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary, flex: 1 }]} onPress={downloadUpdate} activeOpacity={0.8}>
-										<Ionicons name="download-outline" size={20} color="#FFFFFF" />
-										<Text style={styles.primaryButtonText}>Download Update</Text>
-									</TouchableOpacity>
-
-									<TouchableOpacity style={[styles.secondaryButton, { backgroundColor: '#1C2541', borderColor: colors.border, flex: 1 }]} onPress={handleAndroidExit} activeOpacity={0.8}>
-										<Ionicons name="exit-outline" size={20} color={colors.text} />
-										<Text style={[styles.secondaryButtonText, { color: colors.text }]}>Exit App</Text>
-									</TouchableOpacity>
-								</View>
-							)}
-
-							{/* Optional update prompt options */}
-							{updateType === 'optional' && !isDownloading && !isCompleted && (
-								<View style={styles.buttonStack}>
-									<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={downloadUpdate} activeOpacity={0.8}>
-										<Ionicons name="download-outline" size={20} color="#FFFFFF" />
-										<Text style={styles.primaryButtonText}>Download Newer Version</Text>
-									</TouchableOpacity>
-								</View>
-							)}
-
-							{/* Install trigger */}
-							{isCompleted && !isDownloading && (
-								<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.success || '#10B981' }]} onPress={installUpdate} activeOpacity={0.8}>
-									<Ionicons name="build-outline" size={20} color="#FFFFFF" />
-									<Text style={styles.primaryButtonText}>Install Update Package</Text>
-								</TouchableOpacity>
-							)}
-
-							{/* Share action */}
-							{(updateInfo?.download_url || cachedApk) && (
-								<TouchableOpacity style={[styles.secondaryButton, { borderColor: colors.border }]} onPress={handleSharePress} activeOpacity={0.8}>
-									<Ionicons name="share-social-outline" size={20} color={colors.primary} />
-									<Text style={[styles.secondaryButtonText, { color: colors.primary }]}>Share Update</Text>
-								</TouchableOpacity>
-							)}
-						</View>
-					)}
-
-					{/* Web Actions */}
-					{Platform.OS === 'web' && updateType !== 'none' && (
-						<View style={styles.buttonStack}>
-							<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary }]} onPress={handleWebDownload} activeOpacity={0.8}>
-								<Ionicons name="download-outline" size={20} color="#FFFFFF" />
-								<Text style={styles.primaryButtonText}>Download Update</Text>
-							</TouchableOpacity>
-
-							<View style={styles.webRow}>
-								<TouchableOpacity style={[styles.webButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={handleWebRefresh} activeOpacity={0.8}>
-									<Ionicons name="refresh" size={18} color={colors.text} />
-									<Text style={[styles.webButtonText, { color: colors.text }]}>Refresh Page</Text>
-								</TouchableOpacity>
-
-								<TouchableOpacity style={[styles.webButton, { backgroundColor: colors.card, borderColor: colors.border }]} onPress={handleCopyUrl} activeOpacity={0.8}>
-									<Ionicons name="copy-outline" size={18} color={colors.text} />
-									<Text style={[styles.webButtonText, { color: colors.text }]}>Copy Link</Text>
-								</TouchableOpacity>
-							</View>
-						</View>
-					)}
-				</View>
+					</View>
+				) : (
+					<View style={styles.loadingContainer}>
+						<ActivityIndicator size="large" color={colors.primary} />
+						<Text style={[styles.loadingText, { color: colors.textSecondary }]}>Checking for updates...</Text>
+					</View>
+				)}
 			</ScrollView>
 
-			{/* Android Share Modal Options */}
-			<Modal visible={shareModalVisible} transparent animationType="fade" onRequestClose={() => setShareModalVisible(false)}>
+			{/* GORGEOUS GLASSMORPHIC STARTUP CHOICES MODAL */}
+			<Modal visible={showChoiceModal} transparent animationType="fade" onRequestClose={() => {}}>
 				<View style={styles.modalOverlay}>
-					<View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						<Text style={[styles.modalTitle, { color: colors.text }]}>Share Option</Text>
-						<Text style={[styles.modalDesc, { color: colors.textSecondary }]}>Select how you would like to share this software update:</Text>
+					<View style={[styles.modalContent, { backgroundColor: '#0B132B', borderColor: colors.border }]}>
+						<View style={[styles.modalHeaderIcon, { backgroundColor: colors.primaryContainer }]}>
+							<Ionicons name="rocket-outline" size={32} color={colors.primary} />
+						</View>
 
-						<TouchableOpacity style={[styles.modalBtn, { borderBottomColor: colors.borderLight, borderBottomWidth: 1 }]} onPress={handleShareUrl}>
-							<Ionicons name="link-outline" size={20} color={colors.primary} />
-							<Text style={[styles.modalBtnText, { color: colors.text }]}>Share Download URL</Text>
-						</TouchableOpacity>
+						<Text style={[styles.modalTitle, { color: colors.text }]}>New Update Available!</Text>
+						<Text style={[styles.modalDesc, { color: colors.textSecondary }]}>
+							A newer software version <Text style={{ color: colors.primary, fontWeight: '700' }}>{updateInfo?.latest_version}</Text> is ready. We highly recommend updating to get the latest features
+							and security improvements.
+						</Text>
 
-						{cachedApk && (
-							<TouchableOpacity style={[styles.modalBtn, { borderBottomColor: colors.borderLight, borderBottomWidth: 1 }]} onPress={handleShareApk}>
-								<Ionicons name="document-attach-outline" size={20} color={colors.primary} />
-								<Text style={[styles.modalBtnText, { color: colors.text }]}>Share Cached APK File</Text>
+						<View style={styles.modalActions}>
+							{/* Option 1: Install Cached APK if ready */}
+							{!!cachedApk && (
+								<TouchableOpacity style={[styles.modalOptionCard, { borderColor: '#10B98160', backgroundColor: '#10B98110' }]} onPress={handleStartupInstallCache}>
+									<Ionicons name="checkmark-circle-outline" size={20} color="#10B981" />
+									<View style={styles.optionTextCol}>
+										<Text style={[styles.optionTitle, { color: colors.text }]}>Install Cached Update</Text>
+										<Text style={[styles.optionDesc, { color: colors.textSecondary }]}>Version {cachedApk.version} is already downloaded and ready to install.</Text>
+									</View>
+								</TouchableOpacity>
+							)}
+
+							{/* Option 2: Download Newer Version */}
+							<TouchableOpacity style={[styles.modalOptionCard, { borderColor: '#0EA5E960', backgroundColor: '#0EA5E910' }]} onPress={handleStartupDownloadNew}>
+								<Ionicons name="download-outline" size={20} color="#0EA5E9" />
+								<View style={styles.optionTextCol}>
+									<Text style={[styles.optionTitle, { color: colors.text }]}>Download & Install</Text>
+									<Text style={[styles.optionDesc, { color: colors.textSecondary }]}>Fetch the latest {updateInfo?.latest_version} package from the release servers.</Text>
+								</View>
 							</TouchableOpacity>
-						)}
 
-						<TouchableOpacity style={styles.modalCancelBtn} onPress={() => setShareModalVisible(false)}>
-							<Text style={[styles.modalCancelText, { color: colors.error }]}>Cancel</Text>
-						</TouchableOpacity>
+							{/* Option 3: Skip / Continue */}
+							<TouchableOpacity style={[styles.modalOptionCard, { borderColor: '#334155', backgroundColor: '#1E293B30' }]} onPress={handleStartupContinue}>
+								<Ionicons name="arrow-forward-outline" size={20} color="#94A3B8" />
+								<View style={styles.optionTextCol}>
+									<Text style={[styles.optionTitle, { color: colors.text }]}>Skip for Now</Text>
+									<Text style={[styles.optionDesc, { color: colors.textSecondary }]}>Continue into the application without updating.</Text>
+								</View>
+							</TouchableOpacity>
+						</View>
 					</View>
 				</View>
 			</Modal>
 
-			{/* Quick Share Recommendation Dialog */}
-			<Modal visible={quickShareDialogVisible} transparent animationType="fade" onRequestClose={() => setQuickShareDialogVisible(false)}>
+			{/* QUICK SHARE RECOMMENDATION MODAL */}
+			<Modal visible={showQuickShareModal} transparent animationType="fade" onRequestClose={() => setShowQuickShareModal(false)}>
 				<View style={styles.modalOverlay}>
-					<View style={[styles.modalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
-						<View style={styles.alertHeader}>
-							<Ionicons name="flash-outline" size={28} color={colors.warning} />
-							<Text style={[styles.modalTitle, { color: colors.text, marginLeft: 8 }]}>Quick Share Recommended</Text>
+					<View style={[styles.modalContent, { backgroundColor: '#0B132B', borderColor: colors.border }]}>
+						<View style={[styles.modalHeaderIcon, { backgroundColor: '#F59E0B20' }]}>
+							<Ionicons name="flash-outline" size={32} color="#F59E0B" />
 						</View>
-						<Text style={[styles.modalDesc, { color: colors.textSecondary, marginTop: 12 }]}>
-							We recommend using **Quick Share** or **Nearby Share** on your Android device to send this APK package. It allows extremely fast and internet-free offline sharing between devices.
+
+						<Text style={[styles.modalTitle, { color: colors.text }]}>Recommended Method</Text>
+						<Text style={[styles.modalDesc, { color: colors.textSecondary, textAlign: 'center' }]}>
+							For the fastest transfer of this APK installation package to another device, we highly recommend selecting <Text style={{ color: '#F59E0B', fontWeight: 'bold' }}>Quick Share</Text> (or
+							Nearby Share) in the system share sheet that opens next.
 						</Text>
 
-						<TouchableOpacity style={[styles.primaryButton, { backgroundColor: colors.primary, marginTop: 16 }]} onPress={triggerApkFileShare}>
-							<Text style={styles.primaryButtonText}>Continue with Share</Text>
-						</TouchableOpacity>
-
-						<TouchableOpacity style={styles.modalCancelBtn} onPress={() => setQuickShareDialogVisible(false)}>
-							<Text style={[styles.modalCancelText, { color: colors.textSecondary }]}>Go Back</Text>
-						</TouchableOpacity>
+						<View style={[styles.modalActions, { width: '100%', gap: 12, flexDirection: 'row' }]}>
+							<TouchableOpacity style={[styles.flexButton, { backgroundColor: '#1E293B', borderColor: colors.border }]} onPress={() => setShowQuickShareModal(false)}>
+								<Text style={[styles.flexButtonText, { color: colors.text }]}>Cancel</Text>
+							</TouchableOpacity>
+							<TouchableOpacity style={[styles.flexButton, { backgroundColor: '#F59E0B' }]} onPress={confirmQuickShareAndShare}>
+								<Text style={[styles.flexButtonText, { color: '#000000', fontWeight: '700' }]}>Continue</Text>
+							</TouchableOpacity>
+						</View>
 					</View>
 				</View>
 			</Modal>
@@ -418,260 +476,359 @@ export const UpdatesScreen: React.FC = () => {
 
 const styles = StyleSheet.create({
 	container: {
-		flex: 1
+		flex: 1,
+		backgroundColor: '#000000'
 	},
-	scroll: {
-		flex: 1
-	},
-	scrollContent: {
+	scrollContainer: {
 		padding: 16,
-		gap: 16
+		paddingBottom: 40
 	},
-	card: {
+	heroCard: {
 		borderRadius: 16,
 		borderWidth: 1,
 		padding: 16,
-		...Platform.select({
-			web: {
-				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-			}
-		})
+		marginBottom: 16,
+		overflow: 'hidden'
 	},
-	statusHeader: {
+	heroHeader: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 16
+		marginBottom: 16
 	},
-	iconCircle: {
+	iconWrapper: {
 		width: 56,
 		height: 56,
-		borderRadius: 28,
+		borderRadius: 14,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginRight: 14
+	},
+	heroTextContainer: {
+		flex: 1
+	},
+	appName: {
+		fontSize: 22,
+		fontWeight: '800',
+		letterSpacing: -0.5
+	},
+	heroSubtitle: {
+		fontSize: 13,
+		marginTop: 2
+	},
+	versionGrid: {
+		flexDirection: 'row',
+		borderTopWidth: 1,
+		paddingTop: 16
+	},
+	versionCol: {
+		flex: 1,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
+	versionLabel: {
+		fontSize: 11,
+		fontWeight: '600',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5,
+		marginBottom: 4
+	},
+	versionValue: {
+		fontSize: 16,
+		fontWeight: '700'
+	},
+	checkButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: 12,
+		borderWidth: 1,
+		height: 48,
+		width: '100%',
+		gap: 8,
+		marginBottom: 24,
+		borderStyle: 'dashed'
+	},
+	checkButtonText: {
+		fontSize: 14,
+		fontWeight: '600'
+	},
+	layoutWrapper: {
+		width: '100%'
+	},
+	detailsSection: {
+		width: '100%'
+	},
+	sectionTitle: {
+		fontSize: 12,
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 1,
+		marginBottom: 12
+	},
+	statsGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 8,
+		marginBottom: 16
+	},
+	statItem: {
+		width: '48%',
+		flexGrow: 1,
+		borderRadius: 12,
+		padding: 12,
+		gap: 4
+	},
+	statVal: {
+		fontSize: 14,
+		fontWeight: '700',
+		marginTop: 4
+	},
+	statLbl: {
+		fontSize: 10,
+		fontWeight: '600'
+	},
+	actionBlock: {
+		gap: 10,
+		marginBottom: 16
+	},
+	primaryButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: 12,
+		height: 52,
+		gap: 8,
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 4 },
+		shadowOpacity: 0.3,
+		shadowRadius: 6,
+		elevation: 4
+	},
+	primaryButtonText: {
+		color: '#FFFFFF',
+		fontSize: 15,
+		fontWeight: '700'
+	},
+	secondaryButton: {
+		flex: 1,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: 12,
+		borderWidth: 1,
+		height: 46,
+		gap: 6
+	},
+	secondaryButtonText: {
+		fontSize: 13,
+		fontWeight: '600'
+	},
+	buttonRow: {
+		flexDirection: 'row',
+		gap: 10
+	},
+	cancelButton: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: '#EF444440',
+		height: 48,
+		gap: 6,
+		backgroundColor: '#EF444410'
+	},
+	cancelButtonText: {
+		color: '#EF4444',
+		fontSize: 14,
+		fontWeight: '600'
+	},
+	progressContainer: {
+		borderRadius: 12,
+		padding: 12,
+		backgroundColor: '#1C2541'
+	},
+	progressHeader: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		marginBottom: 8
+	},
+	progressText: {
+		fontSize: 12,
+		fontWeight: '500'
+	},
+	percentText: {
+		fontSize: 13,
+		fontWeight: '700'
+	},
+	progressBarTrack: {
+		height: 6,
+		borderRadius: 3,
+		width: '100%',
+		overflow: 'hidden'
+	},
+	progressBarFill: {
+		height: '100%',
+		borderRadius: 3
+	},
+	cacheCard: {
+		borderRadius: 12,
+		borderWidth: 1,
+		padding: 12,
+		marginTop: 8
+	},
+	cacheHeader: {
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
+	cacheInfo: {
+		flex: 1,
+		marginLeft: 10
+	},
+	cacheTitle: {
+		fontSize: 13,
+		fontWeight: '700'
+	},
+	cacheSubtitle: {
+		fontSize: 11,
+		marginTop: 2
+	},
+	cacheDeleteBtn: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: '#EF444415',
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
-	statusInfo: {
-		flex: 1
+	changelogSection: {
+		width: '100%'
 	},
-	statusTitle: {
-		fontSize: 18,
-		fontWeight: '700'
-	},
-	versionLabel: {
-		fontSize: 14,
-		marginTop: 2
-	},
-	typeBadgeContainer: {
-		marginTop: 16,
-		paddingTop: 16,
-		borderTopWidth: 1,
-		gap: 10
-	},
-	badge: {
-		alignSelf: 'flex-start',
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 6,
-		borderWidth: 1
-	},
-	badgeText: {
-		fontSize: 11,
-		fontWeight: '800',
-		letterSpacing: 0.5
-	},
-	messageText: {
-		fontSize: 14,
-		lineHeight: 20
-	},
-	cardTitle: {
-		fontSize: 16,
-		fontWeight: '700',
-		marginBottom: 16
-	},
-	detailRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		paddingVertical: 12,
-		borderTopWidth: 1
-	},
-	detailLabel: {
-		fontSize: 14
-	},
-	detailValue: {
-		fontSize: 14,
-		fontWeight: '600'
-	},
-	cachedDescription: {
-		fontSize: 14,
-		lineHeight: 20,
-		marginBottom: 16
-	},
-	cachedActions: {
-		flexDirection: 'row',
-		gap: 12
-	},
-	cachedButton: {
-		flex: 1,
-		height: 40,
-		borderRadius: 8,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8
-	},
-	cachedButtonText: {
-		fontSize: 14,
-		fontWeight: '600'
-	},
-	changelogBox: {
-		borderRadius: 8,
-		padding: 12,
-		height: 220,
+	changelogCard: {
+		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.05)'
+		padding: 14,
+		height: 250
 	},
 	changelogScroll: {
 		flex: 1
 	},
 	changelogText: {
 		fontSize: 13,
-		lineHeight: 20,
-		fontFamily: Platform.select({ ios: 'Courier New', android: 'monospace', default: 'monospace' })
+		lineHeight: 20
 	},
-	errorCard: {
-		flexDirection: 'row',
+	errorContainer: {
 		alignItems: 'center',
-		borderWidth: 1,
-		borderRadius: 12,
-		padding: 12,
-		backgroundColor: 'rgba(239, 68, 68, 0.08)'
+		justifyContent: 'center',
+		padding: 30,
+		gap: 12
 	},
-	errorIcon: {
-		marginRight: 8
+	errorTitle: {
+		fontSize: 16,
+		fontWeight: '700'
 	},
 	errorText: {
-		flex: 1,
+		fontSize: 13,
+		textAlign: 'center'
+	},
+	retryButton: {
+		borderRadius: 10,
+		height: 40,
+		paddingHorizontal: 24,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginTop: 8
+	},
+	retryButtonText: {
+		color: '#FFFFFF',
+		fontWeight: '700',
 		fontSize: 13
 	},
-	actionContainer: {
-		marginTop: 8,
+	loadingContainer: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		padding: 40,
 		gap: 16
 	},
-	progressContainer: {
-		gap: 8
+	loadingText: {
+		fontSize: 14
 	},
-	progressLabel: {
-		fontSize: 14,
-		fontWeight: '600'
-	},
-	progressBarBg: {
-		height: 8,
-		borderRadius: 4,
-		overflow: 'hidden'
-	},
-	progressBarFill: {
-		height: '100%',
-		borderRadius: 4
-	},
-	primaryButton: {
-		height: 48,
-		borderRadius: 12,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-		width: '100%'
-	},
-	primaryButtonText: {
-		color: '#FFFFFF',
-		fontSize: 16,
-		fontWeight: '700'
-	},
-	secondaryButton: {
-		height: 48,
-		borderRadius: 12,
-		borderWidth: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-		width: '100%'
-	},
-	secondaryButtonText: {
-		fontSize: 16,
-		fontWeight: '600'
-	},
-	buttonStack: {
-		gap: 12,
-		width: '100%'
-	},
-	startupActions: {
-		flexDirection: 'row',
-		gap: 12,
-		width: '100%'
-	},
-	webRow: {
-		flexDirection: 'row',
-		gap: 12
-	},
-	webButton: {
-		flex: 1,
-		height: 44,
-		borderRadius: 10,
-		borderWidth: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8
-	},
-	webButtonText: {
-		fontSize: 14,
-		fontWeight: '600'
-	},
+	// Modals layout
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0,0,0,0.8)',
+		backgroundColor: 'rgba(3, 7, 18, 0.85)',
 		justifyContent: 'center',
 		alignItems: 'center',
-		padding: 24
-	},
-	modalCard: {
-		width: '100%',
-		maxWidth: 380,
-		borderRadius: 16,
-		borderWidth: 1,
 		padding: 20
 	},
-	alertHeader: {
-		flexDirection: 'row',
-		alignItems: 'center'
+	modalContent: {
+		width: '100%',
+		maxWidth: 440,
+		borderRadius: 24,
+		borderWidth: 1,
+		padding: 24,
+		alignItems: 'center',
+		shadowColor: '#000',
+		shadowOffset: { width: 0, height: 10 },
+		shadowOpacity: 0.5,
+		shadowRadius: 15,
+		elevation: 10
+	},
+	modalHeaderIcon: {
+		width: 64,
+		height: 64,
+		borderRadius: 20,
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginBottom: 16
 	},
 	modalTitle: {
-		fontSize: 18,
-		fontWeight: '700'
+		fontSize: 20,
+		fontWeight: '800',
+		letterSpacing: -0.5,
+		marginBottom: 8,
+		textAlign: 'center'
 	},
 	modalDesc: {
-		fontSize: 14,
+		fontSize: 13,
 		lineHeight: 20,
-		marginTop: 8,
-		marginBottom: 20
+		textAlign: 'center',
+		marginBottom: 24
 	},
-	modalBtn: {
+	modalActions: {
+		width: '100%',
+		gap: 10
+	},
+	modalOptionCard: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingVertical: 14,
+		borderRadius: 16,
+		borderWidth: 1,
+		padding: 14,
 		gap: 12
 	},
-	modalBtnText: {
-		fontSize: 15,
-		fontWeight: '600'
+	optionTextCol: {
+		flex: 1
 	},
-	modalCancelBtn: {
-		paddingVertical: 12,
-		alignItems: 'center',
-		marginTop: 12
-	},
-	modalCancelText: {
-		fontSize: 15,
+	optionTitle: {
+		fontSize: 14,
 		fontWeight: '700'
+	},
+	optionDesc: {
+		fontSize: 11,
+		marginTop: 2,
+		lineHeight: 15
+	},
+	flexButton: {
+		flex: 1,
+		borderRadius: 12,
+		height: 48,
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: 1,
+		borderColor: 'transparent'
+	},
+	flexButtonText: {
+		fontSize: 14
 	}
 })

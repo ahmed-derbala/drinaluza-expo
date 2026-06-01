@@ -1,39 +1,539 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { Platform, AppState, AppStateStatus, Share } from 'react-native'
+import { Platform } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as IntentLauncher from 'expo-intent-launcher'
 import * as Sharing from 'expo-sharing'
-import * as Clipboard from 'expo-clipboard'
-import { useRouter } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import axios from 'axios'
-
-import { APP_VERSION, UPDATE_CHECK_URL, TIMEOUT_MS } from '@/config'
-import { log } from '@/core/log'
+import { useRouter } from 'expo-router'
+import { UPDATE_CHECK_URL, TIMEOUT_MS, APP_VERSION } from '@/config'
 import { toast } from '@/features/common/Toast'
-import { UpdateStatus, UpdateType, ParsedRelease, CachedApkDetails } from './types'
-import { compareVersions, determineUpdateType, parseReleaseResponse } from './utils'
+import { log } from '@/core/log'
 
-const UPDATES_DIR = FileSystem.cacheDirectory + 'updates/'
-const METADATA_PATH = UPDATES_DIR + 'metadata.json'
+export interface UpdateInfo {
+	name: string
+	published_at: string
+	latest_version: string
+	size: number // bytes
+	download_count: number
+	changelog: string
+	download_url: string
+}
+
+export interface CachedApkDetails {
+	uri: string
+	filename: string
+	version: string
+	size: number
+	mtime: number
+}
 
 interface UpdatesContextType {
-	status: UpdateStatus
-	updateInfo: ParsedRelease | null
-	updateType: UpdateType
-	cachedApk: CachedApkDetails | null
-	downloadProgress: number
-	freeStorage: number | null // bytes
 	isCheckingStartup: boolean
 	startupRedirect: string | null
+	updateType: 'none' | 'optional' | 'required'
+	status: 'idle' | 'checking' | 'downloading' | 'completed' | 'error'
 	error: string | null
-	checkForUpdates: (isBackground?: boolean) => Promise<ParsedRelease | null>
+	updateInfo: UpdateInfo | null
+	cachedApk: CachedApkDetails | null
+	downloadProgress: number
+	freeStorageSize: number | null // MB
+	checkForUpdates: (manual?: boolean) => Promise<UpdateInfo | null>
 	downloadUpdate: () => Promise<void>
+	cancelDownload: () => Promise<void>
 	installUpdate: () => Promise<void>
-	deleteCachedApk: () => Promise<void>
+	deleteCache: () => Promise<void>
+	shareUpdate: (type: 'link' | 'file') => Promise<void>
+	skipStartupRedirect: () => void
 }
 
 const UpdatesContext = createContext<UpdatesContextType | undefined>(undefined)
+
+const CACHE_DIR = FileSystem.documentDirectory + 'drinaluza-cache/'
+const LAST_CHECK_KEY = '@drinaluza_last_update_check'
+const LAST_ALERTED_KEY = '@drinaluza_last_alerted_version'
+
+// Simple robust semver parser
+export function isVersionHigher(vLatest: string, vCurrent: string): boolean {
+	const cleanLatest = vLatest.replace(/^v/, '').trim()
+	const cleanCurrent = vCurrent.replace(/^v/, '').trim()
+
+	const partsLatest = cleanLatest.split('.').map(Number)
+	const partsCurrent = cleanCurrent.split('.').map(Number)
+
+	const maxLength = Math.max(partsLatest.length, partsCurrent.length)
+	for (let i = 0; i < maxLength; i++) {
+		const numLatest = partsLatest[i] || 0
+		const numCurrent = partsCurrent[i] || 0
+		if (numLatest > numCurrent) return true
+		if (numLatest < numCurrent) return false
+	}
+	return false
+}
+
+// Timeout fetch utility
+async function fetchWithTimeout(url: string, timeoutMs: number): Promise<any> {
+	const controller = new AbortController()
+	const id = setTimeout(() => controller.abort(), timeoutMs)
+
+	try {
+		const response = await fetch(url, { signal: controller.signal })
+		clearTimeout(id)
+		if (!response.ok) {
+			throw new Error(`HTTP error! status: ${response.status}`)
+		}
+		return await response.json()
+	} catch (error) {
+		clearTimeout(id)
+		throw error
+	}
+}
+
+export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const router = useRouter()
+	const [isCheckingStartup, setIsCheckingStartup] = useState(Platform.OS === 'android')
+	const [startupRedirect, setStartupRedirect] = useState<string | null>(null)
+	const [updateType, setUpdateType] = useState<'none' | 'optional' | 'required'>('none')
+	const [status, setStatus] = useState<'idle' | 'checking' | 'downloading' | 'completed' | 'error'>('idle')
+	const [error, setError] = useState<string | null>(null)
+	const [updateInfo, setUpdateInfo] = useState<UpdateInfo | null>(null)
+	const [cachedApk, setCachedApk] = useState<CachedApkDetails | null>(null)
+	const [downloadProgress, setDownloadProgress] = useState(0)
+	const [freeStorageSize, setFreeStorageSize] = useState<number | null>(null)
+
+	const activeDownloadRef = useRef<any>(null)
+	const isMountedRef = useRef(true)
+
+	// Ensure cache directory exists
+	const ensureCacheDirExists = async () => {
+		if (Platform.OS === 'web') return
+		const dirInfo = await FileSystem.getInfoAsync(CACHE_DIR)
+		if (!dirInfo.exists) {
+			await FileSystem.makeDirectoryAsync(CACHE_DIR, { intermediates: true })
+		}
+	}
+
+	// Update storage details
+	const refreshStorageDetails = async () => {
+		if (Platform.OS === 'android') {
+			try {
+				const bytes = await FileSystem.getFreeDiskStorageAsync()
+				setFreeStorageSize(Math.round(bytes / (1024 * 1024)))
+			} catch (e) {
+				log({ level: 'warn', label: 'Updates', message: 'Failed to query disk storage', error: e })
+			}
+		}
+	}
+
+	// Clean out outdated cached APKs and check if current matches latestVersion
+	const manageApkCache = async (latestVersion: string): Promise<CachedApkDetails | null> => {
+		if (Platform.OS === 'web') return null
+		try {
+			await ensureCacheDirExists()
+			const files = await FileSystem.readDirectoryAsync(CACHE_DIR)
+			let matchedDetails: CachedApkDetails | null = null
+
+			for (const filename of files) {
+				const fileUri = CACHE_DIR + filename
+				const match = filename.match(/drinaluza-(.+)\.apk/)
+				const version = match ? match[1] : ''
+
+				// If it matches the latest update tag exactly, we keep it as cached
+				if (version === latestVersion) {
+					const info = await FileSystem.getInfoAsync(fileUri)
+					if (info.exists) {
+						matchedDetails = {
+							uri: fileUri,
+							filename,
+							version,
+							size: info.size || 0,
+							mtime: (info as any).modificationTime || Date.now()
+						}
+					}
+				} else {
+					// Delete older or mismatching APK files in cache to keep only the latest
+					log({ level: 'info', label: 'Updates', message: `Purging mismatching cached APK: ${filename}` })
+					await FileSystem.deleteAsync(fileUri, { idempotent: true })
+				}
+			}
+			return matchedDetails
+		} catch (e) {
+			log({ level: 'error', label: 'Updates', message: 'Error cleaning/scanning APK cache', error: e })
+			return null
+		}
+	}
+
+	// Native installation call
+	const triggerInstallation = async (uri: string) => {
+		if (Platform.OS !== 'android') return
+		try {
+			log({ level: 'info', label: 'Updates', message: `Launching package installer for ${uri}` })
+			const contentUri = await FileSystem.getContentUriAsync(uri)
+			await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+				data: contentUri,
+				flags: 1, // Intent.FLAG_GRANT_READ_URI_PERMISSION
+				type: 'application/vnd.android.package-archive'
+			})
+		} catch (e) {
+			log({ level: 'error', label: 'Updates', message: 'Failed to launch standard intent installer, trying fallback share', error: e })
+			// Fallback to sharing the file as a package archive
+			try {
+				const contentUri = await FileSystem.getContentUriAsync(uri)
+				await Sharing.shareAsync(contentUri, {
+					mimeType: 'application/vnd.android.package-archive',
+					dialogTitle: 'Install Drinaluza Update'
+				})
+			} catch (shareErr) {
+				log({ level: 'error', label: 'Updates', message: 'Intent and Sharing fallback both failed', error: shareErr })
+				toast.show({ title: 'Error', message: 'Failed to trigger package installer.', color: '#EF4444' })
+			}
+		}
+	}
+
+	// Share download URL or APK
+	const shareUpdate = async (type: 'link' | 'file') => {
+		if (type === 'file') {
+			if (!cachedApk) {
+				toast.show({ title: 'Error', message: 'No cached APK found to share.', color: '#EF4444' })
+				return
+			}
+			try {
+				const contentUri = await FileSystem.getContentUriAsync(cachedApk.uri)
+				await Sharing.shareAsync(contentUri, {
+					mimeType: 'application/vnd.android.package-archive',
+					dialogTitle: 'Share drinaluza APK'
+				})
+			} catch (e) {
+				log({ level: 'error', label: 'Updates', message: 'Failed to share cached APK', error: e })
+			}
+		} else {
+			const link = updateInfo?.download_url || 'https://github.com/ahmed-derbala/drinaluza-expo-releases'
+			try {
+				if (Platform.OS === 'web') {
+					toast.show({ title: 'Info', message: 'Share link available. Copy to clipboard instead.', color: '#3B82F6' })
+				} else {
+					await Sharing.shareAsync(link, {
+						dialogTitle: 'Share Download Link'
+					})
+				}
+			} catch (e) {
+				log({ level: 'error', label: 'Updates', message: 'Sharing link failed', error: e })
+			}
+		}
+	}
+
+	// Fetch update details
+	const checkForUpdates = async (manual = false): Promise<UpdateInfo | null> => {
+		if (!manual) {
+			setStatus('checking')
+		}
+		setError(null)
+
+		try {
+			log({ level: 'info', label: 'Updates', message: `Checking updates at URL: ${UPDATE_CHECK_URL}` })
+			const rawData = await fetchWithTimeout(UPDATE_CHECK_URL, TIMEOUT_MS)
+
+			const latest_version = rawData.tag_name || ''
+			const name = rawData.name || `Release ${latest_version}`
+			const published_at = rawData.published_at || ''
+			const changelog = rawData.body || ''
+
+			const assets = rawData.assets || []
+			const apkAsset = assets.find((a: any) => a.name?.endsWith('.apk')) || assets[0]
+
+			const info: UpdateInfo = {
+				name,
+				published_at,
+				latest_version,
+				size: apkAsset ? apkAsset.size : 0,
+				download_count: apkAsset ? apkAsset.download_count : 0,
+				changelog,
+				download_url: apkAsset ? apkAsset.browser_download_url : ''
+			}
+
+			if (isMountedRef.current) {
+				setUpdateInfo(info)
+				const hasCache = await manageApkCache(info.latest_version)
+				setCachedApk(hasCache)
+				if (hasCache) {
+					setStatus('completed')
+					setDownloadProgress(1)
+				} else {
+					setStatus('idle')
+				}
+			}
+
+			await AsyncStorage.setItem(LAST_CHECK_KEY, Date.now().toString())
+			return info
+		} catch (e) {
+			log({ level: 'error', label: 'Updates', message: 'Failed update retrieval check', error: e })
+			if (isMountedRef.current) {
+				setError('Connection error or update check timed out.')
+				setStatus('idle')
+			}
+			return null
+		}
+	}
+
+	// Start APK Download Resumable
+	const downloadUpdate = async () => {
+		if (!updateInfo || Platform.OS !== 'android') return
+
+		await refreshStorageDetails()
+		await ensureCacheDirExists()
+
+		const localApkUri = CACHE_DIR + `drinaluza-${updateInfo.latest_version}.apk`
+
+		// Cancel any existing download
+		if (activeDownloadRef.current) {
+			await cancelDownload()
+		}
+
+		setStatus('downloading')
+		setError(null)
+		setDownloadProgress(0)
+
+		const downloadResumable = FileSystem.createDownloadResumable(updateInfo.download_url, localApkUri, {}, (data) => {
+			const progress = data.totalBytesWritten / data.totalBytesExpectedToWrite
+			if (isMountedRef.current) {
+				setDownloadProgress(isNaN(progress) ? 0 : progress)
+			}
+		})
+
+		activeDownloadRef.current = downloadResumable
+
+		try {
+			const result = await downloadResumable.downloadAsync()
+			if (result && result.uri && isMountedRef.current) {
+				const info = await FileSystem.getInfoAsync(result.uri)
+				const cacheDetails: CachedApkDetails = {
+					uri: result.uri,
+					filename: `drinaluza-${updateInfo.latest_version}.apk`,
+					version: updateInfo.latest_version,
+					size: (info as any).size || 0,
+					mtime: (info as any).modificationTime || Date.now()
+				}
+				setCachedApk(cacheDetails)
+				setStatus('completed')
+				setDownloadProgress(1)
+				log({ level: 'info', label: 'Updates', message: `APK Downloaded successfully to ${result.uri}` })
+			}
+		} catch (e) {
+			if (isMountedRef.current && activeDownloadRef.current !== null) {
+				setError('Download failed or interrupted.')
+				setStatus('error')
+				log({ level: 'error', label: 'Updates', message: 'Download error', error: e })
+			}
+		} finally {
+			activeDownloadRef.current = null
+		}
+	}
+
+	// Cancel active download
+	const cancelDownload = async () => {
+		if (activeDownloadRef.current) {
+			try {
+				await activeDownloadRef.current.cancelAsync()
+				log({ level: 'info', label: 'Updates', message: 'Download cancelled successfully' })
+			} catch (e) {
+				log({ level: 'error', label: 'Updates', message: 'Error while cancelling download', error: e })
+			} finally {
+				activeDownloadRef.current = null
+				if (isMountedRef.current) {
+					setStatus('idle')
+					setDownloadProgress(0)
+				}
+			}
+		}
+	}
+
+	// Install downloaded APK
+	const installUpdate = async () => {
+		if (!cachedApk) {
+			toast.show({ title: 'Error', message: 'No cached update file ready to install.', color: '#EF4444' })
+			return
+		}
+		await triggerInstallation(cachedApk.uri)
+	}
+
+	// Delete Cache
+	const deleteCache = async () => {
+		if (Platform.OS === 'web') return
+		try {
+			await ensureCacheDirExists()
+			const files = await FileSystem.readDirectoryAsync(CACHE_DIR)
+			for (const filename of files) {
+				await FileSystem.deleteAsync(CACHE_DIR + filename, { idempotent: true })
+			}
+			setCachedApk(null)
+			setStatus('idle')
+			setDownloadProgress(0)
+			await refreshStorageDetails()
+			toast.show({ title: 'Success', message: 'Cached update files deleted.', color: '#10B981' })
+		} catch (e) {
+			log({ level: 'error', label: 'Updates', message: 'Failed to purge cache', error: e })
+			toast.show({ title: 'Error', message: 'Failed to clear cache.', color: '#EF4444' })
+		}
+	}
+
+	const skipStartupRedirect = () => {
+		setStartupRedirect(null)
+		setIsCheckingStartup(false)
+	}
+
+	// Startup checks (Android only)
+	useEffect(() => {
+		isMountedRef.current = true
+
+		const runStartupCheck = async () => {
+			if (Platform.OS !== 'android') {
+				setIsCheckingStartup(false)
+				return
+			}
+
+			await ensureCacheDirExists()
+			await refreshStorageDetails()
+
+			try {
+				log({ level: 'info', label: 'Updates', message: 'Running startup update scan' })
+				const info = await checkForUpdates()
+
+				if (!info) {
+					// Timeout or Offline - fallback gracefully
+					setIsCheckingStartup(false)
+					return
+				}
+
+				const isNewerAvailable = isVersionHigher(info.latest_version, APP_VERSION)
+
+				// 1. Scan if there's any file in the local cache
+				const files = await FileSystem.readDirectoryAsync(CACHE_DIR)
+				let localApkFile: { filename: string; version: string; uri: string } | null = null
+
+				for (const filename of files) {
+					const match = filename.match(/drinaluza-(.+)\.apk/)
+					if (match) {
+						localApkFile = {
+							filename,
+							version: match[1],
+							uri: CACHE_DIR + filename
+						}
+						break
+					}
+				}
+
+				if (localApkFile) {
+					const isCachedNewerThanCurrent = isVersionHigher(localApkFile.version, APP_VERSION)
+
+					if (!isNewerAvailable) {
+						// Case: No newer version available on server than the cached version
+						if (isCachedNewerThanCurrent) {
+							// Cached version is higher than installed - install it!
+							log({ level: 'info', label: 'Updates', message: 'No new update on server, but local cache is higher. Installing cached APK...' })
+							await triggerInstallation(localApkFile.uri)
+						} else {
+							// Cached version is lower/equal to installed - clean cache
+							log({ level: 'info', label: 'Updates', message: 'No updates. Purging outdated cached file.' })
+							await FileSystem.deleteAsync(localApkFile.uri, { idempotent: true })
+						}
+						setIsCheckingStartup(false)
+					} else {
+						// Case: Newer version is available on server AND a cached APK exists
+						log({ level: 'info', label: 'Updates', message: 'New update available on server and cached APK exists. Redirecting to updates screen...' })
+						setStartupRedirect('/updates')
+						setIsCheckingStartup(false)
+					}
+				} else {
+					// 2. Case: No cached APK exists at all
+					if (isNewerAvailable) {
+						log({ level: 'info', label: 'Updates', message: 'New update available. Redirecting to updates screen...' })
+						setStartupRedirect('/updates')
+					}
+					setIsCheckingStartup(false)
+				}
+			} catch (e) {
+				log({ level: 'error', label: 'Updates', message: 'Fatal error in startup updates logic', error: e })
+				setIsCheckingStartup(false)
+			}
+		}
+
+		runStartupCheck()
+
+		return () => {
+			isMountedRef.current = false
+		}
+	}, [])
+
+	// Background Check (Once per day when app is active)
+	useEffect(() => {
+		const checkBackgroundUpdate = async () => {
+			try {
+				const lastCheck = await AsyncStorage.getItem(LAST_CHECK_KEY)
+				const now = Date.now()
+
+				// If checked in last 24h, skip
+				if (lastCheck && now - Number(lastCheck) < 86400000) {
+					return
+				}
+
+				log({ level: 'info', label: 'Updates', message: 'Performing background update check' })
+				const info = await checkForUpdates()
+
+				if (info) {
+					const isNewerAvailable = isVersionHigher(info.latest_version, APP_VERSION)
+					if (isNewerAvailable) {
+						const lastAlerted = await AsyncStorage.getItem(LAST_ALERTED_KEY)
+
+						// Alert only once per version
+						if (lastAlerted !== info.latest_version) {
+							await AsyncStorage.setItem(LAST_ALERTED_KEY, info.latest_version)
+
+							toast.show({
+								title: 'App Update Available',
+								message: `Version ${info.latest_version} is available. Tap here to review what's new.`,
+								color: '#0EA5E9',
+								screen: '/updates'
+							})
+						}
+					}
+				}
+			} catch (e) {
+				log({ level: 'warn', label: 'Updates', message: 'Background update checking failed silently', error: e })
+			}
+		}
+
+		// Let the app bootstrap first, then do the background check after 5 seconds
+		const timer = setTimeout(() => {
+			checkBackgroundUpdate()
+		}, 5000)
+
+		return () => clearTimeout(timer)
+	}, [])
+
+	return (
+		<UpdatesContext.Provider
+			value={{
+				isCheckingStartup,
+				startupRedirect,
+				updateType,
+				status,
+				error,
+				updateInfo,
+				cachedApk,
+				downloadProgress,
+				freeStorageSize,
+				checkForUpdates,
+				downloadUpdate,
+				cancelDownload,
+				installUpdate,
+				deleteCache,
+				shareUpdate,
+				skipStartupRedirect
+			}}
+		>
+			{children}
+		</UpdatesContext.Provider>
+	)
+}
 
 export const useUpdates = () => {
 	const context = useContext(UpdatesContext)
@@ -41,385 +541,4 @@ export const useUpdates = () => {
 		throw new Error('useUpdates must be used within an UpdatesProvider')
 	}
 	return context
-}
-
-export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	const router = useRouter()
-	const [status, setStatus] = useState<UpdateStatus>('idle')
-	const [updateInfo, setUpdateInfo] = useState<ParsedRelease | null>(null)
-	const [updateType, setUpdateType] = useState<UpdateType>('none')
-	const [cachedApk, setCachedApk] = useState<CachedApkDetails | null>(null)
-	const [downloadProgress, setDownloadProgress] = useState(0)
-	const [freeStorage, setFreeStorage] = useState<number | null>(null)
-	const [isCheckingStartup, setIsCheckingStartup] = useState(true)
-	const [startupRedirect, setStartupRedirect] = useState<string | null>(null)
-	const [error, setError] = useState<string | null>(null)
-
-	const activeDownloadRef = useRef<any>(null)
-
-	// Get free storage space on Android
-	const updateFreeStorage = async () => {
-		if (Platform.OS === 'android') {
-			try {
-				const free = await FileSystem.getFreeDiskStorageAsync()
-				setFreeStorage(free)
-			} catch (e) {
-				log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to get free storage size', error: e })
-			}
-		}
-	}
-
-	// Cleans all updates cache files except the specified latest version
-	const cleanCacheDirExcept = async (latestVersion: string) => {
-		try {
-			const dirInfo = await FileSystem.getInfoAsync(UPDATES_DIR)
-			if (!dirInfo.exists) return
-
-			const files = await FileSystem.readDirectoryAsync(UPDATES_DIR)
-			for (const file of files) {
-				if (file === 'metadata.json') {
-					try {
-						const metaStr = await FileSystem.readAsStringAsync(METADATA_PATH)
-						const meta = JSON.parse(metaStr) as CachedApkDetails
-						if (meta.version === latestVersion) {
-							continue // keep latest metadata
-						}
-					} catch {
-						// Invalid JSON, let's delete it
-					}
-				}
-				if (file === `drinaluza-${latestVersion}.apk`) {
-					continue // keep latest APK
-				}
-
-				// Otherwise delete older/stale cache
-				await FileSystem.deleteAsync(UPDATES_DIR + file, { idempotent: true })
-			}
-		} catch (err) {
-			log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to clean old updates cache', error: err })
-		}
-	}
-
-	// Promise helper to check update URL with timeout abort controller
-	const checkForUpdatesPromise = (isBackground: boolean): Promise<ParsedRelease | null> => {
-		return new Promise(async (resolve, reject) => {
-			const controller = new AbortController()
-			const timeoutId = setTimeout(() => {
-				controller.abort()
-				reject(new Error('Update check timed out'))
-			}, TIMEOUT_MS)
-
-			try {
-				const response = await axios.get(UPDATE_CHECK_URL, {
-					signal: controller.signal,
-					headers: { 'Cache-Control': 'no-cache' }
-				})
-				clearTimeout(timeoutId)
-
-				const parsed = parseReleaseResponse(response.data)
-				resolve(parsed)
-			} catch (err) {
-				clearTimeout(timeoutId)
-				reject(err)
-			}
-		})
-	}
-
-	// Main function to check updates manually or in background
-	const checkForUpdates = async (isBackground = false): Promise<ParsedRelease | null> => {
-		setStatus('checking')
-		setError(null)
-
-		try {
-			const parsed = await checkForUpdatesPromise(isBackground)
-			setStatus('idle')
-
-			if (parsed) {
-				setUpdateInfo(parsed)
-				const type = determineUpdateType(APP_VERSION, parsed.latest_version)
-				setUpdateType(type)
-
-				if (Platform.OS === 'android') {
-					await cleanCacheDirExcept(parsed.latest_version)
-					await updateFreeStorage()
-				}
-
-				if (type !== 'none') {
-					if (type === 'required') {
-						log({ level: 'info', label: 'UpdatesContext', message: 'Required update found. Redirecting to /updates' })
-						// Force redirect to updates screen
-						router.replace('/updates')
-					} else if (type === 'optional') {
-						// Optional update: Toast user exactly once
-						const notifiedVersion = await AsyncStorage.getItem('notified_update_version')
-						if (notifiedVersion !== parsed.latest_version) {
-							toast.show({
-								title: 'New Update Available',
-								message: `Version ${parsed.latest_version} is available. Tap to view.`,
-								color: '#0EA5E9',
-								screen: '/updates'
-							})
-							await AsyncStorage.setItem('notified_update_version', parsed.latest_version)
-						}
-					}
-				}
-				return parsed
-			}
-			return null
-		} catch (err: any) {
-			setStatus('error')
-			setError(err.message || 'Failed to check for updates')
-			log({ level: 'warn', label: 'UpdatesContext', message: 'Update check failed', error: err })
-			return null
-		}
-	}
-
-	// Downloads update APK file on Android
-	const downloadUpdate = async () => {
-		if (Platform.OS !== 'android' || !updateInfo || !updateInfo.download_url) return
-
-		try {
-			setStatus('downloading')
-			setDownloadProgress(0)
-			setError(null)
-
-			await FileSystem.makeDirectoryAsync(UPDATES_DIR, { intermediates: true })
-			await cleanCacheDirExcept('') // clean all previous before downloading
-
-			const filename = `drinaluza-${updateInfo.latest_version}.apk`
-			const localUri = UPDATES_DIR + filename
-
-			const downloadResumable = FileSystem.createDownloadResumable(updateInfo.download_url, localUri, {}, (progressData) => {
-				const progress = progressData.totalBytesWritten / progressData.totalBytesExpectedToWrite
-				setDownloadProgress(progress)
-			})
-
-			activeDownloadRef.current = downloadResumable
-			const result = await downloadResumable.downloadAsync()
-			activeDownloadRef.current = null
-
-			if (result && result.uri) {
-				const meta: CachedApkDetails = {
-					version: updateInfo.latest_version,
-					localUri: result.uri,
-					size: updateInfo.size,
-					published_at: updateInfo.published_at
-				}
-
-				await FileSystem.writeAsStringAsync(METADATA_PATH, JSON.stringify(meta))
-				setCachedApk(meta)
-				setStatus('completed')
-				await updateFreeStorage()
-				log({ level: 'info', label: 'UpdatesContext', message: 'APK download complete', data: meta })
-			} else {
-				throw new Error('Download completed with empty URI')
-			}
-		} catch (err: any) {
-			activeDownloadRef.current = null
-			setStatus('error')
-			setError(err.message || 'Failed to download update')
-			log({ level: 'error', label: 'UpdatesContext', message: 'APK download failed', error: err })
-		}
-	}
-
-	// Installs APK file using IntentLauncher on Android
-	const installUpdate = async () => {
-		if (Platform.OS !== 'android') return
-
-		let apkUri = ''
-		if (cachedApk) {
-			apkUri = cachedApk.localUri
-		} else if (status === 'completed' && updateInfo) {
-			apkUri = UPDATES_DIR + `drinaluza-${updateInfo.latest_version}.apk`
-		}
-
-		if (!apkUri) {
-			log({ level: 'warn', label: 'UpdatesContext', message: 'No APK file available to install' })
-			return
-		}
-
-		try {
-			const contentUri = await FileSystem.getContentUriAsync(apkUri)
-			log({ level: 'info', label: 'UpdatesContext', message: 'Launching APK installer', data: { apkUri, contentUri } })
-
-			await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-				data: contentUri,
-				type: 'application/vnd.android.package-archive',
-				flags: 1 // FLAG_GRANT_READ_URI_PERMISSION
-			})
-		} catch (err: any) {
-			log({ level: 'error', label: 'UpdatesContext', message: 'Failed to launch APK installation', error: err })
-			setError(err.message || 'Failed to trigger app installation')
-		}
-	}
-
-	// Deletes cached APK file
-	const deleteCachedApk = async () => {
-		try {
-			await FileSystem.deleteAsync(UPDATES_DIR, { idempotent: true })
-			setCachedApk(null)
-			if (status === 'completed') {
-				setStatus('idle')
-			}
-			await updateFreeStorage()
-			log({ level: 'info', label: 'UpdatesContext', message: 'Cached APK deleted successfully' })
-		} catch (err) {
-			log({ level: 'error', label: 'UpdatesContext', message: 'Failed to delete cached APK', error: err })
-		}
-	}
-
-	// Startup update checking routine (Android only)
-	const runStartupCheck = async () => {
-		try {
-			setIsCheckingStartup(true)
-
-			// 1. Read cached APK metadata if exists
-			let localMeta: CachedApkDetails | null = null
-			try {
-				await FileSystem.makeDirectoryAsync(UPDATES_DIR, { intermediates: true })
-				const metaInfo = await FileSystem.getInfoAsync(METADATA_PATH)
-				if (metaInfo.exists) {
-					const metaStr = await FileSystem.readAsStringAsync(METADATA_PATH)
-					const meta = JSON.parse(metaStr) as CachedApkDetails
-					const apkInfo = await FileSystem.getInfoAsync(meta.localUri)
-					if (apkInfo.exists) {
-						localMeta = meta
-						setCachedApk(meta)
-						setStatus('completed')
-					} else {
-						// Stale metadata file
-						await FileSystem.deleteAsync(METADATA_PATH, { idempotent: true })
-					}
-				}
-			} catch (e) {
-				log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to read cache metadata', error: e })
-			}
-
-			await updateFreeStorage()
-
-			// 2. Query GitHub release check (with config.TIMEOUT_MS)
-			let onlineRelease: ParsedRelease | null = null
-			let type: UpdateType = 'none'
-
-			try {
-				onlineRelease = await checkForUpdatesPromise(false)
-				if (onlineRelease) {
-					type = determineUpdateType(APP_VERSION, onlineRelease.latest_version)
-					setUpdateInfo(onlineRelease)
-					setUpdateType(type)
-				}
-			} catch (e) {
-				log({ level: 'error', label: 'UpdatesContext', message: 'Online check failed during startup', error: e })
-			}
-
-			// 3. Make navigation decisions
-			if (onlineRelease && type !== 'none') {
-				// New version is available online -> open updates screen
-				setStartupRedirect('/updates')
-			} else {
-				// No new version available online
-				if (localMeta) {
-					const isHigher = compareVersions(localMeta.version, APP_VERSION) > 0
-					if (isHigher) {
-						// Cached apk version is higher than current version -> install
-						// We do a non-blocking trigger so startup can finish or trigger the view
-						installApkUriDirect(localMeta.localUri)
-					}
-				}
-				setStartupRedirect(null)
-			}
-		} catch (err) {
-			log({ level: 'error', label: 'UpdatesContext', message: 'Startup check failed', error: err })
-		} finally {
-			setIsCheckingStartup(false)
-		}
-	}
-
-	const installApkUriDirect = async (apkUri: string) => {
-		try {
-			const contentUri = await FileSystem.getContentUriAsync(apkUri)
-			await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-				data: contentUri,
-				type: 'application/vnd.android.package-archive',
-				flags: 1
-			})
-		} catch (e) {
-			log({ level: 'error', label: 'UpdatesContext', message: 'Direct APK installation trigger failed', error: e })
-		}
-	}
-
-	// Background updater timer (Checks updates every 15 minutes when app is active)
-	useEffect(() => {
-		if (Platform.OS === 'android') {
-			runStartupCheck()
-		} else {
-			setIsCheckingStartup(false)
-		}
-
-		let intervalId: NodeJS.Timeout | null = null
-
-		const startInterval = () => {
-			if (intervalId) clearInterval(intervalId)
-			intervalId = setInterval(
-				() => {
-					checkForUpdates(true)
-				},
-				15 * 60 * 1000
-			) // 15 minutes
-		}
-
-		const stopInterval = () => {
-			if (intervalId) {
-				clearInterval(intervalId)
-				intervalId = null
-			}
-		}
-
-		const handleAppStateChange = (nextAppState: AppStateStatus) => {
-			if (nextAppState === 'active') {
-				checkForUpdates(true)
-				startInterval()
-			} else {
-				stopInterval()
-			}
-		}
-
-		const subscription = AppState.addEventListener('change', handleAppStateChange)
-
-		if (AppState.currentState === 'active') {
-			startInterval()
-		}
-
-		return () => {
-			subscription.remove()
-			stopInterval()
-			if (activeDownloadRef.current) {
-				activeDownloadRef.current.cancelAsync().catch((err: any) => {
-					log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to cancel active download on unmount', error: err })
-				})
-			}
-		}
-	}, [])
-
-	return (
-		<UpdatesContext.Provider
-			value={{
-				status,
-				updateInfo,
-				updateType,
-				cachedApk,
-				downloadProgress,
-				freeStorage,
-				isCheckingStartup,
-				startupRedirect,
-				error,
-				checkForUpdates,
-				downloadUpdate,
-				installUpdate,
-				deleteCachedApk
-			}}
-		>
-			{children}
-		</UpdatesContext.Provider>
-	)
 }

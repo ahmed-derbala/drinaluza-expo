@@ -1,52 +1,9 @@
-## Updates screen
-using expo-router best practices, create updates screen in:
-src/app/updates/ : expo-router
-src/features/updates/ : screen and ui
-src/core/updates/ : core logic
+## AppUpdater
+based on the rules from .agent/rules/, create AppUpdater component:
+src/app/updates/ (expo-router)
+src/core/app-updater/
 
-updates is responsible for checking, downloading and installing updates.
-
-Use semantic version comparison for update behavior.
-
-Current app version format:
-MAJOR.MINOR.PATCH
-
-Examples:
-1.2.3
-2.5.0
-
-Rules:
-
-- If the latest version has a different MAJOR version than the current version:
-  Example:
-  Current: 1.2.x
-  Latest: 2.x.y
-
-  → This is a REQUIRED update.
-
-- If the latest version has the same MAJOR version but a higher MINOR version:
-  Example:
-  Current: 1.2.x
-  Latest: 1.3.x
-
-  → This is a REQUIRED update.
-
-- If only the PATCH version is higher:
-  Example:
-  Current: 1.2.x
-  Latest: 1.2.z
-
-  → This is an OPTIONAL update.
-
-- If the latest version is lower than the current version do nothing
-
-on android:
-Required updates should block app usage until updated.
-Optional updates should allow the user to continue using the app
-
-on web:
-Required updates should block app usage until refreshed. 
-Optional updates should allow the user to continue using the app regardless of user choose to refresh or not
+AppUpdater is responsible for checking, downloading and installing updates.
 
 check for updates using config.UPDATE_CHECK_URL link
 example responce of config.UPDATE_CHECK_URL:
@@ -127,12 +84,11 @@ example responce of config.UPDATE_CHECK_URL:
   ],
   "tarball_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/tarball/v1.16.2",
   "zipball_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/zipball/v1.16.2",
-  "body": "# Changelog\n\n## [1.16.1] - 2026-05-29\n### Added\n- Completely rewrote `KeyboardSafeView` and `KeyboardSafeFlatList` from scratch as highly robust, cross-platform, layout-aware containers.\n- Integrated automatic scroll-to-focused-input automation leveraging standard host measurements relative to viewport wrapping containers on Native and Web.\n- Added configurable `bottomOffset` and `dismissKeyboardOnTap` properties to customize padding and background tap dismiss behavior.\n- Supported seamless landscape and portrait orientation transitions with automatic layout recalculation when keyboard height changes.\n- Completely rewrote the authentication route (`/auth`) from scratch to provide a stunning premium-tier interface with advanced saved accounts lists, flag selector buttons, strict validation sanitizers, custom checkbox components, and complete storage destruction buttons.\n\n### Fixed\n- Fixed layout overlap, flickering, and jumps when virtual keyboards are triggered inside nested navigators, modals, and tab views across Android and iOS.\n\n##"
+  "body": "# Changelog\n\n## [1.16.1] - 2026-05-29\n### various bug fixes"
 }
 ```
 
 create a function that takes config.UPDATE_CHECK_URL as input and returns from the response this object:
-
 {
   name,
   published_at,
@@ -143,15 +99,9 @@ create a function that takes config.UPDATE_CHECK_URL as input and returns from t
   download_url (browser_download_url)
 }
 
-keep only the latest version apk file in cache
-
 in updates screen show:
 on android:
 - check for updates button
-- update type (required/optional)
-- message text based on update type:
-  REQUIRED → "a new update is available, please update your app to continue using it"
-  OPTIONAL → "a new update is available, you can update your app to continue using it"
 - name 
 - published date
 - current version (version installed on device)
@@ -160,10 +110,10 @@ on android:
 - device free storage size
 - download count
 - whats new (changelog)
-- cached apk file details if exists with delete button next to it.
+- cached apk file details if exists with delete button next to it. keep only the latest version apk file in cache
 - download button
 - download progress
-- install button when download is completed or there is a cached apk file ready to install
+- install button when download is completed or if there is a cached apk file ready to install
 - share button, use expo-sharing:
     - ask the user if he wants to share the download url or cached apk file (if exists).
     - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
@@ -172,10 +122,6 @@ use SmartScreenHeader to show an update HeaderAction in the headerRight in all s
 
 on web:
 - check for updates button
-- update type (required/optional)
-- message text based on update type:
-  REQUIRED → "a new update is available, please update your app to continue using it"
-  OPTIONAL → "a new update is available, you can update your app to continue using it"
 - name 
 - published date
 - current version 
@@ -195,25 +141,17 @@ on android:
       -if cached apk version is higher than current version:
         -install the cached apk file
       -if cached apk version is lower than current version:
-        -continue to the app without update
+        -continue to the app without updating
     -if there is new version available, open /updates:
-      -if the new version is optional: 
-        -ask the user if he wants to download the newer version or install the cached apk file or continue to use the app
-      -if the new version is required: 
-        -ask the user to confirm downloading the new version or exit the app
+      -ask the user if he wants to download the newer version or install the cached apk file or continue to use the app without updating
   -if there is no cached apk file:
     -if there is new version available, open /updates:
-      -if the new version is optional: 
-        -ask the user if he wants to download the newer version or continue to use the app
-      -if the new version is required: 
-        -ask the user to confirm downloading the new version or exit the app
+      -ask the user if he wants to download the newer version or continue to use the app
+
 on web: do not check for updates when app starts
 
-- when app is in use, check for updates in background:
-  - inform the user once per optional update version using Toast
-  - open /updates screen automatically if the new version is required
-
-- keep only the latest version apk file in cache
+- when app is in use, check for updates in background once a day:
+  - inform the user once per version update using Toast
 - Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
 - Prevent navigation race conditions

@@ -92,7 +92,7 @@ export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
 
 		const handleUpdatePress = () => {
 			if (pathname !== '/updates') {
-				router.push('/updates')
+				router.push('/updates' as any)
 			}
 		}
 

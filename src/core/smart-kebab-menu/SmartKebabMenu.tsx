@@ -51,7 +51,7 @@ export const SmartKebabMenu: React.FC = () => {
 		key: 'updates',
 		label: translate('updates', 'Updates'),
 		icon: 'cloud-download-outline',
-		onPress: () => router.push('/updates')
+		onPress: () => router.push('/updates' as any)
 	}
 
 	// Filter out invisible dynamic items, and also filter out 'refresh' key if registered by the screen
