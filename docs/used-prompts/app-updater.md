@@ -89,7 +89,6 @@ on web:
           - if no: continue to the app
       - if current version is lower than latest version:
         - open /updates
-
   - on web: do not check for updates when app starts
 
 - if there is no previous screen, the back button opens /feed

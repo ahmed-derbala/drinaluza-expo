@@ -47,5 +47,6 @@ export const fr = {
 	theme_light: 'Clair',
 	theme_dark: 'Sombre',
 	username_invalid_chars: "Le nom d'utilisateur ne peut contenir que des lettres minuscules, des chiffres et des traits d'union.",
-	username_invalid_hyphen: "Le trait d'union (-) ne peut pas être le premier ou le dernier caractère du nom d'utilisateur."
+	username_invalid_hyphen: "Le trait d'union (-) ne peut pas être le premier ou le dernier caractère du nom d'utilisateur.",
+	loading: 'Chargement...'
 }

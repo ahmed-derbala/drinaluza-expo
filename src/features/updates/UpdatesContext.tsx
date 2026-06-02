@@ -80,8 +80,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const activeDownloadRef = useRef<FileSystem.DownloadResumable | null>(null)
 
 	// Fetch dynamic APK files from local storage on Android
-	const refreshApkList = useCallback(async () => {
-		if (Platform.OS !== 'android') return
+	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
+		if (Platform.OS !== 'android') return []
 		try {
 			await ensureUpdatesFolder()
 			const files = await FileSystem.readDirectoryAsync(UPDATES_FOLDER)
@@ -117,8 +117,10 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			// Get free space
 			const freeSpace = await FileSystem.getFreeDiskStorageAsync()
 			setDeviceFreeStorage(freeSpace)
+			return apks
 		} catch (err) {
 			console.warn('[UpdatesContext] Failed to scan cached APKs:', err)
+			return []
 		}
 	}, [])
 

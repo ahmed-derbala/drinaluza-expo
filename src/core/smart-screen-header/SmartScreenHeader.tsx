@@ -21,7 +21,7 @@ interface HeaderBackButtonProps {
 	fallbackRoute?: string
 }
 
-export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ onPress, fallbackRoute = '/(home)/feed' }) => {
+export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ onPress, fallbackRoute = '/feed' }) => {
 	const { colors } = useTheme()
 	const router = useRouter()
 
@@ -156,7 +156,7 @@ export interface SmartScreenHeaderProps {
 	 */
 	loading?: boolean
 	/**
-	 * Navigation fallback path if there's no router history. Defaults to `/(home)/feed`.
+	 * Navigation fallback path if there's no router history. Defaults to `/feed`.
 	 */
 	fallbackRoute?: string
 	/**
@@ -224,7 +224,9 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 
 	// Resolve title
 	let resolvedTitle = title
-	if (resolvedTitle === undefined) {
+	if (loading) {
+		resolvedTitle = translate('loading', 'Loading...')
+	} else if (resolvedTitle === undefined) {
 		if (typeof options?.headerTitle === 'function') {
 			resolvedTitle = options.headerTitle()
 		} else if (options?.headerTitle !== undefined) {
@@ -239,21 +241,16 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	// Resolve headerLeft
 	let resolvedHeaderLeft = headerLeft
 	if (resolvedHeaderLeft === undefined) {
-		if (options !== undefined || back !== undefined) {
-			// Rendered via React Navigation layout
-			if (typeof options?.headerLeft === 'function') {
-				resolvedHeaderLeft = options.headerLeft()
-			} else if (options?.headerLeft !== undefined) {
-				resolvedHeaderLeft = options.headerLeft
-			} else if (back) {
-				resolvedHeaderLeft = <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute} />
-			} else {
-				resolvedHeaderLeft = null
-			}
-		} else {
-			// Standalone manual rendering: default to rendering back button
-			resolvedHeaderLeft = <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute} />
+		if (typeof options?.headerLeft === 'function') {
+			resolvedHeaderLeft = options.headerLeft()
+		} else if (options?.headerLeft !== undefined) {
+			resolvedHeaderLeft = options.headerLeft
 		}
+	}
+
+	// Always ensure back button is visible
+	if (resolvedHeaderLeft === null || resolvedHeaderLeft === false || resolvedHeaderLeft === undefined) {
+		resolvedHeaderLeft = <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />
 	}
 
 	// Resolve headerRight
@@ -276,10 +273,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	})
 
 	const renderLeftSection = () => {
-		if (resolvedHeaderLeft === null || resolvedHeaderLeft === false) {
-			return null
-		}
-		return resolvedHeaderLeft
+		return resolvedHeaderLeft as React.ReactNode
 	}
 
 	const renderTitleSection = () => {
@@ -297,7 +291,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 					</Text>
 					{loading && <ActivityIndicator size="small" color={colors.primary} style={styles.titleSpinner} />}
 				</View>
-				{subtitle ? (
+				{subtitle && !loading ? (
 					<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
 						{subtitle}
 					</Text>

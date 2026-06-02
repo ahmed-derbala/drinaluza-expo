@@ -168,6 +168,7 @@ export const tn_latn = {
 	empty_cancelled: 'Ma famma hatta commande t-battlet',
 	empty_cancelled_sub: 'Ma battelt hatta commande',
 	loading_purchases: 'Nestannaw fihom...',
+	loading: 'Qa3ed i7amel...',
 	no: 'Le',
 	status_pending_businessconfirmation: 'Testanna fi Moulaha',
 	status_confirmed_by_business: 'Confirmé',

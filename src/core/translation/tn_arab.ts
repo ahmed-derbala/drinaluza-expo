@@ -168,6 +168,7 @@ export const tn_arab = {
 	empty_cancelled: 'ما فما حتى طلب ملغى',
 	empty_cancelled_sub: 'ما لغيت حتى طلب',
 	loading_purchases: 'قاعدين نحضروا في المشتريات...',
+	loading: 'قاعد يحمل...',
 	no: 'لا',
 	status_pending_businessconfirmation: 'في انتظار التأكيد',
 	status_confirmed_by_business: 'مؤكد',

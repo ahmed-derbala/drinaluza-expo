@@ -186,6 +186,7 @@ export const en = {
 	empty_cancelled: 'No cancelled orders',
 	empty_cancelled_sub: 'You have no cancelled orders',
 	loading_purchases: 'Loading purchases...',
+	loading: 'Loading...',
 	no: 'No',
 	status_pending_businessconfirmation: 'Pending Confirmation',
 	status_confirmed_by_business: 'Confirmed',

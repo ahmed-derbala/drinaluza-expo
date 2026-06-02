@@ -28,5 +28,5 @@ export interface UpdatesContextProps {
 	downloadUpdate: () => Promise<string | null>
 	installApk: (fileUri: string) => Promise<void>
 	deleteApk: (fileUri: string) => Promise<void>
-	refreshApkList: () => Promise<void>
+	refreshApkList: () => Promise<CachedApkMetadata[]>
 }

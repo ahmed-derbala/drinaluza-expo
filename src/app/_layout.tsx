@@ -24,7 +24,7 @@ import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
-	const { checkForUpdates, downloadedApks, installApk } = useUpdates()
+	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
 	const [isStartupChecking, setIsStartupChecking] = useState(true)
 	const router = useRouter()
 
@@ -46,7 +46,8 @@ function RootLayoutContent() {
 						return
 					} else {
 						// Current version is equal or higher! Check for ready downloaded APKs
-						const installableApk = downloadedApks.find((apk) => apk.isInstallable)
+						const freshApks = await refreshApkList()
+						const installableApk = freshApks.find((apk) => apk.isInstallable)
 						if (installableApk) {
 							// Trigger package installation
 							await installApk(installableApk.fileUri)
