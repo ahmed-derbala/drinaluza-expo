@@ -21,9 +21,9 @@ export default function UpdatesScreen() {
 
 	// Refresh cache list on mount, and trigger fetch automatically on Web
 	useEffect(() => {
-		if (Platform.OS === 'android') {
+		if (Platform.OS !== 'web') {
 			refreshApkList()
-		} else if (Platform.OS === 'web') {
+		} else {
 			checkForUpdates(false)
 		}
 	}, [refreshApkList, checkForUpdates])
@@ -156,36 +156,6 @@ export default function UpdatesScreen() {
 					<View style={[styles.warningBox, { backgroundColor: colors.error + '1A', borderColor: colors.error }]}>
 						<Ionicons name="warning" size={16} color={colors.error} />
 						<Text style={[styles.warningText, { color: colors.error }]}>{translate('low_space_warning', 'Your device is low on storage space. The download might fail.')}</Text>
-					</View>
-				)}
-
-				{/* APK Files Cache List */}
-				{downloadedApks.length > 0 && (
-					<View style={styles.apkSection}>
-						<Text style={[styles.subsectionTitle, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
-						{downloadedApks.map((apk) => (
-							<View key={apk.filename} style={[styles.apkItem, { borderColor: colors.borderLight }]}>
-								<View style={styles.apkInfo}>
-									<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1}>
-										{apk.filename}
-									</Text>
-									<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
-										v{apk.version} • {formatBytes(apk.size)}
-									</Text>
-								</View>
-								<View style={styles.apkActions}>
-									{/* Share APK Button */}
-									<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: colors.primaryContainer }]}>
-										<Ionicons name="share-social-outline" size={18} color={colors.primary} />
-									</TouchableOpacity>
-
-									{/* Delete Button */}
-									<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: colors.error + '1F' }]}>
-										<Ionicons name="trash-outline" size={18} color={colors.error} />
-									</TouchableOpacity>
-								</View>
-							</View>
-						))}
 					</View>
 				)}
 			</View>
@@ -441,6 +411,38 @@ export default function UpdatesScreen() {
 
 				{/* Android cached installer and storage checker section */}
 				{isAndroid && renderAndroidSection()}
+
+				{/* APK Files Cache List */}
+				{downloadedApks.length > 0 && (
+					<View style={[styles.card, { borderColor: colors.borderLight }]}>
+						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
+						<View style={styles.apkSection}>
+							{downloadedApks.map((apk) => (
+								<View key={apk.filename} style={[styles.apkItem, { borderColor: colors.borderLight }]}>
+									<View style={styles.apkInfo}>
+										<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1}>
+											{apk.filename}
+										</Text>
+										<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
+											v{apk.version} • {formatBytes(apk.size)}
+										</Text>
+									</View>
+									<View style={styles.apkActions}>
+										{/* Share APK Button */}
+										<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: colors.primaryContainer }]}>
+											<Ionicons name="share-social-outline" size={18} color={colors.primary} />
+										</TouchableOpacity>
+
+										{/* Delete Button */}
+										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: colors.error + '1F' }]}>
+											<Ionicons name="trash-outline" size={18} color={colors.error} />
+										</TouchableOpacity>
+									</View>
+								</View>
+							))}
+						</View>
+					</View>
+				)}
 
 				{/* Changelog (Body) Section */}
 				{(isWeb || (latestRelease && latestRelease.changelog !== '')) && (

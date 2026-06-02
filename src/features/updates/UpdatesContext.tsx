@@ -79,9 +79,9 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 	const activeDownloadRef = useRef<FileSystem.DownloadResumable | null>(null)
 
-	// Fetch dynamic APK files from local storage on Android
+	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
-		if (Platform.OS !== 'android') return []
+		if (Platform.OS === 'web') return []
 		try {
 			await ensureUpdatesFolder()
 			const files = await FileSystem.readDirectoryAsync(UPDATES_FOLDER)
@@ -126,7 +126,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 	// Self-healing cleaner: deletes older APK versions, keeping only the latest
 	const pruneOldApks = useCallback(async (latestVer: string) => {
-		if (Platform.OS !== 'android') return
+		if (Platform.OS === 'web') return
 		try {
 			const files = await FileSystem.readDirectoryAsync(UPDATES_FOLDER)
 			for (const file of files) {
@@ -149,10 +149,10 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				setLatestRelease(result)
 				setIsChecking(false)
 
-				if (Platform.OS === 'android') {
+				if (Platform.OS !== 'web') {
 					await refreshApkList()
-					// Run a proactive cleanup of stale APK cache files
-					await pruneOldApks(result.latest_version)
+					// Run a proactive cleanup of stale APK cache files (disabled to show all downloaded APKs)
+					// await pruneOldApks(result.latest_version)
 				}
 				return result
 			} catch (err: any) {
@@ -204,7 +204,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Delete downloaded APK
 	const deleteApk = useCallback(
 		async (fileUri: string) => {
-			if (Platform.OS !== 'android') return
+			if (Platform.OS === 'web') return
 			try {
 				await FileSystem.deleteAsync(fileUri, { idempotent: true })
 				await refreshApkList()
@@ -246,8 +246,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 			if (downloadResult && downloadResult.uri) {
 				await refreshApkList()
-				// Automatically prune other older cached APK releases
-				await pruneOldApks(latestRelease.latest_version)
+				// Automatically prune other older cached APK releases (disabled to show all downloaded APKs)
+				// await pruneOldApks(latestRelease.latest_version)
 
 				// Automatically launch package installer when download is complete
 				await installApk(downloadResult.uri)
