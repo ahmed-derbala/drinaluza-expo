@@ -1,13 +1,23 @@
 import React, { useEffect } from 'react'
-import { View, ActivityIndicator, StyleSheet } from 'react-native'
+import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
+import { useUpdates, isVersionGreater } from '@/features/updates'
+import { APP_VERSION } from '@/config'
 
 export default function Index() {
 	const router = useRouter()
+	const { latestRelease } = useUpdates()
 
 	useEffect(() => {
-		router.replace('/(home)/feed')
-	}, [router])
+		if (Platform.OS === 'android' && latestRelease) {
+			const hasNewerRelease = isVersionGreater(latestRelease.latest_version, APP_VERSION)
+			if (hasNewerRelease) {
+				router.replace('/updates' as any)
+				return
+			}
+		}
+		router.replace('/(home)/feed' as any)
+	}, [router, latestRelease])
 
 	return (
 		<View style={styles.container}>

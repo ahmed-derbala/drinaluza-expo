@@ -41,8 +41,10 @@ function RootLayoutContent() {
 					const hasNewerRelease = isVersionGreater(release.latest_version, APP_VERSION)
 					if (hasNewerRelease) {
 						// There is a newer version! Redirect to updates page
-						router.replace('/updates' as any)
 						setIsStartupChecking(false)
+						setTimeout(() => {
+							router.replace('/updates' as any)
+						}, 0)
 						return
 					} else {
 						// Current version is equal or higher! Check for ready downloaded APKs

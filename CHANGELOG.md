@@ -3,10 +3,11 @@
 ## [Unreleased]
 
 ### Changed
-- Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` and defaults to `/feed` when there is no screen in history.
+- Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
 - Modified `SmartScreenHeader` to show "Loading..." as the title while a screen is loading, and hide the subtitle during this state.
 - Modified `UpdatesContext` to keep all downloaded APK files in local storage by disabling the automatic pruning of older version files, allowing users to view and manage all cached files.
 - Modified the `/updates` page to show the cached APK installers list on all platforms when files exist, rather than restricting it to Android.
+- Fixed Android startup redirection to `/updates` when a newer version is available by delaying the layout transition until the stack navigator mounts, and by performing a version redirection check in the root index component.
 
 ### Added
 - Added `loading` translation key to local translation files (`en`, `fr`, `ar`, `tn_latn`, `tn_arab`).

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react'
 import { StyleSheet, View, Text, Platform, Animated, Easing, useWindowDimensions, ActivityIndicator, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter } from 'expo-router'
+import { useRouter, Href, usePathname } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -18,7 +18,7 @@ export { HeaderActionButton, HeaderRefreshButton }
 // ----------------------------------------
 interface HeaderBackButtonProps {
 	onPress?: () => void
-	fallbackRoute?: string
+	fallbackRoute?: Href
 }
 
 export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ onPress, fallbackRoute = '/feed' }) => {
@@ -31,7 +31,7 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 		} else if (router.canGoBack()) {
 			router.back()
 		} else {
-			router.replace(fallbackRoute as any)
+			router.replace(fallbackRoute)
 		}
 	}
 
@@ -158,7 +158,7 @@ export interface SmartScreenHeaderProps {
 	/**
 	 * Navigation fallback path if there's no router history. Defaults to `/feed`.
 	 */
-	fallbackRoute?: string
+	fallbackRoute?: Href
 	/**
 	 * Left offset for center title (to avoid overlapping). Defaults to 60.
 	 */
@@ -196,6 +196,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	const { colors } = useTheme()
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
+	const pathname = usePathname()
 
 	const loadingAnim = useRef(new Animated.Value(0)).current
 
@@ -248,9 +249,19 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		}
 	}
 
-	// Always ensure back button is visible
-	if (resolvedHeaderLeft === null || resolvedHeaderLeft === false || resolvedHeaderLeft === undefined) {
-		resolvedHeaderLeft = <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />
+	const rootPaths = ['/', '/feed', '/dashboard', '/notifications', '/profile', '/settings', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile', '/(home)/settings']
+	const isRootPath = rootPaths.includes(pathname)
+
+	// Always ensure back button is visible on non-root pages
+	if (!isRootPath) {
+		if (resolvedHeaderLeft === null || resolvedHeaderLeft === false || resolvedHeaderLeft === undefined) {
+			resolvedHeaderLeft = <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />
+		}
+	} else {
+		// Respect null/false/undefined on root pages to keep back button hidden
+		if (resolvedHeaderLeft === undefined || resolvedHeaderLeft === null || resolvedHeaderLeft === false) {
+			resolvedHeaderLeft = null
+		}
 	}
 
 	// Resolve headerRight
