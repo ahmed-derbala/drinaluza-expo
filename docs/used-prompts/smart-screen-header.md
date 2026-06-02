@@ -18,7 +18,7 @@ Features:
   - optional right section
 
 - Must support:
-  - back button
+  - back button: always shown. if there is no previous screen in history it must navigates to /feed
   - custom actions/icons
   - loading state
   - responsive web/mobile layout
