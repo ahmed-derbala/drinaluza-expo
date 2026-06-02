@@ -1,13 +1,15 @@
-## AppUpdater
+## updates
 apply rules from .agent/rules/
 
-AppUpdater is responsible for checking, downloading and installing updates.
+updates component is responsible for checking, downloading and installing updates.
 
 use these directories:
 src/app/updates/ (expo-router)
-src/core/app-updater/
+src/features/updates/
 
-check for updates using config.UPDATE_CHECK_URL link
+use modern ui
+
+check for updates using config.UPDATE_CHECK_URL 
 example responce of config.UPDATE_CHECK_URL:
 ```{
   "tag_name": "v1.16.2",
@@ -30,7 +32,7 @@ create a function that takes config.UPDATE_CHECK_URL as input and returns from t
 {
   name,
   published_at,
-  latest_version (tag_name),
+  latest_version,
   size,
   download_count,
   changelog (body),
@@ -47,13 +49,13 @@ on android:
 - size
 - device free storage size
 - download count
-- list of downloaded apk files details with delete and install buttons next to each one. 
+- list of downloaded apk files from cache with their details, delete and install buttons next to each one. 
 - download button. disable if the current version is equal or higher than the latest version
 - download progress
 - share button. use expo-sharing:
-    - ask to share the download url or the downloaded apk file if exists.
+    - ask the user to share the download url or the downloaded apk file if exists in cache.
     - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
-- whats new (body)
+- whats new (changelog)
 
 use SmartKebabMenu to show download progress next to updates menu item.
 when download is complete trigger an apk file install immediately.
@@ -69,7 +71,7 @@ on web:
 - download button
 - refresh button. disable if the current version is equal or higher than the latest version
 - share button: copy download url to clipboard
-- whats new (body)
+- whats new (changelog)
 
 
 ### Behavior requirements:
