@@ -1,5 +1,33 @@
 # Changelog
 
+## [1.20.4] - 2026-06-02
+### Added
+- Implemented a complete cross-platform Updates Suite featuring local storage checking, cache pruning, space checking, and background downloads in `src/features/updates/`.
+- Created a beautiful dark-theme Updates screen at `src/app/updates/index.tsx` supporting Android-native actions (installer intents, quick share advisories, deletion controls) and Web fallbacks (clipboard URL buffers).
+- Configured a Startup check gate inside the root layout preventing flash rendering and dynamically routing Android devices to the Updates screen if a newer version is discovered.
+
+## [1.20.3] - 2026-06-02
+### Added
+- Created a highly premium, reusable, and type-safe global kebab menu component (`SmartKebabMenu`) integrated directly into `SmartScreenHeader`.
+- Implemented a custom context provider (`SmartKebabMenuProvider`) and a dynamic hook (`useSmartKebabMenu`) for screen-specific menu item registration and automatic cleanup on unmount.
+- Integrated adaptive click-outside drop-down behaviors and backdrop overlays across Web, Android, and iOS.
+- Added support for auto-sizing, truncation, accessibility support, and dark-theme rendering for text/numeric badges.
+- Configured translation keys for `updates` across all supported locales (English, French, Arabic, Tunisian Arabic, and Tunisian Latin).
+
+## [1.20.2] - 2026-06-02
+### Added
+- Re-created a premium, highly responsive, and type-safe cross-platform `SmartScreenHeader` component supporting Android, iOS, and Web under `src/core/smart-screen-header/`.
+- Configured dynamic Back Button navigation fallbacks to route directly to `/feed` when the navigation history stack is empty.
+
+### Changed
+- Completely removed the `SmartKebabMenu` subsystem, including its provider, registration hook, types, and integrations from all layouts and headers.
+
+## [1.19.5] - 2026-06-02
+### Changed
+- Deprecated and completely removed the `AppUpdater` suite, the `/updates` route and screen, the `SmartKebabMenu` component, and the `SmartScreenHeader` component.
+- Replaced all usages of `SmartScreenHeader` with standard `expo-router` screen headers.
+- Cleaned up obsolete `updates` translation keys across all supported locales (English, French, Arabic, Tunisian Arabic, and Tunisian Latin).
+
 ## [1.18.1] - 2026-05-30
 ### Added
 - Implemented advanced app startup cached APK flows:

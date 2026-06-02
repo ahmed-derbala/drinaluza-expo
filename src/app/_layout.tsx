@@ -1,8 +1,11 @@
-import { Stack } from 'expo-router'
-import React from 'react'
+import { Stack, useRouter } from 'expo-router'
+import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { StatusBar } from 'expo-status-bar'
-import { View, ActivityIndicator } from 'react-native'
+import { View, ActivityIndicator, Platform } from 'react-native'
+import { useUpdates, isVersionGreater } from '@/features/updates'
+import { APP_VERSION } from '@/config'
+
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
 	// @ts-ignore
@@ -15,32 +18,57 @@ import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
+import { UpdatesProvider } from '@/features/updates'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme } from '@/core/theme'
-import { UpdatesProvider, useUpdates } from '@/core/updates/UpdatesContext'
-import { UpdatesScreen } from '@/features/updates/UpdatesScreen'
 
 function RootLayoutContent() {
-	const { isCheckingStartup, updateType } = useUpdates()
+	const { checkForUpdates, downloadedApks, installApk } = useUpdates()
+	const [isStartupChecking, setIsStartupChecking] = useState(true)
+	const router = useRouter()
 
-	// Avoid white screen or flickering during startup.
-	// While the initial update check is in progress, prevent rendering any app screens.
-	if (isCheckingStartup) {
+	useEffect(() => {
+		const performStartupCheck = async () => {
+			if (Platform.OS !== 'android') {
+				setIsStartupChecking(false)
+				return
+			}
+
+			try {
+				const release = await checkForUpdates(false)
+				if (release) {
+					const hasNewerRelease = isVersionGreater(release.latest_version, APP_VERSION)
+					if (hasNewerRelease) {
+						// There is a newer version! Redirect to updates page
+						router.replace('/updates' as any)
+						setIsStartupChecking(false)
+						return
+					} else {
+						// Current version is equal or higher! Check for ready downloaded APKs
+						const installableApk = downloadedApks.find((apk) => apk.isInstallable)
+						if (installableApk) {
+							// Trigger package installation
+							await installApk(installableApk.fileUri)
+						}
+					}
+				}
+			} catch (e) {
+				console.warn('[StartupGate] Startup update check failed:', e)
+			} finally {
+				setIsStartupChecking(false)
+			}
+		}
+
+		performStartupCheck()
+	}, [])
+
+	if (isStartupChecking) {
+		// Solid black splash gate to completely prevent white flashes or home screen rendering
 		return (
 			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
 				<ActivityIndicator size="large" color="#0EA5E9" />
 			</View>
-		)
-	}
-
-	// Required updates completely block app usage until updated (Android) or refreshed (Web)
-	if (updateType === 'required') {
-		return (
-			<ErrorBoundary>
-				<StatusBar style="light" />
-				<UpdatesScreen />
-			</ErrorBoundary>
 		)
 	}
 
@@ -72,21 +100,21 @@ export default function RootLayout() {
 	return (
 		<SafeAreaProvider>
 			<AppThemeProvider>
-				<ToastProvider>
-					<UpdatesProvider>
-						<UserProvider>
-							<NotificationProvider>
-								<SocketProvider>
-									<LayoutProvider>
-										<SmartKebabMenuProvider>
+				<UpdatesProvider>
+					<SmartKebabMenuProvider>
+						<ToastProvider>
+							<UserProvider>
+								<NotificationProvider>
+									<SocketProvider>
+										<LayoutProvider>
 											<RootLayoutContent />
-										</SmartKebabMenuProvider>
-									</LayoutProvider>
-								</SocketProvider>
-							</NotificationProvider>
-						</UserProvider>
-					</UpdatesProvider>
-				</ToastProvider>
+										</LayoutProvider>
+									</SocketProvider>
+								</NotificationProvider>
+							</UserProvider>
+						</ToastProvider>
+					</SmartKebabMenuProvider>
+				</UpdatesProvider>
 			</AppThemeProvider>
 		</SafeAreaProvider>
 	)

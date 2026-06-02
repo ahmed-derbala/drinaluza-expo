@@ -1,22 +1,32 @@
 export interface SmartKebabMenuItem {
 	key: string
 	label: string
-	icon?: string
-	iconType?: 'ionicons' | 'material'
+	icon?: string // Name of the Ionicons/MaterialIcons icon
 	disabled?: boolean
 	destructive?: boolean
+
+	/**
+	 * Optional badge.
+	 * Examples:
+	 * 3
+	 * "NEW"
+	 * "99+"
+	 */
 	badge?: string | number
+
 	onPress: () => void | Promise<void>
+
+	// Extensibility / Future Proofing
 	type?: 'item' | 'separator'
-	visible?: boolean
+	group?: string
+	roles?: string[]
+	permissions?: string[]
 	loading?: boolean
 	tooltip?: string
 }
 
 export interface SmartKebabMenuContextProps {
-	isOpen: boolean
-	setIsOpen: (isOpen: boolean) => void
-	menuItems: SmartKebabMenuItem[]
-	registerItems: (items: SmartKebabMenuItem[]) => void
-	unregisterItems: () => void
+	screenItems: SmartKebabMenuItem[]
+	registerItems: (key: string, items: SmartKebabMenuItem[]) => void
+	unregisterItems: (key: string) => void
 }

@@ -1,24 +1,14 @@
 import { Stack } from 'expo-router'
 import { Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
+import { getSmartHeaderOptions } from '@/core/smart-screen-header'
 
 export default function DashboardLayout() {
 	return (
 		<Stack
 			screenOptions={{
+				...getSmartHeaderOptions(),
 				headerShown: true,
-				headerTitleStyle: {
-					fontWeight: '600'
-				},
-				headerBackTitle: Platform.select({
-					ios: 'Back',
-					android: undefined,
-					web: 'Back'
-				}),
-				headerStyle: {
-					backgroundColor: '#1C2541'
-				},
-				headerTintColor: '#F8FAFC',
 				contentStyle: {
 					backgroundColor: '#000000'
 				}

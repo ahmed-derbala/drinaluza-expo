@@ -2,12 +2,11 @@
 
 Create a reusable kebab menu named SmartKebabMenu that integrates with the existing `SmartScreenHeader`
 
-SmartKebabMenu should be visible on the header of any screen
-SmartKebabMenu should has 3 default menu items shown at the end of the list:
- - refresh
+SmartKebabMenu should be visible in headerRight of the header on any screen
+
+SmartKebabMenu should has 2 default menu items:
  - /settings
  - /updates
-
 more menu items should be determined dynamically by the currently displayed screen.
 
 ### Architecture
@@ -27,10 +26,6 @@ src/core/smart-kebab-menu/
 ### SmartScreenHeader Integration
 
 - `SmartScreenHeader` must always render the kebab menu button area.
-- The kebab menu button should only be visible when the current screen has registered one or more menu items.
-- If no menu items are registered, hide the kebab menu button.
-
----
 
 ### Dynamic Screen Registration
 
@@ -89,7 +84,6 @@ export interface SmartKebabMenuItem {
   - the route changes
   - the screen loses focus
 - Support keyboard navigation on web.
-- Support accessibility labels.
 - Support dark mode.
 - Support mobile and desktop layouts.
 
@@ -119,10 +113,10 @@ without requiring architectural changes.
 ```ts
 useSmartKebabMenu([
   {
-    key: 'refresh',
-    label: 'Refresh',
-    icon: 'refresh',
-    onPress: refreshData,
+    key: 'settings',
+    label: 'Settings',
+    icon: 'settings',
+    onPress: openSettings,
   },
   {
     key: 'updates',
@@ -133,11 +127,3 @@ useSmartKebabMenu([
   },
 ]);
 ```
-
-### Important
-
-- Keep `SmartScreenHeader` generic.
-- Screens must declare their own menu items.
-- Do not hardcode screen-specific actions inside shared components.
-- Follow existing project architecture and coding conventions.
-- Ensure the implementation is production-ready.

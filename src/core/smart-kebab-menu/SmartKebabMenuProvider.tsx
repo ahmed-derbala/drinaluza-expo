@@ -1,55 +1,48 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react'
-import { usePathname } from 'expo-router'
+import React, { createContext, useState, useCallback, useMemo } from 'react'
 import { SmartKebabMenuItem, SmartKebabMenuContextProps } from './types'
 
-const SmartKebabMenuContext = createContext<SmartKebabMenuContextProps | undefined>(undefined)
+export const SmartKebabMenuContext = createContext<SmartKebabMenuContextProps | undefined>(undefined)
 
-export const useSmartKebabMenuContext = () => {
-	const context = useContext(SmartKebabMenuContext)
-	if (!context) {
-		throw new Error('useSmartKebabMenuContext must be used within a SmartKebabMenuProvider')
-	}
-	return context
-}
+export const SmartKebabMenuProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const [registry, setRegistry] = useState<Record<string, SmartKebabMenuItem[]>>({})
 
-interface SmartKebabMenuProviderProps {
-	children: React.ReactNode
-}
-
-export const SmartKebabMenuProvider: React.FC<SmartKebabMenuProviderProps> = ({ children }) => {
-	const [isOpen, setIsOpenState] = useState(false)
-	const [menuItems, setMenuItems] = useState<SmartKebabMenuItem[]>([])
-	const pathname = usePathname()
-
-	const setIsOpen = useCallback((open: boolean) => {
-		setIsOpenState(open)
+	const registerItems = useCallback((key: string, items: SmartKebabMenuItem[]) => {
+		setRegistry((prev) => {
+			// To avoid unnecessary re-renders, perform a JSON serialization comparison check
+			if (JSON.stringify(prev[key]) === JSON.stringify(items)) {
+				return prev
+			}
+			return {
+				...prev,
+				[key]: items
+			}
+		})
 	}, [])
 
-	const registerItems = useCallback((items: SmartKebabMenuItem[]) => {
-		setMenuItems(items)
+	const unregisterItems = useCallback((key: string) => {
+		setRegistry((prev) => {
+			if (!(key in prev)) {
+				return prev
+			}
+			const next = { ...prev }
+			delete next[key]
+			return next
+		})
 	}, [])
 
-	const unregisterItems = useCallback(() => {
-		setMenuItems([])
-		setIsOpenState(false)
-	}, [])
+	// Memoize the flattened items array to optimize performance
+	const screenItems = useMemo(() => {
+		return Object.values(registry).flat()
+	}, [registry])
 
-	// Automatically close the menu when route changes
-	useEffect(() => {
-		setIsOpenState(false)
-	}, [pathname])
-
-	return (
-		<SmartKebabMenuContext.Provider
-			value={{
-				isOpen,
-				setIsOpen,
-				menuItems,
-				registerItems,
-				unregisterItems
-			}}
-		>
-			{children}
-		</SmartKebabMenuContext.Provider>
+	const contextValue = useMemo(
+		() => ({
+			screenItems,
+			registerItems,
+			unregisterItems
+		}),
+		[screenItems, registerItems, unregisterItems]
 	)
+
+	return <SmartKebabMenuContext.Provider value={contextValue}>{children}</SmartKebabMenuContext.Provider>
 }

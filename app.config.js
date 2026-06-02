@@ -93,13 +93,6 @@ export default {
 
         },
         jsEngine: "hermes",
-        runtimeVersion: {
-            policy: "appVersion"
-        },
-        buildCacheProvider: "eas",
-        updates: {
-            "url": "https://u.expo.dev/663c7ecc-f495-4630-9913-c923ef3f8bb2"
-        }
-
+        buildCacheProvider: "eas"
     }
 };

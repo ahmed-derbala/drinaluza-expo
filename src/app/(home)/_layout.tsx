@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet } from 'react-native'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
 
 const TabsComponent = Tabs as any
 import { StatusBar } from 'expo-status-bar'
@@ -11,6 +10,8 @@ import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
+
+import { getSmartHeaderOptions } from '@/core/smart-screen-header'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
@@ -39,17 +40,7 @@ export default function HomeLayout() {
 					backgroundColor: '#000000'
 				}}
 				screenOptions={{
-					header: ({ options, route, navigation }: any) => {
-						const title = options.headerTitle ? (typeof options.headerTitle === 'function' ? options.headerTitle({ children: '' }) : options.headerTitle) : options.title || route.name
-
-						return (
-							<SmartScreenHeader
-								title={title}
-								headerLeft={options.headerLeft ? options.headerLeft({ canGoBack: navigation.canGoBack() }) : undefined}
-								headerRight={options.headerRight ? options.headerRight({}) : undefined}
-							/>
-						)
-					},
+					...getSmartHeaderOptions(),
 					tabBarStyle: {
 						position: 'absolute',
 						bottom: 0,

@@ -23,7 +23,6 @@ Features:
   - loading state
   - responsive web/mobile layout
   - safe area handling
-  - accessibility
   - keyboard navigation on web
   - hover effects on web
   - proper touch targets on mobile
@@ -46,6 +45,7 @@ Features:
   - work correctly on Android, iOS, and web
   - handle long titles gracefully
   - avoid layout shift when right actions differ between screens
+  - if there is no previous screen, the back button should open /feed
 
 - Do not hardcode header icons directly inside screens.
 - Header actions must be reusable across screens.

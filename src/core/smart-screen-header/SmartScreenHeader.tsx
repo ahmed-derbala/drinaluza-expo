@@ -1,249 +1,139 @@
-import React, { useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, Platform, Animated, useWindowDimensions } from 'react-native'
+import React from 'react'
+import { StyleSheet, View, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/core/theme'
-import { BackButton } from './BackButton'
-import HeaderAction from './HeaderAction'
-import { usePathname, useRouter } from 'expo-router'
 import { SmartKebabMenu } from '@/core/smart-kebab-menu'
-import { useUpdates } from '@/core/updates/UpdatesContext'
+import { SmartScreenHeaderProps } from './types'
+import BackButton from './components/BackButton'
+import Title from './components/Title'
 
-export interface SmartScreenHeaderProps {
-	/**
-	 * Main title text or custom component node.
-	 */
-	title?: string | React.ReactNode
-	/**
-	 * Secondary subtitle text.
-	 */
-	subtitle?: string
-	/**
-	 * Optional left side component slot. Overrides showBackButton.
-	 */
-	headerLeft?: React.ReactNode
-	/**
-	 * Optional right side component slot.
-	 */
-	headerRight?: React.ReactNode
-	/**
-	 * Callback when default back button is pressed.
-	 */
-	onBackPress?: () => void
-	/**
-	 * Whether to show default BackButton in left slot.
-	 */
-	showBackButton?: boolean
-	/**
-	 * Triggers a looping premium linear loading bar along the bottom.
-	 */
-	loading?: boolean
-}
-
-// Consistent header height (excluding status bar safe area)
-const HEADER_HEIGHT = Platform.select({
-	ios: 44,
-	android: 56,
-	default: 56
-})
-
-export const SmartScreenHeader: React.FC<SmartScreenHeaderProps> & {
-	BackButton: typeof BackButton
-	Action: typeof HeaderAction
-} = ({ title, subtitle, headerLeft, headerRight, onBackPress, showBackButton = false, loading = false }) => {
-	const { colors } = useTheme()
+const SmartScreenHeader: React.FC<SmartScreenHeaderProps> = ({
+	title,
+	subtitle,
+	showBackButton = false,
+	onBackPress,
+	headerLeft,
+	headerRight,
+	loading = false,
+	safeArea = true,
+	borderBottom = true,
+	backgroundColor,
+	style,
+	children
+}) => {
 	const insets = useSafeAreaInsets()
-	const width = useWindowDimensions().width
-	const pathname = usePathname()
-	const router = useRouter()
+	const { colors } = useTheme()
 
-	const loadingAnim = useRef(new Animated.Value(-100)).current
-
-	useEffect(() => {
-		if (loading) {
-			Animated.loop(
-				Animated.timing(loadingAnim, {
-					toValue: 100,
-					duration: 1500,
-					useNativeDriver: true
-				})
-			).start()
-		} else {
-			loadingAnim.setValue(-100)
-			loadingAnim.stopAnimation()
-		}
-	}, [loading])
-
-	// Calculate top padding (Safe Area)
-	const calculatedPaddingTop = insets.top
-
-	// Loading animation progress bar interpolation
-	const barWidth = width * 0.4
-	const translateX = loadingAnim.interpolate({
-		inputRange: [-100, 100],
-		outputRange: [-barWidth, width + barWidth]
-	})
-
-	const leftSection = headerLeft ? headerLeft : showBackButton ? <BackButton onPress={onBackPress} /> : null
-
-	// Determine if we should show the global update header action
-	const renderHeaderRight = () => {
-		const { updateType, status, downloadProgress, cachedApk } = useUpdates()
-		const showUpdateIcon = updateType !== 'none' || status === 'downloading' || status === 'completed' || !!cachedApk
-
-		const handleUpdatePress = () => {
-			if (pathname !== '/updates') {
-				router.push('/updates' as any)
-			}
-		}
-
-		return (
-			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-				{showUpdateIcon && (
-					<HeaderAction
-						iconName={status === 'completed' || !!cachedApk ? 'checkmark-circle-outline' : status === 'downloading' ? 'download-outline' : 'arrow-down-circle-outline'}
-						onPress={handleUpdatePress}
-						accessibilityLabel="App Update Available"
-						badgeCount={status === 'downloading' ? Math.round(downloadProgress * 100) : undefined}
-						iconColor={status === 'completed' || !!cachedApk ? '#10B981' : colors.primary}
-					/>
-				)}
-				{headerRight}
-				<SmartKebabMenu />
-			</View>
-		)
-	}
+	const resolvedBackground = backgroundColor || colors.background || '#000000'
+	const resolvedBorderColor = colors.borderLight || colors.border || '#1E293B'
 
 	return (
 		<View
 			style={[
-				styles.headerContainer,
+				styles.outerContainer,
 				{
-					backgroundColor: '#000000', // strictly dark theme default background
-					borderBottomColor: colors.border || '#3A506B',
-					borderBottomWidth: StyleSheet.hairlineWidth,
-					paddingTop: calculatedPaddingTop,
-					height: HEADER_HEIGHT + calculatedPaddingTop
-				}
+					backgroundColor: resolvedBackground,
+					paddingTop: safeArea ? insets.top : 0,
+					borderBottomWidth: borderBottom ? StyleSheet.hairlineWidth : 0,
+					borderBottomColor: resolvedBorderColor
+				},
+				style
 			]}
 		>
-			{/* Core row structure */}
-			<View style={styles.headerRow} pointerEvents="box-none">
-				{/* Left Section */}
-				<View style={styles.sideContainer} pointerEvents="box-none">
-					{leftSection}
-				</View>
+			{children ? (
+				children
+			) : (
+				<View style={styles.innerContainer}>
+					{/* Absolutely Centered Title block to prevent layout shifts */}
+					<View style={styles.titleWrapper} pointerEvents="box-none">
+						<Title title={title} subtitle={subtitle} loading={loading} />
+					</View>
 
-				{/* Mathematically Centered Title Container (uses marginHorizontal to avoid button overlaps) */}
-				<View style={styles.centerContainer} pointerEvents="box-none">
-					{typeof title === 'string' ? (
-						<Text style={[styles.title, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-							{title}
-						</Text>
-					) : (
-						title
-					)}
-					{subtitle ? (
-						<Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-							{subtitle}
-						</Text>
-					) : null}
-				</View>
+					{/* Left Section */}
+					<View style={styles.leftSection}>
+						{showBackButton && <BackButton onPress={onBackPress} />}
+						{headerLeft}
+					</View>
 
-				{/* Right Section */}
-				<View style={[styles.sideContainer, styles.rightContainer]} pointerEvents="box-none">
-					{renderHeaderRight()}
-				</View>
-			</View>
-
-			{/* Sleek, premium looping loading bar at bottom boundary */}
-			{loading && (
-				<View style={[styles.loadingTrack, { backgroundColor: colors.borderLight || '#1E293B' }]}>
-					<Animated.View
-						style={[
-							styles.loadingIndicator,
-							{
-								width: barWidth,
-								backgroundColor: colors.primary,
-								transform: [{ translateX }]
-							}
-						]}
-					/>
+					{/* Right Section */}
+					<View style={styles.rightSection}>
+						{headerRight}
+						<SmartKebabMenu />
+					</View>
 				</View>
 			)}
 		</View>
 	)
 }
 
-// Attach sub-components for Composition usage
-SmartScreenHeader.BackButton = BackButton
-SmartScreenHeader.Action = HeaderAction
-
 const styles = StyleSheet.create({
-	headerContainer: {
+	outerContainer: {
 		width: '100%',
-		justifyContent: 'flex-end',
-		zIndex: 1000,
+		zIndex: 100,
 		...Platform.select({
+			ios: {
+				shadowColor: '#000000',
+				shadowOffset: { width: 0, height: 1 },
+				shadowOpacity: 0.15,
+				shadowRadius: 2
+			},
+			android: {
+				elevation: 2
+			},
 			web: {
-				boxSizing: 'border-box'
+				position: 'sticky',
+				top: 0
 			}
 		})
 	},
-	headerRow: {
+	innerContainer: {
+		height: 56,
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		height: HEADER_HEIGHT,
 		paddingHorizontal: 16,
-		position: 'relative',
-		width: '100%'
+		position: 'relative'
 	},
-	sideContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'flex-start',
-		zIndex: 10,
-		minWidth: 44,
-		height: '100%'
-	},
-	rightContainer: {
-		justifyContent: 'flex-end',
-		gap: 8
-	},
-	centerContainer: {
+	titleWrapper: {
 		position: 'absolute',
-		left: 0,
-		right: 0,
+		left: 76,
+		right: 76,
 		top: 0,
 		bottom: 0,
 		justifyContent: 'center',
-		alignItems: Platform.OS === 'ios' ? 'center' : 'flex-start',
-		marginHorizontal: 76, // Ensures long titles truncate gracefully before hitting action buttons
+		alignItems: 'center',
 		zIndex: 1
 	},
-	title: {
-		fontSize: Platform.OS === 'ios' ? 17 : 20,
-		fontWeight: Platform.OS === 'ios' ? '600' : '500',
-		textAlign: 'center',
-		letterSpacing: -0.3
+	leftSection: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		zIndex: 2
 	},
-	subtitle: {
-		fontSize: 12,
-		marginTop: 1,
-		textAlign: 'center',
-		opacity: 0.8
-	},
-	loadingTrack: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		height: 2.5,
-		overflow: 'hidden',
-		width: '100%'
-	},
-	loadingIndicator: {
-		height: '100%',
-		borderRadius: 1
+	rightSection: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		zIndex: 2
+	}
+})
+
+export default React.memo(SmartScreenHeader)
+
+export const getSmartHeaderOptions = () => ({
+	header: (props: any) => {
+		const title = props.options.headerTitle !== undefined ? props.options.headerTitle : props.options.title !== undefined ? props.options.title : props.route.name
+
+		const showBackButton = props.options.headerLeft === undefined ? props.navigation.canGoBack() : false
+
+		return (
+			<SmartScreenHeader
+				title={typeof title === 'string' ? title : undefined}
+				showBackButton={showBackButton}
+				onBackPress={props.navigation.goBack}
+				headerRight={props.options.headerRight ? props.options.headerRight({ tintColor: '#F8FAFC' }) : undefined}
+				headerLeft={props.options.headerLeft ? props.options.headerLeft({ tintColor: '#F8FAFC' }) : undefined}
+			/>
+		)
 	}
 })

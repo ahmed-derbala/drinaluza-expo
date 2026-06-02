@@ -1,4 +1,3 @@
-import { SmartScreenHeader } from '@/core/smart-screen-header'
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -11,7 +10,6 @@ import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 
 const formatUptime = (uptime: string | undefined): string => {
 	if (!uptime) return ''
@@ -64,17 +62,6 @@ export default function SettingsScreen() {
 				setLoading(false)
 			})
 	}
-
-	useSmartKebabMenu([
-		{
-			key: 'refresh',
-			label: translate('refresh', 'Refresh'),
-			icon: 'refresh-outline',
-			onPress: fetchServerInfo,
-			disabled: loading,
-			loading: loading
-		}
-	])
 
 	useEffect(() => {
 		fetchServerInfo()
@@ -150,13 +137,11 @@ export default function SettingsScreen() {
 		>
 			<Tabs.Screen
 				options={{
-					header: () => (
-						<SmartScreenHeader
-							title={translate('settings', 'Settings')}
-							subtitle="Drinaluza - Business Manager"
-							loading={loading}
-							headerRight={<SmartScreenHeader.Action iconName="refresh" onPress={fetchServerInfo} disabled={loading} accessibilityLabel="Refresh settings info" />}
-						/>
+					title: translate('settings', 'Settings'),
+					headerRight: () => (
+						<TouchableOpacity onPress={fetchServerInfo} disabled={loading} style={{ marginRight: 16 }}>
+							{loading ? <ActivityIndicator size="small" color={colors.text} /> : <Ionicons name="refresh" size={24} color={colors.text} />}
+						</TouchableOpacity>
 					)
 				}}
 			/>

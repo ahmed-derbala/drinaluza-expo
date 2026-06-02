@@ -1,13 +1,18 @@
-## updates
+## Updates screen
+
+Updates component is responsible for checking, downloading and installing updates
+
 apply rules from .agent/rules/
 
-updates component is responsible for checking, downloading and installing updates.
-
-use these directories:
-src/app/updates/ (expo-router)
-src/features/updates/
+recommended directories:
+- src/app/updates/ (using expo-router)
+- src/features/updates/
 
 use modern ui
+
+Handle Android package installer permissions
+
+use expo-sharing to share
 
 check for updates using config.UPDATE_CHECK_URL 
 example responce of config.UPDATE_CHECK_URL:
@@ -48,16 +53,18 @@ on android:
 - size
 - device free storage size
 - download count
-- list of downloaded apk files from cache with their details, delete and install buttons next to each one. 
+- list of downloaded apk files from cache:
+  - file details
+  - share apk file button: show a dialog recommending using quick share for faster share with other devices
+  - install button: triggers Android APK installation. disable if apk file version is equal or lower than current version
+  - delete button
 - download button. disable if the current version is equal or higher than the latest version
 - download progress
-- share button. use expo-sharing:
-    - ask the user to share the download url or the downloaded apk file if exists in cache.
-      - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
+- share download url button
+- button to copy download url to clipboard
 - whats new (changelog)
-
 use SmartKebabMenu to show download progress next to updates menu item.
-when download is complete trigger an apk file install immediately.
+when download is complete launch apk file installer.
 
 on web:
 - check for updates button
@@ -68,7 +75,7 @@ on web:
 - download count
 - download button
 - refresh button. disable if the current version is equal or higher than the latest version
-- share button: copy download url to clipboard
+- button to copy download url to clipboard
 - whats new (changelog)
 
 
@@ -78,7 +85,7 @@ on web:
     - check for updates:
       - if current version is equal or higher than latest version:
         - check if there is a downloaded apk file ready to install (apk file version is higher than current version):
-          - if yes: install the apk file
+          - if yes: Trigger Android APK installation
           - if no: continue to the app
       - if current version is lower than latest version:
         - open /updates
@@ -87,9 +94,7 @@ on web:
 
 - if there is no previous screen, the back button opens /feed
 - keep only the latest version apk file
-- Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
-- Prevent navigation race conditions
 - Update check must have timeout protection, use config.TIMEOUT_MS
 - Handle offline/network failure gracefully
 - If update check fails:

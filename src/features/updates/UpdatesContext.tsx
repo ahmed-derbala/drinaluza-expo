@@ -1,0 +1,284 @@
+import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { Platform } from 'react-native'
+import * as FileSystem from 'expo-file-system/legacy'
+import * as Sharing from 'expo-sharing'
+import { APP_VERSION, UPDATE_CHECK_URL, TIMEOUT_MS } from '@/config'
+import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
+
+export const UpdatesContext = createContext<UpdatesContextProps | undefined>(undefined)
+
+const UPDATES_FOLDER = FileSystem.documentDirectory + 'updates/'
+
+// Helper: Ensure the updates directory exists
+const ensureUpdatesFolder = async () => {
+	if (Platform.OS === 'web') return
+	try {
+		const dirInfo = await FileSystem.getInfoAsync(UPDATES_FOLDER)
+		if (!dirInfo.exists) {
+			await FileSystem.makeDirectoryAsync(UPDATES_FOLDER, { intermediates: true })
+		}
+	} catch (err) {
+		console.warn('[UpdatesContext] Failed to create updates folder:', err)
+	}
+}
+
+// Function that parses Github release response
+export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> => {
+	const controller = new AbortController()
+	const id = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+	try {
+		const res = await fetch(url, { signal: controller.signal })
+		clearTimeout(id)
+		if (!res.ok) {
+			throw new Error(`Update check request failed with status: ${res.status}`)
+		}
+		const data = await res.json()
+		// Find standard APK asset
+		const apkAsset = data.assets?.find((asset: any) => asset.content_type === 'application/vnd.android.package-archive' || asset.name.endsWith('.apk'))
+
+		const latestVersion = data.tag_name ? data.tag_name.replace(/^v/, '') : ''
+
+		return {
+			name: data.name || '',
+			published_at: data.published_at || '',
+			latest_version: latestVersion,
+			size: apkAsset ? apkAsset.size : 0,
+			download_count: apkAsset ? apkAsset.download_count : 0,
+			changelog: data.body || '',
+			download_url: apkAsset ? apkAsset.browser_download_url : ''
+		}
+	} catch (err) {
+		clearTimeout(id)
+		throw err
+	}
+}
+
+// Version comparator helper: returns true if v1 > v2
+export const isVersionGreater = (v1: string, v2: string): boolean => {
+	const p1 = v1.split('.').map(Number)
+	const p2 = v2.split('.').map(Number)
+	for (let i = 0; i < Math.max(p1.length, p2.length); i++) {
+		const num1 = p1[i] || 0
+		const num2 = p2[i] || 0
+		if (num1 > num2) return true
+		if (num1 < num2) return false
+	}
+	return false
+}
+
+export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+	const [isChecking, setIsChecking] = useState(false)
+	const [latestRelease, setLatestRelease] = useState<UpdateCheckResult | null>(null)
+	const [error, setError] = useState<string | null>(null)
+	const [downloadProgress, setDownloadProgress] = useState(0)
+	const [isDownloading, setIsDownloading] = useState(false)
+	const [downloadedApks, setDownloadedApks] = useState<CachedApkMetadata[]>([])
+	const [deviceFreeStorage, setDeviceFreeStorage] = useState(0)
+
+	const activeDownloadRef = useRef<FileSystem.DownloadResumable | null>(null)
+
+	// Fetch dynamic APK files from local storage on Android
+	const refreshApkList = useCallback(async () => {
+		if (Platform.OS !== 'android') return
+		try {
+			await ensureUpdatesFolder()
+			const files = await FileSystem.readDirectoryAsync(UPDATES_FOLDER)
+			const apks: CachedApkMetadata[] = []
+
+			for (const file of files) {
+				if (file.endsWith('.apk')) {
+					const fileUri = UPDATES_FOLDER + file
+					const fileInfo = await FileSystem.getInfoAsync(fileUri)
+
+					if (fileInfo.exists) {
+						// Extract version from file name like drinaluza-1.16.2.apk
+						const match = file.match(/drinaluza-(.+)\.apk/)
+						const version = match ? match[1] : 'unknown'
+						const size = fileInfo.size || 0
+
+						// If file version is higher than active version, it is installable
+						const isInstallable = version !== 'unknown' && isVersionGreater(version, APP_VERSION)
+
+						apks.push({
+							filename: file,
+							fileUri,
+							version,
+							size,
+							isInstallable
+						})
+					}
+				}
+			}
+
+			setDownloadedApks(apks)
+
+			// Get free space
+			const freeSpace = await FileSystem.getFreeDiskStorageAsync()
+			setDeviceFreeStorage(freeSpace)
+		} catch (err) {
+			console.warn('[UpdatesContext] Failed to scan cached APKs:', err)
+		}
+	}, [])
+
+	// Self-healing cleaner: deletes older APK versions, keeping only the latest
+	const pruneOldApks = useCallback(async (latestVer: string) => {
+		if (Platform.OS !== 'android') return
+		try {
+			const files = await FileSystem.readDirectoryAsync(UPDATES_FOLDER)
+			for (const file of files) {
+				if (file.endsWith('.apk') && !file.includes(latestVer)) {
+					await FileSystem.deleteAsync(UPDATES_FOLDER + file, { idempotent: true })
+				}
+			}
+		} catch (err) {
+			console.warn('[UpdatesContext] Pruning older cached releases failed:', err)
+		}
+	}, [])
+
+	// Trigger Check for Updates
+	const checkForUpdates = useCallback(
+		async (manual = false): Promise<UpdateCheckResult | null> => {
+			setIsChecking(true)
+			setError(null)
+			try {
+				const result = await checkUpdatesApi(UPDATE_CHECK_URL)
+				setLatestRelease(result)
+				setIsChecking(false)
+
+				if (Platform.OS === 'android') {
+					await refreshApkList()
+					// Run a proactive cleanup of stale APK cache files
+					await pruneOldApks(result.latest_version)
+				}
+				return result
+			} catch (err: any) {
+				console.warn('[UpdatesContext] Update check encountered network/timeout error:', err)
+				setError(err?.message || 'Failed to check for updates.')
+				setIsChecking(false)
+				return null
+			}
+		},
+		[refreshApkList, pruneOldApks]
+	)
+
+	// Install Android APK
+	const installApk = useCallback(async (fileUri: string) => {
+		if (Platform.OS !== 'android') return
+		try {
+			const { startInstallAsync } = require('expo-intent-launcher')
+			const contentUri = await FileSystem.getContentUriAsync(fileUri)
+
+			// Start native Package Installer
+			const { startActivityAsync } = require('expo-intent-launcher')
+			await startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+				data: contentUri,
+				flags: 1, // Intent.FLAG_GRANT_READ_URI_PERMISSION
+				type: 'application/vnd.android.package-archive'
+			})
+		} catch (err) {
+			console.error('[UpdatesContext] Android package installation failed:', err)
+			throw new Error('Failed to launch the Android package installer. Please verify permissions.')
+		}
+	}, [])
+
+	// Delete downloaded APK
+	const deleteApk = useCallback(
+		async (fileUri: string) => {
+			if (Platform.OS !== 'android') return
+			try {
+				await FileSystem.deleteAsync(fileUri, { idempotent: true })
+				await refreshApkList()
+			} catch (err) {
+				console.warn('[UpdatesContext] Deleting local APK cache failed:', err)
+			}
+		},
+		[refreshApkList]
+	)
+
+	// Download APK
+	const downloadUpdate = useCallback(async (): Promise<string | null> => {
+		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
+			return null
+		}
+
+		setIsDownloading(true)
+		setDownloadProgress(0)
+		await ensureUpdatesFolder()
+
+		const filename = `drinaluza-${latestRelease.latest_version}.apk`
+		const fileUri = UPDATES_FOLDER + filename
+
+		try {
+			// Clean any partial downloads of this exact version
+			await FileSystem.deleteAsync(fileUri, { idempotent: true })
+
+			const downloadResumable = FileSystem.createDownloadResumable(latestRelease.download_url, fileUri, {}, (downloadProgressData) => {
+				const progress = downloadProgressData.totalBytesWritten / downloadProgressData.totalBytesExpectedToWrite
+				setDownloadProgress(isNaN(progress) ? 0 : progress)
+			})
+
+			activeDownloadRef.current = downloadResumable
+			const downloadResult = await downloadResumable.downloadAsync()
+			activeDownloadRef.current = null
+
+			setIsDownloading(false)
+			setDownloadProgress(1)
+
+			if (downloadResult && downloadResult.uri) {
+				await refreshApkList()
+				// Automatically prune other older cached APK releases
+				await pruneOldApks(latestRelease.latest_version)
+
+				// Automatically launch package installer when download is complete
+				await installApk(downloadResult.uri)
+				return downloadResult.uri
+			}
+			return null
+		} catch (err) {
+			setIsDownloading(false)
+			setDownloadProgress(0)
+			activeDownloadRef.current = null
+			console.error('[UpdatesContext] File download error:', err)
+			throw err
+		}
+	}, [latestRelease, refreshApkList, pruneOldApks, installApk])
+
+	// Cancel download on unmount to prevent resource memory leak
+	useEffect(() => {
+		return () => {
+			if (activeDownloadRef.current) {
+				try {
+					activeDownloadRef.current.cancelAsync()
+				} catch (e) {
+					console.warn('[UpdatesContext] Failed to cancel active download on unmount:', e)
+				}
+			}
+		}
+	}, [])
+
+	// Setup initial storage state
+	useEffect(() => {
+		refreshApkList()
+	}, [refreshApkList])
+
+	const contextValue = useMemo(
+		() => ({
+			isChecking,
+			latestRelease,
+			error,
+			downloadProgress,
+			isDownloading,
+			downloadedApks,
+			deviceFreeStorage,
+			checkForUpdates,
+			downloadUpdate,
+			installApk,
+			deleteApk,
+			refreshApkList
+		}),
+		[isChecking, latestRelease, error, downloadProgress, isDownloading, downloadedApks, deviceFreeStorage, checkForUpdates, downloadUpdate, installApk, deleteApk, refreshApkList]
+	)
+
+	return <UpdatesContext.Provider value={contextValue}>{children}</UpdatesContext.Provider>
+}

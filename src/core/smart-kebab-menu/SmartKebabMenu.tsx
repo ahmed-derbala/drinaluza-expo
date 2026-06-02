@@ -1,38 +1,88 @@
-import React, { useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, Pressable, Modal, Platform, useWindowDimensions, ActivityIndicator } from 'react-native'
+import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'
+import { StyleSheet, Text, View, Animated, Platform, Pressable, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter, usePathname } from 'expo-router'
+import { usePathname, useRouter, useNavigation } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { useSmartKebabMenuContext } from './SmartKebabMenuProvider'
+import { SmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
-import HeaderAction from '../smart-screen-header/HeaderAction'
-import { useUpdates } from '@/core/updates/UpdatesContext'
 
-const HEADER_HEIGHT = Platform.select({
-	ios: 44,
-	android: 56,
-	default: 56
-})
+import { useUpdates } from '@/features/updates'
 
 export const SmartKebabMenu: React.FC = () => {
 	const { colors } = useTheme()
-	const insets = useSafeAreaInsets()
 	const router = useRouter()
 	const pathname = usePathname()
-	const { width: windowWidth } = useWindowDimensions()
+	const navigation = useNavigation()
+	const { width } = useWindowDimensions()
 
-	const { isOpen, setIsOpen, menuItems } = useSmartKebabMenuContext()
-	const { status, downloadProgress, cachedApk } = useUpdates()
+	const context = useContext(SmartKebabMenuContext)
+	const screenItems = context ? context.screenItems : []
 
-	// Automatically close the menu on Web when pressing Escape key
+	const { isDownloading, downloadProgress, downloadedApks } = useUpdates()
+
+	const [isOpen, setIsOpen] = useState(false)
+	const scaleAnim = useRef(new Animated.Value(0)).current
+	const opacityAnim = useRef(new Animated.Value(0)).current
+
+	// Toggle menu open/close
+	const toggleMenu = () => {
+		if (isOpen) {
+			closeMenu()
+		} else {
+			setIsOpen(true)
+			Animated.parallel([
+				Animated.timing(scaleAnim, {
+					toValue: 1,
+					duration: 150,
+					useNativeDriver: true
+				}),
+				Animated.timing(opacityAnim, {
+					toValue: 1,
+					duration: 150,
+					useNativeDriver: true
+				})
+			]).start()
+		}
+	}
+
+	const closeMenu = () => {
+		Animated.parallel([
+			Animated.timing(scaleAnim, {
+				toValue: 0.9,
+				duration: 100,
+				useNativeDriver: true
+			}),
+			Animated.timing(opacityAnim, {
+				toValue: 0,
+				duration: 100,
+				useNativeDriver: true
+			})
+		]).start(() => {
+			setIsOpen(false)
+		})
+	}
+
+	// 1. Close when route/pathname changes
 	useEffect(() => {
-		if (Platform.OS !== 'web' || !isOpen) return
+		closeMenu()
+	}, [pathname])
+
+	// 2. Close when screen loses focus
+	useEffect(() => {
+		const unsubscribe = navigation.addListener('blur', () => {
+			closeMenu()
+		})
+		return unsubscribe
+	}, [navigation])
+
+	// 3. Web keyboard navigation listener
+	useEffect(() => {
+		if (!isOpen || Platform.OS !== 'web') return
 
 		const handleKeyDown = (e: KeyboardEvent) => {
 			if (e.key === 'Escape') {
-				setIsOpen(false)
+				closeMenu()
 			}
 		}
 
@@ -40,238 +90,296 @@ export const SmartKebabMenu: React.FC = () => {
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
 		}
-	}, [isOpen, setIsOpen])
+	}, [isOpen])
 
-	const defaultSettingsItem: SmartKebabMenuItem = {
-		key: 'settings',
-		label: translate('settings', 'Settings'),
-		icon: 'settings-outline',
-		onPress: () => router.push('/settings')
-	}
+	const updatesBadge = useMemo(() => {
+		if (isDownloading) {
+			return `${Math.round(downloadProgress * 100)}%`
+		}
+		const hasInstallable = downloadedApks.some((apk) => apk.isInstallable)
+		if (hasInstallable) {
+			return 'READY'
+		}
+		return 'NEW'
+	}, [isDownloading, downloadProgress, downloadedApks])
 
-	const defaultUpdatesItem: SmartKebabMenuItem = {
-		key: 'updates',
-		label: translate('updates', 'Updates'),
-		icon: status === 'completed' || !!cachedApk ? 'arrow-down-circle-outline' : status === 'downloading' ? 'download-outline' : 'cloud-download-outline',
-		badge: status === 'downloading' ? `${Math.round(downloadProgress * 100)}%` : undefined,
-		onPress: () => router.push('/updates' as any)
-	}
-
-	// Filter out invisible dynamic items, and also filter out 'refresh' key if registered by the screen
-	// (so that it doesn't get rendered twice, since we'll render it as a default item at the end of the list)
-	const visibleDynamicItems = menuItems.filter((item) => item.visible !== false && item.key !== 'refresh')
-
-	// Locate the screen-registered custom refresh handler
-	const screenRefreshItem = menuItems.find((item) => item.key === 'refresh')
-
-	const defaultRefreshItem: SmartKebabMenuItem = {
-		key: 'refresh',
-		label: translate('refresh', 'Refresh'),
-		icon: 'refresh-outline',
-		disabled: screenRefreshItem?.disabled,
-		loading: screenRefreshItem?.loading,
-		onPress: () => {
-			if (screenRefreshItem) {
-				screenRefreshItem.onPress()
-			} else if (Platform.OS === 'web') {
-				window.location.reload()
+	// Default menu items: /settings and /updates
+	const defaultItems: SmartKebabMenuItem[] = useMemo(
+		() => [
+			{
+				key: 'settings',
+				label: translate('settings', 'Settings'),
+				icon: 'settings-outline',
+				onPress: () => {
+					router.push('/settings')
+				}
+			},
+			{
+				key: 'updates',
+				label: translate('updates', 'Updates'),
+				icon: 'cloud-download-outline',
+				badge: updatesBadge,
+				onPress: () => {
+					router.push('/updates' as any)
+				}
 			}
+		],
+		[router, updatesBadge]
+	)
+
+	// Combine default and screen-registered menu items
+	const allItems = useMemo(() => {
+		return [...defaultItems, ...screenItems]
+	}, [defaultItems, screenItems])
+
+	const handleItemPress = async (item: SmartKebabMenuItem) => {
+		if (item.disabled) return
+		closeMenu()
+		// Wait short duration for animation to clear before triggering action
+		setTimeout(async () => {
+			try {
+				await item.onPress()
+			} catch (err) {
+				console.error('[SmartKebabMenu] failed to execute item onPress:', err)
+			}
+		}, 120)
+	}
+
+	const formatBadge = (badge?: string | number) => {
+		if (badge === undefined || badge === null) return ''
+		const str = String(badge)
+		if (str.length > 5) {
+			return str.slice(0, 4) + '…'
 		}
+		return str
 	}
 
-	// Build default items, filtering out the current screen's route to prevent redundant self-navigation
-	const defaultItems: SmartKebabMenuItem[] = [defaultRefreshItem]
-	const activePathname = pathname || ''
-	if (!activePathname.includes('/updates')) {
-		defaultItems.push(defaultUpdatesItem)
-	}
-	if (!activePathname.includes('/settings')) {
-		defaultItems.push(defaultSettingsItem)
-	}
-
-	// Combine dynamic items, separator (if applicable), and default items
-	const allItems = [...visibleDynamicItems, ...(visibleDynamicItems.length > 0 && defaultItems.length > 0 ? [{ key: 'sep-default', type: 'separator' } as SmartKebabMenuItem] : []), ...defaultItems]
-
-	// Hide the kebab menu button entirely if there are no items to display
-	if (allItems.length === 0) {
-		return null
-	}
-
-	// Dynamic absolute position matching the header bottom
-	const topOffset = insets.top + HEADER_HEIGHT - 4
-
-	const renderItem = (item: SmartKebabMenuItem) => {
-		if (item.type === 'separator') {
-			return <View key={item.key} style={[styles.separator, { backgroundColor: colors.borderLight || '#1E293B' }]} />
+	// Calculate responsive positioning (desktop vs mobile viewport check)
+	const isDesktop = width >= 768
+	const menuStyle = [
+		styles.menuContainer,
+		{
+			backgroundColor: colors.card || '#1C2541',
+			borderColor: colors.borderLight || '#1E293B',
+			opacity: opacityAnim,
+			transform: [{ scale: scaleAnim }, { translateY: scaleAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
+			right: isDesktop ? 20 : 16
 		}
+	]
 
-		const isDestructive = item.destructive
-		const isDisabled = item.disabled
-		const labelColor = isDestructive ? colors.error || '#EF4444' : isDisabled ? colors.textSecondary || '#94A3B8' : colors.text || '#F8FAFC'
-		const iconColor = isDestructive ? colors.error || '#EF4444' : colors.primary || '#0EA5E9'
-
-		// Combine accessibility roles and dynamic states
-		const isBtnDisabled = isDisabled || item.loading
-		const accessibilityLabel = item.badge ? `${item.label}, ${item.badge}` : item.label
-
-		return (
+	return (
+		<View style={styles.container}>
+			{/* Kebab Icon Button */}
 			<Pressable
-				key={item.key}
-				disabled={isBtnDisabled}
-				onPress={() => {
-					setIsOpen(false)
-					item.onPress()
-				}}
+				onPress={toggleMenu}
+				focusable={true}
 				accessibilityRole="button"
-				accessibilityLabel={accessibilityLabel}
-				accessibilityState={{ disabled: isBtnDisabled }}
-				style={({ pressed, hovered }) => [
-					styles.itemContainer,
+				accessibilityLabel={translate('kebab_menu_button', 'Open menu')}
+				accessibilityState={{ expanded: isOpen }}
+				hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+				style={({ hovered, pressed }) => [
+					styles.kebabButton,
 					{
-						backgroundColor: hovered && Platform.OS === 'web' ? colors.borderLight || 'rgba(255, 255, 255, 0.05)' : pressed ? colors.border || 'rgba(255, 255, 255, 0.1)' : 'transparent'
+						backgroundColor: isOpen ? colors.surfaceVariant || '#3A506B30' : hovered ? colors.surfaceVariant || '#3A506B30' : pressed ? colors.primary + '15' : colors.primary + '0A'
 					}
 				]}
 			>
-				<View style={styles.itemLeft}>
-					{item.loading ? (
-						<ActivityIndicator size="small" color={iconColor} style={styles.iconLoader} />
-					) : item.icon ? (
-						<Ionicons name={item.icon as any} size={18} color={iconColor} style={styles.icon} />
-					) : null}
-					<Text style={[styles.itemLabel, { color: labelColor }, isDestructive && styles.destructiveText]} numberOfLines={1} ellipsizeMode="tail">
-						{item.label}
-					</Text>
-				</View>
-
-				{item.badge !== undefined && item.badge !== null && item.badge !== '' && (
-					<View
-						style={[
-							styles.badgeContainer,
-							{
-								backgroundColor: colors.primaryContainer || '#0EA5E920',
-								borderColor: colors.primary || '#0EA5E9'
-							}
-						]}
-					>
-						<Text style={[styles.badgeText, { color: colors.primary || '#0EA5E9' }]} numberOfLines={1} ellipsizeMode="tail">
-							{item.badge}
-						</Text>
-					</View>
-				)}
+				<Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
 			</Pressable>
-		)
-	}
 
-	return (
-		<View style={styles.kebabContainer}>
-			<HeaderAction iconName="ellipsis-vertical" onPress={() => setIsOpen(!isOpen)} accessibilityLabel="Open settings and actions menu" iconColor={colors.text} />
-
-			<Modal visible={isOpen} transparent animationType="fade" onRequestClose={() => setIsOpen(false)}>
-				<Pressable style={styles.backdrop} onPress={() => setIsOpen(false)}>
-					<View
-						style={[
-							styles.dropdownMenu,
-							{
-								top: topOffset,
-								backgroundColor: colors.surface || '#1C2541',
-								borderColor: colors.border || '#3A506B'
+			{/* Backdrop overlay for outside tap/click to close */}
+			{isOpen && (
+				<Pressable
+					style={[
+						styles.backdrop,
+						Platform.select({
+							web: { position: 'fixed' } as any,
+							default: {
+								position: 'absolute',
+								top: -500,
+								left: -1000,
+								right: -1000,
+								bottom: -2000
 							}
-						]}
-					>
-						{allItems.map(renderItem)}
-					</View>
-				</Pressable>
-			</Modal>
+						})
+					]}
+					onPress={closeMenu}
+					accessibilityLabel="Close menu backdrop"
+					accessibilityRole="button"
+				/>
+			)}
+
+			{/* Dropdown Menu Container */}
+			{isOpen && (
+				<Animated.View style={menuStyle} accessibilityRole="menu">
+					{allItems.map((item, idx) => {
+						const isDestructive = item.destructive
+						const finalColor = item.disabled ? colors.textTertiary || '#64748B' : isDestructive ? colors.error || '#EF4444' : colors.text || '#F8FAFC'
+
+						const hasSeparator = item.type === 'separator'
+
+						if (hasSeparator) {
+							return <View key={`sep-${idx}`} style={[styles.separator, { backgroundColor: colors.borderLight || '#1E293B' }]} />
+						}
+
+						const badgeContent = formatBadge(item.badge)
+
+						return (
+							<Pressable
+								key={item.key}
+								onPress={() => handleItemPress(item)}
+								disabled={item.disabled}
+								focusable={!item.disabled}
+								accessibilityRole="menuitem"
+								accessibilityLabel={`${item.label}${item.badge ? `, badge: ${item.badge}` : ''}`}
+								accessibilityState={{ disabled: !!item.disabled }}
+								style={({ hovered, pressed }) => [
+									styles.menuItem,
+									{
+										backgroundColor: item.disabled ? 'transparent' : hovered ? colors.surfaceVariant || '#3A506B30' : pressed ? colors.primary + '15' : 'transparent'
+									}
+								]}
+							>
+								<View style={styles.itemLeft}>
+									{item.icon && <Ionicons name={item.icon as any} size={18} color={finalColor} style={styles.itemIcon} />}
+									<Text
+										numberOfLines={1}
+										style={[
+											styles.itemText,
+											{
+												color: finalColor,
+												opacity: item.disabled ? 0.5 : 1
+											}
+										]}
+									>
+										{item.label}
+									</Text>
+								</View>
+
+								{/* Dynamic resizing Text/Numeric Badge */}
+								{badgeContent !== '' && (
+									<View
+										style={[
+											styles.badge,
+											{
+												backgroundColor: isDestructive ? colors.border || '#3A506B' : colors.notification || '#F43F5E'
+											}
+										]}
+										accessibilityLabel={`Badge: ${item.badge}`}
+									>
+										<Text style={styles.badgeText} numberOfLines={1}>
+											{badgeContent}
+										</Text>
+									</View>
+								)}
+							</Pressable>
+						)
+					})}
+				</Animated.View>
+			)}
 		</View>
 	)
 }
 
 const styles = StyleSheet.create({
-	kebabContainer: {
-		position: 'relative'
+	container: {
+		position: 'relative',
+		zIndex: 1000
+	},
+	kebabButton: {
+		width: 38,
+		height: 38,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({
+			web: {
+				cursor: 'pointer',
+				outlineStyle: 'none',
+				transition: 'background-color 0.2s ease'
+			} as any
+		})
 	},
 	backdrop: {
-		flex: 1,
+		zIndex: 999,
 		backgroundColor: 'transparent',
-		width: '100%',
-		height: '100%'
+		...Platform.select({
+			web: {
+				top: 0,
+				left: 0,
+				right: 0,
+				bottom: 0
+			}
+		})
 	},
-	dropdownMenu: {
+	menuContainer: {
 		position: 'absolute',
-		right: 16,
-		width: 220,
+		top: 46,
+		width: 190,
 		borderRadius: 12,
 		borderWidth: 1,
 		paddingVertical: 6,
+		zIndex: 1000,
 		...Platform.select({
 			ios: {
 				shadowColor: '#000000',
 				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.35,
-				shadowRadius: 8
+				shadowOpacity: 0.2,
+				shadowRadius: 5
 			},
 			android: {
-				elevation: 8
+				elevation: 5
 			},
 			web: {
-				boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.4)' as any
-			}
+				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
+				transition: 'transform 0.15s ease, opacity 0.15s ease'
+			} as any
 		})
 	},
-	itemContainer: {
+	menuItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
+		paddingHorizontal: 12,
 		paddingVertical: 10,
-		paddingHorizontal: 14,
-		minHeight: 40,
 		...Platform.select({
 			web: {
-				cursor: 'pointer' as any,
-				transition: 'background-color 0.15s ease' as any
-			}
+				cursor: 'pointer',
+				outlineStyle: 'none',
+				userSelect: 'none'
+			} as any
 		})
 	},
 	itemLeft: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		flex: 1,
-		marginRight: 8
+		marginRight: 6
 	},
-	icon: {
-		width: 20,
-		marginRight: 10,
-		textAlign: 'center'
-	},
-	iconLoader: {
+	itemIcon: {
 		marginRight: 10
 	},
-	itemLabel: {
+	itemText: {
 		fontSize: 14,
 		fontWeight: '500'
 	},
-	destructiveText: {
-		fontWeight: '600'
-	},
 	separator: {
 		height: 1,
-		marginVertical: 6,
-		marginHorizontal: 12,
+		marginVertical: 4,
 		opacity: 0.5
 	},
-	badgeContainer: {
-		paddingHorizontal: 6,
-		paddingVertical: 2,
-		borderRadius: 6,
-		borderWidth: 1,
+	badge: {
+		minWidth: 16,
+		height: 16,
+		borderRadius: 8,
+		paddingHorizontal: 5,
 		justifyContent: 'center',
-		alignItems: 'center',
-		minWidth: 20,
-		maxWidth: 60
+		alignItems: 'center'
 	},
 	badgeText: {
+		color: '#FFFFFF',
 		fontSize: 9,
-		fontWeight: '700',
-		textAlign: 'center'
+		fontWeight: 'bold',
+		includeFontPadding: false
 	}
 })
