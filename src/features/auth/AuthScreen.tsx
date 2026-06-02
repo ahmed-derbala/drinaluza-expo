@@ -8,6 +8,8 @@ import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { KeyboardSafeView } from '@/core/KeyboardSafeView'
 import SmartImage from '@/core/SmartImageViewer'
+import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { toast } from '@/features/common/Toast'
 import { showConfirm, showAlert } from '@/core/helpers/popup'
 import { FRONTEND_URL } from '@/config'
@@ -345,18 +347,21 @@ export default function AuthScreen() {
 		}
 	}
 
+	// Register dynamic kebab menu items for auth screen
+	useSmartKebabMenu([
+		{
+			key: 'reset-app',
+			label: translate('reset_app', 'Reset App'),
+			icon: 'trash-outline',
+			destructive: true,
+			onPress: () => handleDestroyStorage()
+		}
+	])
+
 	return (
 		<View style={styles.outerContainer}>
-			{/* Top Header Bar */}
-			<View style={styles.header}>
-				<TouchableOpacity style={styles.headerBtn} onPress={() => router.replace('/(home)/feed')} accessibilityLabel="Navigate to Feed Screen">
-					<Ionicons name="home-outline" size={22} color={colors.text} />
-				</TouchableOpacity>
-				<Text style={styles.headerTitle}>{translate('auth_title', 'Drinaluza')}</Text>
-				<TouchableOpacity style={styles.headerBtn} onPress={handleDestroyStorage} accessibilityLabel="Destroy and Reset App Storage">
-					<Ionicons name="trash-outline" size={22} color={colors.error} />
-				</TouchableOpacity>
-			</View>
+			{/* Responsive Smart Header */}
+			<SmartScreenHeader title={translate('auth_title', 'Drinaluza')} showBackButton={true} onBackPress={() => router.replace('/(home)/feed')} safeArea={true} />
 
 			<KeyboardSafeView style={styles.flex} contentContainerStyle={styles.scrollContent} extraScrollHeight={120} dismissKeyboardOnTap>
 				{/* Glassmorphic Auth Panel Container */}
@@ -499,26 +504,6 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 		},
 		flex: {
 			flex: 1
-		},
-		header: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			paddingHorizontal: 16,
-			height: 56,
-			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight,
-			backgroundColor: colors.background
-		},
-		headerBtn: {
-			padding: 8,
-			borderRadius: 8
-		},
-		headerTitle: {
-			fontSize: 18,
-			fontWeight: '700',
-			color: colors.text,
-			letterSpacing: 0.5
 		},
 		scrollContent: {
 			flexGrow: 1,

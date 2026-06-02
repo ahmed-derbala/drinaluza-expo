@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions, Linking } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
@@ -19,14 +19,17 @@ export default function UpdatesScreen() {
 
 	const [copied, setCopied] = useState(false)
 
-	// Refresh cache list on mount
+	// Refresh cache list on mount, and trigger fetch automatically on Web
 	useEffect(() => {
 		if (Platform.OS === 'android') {
 			refreshApkList()
+		} else if (Platform.OS === 'web') {
+			checkForUpdates(false)
 		}
-	}, [refreshApkList])
+	}, [refreshApkList, checkForUpdates])
 
 	const isAndroid = Platform.OS === 'android'
+	const isWeb = Platform.OS === 'web'
 	const maxLayoutWidth = 600
 	const isWide = width > maxLayoutWidth
 
@@ -180,122 +183,243 @@ export default function UpdatesScreen() {
 		)
 	}
 
+	const renderWebSection = () => {
+		const publishedAt = latestRelease ? formatDate(latestRelease.published_at) : '—'
+		const latestVer = latestRelease ? `v${latestRelease.latest_version}` : '—'
+		const fileSize = latestRelease ? formatBytes(latestRelease.size) : '—'
+		const downloadCountVal = latestRelease ? String(latestRelease.download_count) : '—'
+		const isUpToDateWeb = latestRelease ? isUpToDate : false
+
+		return (
+			<View style={[styles.card, { borderColor: colors.borderLight }]}>
+				<View style={styles.statusHeader}>
+					<View>
+						<Text style={[styles.title, { color: colors.text }]}>{latestRelease ? latestRelease.name : translate('checking_updates', 'Software Updates')}</Text>
+						<Text style={[styles.subtitle, { color: colors.textTertiary }]}>
+							{translate('current_version', 'Current Version')}: v{APP_VERSION}
+						</Text>
+					</View>
+					{isChecking && <ActivityIndicator size="small" color={colors.primary} />}
+				</View>
+
+				{/* Version Details */}
+				<View style={styles.releaseMeta}>
+					<View style={styles.row}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('current_version', 'Current Version')}</Text>
+						<Text style={[styles.value, { color: colors.text }]}>v{APP_VERSION}</Text>
+					</View>
+					<View style={styles.row}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('latest_version', 'Latest Version')}</Text>
+						<Text style={[styles.value, { color: colors.text, fontWeight: 'bold' }]}>{latestVer}</Text>
+					</View>
+					<View style={styles.row}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('published_date', 'Published Date')}</Text>
+						<Text style={[styles.value, { color: colors.text }]}>{publishedAt}</Text>
+					</View>
+					<View style={styles.row}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('file_size', 'Download Size')}</Text>
+						<Text style={[styles.value, { color: colors.text }]}>{fileSize}</Text>
+					</View>
+					<View style={styles.row}>
+						<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('download_count', 'Total Downloads')}</Text>
+						<Text style={[styles.value, { color: colors.text }]}>{downloadCountVal}</Text>
+					</View>
+				</View>
+
+				{/* Action Buttons Row */}
+				<View style={[styles.actionBlock, { gap: 12 }]}>
+					{/* Download Button */}
+					<TouchableOpacity
+						disabled={!latestRelease || !latestRelease.download_url}
+						onPress={() => latestRelease?.download_url && Linking.openURL(latestRelease.download_url)}
+						style={[
+							styles.actionButton,
+							{
+								backgroundColor: !latestRelease || !latestRelease.download_url ? colors.surfaceVariant : colors.primary,
+								marginBottom: 12,
+								opacity: !latestRelease || !latestRelease.download_url ? 0.5 : 1
+							}
+						]}
+					>
+						<Ionicons name="download-outline" size={20} color="#FFFFFF" />
+						<Text style={styles.actionButtonText}>{translate('download_update', 'Download Update')}</Text>
+					</TouchableOpacity>
+
+					<View style={{ flexDirection: 'row', gap: 8 }}>
+						{/* Check for Updates Button */}
+						<TouchableOpacity
+							onPress={() => checkForUpdates(true)}
+							disabled={isChecking}
+							style={[styles.utilityBtn, { backgroundColor: colors.surface, flex: 1, height: 40, justifyContent: 'center' }]}
+						>
+							<Ionicons name="search-outline" size={16} color={colors.textSecondary} />
+							<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{translate('check_for_updates', 'Check for Updates')}</Text>
+						</TouchableOpacity>
+
+						{/* Refresh Button - Disabled if Up to Date */}
+						<TouchableOpacity
+							onPress={() => {
+								if (Platform.OS === 'web' && typeof window !== 'undefined') {
+									window.location.reload()
+								} else {
+									checkForUpdates(true)
+								}
+							}}
+							disabled={isChecking || isUpToDateWeb}
+							style={[
+								styles.utilityBtn,
+								{
+									backgroundColor: isUpToDateWeb ? colors.surfaceVariant : colors.surface,
+									flex: 1,
+									height: 40,
+									justifyContent: 'center',
+									opacity: isUpToDateWeb ? 0.5 : 1
+								}
+							]}
+						>
+							<Ionicons name="sync-outline" size={16} color={isUpToDateWeb ? colors.textTertiary : colors.textSecondary} />
+							<Text style={[styles.utilityBtnText, { color: isUpToDateWeb ? colors.textTertiary : colors.textSecondary }]}>{translate('refresh', 'Refresh')}</Text>
+						</TouchableOpacity>
+					</View>
+				</View>
+
+				{/* Utilities Copy Link Button */}
+				<View style={[styles.utilitiesRow, { marginTop: 16 }]}>
+					<TouchableOpacity
+						disabled={!latestRelease || !latestRelease.download_url}
+						onPress={handleCopyUrl}
+						style={[
+							styles.utilityBtn,
+							{
+								backgroundColor: colors.surface,
+								width: '100%',
+								justifyContent: 'center',
+								opacity: !latestRelease || !latestRelease.download_url ? 0.5 : 1
+							}
+						]}
+					>
+						<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={18} color={copied ? colors.success : colors.textSecondary} />
+						<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link to Clipboard')}</Text>
+					</TouchableOpacity>
+				</View>
+			</View>
+		)
+	}
+
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			{/* Custom Responsive Header */}
 			<SmartScreenHeader title={translate('updates', 'Updates')} showBackButton={true} safeArea={true} />
 
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
-				{/* Top Status Banner */}
-				<View style={[styles.card, { borderColor: colors.borderLight }]}>
-					<View style={styles.statusHeader}>
-						<View>
-							<Text style={[styles.title, { color: colors.text }]}>{latestRelease ? latestRelease.name : translate('checking_updates', 'Software Updates')}</Text>
-							<Text style={[styles.subtitle, { color: colors.textTertiary }]}>
-								{translate('current_version', 'Current Version')}: v{APP_VERSION}
-							</Text>
+				{isWeb ? (
+					renderWebSection()
+				) : (
+					/* Native/Android Section */
+					<View style={[styles.card, { borderColor: colors.borderLight }]}>
+						<View style={styles.statusHeader}>
+							<View>
+								<Text style={[styles.title, { color: colors.text }]}>{latestRelease ? latestRelease.name : translate('checking_updates', 'Software Updates')}</Text>
+								<Text style={[styles.subtitle, { color: colors.textTertiary }]}>
+									{translate('current_version', 'Current Version')}: v{APP_VERSION}
+								</Text>
+							</View>
+							{isChecking && <ActivityIndicator size="small" color={colors.primary} />}
 						</View>
-						{isChecking && <ActivityIndicator size="small" color={colors.primary} />}
-					</View>
 
-					{/* Version Details */}
-					{latestRelease && (
-						<View style={styles.releaseMeta}>
-							<View style={styles.row}>
-								<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('latest_version', 'Latest Version')}</Text>
-								<Text style={[styles.value, { color: colors.text, fontWeight: 'bold' }]}>v{latestRelease.latest_version}</Text>
-							</View>
-							<View style={styles.row}>
-								<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('published_date', 'Published Date')}</Text>
-								<Text style={[styles.value, { color: colors.text }]}>{formatDate(latestRelease.published_at)}</Text>
-							</View>
-							<View style={styles.row}>
-								<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('file_size', 'Download Size')}</Text>
-								<Text style={[styles.value, { color: colors.text }]}>{formatBytes(latestRelease.size)}</Text>
-							</View>
-							<View style={styles.row}>
-								<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('download_count', 'Total Downloads')}</Text>
-								<Text style={[styles.value, { color: colors.text }]}>{latestRelease.download_count}</Text>
-							</View>
-						</View>
-					)}
-
-					{/* Main Call to Action Button */}
-					<View style={styles.actionBlock}>
-						{isDownloading ? (
-							<View style={styles.progressContainer}>
-								<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
-									<View
-										style={[
-											styles.progressBarFill,
-											{
-												backgroundColor: colors.primary,
-												width: `${Math.round(downloadProgress * 100)}%`
-											}
-										]}
-									/>
+						{/* Version Details */}
+						{latestRelease && (
+							<View style={styles.releaseMeta}>
+								<View style={styles.row}>
+									<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('latest_version', 'Latest Version')}</Text>
+									<Text style={[styles.value, { color: colors.text, fontWeight: 'bold' }]}>v{latestRelease.latest_version}</Text>
 								</View>
-								<Text style={[styles.progressText, { color: colors.textSecondary }]}>
-									{translate('downloading', 'Downloading')}... {Math.round(downloadProgress * 100)}%
-								</Text>
+								<View style={styles.row}>
+									<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('published_date', 'Published Date')}</Text>
+									<Text style={[styles.value, { color: colors.text }]}>{formatDate(latestRelease.published_at)}</Text>
+								</View>
+								<View style={styles.row}>
+									<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('file_size', 'Download Size')}</Text>
+									<Text style={[styles.value, { color: colors.text }]}>{formatBytes(latestRelease.size)}</Text>
+								</View>
+								<View style={styles.row}>
+									<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('download_count', 'Total Downloads')}</Text>
+									<Text style={[styles.value, { color: colors.text }]}>{latestRelease.download_count}</Text>
+								</View>
 							</View>
-						) : (
-							<TouchableOpacity
-								disabled={isChecking || (latestRelease ? isUpToDate : false)}
-								onPress={isAndroid ? downloadUpdate : undefined}
-								style={[
-									styles.actionButton,
-									{
-										backgroundColor: isChecking ? colors.surfaceVariant : latestRelease && isUpToDate ? colors.surfaceVariant : colors.primary
-									}
-								]}
-							>
-								<Ionicons name={isAndroid ? 'cloud-download-outline' : 'globe-outline'} size={20} color="#FFFFFF" />
-								<Text style={styles.actionButtonText}>
-									{latestRelease
-										? isUpToDate
-											? translate('up_to_date', 'Up to Date')
-											: isAndroid
-												? translate('download_update', 'Download Update')
-												: translate('visit_releases', 'Open Release Page')
-										: translate('check_for_updates', 'Check for Updates')}
-								</Text>
-							</TouchableOpacity>
 						)}
-					</View>
 
-					{/* Clipboard and Share Utilities */}
-					{latestRelease && (
-						<View style={styles.utilitiesRow}>
-							<TouchableOpacity onPress={handleCopyUrl} style={[styles.utilityBtn, { backgroundColor: colors.surface }]}>
-								<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={18} color={copied ? colors.success : colors.textSecondary} />
-								<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}</Text>
-							</TouchableOpacity>
+						{/* Main Call to Action Button */}
+						<View style={styles.actionBlock}>
+							{isDownloading ? (
+								<View style={styles.progressContainer}>
+									<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
+										<View
+											style={[
+												styles.progressBarFill,
+												{
+													backgroundColor: colors.primary,
+													width: `${Math.round(downloadProgress * 100)}%`
+												}
+											]}
+										/>
+									</View>
+									<Text style={[styles.progressText, { color: colors.textSecondary }]}>
+										{translate('downloading', 'Downloading')}... {Math.round(downloadProgress * 100)}%
+									</Text>
+								</View>
+							) : (
+								<TouchableOpacity
+									disabled={isChecking || (latestRelease ? isUpToDate : false)}
+									onPress={downloadUpdate}
+									style={[
+										styles.actionButton,
+										{
+											backgroundColor: isChecking ? colors.surfaceVariant : latestRelease && isUpToDate ? colors.surfaceVariant : colors.primary
+										}
+									]}
+								>
+									<Ionicons name="cloud-download-outline" size={20} color="#FFFFFF" />
+									<Text style={styles.actionButtonText}>
+										{latestRelease ? (isUpToDate ? translate('up_to_date', 'Up to Date') : translate('download_update', 'Download Update')) : translate('check_for_updates', 'Check for Updates')}
+									</Text>
+								</TouchableOpacity>
+							)}
+						</View>
 
-							{isAndroid && (
+						{/* Clipboard and Share Utilities */}
+						{latestRelease && (
+							<View style={styles.utilitiesRow}>
+								<TouchableOpacity onPress={handleCopyUrl} style={[styles.utilityBtn, { backgroundColor: colors.surface }]}>
+									<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={18} color={copied ? colors.success : colors.textSecondary} />
+									<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}</Text>
+								</TouchableOpacity>
+
 								<TouchableOpacity onPress={handleShareUrl} style={[styles.utilityBtn, { backgroundColor: colors.surface }]}>
 									<Ionicons name="share-social-outline" size={18} color={colors.textSecondary} />
 									<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{translate('share_url', 'Share Link')}</Text>
 								</TouchableOpacity>
-							)}
 
-							<TouchableOpacity onPress={() => checkForUpdates(true)} disabled={isChecking} style={[styles.utilityBtn, { backgroundColor: colors.surface }]}>
-								<Ionicons name="sync-outline" size={18} color={colors.textSecondary} />
-								<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{translate('refresh', 'Refresh')}</Text>
-							</TouchableOpacity>
-						</View>
-					)}
-				</View>
+								<TouchableOpacity onPress={() => checkForUpdates(true)} disabled={isChecking} style={[styles.utilityBtn, { backgroundColor: colors.surface }]}>
+									<Ionicons name="sync-outline" size={18} color={colors.textSecondary} />
+									<Text style={[styles.utilityBtnText, { color: colors.textSecondary }]}>{translate('refresh', 'Refresh')}</Text>
+								</TouchableOpacity>
+							</View>
+						)}
+					</View>
+				)}
 
 				{/* Android cached installer and storage checker section */}
 				{isAndroid && renderAndroidSection()}
 
 				{/* Changelog (Body) Section */}
-				{latestRelease && latestRelease.changelog !== '' && (
+				{(isWeb || (latestRelease && latestRelease.changelog !== '')) && (
 					<View style={[styles.card, { borderColor: colors.borderLight }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('whats_new', "What's New")}</Text>
 						<View style={[styles.changelogBox, { backgroundColor: colors.surface }]}>
-							<Text style={[styles.changelogText, { color: colors.text }]}>{latestRelease.changelog}</Text>
+							<Text style={[styles.changelogText, { color: colors.text }]}>
+								{latestRelease && latestRelease.changelog !== '' ? latestRelease.changelog : translate('no_changelog', 'No changelog details available.')}
+							</Text>
 						</View>
 					</View>
 				)}

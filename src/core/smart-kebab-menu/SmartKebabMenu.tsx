@@ -7,7 +7,8 @@ import { translate } from '@/core/translation'
 import { SmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
 
-import { useUpdates } from '@/features/updates'
+import { useUpdates, isVersionGreater } from '@/features/updates'
+import { APP_VERSION } from '@/config'
 
 export const SmartKebabMenu: React.FC = () => {
 	const { colors } = useTheme()
@@ -19,7 +20,7 @@ export const SmartKebabMenu: React.FC = () => {
 	const context = useContext(SmartKebabMenuContext)
 	const screenItems = context ? context.screenItems : []
 
-	const { isDownloading, downloadProgress, downloadedApks } = useUpdates()
+	const { isDownloading, downloadProgress, downloadedApks, latestRelease } = useUpdates()
 
 	const [isOpen, setIsOpen] = useState(false)
 	const scaleAnim = useRef(new Animated.Value(0)).current
@@ -100,8 +101,12 @@ export const SmartKebabMenu: React.FC = () => {
 		if (hasInstallable) {
 			return 'READY'
 		}
-		return 'NEW'
-	}, [isDownloading, downloadProgress, downloadedApks])
+		const hasDownloadable = latestRelease && isVersionGreater(latestRelease.latest_version, APP_VERSION)
+		if (hasDownloadable) {
+			return 'NEW'
+		}
+		return undefined
+	}, [isDownloading, downloadProgress, downloadedApks, latestRelease])
 
 	// Default menu items: /settings and /updates
 	const defaultItems: SmartKebabMenuItem[] = useMemo(
