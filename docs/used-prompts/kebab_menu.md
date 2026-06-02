@@ -2,7 +2,7 @@
 
 Create a reusable kebab menu named SmartKebabMenu that integrates with the existing `SmartScreenHeader`
 
-SmartKebabMenu should be visible in headerRight of the header on any screen
+SmartKebabMenu should be visible in headerRight of SmartScreenHeader on any screen
 
 SmartKebabMenu should has 2 default menu items:
  - /settings

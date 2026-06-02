@@ -360,8 +360,7 @@ export default function AuthScreen() {
 
 	return (
 		<View style={styles.outerContainer}>
-			{/* Responsive Smart Header */}
-			<SmartScreenHeader title={translate('auth_title', 'Drinaluza')} showBackButton={true} onBackPress={() => router.replace('/(home)/feed')} safeArea={true} />
+			<SmartScreenHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/(home)/feed" loading={loading} />
 
 			<KeyboardSafeView style={styles.flex} contentContainerStyle={styles.scrollContent} extraScrollHeight={120} dismissKeyboardOnTap>
 				{/* Glassmorphic Auth Panel Container */}
@@ -502,6 +501,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			flex: 1,
 			backgroundColor: colors.background
 		},
+
 		flex: {
 			flex: 1
 		},

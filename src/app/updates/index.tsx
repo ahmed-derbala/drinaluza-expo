@@ -317,8 +317,7 @@ export default function UpdatesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			{/* Custom Responsive Header */}
-			<SmartScreenHeader title={translate('updates', 'Updates')} showBackButton={true} safeArea={true} />
+			<SmartScreenHeader title={translate('updates', 'Updates')} fallbackRoute="/(home)/feed" loading={isChecking || isDownloading} />
 
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
 				{isWeb ? (
@@ -471,6 +470,7 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1
 	},
+
 	scrollContent: {
 		padding: 16,
 		paddingBottom: 40,
@@ -516,6 +516,12 @@ const styles = StyleSheet.create({
 	},
 	actionBlock: {
 		marginTop: 20,
+		width: '100%'
+	},
+	buttonRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 12,
 		width: '100%'
 	},
 	actionButton: {

@@ -1,19 +1,13 @@
----
-trigger: always_on
----
-
 /auth is the authentication screen
 
 recommended auth code locations
-src/app/auth
-src/features/auth
+src/app/auth/
+src/features/auth/
 
 always use already built component when possible like storage, SmartImageViewer, translation, Toast, KeyboardSafeView
 
-in the header:
-- home icon: navigates to home screen
+in headerRight:
 - reset icon: destory storage
-
 
 show list of available app languages with horizontal scroll bar, only show flags:
 - tunisian arabic (tn_arab) (default): Tunisia flag with letter "ع"
@@ -25,11 +19,10 @@ show list of available app languages with horizontal scroll bar, only show flags
 
 show list of saved accounts loaded from storage with vertical scroll bar:
 - user photo
-- user name based on the above selected language, defaults to english because only english is required in multilanguage fields in the database
+- user name based on the above selected language, defaults to english
 - user slug
 - last accessed date
 - remove icon
-
 
 show welcome form:
 - slug textfield: 
@@ -78,7 +71,7 @@ example responces
     "data": null
 }
 
-- POST /api/auth/singup
+- POST /api/auth/signup
 example responces
 {
     "level": "verbose",
@@ -127,12 +120,12 @@ example responces
     "data": null
 }
 
-- POST /api/auth/singout
+- POST /api/auth/signout
 example responces
 {
     "level": "verbose",
     "status": 200,
-    "message": "singedout",
+    "message": "signedout",
     "data": {
         "acknowledged": true,
         "deletedCount": 1
@@ -146,4 +139,4 @@ example responces
     "data": null
 }
 
-use KeyboardSafeView so when keyboard opens, the welcome form scrolls up to not be covered by the keyboard
+use KeyboardSafeView so keyboard does not cover the welcome form. the welcome form should move up when keyboard is opened

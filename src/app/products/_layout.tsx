@@ -1,14 +1,12 @@
 import { Stack } from 'expo-router'
-import { Platform } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { getSmartHeaderOptions } from '@/core/smart-screen-header'
+import { SmartScreenHeader } from '@/core/smart-screen-header'
 
 export default function ProductsLayout() {
 	return (
 		<Stack
 			screenOptions={{
-				...getSmartHeaderOptions(),
 				headerShown: true,
+				header: (props) => <SmartScreenHeader {...props} />,
 				contentStyle: {
 					backgroundColor: '#000000'
 				}
