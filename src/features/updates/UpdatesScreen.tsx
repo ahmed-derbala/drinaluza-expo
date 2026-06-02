@@ -1,436 +1,516 @@
 import React, { useState, useEffect } from 'react'
-import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform, Modal, Dimensions } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform, useWindowDimensions, Modal, Share } from 'react-native'
+import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import * as FileSystem from 'expo-file-system/legacy'
-import * as Sharing from 'expo-sharing'
 import * as Clipboard from 'expo-clipboard'
-import { useUpdates } from '@/core/updates/UpdatesContext'
-import { useTheme } from '@/core/theme'
+import * as Sharing from 'expo-sharing'
 import { translate } from '@/core/translation'
-import { APP_VERSION } from '@/config'
+import { useTheme } from '@/core/theme'
+import { useUpdates, compareVersions } from '@/core/updates/UpdatesContext'
 import { SmartScreenHeader } from '@/core/smart-screen-header/SmartScreenHeader'
-import { toast } from '@/features/common/Toast'
-import { compareVersions } from '@/core/updates/UpdatesContext'
+import { log } from '@/core/log'
+import { APP_VERSION } from '@/config'
 
-const { width } = Dimensions.get('window')
+// Helper to format bytes nicely
+function formatBytes(bytes: number, decimals = 2) {
+	if (bytes === 0) return '0 Bytes'
+	const k = 1024
+	const dm = decimals < 0 ? 0 : decimals
+	const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
+	const i = Math.floor(Math.log(bytes) / Math.log(k))
+	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
+}
+
+// Helper to format date
+function formatDate(dateStr: string) {
+	if (!dateStr) return ''
+	try {
+		const d = new Date(dateStr)
+		return d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+	} catch {
+		return dateStr
+	}
+}
 
 export const UpdatesScreen: React.FC = () => {
+	const router = useRouter()
 	const { colors } = useTheme()
-	const { status, downloadProgress, updateInfo, downloadedApks, cachedApk, checkForUpdates, downloadUpdate, installApk, deleteApk } = useUpdates()
+	const { width } = useWindowDimensions()
 
-	const [freeStorage, setFreeStorage] = useState<number | null>(null)
-	const [showShareModal, setShowShareModal] = useState(false)
-	const [showQuickShareInfo, setShowQuickShareInfo] = useState(false)
+	const { updateInfo, status, downloadProgress, downloadedApks, freeDiskStorage, checkForUpdates, downloadUpdate, cancelDownload, deleteApk, installApk, refreshDownloadedList } = useUpdates()
+
+	const [checking, setChecking] = useState(false)
+	const [shareModalVisible, setShareModalVisible] = useState(false)
+	const [quickShareModalVisible, setQuickShareModalVisible] = useState(false)
+	const [toastMsg, setToastMsg] = useState<string | null>(null)
 
 	const isAndroid = Platform.OS === 'android'
+	const isTabletOrWeb = width >= 768
 
-	useEffect(() => {
-		if (isAndroid) {
-			FileSystem.getFreeDiskStorageAsync()
-				.then((bytes) => setFreeStorage(bytes))
-				.catch(() => {})
-		}
-	}, [isAndroid])
-
-	const formatBytes = (bytes?: number) => {
-		if (!bytes) return '0 Bytes'
-		const k = 1024
-		const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB']
-		const i = Math.floor(Math.log(bytes) / Math.log(k))
-		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-	}
-
-	const formatDate = (isoStr?: string) => {
-		if (!isoStr) return ''
-		try {
-			const d = new Date(isoStr)
-			return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-		} catch {
-			return isoStr
+	// Back action: if there is no previous screen, back opens /feed
+	const handleBack = () => {
+		if (router.canGoBack()) {
+			router.back()
+		} else {
+			router.replace('/(home)/feed')
 		}
 	}
 
 	const handleCheckForUpdates = async () => {
-		const info = await checkForUpdates()
-		if (info) {
-			const hasNew = compareVersions(info.latest_version, APP_VERSION) > 0
-			if (!hasNew) {
-				toast.show({
-					title: translate('success', 'Success'),
-					message: translate('updates_up_to_date', 'Your app is up to date!'),
-					color: colors.success || '#10B981'
-				})
-			}
-		} else {
-			toast.show({
-				title: translate('error', 'Error'),
-				message: translate('unknown_error_message', 'An unexpected error occurred.'),
-				color: colors.error || '#EF4444'
-			})
+		setChecking(true)
+		try {
+			await checkForUpdates()
+		} finally {
+			setChecking(false)
 		}
+	}
+
+	const handleDownload = async () => {
+		if (!updateInfo?.download_url) return
+		await downloadUpdate(updateInfo.download_url, updateInfo.latest_version)
 	}
 
 	const handleShare = async () => {
+		if (!updateInfo) return
+
 		if (isAndroid) {
-			setShowShareModal(true)
+			// On Android, if there is a downloaded APK ready/cached, offer file sharing
+			const latestApk = downloadedApks.find((apk) => compareVersions(apk.version, updateInfo.latest_version) === 0)
+			if (latestApk) {
+				setShareModalVisible(true)
+			} else {
+				// Otherwise, directly share the URL
+				try {
+					await Share.share({
+						message: `${translate('updates_new_available', 'A new version is available!')} ${updateInfo.name}\n${updateInfo.download_url}`
+					})
+				} catch (err) {
+					log({ level: 'error', label: 'UpdatesScreen', message: 'Sharing failed', error: err })
+				}
+			}
 		} else {
-			// Web copy download URL
-			if (updateInfo?.download_url) {
-				await Clipboard.setStringAsync(updateInfo.download_url)
-				toast.show({
-					title: translate('success', 'Success'),
-					message: translate('updates_share_toast', 'Download link copied to clipboard!'),
-					color: colors.primary || '#0EA5E9'
-				})
-			}
-		}
-	}
-
-	const shareApk = async () => {
-		if (!cachedApk) return
-		setShowShareModal(false)
-		setShowQuickShareInfo(true)
-	}
-
-	const proceedWithApkShare = async () => {
-		if (!cachedApk) return
-		setShowQuickShareInfo(false)
-		try {
-			if (await Sharing.isAvailableAsync()) {
-				await Sharing.shareAsync(cachedApk.uri)
-			}
-		} catch {}
-	}
-
-	const shareUrlOnly = async () => {
-		setShowShareModal(false)
-		if (updateInfo?.download_url) {
+			// On Web, copy download url to clipboard
 			await Clipboard.setStringAsync(updateInfo.download_url)
-			toast.show({
-				title: translate('success', 'Success'),
-				message: translate('updates_share_toast', 'Download link copied to clipboard!'),
-				color: colors.primary || '#0EA5E9'
-			})
+			showToast(translate('updates_share_toast', 'Download link copied to clipboard!'))
 		}
 	}
 
-	const hasUpdate = updateInfo ? compareVersions(updateInfo.latest_version, APP_VERSION) > 0 : false
+	const shareOnlyUrl = async () => {
+		setShareModalVisible(false)
+		if (!updateInfo) return
+		try {
+			await Share.share({
+				message: `${translate('updates_new_available', 'A new version is available!')} ${updateInfo.name}\n${updateInfo.download_url}`
+			})
+		} catch (err) {
+			log({ level: 'error', label: 'UpdatesScreen', message: 'Sharing failed', error: err })
+		}
+	}
 
-	return (
-		<View style={[styles.container, { backgroundColor: '#000000' }]}>
-			<SmartScreenHeader title={translate('updates_title', 'App Updates')} showBackButton={true} />
+	const shareApkFile = () => {
+		setShareModalVisible(false)
+		// Recommendation to use quick share
+		setQuickShareModalVisible(true)
+	}
 
-			<ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-				{/* Top Hero Card */}
-				<View style={[styles.heroCard, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
-					<View style={styles.heroHeader}>
-						<Ionicons name={hasUpdate ? 'arrow-down-circle-outline' : 'checkmark-circle-outline'} size={44} color={hasUpdate ? colors.primary || '#0EA5E9' : colors.success || '#10B981'} />
-						<View style={styles.heroHeaderTexts}>
-							<Text style={[styles.heroTitle, { color: colors.text }]}>
-								{hasUpdate ? translate('updates_new_available', 'A new version is available!') : translate('updates_up_to_date', 'Your app is up to date!')}
-							</Text>
-							<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>Drinaluza Business Manager</Text>
+	const proceedSharingApkFile = async () => {
+		setQuickShareModalVisible(false)
+		if (!updateInfo) return
+		const latestApk = downloadedApks.find((apk) => compareVersions(apk.version, updateInfo.latest_version) === 0)
+		if (latestApk) {
+			try {
+				await Sharing.shareAsync(latestApk.uri, {
+					mimeType: 'application/vnd.android.package-archive',
+					dialogTitle: translate('updates_share_title', 'Share Update')
+				})
+			} catch (err) {
+				log({ level: 'error', label: 'UpdatesScreen', message: 'File sharing failed', error: err })
+			}
+		}
+	}
+
+	const handleRefreshWeb = () => {
+		if (Platform.OS === 'web') {
+			window.location.reload()
+		}
+	}
+
+	const showToast = (msg: string) => {
+		setToastMsg(msg)
+		setTimeout(() => setToastMsg(null), 3000)
+	}
+
+	// Trigger checked updates on initial mount if not fetched yet
+	useEffect(() => {
+		if (!updateInfo) {
+			handleCheckForUpdates()
+		} else if (isAndroid) {
+			refreshDownloadedList()
+		}
+	}, [])
+
+	const hasUpdate = updateInfo ? compareVersions(APP_VERSION, updateInfo.latest_version) < 0 : false
+
+	const renderMainContent = () => {
+		return (
+			<View style={styles.cardContainer}>
+				{/* Header Info */}
+				<View style={[styles.infoCard, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
+					<View style={styles.infoRow}>
+						<Ionicons name="phone-portrait-outline" size={24} color={colors.primary || '#0EA5E9'} />
+						<View style={styles.infoTextContainer}>
+							<Text style={[styles.infoLabel, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_current_version', 'Current Version')}</Text>
+							<Text style={[styles.infoValue, { color: colors.text || '#F8FAFC' }]}>{APP_VERSION}</Text>
 						</View>
 					</View>
-
-					{/* Version comparison row */}
-					<View style={[styles.versionRow, { borderTopColor: colors.borderLight || '#1E293B' }]}>
-						<View style={styles.versionCol}>
-							<Text style={[styles.versionLabel, { color: colors.textTertiary }]}>{translate('updates_current_version', 'Current Version')}</Text>
-							<Text style={[styles.versionValue, { color: colors.text }]}>{APP_VERSION}</Text>
-						</View>
-						<View style={[styles.versionDivider, { backgroundColor: colors.borderLight || '#1E293B' }]} />
-						<View style={styles.versionCol}>
-							<Text style={[styles.versionLabel, { color: colors.textTertiary }]}>{translate('updates_latest_version', 'Latest Version')}</Text>
-							<Text style={[styles.versionValue, { color: colors.text }]}>{updateInfo ? updateInfo.latest_version : '--'}</Text>
-						</View>
-					</View>
-				</View>
-
-				{/* Primary Platform Controls */}
-				<View style={styles.controlsRow}>
-					<Pressable
-						onPress={handleCheckForUpdates}
-						disabled={status === 'checking'}
-						style={({ pressed }) => [
-							styles.button,
-							{
-								backgroundColor: colors.borderLight || '#1E293B',
-								borderColor: colors.border || '#3A506B',
-								opacity: pressed || status === 'checking' ? 0.7 : 1
-							}
-						]}
-					>
-						{status === 'checking' ? (
-							<ActivityIndicator size="small" color={colors.primary} />
-						) : (
-							<>
-								<Ionicons name="refresh" size={20} color={colors.primary} />
-								<Text style={[styles.buttonText, { color: colors.text }]}>{translate('updates_check_btn', 'Check for Updates')}</Text>
-							</>
-						)}
-					</Pressable>
 
 					{updateInfo && (
-						<Pressable
-							onPress={handleShare}
-							style={({ pressed }) => [
-								styles.button,
-								{
-									backgroundColor: colors.borderLight || '#1E293B',
-									borderColor: colors.border || '#3A506B',
-									opacity: pressed ? 0.7 : 1
-								}
-							]}
-						>
-							<Ionicons name="share-social-outline" size={20} color={colors.primary} />
-							<Text style={[styles.buttonText, { color: colors.text }]}>{translate('updates_share_title', 'Share Update')}</Text>
-						</Pressable>
+						<>
+							<View style={[styles.divider, { backgroundColor: colors.borderLight || '#1E293B' }]} />
+
+							<View style={styles.infoRow}>
+								<Ionicons name="cloud-upload-outline" size={24} color="#10B981" />
+								<View style={styles.infoTextContainer}>
+									<Text style={[styles.infoLabel, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_latest_version', 'Latest Version')}</Text>
+									<Text style={[styles.infoValue, { color: colors.text || '#F8FAFC' }]}>
+										{updateInfo.latest_version} {hasUpdate && <Text style={{ color: colors.primary, fontSize: 12 }}>({translate('updates_new_available', 'A new version is available!')})</Text>}
+									</Text>
+								</View>
+							</View>
+
+							<View style={[styles.divider, { backgroundColor: colors.borderLight || '#1E293B' }]} />
+
+							<View style={styles.metaGrid}>
+								<View style={styles.metaItem}>
+									<Text style={[styles.metaLabel, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_published_date', 'Published Date')}</Text>
+									<Text style={[styles.metaValue, { color: colors.text || '#F8FAFC' }]}>{formatDate(updateInfo.published_at)}</Text>
+								</View>
+
+								<View style={styles.metaItem}>
+									<Text style={[styles.metaLabel, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_file_size', 'File Size')}</Text>
+									<Text style={[styles.metaValue, { color: colors.text || '#F8FAFC' }]}>{formatBytes(updateInfo.size)}</Text>
+								</View>
+
+								<View style={styles.metaItem}>
+									<Text style={[styles.metaLabel, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_download_count', 'Downloads')}</Text>
+									<Text style={[styles.metaValue, { color: colors.text || '#F8FAFC' }]}>{updateInfo.download_count}</Text>
+								</View>
+
+								{isAndroid && (
+									<View style={styles.metaItem}>
+										<Text style={[styles.metaLabel, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_free_storage', 'Free Storage')}</Text>
+										<Text style={[styles.metaValue, { color: colors.text || '#F8FAFC' }]}>{formatBytes(freeDiskStorage)}</Text>
+									</View>
+								)}
+							</View>
+						</>
 					)}
 				</View>
 
-				{/* Update Information Details Card */}
-				{updateInfo && (
-					<View style={[styles.infoCard, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
-						{updateInfo.name && (
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>Release Name</Text>
-								<Text style={[styles.infoValue, { color: colors.text }]} numberOfLines={1}>
-									{updateInfo.name}
-								</Text>
-							</View>
-						)}
-
-						{updateInfo.published_at && (
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('updates_published_date', 'Published Date')}</Text>
-								<Text style={[styles.infoValue, { color: colors.text }]}>{formatDate(updateInfo.published_at)}</Text>
-							</View>
-						)}
-
-						<View style={styles.infoRow}>
-							<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('updates_file_size', 'File Size')}</Text>
-							<Text style={[styles.infoValue, { color: colors.text }]}>{formatBytes(updateInfo.size)}</Text>
-						</View>
-
-						{isAndroid && freeStorage !== null && (
-							<View style={styles.infoRow}>
-								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('updates_free_storage', 'Free Storage')}</Text>
-								<Text style={[styles.infoValue, { color: colors.text }]}>{formatBytes(freeStorage)}</Text>
-							</View>
-						)}
-
-						<View style={styles.infoRow}>
-							<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('updates_download_count', 'Downloads')}</Text>
-							<Text style={[styles.infoValue, { color: colors.text }]}>{updateInfo.download_count}</Text>
-						</View>
-					</View>
-				)}
-
-				{/* What's New Collapsible / Scrollable panel */}
-				{updateInfo?.changelog && (
+				{/* What's New Block */}
+				{updateInfo?.changelog ? (
 					<View style={[styles.changelogCard, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
-						<Text style={[styles.changelogTitle, { color: colors.text }]}>{translate('updates_whats_new', "What's New")}</Text>
-						<Text style={[styles.changelogBody, { color: colors.textSecondary }]}>{updateInfo.changelog}</Text>
+						<Text style={[styles.changelogTitle, { color: colors.text || '#F8FAFC' }]}>{translate('updates_whats_new', "What's New")}</Text>
+						<ScrollView style={styles.changelogScroll} nestedScrollEnabled>
+							<Text style={[styles.changelogText, { color: colors.textSecondary || '#94A3B8' }]}>{updateInfo.changelog}</Text>
+						</ScrollView>
 					</View>
-				)}
+				) : null}
+			</View>
+		)
+	}
 
-				{/* Main Action Action (Download / Install) */}
-				{updateInfo && (
-					<View style={styles.primaryActionContainer}>
-						{status === 'downloading' ? (
-							<View style={styles.downloadProgressContainer}>
-								<View style={[styles.progressBarTrack, { backgroundColor: colors.borderLight || '#1E293B' }]}>
-									<View
-										style={[
-											styles.progressBarFill,
+	const renderActions = () => {
+		const isDownloading = status === 'downloading'
+		const downloadBtnDisabled = !hasUpdate || isDownloading
+
+		return (
+			<View style={styles.cardContainer}>
+				{/* Update Checking/Action Panel */}
+				<View style={[styles.actionsCard, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
+					{isDownloading && (
+						<View style={styles.progressContainer}>
+							<View style={styles.progressRow}>
+								<Text style={[styles.progressLabel, { color: colors.text || '#F8FAFC' }]}>{translate('updates_downloading', 'Downloading update...')}</Text>
+								<Text style={[styles.progressPercent, { color: colors.primary || '#0EA5E9' }]}>{Math.round(downloadProgress * 100)}%</Text>
+							</View>
+							<View style={[styles.progressBarTrack, { backgroundColor: colors.borderLight || '#1E293B' }]}>
+								<View style={[styles.progressBarFill, { width: `${downloadProgress * 100}%`, backgroundColor: colors.primary || '#0EA5E9' }]} />
+							</View>
+							<Pressable onPress={cancelDownload} style={[styles.cancelBtn, { borderColor: colors.error || '#EF4444' }]} accessibilityRole="button" accessibilityLabel="Cancel download">
+								<Text style={[styles.cancelBtnText, { color: colors.error || '#EF4444' }]}>{translate('cancel', 'Cancel')}</Text>
+							</Pressable>
+						</View>
+					)}
+
+					<View style={styles.btnStack}>
+						{isAndroid ? (
+							<>
+								{/* Download Button */}
+								<Pressable
+									disabled={downloadBtnDisabled}
+									onPress={handleDownload}
+									style={({ pressed }) => [
+										styles.actionBtn,
+										{
+											backgroundColor: downloadBtnDisabled ? '#334155' : colors.primary || '#0EA5E9',
+											opacity: pressed && !downloadBtnDisabled ? 0.8 : 1
+										}
+									]}
+									accessibilityRole="button"
+									accessibilityLabel="Download Update"
+									accessibilityState={{ disabled: downloadBtnDisabled }}
+								>
+									{status === 'checking' || checking ? (
+										<ActivityIndicator size="small" color="#FFFFFF" />
+									) : (
+										<>
+											<Ionicons name="download-outline" size={18} color="#FFFFFF" style={styles.btnIcon} />
+											<Text style={styles.actionBtnText}>{translate('updates_download_btn', 'Download Update')}</Text>
+										</>
+									)}
+								</Pressable>
+
+								{/* Share Button */}
+								{updateInfo && (
+									<Pressable
+										onPress={handleShare}
+										style={({ pressed }) => [
+											styles.shareBtn,
 											{
-												backgroundColor: colors.primary || '#0EA5E9',
-												width: `${Math.round(downloadProgress * 100)}%`
+												borderColor: colors.primary || '#0EA5E9',
+												opacity: pressed ? 0.8 : 1
 											}
 										]}
-									/>
-								</View>
-								<Text style={[styles.progressText, { color: colors.textSecondary }]}>
-									{translate('updates_downloading', 'Downloading update...')} ({Math.round(downloadProgress * 100)}%)
-								</Text>
-							</View>
+										accessibilityRole="button"
+										accessibilityLabel="Share Update"
+									>
+										<Ionicons name="share-social-outline" size={18} color={colors.primary || '#0EA5E9'} style={styles.btnIcon} />
+										<Text style={[styles.shareBtnText, { color: colors.primary || '#0EA5E9' }]}>{translate('updates_share_title', 'Share Update')}</Text>
+									</Pressable>
+								)}
+							</>
 						) : (
-							isAndroid && (
+							<>
+								{/* Web Download Link */}
+								{updateInfo?.download_url ? (
+									<Pressable
+										disabled={!hasUpdate}
+										onPress={() => {
+											if (updateInfo.download_url) {
+												window.open(updateInfo.download_url, '_blank')
+											}
+										}}
+										style={({ pressed }) => [
+											styles.actionBtn,
+											{
+												backgroundColor: !hasUpdate ? '#334155' : colors.primary || '#0EA5E9',
+												opacity: pressed && hasUpdate ? 0.8 : 1
+											}
+										]}
+										accessibilityRole="button"
+										accessibilityLabel="Download Link"
+										accessibilityState={{ disabled: !hasUpdate }}
+									>
+										<Ionicons name="open-outline" size={18} color="#FFFFFF" style={styles.btnIcon} />
+										<Text style={styles.actionBtnText}>{translate('updates_download_btn', 'Download Update')}</Text>
+									</Pressable>
+								) : null}
+
+								{/* Web Refresh Page Button */}
 								<Pressable
-									onPress={downloadUpdate}
-									disabled={!hasUpdate && !cachedApk}
+									disabled={!hasUpdate}
+									onPress={handleRefreshWeb}
 									style={({ pressed }) => [
-										styles.primaryButton,
+										styles.shareBtn,
 										{
-											backgroundColor: hasUpdate || cachedApk ? colors.primary || '#0EA5E9' : colors.borderLight || '#1E293B',
-											opacity: pressed || (!hasUpdate && !cachedApk) ? 0.7 : 1
+											borderColor: !hasUpdate ? '#334155' : colors.primary || '#0EA5E9',
+											opacity: pressed && hasUpdate ? 0.8 : 1
 										}
 									]}
+									accessibilityRole="button"
+									accessibilityLabel="Refresh Web Client"
+									accessibilityState={{ disabled: !hasUpdate }}
 								>
-									<Ionicons name={cachedApk ? 'checkmark-circle' : 'cloud-download-outline'} size={20} color="#FFFFFF" />
-									<Text style={styles.primaryButtonText}>{cachedApk ? translate('updates_install_btn', 'Install') : translate('updates_download_btn', 'Download Update')}</Text>
+									<Ionicons name="refresh-outline" size={18} color={!hasUpdate ? '#64748B' : colors.primary || '#0EA5E9'} style={styles.btnIcon} />
+									<Text style={[styles.shareBtnText, { color: !hasUpdate ? '#64748B' : colors.primary || '#0EA5E9' }]}>{translate('refresh', 'Refresh')}</Text>
 								</Pressable>
-							)
+
+								{/* Web Copy Link Share Button */}
+								{updateInfo && (
+									<Pressable
+										onPress={handleShare}
+										style={({ pressed }) => [
+											styles.shareBtn,
+											{
+												borderColor: colors.primary || '#0EA5E9',
+												opacity: pressed ? 0.8 : 1
+											}
+										]}
+										accessibilityRole="button"
+										accessibilityLabel="Copy Download URL"
+									>
+										<Ionicons name="copy-outline" size={18} color={colors.primary || '#0EA5E9'} style={styles.btnIcon} />
+										<Text style={[styles.shareBtnText, { color: colors.primary || '#0EA5E9' }]}>{translate('updates_share_url', 'Share Download URL')}</Text>
+									</Pressable>
+								)}
+							</>
+						)}
+
+						{/* Global Check for Updates Button */}
+						<Pressable
+							disabled={checking}
+							onPress={handleCheckForUpdates}
+							style={({ pressed }) => [
+								styles.checkUpdatesBtn,
+								{
+									backgroundColor: '#1E293B',
+									borderColor: colors.border || '#3A506B',
+									opacity: pressed ? 0.8 : 1
+								}
+							]}
+							accessibilityRole="button"
+							accessibilityLabel="Check for Updates"
+							accessibilityState={{ disabled: checking }}
+						>
+							{checking ? (
+								<ActivityIndicator size="small" color={colors.primary || '#0EA5E9'} />
+							) : (
+								<>
+									<Ionicons name="sync-outline" size={18} color={colors.text || '#F8FAFC'} style={styles.btnIcon} />
+									<Text style={[styles.checkUpdatesBtnText, { color: colors.text || '#F8FAFC' }]}>{translate('updates_check_btn', 'Check for Updates')}</Text>
+								</>
+							)}
+						</Pressable>
+					</View>
+				</View>
+
+				{/* Android Downloaded APK List */}
+				{isAndroid && (
+					<View style={[styles.apkListCard, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
+						<Text style={[styles.apkListTitle, { color: colors.text || '#F8FAFC' }]}>{translate('downloads', 'Downloads')}</Text>
+
+						{downloadedApks.length === 0 ? (
+							<View style={styles.emptyContainer}>
+								<Ionicons name="folder-open-outline" size={32} color={colors.textTertiary || '#64748B'} />
+								<Text style={[styles.emptyText, { color: colors.textTertiary || '#64748B' }]}>{translate('updates_no_downloaded', 'No downloaded updates found.')}</Text>
+							</View>
+						) : (
+							<View style={styles.apkList}>
+								{downloadedApks.map((apk) => {
+									const isInstalled = compareVersions(APP_VERSION, apk.version) >= 0
+
+									return (
+										<View key={apk.uri} style={[styles.apkItem, { borderBottomColor: colors.borderLight || '#1E293B' }]}>
+											<View style={styles.apkInfo}>
+												<Text style={[styles.apkName, { color: colors.text || '#F8FAFC' }]} numberOfLines={1} ellipsizeMode="middle">
+													{apk.name}
+												</Text>
+												<Text style={[styles.apkMeta, { color: colors.textSecondary || '#94A3B8' }]}>
+													{formatBytes(apk.size)} • v{apk.version} {isInstalled && <Text style={{ color: '#10B981', fontSize: 10 }}>(Installed)</Text>}
+												</Text>
+											</View>
+
+											<View style={styles.apkActions}>
+												<Pressable
+													onPress={() => installApk(apk.uri)}
+													style={[styles.apkBtn, styles.installApkBtn, { backgroundColor: '#10B981' }]}
+													accessibilityRole="button"
+													accessibilityLabel={`Install ${apk.name}`}
+												>
+													<Text style={styles.apkBtnText}>{translate('updates_install_btn', 'Install')}</Text>
+												</Pressable>
+
+												<Pressable
+													onPress={() => deleteApk(apk.uri)}
+													style={[styles.apkBtn, styles.deleteApkBtn, { backgroundColor: colors.error || '#EF4444' }]}
+													accessibilityRole="button"
+													accessibilityLabel={`Delete ${apk.name}`}
+												>
+													<Text style={styles.apkBtnText}>{translate('updates_delete_btn', 'Delete')}</Text>
+												</Pressable>
+											</View>
+										</View>
+									)
+								})}
+							</View>
 						)}
 					</View>
 				)}
+			</View>
+		)
+	}
 
-				{/* List of downloaded APK files details (Android only) */}
-				{isAndroid && (
-					<View style={styles.downloadsSection}>
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('downloads', 'Downloads')}</Text>
+	return (
+		<View style={[styles.container, { backgroundColor: '#000000' }]}>
+			<SmartScreenHeader title={translate('updates_title', 'App Updates')} showBackButton={true} onBackPress={handleBack} />
 
-						{downloadedApks.length === 0 ? (
-							<View style={[styles.emptyContainer, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
-								<Ionicons name="folder-open-outline" size={28} color={colors.textTertiary} />
-								<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('updates_no_downloaded', 'No downloaded updates found.')}</Text>
-							</View>
-						) : (
-							downloadedApks.map((apk) => (
-								<View
-									key={apk.uri}
-									style={[
-										styles.apkCard,
-										{
-											backgroundColor: colors.card || '#1C2541',
-											borderColor: colors.border || '#3A506B'
-										}
-									]}
-								>
-									<View style={styles.apkLeft}>
-										<Ionicons name="document-text-outline" size={24} color={colors.primary} />
-										<View style={styles.apkTexts}>
-											<Text style={[styles.apkName, { color: colors.text }]} numberOfLines={1}>
-												{apk.name}
-											</Text>
-											<Text style={[styles.apkDetails, { color: colors.textSecondary }]}>
-												Version: {apk.version} • {formatBytes(apk.size)}
-											</Text>
-										</View>
-									</View>
-
-									<View style={styles.apkActions}>
-										<Pressable
-											onPress={() => deleteApk(apk.uri)}
-											style={({ pressed }) => [
-												styles.apkActionBtn,
-												{
-													backgroundColor: 'rgba(239, 68, 68, 0.1)',
-													opacity: pressed ? 0.6 : 1
-												}
-											]}
-										>
-											<Ionicons name="trash-outline" size={16} color={colors.error || '#EF4444'} />
-										</Pressable>
-
-										<Pressable
-											onPress={() => installApk(apk.uri)}
-											style={({ pressed }) => [
-												styles.apkActionBtn,
-												{
-													backgroundColor: 'rgba(16, 185, 129, 0.1)',
-													opacity: pressed ? 0.6 : 1
-												}
-											]}
-										>
-											<Ionicons name="checkmark-circle-outline" size={16} color={colors.success || '#10B981'} />
-										</Pressable>
-									</View>
-								</View>
-							))
-						)}
+			<ScrollView style={styles.scrollBody} contentContainerStyle={styles.scrollContent}>
+				{isTabletOrWeb ? (
+					<View style={styles.rowLayout}>
+						<View style={styles.colLeft}>{renderMainContent()}</View>
+						<View style={styles.colRight}>{renderActions()}</View>
+					</View>
+				) : (
+					<View style={styles.columnLayout}>
+						{renderMainContent()}
+						{renderActions()}
 					</View>
 				)}
 			</ScrollView>
 
-			{/* Android Sharing Choice Modal */}
-			<Modal visible={showShareModal} transparent={true} animationType="fade" onRequestClose={() => setShowShareModal(false)}>
-				<Pressable style={styles.modalOverlay} onPress={() => setShowShareModal(false)}>
-					<View
-						style={[
-							styles.modalContent,
-							{
-								backgroundColor: colors.card || '#1C2541',
-								borderColor: colors.border || '#3A506B'
-							}
-						]}
-					>
-						<Text style={[styles.modalTitle, { color: colors.text }]}>{translate('updates_share_title', 'Share Update')}</Text>
-						<Text style={[styles.modalPrompt, { color: colors.textSecondary }]}>{translate('updates_share_prompt', 'How would you like to share the update?')}</Text>
+			{/* Custom Toast Alert */}
+			{toastMsg && (
+				<View style={[styles.toastContainer, { backgroundColor: colors.surface || '#1C2541', borderColor: colors.primary || '#0EA5E9' }]}>
+					<Text style={[styles.toastText, { color: colors.text || '#F8FAFC' }]}>{toastMsg}</Text>
+				</View>
+			)}
 
-						<Pressable
-							onPress={shareUrlOnly}
-							style={({ pressed }) => [
-								styles.modalBtn,
-								{
-									backgroundColor: colors.borderLight || '#1E293B',
-									opacity: pressed ? 0.8 : 1
-								}
-							]}
-						>
-							<Ionicons name="copy-outline" size={20} color={colors.primary} />
-							<Text style={[styles.modalBtnText, { color: colors.text }]}>{translate('updates_share_url', 'Share Download URL')}</Text>
-						</Pressable>
+			{/* Android Android APK Share Sheet Dialog */}
+			<Modal visible={shareModalVisible} transparent animationType="fade" onRequestClose={() => setShareModalVisible(false)}>
+				<Pressable style={styles.modalBackdrop} onPress={() => setShareModalVisible(false)}>
+					<View style={[styles.modalContent, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
+						<Text style={[styles.modalTitle, { color: colors.text || '#F8FAFC' }]}>{translate('updates_share_title', 'Share Update')}</Text>
+						<Text style={[styles.modalPrompt, { color: colors.textSecondary || '#94A3B8' }]}>{translate('updates_share_prompt', 'How would you like to share the update?')}</Text>
 
-						{cachedApk && (
-							<Pressable
-								onPress={shareApk}
-								style={({ pressed }) => [
-									styles.modalBtn,
-									{
-										backgroundColor: colors.borderLight || '#1E293B',
-										opacity: pressed ? 0.8 : 1
-									}
-								]}
-							>
-								<Ionicons name="logo-android" size={20} color={colors.success || '#10B981'} />
-								<Text style={[styles.modalBtnText, { color: colors.text }]}>{translate('updates_share_apk', 'Share APK File')}</Text>
+						<View style={styles.modalActions}>
+							<Pressable onPress={shareOnlyUrl} style={[styles.modalBtn, { borderColor: colors.primary || '#0EA5E9', borderWidth: 1 }]}>
+								<Text style={[styles.modalBtnText, { color: colors.primary || '#0EA5E9' }]}>{translate('updates_share_url', 'Share Download URL')}</Text>
 							</Pressable>
-						)}
 
-						<Pressable onPress={() => setShowShareModal(false)} style={({ pressed }) => [styles.modalCancelBtn, { opacity: pressed ? 0.6 : 1 }]}>
-							<Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{translate('cancel', 'Cancel')}</Text>
-						</Pressable>
+							<Pressable onPress={shareApkFile} style={[styles.modalBtn, { backgroundColor: colors.primary || '#0EA5E9' }]}>
+								<Text style={[styles.modalBtnText, { color: '#FFFFFF' }]}>{translate('updates_share_apk', 'Share APK File')}</Text>
+							</Pressable>
+
+							<Pressable onPress={() => setShareModalVisible(false)} style={[styles.modalBtn, { backgroundColor: '#1E293B', marginTop: 10 }]}>
+								<Text style={[styles.modalBtnText, { color: colors.textSecondary || '#94A3B8' }]}>{translate('cancel', 'Cancel')}</Text>
+							</Pressable>
+						</View>
 					</View>
 				</Pressable>
 			</Modal>
 
-			{/* Android Quick Share Alert Info Modal */}
-			<Modal visible={showQuickShareInfo} transparent={true} animationType="fade" onRequestClose={() => setShowQuickShareInfo(false)}>
-				<Pressable style={styles.modalOverlay} onPress={() => setShowQuickShareInfo(false)}>
-					<View
-						style={[
-							styles.modalContent,
-							{
-								backgroundColor: colors.card || '#1C2541',
-								borderColor: colors.border || '#3A506B'
-							}
-						]}
-					>
-						<Ionicons name="flash-outline" size={36} color={colors.warning || '#F59E0B'} style={{ marginBottom: 12 }} />
-						<Text style={[styles.modalTitle, { color: colors.text }]}>{translate('updates_quick_share_title', 'Fast Sharing')}</Text>
-						<Text style={[styles.modalPrompt, { color: colors.textSecondary, textAlign: 'center', lineHeight: 18 }]}>
+			{/* Quick Share Tip Dialog */}
+			<Modal visible={quickShareModalVisible} transparent animationType="fade" onRequestClose={() => setQuickShareModalVisible(false)}>
+				<Pressable style={styles.modalBackdrop} onPress={() => setQuickShareModalVisible(false)}>
+					<View style={[styles.modalContent, { backgroundColor: colors.card || '#1C2541', borderColor: colors.border || '#3A506B' }]}>
+						<View style={styles.modalHeaderIconContainer}>
+							<Ionicons name="flash-outline" size={40} color="#F59E0B" />
+						</View>
+						<Text style={[styles.modalTitle, { color: colors.text || '#F8FAFC', textAlign: 'center' }]}>{translate('updates_quick_share_title', 'Fast Sharing')}</Text>
+						<Text style={[styles.modalPrompt, { color: colors.textSecondary || '#94A3B8', textAlign: 'center' }]}>
 							{translate('updates_quick_share_desc', 'We recommend using Quick Share or Wi-Fi Direct for faster local transfers to other devices.')}
 						</Text>
 
-						<Pressable
-							onPress={proceedWithApkShare}
-							style={({ pressed }) => [
-								styles.modalBtn,
-								{
-									backgroundColor: colors.primary || '#0EA5E9',
-									opacity: pressed ? 0.8 : 1,
-									marginTop: 16
-								}
-							]}
-						>
-							<Text style={{ color: '#FFFFFF', fontWeight: '700' }}>{translate('continue', 'Continue')}</Text>
-						</Pressable>
+						<View style={styles.modalActions}>
+							<Pressable onPress={proceedSharingApkFile} style={[styles.modalBtn, { backgroundColor: colors.primary || '#0EA5E9' }]}>
+								<Text style={[styles.modalBtnText, { color: '#FFFFFF' }]}>{translate('continue', 'Continue')}</Text>
+							</Pressable>
 
-						<Pressable onPress={() => setShowQuickShareInfo(false)} style={({ pressed }) => [styles.modalCancelBtn, { opacity: pressed ? 0.6 : 1 }]}>
-							<Text style={{ color: colors.textSecondary, fontWeight: '600' }}>{translate('cancel', 'Cancel')}</Text>
-						</Pressable>
+							<Pressable onPress={() => setQuickShareModalVisible(false)} style={[styles.modalBtn, { backgroundColor: '#1E293B', marginTop: 10 }]}>
+								<Text style={[styles.modalBtnText, { color: colors.textSecondary || '#94A3B8' }]}>{translate('cancel', 'Cancel')}</Text>
+							</Pressable>
+						</View>
 					</View>
 				</Pressable>
 			</Modal>
@@ -442,197 +522,225 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1
 	},
-	scroll: {
+	scrollBody: {
 		flex: 1
 	},
 	scrollContent: {
-		padding: 16,
-		paddingBottom: 40
+		padding: 16
 	},
-	heroCard: {
-		borderRadius: 16,
-		borderWidth: 1,
-		padding: 20,
-		marginBottom: 16
-	},
-	heroHeader: {
-		flexDirection: 'row',
-		alignItems: 'center',
+	columnLayout: {
+		flexDirection: 'column',
 		gap: 16
 	},
-	heroHeaderTexts: {
-		flex: 1
-	},
-	heroTitle: {
-		fontSize: 16,
-		fontWeight: '700',
-		lineHeight: 20
-	},
-	heroSubtitle: {
-		fontSize: 12,
-		marginTop: 4
-	},
-	versionRow: {
+	rowLayout: {
 		flexDirection: 'row',
-		alignItems: 'center',
-		borderTopWidth: 1,
-		paddingTop: 16,
-		marginTop: 16
+		gap: 16
 	},
-	versionCol: {
-		flex: 1,
-		alignItems: 'center'
+	colLeft: {
+		flex: 3,
+		gap: 16
 	},
-	versionLabel: {
-		fontSize: 11,
-		fontWeight: '500',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5
+	colRight: {
+		flex: 2,
+		gap: 16
 	},
-	versionValue: {
-		fontSize: 16,
-		fontWeight: '700',
-		marginTop: 4
-	},
-	versionDivider: {
-		width: 1,
-		height: 32
-	},
-	controlsRow: {
-		flexDirection: 'row',
-		gap: 12,
-		marginBottom: 16
-	},
-	button: {
-		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-		height: 48,
-		borderRadius: 12,
-		borderWidth: 1
-	},
-	buttonText: {
-		fontSize: 14,
-		fontWeight: '600'
+	cardContainer: {
+		width: '100%',
+		gap: 16
 	},
 	infoCard: {
 		borderRadius: 16,
 		borderWidth: 1,
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		marginBottom: 16
+		padding: 20
 	},
 	infoRow: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		paddingVertical: 10,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: 'rgba(255, 255, 255, 0.05)'
+		alignItems: 'center',
+		paddingVertical: 4
+	},
+	infoTextContainer: {
+		marginLeft: 16,
+		flex: 1
 	},
 	infoLabel: {
-		fontSize: 13,
+		fontSize: 12,
 		fontWeight: '500'
 	},
 	infoValue: {
-		fontSize: 13,
+		fontSize: 16,
 		fontWeight: '600',
-		maxWidth: '60%'
+		marginTop: 2
+	},
+	divider: {
+		height: 1,
+		marginVertical: 14,
+		opacity: 0.5
+	},
+	metaGrid: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		marginTop: 4,
+		gap: 16
+	},
+	metaItem: {
+		minWidth: '45%',
+		flex: 1
+	},
+	metaLabel: {
+		fontSize: 11,
+		fontWeight: '500'
+	},
+	metaValue: {
+		fontSize: 14,
+		fontWeight: '600',
+		marginTop: 2
 	},
 	changelogCard: {
 		borderRadius: 16,
 		borderWidth: 1,
-		padding: 16,
-		marginBottom: 16
+		padding: 20
 	},
 	changelogTitle: {
-		fontSize: 14,
+		fontSize: 16,
 		fontWeight: '700',
+		marginBottom: 12
+	},
+	changelogScroll: {
+		maxHeight: 200,
+		minHeight: 100
+	},
+	changelogText: {
+		fontSize: 13,
+		lineHeight: 20
+	},
+	actionsCard: {
+		borderRadius: 16,
+		borderWidth: 1,
+		padding: 20
+	},
+	progressContainer: {
+		marginBottom: 16
+	},
+	progressRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
 		marginBottom: 8
 	},
-	changelogBody: {
+	progressLabel: {
 		fontSize: 13,
-		lineHeight: 18
+		fontWeight: '600'
 	},
-	primaryActionContainer: {
-		marginBottom: 24
-	},
-	primaryButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-		height: 52,
-		borderRadius: 12
-	},
-	primaryButtonText: {
-		color: '#FFFFFF',
-		fontSize: 15,
+	progressPercent: {
+		fontSize: 13,
 		fontWeight: '700'
 	},
-	downloadProgressContainer: {
-		width: '100%',
-		alignItems: 'center'
-	},
 	progressBarTrack: {
-		width: '100%',
 		height: 8,
 		borderRadius: 4,
 		overflow: 'hidden',
-		marginBottom: 8
+		width: '100%'
 	},
 	progressBarFill: {
 		height: '100%',
 		borderRadius: 4
 	},
-	progressText: {
-		fontSize: 12,
-		fontWeight: '500'
-	},
-	downloadsSection: {
-		marginTop: 8
-	},
-	sectionTitle: {
-		fontSize: 14,
-		fontWeight: '700',
-		marginBottom: 12
-	},
-	emptyContainer: {
-		borderRadius: 16,
+	cancelBtn: {
 		borderWidth: 1,
+		borderRadius: 8,
+		paddingVertical: 6,
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingVertical: 28,
+		marginTop: 12
+	},
+	cancelBtnText: {
+		fontSize: 12,
+		fontWeight: '600'
+	},
+	btnStack: {
+		gap: 12
+	},
+	actionBtn: {
+		height: 48,
+		borderRadius: 12,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		width: '100%'
+	},
+	actionBtnText: {
+		color: '#FFFFFF',
+		fontSize: 15,
+		fontWeight: '600'
+	},
+	shareBtn: {
+		height: 48,
+		borderRadius: 12,
+		borderWidth: 1.5,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		width: '100%',
+		backgroundColor: 'transparent'
+	},
+	shareBtnText: {
+		fontSize: 15,
+		fontWeight: '600'
+	},
+	checkUpdatesBtn: {
+		height: 48,
+		borderRadius: 12,
+		borderWidth: 1,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		width: '100%'
+	},
+	checkUpdatesBtnText: {
+		fontSize: 15,
+		fontWeight: '500'
+	},
+	btnIcon: {
+		marginRight: 8
+	},
+	apkListCard: {
+		borderRadius: 16,
+		borderWidth: 1,
+		padding: 20
+	},
+	apkListTitle: {
+		fontSize: 16,
+		fontWeight: '700',
+		marginBottom: 14
+	},
+	emptyContainer: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 24,
 		gap: 8
 	},
 	emptyText: {
-		fontSize: 13,
-		fontWeight: '500'
+		fontSize: 12,
+		textAlign: 'center'
 	},
-	apkCard: {
+	apkList: {
+		gap: 12
+	},
+	apkItem: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		borderRadius: 12,
-		borderWidth: 1,
-		padding: 12,
-		marginBottom: 8
+		paddingVertical: 10,
+		borderBottomWidth: 1
 	},
-	apkLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
+	apkInfo: {
 		flex: 1,
-		gap: 12
-	},
-	apkTexts: {
-		flex: 1
+		marginRight: 12
 	},
 	apkName: {
 		fontSize: 13,
 		fontWeight: '600'
 	},
-	apkDetails: {
+	apkMeta: {
 		fontSize: 11,
 		marginTop: 2
 	},
@@ -640,54 +748,88 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		gap: 8
 	},
-	apkActionBtn: {
-		width: 32,
-		height: 32,
+	apkBtn: {
+		paddingHorizontal: 12,
+		paddingVertical: 6,
 		borderRadius: 8,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	modalOverlay: {
-		flex: 1,
-		backgroundColor: 'rgba(3, 7, 18, 0.75)',
-		alignItems: 'center',
 		justifyContent: 'center',
-		padding: 20
-	},
-	modalContent: {
-		width: width - 40,
-		maxWidth: 340,
-		borderRadius: 16,
-		borderWidth: 1,
-		padding: 20,
 		alignItems: 'center'
 	},
-	modalTitle: {
-		fontSize: 16,
-		fontWeight: '700',
-		marginBottom: 8
+	installApkBtn: {},
+	deleteApkBtn: {},
+	apkBtnText: {
+		color: '#FFFFFF',
+		fontSize: 11,
+		fontWeight: '600'
 	},
-	modalPrompt: {
+	toastContainer: {
+		position: 'absolute',
+		bottom: 32,
+		alignSelf: 'center',
+		paddingHorizontal: 20,
+		paddingVertical: 12,
+		borderRadius: 24,
+		borderWidth: 1,
+		...Platform.select({
+			ios: {
+				shadowColor: '#000000',
+				shadowOffset: { width: 0, height: 4 },
+				shadowOpacity: 0.3,
+				shadowRadius: 4
+			},
+			android: {
+				elevation: 6
+			},
+			web: {
+				boxShadow: '0px 4px 8px rgba(0, 0, 0, 0.3)' as any
+			}
+		})
+	},
+	toastText: {
 		fontSize: 13,
-		marginBottom: 16,
+		fontWeight: '600',
 		textAlign: 'center'
 	},
-	modalBtn: {
-		flexDirection: 'row',
-		alignItems: 'center',
+	modalBackdrop: {
+		flex: 1,
+		backgroundColor: 'rgba(0, 0, 0, 0.75)',
 		justifyContent: 'center',
-		gap: 8,
+		alignItems: 'center',
+		padding: 24
+	},
+	modalContent: {
+		borderRadius: 20,
+		borderWidth: 1,
+		padding: 24,
 		width: '100%',
-		height: 48,
-		borderRadius: 12,
+		maxWidth: 400
+	},
+	modalHeaderIconContainer: {
+		alignSelf: 'center',
+		marginBottom: 16
+	},
+	modalTitle: {
+		fontSize: 18,
+		fontWeight: '700',
 		marginBottom: 10
+	},
+	modalPrompt: {
+		fontSize: 14,
+		lineHeight: 20,
+		marginBottom: 20
+	},
+	modalActions: {
+		gap: 12
+	},
+	modalBtn: {
+		height: 44,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+		width: '100%'
 	},
 	modalBtnText: {
 		fontSize: 14,
 		fontWeight: '600'
-	},
-	modalCancelBtn: {
-		paddingVertical: 10,
-		marginTop: 6
 	}
 })

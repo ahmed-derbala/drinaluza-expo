@@ -1,90 +1,27 @@
-## updates
+## AppUpdater
 apply rules from .agent/rules/
 
-updates feature is responsible for checking, downloading and installing updates.
-recommended directories to use:
+AppUpdater is responsible for checking, downloading and installing updates.
+
+use these directories:
 src/app/updates/ (expo-router)
-src/features/updates/
+src/core/app-updater/
 
 check for updates using config.UPDATE_CHECK_URL link
 example responce of config.UPDATE_CHECK_URL:
 ```{
-  "url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/331661002",
-  "assets_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/331661002/assets",
-  "upload_url": "https://uploads.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/331661002/assets{?name,label}",
-  "html_url": "https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/tag/v1.16.2",
-  "id": 331661002,
-  "author": {
-    "login": "ahmed-derbala",
-    "id": 30319876,
-    "node_id": "MDQ6VXNlcjMwMzE5ODc2",
-    "avatar_url": "https://avatars.githubusercontent.com/u/30319876?v=4",
-    "gravatar_id": "",
-    "url": "https://api.github.com/users/ahmed-derbala",
-    "html_url": "https://github.com/ahmed-derbala",
-    "followers_url": "https://api.github.com/users/ahmed-derbala/followers",
-    "following_url": "https://api.github.com/users/ahmed-derbala/following{/other_user}",
-    "gists_url": "https://api.github.com/users/ahmed-derbala/gists{/gist_id}",
-    "starred_url": "https://api.github.com/users/ahmed-derbala/starred{/owner}{/repo}",
-    "subscriptions_url": "https://api.github.com/users/ahmed-derbala/subscriptions",
-    "organizations_url": "https://api.github.com/users/ahmed-derbala/orgs",
-    "repos_url": "https://api.github.com/users/ahmed-derbala/repos",
-    "events_url": "https://api.github.com/users/ahmed-derbala/events{/privacy}",
-    "received_events_url": "https://api.github.com/users/ahmed-derbala/received_events",
-    "type": "User",
-    "user_view_type": "public",
-    "site_admin": false
-  },
-  "node_id": "RE_kwDOSps3nM4TxL7K",
   "tag_name": "v1.16.2",
-  "target_commitish": "main",
   "name": "Release v1.16.2",
-  "draft": false,
-  "immutable": false,
-  "prerelease": false,
-  "created_at": "2026-05-29T17:13:04Z",
-  "updated_at": "2026-05-29T17:15:54Z",
   "published_at": "2026-05-29T17:15:54Z",
   "assets": [
     {
-      "url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/assets/433199132",
-      "id": 433199132,
-      "node_id": "RA_kwDOSps3nM4Z0hgc",
       "name": "drinaluza-1.16.2.apk",
-      "label": "",
-      "uploader": {
-        "login": "ahmed-derbala",
-        "id": 30319876,
-        "node_id": "MDQ6VXNlcjMwMzE5ODc2",
-        "avatar_url": "https://avatars.githubusercontent.com/u/30319876?v=4",
-        "gravatar_id": "",
-        "url": "https://api.github.com/users/ahmed-derbala",
-        "html_url": "https://github.com/ahmed-derbala",
-        "followers_url": "https://api.github.com/users/ahmed-derbala/followers",
-        "following_url": "https://api.github.com/users/ahmed-derbala/following{/other_user}",
-        "gists_url": "https://api.github.com/users/ahmed-derbala/gists{/gist_id}",
-        "starred_url": "https://api.github.com/users/ahmed-derbala/starred{/owner}{/repo}",
-        "subscriptions_url": "https://api.github.com/users/ahmed-derbala/subscriptions",
-        "organizations_url": "https://api.github.com/users/ahmed-derbala/orgs",
-        "repos_url": "https://api.github.com/users/ahmed-derbala/repos",
-        "events_url": "https://api.github.com/users/ahmed-derbala/events{/privacy}",
-        "received_events_url": "https://api.github.com/users/ahmed-derbala/received_events",
-        "type": "User",
-        "user_view_type": "public",
-        "site_admin": false
-      },
       "content_type": "application/vnd.android.package-archive",
-      "state": "uploaded",
       "size": 112732026,
-      "digest": "sha256:910818185b7e63489be80367ce347667c90e9d6f48e1107e4190b7702d8c891a",
       "download_count": 3,
-      "created_at": "2026-05-29T17:13:08Z",
-      "updated_at": "2026-05-29T17:15:53Z",
       "browser_download_url": "https://github.com/ahmed-derbala/drinaluza-expo-releases/releases/download/v1.16.2/drinaluza-1.16.2.apk"
     }
   ],
-  "tarball_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/tarball/v1.16.2",
-  "zipball_url": "https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/zipball/v1.16.2",
   "body": "Changelog"
 }
 ```
@@ -110,16 +47,16 @@ on android:
 - size
 - device free storage size
 - download count
-- whats new (body)
 - list of downloaded apk files details with delete and install buttons next to each one. 
 - download button. disable if the current version is equal or higher than the latest version
 - download progress
 - share button. use expo-sharing:
-    - ask the user if he wants to share the download url or downloaded apk file if exists.
+    - ask to share the download url or the downloaded apk file if exists.
     - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
+- whats new (body)
 
-use SmartKebabMenu to show download progress next to updates menu item, when download is complete show an install icon instead.
-when download is complete trigger an install.
+use SmartKebabMenu to show download progress next to updates menu item.
+when download is complete trigger an apk file install immediately.
 
 on web:
 - check for updates button
@@ -129,10 +66,10 @@ on web:
 - latest version
 - size
 - download count
-- whats new (body)
 - download button
 - refresh button. disable if the current version is equal or higher than the latest version
 - share button: copy download url to clipboard
+- whats new (body)
 
 
 ### Behavior requirements:
@@ -148,6 +85,7 @@ on web:
 
   - on web: do not check for updates when app starts
 
+- if there is no previous screen, the back button opens /feed
 - keep only the latest version apk file
 - Avoid white screen or flickering during startup
 - when app starts prevent rendering home screen before update check completes
