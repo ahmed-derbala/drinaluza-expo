@@ -1,8 +1,9 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Platform } from 'react-native'
+import { Platform, Alert } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import { APP_VERSION, UPDATE_CHECK_URL, TIMEOUT_MS } from '@/config'
+import { log } from '@/core/log'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
 
 export const UpdatesContext = createContext<UpdatesContextProps | undefined>(undefined)
@@ -165,19 +166,35 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Install Android APK
 	const installApk = useCallback(async (fileUri: string) => {
 		if (Platform.OS !== 'android') return
+		log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
 		try {
-			const { startInstallAsync } = require('expo-intent-launcher')
 			const contentUri = await FileSystem.getContentUriAsync(fileUri)
-
-			// Start native Package Installer
 			const { startActivityAsync } = require('expo-intent-launcher')
-			await startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-				data: contentUri,
-				flags: 1, // Intent.FLAG_GRANT_READ_URI_PERMISSION
-				type: 'application/vnd.android.package-archive'
-			})
-		} catch (err) {
-			console.error('[UpdatesContext] Android package installation failed:', err)
+
+			try {
+				// 1. Try modern ACTION_VIEW with MIME type (universal file opener)
+				await startActivityAsync('android.intent.action.VIEW', {
+					data: contentUri,
+					flags: 1, // Intent.FLAG_GRANT_READ_URI_PERMISSION
+					type: 'application/vnd.android.package-archive'
+				})
+			} catch (viewErr) {
+				log({ level: 'warn', label: 'UpdatesContext', message: 'ACTION_VIEW failed, trying legacy ACTION_INSTALL_PACKAGE fallback', error: viewErr })
+
+				// 2. Fall back to legacy ACTION_INSTALL_PACKAGE
+				await startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+					data: contentUri,
+					flags: 1 // Intent.FLAG_GRANT_READ_URI_PERMISSION
+				})
+			}
+		} catch (err: any) {
+			log({ level: 'error', label: 'UpdatesContext', message: 'Android package installation failed', error: err })
+
+			Alert.alert(
+				'Installation Failed',
+				'Could not launch the Android package installer. Please ensure you have allowed this app to install unknown apps in your device settings.\n\nError: ' + (err?.message || err),
+				[{ text: 'OK' }]
+			)
 			throw new Error('Failed to launch the Android package installer. Please verify permissions.')
 		}
 	}, [])

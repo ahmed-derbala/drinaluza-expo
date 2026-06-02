@@ -118,6 +118,30 @@ export default function UpdatesScreen() {
 		return true
 	}, [latestRelease])
 
+	// Check if there is an APK file in local cache whose version matches the latest release version
+	const hasLatestApkInCache = useMemo(() => {
+		if (!latestRelease) return false
+		return downloadedApks.some((apk) => apk.version === latestRelease.latest_version)
+	}, [latestRelease, downloadedApks])
+
+	// Check if there is any installable APK in cache (its version is higher than APP_VERSION)
+	const installableApk = useMemo(() => {
+		return downloadedApks.find((apk) => apk.isInstallable)
+	}, [downloadedApks])
+
+	// Download button state
+	const isDownloadDisabled = isChecking || isDownloading || !latestRelease || isUpToDate || hasLatestApkInCache
+
+	// Install button state (enabled if there's a cached APK with version higher than APP_VERSION)
+	const isInstallDisabled = !installableApk
+
+	// Handler to launch installation of the cached installable APK
+	const handleInstallPress = () => {
+		if (installableApk) {
+			installApk(installableApk.fileUri)
+		}
+	}
+
 	const renderAndroidSection = () => {
 		return (
 			<View style={styles.card}>
@@ -153,21 +177,6 @@ export default function UpdatesScreen() {
 									{/* Share APK Button */}
 									<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: colors.primaryContainer }]}>
 										<Ionicons name="share-social-outline" size={18} color={colors.primary} />
-									</TouchableOpacity>
-
-									{/* Install Button */}
-									<TouchableOpacity
-										onPress={() => installApk(apk.fileUri)}
-										disabled={!apk.isInstallable}
-										accessibilityLabel="Install APK"
-										style={[
-											styles.apkBtn,
-											{
-												backgroundColor: apk.isInstallable ? colors.success + '20' : colors.surfaceVariant
-											}
-										]}
-									>
-										<Ionicons name="rocket-outline" size={18} color={apk.isInstallable ? colors.success : colors.textTertiary} />
 									</TouchableOpacity>
 
 									{/* Delete Button */}
@@ -369,21 +378,43 @@ export default function UpdatesScreen() {
 									</Text>
 								</View>
 							) : (
-								<TouchableOpacity
-									disabled={isChecking || (latestRelease ? isUpToDate : false)}
-									onPress={downloadUpdate}
-									style={[
-										styles.actionButton,
-										{
-											backgroundColor: isChecking ? colors.surfaceVariant : latestRelease && isUpToDate ? colors.surfaceVariant : colors.primary
-										}
-									]}
-								>
-									<Ionicons name="cloud-download-outline" size={20} color="#FFFFFF" />
-									<Text style={styles.actionButtonText}>
-										{latestRelease ? (isUpToDate ? translate('up_to_date', 'Up to Date') : translate('download_update', 'Download Update')) : translate('check_for_updates', 'Check for Updates')}
-									</Text>
-								</TouchableOpacity>
+								<View style={styles.buttonRow}>
+									{/* Download Button */}
+									<TouchableOpacity
+										disabled={isDownloadDisabled}
+										onPress={downloadUpdate}
+										style={[
+											styles.actionButton,
+											{
+												backgroundColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary,
+												flex: 1
+											}
+										]}
+									>
+										<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : '#FFFFFF'} />
+										<Text style={[styles.actionButtonText, { color: isDownloadDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
+											{translate('download', 'Download')}
+										</Text>
+									</TouchableOpacity>
+
+									{/* Install Button */}
+									<TouchableOpacity
+										disabled={isInstallDisabled}
+										onPress={handleInstallPress}
+										style={[
+											styles.actionButton,
+											{
+												backgroundColor: isInstallDisabled ? colors.surfaceVariant : colors.success,
+												flex: 1
+											}
+										]}
+									>
+										<Ionicons name="rocket-outline" size={20} color={isInstallDisabled ? colors.textTertiary : '#FFFFFF'} />
+										<Text style={[styles.actionButtonText, { color: isInstallDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
+											{translate('install', 'Install')}
+										</Text>
+									</TouchableOpacity>
+								</View>
 							)}
 						</View>
 

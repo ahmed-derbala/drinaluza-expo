@@ -43,7 +43,10 @@ export default {
                 backgroundColor: "#1C2526"
             },
             package: "com.ahmedderbala.drinaluza",
-            versionCode: 1
+            versionCode: 1,
+            permissions: [
+                "android.permission.REQUEST_INSTALL_PACKAGES"
+            ]
         },
         web: {
             bundler: "metro",
