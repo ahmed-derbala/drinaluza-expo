@@ -42,7 +42,6 @@ create a function that takes config.UPDATE_CHECK_URL as input and returns from t
 ### in updates screen show:
 on android:
 - check for updates button
-- name 
 - published date
 - current version
 - latest version
@@ -54,7 +53,7 @@ on android:
 - download progress
 - share button. use expo-sharing:
     - ask the user to share the download url or the downloaded apk file if exists in cache.
-    - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
+      - if sharing apk file is choosen: show a dialog recommending using quick share for faster share with other devices
 - whats new (changelog)
 
 use SmartKebabMenu to show download progress next to updates menu item.
@@ -62,7 +61,6 @@ when download is complete trigger an apk file install immediately.
 
 on web:
 - check for updates button
-- name 
 - published date
 - current version 
 - latest version
