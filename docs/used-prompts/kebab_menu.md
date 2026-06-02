@@ -107,23 +107,3 @@ Design the system so future screens can add:
 - menu item tooltips
 
 without requiring architectural changes.
-
-### Example
-
-```ts
-useSmartKebabMenu([
-  {
-    key: 'settings',
-    label: 'Settings',
-    icon: 'settings',
-    onPress: openSettings,
-  },
-  {
-    key: 'updates',
-    label: 'Updates',
-    icon: 'download',
-    badge: 'NEW',
-    onPress: openUpdates,
-  },
-]);
-```
