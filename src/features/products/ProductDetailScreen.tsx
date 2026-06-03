@@ -18,7 +18,6 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
-import { KeyboardSafeView } from '@/core/KeyboardSafeView'
 
 export default function ProductDetailScreen() {
 	const { productSlug, businessSlug } = useLocalSearchParams<{ productSlug: string; businessSlug?: string }>()
@@ -333,11 +332,13 @@ export default function ProductDetailScreen() {
 				}}
 			/>
 
-			<KeyboardSafeView
+			<ScrollView
 				contentContainerStyle={[styles.scrollContent, width > 800 && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
+				keyboardShouldPersistTaps="handled"
+				showsVerticalScrollIndicator={false}
 			>
 				{/* Product Image */}
 				<View style={styles.imageContainer}>
@@ -511,7 +512,7 @@ export default function ProductDetailScreen() {
 
 				{/* Bottom Spacing */}
 				<View style={styles.bottomSpacing} />
-			</KeyboardSafeView>
+			</ScrollView>
 
 			{/* QR Code Viewer Modal */}
 			{product && (

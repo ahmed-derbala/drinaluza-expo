@@ -14,7 +14,6 @@ import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
-import { KeyboardSafeView } from '@/core/KeyboardSafeView'
 
 // Product Card for inline display
 const ProductCard = ({ product, colors, localize, onPress }: { product: ProductType; colors: any; localize: (obj: any) => string; onPress?: () => void }) => {
@@ -202,11 +201,13 @@ export default function BusinessDetailsScreen() {
 					)
 				}}
 			/>
-			<KeyboardSafeView
+			<ScrollView
 				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
+				keyboardShouldPersistTaps="handled"
+				showsVerticalScrollIndicator={false}
 			>
 				{/* Business Image */}
 				<View style={styles.imageContainer}>
@@ -321,7 +322,7 @@ export default function BusinessDetailsScreen() {
 
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
-			</KeyboardSafeView>
+			</ScrollView>
 
 			{/* QR Code Viewer Modal */}
 			{business && (

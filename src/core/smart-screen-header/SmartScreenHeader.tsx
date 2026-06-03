@@ -117,10 +117,14 @@ HeaderSettingsButton.displayName = 'HeaderSettingsButton'
 // ----------------------------------------
 // 3. Skeleton Block component for Loading state
 // ----------------------------------------
-const SkeletonBlock: React.FC<{ width: number; height: number; borderRadius?: number }> = ({ width, height, borderRadius = 4 }) => {
+const SkeletonBlock: React.FC<{ width: number; height: number; borderRadius?: number; disableAnimations?: boolean }> = ({ width, height, borderRadius = 4, disableAnimations = false }) => {
 	const opacity = useRef(new Animated.Value(0.3)).current
 
 	useEffect(() => {
+		if (disableAnimations) {
+			opacity.setValue(0.5)
+			return
+		}
 		const animation = Animated.loop(
 			Animated.sequence([
 				Animated.timing(opacity, {
@@ -139,7 +143,7 @@ const SkeletonBlock: React.FC<{ width: number; height: number; borderRadius?: nu
 		)
 		animation.start()
 		return () => animation.stop()
-	}, [opacity])
+	}, [opacity, disableAnimations])
 
 	return (
 		<Animated.View
@@ -185,6 +189,7 @@ export interface SmartScreenHeaderProps {
 	fallbackRoute?: Href
 	centerLeftOffset?: number
 	centerRightOffset?: number
+	disableAnimations?: boolean
 
 	// Backward compatibility props
 	loading?: boolean
@@ -218,7 +223,8 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	options,
 	route,
 	navigation,
-	back
+	back,
+	disableAnimations = false
 }) => {
 	const { colors } = useTheme()
 	const insets = useSafeAreaInsets()
@@ -233,6 +239,10 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 
 	// Setup top linear progress bar animation if loading
 	useEffect(() => {
+		if (disableAnimations) {
+			loadingAnim.setValue(0)
+			return
+		}
 		let animation: Animated.CompositeAnimation | null = null
 		if (isCurrentlyLoading) {
 			loadingAnim.setValue(0)
@@ -253,10 +263,14 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 				animation.stop()
 			}
 		}
-	}, [isCurrentlyLoading, loadingAnim])
+	}, [isCurrentlyLoading, loadingAnim, disableAnimations])
 
 	// Setup title fade-in transition when loading resolves
 	useEffect(() => {
+		if (disableAnimations) {
+			fadeAnim.setValue(1)
+			return
+		}
 		if (!isCurrentlyLoading) {
 			Animated.timing(fadeAnim, {
 				toValue: 1,
@@ -266,7 +280,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		} else {
 			fadeAnim.setValue(0)
 		}
-	}, [isCurrentlyLoading, fadeAnim])
+	}, [isCurrentlyLoading, fadeAnim, disableAnimations])
 
 	// Resolve title
 	let resolvedTitle = title
@@ -387,11 +401,11 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 			return (
 				<View style={styles.titleContainer}>
 					<View style={{ height: 24, justifyContent: 'center' }}>
-						<SkeletonBlock width={120} height={16} borderRadius={4} />
+						<SkeletonBlock width={120} height={16} borderRadius={4} disableAnimations={disableAnimations} />
 					</View>
 					{subtitle ? (
 						<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
-							<SkeletonBlock width={80} height={10} borderRadius={3} />
+							<SkeletonBlock width={80} height={10} borderRadius={3} disableAnimations={disableAnimations} />
 						</View>
 					) : null}
 				</View>
@@ -403,7 +417,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		}
 
 		return (
-			<Animated.View style={[styles.titleContainer, { opacity: fadeAnim }]}>
+			<Animated.View style={[styles.titleContainer, { opacity: disableAnimations ? 1 : fadeAnim }]}>
 				<View style={styles.titleRow}>
 					<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
 						{resolvedTitle}
@@ -446,7 +460,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 			</View>
 
 			{/* Linear Progress/Loading Bar */}
-			{isCurrentlyLoading && (
+			{isCurrentlyLoading && !disableAnimations && (
 				<View style={[styles.loadingBarContainer, { backgroundColor: colors.borderLight || '#1E293B' }]}>
 					<Animated.View
 						style={[

@@ -286,7 +286,7 @@ export default function UpdatesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<SmartScreenHeader title={translate('updates', 'Updates')} fallbackRoute="/(home)/feed" loading={isChecking || isDownloading} />
+			<SmartScreenHeader title={translate('updates', 'Updates')} fallbackRoute="/(home)/feed" loading={isChecking || isDownloading} disableAnimations={true} />
 
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
 				{isWeb ? (

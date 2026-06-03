@@ -24,7 +24,6 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import { uploadFile } from '@/core/file'
 import { log } from '@/core/log'
-import { KeyboardSafeView } from '@/core/KeyboardSafeView'
 
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
@@ -634,7 +633,7 @@ export default function ProfileScreen() {
 	return (
 		<View style={styles.container}>
 			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerRight: () => headerRightActions }} />
-			<KeyboardSafeView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16}>
+			<ScrollView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 				{/* Profile Header Card */}
 				<View style={styles.profileCard}>
 					<View style={styles.photoContainer}>
@@ -1632,13 +1631,18 @@ export default function ProfileScreen() {
 
 				{/* Reviews Section */}
 				{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
-			</KeyboardSafeView>
+			</ScrollView>
 
 			{/* Business Name Modal */}
 			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => !businessLoading && setShowBusinessModal(false)}>
 				<View style={styles.modalOverlay}>
 					<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => !businessLoading && setShowBusinessModal(false)} />
-					<KeyboardSafeView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }} style={{ width: '100%' }}>
+					<ScrollView
+						contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
+						style={{ width: '100%' }}
+						keyboardShouldPersistTaps="handled"
+						showsVerticalScrollIndicator={false}
+					>
 						<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
 							<View style={styles.businessModalHeader}>
 								<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
@@ -1740,7 +1744,7 @@ export default function ProfileScreen() {
 								</TouchableOpacity>
 							</View>
 						</View>
-					</KeyboardSafeView>
+					</ScrollView>
 				</View>
 			</Modal>
 		</View>

@@ -12,7 +12,6 @@ import FeedCard from '../feed/feed.card'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { getToken } from '@/core/storage'
 import { toast } from '@/features/common/Toast'
-import { KeyboardSafeFlatList } from '@/core/KeyboardSafeView'
 
 type SearchType = 'all' | 'products' | 'businesses' | 'users'
 
@@ -418,7 +417,7 @@ export default function SearchScreen() {
 						<ActivityIndicator size="large" color={colors.primary} />
 					</View>
 				) : (
-					<KeyboardSafeFlatList
+					<FlatList
 						key={numColumns}
 						data={results}
 						renderItem={renderItem}
@@ -427,6 +426,7 @@ export default function SearchScreen() {
 						keyExtractor={(item: any) => item.slug || item._id}
 						contentContainerStyle={[styles.list, numColumns === 1 && { paddingHorizontal: padding }]}
 						ListEmptyComponent={renderEmpty}
+						keyboardShouldPersistTaps="handled"
 					/>
 				)}
 			</View>

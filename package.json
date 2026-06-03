@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.23.8",
+  "version": "1.23.9",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -89,6 +89,7 @@
     "expo-sharing": "~55.0.20",
     "expo-splash-screen": "~55.0.21",
     "expo-status-bar": "~55.0.6",
+    "expo-system-ui": "~55.0.18",
     "expo-updates": "~55.0.24",
     "react": "19.2.0",
     "react-dom": "19.2.0",

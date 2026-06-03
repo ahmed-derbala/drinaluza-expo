@@ -3,7 +3,13 @@
 ## [Unreleased]
 
 ### Changed
+- Added a `disableAnimations` prop to `SmartScreenHeader` and enabled it on the `/updates` screen to remove all header animations (linear progress bar, pulsing skeleton loaders, and title fade-in).
+- Refactored form and details screens (including `/auth`, `/profile`, business details, and product edit/create screens) to use standard React Native `KeyboardAvoidingView` and `ScrollView` components, fixing a gesture responder bug that froze scrolling on Android APK release builds.
+- Refactored `/search` and business products lists to use standard React Native `FlatList` components.
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
+
+### Removed
+- Removed the custom `KeyboardSafeView` and `KeyboardSafeFlatList` components (`src/core/KeyboardSafeView`) to align with standard React Native event propagation and cross-platform layouts.
 - Rewrote `SmartScreenHeader` to premium production-grade quality, incorporating a left-aligned layout for back button, title, and subtitle, and a fixed-width right section (`176px`) to completely guarantee Zero Layout Shift during navigation.
 - Added a pulsing `Animated.View` skeleton block loader in `SmartScreenHeader` to replace title/subtitle text during loading states (`isLoading`/`loading`), preserving exact layout constraints and applying a smooth fade-in micro-animation when loading completes.
 - Implemented a reusable `headerActions` prop in `SmartScreenHeader` to resolve predefined keys (`'search'`, `'notifications'`, `'cart'`, `'settings'`, `'refresh'`, `'scanner'`) and custom configuration objects, avoiding hardcoded action button JSX inside screen files.
