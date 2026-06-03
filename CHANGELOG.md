@@ -8,6 +8,10 @@
 - Refactored `/search` and business products lists to use standard React Native `FlatList` components.
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
 
+### Fixed
+- Fixed asynchronous state layout measurement timing lag in `SmartKeyboardSafeView` by utilizing a synchronously updated mutable ref (`viewportHeightRef`).
+- Fixed ScrollView layout truncation on `/auth` screen by moving centering styles from `contentContainerStyle` to an inner `View` wrapper.
+
 ### Removed
 - Removed the custom `KeyboardSafeView` and `KeyboardSafeFlatList` components (`src/core/KeyboardSafeView`) to align with standard React Native event propagation and cross-platform layouts.
 - Rewrote `SmartScreenHeader` to premium production-grade quality, incorporating a left-aligned layout for back button, title, and subtitle, and a fixed-width right section (`176px`) to completely guarantee Zero Layout Shift during navigation.

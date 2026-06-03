@@ -1,5 +1,5 @@
 you are a senior expo developer. produce production level code quality
-Create reusable component in src/core/smart-keyboard-safe-view/ and use it on all screens containing input fields.
+Create reusable component in src/core/smart-keyboard-safe-view/ named SmartKeyboardSafeView and use it on all screens containing input fields.
 
 When a user focuses or types into an input field, ensure the input remains fully visible, scrollable and is never covered by the on-screen keyboard on Android, iOS, or web mobile.
 

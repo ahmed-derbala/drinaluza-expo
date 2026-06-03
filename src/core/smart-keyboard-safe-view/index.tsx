@@ -36,6 +36,7 @@ export const SmartKeyboardSafeView = forwardRef<ScrollView, SmartKeyboardSafeVie
 		const localScrollViewRef = useRef<ScrollView | null>(null)
 		const scrollYRef = useRef(0)
 		const [viewportHeight, setViewportHeight] = useState(0)
+		const viewportHeightRef = useRef(0)
 
 		// Combine local and forwarded refs
 		const setScrollViewRef = useCallback(
@@ -64,7 +65,8 @@ export const SmartKeyboardSafeView = forwardRef<ScrollView, SmartKeyboardSafeVie
 		// Modern New-Arch compatible measurement and scroll-to-input implementation
 		const scrollToFocusedInput = () => {
 			setTimeout(() => {
-				if (!localScrollViewRef.current || viewportHeight <= 0) return
+				const currentViewportHeight = viewportHeightRef.current
+				if (!localScrollViewRef.current || currentViewportHeight <= 0) return
 
 				const inputNode = TextInput.State.currentlyFocusedInput()
 				if (!inputNode) return
@@ -74,11 +76,11 @@ export const SmartKeyboardSafeView = forwardRef<ScrollView, SmartKeyboardSafeVie
 					localScrollViewRef.current as any,
 					(left, top, width, height) => {
 						const currentScrollY = scrollYRef.current
-						const visibleBottom = currentScrollY + viewportHeight
+						const visibleBottom = currentScrollY + currentViewportHeight
 						const inputBottom = top + height
 
 						if (inputBottom + extraScrollHeight > visibleBottom) {
-							const targetY = inputBottom + extraScrollHeight - viewportHeight
+							const targetY = inputBottom + extraScrollHeight - currentViewportHeight
 							localScrollViewRef.current?.scrollTo({
 								y: targetY,
 								animated: true
@@ -105,7 +107,7 @@ export const SmartKeyboardSafeView = forwardRef<ScrollView, SmartKeyboardSafeVie
 			return () => {
 				subscription.remove()
 			}
-		}, [viewportHeight, extraScrollHeight])
+		}, [extraScrollHeight])
 
 		const handleScroll = (event: any) => {
 			scrollYRef.current = event.nativeEvent.contentOffset.y
@@ -116,6 +118,7 @@ export const SmartKeyboardSafeView = forwardRef<ScrollView, SmartKeyboardSafeVie
 
 		const handleLayout = (event: LayoutChangeEvent) => {
 			const { height } = event.nativeEvent.layout
+			viewportHeightRef.current = height
 			setViewportHeight(height)
 			if (onLayout) {
 				onLayout(event)

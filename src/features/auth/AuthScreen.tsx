@@ -363,127 +363,129 @@ export default function AuthScreen() {
 			<SmartScreenHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/(home)/feed" loading={loading} />
 
 			<SmartKeyboardSafeView style={styles.flex} contentContainerStyle={styles.scrollContent} extraScrollHeight={120}>
-				{/* Glassmorphic Auth Panel Container */}
-				<View style={styles.authCard}>
-					<Text style={styles.cardTitle}>{translate('welcome_back', 'Welcome back 👋')}</Text>
-					<Text style={styles.cardSubtitle}>{translate('auth_subtitle', 'Business Manager')}</Text>
+				<View style={styles.scrollContentInner}>
+					{/* Glassmorphic Auth Panel Container */}
+					<View style={styles.authCard}>
+						<Text style={styles.cardTitle}>{translate('welcome_back', 'Welcome back 👋')}</Text>
+						<Text style={styles.cardSubtitle}>{translate('auth_subtitle', 'Business Manager')}</Text>
 
-					{/* Languages Flag Selector */}
-					<View style={styles.sectionContainer}>
-						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.languagesScroll}>
-							{LANGUAGES_LIST.map((lang) => {
-								const isSelected = appLang === lang.code
-								return (
-									<TouchableOpacity key={lang.code} style={[styles.langBadge, isSelected && styles.langBadgeSelected]} onPress={() => setAppLang(lang.code)} activeOpacity={0.8}>
-										<View style={styles.flagWrapper}>
-											<Text style={styles.flagEmoji}>{lang.flag}</Text>
-											{lang.badge && (
-												<View style={styles.flagTextBadge}>
-													<Text style={styles.flagTextBadgeText}>{lang.badge}</Text>
-												</View>
-											)}
-										</View>
-									</TouchableOpacity>
-								)
-							})}
-						</ScrollView>
-					</View>
-
-					{/* Saved Accounts Vertical Scroll Area */}
-					{savedAccounts.length > 0 && (
-						<View style={[styles.sectionContainer, styles.accountsSection]}>
-							<Text style={styles.sectionLabel}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
-							<View style={styles.accountsScrollContainer}>
-								<ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true} contentContainerStyle={styles.accountsVerticalList}>
-									{savedAccounts.map((account) => (
-										<View key={account.slug} style={styles.accountItem}>
-											<TouchableOpacity style={styles.accountPressable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.7}>
-												<View style={styles.accountPhotoWrapper}>
-													<SmartImage source={account.photoUrl} style={styles.accountPhoto} entityType="user" />
-												</View>
-												<View style={styles.accountDetails}>
-													<Text style={styles.accountName} numberOfLines={1}>
-														{getAccountDisplayName(account)}
-													</Text>
-													<Text style={styles.accountSlug} numberOfLines={1}>
-														@{account.slug}
-													</Text>
-													<Text style={styles.accountDate} numberOfLines={1}>
-														{translate('last_signin', 'Last')}: {formatLastAccessedDate(account.lastSignIn)}
-													</Text>
-												</View>
-											</TouchableOpacity>
-
-											<TouchableOpacity style={styles.accountRemoveBtn} onPress={() => handleRemoveSavedAccount(account.slug)} accessibilityLabel={`Remove account ${account.slug}`}>
-												<Ionicons name="close-circle" size={20} color={colors.textTertiary} />
-											</TouchableOpacity>
-										</View>
-									))}
-								</ScrollView>
-							</View>
+						{/* Languages Flag Selector */}
+						<View style={styles.sectionContainer}>
+							<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.languagesScroll}>
+								{LANGUAGES_LIST.map((lang) => {
+									const isSelected = appLang === lang.code
+									return (
+										<TouchableOpacity key={lang.code} style={[styles.langBadge, isSelected && styles.langBadgeSelected]} onPress={() => setAppLang(lang.code)} activeOpacity={0.8}>
+											<View style={styles.flagWrapper}>
+												<Text style={styles.flagEmoji}>{lang.flag}</Text>
+												{lang.badge && (
+													<View style={styles.flagTextBadge}>
+														<Text style={styles.flagTextBadgeText}>{lang.badge}</Text>
+													</View>
+												)}
+											</View>
+										</TouchableOpacity>
+									)
+								})}
+							</ScrollView>
 						</View>
-					)}
 
-					{/* Welcome Credentials Form */}
-					<View style={styles.formContainer}>
-						{/* Username (Slug) Textfield */}
-						<View style={styles.inputWrapper}>
-							<View style={styles.inputIconContainer}>
-								<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+						{/* Saved Accounts Vertical Scroll Area */}
+						{savedAccounts.length > 0 && (
+							<View style={[styles.sectionContainer, styles.accountsSection]}>
+								<Text style={styles.sectionLabel}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
+								<View style={styles.accountsScrollContainer}>
+									<ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true} contentContainerStyle={styles.accountsVerticalList}>
+										{savedAccounts.map((account) => (
+											<View key={account.slug} style={styles.accountItem}>
+												<TouchableOpacity style={styles.accountPressable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.7}>
+													<View style={styles.accountPhotoWrapper}>
+														<SmartImage source={account.photoUrl} style={styles.accountPhoto} entityType="user" />
+													</View>
+													<View style={styles.accountDetails}>
+														<Text style={styles.accountName} numberOfLines={1}>
+															{getAccountDisplayName(account)}
+														</Text>
+														<Text style={styles.accountSlug} numberOfLines={1}>
+															@{account.slug}
+														</Text>
+														<Text style={styles.accountDate} numberOfLines={1}>
+															{translate('last_signin', 'Last')}: {formatLastAccessedDate(account.lastSignIn)}
+														</Text>
+													</View>
+												</TouchableOpacity>
+
+												<TouchableOpacity style={styles.accountRemoveBtn} onPress={() => handleRemoveSavedAccount(account.slug)} accessibilityLabel={`Remove account ${account.slug}`}>
+													<Ionicons name="close-circle" size={20} color={colors.textTertiary} />
+												</TouchableOpacity>
+											</View>
+										))}
+									</ScrollView>
+								</View>
 							</View>
-							<TextInput
-								style={styles.inputField}
-								value={slug}
-								onChangeText={handleSlugChange}
-								placeholder={translate('username', 'Username')}
-								placeholderTextColor={colors.textTertiary}
-								autoCapitalize="none"
-								autoCorrect={false}
-								maxLength={25}
-								editable={!loading}
-							/>
-						</View>
-						{slugError && <Text style={styles.errorText}>{slugError}</Text>}
+						)}
 
-						{/* Checkbox: Save account */}
-						<TouchableOpacity style={styles.checkboxRow} onPress={() => !loading && setSaveAccount(!saveAccount)} activeOpacity={0.8}>
-							<Ionicons name={saveAccount ? 'checkbox' : 'square-outline'} size={20} color={saveAccount ? colors.primary : colors.textSecondary} />
-							<Text style={styles.checkboxLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
-						</TouchableOpacity>
-
-						{/* Password Textfield */}
-						<View style={[styles.inputWrapper, { marginTop: 12 }]}>
-							<View style={styles.inputIconContainer}>
-								<Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+						{/* Welcome Credentials Form */}
+						<View style={styles.formContainer}>
+							{/* Username (Slug) Textfield */}
+							<View style={styles.inputWrapper}>
+								<View style={styles.inputIconContainer}>
+									<Ionicons name="person-outline" size={18} color={colors.textSecondary} />
+								</View>
+								<TextInput
+									style={styles.inputField}
+									value={slug}
+									onChangeText={handleSlugChange}
+									placeholder={translate('username', 'Username')}
+									placeholderTextColor={colors.textTertiary}
+									autoCapitalize="none"
+									autoCorrect={false}
+									maxLength={25}
+									editable={!loading}
+								/>
 							</View>
-							<TextInput
-								ref={passwordInputRef}
-								style={styles.inputField}
-								value={password}
-								onChangeText={setPassword}
-								placeholder={translate('password', 'Password')}
-								placeholderTextColor={colors.textTertiary}
-								secureTextEntry={!showPassword}
-								autoCapitalize="none"
-								autoCorrect={false}
-								maxLength={20}
-								editable={!loading}
-							/>
-							<TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
-								<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textSecondary} />
+							{slugError && <Text style={styles.errorText}>{slugError}</Text>}
+
+							{/* Checkbox: Save account */}
+							<TouchableOpacity style={styles.checkboxRow} onPress={() => !loading && setSaveAccount(!saveAccount)} activeOpacity={0.8}>
+								<Ionicons name={saveAccount ? 'checkbox' : 'square-outline'} size={20} color={saveAccount ? colors.primary : colors.textSecondary} />
+								<Text style={styles.checkboxLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
+							</TouchableOpacity>
+
+							{/* Password Textfield */}
+							<View style={[styles.inputWrapper, { marginTop: 12 }]}>
+								<View style={styles.inputIconContainer}>
+									<Ionicons name="lock-closed-outline" size={18} color={colors.textSecondary} />
+								</View>
+								<TextInput
+									ref={passwordInputRef}
+									style={styles.inputField}
+									value={password}
+									onChangeText={setPassword}
+									placeholder={translate('password', 'Password')}
+									placeholderTextColor={colors.textTertiary}
+									secureTextEntry={!showPassword}
+									autoCapitalize="none"
+									autoCorrect={false}
+									maxLength={20}
+									editable={!loading}
+								/>
+								<TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
+									<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textSecondary} />
+								</TouchableOpacity>
+							</View>
+
+							{/* Checkbox: Require password switch */}
+							<TouchableOpacity style={styles.checkboxRow} onPress={() => !loading && setNeedPassword(!needPassword)} activeOpacity={0.8}>
+								<Ionicons name={needPassword ? 'checkbox' : 'square-outline'} size={20} color={needPassword ? colors.primary : colors.textSecondary} />
+								<Text style={styles.checkboxLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
+							</TouchableOpacity>
+
+							{/* Continue / Sign In Action Button */}
+							<TouchableOpacity style={[styles.continueBtn, loading && styles.continueBtnDisabled]} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.8}>
+								{loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.continueBtnText}>{translate('continue', 'Continue')}</Text>}
 							</TouchableOpacity>
 						</View>
-
-						{/* Checkbox: Require password switch */}
-						<TouchableOpacity style={styles.checkboxRow} onPress={() => !loading && setNeedPassword(!needPassword)} activeOpacity={0.8}>
-							<Ionicons name={needPassword ? 'checkbox' : 'square-outline'} size={20} color={needPassword ? colors.primary : colors.textSecondary} />
-							<Text style={styles.checkboxLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
-						</TouchableOpacity>
-
-						{/* Continue / Sign In Action Button */}
-						<TouchableOpacity style={[styles.continueBtn, loading && styles.continueBtnDisabled]} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.8}>
-							{loading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.continueBtnText}>{translate('continue', 'Continue')}</Text>}
-						</TouchableOpacity>
 					</View>
 				</View>
 			</SmartKeyboardSafeView>
@@ -506,7 +508,11 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			flex: 1
 		},
 		scrollContent: {
+			flexGrow: 1
+		},
+		scrollContentInner: {
 			flexGrow: 1,
+			width: '100%',
 			alignItems: 'center',
 			justifyContent: 'center',
 			padding: 16,
