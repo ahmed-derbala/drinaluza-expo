@@ -286,10 +286,79 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		}
 	}, [])
 
-	// Setup initial storage state
+	// Startup cleanup: delete incomplete downloads, corrupted files, and keep only the highest version APK
+	const performStartupCleanup = useCallback(async () => {
+		if (Platform.OS === 'web') return
+		try {
+			await ensureUpdatesFolder()
+			const files = await FileSystem.readDirectoryAsync(UPDATES_FOLDER)
+
+			const validApks: { filename: string; version: string }[] = []
+
+			for (const file of files) {
+				const filePath = UPDATES_FOLDER + file
+
+				// 1. Delete all .tmp files (incomplete downloads)
+				if (file.endsWith('.tmp')) {
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting incomplete download ${file}` })
+					await FileSystem.deleteAsync(filePath, { idempotent: true })
+					continue
+				}
+
+				// 2. Only process .apk files, delete anything else unexpected
+				if (!file.endsWith('.apk')) {
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting unexpected file ${file}` })
+					await FileSystem.deleteAsync(filePath, { idempotent: true })
+					continue
+				}
+
+				// 3. Parse version from filename (e.g. drinaluza-1.16.2.apk)
+				const match = file.match(/drinaluza-(.+)\.apk/)
+				if (!match || match[1] === 'unknown') {
+					// Corrupted or unrecognized APK file
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting unrecognized APK ${file}` })
+					await FileSystem.deleteAsync(filePath, { idempotent: true })
+					continue
+				}
+
+				// 4. Check file integrity (non-zero size)
+				const fileInfo = await FileSystem.getInfoAsync(filePath)
+				if (!fileInfo.exists || (fileInfo.size || 0) === 0) {
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting empty/corrupted APK ${file}` })
+					await FileSystem.deleteAsync(filePath, { idempotent: true })
+					continue
+				}
+
+				validApks.push({ filename: file, version: match[1] })
+			}
+
+			// 5. Among valid APKs, keep only the highest version
+			if (validApks.length > 1) {
+				// Sort descending by version (highest first)
+				validApks.sort((a, b) => (isVersionGreater(a.version, b.version) ? -1 : isVersionGreater(b.version, a.version) ? 1 : 0))
+
+				const highest = validApks[0]
+				for (let i = 1; i < validApks.length; i++) {
+					const apk = validApks[i]
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting older APK ${apk.filename} (keeping ${highest.filename})` })
+					await FileSystem.deleteAsync(UPDATES_FOLDER + apk.filename, { idempotent: true })
+				}
+			}
+
+			log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup complete. Kept ${validApks.length > 0 ? validApks[0].filename : 'no APKs'}.` })
+		} catch (err) {
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Startup cleanup failed', error: err })
+		}
+	}, [])
+
+	// Run startup cleanup then refresh APK list
 	useEffect(() => {
-		refreshApkList()
-	}, [refreshApkList])
+		const init = async () => {
+			await performStartupCleanup()
+			await refreshApkList()
+		}
+		init()
+	}, [performStartupCleanup, refreshApkList])
 
 	const contextValue = useMemo(
 		() => ({

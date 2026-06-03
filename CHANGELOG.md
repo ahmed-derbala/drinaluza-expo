@@ -11,6 +11,9 @@
 ### Fixed
 - Fixed asynchronous state layout measurement timing lag in `SmartKeyboardSafeView` by utilizing a synchronously updated mutable ref (`viewportHeightRef`).
 - Fixed ScrollView layout truncation on `/auth` screen by moving centering styles from `contentContainerStyle` to an inner `View` wrapper.
+- Fixed Android keyboard covering the welcome form on `/auth` and clipping issues by removing manual padding/KeyboardAvoidingView behavior on Android, relying natively on the OS window `adjustResize` logic, and restoring `flexGrow: 1` to ensure the form correctly recalculates and centers itself within the dynamically shrinking viewport.
+- Fixed `/updates` screen title disappearing during APK download by decoupling the download state (`isDownloading`) from the header's `loading` prop.
+- Refactored `SmartScreenHeader` layout to guarantee zero layout shift using `minWidth` and flex alignment on the right section, and precisely matched skeleton loader dimensions to text line heights to prevent 1px bounding box jumps during loading states.
 
 ### Removed
 - Removed the custom `KeyboardSafeView` and `KeyboardSafeFlatList` components (`src/core/KeyboardSafeView`) to align with standard React Native event propagation and cross-platform layouts.
@@ -27,6 +30,7 @@
 ### Added
 - Created a reusable, high-fidelity, New Architecture (Fabric) compatible `SmartKeyboardSafeView` component under `src/core/smart-keyboard-safe-view` to handle keyboard avoidance, scroll containment, and automatic scrolling to focused text inputs on iOS, Android, and web.
 - Added `loading` translation key to local translation files (`en`, `fr`, `ar`, `tn_latn`, `tn_arab`).
+- Added startup APK cleanup in `UpdatesContext`: on Android app launch, deletes all `.tmp` files (incomplete downloads), unrecognized/corrupted files, and older version APKs — keeping only the single highest-version APK file.
 
 ## [1.23.3] - 2026-06-02
 

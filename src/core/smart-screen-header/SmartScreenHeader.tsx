@@ -398,9 +398,10 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 
 	const renderTitleSection = () => {
 		if (isCurrentlyLoading) {
+			const titleLineHeight = Platform.OS === 'ios' ? 22 : 24
 			return (
 				<View style={styles.titleContainer}>
-					<View style={{ height: 24, justifyContent: 'center' }}>
+					<View style={{ height: titleLineHeight, justifyContent: 'center' }}>
 						<SkeletonBlock width={120} height={16} borderRadius={4} disableAnimations={disableAnimations} />
 					</View>
 					{subtitle ? (
@@ -540,7 +541,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'flex-end',
-		width: 176, // stable container width to guarantee zero layout shifts
+		minWidth: 140, // stable container minimum width to prevent title truncation jumping
+		flexShrink: 0,
 		zIndex: 2,
 		minHeight: 38,
 		gap: 8
