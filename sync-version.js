@@ -8,8 +8,10 @@ const __dirname = path.dirname(__filename);
 
 // Define paths to both package.json files
 const repoAPath = path.join(__dirname, 'package.json');
+const repoAName = 'drinaluza-expo'
 // Adjust '../repo-b' to match the actual relative path to Repo B on your machine
 const repoBPath = path.join(__dirname, '../drinaluza-expo-releases/package.json');
+const repoBName = 'drinaluza-expo-releases'
 
 try {
   // 1. Read Repo A's version
@@ -24,9 +26,9 @@ try {
     // fs.writeFileSync formats the JSON nicely with a 2-space indent and a trailing newline
     fs.writeFileSync(repoBPath, JSON.stringify(pkgB, null, 2) + '\n', 'utf8');
     
-    console.log(`✅ Successfully copied version ${versionA} from Repo A to Repo B.`);
+    console.log(`✅ Successfully copied version ${versionA} from ${repoAName} to ${repoBName}.`);
   } else {
-    console.error(`❌ Could not find Repo B's package.json at: ${repoBPath}`);
+    console.error(`❌ Could not find ${repoBName}'s package.json at: ${repoBPath}`);
     process.exit(1);
   }
 } catch (error) {

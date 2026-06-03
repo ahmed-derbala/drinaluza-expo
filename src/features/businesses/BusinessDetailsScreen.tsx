@@ -1,6 +1,7 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, Linking, RefreshControl, Platform } from 'react-native'
+import { SmartKeyboardSafeView } from '@/core/smart-keyboard-safe-view'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import QRCodeModal from '@/features/common/QRCodeModal'
@@ -201,7 +202,7 @@ export default function BusinessDetailsScreen() {
 					)
 				}}
 			/>
-			<ScrollView
+			<SmartKeyboardSafeView
 				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
@@ -322,7 +323,7 @@ export default function BusinessDetailsScreen() {
 
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
-			</ScrollView>
+			</SmartKeyboardSafeView>
 
 			{/* QR Code Viewer Modal */}
 			{business && (

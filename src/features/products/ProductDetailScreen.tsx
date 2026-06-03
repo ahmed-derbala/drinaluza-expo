@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
+import { SmartKeyboardSafeView } from '@/core/smart-keyboard-safe-view'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
@@ -332,7 +333,7 @@ export default function ProductDetailScreen() {
 				}}
 			/>
 
-			<ScrollView
+			<SmartKeyboardSafeView
 				contentContainerStyle={[styles.scrollContent, width > 800 && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
@@ -512,7 +513,7 @@ export default function ProductDetailScreen() {
 
 				{/* Bottom Spacing */}
 				<View style={styles.bottomSpacing} />
-			</ScrollView>
+			</SmartKeyboardSafeView>
 
 			{/* QR Code Viewer Modal */}
 			{product && (

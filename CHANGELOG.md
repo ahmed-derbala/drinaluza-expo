@@ -4,7 +4,7 @@
 
 ### Changed
 - Added a `disableAnimations` prop to `SmartScreenHeader` and enabled it on the `/updates` screen to remove all header animations (linear progress bar, pulsing skeleton loaders, and title fade-in).
-- Refactored form and details screens (including `/auth`, `/profile`, business details, and product edit/create screens) to use standard React Native `KeyboardAvoidingView` and `ScrollView` components, fixing a gesture responder bug that froze scrolling on Android APK release builds.
+- Refactored form and details screens (including `/auth`, `/profile`, `/businesses/[slug]`, `/businesses/[slug]/edit`, `/products/create`, `/businesses/[slug]/products/[slug]`, and `/businesses/[slug]/products/[slug]/edit`) to use `SmartKeyboardSafeView` to prevent keyboard overlap on input fields across platforms.
 - Refactored `/search` and business products lists to use standard React Native `FlatList` components.
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
 
@@ -21,6 +21,7 @@
 - Fixed Android startup redirection to `/updates` when a newer version is available by delaying the layout transition until the stack navigator mounts, and by performing a version redirection check in the root index component.
 
 ### Added
+- Created a reusable, high-fidelity, New Architecture (Fabric) compatible `SmartKeyboardSafeView` component under `src/core/smart-keyboard-safe-view` to handle keyboard avoidance, scroll containment, and automatic scrolling to focused text inputs on iOS, Android, and web.
 - Added `loading` translation key to local translation files (`en`, `fr`, `ar`, `tn_latn`, `tn_arab`).
 
 ## [1.23.3] - 2026-06-02
