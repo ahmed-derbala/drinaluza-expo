@@ -4,9 +4,14 @@
 
 ### Changed
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
-- Modified `SmartScreenHeader` to show "Loading..." as the title while a screen is loading, and hide the subtitle during this state.
+- Rewrote `SmartScreenHeader` to premium production-grade quality, incorporating a left-aligned layout for back button, title, and subtitle, and a fixed-width right section (`176px`) to completely guarantee Zero Layout Shift during navigation.
+- Added a pulsing `Animated.View` skeleton block loader in `SmartScreenHeader` to replace title/subtitle text during loading states (`isLoading`/`loading`), preserving exact layout constraints and applying a smooth fade-in micro-animation when loading completes.
+- Implemented a reusable `headerActions` prop in `SmartScreenHeader` to resolve predefined keys (`'search'`, `'notifications'`, `'cart'`, `'settings'`, `'refresh'`, `'scanner'`) and custom configuration objects, avoiding hardcoded action button JSX inside screen files.
+- Refactored `FeedScreen` to use the new reusable `headerActions` configuration.
 - Modified `UpdatesContext` to keep all downloaded APK files in local storage by disabling the automatic pruning of older version files, allowing users to view and manage all cached files.
 - Modified the `/updates` page to show the cached APK installers list on all platforms when files exist, rather than restricting it to Android.
+- Fixed the "Share Link" button on the updates screen to use React Native's native `Share` API instead of `expo-sharing` (which only supports sharing local file URIs).
+- Modified the updates download flow to download files to a `.tmp` path first and rename them to `.apk` only upon successful completion, ensuring incomplete or partial downloads are ignored in the cached installers list.
 - Fixed Android startup redirection to `/updates` when a newer version is available by delaying the layout transition until the stack navigator mounts, and by performing a version redirection check in the root index component.
 
 ### Added

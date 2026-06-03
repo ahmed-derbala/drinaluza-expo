@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions, Linking } from 'react-native'
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions, Linking, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
@@ -68,15 +68,14 @@ export default function UpdatesScreen() {
 		}
 	}
 
-	// Share download URL helper
+	// Share download URL helper using native Share API
 	const handleShareUrl = async () => {
 		if (latestRelease?.download_url) {
 			try {
-				if (await Sharing.isAvailableAsync()) {
-					await Sharing.shareAsync(latestRelease.download_url)
-				} else {
-					Alert.alert(translate('error', 'Error'), 'Sharing is not available on this device.')
-				}
+				await Share.share({
+					message: latestRelease.download_url,
+					title: 'Share Drinaluza Update Link'
+				})
 			} catch (err) {
 				console.warn('[UpdatesScreen] Sharing URL failed:', err)
 			}

@@ -9,25 +9,24 @@ Requirements:
 Features:
 - Layout:
   - left section
-    - Back button (always visible, navigates to /feed if no previous screen)
-  - center section
+    - Back button: navigates to /feed if no previous screen
     - Title
     - Optional subtitle
   - right section:
-    - SmartKebabMenu (always visible)
-    - Additional screen-specific actions
+    - SmartKebabMenu: always visible, default menu items: /settings and /updates
+    - Additional screen-specific headerActions
 - Must support:
   - custom actions/icons
   - loading state
   - responsive web/mobile layout
   - safe area handling
-- Core Props to support:
+- example of Core Props to support:
+  - showBackButton
+  - onBackPress
   - title
   - subtitle
-  - headerLeft
-  - headerRight
-  - onBackPress
-  - loading
+  - headerActions
+  - SmartKebabMenuItems
 - Header height and spacing must be consistent across the app.
 - The component must:
   - avoid unnecessary rerenders

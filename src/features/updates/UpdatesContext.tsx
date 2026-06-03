@@ -227,12 +227,14 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 		const filename = `drinaluza-${latestRelease.latest_version}.apk`
 		const fileUri = UPDATES_FOLDER + filename
+		const tempFileUri = fileUri + '.tmp'
 
 		try {
 			// Clean any partial downloads of this exact version
+			await FileSystem.deleteAsync(tempFileUri, { idempotent: true })
 			await FileSystem.deleteAsync(fileUri, { idempotent: true })
 
-			const downloadResumable = FileSystem.createDownloadResumable(latestRelease.download_url, fileUri, {}, (downloadProgressData) => {
+			const downloadResumable = FileSystem.createDownloadResumable(latestRelease.download_url, tempFileUri, {}, (downloadProgressData) => {
 				const progress = downloadProgressData.totalBytesWritten / downloadProgressData.totalBytesExpectedToWrite
 				setDownloadProgress(isNaN(progress) ? 0 : progress)
 			})
@@ -245,19 +247,27 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setDownloadProgress(1)
 
 			if (downloadResult && downloadResult.uri) {
+				// Rename temp file to final .apk file on successful completion
+				await FileSystem.moveAsync({
+					from: downloadResult.uri,
+					to: fileUri
+				})
+
 				await refreshApkList()
 				// Automatically prune other older cached APK releases (disabled to show all downloaded APKs)
 				// await pruneOldApks(latestRelease.latest_version)
 
 				// Automatically launch package installer when download is complete
-				await installApk(downloadResult.uri)
-				return downloadResult.uri
+				await installApk(fileUri)
+				return fileUri
 			}
 			return null
 		} catch (err) {
 			setIsDownloading(false)
 			setDownloadProgress(0)
 			activeDownloadRef.current = null
+			// Clean up temp file on failure
+			await FileSystem.deleteAsync(tempFileUri, { idempotent: true }).catch(() => {})
 			console.error('[UpdatesContext] File download error:', err)
 			throw err
 		}

@@ -1,11 +1,12 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useEffect, useRef, useMemo } from 'react'
 import { StyleSheet, View, Text, Platform, Animated, Easing, useWindowDimensions, ActivityIndicator, Pressable } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Href, usePathname } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { SmartKebabMenu } from '@/core/smart-kebab-menu'
+import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
+import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
@@ -57,7 +58,7 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 HeaderBackButton.displayName = 'HeaderBackButton'
 
 // ----------------------------------------
-// 2. HeaderNotificationsButton Component
+// 2. Predefined Reusable Header Actions
 // ----------------------------------------
 export const HeaderNotificationsButton: React.FC = React.memo(() => {
 	const router = useRouter()
@@ -75,28 +76,19 @@ export const HeaderNotificationsButton: React.FC = React.memo(() => {
 		/>
 	)
 })
-
 HeaderNotificationsButton.displayName = 'HeaderNotificationsButton'
 
-// ----------------------------------------
-// 3. HeaderSearchButton Component
-// ----------------------------------------
 export const HeaderSearchButton: React.FC = React.memo(() => {
 	const router = useRouter()
 	const { colors } = useTheme()
 
 	return <HeaderActionButton iconName="search-outline" onPress={() => router.push('/search')} accessibilityLabel={translate('search', 'Search')} backgroundColor={colors.surface} size={40} />
 })
-
 HeaderSearchButton.displayName = 'HeaderSearchButton'
 
-// ----------------------------------------
-// 4. HeaderCartButton Component
-// ----------------------------------------
 interface HeaderCartButtonProps {
 	badgeCount?: number
 }
-
 export const HeaderCartButton: React.FC<HeaderCartButtonProps> = React.memo(({ badgeCount = 0 }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
@@ -112,61 +104,92 @@ export const HeaderCartButton: React.FC<HeaderCartButtonProps> = React.memo(({ b
 		/>
 	)
 })
-
 HeaderCartButton.displayName = 'HeaderCartButton'
 
-// ----------------------------------------
-// 5. HeaderSettingsButton Component
-// ----------------------------------------
 export const HeaderSettingsButton: React.FC = React.memo(() => {
 	const router = useRouter()
 	const { colors } = useTheme()
 
 	return <HeaderActionButton iconName="settings-outline" onPress={() => router.push('/settings')} accessibilityLabel={translate('settings', 'Settings')} backgroundColor={colors.surface} size={40} />
 })
-
 HeaderSettingsButton.displayName = 'HeaderSettingsButton'
 
 // ----------------------------------------
-// Main SmartScreenHeader Component Props
+// 3. Skeleton Block component for Loading state
 // ----------------------------------------
+const SkeletonBlock: React.FC<{ width: number; height: number; borderRadius?: number }> = ({ width, height, borderRadius = 4 }) => {
+	const opacity = useRef(new Animated.Value(0.3)).current
+
+	useEffect(() => {
+		const animation = Animated.loop(
+			Animated.sequence([
+				Animated.timing(opacity, {
+					toValue: 0.7,
+					duration: 650,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: true
+				}),
+				Animated.timing(opacity, {
+					toValue: 0.3,
+					duration: 650,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: true
+				})
+			])
+		)
+		animation.start()
+		return () => animation.stop()
+	}, [opacity])
+
+	return (
+		<Animated.View
+			style={{
+				width,
+				height,
+				borderRadius,
+				backgroundColor: '#3A506B50',
+				opacity
+			}}
+		/>
+	)
+}
+
+// ----------------------------------------
+// 4. Header Actions configuration types
+// ----------------------------------------
+export type HeaderActionType =
+	| 'search'
+	| 'notifications'
+	| 'cart'
+	| 'settings'
+	| 'refresh'
+	| 'scanner'
+	| {
+			key: string
+			iconName: string
+			iconType?: 'material' | 'ionicons'
+			badgeCount?: number
+			onPress: () => void
+			accessibilityLabel: string
+			disabled?: boolean
+	  }
+
 export interface SmartScreenHeaderProps {
-	/**
-	 * Main title. Can be a string or a custom ReactNode.
-	 */
 	title?: React.ReactNode
-	/**
-	 * Optional subtitle. Only rendered if title is a string.
-	 */
 	subtitle?: string
-	/**
-	 * Custom left actions. Pass `null` or `false` to hide the back button.
-	 */
-	headerLeft?: React.ReactNode
-	/**
-	 * Custom right actions. Rendered to the left of the SmartKebabMenu.
-	 */
-	headerRight?: React.ReactNode
-	/**
-	 * Callback for default back button press.
-	 */
+	showBackButton?: boolean
 	onBackPress?: () => void
-	/**
-	 * Whether the screen is loading. Triggers a linear progress indicator at the bottom.
-	 */
-	loading?: boolean
-	/**
-	 * Navigation fallback path if there's no router history. Defaults to `/feed`.
-	 */
+	headerActions?: (HeaderActionType | React.ReactNode)[]
+	SmartKebabMenuItems?: SmartKebabMenuItem[]
+	isLoading?: boolean
 	fallbackRoute?: Href
-	/**
-	 * Left offset for center title (to avoid overlapping). Defaults to 60.
-	 */
 	centerLeftOffset?: number
-	/**
-	 * Right offset for center title (to avoid overlapping). Defaults to 60 (or 110 if headerRight is present).
-	 */
 	centerRightOffset?: number
+
+	// Backward compatibility props
+	loading?: boolean
+	headerLeft?: React.ReactNode
+	headerRight?: React.ReactNode
 
 	// React Navigation header props support
 	options?: any
@@ -176,16 +199,20 @@ export interface SmartScreenHeaderProps {
 }
 
 // ----------------------------------------
-// SmartScreenHeader Component Implementation
+// 5. SmartScreenHeader Component Implementation
 // ----------------------------------------
 const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	title,
 	subtitle,
+	showBackButton,
+	onBackPress,
+	headerActions,
+	SmartKebabMenuItems,
+	isLoading = false,
+	fallbackRoute,
+	loading = false,
 	headerLeft,
 	headerRight,
-	onBackPress,
-	loading = false,
-	fallbackRoute,
 	centerLeftOffset,
 	centerRightOffset,
 	options,
@@ -199,10 +226,15 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	const pathname = usePathname()
 
 	const loadingAnim = useRef(new Animated.Value(0)).current
+	const fadeAnim = useRef(new Animated.Value(0)).current
 
+	// Resolve actual loading state from both props
+	const isCurrentlyLoading = isLoading || loading
+
+	// Setup top linear progress bar animation if loading
 	useEffect(() => {
 		let animation: Animated.CompositeAnimation | null = null
-		if (loading) {
+		if (isCurrentlyLoading) {
 			loadingAnim.setValue(0)
 			animation = Animated.loop(
 				Animated.timing(loadingAnim, {
@@ -221,11 +253,24 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 				animation.stop()
 			}
 		}
-	}, [loading, loadingAnim])
+	}, [isCurrentlyLoading, loadingAnim])
+
+	// Setup title fade-in transition when loading resolves
+	useEffect(() => {
+		if (!isCurrentlyLoading) {
+			Animated.timing(fadeAnim, {
+				toValue: 1,
+				duration: 250,
+				useNativeDriver: true
+			}).start()
+		} else {
+			fadeAnim.setValue(0)
+		}
+	}, [isCurrentlyLoading, fadeAnim])
 
 	// Resolve title
 	let resolvedTitle = title
-	if (loading) {
+	if (isCurrentlyLoading) {
 		resolvedTitle = translate('loading', 'Loading...')
 	} else if (resolvedTitle === undefined) {
 		if (typeof options?.headerTitle === 'function') {
@@ -239,7 +284,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		}
 	}
 
-	// Resolve headerLeft
+	// Resolve headerLeft (for backward compatibility)
 	let resolvedHeaderLeft = headerLeft
 	if (resolvedHeaderLeft === undefined) {
 		if (typeof options?.headerLeft === 'function') {
@@ -249,22 +294,16 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		}
 	}
 
+	// Determine if we should show the back button
 	const rootPaths = ['/', '/feed', '/dashboard', '/notifications', '/profile', '/settings', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile', '/(home)/settings']
 	const isRootPath = rootPaths.includes(pathname)
+	const resolvedShowBackButton = showBackButton ?? options?.showBackButton ?? !isRootPath
 
-	// Always ensure back button is visible on non-root pages
-	if (!isRootPath) {
-		if (resolvedHeaderLeft === null || resolvedHeaderLeft === false || resolvedHeaderLeft === undefined) {
-			resolvedHeaderLeft = <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />
-		}
-	} else {
-		// Respect null/false/undefined on root pages to keep back button hidden
-		if (resolvedHeaderLeft === undefined || resolvedHeaderLeft === null || resolvedHeaderLeft === false) {
-			resolvedHeaderLeft = null
-		}
-	}
+	// Register kebab menu items dynamically
+	const screenKebabItems = SmartKebabMenuItems ?? options?.SmartKebabMenuItems ?? []
+	useSmartKebabMenu(screenKebabItems)
 
-	// Resolve headerRight
+	// Resolve headerRight (for backward compatibility)
 	let resolvedHeaderRight = headerRight
 	if (resolvedHeaderRight === undefined) {
 		if (typeof options?.headerRight === 'function') {
@@ -274,40 +313,109 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		}
 	}
 
-	// Sane defaults to prevent layout shifts
-	const leftOffset = centerLeftOffset ?? 60
-	const rightOffset = centerRightOffset ?? (resolvedHeaderRight ? 110 : 60)
+	// Resolve headerActions
+	const resolvedActions: (HeaderActionType | React.ReactNode)[] = headerActions ?? options?.headerActions ?? []
+
+	const resolveHeaderAction = (action: HeaderActionType | React.ReactNode, index: number) => {
+		if (React.isValidElement(action)) {
+			return React.cloneElement(action as React.ReactElement, { key: `custom-action-${index}` })
+		}
+
+		if (typeof action === 'string') {
+			switch (action) {
+				case 'search':
+					return <HeaderSearchButton key="predefined-search" />
+				case 'notifications':
+					return <HeaderNotificationsButton key="predefined-notifications" />
+				case 'cart':
+					return <HeaderCartButton key="predefined-cart" />
+				case 'settings':
+					return <HeaderSettingsButton key="predefined-settings" />
+				case 'refresh':
+					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} />
+				case 'scanner':
+					if (Platform.OS === 'web') return null
+					return (
+						<HeaderActionButton
+							key="predefined-scanner"
+							iconName="qr-code-scanner"
+							iconType="material"
+							onPress={() => {
+								if (typeof options?.onScannerPress === 'function') {
+									options.onScannerPress()
+								}
+							}}
+							accessibilityLabel="Scan QR Code"
+							backgroundColor={colors.surface}
+							size={40}
+						/>
+					)
+				default:
+					return null
+			}
+		}
+
+		if (action && typeof action === 'object' && 'key' in action) {
+			const config = action as any
+			if (config.key === 'refresh') {
+				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} />
+			}
+			return (
+				<HeaderActionButton
+					key={config.key}
+					iconName={config.iconName}
+					iconType={config.iconType || 'ionicons'}
+					badgeCount={config.badgeCount}
+					onPress={config.onPress}
+					accessibilityLabel={config.accessibilityLabel}
+					backgroundColor={colors.surface}
+					size={40}
+				/>
+			)
+		}
+
+		return null
+	}
 
 	const translateX = loadingAnim.interpolate({
 		inputRange: [0, 1],
 		outputRange: [-width * 0.4, width]
 	})
 
-	const renderLeftSection = () => {
-		return resolvedHeaderLeft as React.ReactNode
-	}
-
 	const renderTitleSection = () => {
-		if (!resolvedTitle) return null
+		if (isCurrentlyLoading) {
+			return (
+				<View style={styles.titleContainer}>
+					<View style={{ height: 24, justifyContent: 'center' }}>
+						<SkeletonBlock width={120} height={16} borderRadius={4} />
+					</View>
+					{subtitle ? (
+						<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
+							<SkeletonBlock width={80} height={10} borderRadius={3} />
+						</View>
+					) : null}
+				</View>
+			)
+		}
 
 		if (React.isValidElement(resolvedTitle)) {
 			return resolvedTitle
 		}
 
 		return (
-			<View style={styles.titleContainer}>
+			<Animated.View style={[styles.titleContainer, { opacity: fadeAnim }]}>
 				<View style={styles.titleRow}>
 					<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
 						{resolvedTitle}
 					</Text>
 					{loading && <ActivityIndicator size="small" color={colors.primary} style={styles.titleSpinner} />}
 				</View>
-				{subtitle && !loading ? (
+				{subtitle ? (
 					<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
 						{subtitle}
 					</Text>
 				) : null}
-			</View>
+			</Animated.View>
 		)
 	}
 
@@ -323,31 +431,22 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 			]}
 		>
 			<View style={styles.headerInner}>
-				{/* Left Section */}
-				<View style={styles.leftSection}>{renderLeftSection()}</View>
-
-				{/* Center Section (Absolutely Centered to avoid layout shifts) */}
-				<View
-					style={[
-						styles.centerSection,
-						{
-							left: leftOffset,
-							right: rightOffset
-						}
-					]}
-				>
-					{renderTitleSection()}
+				{/* Left Section: Back button + Title & Subtitle */}
+				<View style={styles.leftSection}>
+					{resolvedHeaderLeft ? resolvedHeaderLeft : resolvedShowBackButton && <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />}
+					<View style={[styles.titleContainerWrapper, (resolvedHeaderLeft || resolvedShowBackButton) && { marginLeft: 12 }]}>{renderTitleSection()}</View>
 				</View>
 
-				{/* Right Section */}
+				{/* Right Section: Actions + Kebab menu (stable container width to guarantee zero layout shifts) */}
 				<View style={styles.rightSection}>
 					{resolvedHeaderRight}
+					{resolvedActions.map((action, idx) => resolveHeaderAction(action, idx))}
 					<SmartKebabMenu />
 				</View>
 			</View>
 
 			{/* Linear Progress/Loading Bar */}
-			{loading && (
+			{isCurrentlyLoading && (
 				<View style={[styles.loadingBarContainer, { backgroundColor: colors.borderLight || '#1E293B' }]}>
 					<Animated.View
 						style={[
@@ -419,24 +518,18 @@ const styles = StyleSheet.create({
 	leftSection: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		zIndex: 2,
+		flex: 1,
+		marginRight: 16,
 		minHeight: 38
 	},
 	rightSection: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'flex-end',
+		width: 176, // stable container width to guarantee zero layout shifts
 		zIndex: 2,
 		minHeight: 38,
 		gap: 8
-	},
-	centerSection: {
-		position: 'absolute',
-		top: 0,
-		bottom: 0,
-		justifyContent: 'center',
-		alignItems: Platform.OS === 'ios' ? 'center' : 'flex-start',
-		zIndex: 1
 	},
 	backBtn: {
 		width: 38,
@@ -452,9 +545,13 @@ const styles = StyleSheet.create({
 			} as any
 		})
 	},
+	titleContainerWrapper: {
+		flex: 1
+	},
 	titleContainer: {
+		flexDirection: 'column',
 		justifyContent: 'center',
-		alignItems: Platform.OS === 'ios' ? 'center' : 'flex-start'
+		alignItems: 'flex-start'
 	},
 	titleRow: {
 		flexDirection: 'row',
@@ -462,14 +559,16 @@ const styles = StyleSheet.create({
 	},
 	titleText: {
 		fontSize: Platform.OS === 'ios' ? 17 : 18,
-		fontWeight: Platform.OS === 'ios' ? '600' : '700'
+		fontWeight: Platform.OS === 'ios' ? '600' : '700',
+		lineHeight: Platform.OS === 'ios' ? 22 : 24
 	},
 	titleSpinner: {
 		marginLeft: 6
 	},
 	subtitleText: {
 		fontSize: 12,
-		marginTop: 1
+		marginTop: 2,
+		lineHeight: 16
 	},
 	loadingBarContainer: {
 		position: 'absolute',

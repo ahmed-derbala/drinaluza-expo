@@ -1,6 +1,3 @@
-import HeaderTitle from '@/features/common/HeaderTitle'
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import HeaderActionButton from '@/features/common/HeaderActionButton'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
@@ -474,32 +471,47 @@ export default function FeedScreen() {
 		</View>
 	)
 
-	const headerRightActions = (
-		<View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-			{!isWeb && (
-				<HeaderActionButton iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} backgroundColor={colors.surface} size={40} accessibilityLabel="Scan Barcode" />
-			)}
-			<HeaderActionButton iconName="search-outline" onPress={() => router.push('/search')} backgroundColor={colors.surface} size={40} accessibilityLabel="Search" />
-			<HeaderActionButton
-				iconName="cart-outline"
-				onPress={() => router.push('/profile/purchases?status=cart')}
-				badgeCount={cart.length}
-				backgroundColor={colors.surface}
-				size={40}
-				accessibilityLabel="View Cart"
-			/>
-			<HeaderRefreshButton onRefresh={refreshData} isRefreshing={refreshing} size={20} style={[styles.refreshButtonSmall, { backgroundColor: colors.surface }]} />
-		</View>
-	)
-
 	return (
 		<View style={styles.container}>
 			<Tabs.Screen
-				options={{
-					headerTitle: () => <HeaderTitle title={translate('feed', 'Feed')} subtitle={`${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`} />,
-					headerLeft: () => null,
-					headerRight: () => headerRightActions
-				}}
+				options={
+					{
+						title: translate('feed', 'Feed'),
+						subtitle: `${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`,
+						showBackButton: false,
+						headerActions: [
+							...(!isWeb
+								? [
+										{
+											key: 'scanner',
+											iconName: 'qr-code-scanner',
+											iconType: 'material' as const,
+											onPress: () => setIsScannerVisible(true),
+											accessibilityLabel: 'Scan Barcode'
+										}
+									]
+								: []),
+							{
+								key: 'search',
+								iconName: 'search-outline',
+								onPress: () => router.push('/search'),
+								accessibilityLabel: 'Search'
+							},
+							{
+								key: 'cart',
+								iconName: 'cart-outline',
+								badgeCount: cart.length,
+								onPress: () => router.push('/profile/purchases?status=cart'),
+								accessibilityLabel: 'View Cart'
+							},
+							{
+								key: 'refresh',
+								onPress: refreshData,
+								isRefreshing: refreshing
+							}
+						]
+					} as any
+				}
 			/>
 
 			<Animated.FlatList
