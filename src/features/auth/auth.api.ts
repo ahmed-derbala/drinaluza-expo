@@ -1,7 +1,6 @@
 import { getApiClient } from '@/core/api'
-import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Platform } from 'react-native'
-import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken } from '@/core/storage'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@/core/storage'
 import { log } from '@/core/log'
 import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
 
@@ -377,7 +376,7 @@ export const signOut = async (): Promise<boolean> => {
 			secureRemoveItem('userData'),
 			secureRemoveItem('user._id'),
 			secureRemoveItem('user.slug'),
-			AsyncStorage.multiRemove(['authToken', 'userData', 'user._id', 'user.slug', 'lastActiveTime']),
+			multiRemove(['authToken', 'userData', 'user._id', 'user.slug', 'lastActiveTime']),
 			secureRemoveItem('authToken'),
 			secureRemoveItem('userData'),
 			secureRemoveItem('user._id'),
@@ -403,14 +402,7 @@ export const switchUser = async (): Promise<boolean> => {
 			sessionTimer = null
 		}
 
-		if (Platform.OS === 'web') {
-			const allKeys = await AsyncStorage.getAllKeys()
-			const keysToRemove = allKeys.filter((key) => key !== SAVED_AUTHS_KEY)
-			await AsyncStorage.multiRemove(keysToRemove)
-		} else {
-			await AsyncStorage.clear()
-			await Promise.all([removeToken(), secureRemoveItem('refreshToken'), secureRemoveItem('userData'), secureRemoveItem('user._id'), secureRemoveItem('user.slug')])
-		}
+		await clearStorageExceptSavedAuths()
 
 		return true
 	} catch (error) {

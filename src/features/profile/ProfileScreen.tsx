@@ -1,5 +1,22 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, ActivityIndicator, Linking, Modal, Animated, Easing } from 'react-native'
+import {
+	View,
+	Text,
+	StyleSheet,
+	ScrollView,
+	TextInput,
+	TouchableOpacity,
+	Image,
+	Alert,
+	Platform,
+	useWindowDimensions,
+	ActivityIndicator,
+	Linking,
+	Modal,
+	Animated,
+	Easing,
+	KeyboardAvoidingView
+} from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -24,7 +41,6 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import { uploadFile } from '@/core/file'
 import { log } from '@/core/log'
-import { SmartKeyboardSafeView } from '@/core/smart-keyboard-safe-view'
 
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
@@ -634,669 +650,631 @@ export default function ProfileScreen() {
 	return (
 		<View style={styles.container}>
 			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerRight: () => headerRightActions }} />
-			<SmartKeyboardSafeView contentContainerStyle={styles.contentContainer} onScroll={onScroll} scrollEventThrottle={16} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-				{/* Profile Header Card */}
-				<View style={styles.profileCard}>
-					<View style={styles.photoContainer}>
-						<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" />
-						<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
-							<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
-						</TouchableOpacity>
-						<TouchableOpacity style={[styles.uploadPhotoButton, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
-							{uploadingPhoto ? <ActivityIndicator size={16} color="#fff" /> : <Ionicons name="cloud-upload-outline" size={20} color="#fff" />}
-						</TouchableOpacity>
-					</View>
-
-					{editMode.photo && (
-						<View style={[styles.inputGroup, { width: '100%', marginTop: 16, paddingHorizontal: 20 }]}>
-							<Text style={styles.inputLabel}>Photo URL</Text>
-							<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.card }]}>
-								<TextInput
-									style={[styles.socialInput, { fontSize: 13 }]}
-									value={userData.media?.thumbnail?.url || ''}
-									onChangeText={updatePhotoUrl}
-									placeholder="https://example.com/photo.jpg"
-									placeholderTextColor={colors.textTertiary}
-									selectTextOnFocus
-								/>
-								<TouchableOpacity onPress={handlePastePhoto} style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }]}>
-									<Ionicons name="clipboard-outline" size={18} color={colors.primary} />
-								</TouchableOpacity>
-								<TouchableOpacity
-									onPress={() => saveUserData('photo')}
-									style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
-								>
-									<Ionicons name="save-outline" size={18} color={colors.primary} />
-								</TouchableOpacity>
-								<TouchableOpacity
-									onPress={() => toggleEdit('photo', false)}
-									style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.error + '10' }]}
-								>
-									<Ionicons name="close-outline" size={18} color={colors.error} />
-								</TouchableOpacity>
-							</View>
+			<KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+				<ScrollView
+					style={styles.scrollView}
+					contentContainerStyle={styles.contentContainer}
+					onScroll={onScroll}
+					scrollEventThrottle={16}
+					keyboardShouldPersistTaps="handled"
+					showsVerticalScrollIndicator={false}
+				>
+					{/* Profile Header Card */}
+					<View style={styles.profileCard}>
+						<View style={styles.photoContainer}>
+							<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" />
+							<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
+								<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
+							</TouchableOpacity>
+							<TouchableOpacity style={[styles.uploadPhotoButton, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
+								{uploadingPhoto ? <ActivityIndicator size={16} color="#fff" /> : <Ionicons name="cloud-upload-outline" size={20} color="#fff" />}
+							</TouchableOpacity>
 						</View>
-					)}
 
-					<Text style={styles.profileName}>@{userData.slug}</Text>
-
-					<View style={styles.roleStateContainer}>
-						<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
-							<Text style={styles.roleBadgeText}>{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
-						</View>
-						{userData.state?.code && (
-							<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>
-								<View style={[styles.stateDot, { backgroundColor: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]} />
-								<Text style={[styles.stateText, { color: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]}>{userData.state.code.toUpperCase()}</Text>
+						{editMode.photo && (
+							<View style={[styles.inputGroup, { width: '100%', marginTop: 16, paddingHorizontal: 20 }]}>
+								<Text style={styles.inputLabel}>Photo URL</Text>
+								<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.card }]}>
+									<TextInput
+										style={[styles.socialInput, { fontSize: 13 }]}
+										value={userData.media?.thumbnail?.url || ''}
+										onChangeText={updatePhotoUrl}
+										placeholder="https://example.com/photo.jpg"
+										placeholderTextColor={colors.textTertiary}
+										selectTextOnFocus
+									/>
+									<TouchableOpacity onPress={handlePastePhoto} style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }]}>
+										<Ionicons name="clipboard-outline" size={18} color={colors.primary} />
+									</TouchableOpacity>
+									<TouchableOpacity
+										onPress={() => saveUserData('photo')}
+										style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
+									>
+										<Ionicons name="save-outline" size={18} color={colors.primary} />
+									</TouchableOpacity>
+									<TouchableOpacity
+										onPress={() => toggleEdit('photo', false)}
+										style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.error + '10' }]}
+									>
+										<Ionicons name="close-outline" size={18} color={colors.error} />
+									</TouchableOpacity>
+								</View>
 							</View>
 						)}
+
+						<Text style={styles.profileName}>@{userData.slug}</Text>
+
+						<View style={styles.roleStateContainer}>
+							<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+								<Text style={styles.roleBadgeText}>{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+							</View>
+							{userData.state?.code && (
+								<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>
+									<View style={[styles.stateDot, { backgroundColor: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]} />
+									<Text style={[styles.stateText, { color: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]}>{userData.state.code.toUpperCase()}</Text>
+								</View>
+							)}
+						</View>
 					</View>
-				</View>
 
-				<Section
-					title={'✏️ ' + translate('name', 'Name')}
-					styles={styles}
-					isEditing={editMode.name}
-					onEdit={() => toggleEdit('name', true)}
-					onSave={() => saveUserData('name')}
-					onCancel={() => toggleEdit('name', false)}
-				>
-					{editMode.name ? (
-						<>
-							<LocalizedFormInput
-								label="Name (English)"
-								value={userData.name?.en || ''}
-								onChangeText={(value) => updateField('en', value, 'name')}
-								lang="en"
-								placeholder="Name in English"
-								style={{ marginBottom: 0 }}
-							/>
-							<LocalizedFormInput
-								label="Name (Tunisian Arabic)"
-								value={userData.name?.tn_arab || ''}
-								onChangeText={(value) => updateField('tn_arab', value, 'name')}
-								lang="tn_arab"
-								placeholder="الاسم بالعربية"
-								style={{ marginBottom: 0 }}
-							/>
-							<LocalizedFormInput
-								label="Name (Tunisian Latin)"
-								value={userData.name?.tn_latn || ''}
-								onChangeText={(value) => updateField('tn_latn', value, 'name')}
-								lang="tn_latn"
-								placeholder="Name in Tunisian (Latin)"
-								style={{ marginBottom: 0 }}
-							/>
-						</>
-					) : (
-						<>
-							{userData?.name?.en && (
-								<InfoItem
+					<Section
+						title={'✏️ ' + translate('name', 'Name')}
+						styles={styles}
+						isEditing={editMode.name}
+						onEdit={() => toggleEdit('name', true)}
+						onSave={() => saveUserData('name')}
+						onCancel={() => toggleEdit('name', false)}
+					>
+						{editMode.name ? (
+							<>
+								<LocalizedFormInput
 									label="Name (English)"
-									value={
-										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-											<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'en')?.flag}</Text>
-											<Text style={styles.infoValue}>{userData.name.en}</Text>
-										</View>
-									}
-									icon="person"
-									styles={styles}
-									iconColor={colors.primary}
+									value={userData.name?.en || ''}
+									onChangeText={(value) => updateField('en', value, 'name')}
+									lang="en"
+									placeholder="Name in English"
+									style={{ marginBottom: 0 }}
 								/>
-							)}
-							{userData?.name?.tn_arab && (
-								<InfoItem
+								<LocalizedFormInput
 									label="Name (Tunisian Arabic)"
-									value={
-										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-											<View style={styles.flagContainer}>
-												<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
-												<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-													<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
-												</View>
-											</View>
-											<Text style={[styles.infoValue, { textAlign: 'right', flex: 1 }]}>{userData.name.tn_arab}</Text>
-										</View>
-									}
-									icon="person"
-									styles={styles}
-									iconColor={colors.primary}
+									value={userData.name?.tn_arab || ''}
+									onChangeText={(value) => updateField('tn_arab', value, 'name')}
+									lang="tn_arab"
+									placeholder="الاسم بالعربية"
+									style={{ marginBottom: 0 }}
 								/>
-							)}
-							{userData?.name?.tn_latn && (
-								<InfoItem
+								<LocalizedFormInput
 									label="Name (Tunisian Latin)"
-									value={
-										<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-											<View style={styles.flagContainer}>
-												<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
-												<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-													<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
-												</View>
-											</View>
-											<Text style={styles.infoValue}>{userData.name.tn_latn}</Text>
-										</View>
-									}
-									icon="person"
-									styles={styles}
-									iconColor={colors.primary}
+									value={userData.name?.tn_latn || ''}
+									onChangeText={(value) => updateField('tn_latn', value, 'name')}
+									lang="tn_latn"
+									placeholder="Name in Tunisian (Latin)"
+									style={{ marginBottom: 0 }}
 								/>
-							)}
-							{!userData?.name?.en && !userData?.name?.tn_arab && !userData?.name?.tn_latn && (
-								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No name information set.</Text>
-							)}
-						</>
-					)}
-				</Section>
-
-				<Section
-					title="👤 Basic Information"
-					styles={styles}
-					isEditing={editMode.basic}
-					onEdit={() => toggleEdit('basic', true)}
-					onSave={() => saveUserData('basic')}
-					onCancel={() => toggleEdit('basic', false)}
-				>
-					{editMode.basic ? (
-						<>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Biography</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-										<Ionicons name="document-text" size={20} color={colors.textSecondary} />
-									</View>
-									<TextInput
-										style={[styles.socialInput, styles.textArea]}
-										value={userData.basicInfos?.biography}
-										underlineColorAndroid="transparent"
-										onChangeText={(value) => updateField('biography', value, 'basicInfos')}
-										placeholder="Tell us about yourself"
-										placeholderTextColor={colors.textTertiary}
-										multiline
+							</>
+						) : (
+							<>
+								{userData?.name?.en && (
+									<InfoItem
+										label="Name (English)"
+										value={
+											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+												<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'en')?.flag}</Text>
+												<Text style={styles.infoValue}>{userData.name.en}</Text>
+											</View>
+										}
+										icon="person"
+										styles={styles}
+										iconColor={colors.primary}
 									/>
-								</View>
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Birth Date</Text>
-								{Platform.OS === 'web' ? (
-									<View style={styles.dateInput}>
-										<DateTimePicker
-											value={userData.basicInfos?.birthDate instanceof Date ? userData.basicInfos.birthDate : new Date()}
-											mode="date"
-											display="default"
-											onChange={onDateChange}
-											maximumDate={new Date()}
-											style={{ width: '100%', opacity: 1 }}
-										/>
-									</View>
-								) : (
-									<TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
-										<Text style={styles.dateInputText}>{formatDate(userData.basicInfos?.birthDate)}</Text>
-										<Ionicons name="calendar" size={20} color={colors.textSecondary} />
-									</TouchableOpacity>
 								)}
-							</View>
-						</>
-					) : (
-						<>
-							<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" styles={styles} iconColor={colors.primary} />
-							{userData?.basicInfos?.biography && (
-								<View style={styles.infoItem}>
-									<View style={styles.infoIconContainer}>
-										<Ionicons name="document-text" size={20} color={colors.primary} />
-									</View>
-									<View style={styles.infoContent}>
-										<Text style={styles.infoLabel}>Biography</Text>
-										<Text style={[styles.infoValue, { fontStyle: 'italic' }]}>{userData.basicInfos.biography}</Text>
-									</View>
-								</View>
-							)}
-						</>
-					)}
-				</Section>
+								{userData?.name?.tn_arab && (
+									<InfoItem
+										label="Name (Tunisian Arabic)"
+										value={
+											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+												<View style={styles.flagContainer}>
+													<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
+													<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+														<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
+													</View>
+												</View>
+												<Text style={[styles.infoValue, { textAlign: 'right', flex: 1 }]}>{userData.name.tn_arab}</Text>
+											</View>
+										}
+										icon="person"
+										styles={styles}
+										iconColor={colors.primary}
+									/>
+								)}
+								{userData?.name?.tn_latn && (
+									<InfoItem
+										label="Name (Tunisian Latin)"
+										value={
+											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+												<View style={styles.flagContainer}>
+													<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
+													<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+														<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
+													</View>
+												</View>
+												<Text style={styles.infoValue}>{userData.name.tn_latn}</Text>
+											</View>
+										}
+										icon="person"
+										styles={styles}
+										iconColor={colors.primary}
+									/>
+								)}
+								{!userData?.name?.en && !userData?.name?.tn_arab && !userData?.name?.tn_latn && (
+									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No name information set.</Text>
+								)}
+							</>
+						)}
+					</Section>
 
-				<Section
-					title="📍 Address"
-					styles={styles}
-					isEditing={editMode.address}
-					onEdit={() => toggleEdit('address', true)}
-					onSave={() => saveUserData('address')}
-					onCancel={() => toggleEdit('address', false)}
-				>
-					{editMode.address ? (
-						<View style={styles.addressGrid}>
-							<View style={styles.addressCol12}>
+					<Section
+						title="👤 Basic Information"
+						styles={styles}
+						isEditing={editMode.basic}
+						onEdit={() => toggleEdit('basic', true)}
+						onSave={() => saveUserData('basic')}
+						onCancel={() => toggleEdit('basic', false)}
+					>
+						{editMode.basic ? (
+							<>
 								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Street</Text>
+									<Text style={styles.inputLabel}>Biography</Text>
 									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="home" size={20} color={colors.textSecondary} />
+											<Ionicons name="document-text" size={20} color={colors.textSecondary} />
 										</View>
 										<TextInput
-											style={[styles.socialInput, { textAlignVertical: 'top' }]}
-											value={userData.address?.street}
+											style={[styles.socialInput, styles.textArea]}
+											value={userData.basicInfos?.biography}
 											underlineColorAndroid="transparent"
-											onChangeText={(value) => updateField('street', value, 'address')}
-											placeholder="Street Address"
+											onChangeText={(value) => updateField('biography', value, 'basicInfos')}
+											placeholder="Tell us about yourself"
 											placeholderTextColor={colors.textTertiary}
 											multiline
 										/>
 									</View>
 								</View>
-							</View>
-
-							<View style={styles.addressCol6}>
 								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>City</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="business" size={20} color={colors.textSecondary} />
+									<Text style={styles.inputLabel}>Birth Date</Text>
+									{Platform.OS === 'web' ? (
+										<View style={styles.dateInput}>
+											<DateTimePicker
+												value={userData.basicInfos?.birthDate instanceof Date ? userData.basicInfos.birthDate : new Date()}
+												mode="date"
+												display="default"
+												onChange={onDateChange}
+												maximumDate={new Date()}
+												style={{ width: '100%', opacity: 1 }}
+											/>
 										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.address?.city}
-											underlineColorAndroid="transparent"
-											onChangeText={(value) => updateField('city', value, 'address')}
-											placeholder="City"
-											placeholderTextColor={colors.textTertiary}
-										/>
+									) : (
+										<TouchableOpacity style={styles.dateInput} onPress={() => setShowDatePicker(true)}>
+											<Text style={styles.dateInputText}>{formatDate(userData.basicInfos?.birthDate)}</Text>
+											<Ionicons name="calendar" size={20} color={colors.textSecondary} />
+										</TouchableOpacity>
+									)}
+								</View>
+							</>
+						) : (
+							<>
+								<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" styles={styles} iconColor={colors.primary} />
+								{userData?.basicInfos?.biography && (
+									<View style={styles.infoItem}>
+										<View style={styles.infoIconContainer}>
+											<Ionicons name="document-text" size={20} color={colors.primary} />
+										</View>
+										<View style={styles.infoContent}>
+											<Text style={styles.infoLabel}>Biography</Text>
+											<Text style={[styles.infoValue, { fontStyle: 'italic' }]}>{userData.basicInfos.biography}</Text>
+										</View>
+									</View>
+								)}
+							</>
+						)}
+					</Section>
+
+					<Section
+						title="📍 Address"
+						styles={styles}
+						isEditing={editMode.address}
+						onEdit={() => toggleEdit('address', true)}
+						onSave={() => saveUserData('address')}
+						onCancel={() => toggleEdit('address', false)}
+					>
+						{editMode.address ? (
+							<View style={styles.addressGrid}>
+								<View style={styles.addressCol12}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Street</Text>
+										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="home" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { textAlignVertical: 'top' }]}
+												value={userData.address?.street}
+												underlineColorAndroid="transparent"
+												onChangeText={(value) => updateField('street', value, 'address')}
+												placeholder="Street Address"
+												placeholderTextColor={colors.textTertiary}
+												multiline
+											/>
+										</View>
+									</View>
+								</View>
+
+								<View style={styles.addressCol6}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>City</Text>
+										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="business" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { color: colors.text }]}
+												value={userData.address?.city}
+												underlineColorAndroid="transparent"
+												onChangeText={(value) => updateField('city', value, 'address')}
+												placeholder="City"
+												placeholderTextColor={colors.textTertiary}
+											/>
+										</View>
+									</View>
+								</View>
+
+								<View style={styles.addressCol6}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>State</Text>
+										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="map" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { color: colors.text }]}
+												value={userData.address?.state}
+												underlineColorAndroid="transparent"
+												onChangeText={(value) => updateField('state', value, 'address')}
+												placeholder="State"
+												placeholderTextColor={colors.textTertiary}
+											/>
+										</View>
+									</View>
+								</View>
+
+								<View style={styles.addressCol6}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Postal Code</Text>
+										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="navigate" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { color: colors.text }]}
+												value={userData.address?.postalCode}
+												underlineColorAndroid="transparent"
+												onChangeText={(value) => updateField('postalCode', value, 'address')}
+												placeholder="ZIP Code"
+												placeholderTextColor={colors.textTertiary}
+											/>
+										</View>
+									</View>
+								</View>
+
+								<View style={styles.addressCol6}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Country</Text>
+										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="earth" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { color: colors.text }]}
+												value={userData.address?.country}
+												underlineColorAndroid="transparent"
+												onChangeText={(value) => updateField('country', value, 'address')}
+												placeholder="Country"
+												placeholderTextColor={colors.textTertiary}
+											/>
+										</View>
 									</View>
 								</View>
 							</View>
+						) : (
+							<>
+								{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" styles={styles} iconColor={colors.primary} />}
+								{(userData?.address?.city || userData?.address?.state || userData?.address?.postalCode) && (
+									<InfoItem
+										label="City/State/Postal Code"
+										value={[userData?.address?.city, userData?.address?.state, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
+										icon="business"
+										styles={styles}
+										iconColor={colors.primary}
+									/>
+								)}
+								{userData?.address?.country && <InfoItem label="Country" value={userData.address.country} icon="earth" styles={styles} iconColor={colors.primary} />}
+								{!userData?.address?.street && !userData?.address?.city && !userData?.address?.state && !userData?.address?.country && (
+									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No address information set.</Text>
+								)}
+							</>
+						)}
+					</Section>
 
-							<View style={styles.addressCol6}>
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>State</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="map" size={20} color={colors.textSecondary} />
+					<Section
+						title="📍 Location"
+						styles={styles}
+						isEditing={editMode.location}
+						onEdit={() => toggleEdit('location', true)}
+						onSave={() => saveUserData('location')}
+						onCancel={() => toggleEdit('location', false)}
+					>
+						{editMode.location ? (
+							<View style={styles.inputGroup}>
+								<Text style={styles.inputLabel}>GPS Coordinates</Text>
+								<View style={styles.locationGrid}>
+									<View style={styles.locationCol}>
+										<Text style={styles.locationSubLabel}>Longitude</Text>
+										<View
+											style={[
+												styles.socialInputContainer,
+												{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC', opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }
+											]}
+										>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="location" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { color: colors.text }]}
+												value={userData.location?.coordinates?.[0]?.toString() || ''}
+												onChangeText={(value) => {
+													if (userData.location?.sharingEnabled === false) return
+													const coords = userData.location?.coordinates || [0, 0]
+													const newCoords: [number, number] = [parseFloat(value) || 0, coords[1]]
+													updateField('location', {
+														type: 'Point',
+														coordinates: newCoords,
+														sharingEnabled: userData.location?.sharingEnabled ?? true
+													})
+												}}
+												placeholder="10.8045"
+												placeholderTextColor={colors.textTertiary}
+												keyboardType="numeric"
+												editable={userData.location?.sharingEnabled !== false}
+											/>
 										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.address?.state}
-											underlineColorAndroid="transparent"
-											onChangeText={(value) => updateField('state', value, 'address')}
-											placeholder="State"
-											placeholderTextColor={colors.textTertiary}
-										/>
+									</View>
+									<View style={styles.locationCol}>
+										<Text style={styles.locationSubLabel}>Latitude</Text>
+										<View
+											style={[
+												styles.socialInputContainer,
+												{
+													borderColor: isDark ? colors.border : '#E1E8ED',
+													backgroundColor: isDark ? colors.card : '#FAFBFC',
+													opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
+												}
+											]}
+										>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+												<Ionicons name="location" size={20} color={colors.textSecondary} />
+											</View>
+											<TextInput
+												style={[styles.socialInput, { color: colors.text }]}
+												value={userData.location?.coordinates?.[1]?.toString() || ''}
+												onChangeText={(value) => {
+													if (userData.location?.sharingEnabled === false) return
+													const coords = userData.location?.coordinates || [0, 0]
+													const newCoords: [number, number] = [coords[0], parseFloat(value) || 0]
+													updateField('location', {
+														type: 'Point',
+														coordinates: newCoords,
+														sharingEnabled: userData.location?.sharingEnabled ?? true
+													})
+												}}
+												placeholder="35.7905"
+												placeholderTextColor={colors.textTertiary}
+												keyboardType="numeric"
+												editable={userData.location?.sharingEnabled !== false}
+											/>
+										</View>
 									</View>
 								</View>
-							</View>
-
-							<View style={styles.addressCol6}>
 								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Postal Code</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="navigate" size={20} color={colors.textSecondary} />
-										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.address?.postalCode}
-											underlineColorAndroid="transparent"
-											onChangeText={(value) => updateField('postalCode', value, 'address')}
-											placeholder="ZIP Code"
-											placeholderTextColor={colors.textTertiary}
-										/>
+									<View style={styles.switchContainer}>
+										<Text style={styles.switchLabel}>Share Location</Text>
+										<TouchableOpacity
+											style={[styles.switch, userData.location?.sharingEnabled ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]}
+											onPress={handleToggleSharing}
+										>
+											<View style={[styles.switchThumb, userData.location?.sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }]} />
+										</TouchableOpacity>
 									</View>
-								</View>
-							</View>
-
-							<View style={styles.addressCol6}>
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Country</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="earth" size={20} color={colors.textSecondary} />
-										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.address?.country}
-											underlineColorAndroid="transparent"
-											onChangeText={(value) => updateField('country', value, 'address')}
-											placeholder="Country"
-											placeholderTextColor={colors.textTertiary}
-										/>
-									</View>
-								</View>
-							</View>
-						</View>
-					) : (
-						<>
-							{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" styles={styles} iconColor={colors.primary} />}
-							{(userData?.address?.city || userData?.address?.state || userData?.address?.postalCode) && (
-								<InfoItem
-									label="City/State/Postal Code"
-									value={[userData?.address?.city, userData?.address?.state, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
-									icon="business"
-									styles={styles}
-									iconColor={colors.primary}
-								/>
-							)}
-							{userData?.address?.country && <InfoItem label="Country" value={userData.address.country} icon="earth" styles={styles} iconColor={colors.primary} />}
-							{!userData?.address?.street && !userData?.address?.city && !userData?.address?.state && !userData?.address?.country && (
-								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No address information set.</Text>
-							)}
-						</>
-					)}
-				</Section>
-
-				<Section
-					title="📍 Location"
-					styles={styles}
-					isEditing={editMode.location}
-					onEdit={() => toggleEdit('location', true)}
-					onSave={() => saveUserData('location')}
-					onCancel={() => toggleEdit('location', false)}
-				>
-					{editMode.location ? (
-						<View style={styles.inputGroup}>
-							<Text style={styles.inputLabel}>GPS Coordinates</Text>
-							<View style={styles.locationGrid}>
-								<View style={styles.locationCol}>
-									<Text style={styles.locationSubLabel}>Longitude</Text>
-									<View
+									<TouchableOpacity
 										style={[
-											styles.socialInputContainer,
-											{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC', opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }
-										]}
-									>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="location" size={20} color={colors.textSecondary} />
-										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.location?.coordinates?.[0]?.toString() || ''}
-											onChangeText={(value) => {
-												if (userData.location?.sharingEnabled === false) return
-												const coords = userData.location?.coordinates || [0, 0]
-												const newCoords: [number, number] = [parseFloat(value) || 0, coords[1]]
-												updateField('location', {
-													type: 'Point',
-													coordinates: newCoords,
-													sharingEnabled: userData.location?.sharingEnabled ?? true
-												})
-											}}
-											placeholder="10.8045"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="numeric"
-											editable={userData.location?.sharingEnabled !== false}
-										/>
-									</View>
-								</View>
-								<View style={styles.locationCol}>
-									<Text style={styles.locationSubLabel}>Latitude</Text>
-									<View
-										style={[
-											styles.socialInputContainer,
+											styles.addButton,
 											{
-												borderColor: isDark ? colors.border : '#E1E8ED',
-												backgroundColor: isDark ? colors.card : '#FAFBFC',
+												borderColor: colors.primary,
+												marginTop: 12,
 												opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
 											}
 										]}
+										onPress={handleGetCurrentLocation}
+										disabled={userData.location?.sharingEnabled === false}
 									>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="location" size={20} color={colors.textSecondary} />
+										<Ionicons name="location" size={20} color={colors.primary} />
+										<Text style={[styles.addButtonText, { color: colors.primary }]}>Get Current Location</Text>
+									</TouchableOpacity>
+								</View>
+							</View>
+						) : (
+							<>
+								{userData.location?.coordinates && (
+									<>
+										<InfoItem
+											label="GPS Coordinates"
+											value={userData.location?.coordinates ? `${userData.location.coordinates[1].toFixed(4)}, ${userData.location.coordinates[0].toFixed(4)}` : translate('not_set', 'Not set')}
+											icon="location"
+											styles={styles}
+											iconColor={colors.primary}
+											onPress={() => {
+												if (userData.location?.coordinates) {
+													const [longitude, latitude] = userData.location.coordinates
+													const mapUrl = Platform.select({
+														ios: `maps:?daddr=${latitude},${longitude}`,
+														android: `google.navigation:q=${latitude},${longitude}`,
+														default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+													})
+													if (mapUrl) {
+														Linking.openURL(mapUrl).catch(() => {})
+													}
+												}
+											}}
+											onCopy={async () => {
+												if (userData.location?.coordinates) {
+													const [longitude, latitude] = userData.location.coordinates
+													await Clipboard.setStringAsync(`${latitude}, ${longitude}`)
+													showAlert('Copied', 'Location coordinates copied to clipboard')
+												}
+											}}
+										/>
+										<TouchableOpacity
+											style={[styles.iconButton, { alignSelf: 'center', marginTop: 16 }]}
+											onPress={() => {
+												if (userData.location?.coordinates) {
+													const [longitude, latitude] = userData.location.coordinates
+													const mapUrl = Platform.select({
+														ios: `maps:?daddr=${latitude},${longitude}`,
+														android: `google.navigation:q=${latitude},${longitude}`,
+														default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
+													})
+													if (mapUrl) {
+														Linking.openURL(mapUrl).catch(() => {})
+													}
+												}
+											}}
+										>
+											<Ionicons name="map" size={24} color={colors.primary} />
+										</TouchableOpacity>
+									</>
+								)}
+								{userData.location?.sharingEnabled !== undefined && (
+									<InfoItem
+										label="Location Sharing"
+										value={userData.location.sharingEnabled ? 'Enabled' : 'Disabled'}
+										icon={userData.location.sharingEnabled ? 'share-social' : 'share-social-outline'}
+										styles={styles}
+										iconColor={userData.location.sharingEnabled ? colors.primary : colors.textSecondary}
+									/>
+								)}
+								{!userData.location?.coordinates && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
+							</>
+						)}
+					</Section>
+
+					<Section
+						title="🌐 Social Media"
+						styles={styles}
+						isEditing={editMode.social}
+						onEdit={() => toggleEdit('social', true)}
+						onSave={() => saveUserData('social')}
+						onCancel={() => toggleEdit('social', false)}
+					>
+						{editMode.social ? (
+							SOCIAL_PLATFORMS.map((platform) => (
+								<View key={platform.id} style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>{platform.label}</Text>
+									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+										<View style={[styles.socialIconBadge, { backgroundColor: platform.color + '15' }]}>
+											<Ionicons name={platform.icon as any} size={20} color={platform.color} />
 										</View>
 										<TextInput
 											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.location?.coordinates?.[1]?.toString() || ''}
+											value={userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]?.username || ''}
+											underlineColorAndroid="transparent"
 											onChangeText={(value) => {
-												if (userData.location?.sharingEnabled === false) return
-												const coords = userData.location?.coordinates || [0, 0]
-												const newCoords: [number, number] = [coords[0], parseFloat(value) || 0]
-												updateField('location', {
-													type: 'Point',
-													coordinates: newCoords,
-													sharingEnabled: userData.location?.sharingEnabled ?? true
-												})
+												const prevSocial = userData.socialMedia || {}
+												const prevPlatform = prevSocial[platform.id as keyof typeof prevSocial] || {}
+												updateField('socialMedia', { ...prevSocial, [platform.id]: { ...prevPlatform, username: value } })
 											}}
-											placeholder="35.7905"
+											placeholder={platform.prefix}
 											placeholderTextColor={colors.textTertiary}
-											keyboardType="numeric"
-											editable={userData.location?.sharingEnabled !== false}
+											autoCapitalize="none"
+											keyboardType="default"
 										/>
 									</View>
 								</View>
-							</View>
-							<View style={styles.inputGroup}>
-								<View style={styles.switchContainer}>
-									<Text style={styles.switchLabel}>Share Location</Text>
-									<TouchableOpacity style={[styles.switch, userData.location?.sharingEnabled ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]} onPress={handleToggleSharing}>
-										<View style={[styles.switchThumb, userData.location?.sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }]} />
-									</TouchableOpacity>
-								</View>
-								<TouchableOpacity
-									style={[
-										styles.addButton,
-										{
-											borderColor: colors.primary,
-											marginTop: 12,
-											opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
+							))
+						) : (
+							<>
+								{SOCIAL_PLATFORMS.map((platform) => {
+									const data = userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]
+									const username = data?.username || ''
+									if (!username) return null
+
+									// Construct URL from username for opening links
+									const constructUrl = (platformId: string, username: string) => {
+										if (platformId === 'facebook') {
+											return `https://www.facebook.com/${username}`
+										} else if (platformId === 'instagram') {
+											return `https://www.instagram.com/${username}`
 										}
-									]}
-									onPress={handleGetCurrentLocation}
-									disabled={userData.location?.sharingEnabled === false}
-								>
-									<Ionicons name="location" size={20} color={colors.primary} />
-									<Text style={[styles.addButtonText, { color: colors.primary }]}>Get Current Location</Text>
-								</TouchableOpacity>
-							</View>
-						</View>
-					) : (
-						<>
-							{userData.location?.coordinates && (
-								<>
-									<InfoItem
-										label="GPS Coordinates"
-										value={userData.location?.coordinates ? `${userData.location.coordinates[1].toFixed(4)}, ${userData.location.coordinates[0].toFixed(4)}` : translate('not_set', 'Not set')}
-										icon="location"
-										styles={styles}
-										iconColor={colors.primary}
-										onPress={() => {
-											if (userData.location?.coordinates) {
-												const [longitude, latitude] = userData.location.coordinates
-												const mapUrl = Platform.select({
-													ios: `maps:?daddr=${latitude},${longitude}`,
-													android: `google.navigation:q=${latitude},${longitude}`,
-													default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-												})
-												if (mapUrl) {
-													Linking.openURL(mapUrl).catch(() => {})
-												}
-											}
-										}}
-										onCopy={async () => {
-											if (userData.location?.coordinates) {
-												const [longitude, latitude] = userData.location.coordinates
-												await Clipboard.setStringAsync(`${latitude}, ${longitude}`)
-												showAlert('Copied', 'Location coordinates copied to clipboard')
-											}
-										}}
-									/>
-									<TouchableOpacity
-										style={[styles.iconButton, { alignSelf: 'center', marginTop: 16 }]}
-										onPress={() => {
-											if (userData.location?.coordinates) {
-												const [longitude, latitude] = userData.location.coordinates
-												const mapUrl = Platform.select({
-													ios: `maps:?daddr=${latitude},${longitude}`,
-													android: `google.navigation:q=${latitude},${longitude}`,
-													default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-												})
-												if (mapUrl) {
-													Linking.openURL(mapUrl).catch(() => {})
-												}
-											}
-										}}
-									>
-										<Ionicons name="map" size={24} color={colors.primary} />
-									</TouchableOpacity>
-								</>
-							)}
-							{userData.location?.sharingEnabled !== undefined && (
-								<InfoItem
-									label="Location Sharing"
-									value={userData.location.sharingEnabled ? 'Enabled' : 'Disabled'}
-									icon={userData.location.sharingEnabled ? 'share-social' : 'share-social-outline'}
-									styles={styles}
-									iconColor={userData.location.sharingEnabled ? colors.primary : colors.textSecondary}
-								/>
-							)}
-							{!userData.location?.coordinates && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
-						</>
-					)}
-				</Section>
-
-				<Section
-					title="🌐 Social Media"
-					styles={styles}
-					isEditing={editMode.social}
-					onEdit={() => toggleEdit('social', true)}
-					onSave={() => saveUserData('social')}
-					onCancel={() => toggleEdit('social', false)}
-				>
-					{editMode.social ? (
-						SOCIAL_PLATFORMS.map((platform) => (
-							<View key={platform.id} style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>{platform.label}</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: platform.color + '15' }]}>
-										<Ionicons name={platform.icon as any} size={20} color={platform.color} />
-									</View>
-									<TextInput
-										style={[styles.socialInput, { color: colors.text }]}
-										value={userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]?.username || ''}
-										underlineColorAndroid="transparent"
-										onChangeText={(value) => {
-											const prevSocial = userData.socialMedia || {}
-											const prevPlatform = prevSocial[platform.id as keyof typeof prevSocial] || {}
-											updateField('socialMedia', { ...prevSocial, [platform.id]: { ...prevPlatform, username: value } })
-										}}
-										placeholder={platform.prefix}
-										placeholderTextColor={colors.textTertiary}
-										autoCapitalize="none"
-										keyboardType="default"
-									/>
-								</View>
-							</View>
-						))
-					) : (
-						<>
-							{SOCIAL_PLATFORMS.map((platform) => {
-								const data = userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]
-								const username = data?.username || ''
-								if (!username) return null
-
-								// Construct URL from username for opening links
-								const constructUrl = (platformId: string, username: string) => {
-									if (platformId === 'facebook') {
-										return `https://www.facebook.com/${username}`
-									} else if (platformId === 'instagram') {
-										return `https://www.instagram.com/${username}`
+										return username
 									}
-									return username
-								}
 
-								const url = constructUrl(platform.id, username)
+									const url = constructUrl(platform.id, username)
 
-								return (
-									<InfoItem
-										key={platform.id}
-										label={platform.label}
-										value={username}
-										icon={platform.icon}
-										styles={styles}
-										iconColor={platform.color}
-										onPress={() => {
-											Linking.openURL(url).catch((err) => showAlert('Error', 'Could not open URL: ' + err.message))
-										}}
-										onLongPress={async () => {
-											await Clipboard.setStringAsync(url)
-											showAlert('Copied', 'Link copied to clipboard')
-										}}
-										onCopy={async () => {
-											await Clipboard.setStringAsync(url)
-											showAlert('Copied', 'Link copied to clipboard')
-										}}
-									/>
-								)
-							})}
-							{(!userData.socialMedia || Object.values(userData.socialMedia).every((v: any) => !v?.username)) && (
-								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No social media links set.</Text>
-							)}
-						</>
-					)}
-				</Section>
-
-				<Section
-					title="📞 Contact Information"
-					styles={styles}
-					isEditing={editMode.phone}
-					onEdit={() => toggleEdit('phone', true)}
-					onSave={() => saveUserData('phone')}
-					onCancel={() => toggleEdit('phone', false)}
-				>
-					{editMode.phone ? (
-						<>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Primary Phone</Text>
-								<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
-										<TextInput
-											style={[styles.phoneCodeInput, { color: colors.text }]}
-											value={getPhone(userData)?.countryCode || '+216'}
-											onChangeText={(value) => updatePhone('primary', 'countryCode', value)}
-											placeholder="+216"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="phone-pad"
-											maxLength={5}
-										/>
-									</View>
-									<TextInput
-										style={[styles.phoneNumberInput, { color: colors.text }]}
-										value={getPhone(userData)?.shortNumber || ''}
-										onChangeText={(value) => updatePhone('primary', 'shortNumber', value)}
-										placeholder="99112619"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="phone-pad"
-										maxLength={15}
-									/>
-								</View>
-								{getPhone(userData)?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {getPhone(userData)?.fullNumber}</Text>}
-							</View>
-
-							{getBackupPhones(userData).map((backupPhone: any, index: number) => (
-								<View key={index} style={styles.inputGroup}>
-									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-										<Text style={styles.inputLabel}>Backup Phone {index + 1}</Text>
-										<TouchableOpacity
+									return (
+										<InfoItem
+											key={platform.id}
+											label={platform.label}
+											value={username}
+											icon={platform.icon}
+											styles={styles}
+											iconColor={platform.color}
 											onPress={() => {
-												const backups = [...getBackupPhones(userData)]
-												backups.splice(index, 1)
-												setUserData((prev) => {
-													if (!prev) return null
-													return {
-														...prev,
-														contact: {
-															...prev.contact,
-															backupPhones: backups
-														}
-													}
-												})
+												Linking.openURL(url).catch((err) => showAlert('Error', 'Could not open URL: ' + err.message))
 											}}
-											style={{ padding: 4 }}
-										>
-											<Ionicons name="trash-outline" size={18} color={colors.error} />
-										</TouchableOpacity>
-									</View>
+											onLongPress={async () => {
+												await Clipboard.setStringAsync(url)
+												showAlert('Copied', 'Link copied to clipboard')
+											}}
+											onCopy={async () => {
+												await Clipboard.setStringAsync(url)
+												showAlert('Copied', 'Link copied to clipboard')
+											}}
+										/>
+									)
+								})}
+								{(!userData.socialMedia || Object.values(userData.socialMedia).every((v: any) => !v?.username)) && (
+									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No social media links set.</Text>
+								)}
+							</>
+						)}
+					</Section>
+
+					<Section
+						title="📞 Contact Information"
+						styles={styles}
+						isEditing={editMode.phone}
+						onEdit={() => toggleEdit('phone', true)}
+						onSave={() => saveUserData('phone')}
+						onCancel={() => toggleEdit('phone', false)}
+					>
+						{editMode.phone ? (
+							<>
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>Primary Phone</Text>
 									<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
 											<TextInput
 												style={[styles.phoneCodeInput, { color: colors.text }]}
-												value={backupPhone?.countryCode || '+216'}
-												onChangeText={(value) => updatePhone('backup', 'countryCode', value, index)}
+												value={getPhone(userData)?.countryCode || '+216'}
+												onChangeText={(value) => updatePhone('primary', 'countryCode', value)}
 												placeholder="+216"
 												placeholderTextColor={colors.textTertiary}
 												keyboardType="phone-pad"
@@ -1305,447 +1283,499 @@ export default function ProfileScreen() {
 										</View>
 										<TextInput
 											style={[styles.phoneNumberInput, { color: colors.text }]}
-											value={backupPhone?.shortNumber || ''}
-											onChangeText={(value) => updatePhone('backup', 'shortNumber', value, index)}
-											placeholder="99112645"
+											value={getPhone(userData)?.shortNumber || ''}
+											onChangeText={(value) => updatePhone('primary', 'shortNumber', value)}
+											placeholder="99112619"
 											placeholderTextColor={colors.textTertiary}
 											keyboardType="phone-pad"
 											maxLength={15}
 										/>
 									</View>
-									{backupPhone?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {backupPhone.fullNumber}</Text>}
+									{getPhone(userData)?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {getPhone(userData)?.fullNumber}</Text>}
 								</View>
-							))}
 
-							<TouchableOpacity
-								onPress={() => {
-									const backups = [...getBackupPhones(userData)]
-									backups.push({ countryCode: '+216', shortNumber: '', fullNumber: '+216' })
-									setUserData((prev) => {
-										if (!prev) return null
-										return {
-											...prev,
-											contact: {
-												...prev.contact,
-												backupPhones: backups
+								{getBackupPhones(userData).map((backupPhone: any, index: number) => (
+									<View key={index} style={styles.inputGroup}>
+										<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+											<Text style={styles.inputLabel}>Backup Phone {index + 1}</Text>
+											<TouchableOpacity
+												onPress={() => {
+													const backups = [...getBackupPhones(userData)]
+													backups.splice(index, 1)
+													setUserData((prev) => {
+														if (!prev) return null
+														return {
+															...prev,
+															contact: {
+																...prev.contact,
+																backupPhones: backups
+															}
+														}
+													})
+												}}
+												style={{ padding: 4 }}
+											>
+												<Ionicons name="trash-outline" size={18} color={colors.error} />
+											</TouchableOpacity>
+										</View>
+										<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
+												<TextInput
+													style={[styles.phoneCodeInput, { color: colors.text }]}
+													value={backupPhone?.countryCode || '+216'}
+													onChangeText={(value) => updatePhone('backup', 'countryCode', value, index)}
+													placeholder="+216"
+													placeholderTextColor={colors.textTertiary}
+													keyboardType="phone-pad"
+													maxLength={5}
+												/>
+											</View>
+											<TextInput
+												style={[styles.phoneNumberInput, { color: colors.text }]}
+												value={backupPhone?.shortNumber || ''}
+												onChangeText={(value) => updatePhone('backup', 'shortNumber', value, index)}
+												placeholder="99112645"
+												placeholderTextColor={colors.textTertiary}
+												keyboardType="phone-pad"
+												maxLength={15}
+											/>
+										</View>
+										{backupPhone?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {backupPhone.fullNumber}</Text>}
+									</View>
+								))}
+
+								<TouchableOpacity
+									onPress={() => {
+										const backups = [...getBackupPhones(userData)]
+										backups.push({ countryCode: '+216', shortNumber: '', fullNumber: '+216' })
+										setUserData((prev) => {
+											if (!prev) return null
+											return {
+												...prev,
+												contact: {
+													...prev.contact,
+													backupPhones: backups
+												}
 											}
-										}
-									})
-								}}
-								style={[styles.addButton, { borderColor: colors.primary }]}
-							>
-								<Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-								<Text style={[styles.addButtonText, { color: colors.primary }]}>Add Backup Phone</Text>
-							</TouchableOpacity>
-
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Email</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-										<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
-									</View>
-									<TextInput
-										style={[styles.socialInput, { color: colors.text }]}
-										value={getEmail(userData) || ''}
-										onChangeText={(value) => {
-											setUserData((prev) => {
-												if (!prev) return null
-												return {
-													...prev,
-													contact: {
-														...prev.contact,
-														email: value
-													}
-												}
-											})
-										}}
-										placeholder="email@example.com"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="email-address"
-										autoCapitalize="none"
-									/>
-								</View>
-							</View>
-
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>WhatsApp</Text>
-								<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-									<View style={[styles.socialIconBadge, { backgroundColor: '#25D36615' }]}>
-										<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-									</View>
-									<TextInput
-										style={[styles.socialInput, { color: colors.text }]}
-										value={userData.contact?.whatsapp || ''}
-										onChangeText={(value) => {
-											setUserData((prev) => {
-												if (!prev) return null
-												return {
-													...prev,
-													contact: {
-														...prev.contact,
-														whatsapp: value
-													}
-												}
-											})
-										}}
-										placeholder="+21699112618"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="phone-pad"
-									/>
-								</View>
-							</View>
-						</>
-					) : (
-						<>
-							{getPhone(userData)?.fullNumber && (
-								<InfoItem
-									label="Primary Phone"
-									value={getPhone(userData)?.fullNumber || 'Not set'}
-									icon="call"
-									styles={styles}
-									iconColor={colors.primary}
-									onPress={() => Linking.openURL(`tel:${getPhone(userData)?.fullNumber}`).catch(() => {})}
-									onCopy={async () => {
-										await Clipboard.setStringAsync(getPhone(userData)?.fullNumber || '')
-										showAlert('Copied', 'Phone number copied to clipboard')
+										})
 									}}
-								/>
-							)}
-							{getBackupPhones(userData).map((backupPhone: any, index: number) => (
-								<InfoItem
-									key={index}
-									label={`Backup Phone ${index + 1}`}
-									value={backupPhone?.fullNumber || 'Not set'}
-									icon="call-outline"
-									styles={styles}
-									iconColor={colors.info}
-									onPress={() => Linking.openURL(`tel:${backupPhone?.fullNumber}`).catch(() => {})}
-									onCopy={async () => {
-										await Clipboard.setStringAsync(backupPhone?.fullNumber || '')
-										showAlert('Copied', 'Phone number copied to clipboard')
-									}}
-								/>
-							))}
-							{getEmail(userData) && (
-								<InfoItem
-									label="Email"
-									value={getEmail(userData) || 'Not set'}
-									icon="mail"
-									styles={styles}
-									iconColor={colors.primary}
-									onPress={() => Linking.openURL(`mailto:${getEmail(userData)}`).catch(() => {})}
-									onCopy={async () => {
-										await Clipboard.setStringAsync(getEmail(userData) || '')
-										showAlert('Copied', 'Email copied to clipboard')
-									}}
-								/>
-							)}
-							{userData.contact?.whatsapp && (
-								<InfoItem
-									label="WhatsApp"
-									value={userData.contact.whatsapp}
-									icon="logo-whatsapp"
-									styles={styles}
-									iconColor="#25D366"
-									onPress={() => Linking.openURL(`https://wa.me/${userData.contact?.whatsapp?.replace(/[^0-9]/g, '')}`).catch(() => {})}
-									onCopy={async () => {
-										await Clipboard.setStringAsync(userData.contact?.whatsapp || '')
-										showAlert('Copied', 'WhatsApp number copied to clipboard')
-									}}
-								/>
-							)}
-							{!getPhone(userData)?.fullNumber && !getEmail(userData) && !userData.contact?.whatsapp && getBackupPhones(userData).length === 0 && (
-								<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No contact information set.</Text>
-							)}
-						</>
-					)}
-				</Section>
+									style={[styles.addButton, { borderColor: colors.primary }]}
+								>
+									<Ionicons name="add-circle-outline" size={20} color={colors.primary} />
+									<Text style={[styles.addButtonText, { color: colors.primary }]}>Add Backup Phone</Text>
+								</TouchableOpacity>
 
-				<Section
-					title={'⚙️ ' + translate('settings', 'Account Settings')}
-					styles={styles}
-					isEditing={editMode.settings}
-					onEdit={() => toggleEdit('settings', true)}
-					onSave={() => saveUserData('settings')}
-					onCancel={() => toggleEdit('settings', false)}
-				>
-					{editMode.settings ? (
-						<>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>{translate('app_lang', 'App Language (UI)')}</Text>
-								<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
-									{LANGUAGES.map((lang) => (
-										<TouchableOpacity
-											key={lang.code}
-											style={[
-												styles.langOption,
-												{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
-												userData.settings?.lang?.app === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
-											]}
-											onPress={() => {
-												const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
-												updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, app: lang.code } })
-											}}
-										>
-											<View style={styles.flagContainer}>
-												<Text style={styles.flagText}>{lang.flag}</Text>
-												{lang.icon && (
-													<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-														<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
-													</View>
-												)}
-											</View>
-											<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.app === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
-										</TouchableOpacity>
-									))}
-								</View>
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>{translate('content_lang', 'Content Language (Products/Businesses)')}</Text>
-								<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
-									{LANGUAGES.map((lang) => (
-										<TouchableOpacity
-											key={lang.code}
-											style={[
-												styles.langOption,
-												{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
-												userData.settings?.lang?.content === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
-											]}
-											onPress={() => {
-												const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
-												updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, content: lang.code } })
-											}}
-										>
-											<View style={styles.flagContainer}>
-												<Text style={styles.flagText}>{lang.flag}</Text>
-												{lang.icon && (
-													<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-														<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
-													</View>
-												)}
-											</View>
-											<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.content === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
-										</TouchableOpacity>
-									))}
-								</View>
-							</View>
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>{translate('currency_label', 'Currency')}</Text>
-								<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
-									{CURRENCIES.map((currency) => (
-										<TouchableOpacity
-											key={currency.code}
-											style={[
-												styles.langOption,
-												{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
-												userData.settings?.currency === currency.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
-											]}
-											onPress={() => {
-												const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
-												updateField('settings', { ...prevSettings, currency: currency.code })
-											}}
-										>
-											<View style={styles.flagContainer}>
-												<Text style={styles.flagText}>{currency.symbol}</Text>
-											</View>
-											<Text style={styles.langLabel}>{currency.label}</Text>
-										</TouchableOpacity>
-									))}
-								</View>
-							</View>
-						</>
-					) : (
-						<>
-							<InfoItem
-								label={translate('app_lang', 'App Language')}
-								value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || translate('not_set', 'Not set')}
-								icon="globe"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
-							<InfoItem
-								label={translate('content_lang', 'Content Language')}
-								value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || translate('not_set', 'Not set')}
-								icon="language"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
-							<InfoItem
-								label={translate('currency_label', 'Currency')}
-								value={CURRENCIES.find((c) => c.code === userData.settings?.currency)?.label || translate('not_set', 'Not set')}
-								icon="cash"
-								styles={styles}
-								iconColor={colors.primary}
-							/>
-						</>
-					)}
-				</Section>
-
-				{/* Customer Dashboard Data */}
-				{personalDashboard && (
-					<Section title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')} styles={styles}>
-						<View style={{ gap: 16 }}>
-							<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
-								<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
-								{personalDashboard.topBusinesses.frequent.length === 0 ? (
-									<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
-								) : (
-									personalDashboard.topBusinesses.frequent.slice(0, 3).map((item, index) => (
-										<View
-											key={item._id || index}
-											style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.frequent.length, 3) - 1 && { borderBottomWidth: 0 }]}
-										>
-											<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
-											<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
-												{item.name ? localize(item.name) : item.slug || '—'}
-											</Text>
-											{item.count !== undefined && (
-												<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}15` }]}>
-													<Text style={[styles.rankMetricText, { color: colors.primary }]}>{item.count}</Text>
-												</View>
-											)}
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>Email</Text>
+									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
+											<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
 										</View>
-									))
-								)}
-							</View>
-							<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
-								<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_new', 'Recently Discovered')}</Text>
-								{personalDashboard.topBusinesses.new.length === 0 ? (
-									<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
-								) : (
-									personalDashboard.topBusinesses.new.slice(0, 3).map((item, index) => (
-										<View
-											key={item._id || index}
-											style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.new.length, 3) - 1 && { borderBottomWidth: 0 }]}
-										>
-											<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
-											<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
-												{item.name ? localize(item.name) : item.slug || '—'}
-											</Text>
+										<TextInput
+											style={[styles.socialInput, { color: colors.text }]}
+											value={getEmail(userData) || ''}
+											onChangeText={(value) => {
+												setUserData((prev) => {
+													if (!prev) return null
+													return {
+														...prev,
+														contact: {
+															...prev.contact,
+															email: value
+														}
+													}
+												})
+											}}
+											placeholder="email@example.com"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="email-address"
+											autoCapitalize="none"
+										/>
+									</View>
+								</View>
+
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>WhatsApp</Text>
+									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+										<View style={[styles.socialIconBadge, { backgroundColor: '#25D36615' }]}>
+											<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
 										</View>
-									))
+										<TextInput
+											style={[styles.socialInput, { color: colors.text }]}
+											value={userData.contact?.whatsapp || ''}
+											onChangeText={(value) => {
+												setUserData((prev) => {
+													if (!prev) return null
+													return {
+														...prev,
+														contact: {
+															...prev.contact,
+															whatsapp: value
+														}
+													}
+												})
+											}}
+											placeholder="+21699112618"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="phone-pad"
+										/>
+									</View>
+								</View>
+							</>
+						) : (
+							<>
+								{getPhone(userData)?.fullNumber && (
+									<InfoItem
+										label="Primary Phone"
+										value={getPhone(userData)?.fullNumber || 'Not set'}
+										icon="call"
+										styles={styles}
+										iconColor={colors.primary}
+										onPress={() => Linking.openURL(`tel:${getPhone(userData)?.fullNumber}`).catch(() => {})}
+										onCopy={async () => {
+											await Clipboard.setStringAsync(getPhone(userData)?.fullNumber || '')
+											showAlert('Copied', 'Phone number copied to clipboard')
+										}}
+									/>
 								)}
-							</View>
-						</View>
+								{getBackupPhones(userData).map((backupPhone: any, index: number) => (
+									<InfoItem
+										key={index}
+										label={`Backup Phone ${index + 1}`}
+										value={backupPhone?.fullNumber || 'Not set'}
+										icon="call-outline"
+										styles={styles}
+										iconColor={colors.info}
+										onPress={() => Linking.openURL(`tel:${backupPhone?.fullNumber}`).catch(() => {})}
+										onCopy={async () => {
+											await Clipboard.setStringAsync(backupPhone?.fullNumber || '')
+											showAlert('Copied', 'Phone number copied to clipboard')
+										}}
+									/>
+								))}
+								{getEmail(userData) && (
+									<InfoItem
+										label="Email"
+										value={getEmail(userData) || 'Not set'}
+										icon="mail"
+										styles={styles}
+										iconColor={colors.primary}
+										onPress={() => Linking.openURL(`mailto:${getEmail(userData)}`).catch(() => {})}
+										onCopy={async () => {
+											await Clipboard.setStringAsync(getEmail(userData) || '')
+											showAlert('Copied', 'Email copied to clipboard')
+										}}
+									/>
+								)}
+								{userData.contact?.whatsapp && (
+									<InfoItem
+										label="WhatsApp"
+										value={userData.contact.whatsapp}
+										icon="logo-whatsapp"
+										styles={styles}
+										iconColor="#25D366"
+										onPress={() => Linking.openURL(`https://wa.me/${userData.contact?.whatsapp?.replace(/[^0-9]/g, '')}`).catch(() => {})}
+										onCopy={async () => {
+											await Clipboard.setStringAsync(userData.contact?.whatsapp || '')
+											showAlert('Copied', 'WhatsApp number copied to clipboard')
+										}}
+									/>
+								)}
+								{!getPhone(userData)?.fullNumber && !getEmail(userData) && !userData.contact?.whatsapp && getBackupPhones(userData).length === 0 && (
+									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No contact information set.</Text>
+								)}
+							</>
+						)}
 					</Section>
-				)}
 
-				{/* Reviews Section */}
-				{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
-			</SmartKeyboardSafeView>
+					<Section
+						title={'⚙️ ' + translate('settings', 'Account Settings')}
+						styles={styles}
+						isEditing={editMode.settings}
+						onEdit={() => toggleEdit('settings', true)}
+						onSave={() => saveUserData('settings')}
+						onCancel={() => toggleEdit('settings', false)}
+					>
+						{editMode.settings ? (
+							<>
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>{translate('app_lang', 'App Language (UI)')}</Text>
+									<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
+										{LANGUAGES.map((lang) => (
+											<TouchableOpacity
+												key={lang.code}
+												style={[
+													styles.langOption,
+													{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
+													userData.settings?.lang?.app === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
+												]}
+												onPress={() => {
+													const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
+													updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, app: lang.code } })
+												}}
+											>
+												<View style={styles.flagContainer}>
+													<Text style={styles.flagText}>{lang.flag}</Text>
+													{lang.icon && (
+														<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+															<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
+														</View>
+													)}
+												</View>
+												<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.app === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
+											</TouchableOpacity>
+										))}
+									</View>
+								</View>
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>{translate('content_lang', 'Content Language (Products/Businesses)')}</Text>
+									<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
+										{LANGUAGES.map((lang) => (
+											<TouchableOpacity
+												key={lang.code}
+												style={[
+													styles.langOption,
+													{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
+													userData.settings?.lang?.content === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
+												]}
+												onPress={() => {
+													const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
+													updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, content: lang.code } })
+												}}
+											>
+												<View style={styles.flagContainer}>
+													<Text style={styles.flagText}>{lang.flag}</Text>
+													{lang.icon && (
+														<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+															<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
+														</View>
+													)}
+												</View>
+												<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.content === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
+											</TouchableOpacity>
+										))}
+									</View>
+								</View>
+								<View style={styles.inputGroup}>
+									<Text style={styles.inputLabel}>{translate('currency_label', 'Currency')}</Text>
+									<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
+										{CURRENCIES.map((currency) => (
+											<TouchableOpacity
+												key={currency.code}
+												style={[
+													styles.langOption,
+													{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
+													userData.settings?.currency === currency.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
+												]}
+												onPress={() => {
+													const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
+													updateField('settings', { ...prevSettings, currency: currency.code })
+												}}
+											>
+												<View style={styles.flagContainer}>
+													<Text style={styles.flagText}>{currency.symbol}</Text>
+												</View>
+												<Text style={styles.langLabel}>{currency.label}</Text>
+											</TouchableOpacity>
+										))}
+									</View>
+								</View>
+							</>
+						) : (
+							<>
+								<InfoItem
+									label={translate('app_lang', 'App Language')}
+									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || translate('not_set', 'Not set')}
+									icon="globe"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+								<InfoItem
+									label={translate('content_lang', 'Content Language')}
+									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || translate('not_set', 'Not set')}
+									icon="language"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+								<InfoItem
+									label={translate('currency_label', 'Currency')}
+									value={CURRENCIES.find((c) => c.code === userData.settings?.currency)?.label || translate('not_set', 'Not set')}
+									icon="cash"
+									styles={styles}
+									iconColor={colors.primary}
+								/>
+							</>
+						)}
+					</Section>
+
+					{/* Customer Dashboard Data */}
+					{personalDashboard && (
+						<Section title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')} styles={styles}>
+							<View style={{ gap: 16 }}>
+								<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
+									{personalDashboard.topBusinesses.frequent.length === 0 ? (
+										<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
+									) : (
+										personalDashboard.topBusinesses.frequent.slice(0, 3).map((item, index) => (
+											<View
+												key={item._id || index}
+												style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.frequent.length, 3) - 1 && { borderBottomWidth: 0 }]}
+											>
+												<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
+												<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
+													{item.name ? localize(item.name) : item.slug || '—'}
+												</Text>
+												{item.count !== undefined && (
+													<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}15` }]}>
+														<Text style={[styles.rankMetricText, { color: colors.primary }]}>{item.count}</Text>
+													</View>
+												)}
+											</View>
+										))
+									)}
+								</View>
+								<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_new', 'Recently Discovered')}</Text>
+									{personalDashboard.topBusinesses.new.length === 0 ? (
+										<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
+									) : (
+										personalDashboard.topBusinesses.new.slice(0, 3).map((item, index) => (
+											<View
+												key={item._id || index}
+												style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.new.length, 3) - 1 && { borderBottomWidth: 0 }]}
+											>
+												<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
+												<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
+													{item.name ? localize(item.name) : item.slug || '—'}
+												</Text>
+											</View>
+										))
+									)}
+								</View>
+							</View>
+						</Section>
+					)}
+
+					{/* Reviews Section */}
+					{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
+				</ScrollView>
+			</KeyboardAvoidingView>
 
 			{/* Business Name Modal */}
 			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => !businessLoading && setShowBusinessModal(false)}>
 				<View style={styles.modalOverlay}>
 					<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => !businessLoading && setShowBusinessModal(false)} />
-					<SmartKeyboardSafeView
-						contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
-						style={{ width: '100%' }}
-						keyboardShouldPersistTaps="handled"
-						showsVerticalScrollIndicator={false}
-					>
-						<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
-							<View style={styles.businessModalHeader}>
-								<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
-									<Ionicons name="briefcase" size={32} color={colors.primary} />
-								</View>
-								<Text style={[styles.businessModalTitle, { color: colors.text }]}>{translate('create_business', 'Create Business')}</Text>
-								<Text style={[styles.businessModalSubtitle, { color: colors.textSecondary }]}>{translate('enter_business_name', 'Enter a name for your business in multiple languages')}</Text>
-							</View>
-							<View style={styles.businessInputContainer}>
-								{/* English Name (Required) */}
-								<View style={styles.languageInputGroup}>
-									<View style={styles.inputLabelRow}>
-										<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
-										<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+					<KeyboardAvoidingView style={{ width: '100%' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+						<ScrollView
+							style={{ width: '100%' }}
+							contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
+							keyboardShouldPersistTaps="handled"
+							showsVerticalScrollIndicator={false}
+						>
+							<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
+								<View style={styles.businessModalHeader}>
+									<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
+										<Ionicons name="briefcase" size={32} color={colors.primary} />
 									</View>
-									<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-										<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-											<Text style={styles.flagText}>🇺🇸</Text>
+									<Text style={[styles.businessModalTitle, { color: colors.text }]}>{translate('create_business', 'Create Business')}</Text>
+									<Text style={[styles.businessModalSubtitle, { color: colors.textSecondary }]}>{translate('enter_business_name', 'Enter a name for your business in multiple languages')}</Text>
+								</View>
+								<View style={styles.businessInputContainer}>
+									{/* English Name (Required) */}
+									<View style={styles.languageInputGroup}>
+										<View style={styles.inputLabelRow}>
+											<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
+											<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
 										</View>
-										<TextInput
-											style={[styles.languageInput, { color: colors.text }]}
-											value={businessName.en}
-											onChangeText={(text) => updateBusinessName('en', text)}
-											placeholder="e.g., Fresh Seafood Market"
-											placeholderTextColor={colors.textSecondary}
-											autoFocus
-											maxLength={50}
-											editable={!businessLoading}
-											returnKeyType="next"
-											onSubmitEditing={() => tnLatnInputRef.current?.focus()}
-										/>
+										<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+												<Text style={styles.flagText}>🇺🇸</Text>
+											</View>
+											<TextInput
+												style={[styles.languageInput, { color: colors.text }]}
+												value={businessName.en}
+												onChangeText={(text) => updateBusinessName('en', text)}
+												placeholder="e.g., Fresh Seafood Market"
+												placeholderTextColor={colors.textSecondary}
+												autoFocus
+												maxLength={50}
+												editable={!businessLoading}
+												returnKeyType="next"
+												onSubmitEditing={() => tnLatnInputRef.current?.focus()}
+											/>
+										</View>
 									</View>
-								</View>
 
-								{/* Tunisian Latin (Optional) */}
-								<View style={styles.languageInputGroup}>
-									<View style={styles.inputLabelRow}>
-										<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Latin)</Text>
-										<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
-									</View>
-									<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_latn ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-										<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-											<Text style={styles.flagText}>🇹🇳</Text>
+									{/* Tunisian Latin (Optional) */}
+									<View style={styles.languageInputGroup}>
+										<View style={styles.inputLabelRow}>
+											<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Latin)</Text>
+											<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
 										</View>
-										<TextInput
-											ref={tnLatnInputRef}
-											style={[styles.languageInput, { color: colors.text }]}
-											value={businessName.tn_latn}
-											onChangeText={(text) => updateBusinessName('tn_latn', text)}
-											placeholder="e.g., Souk el 7out"
-											placeholderTextColor={colors.textSecondary}
-											maxLength={50}
-											editable={!businessLoading}
-											returnKeyType="next"
-											onSubmitEditing={() => tnArabInputRef.current?.focus()}
-										/>
+										<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_latn ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+												<Text style={styles.flagText}>🇹🇳</Text>
+											</View>
+											<TextInput
+												ref={tnLatnInputRef}
+												style={[styles.languageInput, { color: colors.text }]}
+												value={businessName.tn_latn}
+												onChangeText={(text) => updateBusinessName('tn_latn', text)}
+												placeholder="e.g., Souk el 7out"
+												placeholderTextColor={colors.textSecondary}
+												maxLength={50}
+												editable={!businessLoading}
+												returnKeyType="next"
+												onSubmitEditing={() => tnArabInputRef.current?.focus()}
+											/>
+										</View>
 									</View>
-								</View>
 
-								{/* Tunisian Arabic (Optional) */}
-								<View style={styles.languageInputGroup}>
-									<View style={styles.inputLabelRow}>
-										<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Arabic)</Text>
-										<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
-									</View>
-									<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_arab ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-										<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-											<Text style={styles.flagText}>🇹🇳</Text>
+									{/* Tunisian Arabic (Optional) */}
+									<View style={styles.languageInputGroup}>
+										<View style={styles.inputLabelRow}>
+											<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Arabic)</Text>
+											<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
 										</View>
-										<TextInput
-											ref={tnArabInputRef}
-											style={[styles.languageInput, { color: colors.text, textAlign: 'right' }]}
-											value={businessName.tn_arab}
-											onChangeText={(text) => updateBusinessName('tn_arab', text)}
-											placeholder="مثال: سوق الحوت"
-											placeholderTextColor={colors.textSecondary}
-											maxLength={50}
-											editable={!businessLoading}
-											returnKeyType="done"
-											onSubmitEditing={handleSubmitBusinessRequest}
-										/>
+										<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_arab ? colors.primary : colors.border, backgroundColor: colors.background }]}>
+											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
+												<Text style={styles.flagText}>🇹🇳</Text>
+											</View>
+											<TextInput
+												ref={tnArabInputRef}
+												style={[styles.languageInput, { color: colors.text, textAlign: 'right' }]}
+												value={businessName.tn_arab}
+												onChangeText={(text) => updateBusinessName('tn_arab', text)}
+												placeholder="مثال: سوق الحوت"
+												placeholderTextColor={colors.textSecondary}
+												maxLength={50}
+												editable={!businessLoading}
+												returnKeyType="done"
+												onSubmitEditing={handleSubmitBusinessRequest}
+											/>
+										</View>
 									</View>
 								</View>
+								<View style={styles.businessModalActions}>
+									<TouchableOpacity
+										style={[styles.businessModalButton, styles.businessModalCancelButton, { borderColor: colors.border }]}
+										onPress={() => setShowBusinessModal(false)}
+										disabled={businessLoading}
+									>
+										<Text style={[styles.businessModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
+									</TouchableOpacity>
+									<TouchableOpacity
+										style={[styles.businessModalButton, styles.businessModalSubmitButton, { backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }]}
+										onPress={handleSubmitBusinessRequest}
+										disabled={businessLoading || !businessName.en.trim()}
+									>
+										{businessLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.businessModalButtonText, { color: '#fff' }]}>{translate('submit', 'Submit')}</Text>}
+									</TouchableOpacity>
+								</View>
 							</View>
-							<View style={styles.businessModalActions}>
-								<TouchableOpacity
-									style={[styles.businessModalButton, styles.businessModalCancelButton, { borderColor: colors.border }]}
-									onPress={() => setShowBusinessModal(false)}
-									disabled={businessLoading}
-								>
-									<Text style={[styles.businessModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
-								</TouchableOpacity>
-								<TouchableOpacity
-									style={[styles.businessModalButton, styles.businessModalSubmitButton, { backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }]}
-									onPress={handleSubmitBusinessRequest}
-									disabled={businessLoading || !businessName.en.trim()}
-								>
-									{businessLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.businessModalButtonText, { color: '#fff' }]}>{translate('submit', 'Submit')}</Text>}
-								</TouchableOpacity>
-							</View>
-						</View>
-					</SmartKeyboardSafeView>
+						</ScrollView>
+					</KeyboardAvoidingView>
 				</View>
 			</Modal>
 		</View>
