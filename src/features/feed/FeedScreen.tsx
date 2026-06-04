@@ -18,6 +18,130 @@ import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 
+const businessContactCache = new Map<string, any>()
+
+// Enrich feed items with contact info from cache, other feed items, or via API
+const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedItem[]) => void) => {
+	// 1. First, populate from items already present in the feed (cross-referencing)
+	const localContacts = new Map<string, any>()
+	const localLocations = new Map<string, any>()
+
+	for (const item of items) {
+		if (item.card?.kind === 'business') {
+			const bSlug = item.business?.slug || item.slug
+			if (bSlug) {
+				if (item.contact) {
+					localContacts.set(bSlug, item.contact)
+					businessContactCache.set(bSlug, item.contact)
+				}
+				if (item.business?.location) {
+					localLocations.set(bSlug, item.business.location)
+					businessContactCache.set(`${bSlug}_location`, item.business.location)
+				}
+			}
+		}
+		if (item.card?.kind === 'user' && item.contact && item.role === 'business_owner') {
+			const ownerSlug = item.slug
+			if (ownerSlug) {
+				localContacts.set(ownerSlug, item.contact)
+				businessContactCache.set(ownerSlug, item.contact)
+			}
+		}
+	}
+
+	// Apply any cached contacts we already have
+	let hasUpdates = false
+	const enriched = items.map((item) => {
+		if (item.card?.kind === 'product' && item.business) {
+			const bSlug = item.business.slug
+			const ownerSlug = item.business.owner?.slug
+			const contact = businessContactCache.get(bSlug) || localContacts.get(bSlug) || businessContactCache.get(ownerSlug) || localContacts.get(ownerSlug)
+			const location = businessContactCache.get(`${bSlug}_location`) || localLocations.get(bSlug)
+
+			const hasNewContact = contact && !item.business.contact
+			const hasNewLocation = location && (!item.business.location || !item.business.location.coordinates)
+
+			if (hasNewContact || hasNewLocation) {
+				hasUpdates = true
+				return {
+					...item,
+					business: {
+						...item.business,
+						...(hasNewContact ? { contact } : {}),
+						...(hasNewLocation ? { location } : {})
+					}
+				}
+			}
+		}
+		return item
+	})
+
+	if (hasUpdates) {
+		updateState(enriched)
+	}
+
+	// 2. Identify missing business contacts to fetch from the API
+	const missingSlugs = new Set<string>()
+	for (const item of enriched) {
+		if (item.card?.kind === 'product' && item.business && !item.business.contact) {
+			const bSlug = item.business.slug
+			if (bSlug && !businessContactCache.has(bSlug)) {
+				missingSlugs.add(bSlug)
+			}
+		}
+	}
+
+	if (missingSlugs.size === 0) return
+
+	// 3. Fetch missing contacts in parallel
+	try {
+		const { getBusinessBySlug } = require('@/features/businesses/businesses.api')
+		await Promise.all(
+			Array.from(missingSlugs).map(async (slug) => {
+				try {
+					const res = await getBusinessBySlug(slug)
+					if (res?.data) {
+						if (res.data.contact) {
+							businessContactCache.set(slug, res.data.contact)
+						}
+						if (res.data.location) {
+							businessContactCache.set(`${slug}_location`, res.data.location)
+						}
+					}
+				} catch (err) {
+					console.warn(`[FeedScreen] Failed to fetch contact for business: ${slug}`, err)
+				}
+			})
+		)
+
+		// 4. Update state with newly fetched contacts
+		const fullyEnriched = enriched.map((item) => {
+			if (item.card?.kind === 'product' && item.business && !item.business.contact) {
+				const bSlug = item.business.slug
+				const ownerSlug = item.business.owner?.slug
+				const contact = businessContactCache.get(bSlug) || businessContactCache.get(ownerSlug)
+				const location = businessContactCache.get(`${bSlug}_location`)
+
+				if (contact || location) {
+					return {
+						...item,
+						business: {
+							...item.business,
+							...(contact ? { contact } : {}),
+							...(location ? { location } : {})
+						}
+					}
+				}
+			}
+			return item
+		})
+
+		updateState(fullyEnriched)
+	} catch (e) {
+		console.warn('[FeedScreen] Contact enrichment error:', e)
+	}
+}
+
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {
@@ -271,11 +395,22 @@ export default function FeedScreen() {
 				}
 
 				if (shouldAppend) {
-					setFeedItems((prev) => [...prev, ...newItems])
+					setFeedItems((prev) => {
+						const updated = [...prev, ...newItems]
+						enrichFeedContacts(updated, (enriched) => {
+							setFeedItems(enriched)
+							setDisplayedItems(enriched)
+						})
+						return updated
+					})
 					setDisplayedItems((prev) => [...prev, ...newItems])
 				} else {
 					setFeedItems(newItems)
 					setDisplayedItems(newItems)
+					enrichFeedContacts(newItems, (enriched) => {
+						setFeedItems(enriched)
+						setDisplayedItems(enriched)
+					})
 				}
 				setError(null)
 			} catch (err) {

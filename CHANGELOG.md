@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+- Implemented business contact action buttons (Call, WhatsApp, Email, Directions) inside product cards in the feed, enabling direct messaging and navigation access to a product's business.
+- Added a client-side contact details enrichment engine on the feed screen to dynamically resolve missing business contact fields on product cards from other loaded cards or via lazy background fetching.
+
 ### Removed
 - Completely removed the custom `SmartKeyboardSafeView` component and refactored all usages across the app to use standard React Native `ScrollView` and `KeyboardAvoidingView` components.
 

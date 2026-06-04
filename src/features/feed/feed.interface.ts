@@ -51,6 +51,20 @@ interface FeedBusiness {
 		}
 	}
 	rating?: Rating
+	contact?: {
+		phone?: {
+			fullNumber: string
+			countryCode: string
+			localNumber: string
+		}
+		backupPhones?: Array<{
+			fullNumber: string
+			countryCode: string
+			localNumber: string
+		}>
+		whatsapp?: string
+		email?: string
+	}
 	createdAt: string
 	updatedAt: string
 }

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, Linking } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
@@ -56,11 +56,53 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		})
 	}
 
-	const handleBusinessPress = () => {
+	const handleBusinessPress = (e?: any) => {
+		e?.stopPropagation?.()
 		if (item.business?.slug) {
 			router.push(`/businesses/${item.business.slug}` as any)
 		}
 	}
+
+	const handleCall = (e: any) => {
+		e.stopPropagation?.()
+		const phone = item.business?.contact?.phone?.fullNumber
+		if (phone) {
+			Linking.openURL(`tel:${phone}`).catch(() => {})
+		}
+	}
+
+	const handleWhatsApp = (e: any) => {
+		e.stopPropagation?.()
+		const wa = item.business?.contact?.whatsapp
+		if (wa) {
+			Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
+		}
+	}
+
+	const handleDirections = (e: any) => {
+		e.stopPropagation?.()
+		const coords = item.business?.location?.coordinates
+		if (coords && coords.length === 2) {
+			const [lng, lat] = coords
+			const url = Platform.select({
+				ios: `maps:?daddr=${lat},${lng}`,
+				android: `google.navigation:q=${lat},${lng}`,
+				default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+			})
+			if (url) Linking.openURL(url).catch(() => {})
+		}
+	}
+
+	const handleEmail = (e: any) => {
+		e.stopPropagation?.()
+		const email = item.business?.contact?.email
+		if (email) {
+			Linking.openURL(`mailto:${email}`).catch(() => {})
+		}
+	}
+
+	const hasContact = !!(item.business?.contact?.phone || item.business?.contact?.whatsapp || item.business?.contact?.email)
+	const hasLocation = !!(item.business?.location?.coordinates && item.business.location.coordinates.length === 2)
 
 	const handleProductPress = () => {
 		if (item.slug) {
@@ -94,8 +136,8 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		<Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] }]} onPress={handleProductPress}>
 			{/* Business Header */}
 			{showBusinessHeader && (
-				<TouchableOpacity onPress={handleBusinessPress} style={styles.businessHeader} activeOpacity={0.8}>
-					<View style={styles.businessInfoWithImage}>
+				<View style={styles.businessHeader}>
+					<TouchableOpacity onPress={handleBusinessPress} style={styles.businessInfoWithImage} activeOpacity={0.8}>
 						{item.business?.media?.thumbnail?.url ? (
 							<SmartImage source={item.business.media.thumbnail.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
 						) : (
@@ -113,8 +155,33 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 								</Text>
 							)}
 						</View>
-					</View>
-				</TouchableOpacity>
+					</TouchableOpacity>
+
+					{(hasContact || hasLocation) && (
+						<View style={styles.businessContactActions}>
+							{item.business?.contact?.phone ? (
+								<TouchableOpacity style={styles.contactActionBtn} onPress={handleCall} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+									<Ionicons name="call-outline" size={14} color={colors.primary} />
+								</TouchableOpacity>
+							) : null}
+							{item.business?.contact?.whatsapp ? (
+								<TouchableOpacity style={[styles.contactActionBtn, { backgroundColor: '#134E4A' }]} onPress={handleWhatsApp} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+									<Ionicons name="logo-whatsapp" size={14} color="#2DD4BF" />
+								</TouchableOpacity>
+							) : null}
+							{item.business?.contact?.email ? (
+								<TouchableOpacity style={styles.contactActionBtn} onPress={handleEmail} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+									<Ionicons name="mail-outline" size={14} color={colors.primary} />
+								</TouchableOpacity>
+							) : null}
+							{hasLocation ? (
+								<TouchableOpacity style={styles.contactActionBtn} onPress={handleDirections} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+									<Ionicons name="navigate-outline" size={14} color={colors.primary} />
+								</TouchableOpacity>
+							) : null}
+						</View>
+					)}
+				</View>
 			)}
 
 			{/* Image */}
@@ -342,6 +409,19 @@ const createStyles = (colors: any, screenWidth: number, windowHeight: number) =>
 			justifyContent: 'center',
 			alignItems: 'center',
 			...Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any })
+		},
+		businessContactActions: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6
+		},
+		contactActionBtn: {
+			width: 28,
+			height: 28,
+			borderRadius: 8,
+			backgroundColor: colors.primaryContainer,
+			justifyContent: 'center',
+			alignItems: 'center'
 		}
 	})
 }
