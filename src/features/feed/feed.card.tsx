@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { memo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { FeedItem, ProductFeedItem, BusinessFeedItem, UserFeedItem } from './feed.interface'
 import ProductCard from '../products/products.card'
@@ -13,7 +13,7 @@ type FeedCardProps = {
 	addToCart: (item: any, quantity: number) => void
 }
 
-export default function FeedCard({ item, addToCart }: FeedCardProps) {
+function FeedCard({ item, addToCart }: FeedCardProps) {
 	const { translate } = useUser()
 	const { colors } = useTheme()
 	const cardType = item.card?.kind || 'product'
@@ -39,6 +39,8 @@ export default function FeedCard({ item, addToCart }: FeedCardProps) {
 			)
 	}
 }
+
+export default memo(FeedCard)
 
 const styles = StyleSheet.create({
 	placeholderCard: {

@@ -124,7 +124,7 @@ export default function UserDetailScreen() {
 			>
 				{/* Profile Header Card */}
 				<View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: '#FFFFFF' }]}>
-					<LinearGradient colors={[`${colors.primary}15`, 'transparent']} style={StyleSheet.absoluteFillObject} />
+					<LinearGradient colors={[`${colors.primary}15`, 'transparent']} style={StyleSheet.absoluteFill} />
 
 					<View style={styles.avatarContainer}>
 						<SmartImage source={user.media?.thumbnail?.url} style={styles.avatar} entityType="user" />

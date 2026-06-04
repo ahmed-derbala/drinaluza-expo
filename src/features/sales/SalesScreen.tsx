@@ -1,11 +1,12 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
-import { View, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
+import { View, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter } from 'expo-router'
+import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/config/orderStatus'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -42,6 +43,13 @@ export default function SalesScreen() {
 	useEffect(() => {
 		setSelectedStatus(status || 'all')
 	}, [status])
+
+	const selectedStatusRef = useRef(selectedStatus)
+	useEffect(() => {
+		selectedStatusRef.current = selectedStatus
+	}, [selectedStatus])
+
+	const isFirstLoad = useRef(true)
 	const { width } = useWindowDimensions()
 	const { onScroll } = useScrollHandler()
 
@@ -182,20 +190,16 @@ export default function SalesScreen() {
 		[router, loadSales]
 	)
 
-	// Initial data loading on component mount
-	useEffect(() => {
-		const loadInitialData = async () => {
-			await Promise.all([loadAllSalesForCounts(), loadSales(1, false, selectedStatus)])
-		}
-		loadInitialData()
-	}, [])
-
-	// Focus effect triggers silent refresh in background
+	// Focus effect triggers load/silent refresh in background
 	useFocusEffect(
 		useCallback(() => {
 			loadAllSalesForCounts()
-			loadSales(1, true, selectedStatus)
-		}, [loadAllSalesForCounts, loadSales, selectedStatus])
+			const isFirst = isFirstLoad.current
+			if (isFirst) {
+				isFirstLoad.current = false
+			}
+			loadSales(1, !isFirst, selectedStatusRef.current)
+		}, [loadAllSalesForCounts, loadSales])
 	)
 
 	const renderFooter = () => {
@@ -206,6 +210,15 @@ export default function SalesScreen() {
 			</View>
 		)
 	}
+
+	const renderItem = useCallback(
+		({ item }: { item: Sale }) => (
+			<View style={[numColumns > 1 ? styles.columnItem : styles.fullWidthItem, numColumns > 1 && { paddingHorizontal: 8, marginBottom: 16 }]}>
+				<SaleCard sale={item} onStatusUpdate={handleRefresh} />
+			</View>
+		),
+		[numColumns, handleRefresh, styles.columnItem, styles.fullWidthItem]
+	)
 
 	// Only show full-screen loading on initial load
 	if (initialLoading) {
@@ -326,18 +339,13 @@ export default function SalesScreen() {
 			)}
 
 			{/* Sales List */}
-			<FlatList
+			<FlashList
 				data={displayData}
-				renderItem={({ item }) => (
-					<View style={numColumns > 1 ? styles.columnItem : styles.fullWidthItem}>
-						<SaleCard sale={item} onStatusUpdate={handleRefresh} />
-					</View>
-				)}
+				renderItem={renderItem}
 				keyExtractor={(item) => item._id}
 				key={numColumns}
 				numColumns={numColumns}
-				columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : undefined}
-				contentContainerStyle={styles.listContent}
+				contentContainerStyle={[styles.listContent, numColumns > 1 && { paddingHorizontal: 8 }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}

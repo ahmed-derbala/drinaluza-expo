@@ -18,7 +18,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 	const { translate, appLang } = useUser()
 	const [searchText, setSearchText] = useState('')
 
-	const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	const performSearch = useCallback(
 		async (text: string) => {
@@ -55,7 +55,7 @@ export default function SearchBar({ onSearchResults, onSearchClear, onError }: S
 			// Debounce search
 			searchTimerRef.current = setTimeout(() => {
 				performSearch(text)
-			}, 500) as unknown as NodeJS.Timeout
+			}, 500)
 		},
 		[performSearch, onSearchClear]
 	)

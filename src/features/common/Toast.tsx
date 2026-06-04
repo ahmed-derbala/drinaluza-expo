@@ -35,7 +35,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const opacity = useRef(new Animated.Value(0)).current
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
-	const timerRef = useRef<NodeJS.Timeout | null>(null)
+	const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
 	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/notification.mp3')) : null
 

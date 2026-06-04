@@ -1,11 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useColorScheme } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
-import { ThemeProvider as NavigationThemeProvider, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme, Theme } from 'expo-router/react-navigation'
+import { getItem, setItem } from '@/core/storage'
+import { ThemeProvider as NavigationThemeProvider, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme } from 'expo-router/react-navigation'
 import { lightColors, darkColors } from './colors'
 import { log } from '@/core/log'
 
-export const LightTheme: Theme = {
+export const LightTheme: ReactNavigation.Theme = {
 	...NavigationDefaultTheme,
 	colors: {
 		...NavigationDefaultTheme.colors,
@@ -13,7 +13,7 @@ export const LightTheme: Theme = {
 	}
 }
 
-export const DarkTheme: Theme = {
+export const DarkTheme: ReactNavigation.Theme = {
 	...NavigationDarkTheme,
 	colors: {
 		...NavigationDarkTheme.colors,
@@ -48,9 +48,9 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
 	useEffect(() => {
 		const loadThemeMode = async () => {
 			try {
-				const savedMode = await AsyncStorage.getItem('app_theme')
+				const savedMode = await getItem<string>('app_theme')
 				if (savedMode === 'light' || savedMode === 'dark' || savedMode === 'system') {
-					setThemeModeState(savedMode)
+					setThemeModeState(savedMode as ThemeMode)
 				} else {
 					setThemeModeState('dark')
 				}
@@ -64,7 +64,7 @@ export function AppThemeProvider({ children }: ThemeProviderProps) {
 	const setThemeMode = async (mode: ThemeMode) => {
 		setThemeModeState(mode)
 		try {
-			await AsyncStorage.setItem('app_theme', mode)
+			await setItem('app_theme', mode)
 		} catch (e) {
 			log({ level: 'warn', label: 'AppThemeProvider', message: 'Failed to save theme mode', error: e })
 		}

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/core/storage'
+import { FlashList } from '@shopify/flash-list'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
@@ -217,7 +218,7 @@ const createStyles = (colors: any) =>
 			textAlign: 'center'
 		},
 		loadingOverlay: {
-			...StyleSheet.absoluteFillObject,
+			...StyleSheet.absoluteFill,
 			backgroundColor: colors.background,
 			justifyContent: 'center',
 			alignItems: 'center',
@@ -351,9 +352,6 @@ export default function FeedScreen() {
 	const [hasMore, setHasMore] = useState(true)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
 
-	// Animation state for search bar
-	const scrollY = useRef(new Animated.Value(0)).current
-
 	// Error handling state
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
 
@@ -365,9 +363,9 @@ export default function FeedScreen() {
 
 	const loadCart = useCallback(async () => {
 		try {
-			const storedCart = await AsyncStorage.getItem('cart')
+			const storedCart = await getItem<CartItem[]>('cart')
 			if (storedCart) {
-				setCart(JSON.parse(storedCart))
+				setCart(storedCart)
 			}
 		} catch (error) {
 			log({ level: 'error', label: 'FeedScreen', message: 'Failed to load cart', error })
@@ -471,37 +469,40 @@ export default function FeedScreen() {
 		}, [])
 	)
 
-	const addToCart = async (item: FeedItem, quantity: number) => {
-		try {
-			const token = await getToken()
-			if (!token) {
-				toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: '#3B82F6' })
-				router.push('/auth')
-				return
-			}
-
-			const existingItemIndex = cart.findIndex((cartItem) => cartItem._id === item._id)
-			let newCart: CartItem[]
-
-			if (existingItemIndex > -1) {
-				newCart = [...cart]
-				newCart[existingItemIndex] = {
-					...newCart[existingItemIndex],
-					quantity: (newCart[existingItemIndex].quantity || 0) + quantity
+	const addToCart = useCallback(
+		async (item: FeedItem, quantity: number) => {
+			try {
+				const token = await getToken()
+				if (!token) {
+					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: '#3B82F6' })
+					router.push('/auth')
+					return
 				}
-			} else {
-				newCart = [...cart, { ...item, quantity }]
+
+				const existingItemIndex = cart.findIndex((cartItem) => cartItem._id === item._id)
+				let newCart: CartItem[]
+
+				if (existingItemIndex > -1) {
+					newCart = [...cart]
+					newCart[existingItemIndex] = {
+						...newCart[existingItemIndex],
+						quantity: (newCart[existingItemIndex].quantity || 0) + quantity
+					}
+				} else {
+					newCart = [...cart, { ...item, quantity }]
+				}
+
+				setCart(newCart)
+
+				await setItem('cart', newCart)
+				toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
+			} catch (err) {
+				log({ level: 'error', label: 'FeedScreen', message: 'Failed to add to cart', error: err })
+				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 			}
-
-			setCart(newCart)
-
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-			toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
-		} catch (err) {
-			log({ level: 'error', label: 'FeedScreen', message: 'Failed to add to cart', error: err })
-			toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
-		}
-	}
+		},
+		[cart, localize, router, translate]
+	)
 
 	const getPageNumbers = (current: number, total: number) => {
 		const pages: (number | string)[] = []
@@ -600,10 +601,13 @@ export default function FeedScreen() {
 		)
 	}
 
-	const renderItem = ({ item }: { item: FeedItem }) => (
-		<View style={[styles.cardWrapper, { width: numColumns > 1 ? `${(100 - (numColumns - 1) * 1.5) / numColumns}%` : '100%' }]}>
-			<FeedCard item={item} addToCart={addToCart} />
-		</View>
+	const renderItem = useCallback(
+		({ item }: { item: FeedItem }) => (
+			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: 16 }}>
+				<FeedCard item={item} addToCart={addToCart} />
+			</View>
+		),
+		[numColumns, addToCart, gap]
 	)
 
 	return (
@@ -649,15 +653,14 @@ export default function FeedScreen() {
 				}
 			/>
 
-			<Animated.FlatList
+			<FlashList
 				style={{ backgroundColor: colors.background }}
 				key={numColumns}
 				data={displayedItems}
 				renderItem={renderItem}
 				numColumns={numColumns}
-				columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding, alignItems: 'stretch' } : undefined}
 				keyExtractor={(item) => item.slug || item._id}
-				contentContainerStyle={[styles.list, numColumns === 1 && { paddingHorizontal: padding }]}
+				contentContainerStyle={[styles.list, { paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding }]}
 				ListEmptyComponent={!loading ? renderEmpty : null}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}

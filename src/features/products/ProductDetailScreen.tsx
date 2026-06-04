@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native'
 
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -75,7 +75,7 @@ export default function ProductDetailScreen() {
 			const existing = cart.findIndex((b) => b._id === product._id)
 			const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + quantity } : b)) : [...cart, { ...product, quantity }]
 			setCart(newCart)
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+			await setItem('cart', newCart)
 			toast.show({ title: 'Success', message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: '/profile/purchases?status=cart' })
 		} catch {
 			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
@@ -84,8 +84,8 @@ export default function ProductDetailScreen() {
 
 	const loadCart = async () => {
 		try {
-			const saved = await AsyncStorage.getItem('cart')
-			if (saved) setCart(JSON.parse(saved))
+			const saved = await getItem<any[]>('cart')
+			if (saved) setCart(saved)
 		} catch {}
 	}
 
@@ -560,7 +560,7 @@ const styles = StyleSheet.create({
 		height: '100%'
 	},
 	unavailableOverlay: {
-		...StyleSheet.absoluteFillObject,
+		...StyleSheet.absoluteFill,
 		backgroundColor: 'rgba(0,0,0,0.6)',
 		justifyContent: 'center',
 		alignItems: 'center'

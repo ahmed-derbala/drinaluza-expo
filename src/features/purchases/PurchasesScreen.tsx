@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
 import { useRouter, useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/core/storage'
+import { FlashList } from '@shopify/flash-list'
 import { useTheme } from '../../core/theme'
 import HeaderTitle from '../common/HeaderTitle'
 import HeaderRefreshButton from '../common/HeaderRefreshButton'
@@ -75,13 +76,14 @@ const PurchasesScreen = () => {
 	const isDesktop = width >= 1024
 	const numColumns = isDesktop ? 3 : isTablet ? 2 : 1
 	const cardGap = 16
+	const padding = 16
 	const styles = useMemo(() => createStyles(colors, width, numColumns, cardGap), [colors, width, numColumns])
 
 	const loadCart = async () => {
 		try {
-			const storedCart = await AsyncStorage.getItem('cart')
+			const storedCart = await getItem<CartItem[]>('cart')
 			if (storedCart) {
-				setCart(JSON.parse(storedCart))
+				setCart(storedCart)
 			} else {
 				setCart([])
 			}
@@ -180,7 +182,7 @@ const PurchasesScreen = () => {
 	// Initial data loading on component mount
 	useEffect(() => {
 		const loadInitialData = async () => {
-			await Promise.all([fetchPurchases(filter), loadStatusCounts(), loadCart()])
+			await Promise.all([loadStatusCounts(), loadCart()])
 		}
 		loadInitialData()
 	}, [])
@@ -407,7 +409,7 @@ const PurchasesScreen = () => {
 						onPress: async () => {
 							const newCart = cart.filter((item) => item._id !== itemId)
 							setCart(newCart)
-							await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+							await setItem('cart', newCart)
 						}
 					}
 				])
@@ -416,7 +418,7 @@ const PurchasesScreen = () => {
 
 			const newCart = cart.map((item) => (item._id === itemId ? { ...item, quantity: newQuantity } : item))
 			setCart(newCart)
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+			await setItem('cart', newCart)
 		},
 		[cart, translate]
 	)
@@ -425,7 +427,7 @@ const PurchasesScreen = () => {
 		async (itemId: string) => {
 			const newCart = cart.filter((item) => item._id !== itemId)
 			setCart(newCart)
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+			await setItem('cart', newCart)
 		},
 		[cart]
 	)
@@ -447,7 +449,7 @@ const PurchasesScreen = () => {
 				const newCart = cart.filter((item) => !purchasedItemIds.has(item._id))
 
 				setCart(newCart)
-				await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+				await setItem('cart', newCart)
 
 				toast.show({ title: translate('success', 'Success'), message: translate('checkout_success', 'Order placed successfully!'), color: '#10B981' })
 				setFilter('pending')
@@ -668,14 +670,13 @@ const PurchasesScreen = () => {
 			</View>
 
 			{/* Grid container */}
-			<FlatList
+			<FlashList
 				key={numColumns}
 				data={displayData}
 				numColumns={numColumns}
 				renderItem={filter === 'cart' ? (renderCartGroup as any) : renderPurchaseItem}
 				keyExtractor={(item: any) => (filter === 'cart' ? item.businessId : item._id)}
-				contentContainerStyle={styles.listContainer}
-				columnWrapperStyle={numColumns > 1 ? { gap: cardGap } : undefined}
+				contentContainerStyle={[styles.listContainer, numColumns > 1 && { paddingHorizontal: padding - cardGap / 2 }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				ListEmptyComponent={renderEmptyState}
 				showsVerticalScrollIndicator={false}
@@ -717,8 +718,8 @@ const createStyles = (colors: any, width: number, numColumns: number, cardGap: n
 			paddingHorizontal: 4
 		},
 		countText: { fontSize: 10, fontWeight: '800' },
-		listContainer: { padding: padding, paddingBottom: 40, flexGrow: 1 },
-		cardContainer: { width: containerWidth, marginBottom: cardGap },
+		listContainer: { paddingVertical: padding, paddingBottom: 40, flexGrow: 1, paddingHorizontal: padding },
+		cardContainer: { width: '100%', paddingHorizontal: numColumns > 1 ? cardGap / 2 : 0, marginBottom: cardGap },
 		purchaseCard: {
 			borderRadius: 24,
 			borderWidth: 1.5,

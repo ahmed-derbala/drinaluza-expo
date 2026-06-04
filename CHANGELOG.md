@@ -7,11 +7,17 @@
 - Added a client-side contact details enrichment engine on the feed screen to dynamically resolve missing business contact fields on product cards from other loaded cards or via lazy background fetching.
 
 ### Removed
+- Uninstalled unused `react-native-keyboard-aware-scroll-view` dependency from `package.json`.
+- Removed deprecated `estimatedItemSize` props from all `FlashList` components, aligning with `@shopify/flash-list` version `2.0.2` New Architecture layout capabilities.
 - Completely removed the custom `SmartKeyboardSafeView` component and refactored all usages across the app to use standard React Native `ScrollView` and `KeyboardAvoidingView` components.
 - Removed custom `StatusBar` imports and rendering from layouts, disabling app-level alterations to the device's default status bar.
 - Removed unused `@react-navigation/native` and `@react-navigation/native-stack` packages from dependencies.
 
 ### Changed
+- Migrated high-volume list screens (`FeedScreen`, `SalesScreen`, `PurchasesScreen`, `SearchScreen`, `ProductsListScreen`, and `BusinessesListScreen`) from `FlatList` to Fabric-compatible `FlashList` for optimized memory and scroll performance.
+- Refactored `FeedScreen`, `SearchScreen`, `PurchasesScreen`, `BusinessProductsScreen`, `ProductDetailScreen`, `ProfileScreen`, and `UserContext` to use custom storage module helpers (`getItem`, `setItem`) instead of importing `@react-native-async-storage/async-storage` directly, complying with codebase architectural data persistence rules.
+- Memoized `FeedCard` and `SaleCard` components using `React.memo` to prevent redundant item re-renders during list scrolls and parent state updates.
+- Streamlined network fetching by resolving duplicate API calls on mount and tab switches in `SalesScreen` and `PurchasesScreen`.
 - Migrated Theme/styling imports from `@react-navigation/native` to the standard `expo-router/react-navigation` library using official Expo SDK 56 codemods.
 - Improved `/auth` keyboard avoidance: focusing on username (slug) or password fields automatically scrolls the credentials form to the bottom to ensure the continue button is clearly visible and not obscured by the on-screen keyboard.
 - Improved centralized storage module `src/core/storage/` by adding generic storage helpers (`getItem`, `setItem`, `removeItem`, `multiRemove`, `getAllKeys`), a complete `clearAllStorage` function (clearing AsyncStorage, web storages, and all known SecureStore keys), and `clearStorageExceptSavedAuths` helper.
@@ -22,6 +28,7 @@
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
 
 ### Fixed
+- Resolved React Navigation theme type augmentation errors under Expo Router SDK 56 and fixed typing issues with `StyleSheet.absoluteFillObject` by adopting `StyleSheet.absoluteFill`.
 - Fixed asynchronous state layout measurement timing lag in `SmartKeyboardSafeView` by utilizing a synchronously updated mutable ref (`viewportHeightRef`).
 - Fixed ScrollView layout truncation on `/auth` screen by moving centering styles from `contentContainerStyle` to an inner `View` wrapper.
 - Fixed Android keyboard covering the welcome form on `/auth` and clipping issues by removing manual padding/KeyboardAvoidingView behavior on Android, relying natively on the OS window `adjustResize` logic, and restoring `flexGrow: 1` to ensure the form correctly recalculates and centers itself within the dynamically shrinking viewport.

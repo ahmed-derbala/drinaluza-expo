@@ -9,7 +9,7 @@ import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
 import HeaderRefreshButton from '../common/HeaderRefreshButton'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
 import SmartImage from '@/core/SmartImageViewer'
@@ -173,7 +173,7 @@ const cardStyles = StyleSheet.create({
 	},
 	image: { width: '100%', height: '100%' },
 	stockOverlay: {
-		...StyleSheet.absoluteFillObject,
+		...StyleSheet.absoluteFill,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
@@ -285,8 +285,8 @@ export default function BusinessProductsScreen() {
 	// Load cart
 	const loadCart = async () => {
 		try {
-			const saved = await AsyncStorage.getItem('cart')
-			if (saved) setCart(JSON.parse(saved))
+			const saved = await getItem<any[]>('cart')
+			if (saved) setCart(saved)
 		} catch {}
 	}
 
@@ -342,7 +342,7 @@ export default function BusinessProductsScreen() {
 				const existing = cart.findIndex((b) => b._id === item._id)
 				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
 				setCart(newCart)
-				await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+				await setItem('cart', newCart)
 				toast.show({ title: 'Success', message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: '/profile/purchases?status=cart' })
 			} catch {
 				toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })

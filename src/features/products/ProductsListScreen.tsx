@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
+import { FlashList } from '@shopify/flash-list'
 
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/core/storage'
 import { Ionicons } from '@expo/vector-icons'
 import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
@@ -48,8 +49,8 @@ export default function ProductsListScreen() {
 
 	const loadCart = async () => {
 		try {
-			const saved = await AsyncStorage.getItem('cart')
-			if (saved) setCart(JSON.parse(saved))
+			const saved = await getItem<any[]>('cart')
+			if (saved) setCart(saved)
 		} catch {}
 	}
 
@@ -110,33 +111,37 @@ export default function ProductsListScreen() {
 		}
 	}
 
-	const handleAddToCart = async (item: ProductFeedItem, qty: number) => {
-		try {
-			const token = await getToken()
-			if (!token) {
-				toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: '#3B82F6' })
-				router.push('/auth')
-				return
+	const handleAddToCart = useCallback(
+		async (item: ProductFeedItem, qty: number) => {
+			try {
+				const token = await getToken()
+				if (!token) {
+					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: '#3B82F6' })
+					router.push('/auth')
+					return
+				}
+
+				const existing = cart.findIndex((b) => b._id === item._id)
+				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
+
+				setCart(newCart)
+				await setItem('cart', newCart)
+				toast.show({ title: 'Success', message: `Added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
+			} catch {
+				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 			}
+		},
+		[cart, router]
+	)
 
-			const existing = cart.findIndex((b) => b._id === item._id)
-			const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
-
-			setCart(newCart)
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
-			toast.show({ title: 'Success', message: `Added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
-		} catch {
-			toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
-		}
-	}
-
-	const renderItem = ({ item }: { item: ProductFeedItem }) => {
-		return (
-			<View style={{ width: itemWidth, marginBottom: gap }}>
+	const renderItem = useCallback(
+		({ item }: { item: ProductFeedItem }) => (
+			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: gap }}>
 				<ProductCard item={item} addToCart={handleAddToCart} />
 			</View>
-		)
-	}
+		),
+		[numColumns, handleAddToCart, gap]
+	)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -189,14 +194,13 @@ export default function ProductsListScreen() {
 			{error ? (
 				<ErrorState title={error.title} message={error.message} onRetry={handleRefresh} />
 			) : (
-				<FlatList
+				<FlashList
 					data={products}
 					key={numColumns}
 					numColumns={numColumns}
-					keyExtractor={(item, idx) => item._id + '-' + idx}
+					keyExtractor={(item: ProductFeedItem, idx: number) => item._id + '-' + idx}
 					renderItem={renderItem}
-					contentContainerStyle={{ padding: padding, paddingBottom: 100 }}
-					columnWrapperStyle={numColumns > 1 ? { gap: gap } : undefined}
+					contentContainerStyle={{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding, paddingTop: padding, paddingBottom: 100 }}
 					showsVerticalScrollIndicator={false}
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 					onEndReached={handleLoadMore}
@@ -246,7 +250,7 @@ const styles = StyleSheet.create({
 		fontWeight: '600'
 	},
 	loadingOverlay: {
-		...StyleSheet.absoluteFillObject,
+		...StyleSheet.absoluteFill,
 		justifyContent: 'center',
 		alignItems: 'center',
 		zIndex: 10

@@ -18,7 +18,7 @@ import {
 	KeyboardAvoidingView
 } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem } from '@/core/storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
@@ -153,9 +153,9 @@ export default function ProfileScreen() {
 
 	const loadCart = async () => {
 		try {
-			const storedCart = await AsyncStorage.getItem('cart')
+			const storedCart = await getItem<any[]>('cart')
 			if (storedCart) {
-				setCart(JSON.parse(storedCart))
+				setCart(storedCart)
 			} else {
 				setCart([])
 			}

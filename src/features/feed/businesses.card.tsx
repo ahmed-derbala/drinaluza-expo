@@ -197,7 +197,7 @@ const createStyles = (colors: any, screenWidth: number, windowHeight: number) =>
 			height: '100%'
 		},
 		imageOverlay: {
-			...StyleSheet.absoluteFillObject,
+			...StyleSheet.absoluteFill,
 			backgroundColor: 'rgba(2, 6, 23, 0.15)'
 		},
 		badge: {

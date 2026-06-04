@@ -24,9 +24,11 @@ export interface AppThemeColors {
 	inputBorder: string
 }
 
-declare module '@react-navigation/native' {
-	export interface Theme {
-		dark: boolean
-		colors: AppThemeColors
+declare global {
+	namespace ReactNavigation {
+		interface Theme {
+			dark: boolean
+			colors: AppThemeColors
+		}
 	}
 }

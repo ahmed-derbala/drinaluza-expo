@@ -6,6 +6,7 @@ import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
+import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import { getBusinesses } from '@/features/businesses/businesses.api'
@@ -648,17 +649,22 @@ export default function BusinessesListScreen() {
 		router.push(`/businesses/${slug}` as any)
 	}
 
-	const renderBusinessCard = ({ item }: { item: Business }) => (
-		<BusinessCard
-			business={item}
-			width={cardWidth}
-			imageHeight={imageHeight}
-			showExtended={showExtended}
-			isExtraSmall={isExtraSmall}
-			fontSize={fontSize}
-			subtitleFontSize={subtitleFontSize}
-			smallFontSize={smallFontSize}
-		/>
+	const renderBusinessCard = useCallback(
+		({ item }: { item: Business }) => (
+			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: gap }}>
+				<BusinessCard
+					business={item}
+					width={cardWidth}
+					imageHeight={imageHeight}
+					showExtended={showExtended}
+					isExtraSmall={isExtraSmall}
+					fontSize={fontSize}
+					subtitleFontSize={subtitleFontSize}
+					smallFontSize={smallFontSize}
+				/>
+			</View>
+		),
+		[numColumns, cardWidth, imageHeight, showExtended, isExtraSmall, fontSize, subtitleFontSize, smallFontSize, gap]
 	)
 
 	const renderEmpty = () => {
@@ -708,20 +714,12 @@ export default function BusinessesListScreen() {
 					headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
 				}}
 			/>
-			<FlatList
+			<FlashList
 				key={`cols-${numColumns}`}
 				data={businesses}
 				renderItem={renderBusinessCard}
-				keyExtractor={(item) => item._id}
-				contentContainerStyle={styles.listContent as ViewStyle}
-				columnWrapperStyle={
-					numColumns > 1
-						? {
-								gap,
-								marginBottom: gap
-							}
-						: undefined
-				}
+				keyExtractor={(item: Business) => item._id}
+				contentContainerStyle={[styles.listContent as ViewStyle, { paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding }]}
 				numColumns={numColumns}
 				ListEmptyComponent={renderEmpty}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}

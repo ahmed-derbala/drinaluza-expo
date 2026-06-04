@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, useWindowDimensions, Platform, FlatList, Keyboard } from 'react-native'
 import { useRouter, useLocalSearchParams } from 'expo-router'
+import { FlashList } from '@shopify/flash-list'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem, removeItem } from '@/core/storage'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -40,7 +41,7 @@ export default function SearchScreen() {
 	const [error, setError] = useState<string | null>(null)
 	const [history, setHistory] = useState<string[]>([])
 
-	const searchTimerRef = useRef<NodeJS.Timeout | null>(null)
+	const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const inputRef = useRef<TextInput>(null)
 
 	// Responsiveness layout settings (matches FeedScreen)
@@ -57,9 +58,9 @@ export default function SearchScreen() {
 
 	const loadCart = async () => {
 		try {
-			const storedCart = await AsyncStorage.getItem('cart')
+			const storedCart = await getItem<CartItem[]>('cart')
 			if (storedCart) {
-				setCart(JSON.parse(storedCart))
+				setCart(storedCart)
 			}
 		} catch (error) {
 			console.error('Failed to load cart in SearchScreen:', error)
@@ -88,20 +89,18 @@ export default function SearchScreen() {
 		if (!trimmedText) return
 
 		try {
-			const storedHistory = await AsyncStorage.getItem('search_history')
-			let currentHistory: string[] = storedHistory ? JSON.parse(storedHistory) : []
-
+			const currentHistory = (await getItem<string[]>('search_history')) || []
 			// Remove duplicate if exists so we can move it to the front
-			currentHistory = currentHistory.filter((item) => item.toLowerCase() !== trimmedText.toLowerCase())
+			let updatedHistory = currentHistory.filter((item) => item.toLowerCase() !== trimmedText.toLowerCase())
 			// Insert at the beginning of the array
-			currentHistory.unshift(trimmedText)
+			updatedHistory.unshift(trimmedText)
 			// Limit to 10 unique entries
-			if (currentHistory.length > 10) {
-				currentHistory = currentHistory.slice(0, 10)
+			if (updatedHistory.length > 10) {
+				updatedHistory = updatedHistory.slice(0, 10)
 			}
 
-			setHistory(currentHistory)
-			await AsyncStorage.setItem('search_history', JSON.stringify(currentHistory))
+			setHistory(updatedHistory)
+			await setItem('search_history', updatedHistory)
 		} catch (error) {
 			console.error('Failed to save search history:', error)
 		}
@@ -109,12 +108,11 @@ export default function SearchScreen() {
 
 	const deleteHistoryItem = useCallback(async (itemToDelete: string) => {
 		try {
-			const storedHistory = await AsyncStorage.getItem('search_history')
-			if (storedHistory) {
-				const currentHistory = JSON.parse(storedHistory) as string[]
+			const currentHistory = await getItem<string[]>('search_history')
+			if (currentHistory) {
 				const updatedHistory = currentHistory.filter((item) => item !== itemToDelete)
 				setHistory(updatedHistory)
-				await AsyncStorage.setItem('search_history', JSON.stringify(updatedHistory))
+				await setItem('search_history', updatedHistory)
 			}
 		} catch (error) {
 			console.error('Failed to delete history item:', error)
@@ -124,7 +122,7 @@ export default function SearchScreen() {
 	const clearAllHistory = useCallback(async () => {
 		try {
 			setHistory([])
-			await AsyncStorage.removeItem('search_history')
+			await removeItem('search_history')
 		} catch (error) {
 			console.error('Failed to clear search history:', error)
 		}
@@ -153,7 +151,7 @@ export default function SearchScreen() {
 			}
 
 			setCart(newCart)
-			await AsyncStorage.setItem('cart', JSON.stringify(newCart))
+			await setItem('cart', newCart)
 			toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
 		} catch (err) {
 			console.error('Failed to add to cart:', err)
@@ -195,9 +193,8 @@ export default function SearchScreen() {
 
 	const loadHistory = useCallback(async () => {
 		try {
-			const storedHistory = await AsyncStorage.getItem('search_history')
-			if (storedHistory) {
-				const parsedHistory = JSON.parse(storedHistory) as string[]
+			const parsedHistory = await getItem<string[]>('search_history')
+			if (parsedHistory) {
 				setHistory(parsedHistory)
 
 				// Automatically trigger search on last search term on mount only if there is no URL query
@@ -230,7 +227,7 @@ export default function SearchScreen() {
 					setResults([])
 					setLoading(false)
 				}
-			}, 400) as unknown as NodeJS.Timeout
+			}, 400)
 		},
 		[performSearch, activeFilter, router]
 	)
@@ -270,10 +267,13 @@ export default function SearchScreen() {
 		}
 	}, [loadHistory])
 
-	const renderItem = ({ item }: { item: FeedItem }) => (
-		<View style={[styles.cardWrapper, { width: numColumns > 1 ? `${(100 - (numColumns - 1) * 1.5) / numColumns}%` : '100%' }]}>
-			<FeedCard item={item} addToCart={addToCart} />
-		</View>
+	const renderItem = useCallback(
+		({ item }: { item: FeedItem }) => (
+			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: 14 }}>
+				<FeedCard item={item} addToCart={addToCart} />
+			</View>
+		),
+		[numColumns, addToCart, gap]
 	)
 
 	const renderEmpty = () => {
@@ -417,14 +417,13 @@ export default function SearchScreen() {
 						<ActivityIndicator size="large" color={colors.primary} />
 					</View>
 				) : (
-					<FlatList
+					<FlashList
 						key={numColumns}
 						data={results}
 						renderItem={renderItem}
 						numColumns={numColumns}
-						columnWrapperStyle={numColumns > 1 ? { gap, paddingHorizontal: padding, marginBottom: 12, alignItems: 'stretch' } : undefined}
 						keyExtractor={(item: any) => item.slug || item._id}
-						contentContainerStyle={[styles.list, numColumns === 1 && { paddingHorizontal: padding }]}
+						contentContainerStyle={[styles.list, { paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding }]}
 						ListEmptyComponent={renderEmpty}
 						keyboardShouldPersistTaps="handled"
 					/>

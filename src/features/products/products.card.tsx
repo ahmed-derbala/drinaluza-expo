@@ -325,7 +325,7 @@ const createStyles = (colors: any, screenWidth: number, windowHeight: number) =>
 		},
 		productImage: { width: '100%', height: '100%' },
 		stockOverlay: {
-			...StyleSheet.absoluteFillObject,
+			...StyleSheet.absoluteFill,
 			justifyContent: 'center',
 			alignItems: 'center'
 		},

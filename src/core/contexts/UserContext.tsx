@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
-import AsyncStorage from '@react-native-async-storage/async-storage'
+import { getItem, setItem } from '@/core/storage'
 import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
 import { UserData } from '../../features/profile/profile.interface'
 import { LocalizedName } from '../../features/businesses/businesses.interface'
@@ -59,11 +59,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 	useEffect(() => {
 		const loadSettings = async () => {
 			try {
-				const [savedAppLang, savedContentLang, savedCurrency] = await Promise.all([
-					AsyncStorage.getItem('guest_appLang'),
-					AsyncStorage.getItem('guest_contentLang'),
-					AsyncStorage.getItem('guest_currency')
-				])
+				const [savedAppLang, savedContentLang, savedCurrency] = await Promise.all([getItem<string>('guest_appLang'), getItem<string>('guest_contentLang'), getItem<string>('guest_currency')])
 
 				setGuestSettings({
 					appLang: savedAppLang || DEFAULT_APP_LANG,
@@ -79,17 +75,17 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
 	const setAppLang = useCallback(async (lang: string) => {
 		setGuestSettings((prev) => ({ ...prev, appLang: lang }))
-		await AsyncStorage.setItem('guest_appLang', lang)
+		await setItem('guest_appLang', lang)
 	}, [])
 
 	const setContentLang = useCallback(async (lang: string) => {
 		setGuestSettings((prev) => ({ ...prev, contentLang: lang }))
-		await AsyncStorage.setItem('guest_contentLang', lang)
+		await setItem('guest_contentLang', lang)
 	}, [])
 
 	const setCurrency = useCallback(async (currency: string) => {
 		setGuestSettings((prev) => ({ ...prev, currency: currency }))
-		await AsyncStorage.setItem('guest_currency', currency)
+		await setItem('guest_currency', currency)
 	}, [])
 
 	const loadUser = useCallback(async () => {
