@@ -1,7 +1,6 @@
 import { Stack, useRouter } from 'expo-router'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { StatusBar } from 'expo-status-bar'
 import { View, ActivityIndicator, Platform } from 'react-native'
 import { useUpdates, isVersionGreater } from '@/features/updates'
 import { APP_VERSION } from '@/config'
@@ -77,7 +76,6 @@ function RootLayoutContent() {
 
 	return (
 		<ErrorBoundary>
-			<StatusBar style="light" />
 			<Stack
 				screenOptions={{
 					contentStyle: {

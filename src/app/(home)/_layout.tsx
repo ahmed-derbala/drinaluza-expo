@@ -3,7 +3,6 @@ import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet } from 'react-native'
 
 const TabsComponent = Tabs as any
-import { StatusBar } from 'expo-status-bar'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
@@ -33,7 +32,6 @@ export default function HomeLayout() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: '#000000' }]}>
-			<StatusBar style="light" />
 			<TabsComponent
 				sceneContainerStyle={{
 					backgroundColor: '#000000'

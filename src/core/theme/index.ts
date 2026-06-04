@@ -1,4 +1,4 @@
-import { useTheme as useNavigationTheme } from '@react-navigation/native'
+import { useTheme as useNavigationTheme } from 'expo-router/react-navigation'
 
 export { AppThemeProvider, LightTheme, DarkTheme, useThemeContext } from './provider'
 export { colors, lightColors, darkColors } from './colors'

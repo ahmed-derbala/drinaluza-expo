@@ -21,7 +21,7 @@ export default {
         splash: {
             image: "./assets/images/splash-icon.png",
             resizeMode: "contain",
-            backgroundColor: "#1C2526"
+            backgroundColor: "#000000"
         },
         ios: {
             supportsTablet: true,
@@ -36,11 +36,15 @@ export default {
             backgroundColor: "#000000",
             googleServicesFile: "google-services.json",
             softwareKeyboardLayoutMode: "resize",
+            statusBar: {
+                translucent: false,
+                backgroundColor: "#000000"
+            },
             // Add this line to give Gradle 8GB of Heap and 2GB of Metaspace
             gradleArguments: ["-Dorg.gradle.jvmargs=-Xmx8192m -XX:MaxMetaspaceSize=2048m"],
             adaptiveIcon: {
                 foregroundImage: "./assets/images/adaptive-icon.png",
-                backgroundColor: "#1C2526"
+                backgroundColor: "#000000"
             },
             package: "com.ahmedderbala.drinaluza",
             versionCode: 1,

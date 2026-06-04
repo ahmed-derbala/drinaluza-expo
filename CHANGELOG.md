@@ -8,8 +8,11 @@
 
 ### Removed
 - Completely removed the custom `SmartKeyboardSafeView` component and refactored all usages across the app to use standard React Native `ScrollView` and `KeyboardAvoidingView` components.
+- Removed custom `StatusBar` imports and rendering from layouts, disabling app-level alterations to the device's default status bar.
+- Removed unused `@react-navigation/native` and `@react-navigation/native-stack` packages from dependencies.
 
 ### Changed
+- Migrated Theme/styling imports from `@react-navigation/native` to the standard `expo-router/react-navigation` library using official Expo SDK 56 codemods.
 - Improved `/auth` keyboard avoidance: focusing on username (slug) or password fields automatically scrolls the credentials form to the bottom to ensure the continue button is clearly visible and not obscured by the on-screen keyboard.
 - Improved centralized storage module `src/core/storage/` by adding generic storage helpers (`getItem`, `setItem`, `removeItem`, `multiRemove`, `getAllKeys`), a complete `clearAllStorage` function (clearing AsyncStorage, web storages, and all known SecureStore keys), and `clearStorageExceptSavedAuths` helper.
 - Refactored `/auth` screen and auth API to use the improved storage module instead of importing and using `@react-native-async-storage/async-storage` directly, ensuring full compliance with the codebase persistence architectural rules.

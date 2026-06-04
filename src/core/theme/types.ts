@@ -1,4 +1,4 @@
-import '@react-navigation/native'
+import 'expo-router/react-navigation'
 
 export interface AppThemeColors {
 	primary: string

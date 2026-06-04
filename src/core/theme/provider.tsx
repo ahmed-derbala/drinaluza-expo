@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { useColorScheme } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import { ThemeProvider as NavigationThemeProvider, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme, Theme } from '@react-navigation/native'
+import { ThemeProvider as NavigationThemeProvider, DefaultTheme as NavigationDefaultTheme, DarkTheme as NavigationDarkTheme, Theme } from 'expo-router/react-navigation'
 import { lightColors, darkColors } from './colors'
 import { log } from '@/core/log'
 
