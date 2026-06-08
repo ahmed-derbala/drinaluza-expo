@@ -26,8 +26,8 @@
 
 ## 🛠 Tech Stack
 
-*   **Framework**: [Expo SDK 54](https://expo.dev/)
-*   **Core**: React Native, React 19
+*   **Framework**: [Expo SDK](https://expo.dev/)
+*   **Core**: React Native, React 
 *   **Language**: TypeScript
 *   **Navigation**: Expo Router (File-based routing)
 *   **Networking**: Axios Custom Client
@@ -40,7 +40,7 @@
 
 ### Prerequisites
 
-*   Node.js (v24 recommended)
+*   Node.js LTS
 *   npm
 *   Expo CLI (or use `npx expo`)
 
@@ -120,23 +120,79 @@ src/
 ### Gradle Settings (`~/.gradle/gradle.properties`)
 For optimal Android build performance, ensure your gradle properties are set:
 ```properties
+# =========================================================
+# Java
+# =========================================================
+# download jdk from https://jdk.java.net/archive/
 org.gradle.java.installations.auto-download=false
-org.gradle.java.home=/usr/lib/jvm/jdk-17
+org.gradle.java.home=/usr/lib/jvm/jdk-17.0.2
+
+# =========================================================
+# Core Gradle Performance
+# =========================================================
+
+org.gradle.daemon=true
 org.gradle.parallel=true
-org.gradle.configureondemand=true
 org.gradle.caching=true
+org.gradle.configuration-cache=true
+org.gradle.configuration-cache.problems=warn
+org.gradle.vfs.watch=true
+
+# =========================================================
+# High RAM Optimization
+# =========================================================
+
+# 8 GB heap for Gradle daemon
+# Good for Expo + React Native + Hermes + NDK
+org.gradle.jvmargs=-Xmx8g -Xms4g \
+-XX:MaxMetaspaceSize=2g \
+-XX:+UseG1GC \
+-XX:MaxGCPauseMillis=200 \
+-Dfile.encoding=UTF-8 \
+-Dkotlin.daemon.jvm.options=-Xmx4g
+
+# =========================================================
+# Kotlin
+# =========================================================
+
+kotlin.incremental=true
+kotlin.code.style=official
+
+# =========================================================
+# Android Optimizations
+# =========================================================
+
+android.useAndroidX=true
+android.enableJetifier=true
+
+# Faster resource/R processing
+android.nonTransitiveRClass=true
+android.nonFinalResIds=true
+
+# =========================================================
+# React Native / Expo
+# =========================================================
+
+# Faster runtime and often better builds
+hermesEnabled=true
+
+# Enable only if dependencies support it
+# newArchEnabled=true
 ```
 
 ### Android Environment (`~/.zshrc` or `~/.bashrc`)
 Ensure the Android SDK is correctly linked in your terminal profile:
 ```bash
+# === ANDROID SDK PATHS ===
 export ANDROID_HOME=$HOME/Android/sdk
-export ANDROID_SDK_ROOT=$ANDROID_HOME
-export PATH=$ANDROID_HOME/emulator:$PATH
-export PATH=$ANDROID_HOME/platform-tools:$PATH
-export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
-export ANDROID_NDK_HOME=$ANDROID_HOME/ndk/
-export PATH=$ANDROID_NDK_HOME:$PATH
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/platform-tools
+export PATH=$PATH:$ANDROID_HOME/cmdline-tools/latest/bin
+
+# === ANDROID NDK PATHS ===
+# Change the version number below to match your actual installed NDK folder
+export ANDROID_NDK_HOME=$ANDROID_HOME/ndk
+export PATH=$PATH:$ANDROID_NDK_HOME
 ```
 
 ---

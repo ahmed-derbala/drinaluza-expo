@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import fs from 'fs';
 const packagejson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
@@ -40,8 +39,6 @@ export default {
                 translucent: false,
                 backgroundColor: "#000000"
             },
-            // Add this line to give Gradle 8GB of Heap and 2GB of Metaspace
-            gradleArguments: ["-Dorg.gradle.jvmargs=-Xmx8192m -XX:MaxMetaspaceSize=2048m"],
             adaptiveIcon: {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#000000"
