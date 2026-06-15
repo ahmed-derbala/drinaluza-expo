@@ -3,7 +3,7 @@ import HeaderTitle from '@/features/common/HeaderTitle'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useRouter, Tabs, Stack } from 'expo-router'
+import { useRouter, Tabs, Stack, useLocalSearchParams } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../core/theme'
 import { parseError, logError } from '../../core/helpers/errorHandler'
@@ -32,12 +32,14 @@ type DashboardProps = {
 	businessSlug?: string
 }
 
-const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
+const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardProps = {}) => {
 	const { colors } = useTheme()
 	const styles = useMemo(() => createStyles(colors), [colors])
 	const { localize, translate, user } = useUser()
 	const router = useRouter()
 	const { onScroll } = useScrollHandler()
+	const { businessSlug: routeBusinessSlug } = useLocalSearchParams<{ businessSlug?: string }>()
+	const businessSlug = propBusinessSlug || routeBusinessSlug
 
 	const [profiles, setProfiles] = useState<DashboardProfile[]>([])
 	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
@@ -45,6 +47,7 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 	const [refreshing, setRefreshing] = useState(false)
 	const [loading, setLoading] = useState(true)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const [showQRCode, setShowQRCode] = useState(false)
 
 	const showProfileSwitcher = profiles.length > 1
 
@@ -106,13 +109,38 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 		loadDashboard(selectedProfile ?? undefined)
 	}, [loadDashboard, selectedProfile])
 
+	const headerRightActions = useMemo(() => {
+		if (!dashboardData || !isBusinessDashboard(dashboardData)) {
+			return (
+				<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+					<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+				</View>
+			)
+		}
+
+		const business = dashboardData.business
+		return (
+			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+				{business.slug && (
+					<TouchableOpacity onPress={() => router.push(`/dashboard/${business.slug}/sales` as never)} activeOpacity={0.7} style={styles.headerIconBtn}>
+						<Ionicons name="trending-up" size={22} color={colors.primary} />
+					</TouchableOpacity>
+				)}
+				<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
+					<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
+				</TouchableOpacity>
+				<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+			</View>
+		)
+	}, [dashboardData, refreshing, onRefresh, colors.primary, styles.headerIconBtn])
+
 	const handleSelectProfile = useCallback(
 		(profile: DashboardProfile) => {
 			if (!selectedProfile || profile._id === selectedProfile.profileId) return
 
 			if (profile.kind === 'business' && profile.slug) {
-				// Navigating to a business profile dashboard
-				router.replace(`/dashboard/${profile.slug}` as never)
+				// Navigating to a business profile dashboard in tab view
+				router.replace(`/dashboard?businessSlug=${profile.slug}` as never)
 			} else {
 				// Navigating to personal dashboard
 				if (businessSlug) {
@@ -178,11 +206,12 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 						/>
 					),
 					headerLeft: () => null,
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-						</View>
-					)
+					headerRight: () => headerRightActions
+				}}
+			/>
+			<Stack.Screen
+				options={{
+					headerRight: () => headerRightActions
 				}}
 			/>
 
@@ -246,6 +275,16 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 					<BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} onRefresh={onRefresh} refreshing={refreshing} />
 				)}
 			</ScrollView>
+			{dashboardData && isBusinessDashboard(dashboardData) && (
+				<QRCodeModal
+					visible={showQRCode}
+					onClose={() => setShowQRCode(false)}
+					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${dashboardData.business.slug}`}
+					title={localize(dashboardData.business.name)}
+					subtitle={`@${dashboardData.business.slug}`}
+					filenamePrefix={`business_${dashboardData.business.slug}`}
+				/>
+			)}
 		</View>
 	)
 }
@@ -253,7 +292,7 @@ const Dashboard = ({ profileKind, businessSlug }: DashboardProps = {}) => {
 // --- Business dashboard ---
 
 type ContentProps = {
-	data: DashboardData
+	data: import('./dashboard.interface').BusinessDashboard
 	styles: ReturnType<typeof createStyles>
 	colors: typeof import('../../core/theme').colors
 	router: ReturnType<typeof useRouter>
@@ -261,11 +300,10 @@ type ContentProps = {
 	refreshing: boolean
 }
 
-const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, refreshing }: ContentProps & { data: import('./dashboard.interface').BusinessDashboard }) => {
+const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, refreshing }: ContentProps) => {
 	const { localize, translate } = useUser()
 	const business = data.business
 
-	const [showQRCode, setShowQRCode] = useState(false)
 	const [customers, setCustomers] = useState<import('../businesses/businesses.interface').BusinessCustomerDoc[]>([])
 	const [loadingCustomers, setLoadingCustomers] = useState(true)
 
@@ -413,24 +451,6 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				</ScrollView>
 			)}
 
-			<Stack.Screen
-				options={{
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-							{business.slug && (
-								<TouchableOpacity onPress={() => router.push(`/dashboard/${business.slug}/sales` as never)} activeOpacity={0.7} style={styles.headerIconBtn}>
-									<Ionicons name="trending-up" size={22} color={colors.primary} />
-								</TouchableOpacity>
-							)}
-							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
-								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
-							</TouchableOpacity>
-							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
-			/>
-
 			<SectionTitle title={translate('dashboard.insights', 'Insights')} colors={colors} />
 
 			<RankPairSection
@@ -455,16 +475,6 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				colors={colors}
 				entityType="user"
 				emptyHint={translate('dashboard.no_customers_yet', 'No customer data yet')}
-			/>
-
-			{/* QR Code Viewer Modal */}
-			<QRCodeModal
-				visible={showQRCode}
-				onClose={() => setShowQRCode(false)}
-				value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${business.slug}`}
-				title={localize(business.name)}
-				subtitle={`@${business.slug}`}
-				filenamePrefix={`business_${business.slug}`}
 			/>
 		</>
 	)

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '@/core/contexts'
 import { toast } from '@/features/common/Toast'
@@ -182,11 +182,7 @@ const styles = StyleSheet.create({
 		backgroundColor: 'transparent',
 		borderRadius: 24,
 		// Semi-transparent cutout effect
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 0 },
-		shadowOpacity: 0.5,
-		shadowRadius: 100,
-		elevation: 0
+		...createShadow({ offsetY: 0, opacity: 0.5, radius: 100, elevation: 0 })
 	},
 	instructionText: {
 		color: '#fff',

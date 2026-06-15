@@ -131,13 +131,13 @@ const SkeletonBlock: React.FC<{ width: number; height: number; borderRadius?: nu
 					toValue: 0.7,
 					duration: 650,
 					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				}),
 				Animated.timing(opacity, {
 					toValue: 0.3,
 					duration: 650,
 					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				})
 			])
 		)
@@ -251,7 +251,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 					toValue: 1,
 					duration: 1500,
 					easing: Easing.linear,
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				})
 			)
 			animation.start()
@@ -275,7 +275,7 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 			Animated.timing(fadeAnim, {
 				toValue: 1,
 				duration: 250,
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			}).start()
 		} else {
 			fadeAnim.setValue(0)

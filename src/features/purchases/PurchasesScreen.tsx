@@ -5,7 +5,7 @@ import { useRouter, useFocusEffect, useLocalSearchParams, Stack } from 'expo-rou
 import { Ionicons } from '@expo/vector-icons'
 import { getItem, setItem } from '@/core/storage'
 import { FlashList } from '@shopify/flash-list'
-import { useTheme } from '../../core/theme'
+import { useTheme, createShadow } from '../../core/theme'
 import HeaderTitle from '../common/HeaderTitle'
 import HeaderRefreshButton from '../common/HeaderRefreshButton'
 import ErrorState from '../common/ErrorState'
@@ -703,10 +703,7 @@ const createStyles = (colors: any, width: number, numColumns: number, cardGap: n
 			borderRadius: 20,
 			borderWidth: 1.5,
 			gap: 8,
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-				android: { elevation: 1 }
-			})
+			...createShadow({ offsetY: 2, opacity: 0.05, radius: 4, elevation: 1 })
 		},
 		filterTabText: { fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
 		countBadge: {
@@ -726,11 +723,7 @@ const createStyles = (colors: any, width: number, numColumns: number, cardGap: n
 			padding: 20,
 			minHeight: 380,
 			justifyContent: 'space-between',
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 12 },
-				android: { elevation: 3 },
-				web: { boxShadow: '0 4px 20px rgba(0,0,0,0.15)' } as any
-			})
+			...createShadow({ offsetY: 6, opacity: 0.08, radius: 12, elevation: 3 })
 		},
 		cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
 		headerLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 12 },

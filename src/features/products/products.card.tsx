@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
-import { useTheme } from '../../core/theme'
+import { useTheme, createShadow } from '../../core/theme'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 
@@ -118,7 +118,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0
 	const isLowStock = stockQty > 0 && stockQty <= minThreshold
-	const isActive = item.state?.code === 'active' || item.isActive !== false
+	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
 
 	const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
@@ -280,11 +280,8 @@ const createStyles = (colors: any, screenWidth: number, windowHeight: number) =>
 			borderColor: colors.info || '#3B82F6',
 			overflow: 'hidden',
 			maxHeight: Math.max(220, windowHeight - 140),
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 8 },
-				android: { elevation: 3 },
-				web: { boxShadow: '0 4px 12px rgba(0,0,0,0.15)', transition: 'transform 0.1s ease' } as any
-			})
+			...createShadow({ offsetY: 4, opacity: 0.12, radius: 8, elevation: 3 }),
+			...Platform.select({ web: { transition: 'transform 0.1s ease' } as any })
 		},
 		businessHeader: {
 			flexDirection: 'row',

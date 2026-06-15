@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { Business } from './businesses.interface'

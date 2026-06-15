@@ -36,12 +36,12 @@ export const SmartKebabMenu: React.FC = () => {
 				Animated.timing(scaleAnim, {
 					toValue: 1,
 					duration: 150,
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				}),
 				Animated.timing(opacityAnim, {
 					toValue: 1,
 					duration: 150,
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				})
 			]).start()
 		}
@@ -52,12 +52,12 @@ export const SmartKebabMenu: React.FC = () => {
 			Animated.timing(scaleAnim, {
 				toValue: 0.9,
 				duration: 100,
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			}),
 			Animated.timing(opacityAnim, {
 				toValue: 0,
 				duration: 100,
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			})
 		]).start(() => {
 			setIsOpen(false)

@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { clearAllStorage } from '@/core/storage'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { SmartScreenHeader } from '@/core/smart-screen-header'
@@ -540,11 +540,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			backgroundColor: colors.card,
 			borderWidth: 1,
 			borderColor: colors.borderLight,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 12 },
-			shadowOpacity: 0.25,
-			shadowRadius: 16,
-			elevation: 8,
+			...createShadow({ offsetY: 12, opacity: 0.25, radius: 16, elevation: 8 }),
 			marginVertical: isTablet ? 30 : 0
 		},
 		cardTitle: {
@@ -582,11 +578,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			borderColor: colors.borderLight,
 			alignItems: 'center',
 			justifyContent: 'center',
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4,
-			elevation: 2
+			...createShadow({ offsetY: 2, opacity: 0.1, radius: 4, elevation: 2 })
 		},
 		langBadgeSelected: {
 			borderColor: colors.primary,
@@ -617,11 +609,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			borderRadius: 8,
 			alignItems: 'center',
 			justifyContent: 'center',
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 1 },
-			shadowOpacity: 0.2,
-			shadowRadius: 1,
-			elevation: 1
+			...createShadow({ offsetY: 1, opacity: 0.2, radius: 1, elevation: 1 })
 		},
 		flagTextBadgeText: {
 			fontSize: 8,
@@ -662,11 +650,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			backgroundColor: colors.card,
 			borderWidth: 1,
 			borderColor: colors.borderLight,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.05,
-			shadowRadius: 3,
-			elevation: 1
+			...createShadow({ offsetY: 2, opacity: 0.05, radius: 3, elevation: 1 })
 		},
 		accountPressable: {
 			flex: 1,
@@ -765,11 +749,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			alignItems: 'center',
 			justifyContent: 'center',
 			marginTop: 24,
-			shadowColor: colors.primary,
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: 0.3,
-			shadowRadius: 8,
-			elevation: 4
+			...createColorShadow({ color: colors.primary, offsetY: 4, opacity: 0.3, radius: 8, elevation: 4 })
 		},
 		continueBtnDisabled: {
 			backgroundColor: colors.borderLight,

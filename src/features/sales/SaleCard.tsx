@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Alert, useWindowDimensions, ActivityIndicator } from 'react-native'
-import { useTheme } from '../../core/theme'
+import { useTheme, createShadow } from '../../core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
@@ -292,20 +292,7 @@ const styles = StyleSheet.create({
 		marginBottom: 16,
 		overflow: 'hidden',
 		width: '100%',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 3
-			},
-			web: {
-				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
-			}
-		})
+		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
 	},
 	header: {
 		flexDirection: 'row',
@@ -389,17 +376,7 @@ const styles = StyleSheet.create({
 		borderRadius: 18,
 		justifyContent: 'center',
 		alignItems: 'center',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 1 },
-				shadowOpacity: 0.1,
-				shadowRadius: 2
-			},
-			android: {
-				elevation: 2
-			}
-		})
+		...createShadow({ offsetY: 1, opacity: 0.1, radius: 2, elevation: 2 })
 	},
 	whatsappIcon: {
 		backgroundColor: '#25D366'

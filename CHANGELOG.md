@@ -3,10 +3,12 @@
 ## [Unreleased]
 
 ### Added
+- Redesigned the business products management dashboard screen (`/dashboard/:businessSlug/products`) from scratch, featuring live summary metrics, count-aware filter chips, inline active/inactive product toggling, and zero-layout-shift skeleton loaders.
 - Implemented business contact action buttons (Call, WhatsApp, Email, Directions) inside product cards in the feed, enabling direct messaging and navigation access to a product's business.
 - Added a client-side contact details enrichment engine on the feed screen to dynamically resolve missing business contact fields on product cards from other loaded cards or via lazy background fetching.
 
 ### Removed
+- Removed currency settings selection and display from the user profile screen.
 - Uninstalled unused `react-native-keyboard-aware-scroll-view` dependency from `package.json`.
 - Removed deprecated `estimatedItemSize` props from all `FlashList` components, aligning with `@shopify/flash-list` version `2.0.2` New Architecture layout capabilities.
 - Completely removed the custom `SmartKeyboardSafeView` component and refactored all usages across the app to use standard React Native `ScrollView` and `KeyboardAvoidingView` components.
@@ -14,6 +16,10 @@
 - Removed unused `@react-navigation/native` and `@react-navigation/native-stack` packages from dependencies.
 
 ### Changed
+- Updated the dashboard screen (`/dashboard`) to stay within the bottom tab navigation view by utilizing query parameters (`businessSlug`) instead of stack navigations, and adjusted the products dashboard screen's back button press to redirect directly back to the tab screen to preserve the bottom navigation tab bar.
+- Updated product status state mapping from `'inactive'` to `'suspended'` across product details, edit, feed, and business products screens, ensuring consistency with the database's `STATES` definitions.
+- Refactored shadow styling to use centralized, cross-platform `createShadow` and `createColorShadow` helpers.
+- Updated Animated transform timing and sequence calls in `SmartKebabMenu`, `SmartScreenHeader`, `Toast`, `HeaderRefreshButton`, and `HeaderActionButton` to use platform-conditional `useNativeDriver` values to avoid web console warnings.
 - Migrated high-volume list screens (`FeedScreen`, `SalesScreen`, `PurchasesScreen`, `SearchScreen`, `ProductsListScreen`, and `BusinessesListScreen`) from `FlatList` to Fabric-compatible `FlashList` for optimized memory and scroll performance.
 - Refactored `FeedScreen`, `SearchScreen`, `PurchasesScreen`, `BusinessProductsScreen`, `ProductDetailScreen`, `ProfileScreen`, and `UserContext` to use custom storage module helpers (`getItem`, `setItem`) instead of importing `@react-native-async-storage/async-storage` directly, complying with codebase architectural data persistence rules.
 - Memoized `FeedCard` and `SaleCard` components using `React.memo` to prevent redundant item re-renders during list scrolls and parent state updates.
@@ -28,6 +34,8 @@
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
 
 ### Fixed
+- Resolved TypeScript compilation and syntax errors across card and list screens (`BusinessProductsScreen`, `products.card`, `PurchasesScreen`, `SaleCard`) caused by malformed layout styles.
+- Fixed `shadow*` styling warnings on Web by mapping shadow values to CSS `boxShadow` via the `createShadow` theme helper.
 - Resolved React Navigation theme type augmentation errors under Expo Router SDK 56 and fixed typing issues with `StyleSheet.absoluteFillObject` by adopting `StyleSheet.absoluteFill`.
 - Fixed asynchronous state layout measurement timing lag in `SmartKeyboardSafeView` by utilizing a synchronously updated mutable ref (`viewportHeightRef`).
 - Fixed ScrollView layout truncation on `/auth` screen by moving centering styles from `contentContainerStyle` to an inner `View` wrapper.

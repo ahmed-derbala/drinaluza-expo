@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator,
 
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
@@ -682,11 +682,7 @@ const createStyles = (colors: any) =>
 					outlineColor: '#FFFFFF'
 				} as any,
 				default: {
-					shadowColor: '#000',
-					shadowOffset: { width: 0, height: 4 },
-					shadowOpacity: 0.08,
-					shadowRadius: 12,
-					elevation: 3
+					...createShadow({ offsetY: 4, opacity: 0.08, radius: 12, elevation: 3 })
 				}
 			}),
 			borderWidth: 1.5,
@@ -853,11 +849,7 @@ const createStyles = (colors: any) =>
 			height: 54,
 			borderRadius: 12,
 			gap: 8,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.1,
-			shadowRadius: 4,
-			elevation: 3
+			...createShadow({ offsetY: 2, opacity: 0.1, radius: 4, elevation: 3 })
 		},
 		submitBtnText: {
 			color: '#fff',

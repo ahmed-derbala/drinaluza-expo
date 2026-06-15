@@ -8,7 +8,7 @@ import QRCodeModal from '@/features/common/QRCodeModal'
 import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
@@ -374,17 +374,7 @@ const styles = StyleSheet.create({
 		padding: 20,
 		marginBottom: 20,
 		borderWidth: 1,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 3
-			}
-		})
+		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
 	},
 	businessName: {
 		fontSize: 26,
@@ -441,17 +431,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		padding: 20,
 		borderWidth: 1,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 3
-			}
-		})
+		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
 	},
 	productsSectionHeader: {
 		flexDirection: 'row',
@@ -570,17 +550,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		padding: 20,
 		borderWidth: 1,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 3
-			}
-		})
+		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
 	},
 	customersSectionHeader: {
 		flexDirection: 'row',

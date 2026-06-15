@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { TouchableOpacity, Animated, StyleSheet, View, Text } from 'react-native'
+import { TouchableOpacity, Animated, StyleSheet, View, Text, Platform } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 
@@ -48,13 +48,13 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconT
 			Animated.timing(scaleValue, {
 				toValue: 0.85,
 				duration: 80,
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			}),
 			Animated.spring(scaleValue, {
 				toValue: 1,
 				friction: 4,
 				tension: 40,
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			})
 		]).start()
 

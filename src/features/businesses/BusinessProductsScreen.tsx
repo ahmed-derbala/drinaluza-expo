@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Product } from '@/features/businesses/businesses.interface'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
@@ -39,7 +39,7 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0
 	const isLowStock = stockQty > 0 && stockQty <= minThreshold
-	const isActive = item.state?.code === 'active' || item.isActive !== false
+	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
 
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
@@ -160,11 +160,7 @@ const cardStyles = StyleSheet.create({
 		borderRadius: 20,
 		borderWidth: 1,
 		overflow: 'hidden',
-		...Platform.select({
-			ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.15, shadowRadius: 12 },
-			android: { elevation: 4 },
-			web: { boxShadow: '0 4px 16px rgba(0,0,0,0.25)' } as any
-		})
+		...createShadow({ offsetY: 6, opacity: 0.15, radius: 12, elevation: 4 })
 	},
 	imageWrap: {
 		width: '100%',
@@ -703,10 +699,6 @@ const s = StyleSheet.create({
 		borderRadius: 28,
 		justifyContent: 'center',
 		alignItems: 'center',
-		...Platform.select({
-			ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 4 },
-			android: { elevation: 6 },
-			web: { boxShadow: '0 4px 12px rgba(0,0,0,0.3)' } as any
-		})
+		...createShadow({ offsetY: 4, opacity: 0.3, radius: 4, elevation: 6 })
 	}
 })

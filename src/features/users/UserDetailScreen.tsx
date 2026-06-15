@@ -2,7 +2,7 @@ import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
-import { useTheme } from '../../core/theme'
+import { useTheme, createShadow } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getUserBySlug } from './users.api'
 import { UserProfile } from './users.interface'
@@ -235,17 +235,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		borderWidth: 1.5,
 		overflow: 'hidden',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.2,
-				shadowRadius: 12
-			},
-			android: {
-				elevation: 6
-			}
-		})
+		...createShadow({ offsetY: 4, opacity: 0.2, radius: 12, elevation: 6 })
 	},
 	avatarContainer: {
 		position: 'relative',
@@ -287,17 +277,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		borderWidth: 1.5,
 		padding: 20,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 4
-			}
-		})
+		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 4 })
 	},
 	sectionHeader: {
 		flexDirection: 'row',

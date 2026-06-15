@@ -25,7 +25,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/features/auth/auth.api'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
@@ -45,7 +45,7 @@ import { log } from '@/core/log'
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
-import { LANGUAGES, CURRENCIES, SOCIAL_PLATFORMS } from '@/config/settings'
+import { LANGUAGES, SOCIAL_PLATFORMS } from '@/config/settings'
 
 // Components moved outside to prevent re-creation on render
 const Section = ({
@@ -1556,30 +1556,6 @@ export default function ProfileScreen() {
 										))}
 									</View>
 								</View>
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>{translate('currency_label', 'Currency')}</Text>
-									<View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, paddingVertical: 4 }}>
-										{CURRENCIES.map((currency) => (
-											<TouchableOpacity
-												key={currency.code}
-												style={[
-													styles.langOption,
-													{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
-													userData.settings?.currency === currency.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
-												]}
-												onPress={() => {
-													const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
-													updateField('settings', { ...prevSettings, currency: currency.code })
-												}}
-											>
-												<View style={styles.flagContainer}>
-													<Text style={styles.flagText}>{currency.symbol}</Text>
-												</View>
-												<Text style={styles.langLabel}>{currency.label}</Text>
-											</TouchableOpacity>
-										))}
-									</View>
-								</View>
 							</>
 						) : (
 							<>
@@ -1594,13 +1570,6 @@ export default function ProfileScreen() {
 									label={translate('content_lang', 'Content Language')}
 									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || translate('not_set', 'Not set')}
 									icon="language"
-									styles={styles}
-									iconColor={colors.primary}
-								/>
-								<InfoItem
-									label={translate('currency_label', 'Currency')}
-									value={CURRENCIES.find((c) => c.code === userData.settings?.currency)?.label || translate('not_set', 'Not set')}
-									icon="cash"
 									styles={styles}
 									iconColor={colors.primary}
 								/>
@@ -2106,11 +2075,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderRadius: 12,
 			borderWidth: 2,
 			borderColor: isDark ? colors.border : '#E1E8ED',
-			shadowColor: colors.primary,
-			shadowOffset: { width: 0, height: 0 },
-			shadowOpacity: 0,
-			shadowRadius: 0,
-			elevation: 0
+			...createColorShadow({ color: colors.primary, offsetY: 0, opacity: 0, radius: 0, elevation: 0 })
 		},
 		textArea: {
 			minHeight: 100,
@@ -2192,11 +2157,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 1,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 1 },
-			shadowOpacity: 0.1,
-			shadowRadius: 1,
-			elevation: 1
+			...createShadow({ offsetY: 1, opacity: 0.1, radius: 1, elevation: 1 })
 		},
 		langIconText: {
 			fontSize: 10,
@@ -2229,17 +2190,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			color: colors.text,
 			textAlignVertical: 'center'
 		},
-		currencyBadge: {
-			width: 32,
-			height: 32,
-			borderRadius: 16,
-			alignItems: 'center',
-			justifyContent: 'center'
-		},
-		currencySymbol: {
-			fontSize: 16,
-			fontWeight: '700'
-		},
+
 		addressGrid: {
 			flexDirection: 'row',
 			flexWrap: 'wrap',
@@ -2339,11 +2290,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			position: 'absolute',
 			top: 2,
 			left: 2,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.2,
-			shadowRadius: 2,
-			elevation: 2
+			...createShadow({ offsetY: 2, opacity: 0.2, radius: 2, elevation: 2 })
 		},
 		// Business Modal Styles
 		modalOverlay: {
@@ -2364,11 +2311,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			maxWidth: 500,
 			borderRadius: 16,
 			padding: 24,
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 4 },
-			shadowOpacity: 0.3,
-			shadowRadius: 8,
-			elevation: 8
+			...createShadow({ offsetY: 4, opacity: 0.3, radius: 8, elevation: 8 })
 		},
 		businessModalHeader: {
 			alignItems: 'center',

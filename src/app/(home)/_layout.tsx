@@ -6,7 +6,7 @@ const TabsComponent = Tabs as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartScreenHeader } from '@/core/smart-screen-header'

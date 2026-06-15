@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '../../core/theme'
+import { useTheme, createShadow } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getReviews, createReview } from './reviews.api'
 import { Review } from './reviews.interface'
@@ -244,11 +244,7 @@ const styles = StyleSheet.create({
 		width: 24,
 		height: 24,
 		borderRadius: 12,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.2,
-		shadowRadius: 2,
-		elevation: 2
+		...createShadow({ offsetY: 2, opacity: 0.2, radius: 2, elevation: 2 })
 	},
 	toggleLabel: {
 		fontSize: 14,

@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 
 export interface EmptyStateProps {
 	/**
@@ -93,11 +93,7 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 		justifyContent: 'center',
 		alignItems: 'center',
-		elevation: 2,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 2 },
-		shadowOpacity: 0.1,
-		shadowRadius: 4
+		...createShadow({ offsetY: 2, opacity: 0.1, radius: 4, elevation: 2 })
 	},
 	actionText: {
 		color: '#fff',

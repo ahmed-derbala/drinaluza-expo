@@ -1,7 +1,7 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
@@ -405,17 +405,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5,
 		minHeight: 40,
 		gap: 8,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.08,
-				shadowRadius: 4
-			},
-			android: {
-				elevation: 2
-			}
-		})
+		...createShadow({ offsetY: 2, opacity: 0.08, radius: 4, elevation: 2 })
 	},
 	filterLoader: {
 		marginRight: -4

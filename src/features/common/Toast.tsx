@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
-import { View, Text, TouchableOpacity, Animated, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
+import { createShadow } from '../../core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -40,12 +41,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const player = useAudioPlayer ? useAudioPlayer(require('../../../assets/sounds/notification.mp3')) : null
 
 	const hide = useCallback(() => {
-		Animated.parallel([Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: true }), Animated.timing(translateY, { toValue: -100, duration: 200, useNativeDriver: true })]).start(
-			() => {
-				setVisible(false)
-				setOptions(null)
-			}
-		)
+		Animated.parallel([
+			Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
+			Animated.timing(translateY, { toValue: -100, duration: 200, useNativeDriver: Platform.OS !== 'web' })
+		]).start(() => {
+			setVisible(false)
+			setOptions(null)
+		})
 	}, [opacity, translateY])
 
 	const show = useCallback(
@@ -61,7 +63,10 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 				console.error('Failed to play toast sound:', error)
 			}
 
-			Animated.parallel([Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: true }), Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: true })]).start()
+			Animated.parallel([
+				Animated.timing(opacity, { toValue: 1, duration: 300, useNativeDriver: Platform.OS !== 'web' }),
+				Animated.timing(translateY, { toValue: 0, duration: 300, useNativeDriver: Platform.OS !== 'web' })
+			]).start()
 
 			if (timerRef.current) {
 				clearTimeout(timerRef.current)
@@ -118,11 +123,7 @@ const styles = StyleSheet.create({
 		right: 16,
 		borderRadius: 12,
 		zIndex: 9999,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.2,
-		shadowRadius: 8,
-		elevation: 5
+		...createShadow({ offsetY: 4, opacity: 0.2, radius: 8, elevation: 5 })
 	},
 	content: {
 		flexDirection: 'row',

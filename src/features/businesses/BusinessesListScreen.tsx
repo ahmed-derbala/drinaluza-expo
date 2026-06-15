@@ -1,7 +1,7 @@
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 import HeaderTitle from '@/features/common/HeaderTitle'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, Text, TouchableOpacity, FlatList, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
@@ -351,11 +351,7 @@ const createStyles = (
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
-			shadowColor: '#000',
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.2,
-			shadowRadius: 8,
-			elevation: 3
+			...createShadow({ offsetY: 2, opacity: 0.2, radius: 8, elevation: 3 })
 		},
 		buttonText: {
 			color: '#fff'

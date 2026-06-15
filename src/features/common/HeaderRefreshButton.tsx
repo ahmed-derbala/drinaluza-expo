@@ -43,7 +43,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 					toValue: 1,
 					duration: 1000,
 					easing: Easing.linear,
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				})
 			)
 			animation.start()
@@ -52,7 +52,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 				toValue: 0,
 				duration: 300,
 				easing: Easing.out(Easing.ease),
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			}).start()
 		}
 
@@ -75,13 +75,13 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 				Animated.timing(scaleValue, {
 					toValue: 0.85,
 					duration: 80,
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				}),
 				Animated.spring(scaleValue, {
 					toValue: 1,
 					friction: 4,
 					tension: 40,
-					useNativeDriver: true
+					useNativeDriver: Platform.OS !== 'web'
 				})
 			]).start()
 
@@ -90,7 +90,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 				toValue: 1,
 				duration: 500,
 				easing: Easing.bezier(0.25, 1, 0.5, 1),
-				useNativeDriver: true
+				useNativeDriver: Platform.OS !== 'web'
 			}).start(() => {
 				if (!isRefreshing) {
 					rotationValue.setValue(0)

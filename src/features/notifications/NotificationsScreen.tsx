@@ -3,7 +3,7 @@ import HeaderTitle from '@/features/common/HeaderTitle'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 import { FlashList } from '@shopify/flash-list'
@@ -289,11 +289,7 @@ const styles = StyleSheet.create({
 		borderRadius: 16,
 		marginBottom: 12,
 		borderWidth: 1,
-		shadowColor: '#000',
-		shadowOffset: { width: 0, height: 4 },
-		shadowOpacity: 0.08,
-		shadowRadius: 8,
-		elevation: 3
+		...createShadow({ offsetY: 4, opacity: 0.08, radius: 8, elevation: 3 })
 	},
 	priorityBadge: {
 		flexDirection: 'row',
