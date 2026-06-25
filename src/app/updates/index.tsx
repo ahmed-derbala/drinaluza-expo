@@ -209,7 +209,20 @@ export default function UpdatesScreen() {
 					{/* Download Button */}
 					<TouchableOpacity
 						disabled={!latestRelease || !latestRelease.download_url}
-						onPress={() => latestRelease?.download_url && Linking.openURL(latestRelease.download_url)}
+						onPress={() => {
+							if (!latestRelease?.download_url) return
+							if (Platform.OS === 'web') {
+								const link = document.createElement('a')
+								link.href = latestRelease.download_url
+								link.setAttribute('download', '')
+								link.style.display = 'none'
+								document.body.appendChild(link)
+								link.click()
+								document.body.removeChild(link)
+							} else {
+								Linking.openURL(latestRelease.download_url)
+							}
+						}}
 						style={[
 							styles.actionButton,
 							{

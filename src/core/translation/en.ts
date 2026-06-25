@@ -6,6 +6,7 @@ export const en = {
 	profile: 'Profile',
 	settings: 'Settings',
 	updates: 'Updates',
+	about: 'About',
 	ok: 'OK',
 	cancel: 'Cancel',
 	confirm: 'Confirm',

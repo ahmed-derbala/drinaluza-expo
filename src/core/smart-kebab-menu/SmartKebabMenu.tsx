@@ -108,7 +108,7 @@ export const SmartKebabMenu: React.FC = () => {
 		return undefined
 	}, [isDownloading, downloadProgress, downloadedApks, latestRelease])
 
-	// Default menu items: /settings and /updates
+	// Default menu items: /settings, /about, and /updates
 	const defaultItems: SmartKebabMenuItem[] = useMemo(
 		() => [
 			{
@@ -117,6 +117,14 @@ export const SmartKebabMenu: React.FC = () => {
 				icon: 'settings-outline',
 				onPress: () => {
 					router.push('/settings')
+				}
+			},
+			{
+				key: 'about',
+				label: translate('about', 'About'),
+				icon: 'information-circle-outline',
+				onPress: () => {
+					router.push('/about' as any)
 				}
 			},
 			{

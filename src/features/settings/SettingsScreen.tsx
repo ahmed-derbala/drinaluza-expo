@@ -1,13 +1,10 @@
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
-import { LinearGradient } from 'expo-linear-gradient'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform, ActivityIndicator, Alert } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '@/core/theme'
 import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
-import { toast } from '@/features/common/Toast'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
@@ -19,15 +16,6 @@ const formatUptime = (uptime: string | undefined): string => {
 		.replace(/\s*minutes?,?\s*/gi, 'm ')
 		.replace(/\s*seconds?,?\s*/gi, 's')
 		.trim()
-}
-
-const formatBytes = (bytes: number): string => {
-	if (bytes === 0) return '0 B'
-	const k = 1024
-	const dm = 2
-	const sizes = ['B', 'KB', 'MB', 'GB']
-	const i = Math.floor(Math.log(bytes) / Math.log(k))
-	return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i]
 }
 
 export default function SettingsScreen() {
@@ -74,57 +62,19 @@ export default function SettingsScreen() {
 		</View>
 	)
 
-	const SettingItem = ({
-		icon,
-		title,
-		subtitle,
-		value,
-		onPress,
-		type = 'arrow',
-		color,
-		copyValue
-	}: {
-		icon: any
-		title: string
-		subtitle?: string
-		value?: string
-		onPress?: () => void
-		type?: 'arrow' | 'value' | 'none'
-		color?: string
-		copyValue?: string
-	}) => {
-		const handleCopy = async () => {
-			if (copyValue) {
-				await Clipboard.setStringAsync(copyValue)
-				toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
-			}
-		}
-
+	const SettingItem = ({ icon, title, value, color }: { icon: any; title: string; value?: string; color?: string }) => {
 		return (
-			<TouchableOpacity style={styles.item} onPress={onPress} disabled={type === 'none'} activeOpacity={type === 'none' ? 1 : 0.7}>
+			<View style={styles.item}>
 				<View style={[styles.iconContainer, { backgroundColor: (color || colors.primary) + '20' }]}>
 					<Ionicons name={icon} size={20} color={color || colors.primary} />
 				</View>
 				<View style={styles.itemContent}>
 					<Text style={styles.itemTitle}>{title}</Text>
-					{subtitle && <Text style={styles.itemSubtitle}>{subtitle}</Text>}
 				</View>
 				<View style={styles.itemRight}>
-					{copyValue && (
-						<TouchableOpacity
-							onPress={(e) => {
-								e.stopPropagation()
-								handleCopy()
-							}}
-							style={styles.copyButton}
-						>
-							<Ionicons name="copy-outline" size={18} color={colors.textTertiary} />
-						</TouchableOpacity>
-					)}
-					{type === 'arrow' && <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
-					{type === 'value' && <Text style={styles.itemValue}>{value}</Text>}
+					<Text style={styles.itemValue}>{value}</Text>
 				</View>
-			</TouchableOpacity>
+			</View>
 		)
 	}
 
@@ -146,67 +96,6 @@ export default function SettingsScreen() {
 				}}
 			/>
 			<View style={{ height: 16 }} />
-
-			<SettingSection title={translate('social_media', 'Social Media')}>
-				<SettingItem
-					icon="logo-facebook"
-					title="Facebook"
-					subtitle="Follow us on Facebook"
-					onPress={() => Linking.openURL('https://www.facebook.com/Drinaluza')}
-					copyValue="https://www.facebook.com/Drinaluza"
-					color="#1877F2"
-				/>
-				<SettingItem
-					icon="logo-instagram"
-					title="Instagram"
-					subtitle={translate('follow_on_instagram', 'Follow us on Instagram')}
-					onPress={() => Linking.openURL('https://www.instagram.com/drinaluza/')}
-					copyValue="https://www.instagram.com/drinaluza/"
-					color="#E4405F"
-				/>
-				<SettingItem
-					icon="logo-tiktok"
-					title="TikTok"
-					subtitle="Follow us on TikTok"
-					onPress={() => Linking.openURL('https://www.tiktok.com/@drinaluza')}
-					copyValue="https://www.tiktok.com/@drinaluza"
-					color="#000000"
-				/>
-			</SettingSection>
-
-			<SettingSection title={translate('contact', 'Contact')}>
-				<SettingItem icon="mail" title="Email" subtitle="drinaluza@gmail.com" onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')} copyValue="drinaluza@gmail.com" color="#EA4335" />
-			</SettingSection>
-
-			<SettingSection title={translate('downloads', 'Downloads')}>
-				<SettingItem
-					icon="globe-outline"
-					title="Netlify"
-					subtitle="drinaluza.netlify.app"
-					onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
-					copyValue="https://drinaluza.netlify.app/"
-					color="#00C7B7"
-				/>
-				<SettingItem
-					icon="globe-outline"
-					title="Vercel"
-					subtitle="drinaluza.vercel.app"
-					onPress={() => Linking.openURL('https://drinaluza.vercel.app/')}
-					copyValue="https://drinaluza.vercel.app/"
-					color={colors.text}
-				/>
-			</SettingSection>
-
-			<SettingSection title={translate('developer', 'Developer')}>
-				<SettingItem
-					icon="logo-linkedin"
-					title="Ahmed Derbala"
-					subtitle="Connect on LinkedIn"
-					onPress={() => Linking.openURL('https://www.linkedin.com/in/ahmed-derbala/')}
-					copyValue="https://www.linkedin.com/in/ahmed-derbala/"
-					color="#0077B5"
-				/>
-			</SettingSection>
 
 			{serverInfo && (
 				<SettingSection title={translate('server_info', 'Server Info')}>

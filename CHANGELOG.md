@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- Created a new `/about` screen (`src/features/about/AboutScreen.tsx`) containing "Social Media", "Contact", "Downloads", and "Developer" sections and the copyright footer, and registered the stack route `/about` in the root stack layout.
+- Added `/about` as a default menu option in `SmartKebabMenu` (using `information-circle-outline` icon) to allow quick navigation from any screen.
 - Redesigned the business products management dashboard screen (`/dashboard/:businessSlug/products`) from scratch, featuring live summary metrics, count-aware filter chips, inline active/inactive product toggling, and zero-layout-shift skeleton loaders.
 - Implemented business contact action buttons (Call, WhatsApp, Email, Directions) inside product cards in the feed, enabling direct messaging and navigation access to a product's business.
 - Added a client-side contact details enrichment engine on the feed screen to dynamically resolve missing business contact fields on product cards from other loaded cards or via lazy background fetching.
@@ -16,6 +18,8 @@
 - Removed unused `@react-navigation/native` and `@react-navigation/native-stack` packages from dependencies.
 
 ### Changed
+- Refactored `/settings` screen to remove the "Social Media", "Contact", "Downloads", and "Developer" sections (now residing in `/about`), simplifying its component code, imports, and layout design.
+- Updated the updates screen on Web so that clicking the "Download Update" button initiates the file download instantly in the same tab using a programmatically triggered anchor element with the download attribute, rather than opening a new tab/window via Linking.openURL.
 - Updated the dashboard screen (`/dashboard`) to stay within the bottom tab navigation view by utilizing query parameters (`businessSlug`) instead of stack navigations, and adjusted the products dashboard screen's back button press to redirect directly back to the tab screen to preserve the bottom navigation tab bar.
 - Updated product status state mapping from `'inactive'` to `'suspended'` across product details, edit, feed, and business products screens, ensuring consistency with the database's `STATES` definitions.
 - Refactored shadow styling to use centralized, cross-platform `createShadow` and `createColorShadow` helpers.
