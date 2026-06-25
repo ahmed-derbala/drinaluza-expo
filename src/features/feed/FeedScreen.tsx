@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, FlatList, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
 import { getItem, setItem } from '@/core/storage'
 import { FlashList } from '@shopify/flash-list'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
@@ -7,23 +7,25 @@ import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
 
 import FeedCard from '@/features/feed/feed.card'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
 import { toast } from '@/features/common/Toast'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
+import { SmartScreenHeader } from '@/core/smart-screen-header'
 
+// Bypass type issues with FlashList generic components
+const TypedFlashList = FlashList as any
+
+// ─── Contact enrichment cache ───────────────────────────────────────────────────
 const businessContactCache = new Map<string, any>()
 
-// Enrich feed items with contact info from cache, other feed items, or via API
 const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedItem[]) => void) => {
-	// 1. First, populate from items already present in the feed (cross-referencing)
 	const localContacts = new Map<string, any>()
 	const localLocations = new Map<string, any>()
 
@@ -50,7 +52,6 @@ const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedIt
 		}
 	}
 
-	// Apply any cached contacts we already have
 	let hasUpdates = false
 	const enriched = items.map((item) => {
 		if (item.card?.kind === 'product' && item.business) {
@@ -81,7 +82,6 @@ const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedIt
 		updateState(enriched)
 	}
 
-	// 2. Identify missing business contacts to fetch from the API
 	const missingSlugs = new Set<string>()
 	for (const item of enriched) {
 		if (item.card?.kind === 'product' && item.business && !item.business.contact) {
@@ -94,7 +94,6 @@ const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedIt
 
 	if (missingSlugs.size === 0) return
 
-	// 3. Fetch missing contacts in parallel
 	try {
 		const { getBusinessBySlug } = require('@/features/businesses/businesses.api')
 		await Promise.all(
@@ -115,7 +114,6 @@ const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedIt
 			})
 		)
 
-		// 4. Update state with newly fetched contacts
 		const fullyEnriched = enriched.map((item) => {
 			if (item.card?.kind === 'product' && item.business && !item.business.contact) {
 				const bSlug = item.business.slug
@@ -143,164 +141,14 @@ const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedIt
 	}
 }
 
-const createStyles = (colors: any) =>
-	StyleSheet.create({
-		container: {
-			flex: 1,
-			backgroundColor: '#000000'
-		},
-		headerContainer: {
-			padding: 20,
-			paddingTop: 10,
-			backgroundColor: colors.background
-		},
-		headerTop: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 16
-		},
-		greeting: {
-			fontSize: 14,
-			color: colors.textSecondary,
-			fontWeight: '500'
-		},
-		title: {
-			fontSize: 26,
-			fontWeight: '700',
-			color: colors.text,
-			marginTop: 2
-		},
-		refreshButton: {
-			width: 48,
-			height: 48,
-			borderRadius: 14,
-			backgroundColor: colors.surface,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		refreshButtonSmall: {
-			width: 40,
-			height: 40,
-			borderRadius: 10,
-			backgroundColor: colors.surface,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		emptyContainer: {
-			alignItems: 'center',
-			justifyContent: 'center',
-			paddingTop: 60,
-			paddingHorizontal: 40
-		},
-		emptyIcon: {
-			width: 80,
-			height: 80,
-			borderRadius: 20,
-			backgroundColor: colors.surface,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 20
-		},
-		emptyTitle: {
-			fontSize: 18,
-			fontWeight: '600',
-			color: colors.text,
-			marginBottom: 8
-		},
-		emptyText: {
-			fontSize: 14,
-			color: colors.textSecondary,
-			textAlign: 'center'
-		},
-		loadingOverlay: {
-			...StyleSheet.absoluteFill,
-			backgroundColor: colors.background,
-			justifyContent: 'center',
-			alignItems: 'center',
-			zIndex: 10
-		},
-		list: {
-			paddingBottom: 90
-		},
-		cardWrapper: {
-			marginBottom: 16
-		},
-		// Filter chip styles
-		filterContainer: {
-			paddingVertical: 8,
-			paddingHorizontal: 16,
-			backgroundColor: colors.background
-		},
-		filterChip: {
-			width: 44,
-			height: 44,
-			borderRadius: 12,
-			backgroundColor: colors.surface,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderColor: colors.border,
-			marginRight: 8
-		},
-		filterChipActive: {
-			backgroundColor: colors.primaryContainer,
-			borderColor: colors.primary
-		},
-		paginationContainer: {
-			flexDirection: 'row',
-			justifyContent: 'center',
-			alignItems: 'center',
-			paddingVertical: 24,
-			gap: 8,
-			backgroundColor: colors.background
-		},
-		pageButton: {
-			minWidth: 40,
-			height: 40,
-			borderRadius: 10,
-			backgroundColor: colors.surface,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		pageButtonActive: {
-			backgroundColor: colors.primary,
-			borderColor: colors.primary
-		},
-		pageButtonText: {
-			fontSize: 14,
-			fontWeight: '600',
-			color: colors.text
-		},
-		pageButtonTextActive: {
-			color: '#ffffff'
-		},
-		pageButtonDisabled: {
-			opacity: 0.5
-		},
-		pageDots: {
-			paddingHorizontal: 4,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		pageDotsText: {
-			fontSize: 14,
-			color: colors.textSecondary,
-			fontWeight: '600'
-		}
-	})
-
+// ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
 
 export default function FeedScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
+
+	// ── Data state ──
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
 	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
 	const [cart, setCart] = useState<CartItem[]>([])
@@ -308,27 +156,27 @@ export default function FeedScreen() {
 	const [loading, setLoading] = useState(true)
 	const [isScannerVisible, setIsScannerVisible] = useState(false)
 
+	// ── Layout ──
 	const { width } = useWindowDimensions()
-	const isWide = width >= 1440
-	const isDesktop = width >= 1024
-	const isTablet = width >= 768
-
 	const numColumns = useMemo(() => {
-		// Intelligently scale column count based on device screen size
-		if (width < 500) return 1 // Mobile phones -> 1 large, highly readable column
-		if (width < 800) return 2 // Small tablets / Phablets -> 2 columns
-		if (width < 1100) return 3 // Tablets / Small laptops -> 3 columns
-		if (width < 1440) return 4 // Desktops -> 4 columns
-		return 5 // Ultrawide monitors -> 5 columns
+		if (width < 500) return 1
+		if (width < 800) return 2
+		if (width < 1100) return 3
+		if (width < 1440) return 4
+		return 5
 	}, [width])
 
-	const gap = 14
+	const gap = 16
 	const padding = 16
-	const itemWidth = (width - padding * 2 - gap * (numColumns - 1)) / numColumns
+	const itemWidth = useMemo(() => {
+		return (width - padding * 2 - gap * (numColumns - 1)) / numColumns
+	}, [width, padding, gap, numColumns])
 
-	// Pagination state
+	// ── Routing / Pagination ──
 	const isWeb = Platform.OS === 'web'
-	const { page: queryPage } = useLocalSearchParams<{ page?: string }>()
+	const { page: queryPage, filter: queryFilter } = useLocalSearchParams<{ page?: string; filter?: string }>()
+	const selectedFilter = queryFilter || 'all'
+
 	const urlPage = useMemo(() => {
 		if (!isWeb) return 1
 		return queryPage ? Math.max(1, parseInt(queryPage, 10)) : 1
@@ -351,45 +199,63 @@ export default function FeedScreen() {
 
 	const [hasMore, setHasMore] = useState(true)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
-
-	// Error handling state
 	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
 
+	// ── Context ──
 	const { user, localize, translate } = useUser()
-
 	const { onScroll } = useScrollHandler()
-	const insets = useSafeAreaInsets()
-	const styles = useMemo(() => createStyles(colors), [colors])
 
+	// ── Filter categories ──
+	const categories = useMemo(
+		() => [
+			{ key: 'all', label: translate('all', 'All'), icon: 'apps-outline' },
+			{ key: 'products', label: translate('products', 'Products'), icon: 'fish-outline' },
+			{ key: 'businesses', label: translate('businesses', 'Businesses'), icon: 'storefront-outline' },
+			{ key: 'users', label: translate('people', 'People'), icon: 'people-outline' }
+		],
+		[translate]
+	)
+
+	// ── Skeleton pulse ──
+	const shimmerAnim = useRef(new Animated.Value(0.35)).current
+
+	useEffect(() => {
+		const loop = Animated.loop(
+			Animated.sequence([
+				Animated.timing(shimmerAnim, { toValue: 0.65, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: Platform.OS !== 'web' }),
+				Animated.timing(shimmerAnim, { toValue: 0.35, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: Platform.OS !== 'web' })
+			])
+		)
+		loop.start()
+		return () => loop.stop()
+	}, [shimmerAnim])
+
+	// ── Cart ──
 	const loadCart = useCallback(async () => {
 		try {
 			const storedCart = await getItem<CartItem[]>('cart')
-			if (storedCart) {
-				setCart(storedCart)
-			}
-		} catch (error) {
-			log({ level: 'error', label: 'FeedScreen', message: 'Failed to load cart', error })
+			if (storedCart) setCart(storedCart)
+		} catch (err) {
+			log({ level: 'error', label: 'FeedScreen', message: 'Failed to load cart', error: err })
 		}
 	}, [])
 
+	// ── Feed fetch ──
 	const fetchFeed = useCallback(
-		async (pageNum: number = 1, shouldAppend: boolean = false) => {
+		async (pageNum: number = 1, shouldAppend: boolean = false, filterType: string = selectedFilter) => {
 			try {
 				if (pageNum === 1) setLoading(true)
 				else setIsLoadingMore(true)
 
-				const response = await getFeed(pageNum, 10)
+				const apiFilter = filterType === 'all' ? undefined : filterType
+				const response = await getFeed(pageNum, 10, apiFilter)
 				const newItems = response.data.docs
 
 				if (response.data.pagination) {
 					setPagination(response.data.pagination)
 					setHasMore(response.data.pagination.hasNextPage)
 				} else {
-					if (newItems.length < 10) {
-						setHasMore(false)
-					} else {
-						setHasMore(true)
-					}
+					setHasMore(newItems.length >= 10)
 				}
 
 				if (shouldAppend) {
@@ -416,52 +282,25 @@ export default function FeedScreen() {
 				const errorInfo = parseError(err)
 				setError({
 					message: errorInfo.message,
-					retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend) : undefined
+					retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend, filterType) : undefined
 				})
 			} finally {
 				setLoading(false)
 				setIsLoadingMore(false)
 			}
 		},
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[]
+		[selectedFilter]
 	)
 
-	// Trigger data load on page parameter changes on Web, or initial load on Mobile
+	// ── Effects ──
 	useEffect(() => {
+		loadCart()
 		if (isWeb) {
-			loadCart()
-			fetchFeed(urlPage, false)
+			fetchFeed(urlPage, false, selectedFilter)
 		} else {
-			loadCart()
-			fetchFeed(1, false)
+			fetchFeed(1, false, selectedFilter)
 		}
-	}, [urlPage, isWeb])
-
-	const refreshData = useCallback(async () => {
-		setRefreshing(true)
-		if (isWeb) {
-			if (urlPage === 1) {
-				await Promise.all([loadCart(), fetchFeed(1, false)])
-			} else {
-				router.setParams({ page: '1' })
-			}
-		} else {
-			setMobilePage(1)
-			setHasMore(true)
-			await Promise.all([loadCart(), fetchFeed(1, false)])
-		}
-		setRefreshing(false)
-	}, [isWeb, urlPage])
-
-	const handleLoadMore = useCallback(() => {
-		if (isWeb) return
-		if (hasMore && !loading && !isLoadingMore) {
-			const nextPage = mobilePage + 1
-			setMobilePage(nextPage)
-			fetchFeed(nextPage, true)
-		}
-	}, [hasMore, loading, isLoadingMore, mobilePage, isWeb])
+	}, [urlPage, selectedFilter, isWeb])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -469,6 +308,47 @@ export default function FeedScreen() {
 		}, [])
 	)
 
+	// ── Refresh ──
+	const refreshData = useCallback(async () => {
+		setRefreshing(true)
+		if (isWeb) {
+			if (urlPage === 1) {
+				await Promise.all([loadCart(), fetchFeed(1, false, selectedFilter)])
+			} else {
+				router.setParams({ page: '1' })
+			}
+		} else {
+			setMobilePage(1)
+			setHasMore(true)
+			await Promise.all([loadCart(), fetchFeed(1, false, selectedFilter)])
+		}
+		setRefreshing(false)
+	}, [isWeb, urlPage, selectedFilter])
+
+	// ── Infinite scroll ──
+	const handleLoadMore = useCallback(() => {
+		if (isWeb) return
+		if (hasMore && !loading && !isLoadingMore) {
+			const nextPage = mobilePage + 1
+			setMobilePage(nextPage)
+			fetchFeed(nextPage, true, selectedFilter)
+		}
+	}, [hasMore, loading, isLoadingMore, mobilePage, isWeb, selectedFilter])
+
+	// ── Filter select ──
+	const handleFilterSelect = useCallback(
+		(filterKey: string) => {
+			router.setParams({ filter: filterKey, page: '1' })
+			if (!isWeb) {
+				setMobilePage(1)
+				setHasMore(true)
+				fetchFeed(1, false, filterKey)
+			}
+		},
+		[isWeb, router, fetchFeed]
+	)
+
+	// ── Add to cart ──
 	const addToCart = useCallback(
 		async (item: FeedItem, quantity: number) => {
 			try {
@@ -479,21 +359,17 @@ export default function FeedScreen() {
 					return
 				}
 
-				const existingItemIndex = cart.findIndex((cartItem) => cartItem._id === item._id)
+				const existingIdx = cart.findIndex((c) => c._id === item._id)
 				let newCart: CartItem[]
 
-				if (existingItemIndex > -1) {
+				if (existingIdx > -1) {
 					newCart = [...cart]
-					newCart[existingItemIndex] = {
-						...newCart[existingItemIndex],
-						quantity: (newCart[existingItemIndex].quantity || 0) + quantity
-					}
+					newCart[existingIdx] = { ...newCart[existingIdx], quantity: (newCart[existingIdx].quantity || 0) + quantity }
 				} else {
 					newCart = [...cart, { ...item, quantity }]
 				}
 
 				setCart(newCart)
-
 				await setItem('cart', newCart)
 				toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
 			} catch (err) {
@@ -501,184 +377,399 @@ export default function FeedScreen() {
 				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 			}
 		},
-		[cart, localize, router, translate]
+		[cart, localize, router]
 	)
 
-	const getPageNumbers = (current: number, total: number) => {
+	// ── Pagination helpers ──
+	const getPageNumbers = useCallback((current: number, total: number) => {
 		const pages: (number | string)[] = []
 		if (total <= 7) {
 			for (let i = 1; i <= total; i++) pages.push(i)
 		} else {
 			pages.push(1)
-			if (current > 3) {
-				pages.push('...')
-			}
+			if (current > 3) pages.push('...')
 			const start = Math.max(2, current - 1)
 			const end = Math.min(total - 1, current + 1)
-			for (let i = start; i <= end; i++) {
-				pages.push(i)
-			}
-			if (current < total - 2) {
-				pages.push('...')
-			}
+			for (let i = start; i <= end; i++) pages.push(i)
+			if (current < total - 2) pages.push('...')
 			pages.push(total)
 		}
 		return pages
-	}
+	}, [])
 
-	const renderWebPagination = () => {
-		if (!isWeb || !pagination || pagination.totalPages <= 1) return null
+	// ═══════════════════════════════════════════════════════════════════════════════
+	// ── Render helpers ──
+	// ═══════════════════════════════════════════════════════════════════════════════
 
-		const { totalPages } = pagination
-		const pageNumbers = getPageNumbers(activePage, totalPages)
-
+	const renderFilterBar = useCallback(() => {
 		return (
-			<View style={styles.paginationContainer}>
-				<TouchableOpacity
-					style={[styles.pageButton, activePage === 1 && styles.pageButtonDisabled]}
-					disabled={activePage === 1}
-					onPress={() => router.setParams({ page: (activePage - 1).toString() })}
-				>
-					<Ionicons name="chevron-back" size={18} color={activePage === 1 ? colors.textSecondary : colors.primary} />
-				</TouchableOpacity>
-
-				{pageNumbers.map((num, idx) => {
-					if (num === '...') {
+			<View style={styles.filterBar}>
+				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
+					{categories.map((cat) => {
+						const active = selectedFilter === cat.key
 						return (
-							<View key={`dots-${idx}`} style={styles.pageDots}>
-								<Text style={styles.pageDotsText}>...</Text>
-							</View>
+							<TouchableOpacity key={cat.key} style={[styles.filterPill, active && styles.filterPillActive]} onPress={() => handleFilterSelect(cat.key)} activeOpacity={0.75}>
+								<Ionicons name={cat.icon as any} size={14} color={active ? '#fff' : 'rgba(255, 255, 255, 0.4)'} />
+								<Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>{cat.label}</Text>
+							</TouchableOpacity>
 						)
-					}
-
-					const isPageActive = num === activePage
-					return (
-						<TouchableOpacity key={`page-${num}`} style={[styles.pageButton, isPageActive && styles.pageButtonActive]} onPress={() => router.setParams({ page: num.toString() })}>
-							<Text style={[styles.pageButtonText, isPageActive && styles.pageButtonTextActive]}>{num}</Text>
-						</TouchableOpacity>
-					)
-				})}
-
-				<TouchableOpacity
-					style={[styles.pageButton, activePage === totalPages && styles.pageButtonDisabled]}
-					disabled={activePage === totalPages}
-					onPress={() => router.setParams({ page: (activePage + 1).toString() })}
-				>
-					<Ionicons name="chevron-forward" size={18} color={activePage === totalPages ? colors.textSecondary : colors.primary} />
-				</TouchableOpacity>
+					})}
+				</ScrollView>
 			</View>
 		)
-	}
+	}, [categories, selectedFilter, handleFilterSelect])
 
-	const renderFooter = () => {
-		if (isWeb) {
-			return renderWebPagination()
-		}
-		if (!isLoadingMore) return null
+	const renderSkeletons = useCallback(() => {
+		const count = numColumns * 3
 		return (
-			<View style={{ paddingVertical: 20 }}>
-				<ActivityIndicator size="small" color={colors.primary} />
-			</View>
+			<ScrollView contentContainerStyle={[styles.skeletonWrap, { paddingHorizontal: padding }]} showsVerticalScrollIndicator={false}>
+				{Array.from({ length: count }).map((_, i) => (
+					<View key={`sk-${i}`} style={[styles.skeletonCard, { width: itemWidth, marginHorizontal: gap / 2, marginBottom: 16 }]}>
+						<Animated.View style={[styles.skeletonImg, { opacity: shimmerAnim }]} />
+						<View style={styles.skeletonBody}>
+							<Animated.View style={[styles.skeletonLine, { width: '75%', opacity: shimmerAnim }]} />
+							<Animated.View style={[styles.skeletonLine, { width: '50%', opacity: shimmerAnim }]} />
+							<Animated.View style={[styles.skeletonLineLg, { opacity: shimmerAnim }]} />
+						</View>
+					</View>
+				))}
+			</ScrollView>
 		)
-	}
+	}, [numColumns, itemWidth, shimmerAnim])
 
-	const renderEmpty = () => {
+	const renderItem = useCallback(
+		({ item }: { item: FeedItem }) => (
+			<View style={[styles.cardWrap, { paddingHorizontal: numColumns > 1 ? gap / 2 : 0 }]}>
+				<FeedCard item={item} addToCart={addToCart} />
+			</View>
+		),
+		[numColumns, addToCart]
+	)
+
+	const renderEmpty = useCallback(() => {
 		if (error) {
 			return (
-				<View style={{ paddingTop: 60 }}>
+				<View style={{ paddingTop: 80 }}>
 					<ErrorState title={error.message} onRetry={refreshData} icon="cloud-offline-outline" />
 				</View>
 			)
 		}
 		return (
-			<View style={styles.emptyContainer}>
-				<View style={styles.emptyIcon}>
-					<Ionicons name="fish-outline" size={40} color={colors.textSecondary} />
+			<View style={styles.emptyWrap}>
+				<View style={styles.emptyIconWrap}>
+					<Ionicons name="fish-outline" size={38} color="rgba(255, 255, 255, 0.2)" />
 				</View>
-				<Text style={styles.emptyTitle}>{translate('no_products', 'No products found')}</Text>
-				<Text style={styles.emptyText}>{translate('try_adjusting', 'Try adjusting your search or check back later for fresh catches!')}</Text>
+				<Text style={styles.emptyTitle}>{translate('no_items', 'No items found')}</Text>
+				<Text style={styles.emptySubtitle}>{translate('try_adjusting', 'Try adjusting your search or check back later!')}</Text>
+			</View>
+		)
+	}, [error, refreshData, translate])
+
+	const renderWebPagination = useCallback(() => {
+		if (!isWeb || !pagination || pagination.totalPages <= 1) return null
+		const { totalPages } = pagination
+		const pages = getPageNumbers(activePage, totalPages)
+
+		return (
+			<View style={styles.paginationBar}>
+				<TouchableOpacity style={[styles.pageBtn, activePage === 1 && styles.pageBtnDisabled]} disabled={activePage === 1} onPress={() => router.setParams({ page: (activePage - 1).toString() })}>
+					<Ionicons name="chevron-back" size={16} color={activePage === 1 ? 'rgba(255, 255, 255, 0.2)' : '#0EA5E9'} />
+				</TouchableOpacity>
+
+				{pages.map((num, idx) => {
+					if (num === '...') {
+						return (
+							<View key={`dots-${idx}`} style={styles.pageEllipsis}>
+								<Text style={styles.pageEllipsisText}>…</Text>
+							</View>
+						)
+					}
+					const active = num === activePage
+					return (
+						<TouchableOpacity key={`p-${num}`} style={[styles.pageBtn, active && styles.pageBtnActive]} onPress={() => router.setParams({ page: num.toString() })}>
+							<Text style={[styles.pageBtnText, active && styles.pageBtnTextActive]}>{num}</Text>
+						</TouchableOpacity>
+					)
+				})}
+
+				<TouchableOpacity
+					style={[styles.pageBtn, activePage === totalPages && styles.pageBtnDisabled]}
+					disabled={activePage === totalPages}
+					onPress={() => router.setParams({ page: (activePage + 1).toString() })}
+				>
+					<Ionicons name="chevron-forward" size={16} color={activePage === totalPages ? 'rgba(255, 255, 255, 0.2)' : '#0EA5E9'} />
+				</TouchableOpacity>
+			</View>
+		)
+	}, [isWeb, pagination, activePage, getPageNumbers, router])
+
+	// ── Header Actions (reusable & zero layout shift) ──
+	const headerOptions = useMemo(
+		() => ({
+			title: translate('feed', 'Feed'),
+			subtitle: `${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`,
+			showBackButton: false,
+			isLoading: loading && displayedItems.length === 0,
+			headerActions: [
+				...(!isWeb
+					? [<SmartScreenHeader.ActionButton key="scanner" iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} accessibilityLabel="Scan Barcode" />]
+					: []),
+				<SmartScreenHeader.SearchButton key="search" />,
+				<SmartScreenHeader.CartButton key="cart" badgeCount={cart.length} />,
+				<SmartScreenHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={refreshing} />
+			]
+		}),
+		[translate, user, loading, displayedItems.length, isWeb, cart.length, refreshData, refreshing]
+	)
+
+	// ═══════════════════════════════════════════════════════════════════════════════
+	// ── Main render ──
+	// ═══════════════════════════════════════════════════════════════════════════════
+	if (isWeb) {
+		return (
+			<View style={styles.root}>
+				<Tabs.Screen options={headerOptions as any} />
+				{renderFilterBar()}
+
+				{loading && displayedItems.length === 0 ? (
+					renderSkeletons()
+				) : displayedItems.length === 0 ? (
+					renderEmpty()
+				) : (
+					<ScrollView
+						style={styles.root}
+						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding }]}
+						showsVerticalScrollIndicator={false}
+						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+					>
+						<View style={styles.webGridContainer}>
+							{displayedItems.map((item) => (
+								<View
+									key={item.slug || item._id}
+									style={[
+										styles.webGridItem,
+										{
+											width: `${100 / numColumns}%`,
+											paddingHorizontal: gap / 2,
+											marginBottom: 16
+										}
+									]}
+								>
+									<FeedCard item={item} addToCart={addToCart} />
+								</View>
+							))}
+						</View>
+						{renderWebPagination()}
+					</ScrollView>
+				)}
+				<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
 			</View>
 		)
 	}
 
-	const renderItem = useCallback(
-		({ item }: { item: FeedItem }) => (
-			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: 16 }}>
-				<FeedCard item={item} addToCart={addToCart} />
-			</View>
-		),
-		[numColumns, addToCart, gap]
-	)
-
 	return (
-		<View style={styles.container}>
-			<Tabs.Screen
-				options={
-					{
-						title: translate('feed', 'Feed'),
-						subtitle: `${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`,
-						showBackButton: false,
-						headerActions: [
-							...(!isWeb
-								? [
-										{
-											key: 'scanner',
-											iconName: 'qr-code-scanner',
-											iconType: 'material' as const,
-											onPress: () => setIsScannerVisible(true),
-											accessibilityLabel: 'Scan Barcode'
-										}
-									]
-								: []),
-							{
-								key: 'search',
-								iconName: 'search-outline',
-								onPress: () => router.push('/search'),
-								accessibilityLabel: 'Search'
-							},
-							{
-								key: 'cart',
-								iconName: 'cart-outline',
-								badgeCount: cart.length,
-								onPress: () => router.push('/profile/purchases?status=cart'),
-								accessibilityLabel: 'View Cart'
-							},
-							{
-								key: 'refresh',
-								onPress: refreshData,
-								isRefreshing: refreshing
-							}
-						]
-					} as any
-				}
-			/>
+		<View style={styles.root}>
+			<Tabs.Screen options={headerOptions as any} />
+			{renderFilterBar()}
 
-			<FlashList
-				style={{ backgroundColor: colors.background }}
-				key={numColumns}
-				data={displayedItems}
-				renderItem={renderItem}
-				numColumns={numColumns}
-				keyExtractor={(item) => item.slug || item._id}
-				contentContainerStyle={[styles.list, { paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding }]}
-				ListEmptyComponent={!loading ? renderEmpty : null}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={[colors.primary]} tintColor={colors.primary} />}
-				showsVerticalScrollIndicator={false}
-				keyboardShouldPersistTaps="handled"
-				onScroll={onScroll}
-				scrollEventThrottle={16}
-				onEndReached={handleLoadMore}
-				onEndReachedThreshold={0.5}
-				ListFooterComponent={renderFooter}
-			/>
-
-			{loading && (
-				<View style={styles.loadingOverlay}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+			{loading && displayedItems.length === 0 ? (
+				renderSkeletons()
+			) : (
+				<TypedFlashList
+					style={{ backgroundColor: 'transparent' }}
+					data={displayedItems}
+					renderItem={renderItem}
+					numColumns={numColumns}
+					estimatedItemSize={260}
+					keyExtractor={(item: FeedItem) => item.slug || item._id}
+					contentContainerStyle={[styles.listContent, { paddingHorizontal: padding }]}
+					ListEmptyComponent={renderEmpty}
+					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+					showsVerticalScrollIndicator={false}
+					keyboardShouldPersistTaps="handled"
+					onScroll={onScroll}
+					scrollEventThrottle={16}
+					onEndReached={handleLoadMore}
+					onEndReachedThreshold={0.5}
+					ListFooterComponent={isLoadingMore ? <ActivityIndicator size="small" color="#0EA5E9" style={{ paddingVertical: 24 }} /> : null}
+				/>
 			)}
 
 			<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
 		</View>
 	)
 }
+
+const styles = StyleSheet.create({
+	root: {
+		flex: 1,
+		backgroundColor: '#0A0E1A'
+	},
+	// ── Filter bar ──
+	filterBar: {
+		backgroundColor: 'rgba(10, 14, 26, 0.85)',
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		borderBottomColor: 'rgba(255, 255, 255, 0.08)'
+	},
+	filterScroll: {
+		paddingHorizontal: 16,
+		paddingTop: 10,
+		paddingBottom: 12,
+		gap: 8
+	},
+	filterPill: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		paddingHorizontal: 16,
+		paddingVertical: 8,
+		borderRadius: 22,
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.08)',
+		backgroundColor: 'rgba(255, 255, 255, 0.02)'
+	},
+	filterPillActive: {
+		backgroundColor: '#0EA5E9',
+		borderColor: '#0EA5E9'
+	},
+	filterPillText: {
+		fontSize: 13,
+		fontWeight: '600',
+		color: 'rgba(255, 255, 255, 0.5)'
+	},
+	filterPillTextActive: {
+		color: '#ffffff',
+		fontWeight: '700'
+	},
+	// ── Grid Layouts ──
+	listContent: {
+		paddingTop: 12,
+		paddingBottom: 120
+	},
+	cardWrap: {
+		width: '100%',
+		marginBottom: 16
+	},
+	webGridContainer: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		width: '100%'
+	},
+	webGridItem: {
+		boxSizing: 'border-box'
+	} as any,
+	// ── Empty state ──
+	emptyWrap: {
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingTop: 120,
+		paddingHorizontal: 40
+	},
+	emptyIconWrap: {
+		width: 84,
+		height: 84,
+		borderRadius: 26,
+		backgroundColor: 'rgba(255, 255, 255, 0.03)',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.06)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		marginBottom: 24
+	},
+	emptyTitle: {
+		fontSize: 18,
+		fontWeight: '700',
+		color: '#F8FAFC',
+		marginBottom: 10,
+		letterSpacing: -0.3
+	},
+	emptySubtitle: {
+		fontSize: 14,
+		color: 'rgba(255, 255, 255, 0.45)',
+		textAlign: 'center',
+		lineHeight: 22
+	},
+	// ── Skeleton ──
+	skeletonWrap: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		paddingTop: 12,
+		paddingBottom: 120
+	},
+	skeletonCard: {
+		borderRadius: 20,
+		backgroundColor: 'rgba(255, 255, 255, 0.02)',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.04)',
+		overflow: 'hidden'
+	},
+	skeletonImg: {
+		width: '100%',
+		aspectRatio: 1.35,
+		backgroundColor: 'rgba(255, 255, 255, 0.03)'
+	},
+	skeletonBody: {
+		padding: 14,
+		gap: 12
+	},
+	skeletonLine: {
+		height: 12,
+		borderRadius: 6,
+		backgroundColor: 'rgba(255, 255, 255, 0.04)'
+	},
+	skeletonLineLg: {
+		height: 18,
+		width: '40%',
+		borderRadius: 6,
+		backgroundColor: 'rgba(255, 255, 255, 0.05)',
+		marginTop: 4
+	},
+	// ── Pagination ──
+	paginationBar: {
+		flexDirection: 'row',
+		justifyContent: 'center',
+		alignItems: 'center',
+		paddingVertical: 20,
+		paddingHorizontal: 16,
+		gap: 8,
+		marginTop: 10,
+		marginBottom: 30
+	},
+	pageBtn: {
+		minWidth: 40,
+		height: 40,
+		borderRadius: 12,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: 'rgba(255, 255, 255, 0.03)',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.06)',
+		...Platform.select({
+			web: { cursor: 'pointer', transition: 'all 0.15s ease' } as any
+		})
+	},
+	pageBtnActive: {
+		backgroundColor: '#0EA5E9',
+		borderColor: '#0EA5E9'
+	},
+	pageBtnDisabled: {
+		opacity: 0.3
+	},
+	pageBtnText: {
+		fontSize: 14,
+		fontWeight: '700',
+		color: 'rgba(255, 255, 255, 0.5)'
+	},
+	pageBtnTextActive: {
+		color: '#ffffff'
+	},
+	pageEllipsis: {
+		paddingHorizontal: 4,
+		justifyContent: 'center'
+	},
+	pageEllipsisText: {
+		fontSize: 14,
+		fontWeight: '700',
+		color: 'rgba(255, 255, 255, 0.25)'
+	}
+})

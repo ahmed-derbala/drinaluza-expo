@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensio
 import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme } from '@/core/theme'
-import { APP_VERSION, BACKEND_URL, NODE_ENV } from '@/config'
+import { config } from '@/config'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 
@@ -31,9 +31,9 @@ export default function SettingsScreen() {
 	const [loading, setLoading] = useState(false)
 
 	const fetchServerInfo = () => {
-		if (!BACKEND_URL) return
+		if (!config.backend.url) return
 		setLoading(true)
-		fetch(BACKEND_URL)
+		fetch(config.backend.url)
 			.then(async (res) => {
 				const text = await res.text()
 				try {
@@ -110,7 +110,7 @@ export default function SettingsScreen() {
 			<View style={styles.footer}>
 				<View style={styles.versionBadge}>
 					<Text style={styles.versionText}>
-						v{APP_VERSION} • {NODE_ENV}
+						v{config.app.version} • {config.NODE_ENV}
 					</Text>
 				</View>
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>

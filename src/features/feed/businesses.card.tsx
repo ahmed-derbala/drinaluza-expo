@@ -1,9 +1,8 @@
-import React, { useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, useWindowDimensions } from 'react-native'
+import React from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { BusinessFeedItem } from './feed.interface'
-import { useTheme } from '../../core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 
@@ -12,11 +11,8 @@ type BusinessCardProps = {
 }
 
 export default function BusinessCard({ item }: BusinessCardProps) {
-	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 	const router = useRouter()
-	const { width, height: windowHeight } = useWindowDimensions()
-	const styles = useMemo(() => createStyles(colors, width, windowHeight), [colors, width, windowHeight])
 
 	const businessName = localize(item.name) || localize(item.business?.name) || translate('business', 'Business')
 	const ownerName = localize(item.business?.owner?.name)
@@ -28,26 +24,23 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 
 	const handlePress = () => {
 		const slug = item.business?.slug || item.slug
-		if (slug) {
-			router.push(`/businesses/${slug}` as any)
-		}
+		if (slug) router.push(`/businesses/${slug}` as any)
 	}
 
-	const handleCall = () => {
+	const handleCall = (e: any) => {
+		e.stopPropagation?.()
 		const phone = item.contact?.phone?.fullNumber
-		if (phone) {
-			Linking.openURL(`tel:${phone}`).catch(() => {})
-		}
+		if (phone) Linking.openURL(`tel:${phone}`).catch(() => {})
 	}
 
-	const handleWhatsApp = () => {
+	const handleWhatsApp = (e: any) => {
+		e.stopPropagation?.()
 		const wa = item.contact?.whatsapp
-		if (wa) {
-			Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
-		}
+		if (wa) Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
 	}
 
-	const handleDirections = () => {
+	const handleDirections = (e: any) => {
+		e.stopPropagation?.()
 		const coords = item.business?.location?.coordinates
 		if (coords && coords.length === 2) {
 			const [lng, lat] = coords
@@ -60,241 +53,213 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 		}
 	}
 
-	const handleEmail = () => {
+	const handleEmail = (e: any) => {
+		e.stopPropagation?.()
 		const email = item.contact?.email
-		if (email) {
-			Linking.openURL(`mailto:${email}`).catch(() => {})
-		}
+		if (email) Linking.openURL(`mailto:${email}`).catch(() => {})
 	}
 
-	const hasContact = item.contact?.phone || item.contact?.whatsapp || item.contact?.email
 	const hasLocation = item.business?.location?.coordinates && item.business.location.coordinates.length === 2
 
 	return (
-		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.85}>
-			{/* Thumbnail */}
-			<View style={styles.imageContainer}>
-				<SmartImage source={item.media?.thumbnail?.url} style={styles.image} resizeMode="cover" entityType="business" />
-				<View style={styles.imageOverlay} />
-				{/* Business badge */}
-				<View style={styles.badge}>
-					<MaterialIcons name="store" size={14} color={colors.primary} />
+		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.88}>
+			{/* Banner image */}
+			<View style={styles.banner}>
+				<SmartImage source={item.media?.thumbnail?.url} style={styles.bannerImg} resizeMode="cover" entityType="business" />
+				<View style={styles.bannerOverlay} />
+				<View style={styles.storeBadge}>
+					<MaterialIcons name="store" size={14} color="#0EA5E9" />
 				</View>
 			</View>
 
-			{/* Info */}
-			<View style={styles.info}>
-				<Text style={styles.businessName} numberOfLines={1}>
+			{/* Content */}
+			<View style={styles.content}>
+				<Text style={styles.name} numberOfLines={1}>
 					{businessName}
 				</Text>
 
 				{rating > 0 && (
 					<View style={styles.ratingRow}>
-						<Ionicons name="star" size={12} color="#FFD700" />
-						<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-						<Text style={styles.ratingCount}>({ratingCount})</Text>
+						<MaterialIcons name="star" size={12} color="#FBBF24" />
+						<Text style={styles.ratingVal}>{rating.toFixed(1)}</Text>
+						<Text style={styles.ratingCnt}>({ratingCount})</Text>
 					</View>
 				)}
 
-				{ownerName && windowHeight >= 460 ? (
-					<View style={styles.ownerRow}>
-						<Ionicons name="person-outline" size={12} color={colors.textTertiary} />
-						<Text style={styles.ownerText} numberOfLines={1}>
+				{ownerName && (
+					<View style={styles.metaRow}>
+						<Ionicons name="person-outline" size={11} color="rgba(255,255,255,0.4)" />
+						<Text style={styles.metaText} numberOfLines={1}>
 							{ownerName}
 						</Text>
 					</View>
-				) : null}
+				)}
 
-				{locationText && windowHeight >= 490 ? (
-					<View style={styles.locationRow}>
-						<Ionicons name="location-outline" size={12} color={colors.textTertiary} />
-						<Text style={styles.locationText} numberOfLines={1}>
+				{locationText && (
+					<View style={styles.metaRow}>
+						<Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.4)" />
+						<Text style={styles.metaText} numberOfLines={1}>
 							{locationText}
 						</Text>
 					</View>
-				) : null}
+				)}
 
-				{streetText && windowHeight >= 520 ? (
+				{streetText && (
 					<Text style={styles.streetText} numberOfLines={1}>
 						{streetText}
 					</Text>
-				) : null}
-
-				{/* Action buttons — icons only */}
-				{hasContact || hasLocation ? (
-					<View style={styles.actions}>
-						{item.contact?.phone ? (
-							<TouchableOpacity style={styles.actionBtn} onPress={handleCall} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-								<Ionicons name="call-outline" size={18} color={colors.primary} />
-							</TouchableOpacity>
-						) : null}
-						{item.contact?.whatsapp ? (
-							<TouchableOpacity style={[styles.actionBtn, { backgroundColor: '#134E4A' }]} onPress={handleWhatsApp} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-								<Ionicons name="logo-whatsapp" size={18} color="#2DD4BF" />
-							</TouchableOpacity>
-						) : null}
-						{item.contact?.email ? (
-							<TouchableOpacity style={styles.actionBtn} onPress={handleEmail} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-								<Ionicons name="mail-outline" size={18} color={colors.primary} />
-							</TouchableOpacity>
-						) : null}
-						{hasLocation ? (
-							<TouchableOpacity style={styles.actionBtn} onPress={handleDirections} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-								<Ionicons name="navigate-outline" size={18} color={colors.primary} />
-							</TouchableOpacity>
-						) : null}
-						{/* Spacer + arrow */}
-						<View style={{ flex: 1 }} />
-						<TouchableOpacity style={styles.viewBtn} onPress={handlePress}>
-							<MaterialIcons name="arrow-forward" size={20} color={colors.textOnPrimary} />
-						</TouchableOpacity>
-					</View>
-				) : (
-					<View style={styles.actions}>
-						<View style={{ flex: 1 }} />
-						<TouchableOpacity style={styles.viewBtn} onPress={handlePress}>
-							<MaterialIcons name="arrow-forward" size={20} color={colors.textOnPrimary} />
-						</TouchableOpacity>
-					</View>
 				)}
+
+				{/* Actions row */}
+				<View style={styles.actionsRow}>
+					{item.contact?.phone && (
+						<TouchableOpacity style={styles.actionBtn} onPress={handleCall} hitSlop={8}>
+							<Ionicons name="call-outline" size={14} color="#0EA5E9" />
+						</TouchableOpacity>
+					)}
+					{item.contact?.whatsapp && (
+						<TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={8}>
+							<Ionicons name="logo-whatsapp" size={14} color="#2DD4BF" />
+						</TouchableOpacity>
+					)}
+					{item.contact?.email && (
+						<TouchableOpacity style={styles.actionBtn} onPress={handleEmail} hitSlop={8}>
+							<Ionicons name="mail-outline" size={14} color="#0EA5E9" />
+						</TouchableOpacity>
+					)}
+					{hasLocation && (
+						<TouchableOpacity style={styles.actionBtn} onPress={handleDirections} hitSlop={8}>
+							<Ionicons name="navigate-outline" size={14} color="#0EA5E9" />
+						</TouchableOpacity>
+					)}
+
+					<View style={{ flex: 1 }} />
+
+					<TouchableOpacity style={styles.viewBtn} onPress={handlePress}>
+						<MaterialIcons name="arrow-forward" size={16} color="#ffffff" />
+					</TouchableOpacity>
+				</View>
 			</View>
 		</TouchableOpacity>
 	)
 }
 
-const createStyles = (colors: any, screenWidth: number, windowHeight: number) => {
-	const isSmall = screenWidth < 400
-	const isCompact = windowHeight < 550
-	return StyleSheet.create({
-		card: {
-			flex: 1,
-			backgroundColor: colors.card,
-			borderRadius: 16,
-			overflow: 'hidden',
-			borderWidth: 1.5,
-			borderColor: colors.info || '#3B82F6',
-			maxHeight: Math.max(180, windowHeight - 140),
-			...Platform.select({
-				ios: {
-					shadowColor: colors.primary,
-					shadowOffset: { width: 0, height: 4 },
-					shadowOpacity: 0.15,
-					shadowRadius: 12
-				},
-				android: { elevation: 6 },
-				web: { boxShadow: `0 4px 12px ${colors.primary}15` }
-			})
-		},
-		imageContainer: {
-			width: '100%',
-			aspectRatio: 2.2,
-			maxHeight: Math.min(130, windowHeight * 0.18),
-			backgroundColor: colors.surface,
-			position: 'relative'
-		},
-		image: {
-			width: '100%',
-			height: '100%'
-		},
-		imageOverlay: {
-			...StyleSheet.absoluteFill,
-			backgroundColor: 'rgba(2, 6, 23, 0.15)'
-		},
-		badge: {
-			position: 'absolute',
-			top: isCompact ? 5 : 10,
-			right: isCompact ? 5 : 10,
-			width: isCompact ? 24 : 32,
-			height: isCompact ? 24 : 32,
-			borderRadius: isCompact ? 7 : 10,
-			backgroundColor: colors.primaryContainer,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		info: {
-			flex: 1,
-			padding: isCompact ? 8 : 14,
-			gap: isCompact ? 3 : 6,
-			justifyContent: 'space-between'
-		},
-		businessName: {
-			fontSize: isCompact ? 14 : isSmall ? 17 : 19,
-			fontWeight: '700',
-			color: colors.text
-		},
-		ratingRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 4
-		},
-		ratingText: {
-			fontSize: 13,
-			fontWeight: '600',
-			color: colors.text
-		},
-		ratingCount: {
-			fontSize: 12,
-			color: colors.textSecondary
-		},
-		ownerRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 5
-		},
-		ownerText: {
-			fontSize: 12,
-			color: colors.textTertiary,
-			fontWeight: '500'
-		},
-		locationRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 5
-		},
-		locationText: {
-			fontSize: 12,
-			color: colors.textSecondary,
-			fontWeight: '500'
-		},
-		streetText: {
-			fontSize: 11,
-			color: colors.textTertiary,
-			marginLeft: 17
-		},
-		actions: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 8,
-			marginTop: isCompact ? 3 : 6,
-			paddingTop: isCompact ? 4 : 10,
-			borderTopWidth: isCompact ? 0.5 : 1,
-			borderTopColor: colors.border
-		},
-		actionBtn: {
-			width: 36,
-			height: 36,
-			borderRadius: 10,
-			backgroundColor: colors.primaryContainer,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		viewBtn: {
-			width: 40,
-			height: 40,
-			borderRadius: 12,
-			backgroundColor: colors.primary,
-			justifyContent: 'center',
-			alignItems: 'center',
-			...Platform.select({
-				ios: {
-					shadowColor: colors.primary,
-					shadowOffset: { width: 0, height: 3 },
-					shadowOpacity: 0.35,
-					shadowRadius: 6
-				},
-				android: { elevation: 4 },
-				web: { boxShadow: `0 3px 8px ${colors.primary}40` }
-			})
-		}
-	})
-}
+// ─── Styles ─────────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+	card: {
+		flex: 1,
+		borderRadius: 20,
+		backgroundColor: 'rgba(15, 23, 42, 0.65)',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.08)',
+		overflow: 'hidden',
+		...Platform.select({
+			web: {
+				transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+				backdropFilter: 'blur(20px)',
+				WebkitBackdropFilter: 'blur(20px)'
+			} as any
+		})
+	},
+	banner: {
+		width: '100%',
+		aspectRatio: 2.4,
+		position: 'relative',
+		backgroundColor: 'rgba(255, 255, 255, 0.02)'
+	},
+	bannerImg: {
+		width: '100%',
+		height: '100%'
+	},
+	bannerOverlay: {
+		...StyleSheet.absoluteFill,
+		backgroundColor: 'rgba(10, 14, 26, 0.2)'
+	},
+	storeBadge: {
+		position: 'absolute',
+		top: 10,
+		right: 10,
+		width: 28,
+		height: 28,
+		borderRadius: 8,
+		backgroundColor: 'rgba(14, 165, 233, 0.12)',
+		borderWidth: 1,
+		borderColor: 'rgba(14, 165, 233, 0.2)',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	content: {
+		padding: 14,
+		gap: 6
+	},
+	name: {
+		fontSize: 16,
+		fontWeight: '700',
+		color: '#F8FAFC',
+		letterSpacing: -0.2
+	},
+	ratingRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 3,
+		marginTop: 2
+	},
+	ratingVal: {
+		fontSize: 12,
+		fontWeight: '700',
+		color: '#FBBF24'
+	},
+	ratingCnt: {
+		fontSize: 10,
+		color: 'rgba(255, 255, 255, 0.35)'
+	},
+	metaRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		marginTop: 1
+	},
+	metaText: {
+		fontSize: 12,
+		color: 'rgba(255, 255, 255, 0.45)',
+		fontWeight: '500',
+		flex: 1
+	},
+	streetText: {
+		fontSize: 11,
+		color: 'rgba(255, 255, 255, 0.3)',
+		marginLeft: 17,
+		fontWeight: '400'
+	},
+	actionsRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		marginTop: 10,
+		paddingTop: 10,
+		borderTopWidth: StyleSheet.hairlineWidth,
+		borderTopColor: 'rgba(255, 255, 255, 0.08)'
+	},
+	actionBtn: {
+		width: 32,
+		height: 32,
+		borderRadius: 8,
+		backgroundColor: 'rgba(14, 165, 233, 0.1)',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	viewBtn: {
+		width: 34,
+		height: 34,
+		borderRadius: 10,
+		backgroundColor: '#0EA5E9',
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({
+			web: {
+				boxShadow: '0 2px 10px rgba(14, 165, 233, 0.35)',
+				transition: 'transform 0.12s ease'
+			} as any
+		})
+	}
+})

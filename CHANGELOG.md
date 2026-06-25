@@ -3,6 +3,8 @@
 ## [Unreleased]
 
 ### Added
+- Redesigned `/feed` screen and all card types (ProductCard, BusinessCard, UserCard) from scratch with a unified dark-glassmorphic visual system: `#0A0E1A` base, `rgba(15,23,42,0.65)` card surfaces, cyan (`#0EA5E9`) accents, refined filter pills, shimmer skeleton loaders, and consistent responsive multi-column grid layout.
+- Added `/home` as a default menu option in `SmartKebabMenu` (using `home-outline` icon) to allow quick navigation back to the feed from any screen.
 - Created a new `/about` screen (`src/features/about/AboutScreen.tsx`) containing "Social Media", "Contact", "Downloads", and "Developer" sections and the copyright footer, and registered the stack route `/about` in the root stack layout.
 - Added `/about` as a default menu option in `SmartKebabMenu` (using `information-circle-outline` icon) to allow quick navigation from any screen.
 - Redesigned the business products management dashboard screen (`/dashboard/:businessSlug/products`) from scratch, featuring live summary metrics, count-aware filter chips, inline active/inactive product toggling, and zero-layout-shift skeleton loaders.
@@ -18,6 +20,9 @@
 - Removed unused `@react-navigation/native` and `@react-navigation/native-stack` packages from dependencies.
 
 ### Changed
+- Redesigned the updates screen (`/updates`) from scratch, incorporating a modern dark visual identity with glassmorphic cards, side-by-side version comparisons, and a color-coded environment badge pill (`config.NODE_ENV`).
+- Refactored `src/config/index.ts` to export a single consolidated `config` object instead of multiple individual constants, and updated all referencing screens, hooks, and utilities across the codebase.
+- Relocated the order status configuration file from `src/config/orderStatus.ts` to `src/features/orders/orderStatus.ts` and updated all importing screens and components (`SalesScreen`, `SaleCard`, `PurchasesScreen`) accordingly.
 - Refactored `/settings` screen to remove the "Social Media", "Contact", "Downloads", and "Developer" sections (now residing in `/about`), simplifying its component code, imports, and layout design.
 - Updated the updates screen on Web so that clicking the "Download Update" button initiates the file download instantly in the same tab using a programmatically triggered anchor element with the download attribute, rather than opening a new tab/window via Linking.openURL.
 - Updated the dashboard screen (`/dashboard`) to stay within the bottom tab navigation view by utilizing query parameters (`businessSlug`) instead of stack navigations, and adjusted the products dashboard screen's back button press to redirect directly back to the tab screen to preserve the bottom navigation tab bar.
@@ -38,6 +43,7 @@
 - Modified `SmartScreenHeader` to ensure the back button is always visible in `headerLeft` (defaulting to `/feed` when there is no screen in history) on all non-root screens, while keeping it hidden on main root tab screens by checking the router's current `pathname` (following Expo Router best practices).
 
 ### Fixed
+- Fixed cards overlapping on `/feed` in the Web version when navigating back from `/purchases` by implementing a custom responsive CSS flex-wrap layout wrapper instead of native list components on Web.
 - Resolved TypeScript compilation and syntax errors across card and list screens (`BusinessProductsScreen`, `products.card`, `PurchasesScreen`, `SaleCard`) caused by malformed layout styles.
 - Fixed `shadow*` styling warnings on Web by mapping shadow values to CSS `boxShadow` via the `createShadow` theme helper.
 - Resolved React Navigation theme type augmentation errors under Expo Router SDK 56 and fixed typing issues with `StyleSheet.absoluteFillObject` by adopting `StyleSheet.absoluteFill`.

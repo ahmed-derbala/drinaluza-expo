@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
-import { useTheme, createShadow } from '../../core/theme'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 
@@ -13,24 +12,21 @@ type ProductCardProps = {
 }
 
 export default function ProductCard({ item, addToCart }: ProductCardProps) {
-	const { colors } = useTheme()
 	const { localize, currency, formatPrice, translate } = useUser()
 	const router = useRouter()
 	const pathname = usePathname()
-	const { width, height: windowHeight } = useWindowDimensions()
-	const styles = useMemo(() => createStyles(colors, width, windowHeight), [colors, width, windowHeight])
+	const { width } = useWindowDimensions()
 
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
-
 	const step = item.unit?.step || 1
 
 	const rating = item.rating?.average || 0
 	const ratingCount = item.rating?.count || 0
 
 	// @ts-ignore
-	const unitPrice = item.price.total[currency] || item.price.total.tnd || 0
+	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 	const pricePerUnit = unitPrice / (item.unit?.min || 1)
 
 	const mainName = localize(item.name)
@@ -66,17 +62,13 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const handleCall = (e: any) => {
 		e.stopPropagation?.()
 		const phone = item.business?.contact?.phone?.fullNumber
-		if (phone) {
-			Linking.openURL(`tel:${phone}`).catch(() => {})
-		}
+		if (phone) Linking.openURL(`tel:${phone}`).catch(() => {})
 	}
 
 	const handleWhatsApp = (e: any) => {
 		e.stopPropagation?.()
 		const wa = item.business?.contact?.whatsapp
-		if (wa) {
-			Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
-		}
+		if (wa) Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
 	}
 
 	const handleDirections = (e: any) => {
@@ -90,14 +82,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 				default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
 			})
 			if (url) Linking.openURL(url).catch(() => {})
-		}
-	}
-
-	const handleEmail = (e: any) => {
-		e.stopPropagation?.()
-		const email = item.business?.contact?.email
-		if (email) {
-			Linking.openURL(`mailto:${email}`).catch(() => {})
 		}
 	}
 
@@ -121,147 +105,128 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
 
-	const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
+	const stockColor = isOutOfStock ? '#EF4444' : isLowStock ? '#F59E0B' : '#10B981'
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
 
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0]
 
-	const showBusinessHeader = windowHeight >= 450
-	const showRatingRow = windowHeight >= 500 && rating > 0
-	const showSecondaryNames = windowHeight >= 550 && secondaryNames.length > 0
-	const showFooter = windowHeight >= 480
+	const isSmall = width < 500
 
 	return (
-		<Pressable style={({ pressed }) => [styles.card, pressed && { opacity: 0.95, transform: [{ scale: 0.99 }] }]} onPress={handleProductPress}>
-			{/* Business Header */}
-			{showBusinessHeader && (
-				<View style={styles.businessHeader}>
-					<TouchableOpacity onPress={handleBusinessPress} style={styles.businessInfoWithImage} activeOpacity={0.8}>
-						{item.business?.media?.thumbnail?.url ? (
-							<SmartImage source={item.business.media.thumbnail.url} style={styles.businessImage} resizeMode="cover" entityType="business" />
-						) : (
-							<View style={styles.businessIconContainer}>
-								<MaterialIcons name="store" size={16} color={colors.primary} />
-							</View>
-						)}
-						<View style={styles.businessInfo}>
-							<Text style={styles.businessName} numberOfLines={1}>
-								{localize(item.business?.name)}
-							</Text>
-							{item.business?.address?.city && (
-								<Text style={styles.businessLocation} numberOfLines={1}>
-									{item.business.address.city}
-								</Text>
-							)}
-						</View>
-					</TouchableOpacity>
-
-					{(hasContact || hasLocation) && (
-						<View style={styles.businessContactActions}>
-							{item.business?.contact?.phone ? (
-								<TouchableOpacity style={styles.contactActionBtn} onPress={handleCall} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-									<Ionicons name="call-outline" size={14} color={colors.primary} />
-								</TouchableOpacity>
-							) : null}
-							{item.business?.contact?.whatsapp ? (
-								<TouchableOpacity style={[styles.contactActionBtn, { backgroundColor: '#134E4A' }]} onPress={handleWhatsApp} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-									<Ionicons name="logo-whatsapp" size={14} color="#2DD4BF" />
-								</TouchableOpacity>
-							) : null}
-							{item.business?.contact?.email ? (
-								<TouchableOpacity style={styles.contactActionBtn} onPress={handleEmail} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-									<Ionicons name="mail-outline" size={14} color={colors.primary} />
-								</TouchableOpacity>
-							) : null}
-							{hasLocation ? (
-								<TouchableOpacity style={styles.contactActionBtn} onPress={handleDirections} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-									<Ionicons name="navigate-outline" size={14} color={colors.primary} />
-								</TouchableOpacity>
-							) : null}
+		<Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={handleProductPress} accessibilityRole="button" accessibilityLabel={mainName}>
+			{/* ── Business header ── */}
+			<View style={styles.bizRow}>
+				<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
+					{item.business?.media?.thumbnail?.url ? (
+						<SmartImage source={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
+					) : (
+						<View style={styles.bizAvatarFallback}>
+							<MaterialIcons name="store" size={14} color="#0EA5E9" />
 						</View>
 					)}
-				</View>
-			)}
+					<Text style={styles.bizName} numberOfLines={1}>
+						{localize(item.business?.name)}
+					</Text>
+				</TouchableOpacity>
 
-			{/* Image */}
-			<View style={styles.imageWrap}>
-				<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
-				{/* Stock overlay */}
-				{(isOutOfStock || isLowStock) && (
-					<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)' }]}>
-						<View style={[styles.stockPill, { backgroundColor: stockColor + '22', borderColor: stockColor + '66' }]}>
-							<MaterialIcons name={stockIcon} size={12} color={stockColor} />
-							<Text style={[styles.stockPillText, { color: stockColor }]}>{stockLabel}</Text>
-						</View>
-					</View>
-				)}
-				{/* Active stock badge top-left */}
-				{!isOutOfStock && !isLowStock && (
-					<View style={[styles.inStockBadge, { backgroundColor: colors.success + '22', borderColor: colors.success + '44' }]}>
-						<MaterialIcons name="check-circle" size={10} color={colors.success} />
-						<Text style={[styles.inStockText, { color: colors.success }]}>{stockLabel}</Text>
+				{/* Quick contact icons */}
+				{(hasContact || hasLocation) && (
+					<View style={styles.bizActions}>
+						{item.business?.contact?.phone && (
+							<TouchableOpacity onPress={handleCall} hitSlop={8} style={styles.bizActionBtn}>
+								<Ionicons name="call-outline" size={12} color="rgba(255,255,255,0.4)" />
+							</TouchableOpacity>
+						)}
+						{item.business?.contact?.whatsapp && (
+							<TouchableOpacity onPress={handleWhatsApp} hitSlop={8} style={styles.bizActionBtn}>
+								<Ionicons name="logo-whatsapp" size={12} color="#2DD4BF" />
+							</TouchableOpacity>
+						)}
+						{hasLocation && (
+							<TouchableOpacity onPress={handleDirections} hitSlop={8} style={styles.bizActionBtn}>
+								<Ionicons name="navigate-outline" size={12} color="rgba(255,255,255,0.4)" />
+							</TouchableOpacity>
+						)}
 					</View>
 				)}
 			</View>
 
-			{/* Body */}
-			<View style={styles.body}>
-				<Text style={[styles.name, { color: colors.text }]} numberOfLines={2}>
-					{mainName}
-				</Text>
-				{showSecondaryNames && (
-					<Text style={[styles.nameAlt, { color: colors.textTertiary }]} numberOfLines={1}>
-						{secondaryNames.join(' • ')}
-					</Text>
-				)}
-				{showRatingRow && (
-					<View style={styles.ratingRow}>
-						<MaterialIcons name="star" size={12} color="#F59E0B" />
-						<Text style={[styles.ratingText, { color: colors.text }]}>{rating.toFixed(1)}</Text>
-						<Text style={[styles.ratingCount, { color: colors.textSecondary }]}>({ratingCount})</Text>
+			{/* ── Product image ── */}
+			<View style={styles.imgWrap}>
+				<SmartImage source={imageUrl} style={styles.img} resizeMode="cover" entityType="product" />
+
+				{/* Stock overlay for out-of-stock / low-stock */}
+				{(isOutOfStock || isLowStock) && (
+					<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent' }]}>
+						<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
+							<MaterialIcons name={stockIcon} size={11} color={stockColor} />
+							<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
+						</View>
 					</View>
 				)}
 
+				{/* In-stock badge */}
+				{!isOutOfStock && !isLowStock && (
+					<View style={styles.inStockBadge}>
+						<MaterialIcons name="check-circle" size={10} color="#10B981" />
+					</View>
+				)}
+			</View>
+
+			{/* ── Body ── */}
+			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
+				<Text style={[styles.productName, isSmall ? styles.productNameSmall : styles.productNameNormal]} numberOfLines={2}>
+					{mainName}
+				</Text>
+
+				{secondaryNames.length > 0 && (
+					<Text style={styles.altName} numberOfLines={1}>
+						{secondaryNames.join(' · ')}
+					</Text>
+				)}
+
+				{/* Rating */}
+				{rating > 0 && (
+					<View style={styles.ratingRow}>
+						{[1, 2, 3, 4, 5].map((star) => (
+							<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
+						))}
+						<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+						<Text style={styles.ratingCount}>({ratingCount})</Text>
+					</View>
+				)}
+
+				{/* Price */}
 				<View style={styles.priceRow}>
-					<Text style={[styles.price, { color: colors.primary }]} adjustsFontSizeToFit numberOfLines={1}>
+					<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
 						{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
 					</Text>
-					{quantity === 1 && <Text style={[styles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+					{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
 				</View>
 
-				{/* Quantity & Actions (Bottom of Price) */}
+				{/* Quantity + Cart action */}
 				{purchaseAllowed && isActive && !isOutOfStock && (
-					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: windowHeight < 550 ? 4 : 8, zIndex: 10 }}>
-						<View style={[styles.quantityControlOuter, { backgroundColor: colors.surfaceVariant }]}>
-							<TouchableOpacity onPress={decrement} style={styles.quantityBtn} activeOpacity={0.7}>
-								<MaterialIcons name="remove" size={16} color={colors.text} />
+					<View style={styles.actionRow}>
+						<View style={styles.qtyControl}>
+							<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
+								<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
 							</TouchableOpacity>
-							<Text style={[styles.quantityValue, { color: colors.text }]}>{quantity}</Text>
-							<TouchableOpacity onPress={increment} style={styles.quantityBtn} activeOpacity={0.7}>
-								<MaterialIcons name="add" size={16} color={colors.text} />
+							<Text style={styles.qtyValue}>{quantity}</Text>
+							<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
+								<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
 							</TouchableOpacity>
 						</View>
 						<TouchableOpacity
-							style={[styles.addBtn, { backgroundColor: colors.primary }]}
+							style={styles.cartBtn}
 							onPress={(e) => {
 								e.stopPropagation?.()
 								addToCart(item, quantity)
 							}}
 							activeOpacity={0.8}
 						>
-							<MaterialIcons name="add-shopping-cart" size={16} color={colors.textOnPrimary || '#0F172A'} />
+							<MaterialIcons name="add-shopping-cart" size={16} color="#ffffff" />
 						</TouchableOpacity>
-					</View>
-				)}
-
-				{/* Footer with wrapping */}
-				{showFooter && (
-					<View style={styles.footer}>
-						<View style={[styles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
-							<Ionicons name="cube-outline" size={12} color={colors.textSecondary} />
-							<Text style={[styles.qtyText, { color: colors.textSecondary }]}>{stockQty}</Text>
-						</View>
 					</View>
 				)}
 			</View>
@@ -269,156 +234,226 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	)
 }
 
-const createStyles = (colors: any, screenWidth: number, windowHeight: number) => {
-	const isCompact = windowHeight < 550
-	return StyleSheet.create({
-		card: {
-			flex: 1,
-			borderRadius: 20,
-			borderWidth: 1.5,
-			backgroundColor: colors.card,
-			borderColor: colors.info || '#3B82F6',
-			overflow: 'hidden',
-			maxHeight: Math.max(220, windowHeight - 140),
-			...createShadow({ offsetY: 4, opacity: 0.12, radius: 8, elevation: 3 }),
-			...Platform.select({ web: { transition: 'transform 0.1s ease' } as any })
-		},
-		businessHeader: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			paddingHorizontal: 12,
-			paddingVertical: isCompact ? 6 : 10,
-			borderBottomWidth: 1,
-			borderBottomColor: colors.border
-		},
-		businessInfoWithImage: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			flex: 1,
-			gap: 10
-		},
-		businessImage: {
-			width: 28,
-			height: 28,
-			borderRadius: 8,
-			backgroundColor: colors.surface
-		},
-		businessIconContainer: {
-			width: 28,
-			height: 28,
-			borderRadius: 8,
-			backgroundColor: colors.primaryContainer,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		businessInfo: { flex: 1 },
-		businessName: { fontSize: 13, fontWeight: '700', color: colors.text },
-		businessLocation: { fontSize: 10, color: colors.textSecondary, marginTop: 1 },
-		imageWrap: {
-			width: '100%',
-			aspectRatio: 1.35,
-			maxHeight: Math.min(180, windowHeight * 0.22),
-			position: 'relative'
-		},
-		productImage: { width: '100%', height: '100%' },
-		stockOverlay: {
-			...StyleSheet.absoluteFill,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		stockPill: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 4,
-			paddingHorizontal: 10,
-			paddingVertical: 5,
-			borderRadius: 20,
-			borderWidth: 1
-		},
-		stockPillText: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
-		inStockBadge: {
-			position: 'absolute',
-			top: 8,
-			left: 8,
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 3,
-			paddingHorizontal: 7,
-			paddingVertical: 3,
-			borderRadius: 10,
-			borderWidth: 1
-		},
-		inStockText: { fontSize: 9, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 },
-		body: { padding: isCompact ? 8 : 14, gap: isCompact ? 3 : 6 },
-		name: { fontSize: isCompact ? 13 : 15, fontWeight: '700', lineHeight: isCompact ? 17 : 20, letterSpacing: -0.2 },
-		nameAlt: { fontSize: 12, fontWeight: '500' },
-		ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-		ratingText: { fontSize: 12, fontWeight: '600' },
-		ratingCount: { fontSize: 11 },
-		priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: 3, marginTop: 2 },
-		price: { fontSize: 20, fontWeight: '800', letterSpacing: -0.5, flexShrink: 1 },
-		unit: { fontSize: 12, fontWeight: '500' },
-		footer: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'space-between',
-			flexWrap: 'wrap',
-			gap: 6,
-			marginTop: 4
-		},
-		qtyBadge: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 4,
-			paddingHorizontal: 8,
-			paddingVertical: 4,
-			borderRadius: 8
-		},
-		qtyText: { fontSize: 12, fontWeight: '600' },
-		actionRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 6,
-			zIndex: 10
-		},
-		quantityControlOuter: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			borderRadius: 10,
-			padding: 2
-		},
-		quantityBtn: {
-			width: 28,
-			height: 28,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		quantityValue: {
-			fontSize: 13,
-			fontWeight: '600',
-			minWidth: 24,
-			textAlign: 'center'
-		},
-		addBtn: {
-			width: 36,
-			height: 36,
-			borderRadius: 10,
-			justifyContent: 'center',
-			alignItems: 'center',
-			...Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any })
-		},
-		businessContactActions: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 6
-		},
-		contactActionBtn: {
-			width: 28,
-			height: 28,
-			borderRadius: 8,
-			backgroundColor: colors.primaryContainer,
-			justifyContent: 'center',
-			alignItems: 'center'
-		}
-	})
-}
+// ─── Styles ─────────────────────────────────────────────────────────────────────
+const styles = StyleSheet.create({
+	card: {
+		flex: 1,
+		borderRadius: 20,
+		backgroundColor: 'rgba(15, 23, 42, 0.65)',
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.08)',
+		overflow: 'hidden',
+		...Platform.select({
+			web: {
+				transition: 'transform 0.15s ease, box-shadow 0.15s ease',
+				backdropFilter: 'blur(20px)',
+				WebkitBackdropFilter: 'blur(20px)'
+			} as any
+		})
+	},
+	cardPressed: {
+		opacity: 0.95,
+		transform: [{ scale: 0.985 }]
+	},
+	// ── Business row ──
+	bizRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		paddingHorizontal: 12,
+		paddingVertical: 8,
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		borderBottomColor: 'rgba(255, 255, 255, 0.06)'
+	},
+	bizLeft: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		flex: 1
+	},
+	bizAvatar: {
+		width: 24,
+		height: 24,
+		borderRadius: 7,
+		backgroundColor: 'rgba(255, 255, 255, 0.05)'
+	},
+	bizAvatarFallback: {
+		width: 24,
+		height: 24,
+		borderRadius: 7,
+		backgroundColor: 'rgba(14, 165, 233, 0.12)',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	bizName: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: 'rgba(255, 255, 255, 0.6)',
+		flex: 1
+	},
+	bizActions: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4
+	},
+	bizActionBtn: {
+		width: 24,
+		height: 24,
+		borderRadius: 7,
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: 'rgba(255, 255, 255, 0.03)'
+	},
+	// ── Image ──
+	imgWrap: {
+		width: '100%',
+		aspectRatio: 1.35,
+		position: 'relative',
+		backgroundColor: 'rgba(255, 255, 255, 0.02)'
+	},
+	img: {
+		width: '100%',
+		height: '100%'
+	},
+	stockOverlay: {
+		...StyleSheet.absoluteFill,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	stockChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4,
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 20,
+		borderWidth: 1
+	},
+	stockChipText: {
+		fontSize: 10,
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5
+	},
+	inStockBadge: {
+		position: 'absolute',
+		top: 10,
+		left: 10,
+		width: 20,
+		height: 20,
+		borderRadius: 10,
+		backgroundColor: 'rgba(16, 185, 129, 0.15)',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	// ── Body ──
+	body: {
+		gap: 6
+	},
+	bodyNormal: {
+		padding: 14
+	},
+	bodySmall: {
+		padding: 12
+	},
+	productName: {
+		fontWeight: '700',
+		color: '#F8FAFC',
+		letterSpacing: -0.2
+	},
+	productNameNormal: {
+		fontSize: 15,
+		lineHeight: 20
+	},
+	productNameSmall: {
+		fontSize: 14,
+		lineHeight: 18
+	},
+	altName: {
+		fontSize: 11,
+		fontWeight: '500',
+		color: 'rgba(255, 255, 255, 0.35)'
+	},
+	ratingRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 3,
+		marginTop: 2
+	},
+	ratingValue: {
+		fontSize: 11,
+		fontWeight: '700',
+		color: '#FBBF24',
+		marginLeft: 2
+	},
+	ratingCount: {
+		fontSize: 10,
+		color: 'rgba(255, 255, 255, 0.35)'
+	},
+	priceRow: {
+		flexDirection: 'row',
+		alignItems: 'baseline',
+		gap: 3,
+		marginTop: 4
+	},
+	price: {
+		fontWeight: '800',
+		color: '#0EA5E9',
+		letterSpacing: -0.5,
+		flexShrink: 1
+	},
+	priceNormal: {
+		fontSize: 20
+	},
+	priceSmall: {
+		fontSize: 18
+	},
+	priceUnit: {
+		fontSize: 11,
+		fontWeight: '500',
+		color: 'rgba(255, 255, 255, 0.35)'
+	},
+	// ── Quantity + Cart ──
+	actionRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginTop: 8
+	},
+	qtyControl: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: 'rgba(255, 255, 255, 0.03)',
+		borderRadius: 12,
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.06)',
+		padding: 2
+	},
+	qtyBtn: {
+		width: 28,
+		height: 28,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	qtyValue: {
+		fontSize: 13,
+		fontWeight: '700',
+		color: '#F8FAFC',
+		minWidth: 26,
+		textAlign: 'center'
+	},
+	cartBtn: {
+		width: 36,
+		height: 36,
+		borderRadius: 12,
+		backgroundColor: '#0EA5E9',
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({
+			web: {
+				boxShadow: '0 2px 10px rgba(14, 165, 233, 0.35)',
+				transition: 'transform 0.12s ease'
+			} as any
+		})
+	}
+})

@@ -4,12 +4,12 @@ import { useTheme, createShadow } from '../../core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
-import { orderStatusColors, orderStatusLabels } from '../../config/orderStatus'
+import { orderStatusColors, orderStatusLabels } from '../orders/orderStatus'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '../../core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
 import { toast } from '@/features/common/Toast'
-import { orderStatusEnum as statuses } from '../../config/orderStatus'
+import { orderStatusEnum as statuses } from '../orders/orderStatus'
 
 interface SaleCardProps {
 	sale: Sale

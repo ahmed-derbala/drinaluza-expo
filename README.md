@@ -118,66 +118,9 @@ src/
 ## ⚙️ Environment Configuration
 
 ### Gradle Settings (`~/.gradle/gradle.properties`)
-For optimal Android build performance, ensure your gradle properties are set:
-```properties
-# =========================================================
-# Java
-# =========================================================
-# download jdk from https://jdk.java.net/archive/
-org.gradle.java.installations.auto-download=false
-org.gradle.java.home=/usr/lib/jvm/jdk-17.0.2
-
-# =========================================================
-# Core Gradle Performance
-# =========================================================
-
-org.gradle.daemon=true
-org.gradle.parallel=true
-org.gradle.caching=true
-org.gradle.configuration-cache=true
-org.gradle.configuration-cache.problems=warn
-org.gradle.vfs.watch=true
-
-# =========================================================
-# High RAM Optimization
-# =========================================================
-
-# 8 GB heap for Gradle daemon
-# Good for Expo + React Native + Hermes + NDK
-org.gradle.jvmargs=-Xmx8g -Xms4g \
--XX:MaxMetaspaceSize=2g \
--XX:+UseG1GC \
--XX:MaxGCPauseMillis=200 \
--Dfile.encoding=UTF-8 \
--Dkotlin.daemon.jvm.options=-Xmx4g
-
-# =========================================================
-# Kotlin
-# =========================================================
-
-kotlin.incremental=true
-kotlin.code.style=official
-
-# =========================================================
-# Android Optimizations
-# =========================================================
-
-android.useAndroidX=true
-android.enableJetifier=true
-
-# Faster resource/R processing
-android.nonTransitiveRClass=true
-android.nonFinalResIds=true
-
-# =========================================================
-# React Native / Expo
-# =========================================================
-
-# Faster runtime and often better builds
-hermesEnabled=true
-
-# Enable only if dependencies support it
-# newArchEnabled=true
+For optimal Android build performance
+```
+docs/gradle.properties
 ```
 
 ### Android Environment (`~/.zshrc` or `~/.bashrc`)

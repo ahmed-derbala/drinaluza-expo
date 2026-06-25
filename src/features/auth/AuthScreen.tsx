@@ -12,7 +12,7 @@ import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 
 import { toast } from '@/features/common/Toast'
 import { showConfirm, showAlert } from '@/core/helpers/popup'
-import { FRONTEND_URL } from '@/config'
+import { config } from '@/config'
 import { log } from '@/core/log'
 
 import { getSavedAuthentications, saveAuthentication, deleteSavedAuthentication, signIn, signUp, signInWithToken, SavedAuth } from './auth.api'
@@ -169,7 +169,7 @@ export default function AuthScreen() {
 				// No user found - Ask if they want to sign up
 				setLoading(false)
 				const signupTitle = translate('signup_title', 'Create Account?')
-				const signupMessage = `${translate('user_not_found_signup', 'User not found. Do you want to sign up?')}\n\nURL: ${FRONTEND_URL}/u/${slug}`
+				const signupMessage = `${translate('user_not_found_signup', 'User not found. Do you want to sign up?')}\n\nURL: ${config.frontend.url}/u/${slug}`
 
 				showConfirm(signupTitle, signupMessage, async () => {
 					try {

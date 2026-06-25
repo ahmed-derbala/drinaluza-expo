@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 import { View, ActivityIndicator, StyleSheet, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
 import { useUpdates, isVersionGreater } from '@/features/updates'
-import { APP_VERSION } from '@/config'
+import { config } from '@/config'
 
 export default function Index() {
 	const router = useRouter()
@@ -10,7 +10,7 @@ export default function Index() {
 
 	useEffect(() => {
 		if (Platform.OS === 'android' && latestRelease) {
-			const hasNewerRelease = isVersionGreater(latestRelease.latest_version, APP_VERSION)
+			const hasNewerRelease = isVersionGreater(latestRelease.latest_version, config.app.version)
 			if (hasNewerRelease) {
 				router.replace('/updates' as any)
 				return

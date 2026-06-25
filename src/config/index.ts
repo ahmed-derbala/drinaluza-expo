@@ -1,41 +1,26 @@
-// Configuration file for Drinaluza app
 import packagejson from '../../package.json' with { type: 'json' }
 import Constants from 'expo-constants'
 
-interface AppConfig {
-	app: {
-		name: string
-		version: string
-		timeout: number
-		retryAttempts: number
-	}
-}
+const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.1.11:5001'
 
-// Main configuration - edit these values as needed
-const config: AppConfig = {
+export const config = {
 	app: {
 		name: packagejson.name,
 		version: packagejson.version,
-		timeout: 60000, // 1 minute
+		timeout: Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000,
 		retryAttempts: 3
-	}
+	},
+	backend: {
+		url: backendUrl
+	},
+	api: {
+		prefix: '/api',
+		url: backendUrl ? `${backendUrl.replace(/\/$/, '')}/api` : undefined
+	},
+	frontend: {
+		url: process.env.EXPO_PUBLIC_FRONTEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.vercel.app'
+	},
+	updateCheckUrl:
+		process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
+	NODE_ENV: process.env.EXPO_PUBLIC_NODE_ENV || Constants.expoConfig?.extra?.NODE_ENV || 'local'
 }
-
-// App configuration
-export const APP_NAME = config.app.name
-export const APP_VERSION = config.app.version
-export const API_TIMEOUT = config.app.timeout
-export const RETRY_ATTEMPTS = config.app.retryAttempts
-
-// API URL from environment variables
-export const API_PREFIX = '/api'
-export const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL
-export const NODE_ENV = process.env.EXPO_PUBLIC_NODE_ENV || Constants.expoConfig?.extra?.NODE_ENV || 'development'
-export const FRONTEND_URL = process.env.EXPO_PUBLIC_FRONTEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
-
-export const API_URL = BACKEND_URL ? `${BACKEND_URL.replace(/\/$/, '')}${API_PREFIX}` : undefined
-
-export const UPDATE_CHECK_URL =
-	process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest'
-
-export const TIMEOUT_MS = Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, ActivityIndicator, Platform } from 'react-native'
 import { useUpdates, isVersionGreater } from '@/features/updates'
-import { APP_VERSION } from '@/config'
+import { config } from '@/config'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -37,7 +37,7 @@ function RootLayoutContent() {
 			try {
 				const release = await checkForUpdates(false)
 				if (release) {
-					const hasNewerRelease = isVersionGreater(release.latest_version, APP_VERSION)
+					const hasNewerRelease = isVersionGreater(release.latest_version, config.app.version)
 					if (hasNewerRelease) {
 						// There is a newer version! Redirect to updates page
 						setIsStartupChecking(false)

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useRef, useState } from 'r
 import { io, Socket } from 'socket.io-client'
 import { View, Platform } from 'react-native'
 import { useRouter } from 'expo-router'
-import { BACKEND_URL, RETRY_ATTEMPTS } from '@/config'
+import { config } from '@/config'
 import { useUser } from '../contexts/UserContext'
 import { useNotification } from '../../features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
@@ -34,11 +34,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		log({ level: 'info', label: 'socket', message: `Initializing for user: ${user.slug}` })
 
 		// Initialize socket with query for room auto-join
-		const socket = io(BACKEND_URL, {
+		const socket = io(config.backend.url, {
 			transports: ['websocket'],
 			autoConnect: true,
 			reconnection: true,
-			reconnectionAttempts: RETRY_ATTEMPTS || 3,
+			reconnectionAttempts: config.app.retryAttempts || 3,
 			query: {
 				userSlug: user.slug
 			}

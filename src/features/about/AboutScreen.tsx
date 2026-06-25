@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 
 import { useTheme } from '@/core/theme'
-import { APP_VERSION, NODE_ENV } from '@/config'
+import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -153,7 +153,7 @@ export default function AboutScreen() {
 				<View style={styles.footer}>
 					<View style={styles.versionBadge}>
 						<Text style={styles.versionText}>
-							v{APP_VERSION} • {NODE_ENV}
+							v{config.app.version} • {config.NODE_ENV}
 						</Text>
 					</View>
 					<Text style={styles.copyright}>© 2026 Drinaluza</Text>

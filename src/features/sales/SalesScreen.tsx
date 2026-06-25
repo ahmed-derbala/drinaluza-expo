@@ -8,7 +8,7 @@ import SaleCard from '@/features/sales/SaleCard'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
-import { orderStatusEnum, orderStatusLabels } from '@/config/orderStatus'
+import { orderStatusEnum, orderStatusLabels } from '@/features/orders/orderStatus'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 
 const ITEMS_PER_PAGE = 10

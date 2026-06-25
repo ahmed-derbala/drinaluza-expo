@@ -8,7 +8,7 @@ import { SmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
 
 import { useUpdates, isVersionGreater } from '@/features/updates'
-import { APP_VERSION } from '@/config'
+import { config } from '@/config'
 
 export const SmartKebabMenu: React.FC = () => {
 	const { colors } = useTheme()
@@ -101,16 +101,24 @@ export const SmartKebabMenu: React.FC = () => {
 		if (hasInstallable) {
 			return 'READY'
 		}
-		const hasDownloadable = latestRelease && isVersionGreater(latestRelease.latest_version, APP_VERSION)
+		const hasDownloadable = latestRelease && isVersionGreater(latestRelease.latest_version, config.app.version)
 		if (hasDownloadable) {
 			return 'NEW'
 		}
 		return undefined
 	}, [isDownloading, downloadProgress, downloadedApks, latestRelease])
 
-	// Default menu items: /settings, /about, and /updates
+	// Default menu items: /home, /settings, /about, and /updates
 	const defaultItems: SmartKebabMenuItem[] = useMemo(
 		() => [
+			{
+				key: 'home',
+				label: translate('home', 'Home'),
+				icon: 'home-outline',
+				onPress: () => {
+					router.push('/(home)/feed' as any)
+				}
+			},
 			{
 				key: 'settings',
 				label: translate('settings', 'Settings'),

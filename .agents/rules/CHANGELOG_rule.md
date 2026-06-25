@@ -9,7 +9,7 @@ trigger: always_on
 - Do NOT update the changelog for trivial changes (e.g., fixing typos in code comments, updating internal `.gitignore` rules, or updating agent instructions).
 
 ## Formatting Standards
-1. **File Format:** Keep changes at the very top of the file, directly under the main heading, or under the `## [Unreleased]` section if it exists.
+1. **File Format:** Keep changes at the very top of the file, directly under the current version heading, 
 2. **Changelog Format:** Strictly adhere to the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard.
 3. **Allowed Groupings:** Categorize changes using *only* these exact subheadings:
    - `### Added` - For new features.
@@ -25,8 +25,5 @@ trigger: always_on
 - **Link Issues/PRs:** If the context or git history implies a specific issue number or Pull Request, append it to the end of the line (e.g., `(#123)`).
 - **Do Not Invent Versions:** If modifying the `[Unreleased]` section, keep it as `## [Unreleased]`. Only create a new version heading (e.g., `## [1.2.0] - 2026-06-02`) if explicitly instructed to cut a new release.
 
-## Execution Workflow
-1. **Analyze:** Inspect the files you have just modified or the git diff of the current working branch.
-2. **Draft:** Identify which category (`Added`, `Fixed`, etc.) the changes fall under.
-3. **Verify:** Check `CHANGELOG.md` to ensure you aren't duplicating an entry.
-4. **Append:** Insert the new bullet point(s) in the correct section. Maintain a single empty line between subheadings.
+## File length
+max 100 lines

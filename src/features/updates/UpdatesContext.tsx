@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useCallback, useMemo, useRef
 import { Platform, Alert } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
-import { APP_VERSION, UPDATE_CHECK_URL, TIMEOUT_MS } from '@/config'
+import { config } from '@/config'
 import { log } from '@/core/log'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
 
@@ -26,7 +26,7 @@ const ensureUpdatesFolder = async () => {
 // Function that parses Github release response
 export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> => {
 	const controller = new AbortController()
-	const id = setTimeout(() => controller.abort(), TIMEOUT_MS)
+	const id = setTimeout(() => controller.abort(), config.app.timeout)
 
 	try {
 		const res = await fetch(url, { signal: controller.signal })
@@ -99,7 +99,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 						const size = fileInfo.size || 0
 
 						// If file version is higher than active version, it is installable
-						const isInstallable = version !== 'unknown' && isVersionGreater(version, APP_VERSION)
+						const isInstallable = version !== 'unknown' && isVersionGreater(version, config.app.version)
 
 						apks.push({
 							filename: file,
@@ -145,7 +145,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setIsChecking(true)
 			setError(null)
 			try {
-				const result = await checkUpdatesApi(UPDATE_CHECK_URL)
+				const result = await checkUpdatesApi(config.updateCheckUrl)
 				setLatestRelease(result)
 				setIsChecking(false)
 
