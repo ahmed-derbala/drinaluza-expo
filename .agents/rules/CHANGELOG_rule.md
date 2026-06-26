@@ -5,7 +5,7 @@ trigger: always_on
 # Rule: CHANGELOG.md Management
 
 ## Trigger
-- Evaluate and update `CHANGELOG.md` whenever a feature is completed, a bug is fixed, a breaking change is introduced, or a new release/tag is prepared.
+- Evaluate and update `CHANGELOG.md` whenever a feature is completed, a bug is fixed, a breaking change is introduced.
 - Do NOT update the changelog for trivial changes (e.g., fixing typos in code comments, updating internal `.gitignore` rules, or updating agent instructions).
 
 ## Formatting Standards
@@ -20,10 +20,8 @@ trigger: always_on
    - `### Security` - In case of vulnerabilities.
 
 ## Writing Style & Guidelines
-- **Be Concise but Descriptive:** Write clear, one-line bullet points explaining *what* changed and *why*, from a developer/user perspective (not a raw commit message dump).
+- **Be Concise but Descriptive:** Write clear, one-line bullet points explaining *what* changed and *why*, from a user perspective (not a raw commit message dump).
 - **No Technical Jargon Overload:** Avoid pasting raw stack traces or internal variable names unless necessary for context.
-- **Link Issues/PRs:** If the context or git history implies a specific issue number or Pull Request, append it to the end of the line (e.g., `(#123)`).
-- **Do Not Invent Versions:** If modifying the `[Unreleased]` section, keep it as `## [Unreleased]`. Only create a new version heading (e.g., `## [1.2.0] - 2026-06-02`) if explicitly instructed to cut a new release.
 
 ## File length
 max 100 lines

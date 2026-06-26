@@ -134,18 +134,18 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 				{(hasContact || hasLocation) && (
 					<View style={styles.bizActions}>
 						{item.business?.contact?.phone && (
-							<TouchableOpacity onPress={handleCall} hitSlop={8} style={styles.bizActionBtn}>
-								<Ionicons name="call-outline" size={12} color="rgba(255,255,255,0.4)" />
+							<TouchableOpacity onPress={handleCall} hitSlop={12} style={styles.bizActionBtn}>
+								<Ionicons name="call-outline" size={14} color="rgba(255,255,255,0.4)" />
 							</TouchableOpacity>
 						)}
 						{item.business?.contact?.whatsapp && (
-							<TouchableOpacity onPress={handleWhatsApp} hitSlop={8} style={styles.bizActionBtn}>
-								<Ionicons name="logo-whatsapp" size={12} color="#2DD4BF" />
+							<TouchableOpacity onPress={handleWhatsApp} hitSlop={12} style={styles.bizActionBtn}>
+								<Ionicons name="logo-whatsapp" size={14} color="#2DD4BF" />
 							</TouchableOpacity>
 						)}
 						{hasLocation && (
-							<TouchableOpacity onPress={handleDirections} hitSlop={8} style={styles.bizActionBtn}>
-								<Ionicons name="navigate-outline" size={12} color="rgba(255,255,255,0.4)" />
+							<TouchableOpacity onPress={handleDirections} hitSlop={12} style={styles.bizActionBtn}>
+								<Ionicons name="navigate-outline" size={14} color="rgba(255,255,255,0.4)" />
 							</TouchableOpacity>
 						)}
 					</View>
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		backgroundColor: 'rgba(15, 23, 42, 0.65)',
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
+		borderColor: '#0EA5E9',
 		overflow: 'hidden',
 		...Platform.select({
 			web: {
@@ -297,9 +297,9 @@ const styles = StyleSheet.create({
 		gap: 4
 	},
 	bizActionBtn: {
-		width: 24,
-		height: 24,
-		borderRadius: 7,
+		width: 48,
+		height: 48,
+		borderRadius: 8,
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: 'rgba(255, 255, 255, 0.03)'

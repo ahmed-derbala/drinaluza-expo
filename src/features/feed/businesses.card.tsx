@@ -113,23 +113,23 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 				{/* Actions row */}
 				<View style={styles.actionsRow}>
 					{item.contact?.phone && (
-						<TouchableOpacity style={styles.actionBtn} onPress={handleCall} hitSlop={8}>
-							<Ionicons name="call-outline" size={14} color="#0EA5E9" />
+						<TouchableOpacity style={styles.actionBtn} onPress={handleCall} hitSlop={12}>
+							<Ionicons name="call-outline" size={16} color="#0EA5E9" />
 						</TouchableOpacity>
 					)}
 					{item.contact?.whatsapp && (
-						<TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={8}>
-							<Ionicons name="logo-whatsapp" size={14} color="#2DD4BF" />
+						<TouchableOpacity style={[styles.actionBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={12}>
+							<Ionicons name="logo-whatsapp" size={16} color="#2DD4BF" />
 						</TouchableOpacity>
 					)}
 					{item.contact?.email && (
-						<TouchableOpacity style={styles.actionBtn} onPress={handleEmail} hitSlop={8}>
-							<Ionicons name="mail-outline" size={14} color="#0EA5E9" />
+						<TouchableOpacity style={styles.actionBtn} onPress={handleEmail} hitSlop={12}>
+							<Ionicons name="mail-outline" size={16} color="#0EA5E9" />
 						</TouchableOpacity>
 					)}
 					{hasLocation && (
-						<TouchableOpacity style={styles.actionBtn} onPress={handleDirections} hitSlop={8}>
-							<Ionicons name="navigate-outline" size={14} color="#0EA5E9" />
+						<TouchableOpacity style={styles.actionBtn} onPress={handleDirections} hitSlop={12}>
+							<Ionicons name="navigate-outline" size={16} color="#0EA5E9" />
 						</TouchableOpacity>
 					)}
 
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		backgroundColor: 'rgba(15, 23, 42, 0.65)',
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
+		borderColor: '#0EA5E9',
 		overflow: 'hidden',
 		...Platform.select({
 			web: {
@@ -241,9 +241,9 @@ const styles = StyleSheet.create({
 		borderTopColor: 'rgba(255, 255, 255, 0.08)'
 	},
 	actionBtn: {
-		width: 32,
-		height: 32,
-		borderRadius: 8,
+		width: 40,
+		height: 40,
+		borderRadius: 10,
 		backgroundColor: 'rgba(14, 165, 233, 0.1)',
 		justifyContent: 'center',
 		alignItems: 'center'

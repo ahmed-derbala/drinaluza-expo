@@ -8,6 +8,16 @@
 
 ---
 
+## 🎬 App Demo
+
+<p align="center">
+  <img src="docs/demo.gif" alt="Drinaluza marketplace demo — feed, business profile, search, and profile screens" width="320" />
+</p>
+
+*~45 second walkthrough of the Drinaluza marketplace experience on web.*
+
+---
+
 ## 🚀 Features
 
 ### 🛍️ For Customers
@@ -76,6 +86,22 @@
     *   Press `w` for Web environment
 
 ---
+
+## sample data
+```
+sample data to use for testing
+users:
+ - user_1:
+  - slug: ahmed
+  - password: 123
+  - role: business_owner
+- user_2:
+  - slug: abir
+  - password: 123
+  - role: customer
+
+
+```
 
 ## 📂 Project Architecture
 

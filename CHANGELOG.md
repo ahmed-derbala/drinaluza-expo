@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [1.26.3]
 
 ### Added
 - Redesigned `/feed` screen and all card types (ProductCard, BusinessCard, UserCard) from scratch with a unified dark-glassmorphic visual system: `#0A0E1A` base, `rgba(15,23,42,0.65)` card surfaces, cyan (`#0EA5E9`) accents, refined filter pills, shimmer skeleton loaders, and consistent responsive multi-column grid layout.

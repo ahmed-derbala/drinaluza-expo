@@ -103,18 +103,18 @@ export default function UserCard({ item }: UserCardProps) {
 				{hasContact && (
 					<View style={styles.contactRow}>
 						{item.contact?.phone && (
-							<TouchableOpacity style={styles.contactBtn} onPress={handleCall} hitSlop={8}>
-								<Ionicons name="call-outline" size={13} color="#0EA5E9" />
+							<TouchableOpacity style={styles.contactBtn} onPress={handleCall} hitSlop={12}>
+								<Ionicons name="call-outline" size={16} color="#0EA5E9" />
 							</TouchableOpacity>
 						)}
 						{item.contact?.whatsapp && (
-							<TouchableOpacity style={[styles.contactBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={8}>
-								<Ionicons name="logo-whatsapp" size={13} color="#2DD4BF" />
+							<TouchableOpacity style={[styles.contactBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={12}>
+								<Ionicons name="logo-whatsapp" size={16} color="#2DD4BF" />
 							</TouchableOpacity>
 						)}
 						{item.contact?.email && (
-							<TouchableOpacity style={styles.contactBtn} onPress={handleEmail} hitSlop={8}>
-								<Ionicons name="mail-outline" size={13} color="#0EA5E9" />
+							<TouchableOpacity style={styles.contactBtn} onPress={handleEmail} hitSlop={12}>
+								<Ionicons name="mail-outline" size={16} color="#0EA5E9" />
 							</TouchableOpacity>
 						)}
 					</View>
@@ -131,7 +131,7 @@ const styles = StyleSheet.create({
 		borderRadius: 20,
 		backgroundColor: 'rgba(15, 23, 42, 0.65)',
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
+		borderColor: '#0EA5E9',
 		padding: 14,
 		gap: 10,
 		justifyContent: 'space-between',
@@ -243,9 +243,9 @@ const styles = StyleSheet.create({
 		gap: 6
 	},
 	contactBtn: {
-		width: 28,
-		height: 28,
-		borderRadius: 8,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		backgroundColor: 'rgba(14, 165, 233, 0.1)',
 		justifyContent: 'center',
 		alignItems: 'center'
