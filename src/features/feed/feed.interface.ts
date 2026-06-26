@@ -32,8 +32,15 @@ interface BusinessAddress {
 }
 
 interface BusinessLocation {
-	type: string
-	coordinates: number[]
+	geo?: {
+		type: 'Point'
+		coordinates: number[]
+	}
+	accuracy?: number
+	altitude?: number
+	heading?: number
+	speed?: number
+	deviceTimestamp?: string
 	sharingEnabled?: boolean
 	updatedAt?: string
 }

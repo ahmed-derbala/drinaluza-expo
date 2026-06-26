@@ -1,5 +1,18 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+- Redesigned feed product card layout: business photo, name, and `@slug` now appear top-left; contact (call, WhatsApp) and location (directions) action buttons are consolidated top-right; business address (`street, city, region`) is shown directly below the business row; product name is now overlaid at the bottom of the product image using a `LinearGradient` scrim for legibility.
+- Redesigned feed business card layout to match the product card pattern: business photo, name, and `@slug` top-left; call, WhatsApp, email, and directions buttons top-right; address (`street, city, region`) below the header; the banner image remains below as a visual showcase with the rating badge and view arrow overlaid on it.
+- Extracted contact/location action buttons into a shared `ContactButtons` component (`src/features/common/ContactButtons.tsx`) used by both product and business feed cards — consistent 36×36 touch targets, color-coded tinted backgrounds (green/call, teal/WhatsApp, indigo/email, amber/directions), accessible labels, and self-hiding when no contact data is present.
+- Extended `ContactButtons` with an optional `address` prop (structured street/city/state/country) used as a directions fallback when GPS coordinates are unavailable; applied in `SaleCard` to replace the 4 inline contact/location handlers (73 lines → 5 lines).
+
+## [1.26.4]
+
+### Fixed
+- Disabled ANSI escape color codes in the global logger module (`src/core/log/index.ts`) on native platforms (iOS/Android) to prevent raw ANSI sequences from rendering inside React Native's LogBox console UI.
+
 ## [1.26.3]
 
 ### Added

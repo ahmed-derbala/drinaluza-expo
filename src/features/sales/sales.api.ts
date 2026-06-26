@@ -98,8 +98,12 @@ export interface Sale {
 			country: string
 		}
 		location?: {
-			type: string
-			coordinates: [number, number]
+			geo?: { type: 'Point'; coordinates: [number, number] }
+			accuracy?: number
+			altitude?: number
+			heading?: number
+			speed?: number
+			deviceTimestamp?: string
 			sharingEnabled: boolean
 			updatedAt?: string
 		}
@@ -134,8 +138,12 @@ export interface Sale {
 			country: string
 		}
 		location?: {
-			type: string
-			coordinates: [number, number]
+			geo?: { type: 'Point'; coordinates: [number, number] }
+			accuracy?: number
+			altitude?: number
+			heading?: number
+			speed?: number
+			deviceTimestamp?: string
 			sharingEnabled: boolean
 			updatedAt?: string
 		}

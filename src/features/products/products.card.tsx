@@ -1,10 +1,12 @@
 import React, { useState, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, Linking } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
+import { LinearGradient } from 'expo-linear-gradient'
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
+import ContactButtons from '@/features/common/ContactButtons'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -59,35 +61,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		}
 	}
 
-	const handleCall = (e: any) => {
-		e.stopPropagation?.()
-		const phone = item.business?.contact?.phone?.fullNumber
-		if (phone) Linking.openURL(`tel:${phone}`).catch(() => {})
-	}
-
-	const handleWhatsApp = (e: any) => {
-		e.stopPropagation?.()
-		const wa = item.business?.contact?.whatsapp
-		if (wa) Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
-	}
-
-	const handleDirections = (e: any) => {
-		e.stopPropagation?.()
-		const coords = item.business?.location?.coordinates
-		if (coords && coords.length === 2) {
-			const [lng, lat] = coords
-			const url = Platform.select({
-				ios: `maps:?daddr=${lat},${lng}`,
-				android: `google.navigation:q=${lat},${lng}`,
-				default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-			})
-			if (url) Linking.openURL(url).catch(() => {})
-		}
-	}
-
-	const hasContact = !!(item.business?.contact?.phone || item.business?.contact?.whatsapp || item.business?.contact?.email)
-	const hasLocation = !!(item.business?.location?.coordinates && item.business.location.coordinates.length === 2)
-
 	const handleProductPress = () => {
 		if (item.slug) {
 			if (pathname.startsWith('/products')) {
@@ -113,6 +86,10 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 	const isSmall = width < 500
 
+	// Build address line from structured address fields
+	const addr = item.business?.address
+	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
+
 	return (
 		<Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={handleProductPress} accessibilityRole="button" accessibilityLabel={mainName}>
 			{/* ── Business header ── */}
@@ -125,36 +102,40 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 							<MaterialIcons name="store" size={14} color="#0EA5E9" />
 						</View>
 					)}
-					<Text style={styles.bizName} numberOfLines={1}>
-						{localize(item.business?.name)}
-					</Text>
+					<View style={styles.bizInfo}>
+						<Text style={styles.bizName} numberOfLines={1}>
+							{localize(item.business?.name)}
+						</Text>
+						{item.business?.slug ? (
+							<Text style={styles.bizSlug} numberOfLines={1}>
+								@{item.business.slug}
+							</Text>
+						) : null}
+					</View>
 				</TouchableOpacity>
 
-				{/* Quick contact icons */}
-				{(hasContact || hasLocation) && (
-					<View style={styles.bizActions}>
-						{item.business?.contact?.phone && (
-							<TouchableOpacity onPress={handleCall} hitSlop={12} style={styles.bizActionBtn}>
-								<Ionicons name="call-outline" size={14} color="rgba(255,255,255,0.4)" />
-							</TouchableOpacity>
-						)}
-						{item.business?.contact?.whatsapp && (
-							<TouchableOpacity onPress={handleWhatsApp} hitSlop={12} style={styles.bizActionBtn}>
-								<Ionicons name="logo-whatsapp" size={14} color="#2DD4BF" />
-							</TouchableOpacity>
-						)}
-						{hasLocation && (
-							<TouchableOpacity onPress={handleDirections} hitSlop={12} style={styles.bizActionBtn}>
-								<Ionicons name="navigate-outline" size={14} color="rgba(255,255,255,0.4)" />
-							</TouchableOpacity>
-						)}
-					</View>
-				)}
+				<ContactButtons contact={item.business?.contact} location={item.business?.location} />
 			</View>
+
+			{/* Address */}
+			{addressLine ? (
+				<View style={styles.addressRow}>
+					<Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.35)" />
+					<Text style={styles.bizAddress} numberOfLines={1}>
+						{addressLine}
+					</Text>
+				</View>
+			) : null}
 
 			{/* ── Product image ── */}
 			<View style={styles.imgWrap}>
 				<SmartImage source={imageUrl} style={styles.img} resizeMode="cover" entityType="product" />
+
+				<LinearGradient colors={['transparent', 'rgba(5,10,25,0.90)']} locations={[0.3, 1]} style={styles.imgOverlayBottom}>
+					<Text style={styles.productNameOver} numberOfLines={2}>
+						{mainName}
+					</Text>
+				</LinearGradient>
 
 				{/* Stock overlay for out-of-stock / low-stock */}
 				{(isOutOfStock || isLowStock) && (
@@ -165,21 +146,10 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						</View>
 					</View>
 				)}
-
-				{/* In-stock badge */}
-				{!isOutOfStock && !isLowStock && (
-					<View style={styles.inStockBadge}>
-						<MaterialIcons name="check-circle" size={10} color="#10B981" />
-					</View>
-				)}
 			</View>
 
 			{/* ── Body ── */}
 			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
-				<Text style={[styles.productName, isSmall ? styles.productNameSmall : styles.productNameNormal]} numberOfLines={2}>
-					{mainName}
-				</Text>
-
 				{secondaryNames.length > 0 && (
 					<Text style={styles.altName} numberOfLines={1}>
 						{secondaryNames.join(' · ')}
@@ -261,48 +231,54 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		paddingHorizontal: 12,
-		paddingVertical: 8,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: 'rgba(255, 255, 255, 0.06)'
+		paddingTop: 12,
+		paddingBottom: 4
 	},
 	bizLeft: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 8,
-		flex: 1
+		flex: 1,
+		minWidth: 0
+	},
+	bizInfo: {
+		flex: 1,
+		minWidth: 0
 	},
 	bizAvatar: {
-		width: 24,
-		height: 24,
-		borderRadius: 7,
+		width: 32,
+		height: 32,
+		borderRadius: 16,
 		backgroundColor: 'rgba(255, 255, 255, 0.05)'
 	},
 	bizAvatarFallback: {
-		width: 24,
-		height: 24,
-		borderRadius: 7,
+		width: 32,
+		height: 32,
+		borderRadius: 16,
 		backgroundColor: 'rgba(14, 165, 233, 0.12)',
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	bizName: {
-		fontSize: 12,
-		fontWeight: '600',
-		color: 'rgba(255, 255, 255, 0.6)',
-		flex: 1
+		fontSize: 13,
+		fontWeight: '700',
+		color: '#FFF'
 	},
-	bizActions: {
+	bizSlug: {
+		fontSize: 10,
+		color: 'rgba(255, 255, 255, 0.4)'
+	},
+	addressRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 4
+		gap: 4,
+		paddingHorizontal: 12,
+		paddingBottom: 8
 	},
-	bizActionBtn: {
-		width: 48,
-		height: 48,
-		borderRadius: 8,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: 'rgba(255, 255, 255, 0.03)'
+	bizAddress: {
+		flex: 1,
+		fontSize: 11,
+		color: 'rgba(255, 255, 255, 0.35)'
 	},
 	// ── Image ──
 	imgWrap: {
@@ -314,6 +290,23 @@ const styles = StyleSheet.create({
 	img: {
 		width: '100%',
 		height: '100%'
+	},
+	imgOverlayBottom: {
+		position: 'absolute',
+		bottom: 0,
+		left: 0,
+		right: 0,
+		paddingHorizontal: 10,
+		paddingBottom: 10,
+		paddingTop: 32
+	},
+	productNameOver: {
+		fontSize: 16,
+		fontWeight: '800',
+		color: '#FFF',
+		textShadowColor: 'rgba(0,0,0,0.5)',
+		textShadowOffset: { width: 0, height: 1 },
+		textShadowRadius: 2
 	},
 	stockOverlay: {
 		...StyleSheet.absoluteFill,
@@ -335,17 +328,6 @@ const styles = StyleSheet.create({
 		textTransform: 'uppercase',
 		letterSpacing: 0.5
 	},
-	inStockBadge: {
-		position: 'absolute',
-		top: 10,
-		left: 10,
-		width: 20,
-		height: 20,
-		borderRadius: 10,
-		backgroundColor: 'rgba(16, 185, 129, 0.15)',
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
 	// ── Body ──
 	body: {
 		gap: 6
@@ -355,19 +337,6 @@ const styles = StyleSheet.create({
 	},
 	bodySmall: {
 		padding: 12
-	},
-	productName: {
-		fontWeight: '700',
-		color: '#F8FAFC',
-		letterSpacing: -0.2
-	},
-	productNameNormal: {
-		fontSize: 15,
-		lineHeight: 20
-	},
-	productNameSmall: {
-		fontSize: 14,
-		lineHeight: 18
 	},
 	altName: {
 		fontSize: 11,

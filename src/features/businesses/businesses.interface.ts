@@ -5,8 +5,15 @@ export type LocalizedName = {
 }
 
 type GeoPoint = {
-	type: 'Point'
-	coordinates: [number, number]
+	geo?: {
+		type: 'Point'
+		coordinates: [number, number]
+	}
+	accuracy?: number
+	altitude?: number
+	heading?: number
+	speed?: number
+	deviceTimestamp?: string
 	sharingEnabled?: boolean
 	_id?: string
 	createdAt?: string

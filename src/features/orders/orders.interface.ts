@@ -73,8 +73,12 @@ export interface OrderItem {
 			country: string
 		}
 		location?: {
-			type: string
-			coordinates: number[]
+			geo?: { type: 'Point'; coordinates: number[] }
+			accuracy?: number
+			altitude?: number
+			heading?: number
+			speed?: number
+			deviceTimestamp?: string
 			sharingEnabled?: boolean
 			createdAt?: string
 			updatedAt?: string
@@ -93,8 +97,12 @@ export interface OrderItem {
 			country: string
 		}
 		location?: {
-			type: string
-			coordinates: number[]
+			geo?: { type: 'Point'; coordinates: number[] }
+			accuracy?: number
+			altitude?: number
+			heading?: number
+			speed?: number
+			deviceTimestamp?: string
 			sharingEnabled?: boolean
 			createdAt?: string
 			updatedAt?: string

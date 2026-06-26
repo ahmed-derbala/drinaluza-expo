@@ -38,8 +38,15 @@ interface Address {
 }
 
 interface Location {
-	type: string
-	coordinates: [number, number] // [longitude, latitude]
+	geo?: {
+		type: 'Point'
+		coordinates: [number, number] // [longitude, latitude]
+	}
+	accuracy?: number
+	altitude?: number
+	heading?: number
+	speed?: number
+	deviceTimestamp?: string
 	sharingEnabled?: boolean
 	createdAt?: string
 	updatedAt?: string

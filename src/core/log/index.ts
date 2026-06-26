@@ -18,14 +18,14 @@ export const log = ({ level, label, message = '', error, data }: LogParams) => {
 
 	const isWeb = Platform.OS === 'web'
 
-	// Premium ANSI colors for high terminal readability in Metro/Expo
+	// Disable ANSI color codes because they render as raw text in React Native's LogBox UI on devices/simulators
 	const colors = {
-		info: isWeb ? '' : '\x1b[36m', // Cyan
-		warn: isWeb ? '' : '\x1b[33m', // Yellow
-		error: isWeb ? '' : '\x1b[31m', // Red
-		debug: isWeb ? '' : '\x1b[90m', // Dark Gray
-		reset: isWeb ? '' : '\x1b[0m',
-		bold: isWeb ? '' : '\x1b[1m'
+		info: '',
+		warn: '',
+		error: '',
+		debug: '',
+		reset: '',
+		bold: ''
 	}
 
 	const levelBadge = level.toUpperCase()

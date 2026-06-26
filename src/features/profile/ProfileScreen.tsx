@@ -564,7 +564,7 @@ export default function ProfileScreen() {
 
 			// Get current location
 			const location = await Location.getCurrentPositionAsync({
-				accuracy: Location.Accuracy.Balanced
+				accuracy: Location.Accuracy.Highest
 			})
 
 			const { longitude, latitude } = location.coords

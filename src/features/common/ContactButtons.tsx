@@ -1,0 +1,147 @@
+import React from 'react'
+import { View, TouchableOpacity, StyleSheet, Linking, Platform } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+
+export interface ContactButtonsContact {
+	phone?: { fullNumber: string } | null
+	whatsapp?: string | null
+	email?: string | null
+}
+
+export interface ContactButtonsLocation {
+	geo?: {
+		type?: string
+		coordinates?: number[]
+	}
+	sharingEnabled?: boolean
+}
+
+export interface ContactButtonsAddress {
+	street?: string
+	city?: string
+	state?: string
+	region?: string
+	country?: string
+}
+
+interface ContactButtonsProps {
+	contact?: ContactButtonsContact | null
+	/** GPS location — used first for directions when coordinates are present */
+	location?: ContactButtonsLocation | null
+	/** Structured address — used as a directions fallback when GPS coordinates are unavailable */
+	address?: ContactButtonsAddress | null
+}
+
+export default function ContactButtons({ contact, location, address }: ContactButtonsProps) {
+	const hasPhone = !!contact?.phone?.fullNumber
+	const hasWhatsApp = !!contact?.whatsapp
+	const hasEmail = !!contact?.email
+
+	// Show location button if we have GPS coords OR a usable address
+	const hasGps = !!(location?.geo?.coordinates && location.geo.coordinates.length === 2)
+	const hasAddress = !!(address?.city || address?.street)
+	const hasLocation = hasGps || hasAddress
+
+	if (!hasPhone && !hasWhatsApp && !hasEmail && !hasLocation) return null
+
+	const handleCall = (e: any) => {
+		e.stopPropagation?.()
+		const phone = contact?.phone?.fullNumber
+		if (phone) Linking.openURL(`tel:${phone}`).catch(() => {})
+	}
+
+	const handleWhatsApp = (e: any) => {
+		e.stopPropagation?.()
+		const wa = contact?.whatsapp
+		if (wa) Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
+	}
+
+	const handleEmail = (e: any) => {
+		e.stopPropagation?.()
+		const email = contact?.email
+		if (email) Linking.openURL(`mailto:${email}`).catch(() => {})
+	}
+
+	const handleDirections = (e: any) => {
+		e.stopPropagation?.()
+
+		if (hasGps) {
+			// Prefer GPS coordinates
+			const [lng, lat] = location!.geo!.coordinates!
+			const url = Platform.select({
+				ios: `maps:?daddr=${lat},${lng}`,
+				android: `google.navigation:q=${lat},${lng}`,
+				default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
+			})
+			if (url) Linking.openURL(url).catch(() => {})
+		} else if (hasAddress) {
+			// Fall back to address string
+			const parts = [address!.street, address!.city, address!.state ?? address!.region, address!.country].filter(Boolean)
+			const encoded = encodeURIComponent(parts.join(', '))
+			const url = Platform.select({
+				ios: `maps:?daddr=${encoded}`,
+				android: `google.navigation:q=${encoded}`,
+				default: `https://www.google.com/maps/dir/?api=1&destination=${encoded}`
+			})
+			if (url) Linking.openURL(url).catch(() => {})
+		}
+	}
+
+	return (
+		<View style={styles.row}>
+			{hasPhone && (
+				<TouchableOpacity onPress={handleCall} style={[styles.btn, styles.btnCall]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="Call" accessibilityRole="button">
+					<Ionicons name="call-outline" size={16} color="#4ADE80" />
+				</TouchableOpacity>
+			)}
+			{hasWhatsApp && (
+				<TouchableOpacity onPress={handleWhatsApp} style={[styles.btn, styles.btnWhatsApp]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="WhatsApp" accessibilityRole="button">
+					<Ionicons name="logo-whatsapp" size={16} color="#2DD4BF" />
+				</TouchableOpacity>
+			)}
+			{hasEmail && (
+				<TouchableOpacity onPress={handleEmail} style={[styles.btn, styles.btnEmail]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="Email" accessibilityRole="button">
+					<Ionicons name="mail-outline" size={16} color="#818CF8" />
+				</TouchableOpacity>
+			)}
+			{hasLocation && (
+				<TouchableOpacity onPress={handleDirections} style={[styles.btn, styles.btnLocation]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="Directions" accessibilityRole="button">
+					<Ionicons name="navigate-outline" size={16} color="#F59E0B" />
+				</TouchableOpacity>
+			)}
+		</View>
+	)
+}
+
+const styles = StyleSheet.create({
+	row: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6,
+		flexShrink: 0
+	},
+	btn: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center',
+		borderWidth: StyleSheet.hairlineWidth
+	},
+	btnCall: {
+		backgroundColor: 'rgba(74, 222, 128, 0.10)',
+		borderColor: 'rgba(74, 222, 128, 0.22)'
+	},
+	btnWhatsApp: {
+		backgroundColor: 'rgba(45, 212, 191, 0.10)',
+		borderColor: 'rgba(45, 212, 191, 0.22)'
+	},
+	btnEmail: {
+		backgroundColor: 'rgba(129, 140, 248, 0.10)',
+		borderColor: 'rgba(129, 140, 248, 0.22)'
+	},
+	btnLocation: {
+		backgroundColor: 'rgba(245, 158, 11, 0.10)',
+		borderColor: 'rgba(245, 158, 11, 0.22)'
+	}
+})

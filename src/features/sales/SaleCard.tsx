@@ -1,5 +1,5 @@
 import React from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Linking, Alert, useWindowDimensions, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, ActivityIndicator } from 'react-native'
 import { useTheme, createShadow } from '../../core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
@@ -10,6 +10,7 @@ import { useUser } from '../../core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
 import { toast } from '@/features/common/Toast'
 import { orderStatusEnum as statuses } from '../orders/orderStatus'
+import ContactButtons from '@/features/common/ContactButtons'
 
 interface SaleCardProps {
 	sale: Sale
@@ -60,80 +61,6 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 
 	const statusColor = orderStatusColors[currentStatus as keyof typeof orderStatusColors] || colors.primary
 	const statusLabel = orderStatusLabels[currentStatus as keyof typeof orderStatusLabels] || currentStatus
-
-	const handlePhonePress = async () => {
-		const phoneNumber = sale.customer.contact?.phone?.fullNumber
-		if (phoneNumber) {
-			const url = `tel:${phoneNumber}`
-			const supported = await Linking.canOpenURL(url)
-			if (supported) {
-				await Linking.openURL(url)
-			} else {
-				Alert.alert(translate('error', 'Error'), `${translate('cannot_open_phone', 'Cannot open phone dialer for number')}: ${phoneNumber}`)
-			}
-		}
-	}
-
-	const handleWhatsAppPress = async () => {
-		const whatsapp = sale.customer.contact?.whatsapp
-		if (whatsapp) {
-			const cleanNumber = whatsapp.replace(/[^0-9]/g, '')
-			const url = `https://wa.me/${cleanNumber}`
-			try {
-				await Linking.openURL(url)
-			} catch (err) {
-				Alert.alert(translate('error', 'Error'), translate('cannot_open_whatsapp', 'Could not open WhatsApp'))
-			}
-		}
-	}
-
-	const handleEmailPress = async () => {
-		const email = sale.customer.contact?.email
-		if (email) {
-			const url = `mailto:${email}`
-			try {
-				await Linking.openURL(url)
-			} catch (err) {
-				Alert.alert(translate('error', 'Error'), translate('cannot_open_email', 'Could not open email client'))
-			}
-		}
-	}
-
-	const handleLocationPress = async () => {
-		const location = sale.customer.location
-		const address = sale.customer.address
-
-		if (location?.coordinates && location.sharingEnabled) {
-			const [longitude, latitude] = location.coordinates
-			const url = Platform.select({
-				ios: `maps:?daddr=${latitude},${longitude}`,
-				android: `google.navigation:q=${latitude},${longitude}`,
-				web: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-			})
-			if (url) {
-				try {
-					await Linking.openURL(url)
-				} catch (err) {
-					Alert.alert(translate('error', 'Error'), translate('cannot_open_maps', 'Could not open maps application'))
-				}
-			}
-		} else if (address) {
-			const addressString = `${address.street}, ${address.city}, ${address.state}, ${address.country}`
-			const encodedAddress = encodeURIComponent(addressString)
-			const url = Platform.select({
-				ios: `maps:?daddr=${encodedAddress}`,
-				android: `google.navigation:q=${encodedAddress}`,
-				web: `https://www.google.com/maps/dir/?api=1&destination=${encodedAddress}`
-			})
-			if (url) {
-				try {
-					await Linking.openURL(url)
-				} catch (err) {
-					Alert.alert(translate('error', 'Error'), translate('cannot_open_maps', 'Could not open maps application'))
-				}
-			}
-		}
-	}
 
 	const handleStatusUpdate = async (newStatus: string) => {
 		try {
@@ -238,29 +165,8 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 					</View>
 				</View>
 
-				{/* Contact Icons */}
-				<View style={styles.contactIcons}>
-					{sale.customer.contact?.phone?.fullNumber && (
-						<TouchableOpacity onPress={handlePhonePress} style={[styles.contactIcon, { backgroundColor: colors.surface }]} activeOpacity={0.7}>
-							<Ionicons name="call-outline" size={18} color={colors.primary} />
-						</TouchableOpacity>
-					)}
-					{sale.customer.contact?.whatsapp && (
-						<TouchableOpacity onPress={handleWhatsAppPress} style={[styles.contactIcon, styles.whatsappIcon]} activeOpacity={0.7}>
-							<Ionicons name="logo-whatsapp" size={18} color="#fff" />
-						</TouchableOpacity>
-					)}
-					{sale.customer.contact?.email && (
-						<TouchableOpacity onPress={handleEmailPress} style={[styles.contactIcon, { backgroundColor: colors.surface }]} activeOpacity={0.7}>
-							<Ionicons name="mail-outline" size={18} color={colors.primary} />
-						</TouchableOpacity>
-					)}
-					{(sale.customer.location?.coordinates || sale.customer.address) && (
-						<TouchableOpacity onPress={handleLocationPress} style={[styles.contactIcon, { backgroundColor: colors.surface }]} activeOpacity={0.7}>
-							<Ionicons name="location-outline" size={18} color={colors.primary} />
-						</TouchableOpacity>
-					)}
-				</View>
+				{/* Contact Buttons */}
+				<ContactButtons contact={sale.customer.contact} location={sale.customer.location} address={sale.customer.address} />
 			</View>
 
 			{/* Products Section - Scrollable */}
@@ -364,22 +270,6 @@ const styles = StyleSheet.create({
 	},
 	customerAddress: {
 		fontSize: 13
-	},
-	contactIcons: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8
-	},
-	contactIcon: {
-		width: 36,
-		height: 36,
-		borderRadius: 18,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...createShadow({ offsetY: 1, opacity: 0.1, radius: 2, elevation: 2 })
-	},
-	whatsappIcon: {
-		backgroundColor: '#25D366'
 	},
 	productsContainer: {
 		paddingVertical: 12
