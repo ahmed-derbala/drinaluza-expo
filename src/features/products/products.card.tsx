@@ -114,7 +114,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 					</View>
 				</TouchableOpacity>
 
-				<ContactButtons contact={item.business?.contact} location={item.business?.location} />
+				<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
 			</View>
 
 			{/* Address */}

@@ -24,6 +24,7 @@ import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/features/auth/auth.api'
+import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
@@ -250,7 +251,18 @@ export default function ProfileScreen() {
 		if (!userData) return
 
 		try {
-			// Prepare payload
+			// Prepare payload - transform location to match backend schema
+			const locationPayload: any = { ...userData.location }
+			// Handle legacy format (coordinates at top level) by transforming to new format
+			if (locationPayload && 'coordinates' in locationPayload && !locationPayload.geo) {
+				locationPayload.geo = {
+					type: (locationPayload as any).type || 'Point',
+					coordinates: (locationPayload as any).coordinates
+				}
+				delete (locationPayload as any).type
+				delete (locationPayload as any).coordinates
+			}
+
 			const payload = {
 				name: userData.name,
 				contact: {
@@ -261,7 +273,7 @@ export default function ProfileScreen() {
 				},
 				basicInfos: userData.basicInfos,
 				address: userData.address,
-				location: userData.location,
+				location: locationPayload,
 				settings: userData.settings,
 				socialMedia: userData.socialMedia,
 				media: userData.media
@@ -567,12 +579,19 @@ export default function ProfileScreen() {
 				accuracy: Location.Accuracy.Highest
 			})
 
-			const { longitude, latitude } = location.coords
+			const { longitude, latitude, accuracy, heading, speed, altitude } = location.coords
 
 			// Update user data with new location and enable sharing
+			// Coordinates order: [longitude, latitude] as per GeoJSON spec
 			updateField('location', {
-				type: 'Point',
-				coordinates: [longitude, latitude],
+				geo: {
+					type: 'Point',
+					coordinates: [longitude, latitude]
+				},
+				accuracy,
+				heading,
+				speed,
+				altitude,
 				sharingEnabled: true // Always enable sharing when getting current location
 			})
 
@@ -589,7 +608,10 @@ export default function ProfileScreen() {
 		if (currentlyEnabled) {
 			// Disable sharing: remove coordinates
 			updateField('location', {
-				type: userData?.location?.type || 'Point',
+				geo: {
+					type: 'Point',
+					coordinates: []
+				},
 				sharingEnabled: false
 			})
 			return
@@ -604,11 +626,18 @@ export default function ProfileScreen() {
 			}
 
 			const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-			const { longitude, latitude } = location.coords
+			const { longitude, latitude, accuracy, heading, speed, altitude } = location.coords
 
+			// Coordinates order: [longitude, latitude] as per GeoJSON spec
 			updateField('location', {
-				type: 'Point',
-				coordinates: [longitude, latitude],
+				geo: {
+					type: 'Point',
+					coordinates: [longitude, latitude]
+				},
+				accuracy,
+				heading,
+				speed,
+				altitude,
 				sharingEnabled: true
 			})
 			showAlert('Success', `Location sharing enabled: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
@@ -1030,15 +1059,18 @@ export default function ProfileScreen() {
 											</View>
 											<TextInput
 												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.location?.coordinates?.[0]?.toString() || ''}
+												value={userData.location?.geo?.coordinates?.[0]?.toString() || ''}
 												onChangeText={(value) => {
 													if (userData.location?.sharingEnabled === false) return
-													const coords = userData.location?.coordinates || [0, 0]
+													const coords = userData.location?.geo?.coordinates || [0, 0]
 													const newCoords: [number, number] = [parseFloat(value) || 0, coords[1]]
+													// Preserve all location fields, only update coordinates
 													updateField('location', {
-														type: 'Point',
-														coordinates: newCoords,
-														sharingEnabled: userData.location?.sharingEnabled ?? true
+														...userData.location,
+														geo: {
+															type: 'Point',
+															coordinates: newCoords
+														}
 													})
 												}}
 												placeholder="10.8045"
@@ -1065,15 +1097,18 @@ export default function ProfileScreen() {
 											</View>
 											<TextInput
 												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.location?.coordinates?.[1]?.toString() || ''}
+												value={userData.location?.geo?.coordinates?.[1]?.toString() || ''}
 												onChangeText={(value) => {
 													if (userData.location?.sharingEnabled === false) return
-													const coords = userData.location?.coordinates || [0, 0]
+													const coords = userData.location?.geo?.coordinates || [0, 0]
 													const newCoords: [number, number] = [coords[0], parseFloat(value) || 0]
+													// Preserve all location fields, only update coordinates
 													updateField('location', {
-														type: 'Point',
-														coordinates: newCoords,
-														sharingEnabled: userData.location?.sharingEnabled ?? true
+														...userData.location,
+														geo: {
+															type: 'Point',
+															coordinates: newCoords
+														}
 													})
 												}}
 												placeholder="35.7905"
@@ -1113,51 +1148,28 @@ export default function ProfileScreen() {
 							</View>
 						) : (
 							<>
-								{userData.location?.coordinates && (
+								{getGeoCoordinates(userData.location) && (
 									<>
 										<InfoItem
 											label="GPS Coordinates"
-											value={userData.location?.coordinates ? `${userData.location.coordinates[1].toFixed(4)}, ${userData.location.coordinates[0].toFixed(4)}` : translate('not_set', 'Not set')}
+											value={(() => {
+												const coords = getGeoCoordinates(userData.location)
+												return coords ? `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}` : translate('not_set', 'Not set')
+											})()}
 											icon="location"
 											styles={styles}
 											iconColor={colors.primary}
-											onPress={() => {
-												if (userData.location?.coordinates) {
-													const [longitude, latitude] = userData.location.coordinates
-													const mapUrl = Platform.select({
-														ios: `maps:?daddr=${latitude},${longitude}`,
-														android: `google.navigation:q=${latitude},${longitude}`,
-														default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-													})
-													if (mapUrl) {
-														Linking.openURL(mapUrl).catch(() => {})
-													}
-												}
-											}}
+											onPress={() => openDirections(userData.location, userData.address)}
 											onCopy={async () => {
-												if (userData.location?.coordinates) {
-													const [longitude, latitude] = userData.location.coordinates
+												const coords = getGeoCoordinates(userData.location)
+												if (coords) {
+													const [longitude, latitude] = coords
 													await Clipboard.setStringAsync(`${latitude}, ${longitude}`)
 													showAlert('Copied', 'Location coordinates copied to clipboard')
 												}
 											}}
 										/>
-										<TouchableOpacity
-											style={[styles.iconButton, { alignSelf: 'center', marginTop: 16 }]}
-											onPress={() => {
-												if (userData.location?.coordinates) {
-													const [longitude, latitude] = userData.location.coordinates
-													const mapUrl = Platform.select({
-														ios: `maps:?daddr=${latitude},${longitude}`,
-														android: `google.navigation:q=${latitude},${longitude}`,
-														default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-													})
-													if (mapUrl) {
-														Linking.openURL(mapUrl).catch(() => {})
-													}
-												}
-											}}
-										>
+										<TouchableOpacity style={[styles.iconButton, { alignSelf: 'center', marginTop: 16 }]} onPress={() => openDirections(userData.location, userData.address)}>
 											<Ionicons name="map" size={24} color={colors.primary} />
 										</TouchableOpacity>
 									</>
@@ -1171,7 +1183,7 @@ export default function ProfileScreen() {
 										iconColor={userData.location.sharingEnabled ? colors.primary : colors.textSecondary}
 									/>
 								)}
-								{!userData.location?.coordinates && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
+								{!getGeoCoordinates(userData.location) && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
 							</>
 						)}
 					</Section>

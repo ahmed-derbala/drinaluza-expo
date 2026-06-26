@@ -1,6 +1,7 @@
 import React from 'react'
-import { View, TouchableOpacity, StyleSheet, Linking, Platform } from 'react-native'
+import { View, TouchableOpacity, StyleSheet, Linking } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { hasDirectionsTarget, openDirections } from '@/core/helpers/maps'
 
 export interface ContactButtonsContact {
 	phone?: { fullNumber: string } | null
@@ -13,6 +14,8 @@ export interface ContactButtonsLocation {
 		type?: string
 		coordinates?: number[]
 	}
+	coordinates?: number[]
+	type?: string
 	sharingEnabled?: boolean
 }
 
@@ -37,10 +40,7 @@ export default function ContactButtons({ contact, location, address }: ContactBu
 	const hasWhatsApp = !!contact?.whatsapp
 	const hasEmail = !!contact?.email
 
-	// Show location button if we have GPS coords OR a usable address
-	const hasGps = !!(location?.geo?.coordinates && location.geo.coordinates.length === 2)
-	const hasAddress = !!(address?.city || address?.street)
-	const hasLocation = hasGps || hasAddress
+	const hasLocation = hasDirectionsTarget(location, address)
 
 	if (!hasPhone && !hasWhatsApp && !hasEmail && !hasLocation) return null
 
@@ -64,27 +64,7 @@ export default function ContactButtons({ contact, location, address }: ContactBu
 
 	const handleDirections = (e: any) => {
 		e.stopPropagation?.()
-
-		if (hasGps) {
-			// Prefer GPS coordinates
-			const [lng, lat] = location!.geo!.coordinates!
-			const url = Platform.select({
-				ios: `maps:?daddr=${lat},${lng}`,
-				android: `google.navigation:q=${lat},${lng}`,
-				default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-			})
-			if (url) Linking.openURL(url).catch(() => {})
-		} else if (hasAddress) {
-			// Fall back to address string
-			const parts = [address!.street, address!.city, address!.state ?? address!.region, address!.country].filter(Boolean)
-			const encoded = encodeURIComponent(parts.join(', '))
-			const url = Platform.select({
-				ios: `maps:?daddr=${encoded}`,
-				android: `google.navigation:q=${encoded}`,
-				default: `https://www.google.com/maps/dir/?api=1&destination=${encoded}`
-			})
-			if (url) Linking.openURL(url).catch(() => {})
-		}
+		openDirections(location, address)
 	}
 
 	return (

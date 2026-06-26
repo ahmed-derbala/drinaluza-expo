@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
 import { toast } from '@/features/common/Toast'
 import { parseError, logError } from '@/core/helpers/errorHandler'
+import { getGeoCoordinates } from '@/core/helpers/maps'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -61,7 +62,7 @@ const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedIt
 			const location = businessContactCache.get(`${bSlug}_location`) || localLocations.get(bSlug)
 
 			const hasNewContact = contact && !item.business.contact
-			const hasNewLocation = location && (!item.business.location || !item.business.location.coordinates)
+			const hasNewLocation = location && !getGeoCoordinates(item.business.location)
 
 			if (hasNewContact || hasNewLocation) {
 				hasUpdates = true

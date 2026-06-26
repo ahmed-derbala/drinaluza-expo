@@ -10,6 +10,7 @@ import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
 import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
+import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
@@ -112,16 +113,7 @@ export default function BusinessDetailsScreen() {
 	const [showQRCode, setShowQRCode] = useState(false)
 
 	const handleOpenMap = () => {
-		if (!business?.location?.coordinates) return
-		const [lng, lat] = business.location.coordinates
-		const url = Platform.select({
-			ios: `maps:?daddr=${lat},${lng}`,
-			android: `google.navigation:q=${lat},${lng}`,
-			default: `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`
-		})
-		if (url) {
-			Linking.openURL(url).catch((err) => console.error('Failed to open map:', err))
-		}
+		openDirections(business?.location, business?.address)
 	}
 
 	if (loading) {
@@ -169,6 +161,7 @@ export default function BusinessDetailsScreen() {
 	if (business.address?.region) addressParts.push(business.address.region)
 	if (business.address?.country) addressParts.push(business.address.country)
 	const fullAddress = addressParts.join(', ')
+	const businessCoords = getGeoCoordinates(business.location)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -261,14 +254,14 @@ export default function BusinessDetailsScreen() {
 					)}
 
 					{/* Location Coordinates */}
-					{business.location?.coordinates && (
+					{businessCoords && (
 						<TouchableOpacity style={styles.infoRow} onPress={handleOpenMap} activeOpacity={0.7}>
 							<Ionicons name="map-outline" size={18} color={colors.textSecondary} />
 							<View style={styles.infoContent}>
 								<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('business_location', 'Location')}</Text>
 								<View style={styles.locationRow}>
 									<Text style={[styles.infoValue, { color: colors.text }]}>
-										{business.location.coordinates[1].toFixed(4)}, {business.location.coordinates[0].toFixed(4)}
+										{businessCoords[1].toFixed(4)}, {businessCoords[0].toFixed(4)}
 									</Text>
 									<Ionicons name="open-outline" size={16} color={colors.primary} />
 								</View>

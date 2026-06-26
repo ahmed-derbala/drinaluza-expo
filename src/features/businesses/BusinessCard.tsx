@@ -6,6 +6,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { Business } from './businesses.interface'
 import { useRouter } from 'expo-router'
+import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 
 export interface BusinessCardProps {
 	business: Business
@@ -125,23 +126,8 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 							<Ionicons name="logo-whatsapp" size={isExtraSmall ? 16 : 18} color="#fff" />
 						</TouchableOpacity>
 					) : null}
-					{business.location?.coordinates ? (
-						<TouchableOpacity
-							style={styles.contactButton as ViewStyle}
-							onPress={() => {
-								if (business.location?.coordinates) {
-									const [longitude, latitude] = business.location.coordinates
-									const mapUrl = Platform.select({
-										ios: `maps:?daddr=${latitude},${longitude}`,
-										android: `google.navigation:q=${latitude},${longitude}`,
-										default: `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`
-									})
-									if (mapUrl) {
-										Linking.openURL(mapUrl).catch(() => {})
-									}
-								}
-							}}
-						>
+					{getGeoCoordinates(business.location) ? (
+						<TouchableOpacity style={styles.contactButton as ViewStyle} onPress={() => openDirections(business.location, business.address)}>
 							<Ionicons name="map-outline" size={isExtraSmall ? 16 : 18} color={colors.primary} />
 						</TouchableOpacity>
 					) : null}

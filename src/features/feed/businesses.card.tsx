@@ -51,7 +51,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 					</View>
 				</TouchableOpacity>
 
-				<ContactButtons contact={item.contact} location={item.business?.location} />
+				<ContactButtons contact={item.contact} location={item.business?.location} address={item.business?.address} />
 			</View>
 
 			{/* ── Address row ── */}
