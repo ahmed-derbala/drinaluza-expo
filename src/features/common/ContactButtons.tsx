@@ -70,22 +70,50 @@ export default function ContactButtons({ contact, location, address }: ContactBu
 	return (
 		<View style={styles.row}>
 			{hasPhone && (
-				<TouchableOpacity onPress={handleCall} style={[styles.btn, styles.btnCall]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="Call" accessibilityRole="button">
+				<TouchableOpacity
+					onPress={handleCall}
+					style={[styles.btn, styles.btnCall]}
+					hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+					activeOpacity={0.7}
+					accessibilityLabel="Call"
+					accessibilityRole="button"
+				>
 					<Ionicons name="call-outline" size={16} color="#4ADE80" />
 				</TouchableOpacity>
 			)}
 			{hasWhatsApp && (
-				<TouchableOpacity onPress={handleWhatsApp} style={[styles.btn, styles.btnWhatsApp]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="WhatsApp" accessibilityRole="button">
+				<TouchableOpacity
+					onPress={handleWhatsApp}
+					style={[styles.btn, styles.btnWhatsApp]}
+					hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+					activeOpacity={0.7}
+					accessibilityLabel="WhatsApp"
+					accessibilityRole="button"
+				>
 					<Ionicons name="logo-whatsapp" size={16} color="#2DD4BF" />
 				</TouchableOpacity>
 			)}
 			{hasEmail && (
-				<TouchableOpacity onPress={handleEmail} style={[styles.btn, styles.btnEmail]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="Email" accessibilityRole="button">
+				<TouchableOpacity
+					onPress={handleEmail}
+					style={[styles.btn, styles.btnEmail]}
+					hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+					activeOpacity={0.7}
+					accessibilityLabel="Email"
+					accessibilityRole="button"
+				>
 					<Ionicons name="mail-outline" size={16} color="#818CF8" />
 				</TouchableOpacity>
 			)}
 			{hasLocation && (
-				<TouchableOpacity onPress={handleDirections} style={[styles.btn, styles.btnLocation]} hitSlop={6} activeOpacity={0.7} accessibilityLabel="Directions" accessibilityRole="button">
+				<TouchableOpacity
+					onPress={handleDirections}
+					style={[styles.btn, styles.btnLocation]}
+					hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
+					activeOpacity={0.7}
+					accessibilityLabel="Directions"
+					accessibilityRole="button"
+				>
 					<Ionicons name="navigate-outline" size={16} color="#F59E0B" />
 				</TouchableOpacity>
 			)}

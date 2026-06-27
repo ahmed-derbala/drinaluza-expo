@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.27.5] - 27 june 2026
+### Removed
+- Completely remove isStartupChecking state, comments, and the black splash screen loader rendering gate from root `_layout.tsx`.
+
+## [1.27.4] - 27 june 2026
+### Changed
+- Optimize Android startup performance by making update check non-blocking and running it asynchronously in the background.
+
+## [1.27.3] - 27 june 2026
+### Fixed
+- Fix application crash on the Web platform inside `ContactButtons` and `UserCard` by correcting `hitSlop` format from number to object.
+- Fix deprecated `textShadow*` stylesheet property warnings on Web inside `ProductCard` styles.
+
+## [1.27.2] - 27 june 2026
+### Added
+- Add a Cancel button during active download progress on the Updates screen.
+- Retain incomplete download `.tmp` files on app startup by skipping their deletion inside `performStartupCleanup()`.
+- Persist download resume data locally in Storage so downloads can survive application restarts.
+
 ## [1.27.1] - 27 june 2026
 ### Changed
 - Filter out default menu items (Home, Settings, About, Updates) in `SmartKebabMenu` if they match the currently active route path/screen.

@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import { config } from '@/config'
 import { log } from '@/core/log'
+import { getItem, setItem, removeItem } from '@/core/storage'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
 
 export const UpdatesContext = createContext<UpdatesContextProps | undefined>(undefined)
@@ -226,6 +227,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		setIsDownloading(true)
 		setIsPaused(false)
 		resumeDataRef.current = null
+		await removeItem('download_resume_data')
 		setDownloadProgress(0)
 		await ensureUpdatesFolder()
 
@@ -249,6 +251,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 			setIsDownloading(false)
 			setDownloadProgress(1)
+			await removeItem('download_resume_data')
 
 			if (downloadResult && downloadResult.uri) {
 				// Rename temp file to final .apk file on successful completion
@@ -275,6 +278,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setIsPaused(false)
 			setDownloadProgress(0)
 			activeDownloadRef.current = null
+			await removeItem('download_resume_data')
 			// Clean up temp file on failure
 			await FileSystem.deleteAsync(tempFileUri, { idempotent: true }).catch(() => {})
 			console.error('[UpdatesContext] File download error:', err)
@@ -287,9 +291,13 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		if (activeDownloadRef.current && isDownloading && !isPaused) {
 			try {
 				const result = await activeDownloadRef.current.pauseAsync()
-				resumeDataRef.current = result.resumeData || null
+				const resumeData = result.resumeData || null
+				resumeDataRef.current = resumeData
 				setIsPaused(true)
 				setIsDownloading(false)
+				if (resumeData) {
+					await setItem('download_resume_data', resumeData)
+				}
 				log({ level: 'info', label: 'UpdatesContext', message: 'Download paused' })
 			} catch (err) {
 				console.error('[UpdatesContext] Failed to pause download:', err)
@@ -339,6 +347,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setIsDownloading(false)
 			setDownloadProgress(1)
 			resumeDataRef.current = null
+			await removeItem('download_resume_data')
 
 			if (downloadResult && downloadResult.uri) {
 				await FileSystem.moveAsync({
@@ -360,6 +369,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setIsPaused(false)
 			setDownloadProgress(0)
 			activeDownloadRef.current = null
+			await removeItem('download_resume_data')
 			console.error('[UpdatesContext] File resume download error:', err)
 			throw err
 		}
@@ -379,6 +389,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			activeDownloadRef.current = null
 		}
 		resumeDataRef.current = null
+		await removeItem('download_resume_data')
 		if (latestRelease) {
 			const filename = `drinaluza-${latestRelease.latest_version}.apk.tmp`
 			await FileSystem.deleteAsync(UPDATES_FOLDER + filename, { idempotent: true }).catch(() => {})
@@ -410,10 +421,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			for (const file of files) {
 				const filePath = UPDATES_FOLDER + file
 
-				// 1. Delete all .tmp files (incomplete downloads)
+				// 1. Keep .tmp files (incomplete downloads) for potential resume on app startup
 				if (file.endsWith('.tmp')) {
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting incomplete download ${file}` })
-					await FileSystem.deleteAsync(filePath, { idempotent: true })
 					continue
 				}
 
@@ -468,6 +477,15 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		const init = async () => {
 			await performStartupCleanup()
 			await refreshApkList()
+			try {
+				const savedResumeData = await getItem<string>('download_resume_data')
+				if (savedResumeData) {
+					resumeDataRef.current = savedResumeData
+					setIsPaused(true)
+				}
+			} catch (e) {
+				console.warn('[UpdatesContext] Failed to load saved download resume data:', e)
+			}
 		}
 		init()
 	}, [performStartupCleanup, refreshApkList])

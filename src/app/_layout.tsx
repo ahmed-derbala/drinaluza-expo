@@ -24,13 +24,11 @@ import { AppThemeProvider, useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
-	const [isStartupChecking, setIsStartupChecking] = useState(true)
 	const router = useRouter()
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
 			if (Platform.OS !== 'android') {
-				setIsStartupChecking(false)
 				return
 			}
 
@@ -40,10 +38,7 @@ function RootLayoutContent() {
 					const hasNewerRelease = isVersionGreater(release.latest_version, config.app.version)
 					if (hasNewerRelease) {
 						// There is a newer version! Redirect to updates page
-						setIsStartupChecking(false)
-						setTimeout(() => {
-							router.replace('/updates' as any)
-						}, 0)
+						router.replace('/updates' as any)
 						return
 					} else {
 						// Current version is equal or higher! Check for ready downloaded APKs
@@ -57,22 +52,11 @@ function RootLayoutContent() {
 				}
 			} catch (e) {
 				console.warn('[StartupGate] Startup update check failed:', e)
-			} finally {
-				setIsStartupChecking(false)
 			}
 		}
 
 		performStartupCheck()
 	}, [])
-
-	if (isStartupChecking) {
-		// Solid black splash gate to completely prevent white flashes or home screen rendering
-		return (
-			<View style={{ flex: 1, backgroundColor: '#000000', justifyContent: 'center', alignItems: 'center' }}>
-				<ActivityIndicator size="large" color="#0EA5E9" />
-			</View>
-		)
-	}
 
 	return (
 		<ErrorBoundary>

@@ -91,7 +91,12 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]} onPress={handleProductPress} accessibilityRole="button" accessibilityLabel={mainName}>
+		<Pressable
+			style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+			onPress={handleProductPress}
+			accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
+			accessibilityLabel={mainName}
+		>
 			{/* ── Business header ── */}
 			<View style={styles.bizRow}>
 				<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
@@ -304,9 +309,16 @@ const styles = StyleSheet.create({
 		fontSize: 16,
 		fontWeight: '800',
 		color: '#FFF',
-		textShadowColor: 'rgba(0,0,0,0.5)',
-		textShadowOffset: { width: 0, height: 1 },
-		textShadowRadius: 2
+		...Platform.select({
+			web: {
+				textShadow: '0px 1px 2px rgba(0,0,0,0.5)'
+			} as any,
+			default: {
+				textShadowColor: 'rgba(0,0,0,0.5)',
+				textShadowOffset: { width: 0, height: 1 },
+				textShadowRadius: 2
+			}
+		})
 	},
 	stockOverlay: {
 		...StyleSheet.absoluteFill,

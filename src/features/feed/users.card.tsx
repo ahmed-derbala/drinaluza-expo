@@ -103,17 +103,17 @@ export default function UserCard({ item }: UserCardProps) {
 				{hasContact && (
 					<View style={styles.contactRow}>
 						{item.contact?.phone && (
-							<TouchableOpacity style={styles.contactBtn} onPress={handleCall} hitSlop={12}>
+							<TouchableOpacity style={styles.contactBtn} onPress={handleCall} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
 								<Ionicons name="call-outline" size={16} color="#0EA5E9" />
 							</TouchableOpacity>
 						)}
 						{item.contact?.whatsapp && (
-							<TouchableOpacity style={[styles.contactBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={12}>
+							<TouchableOpacity style={[styles.contactBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
 								<Ionicons name="logo-whatsapp" size={16} color="#2DD4BF" />
 							</TouchableOpacity>
 						)}
 						{item.contact?.email && (
-							<TouchableOpacity style={styles.contactBtn} onPress={handleEmail} hitSlop={12}>
+							<TouchableOpacity style={styles.contactBtn} onPress={handleEmail} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
 								<Ionicons name="mail-outline" size={16} color="#0EA5E9" />
 							</TouchableOpacity>
 						)}

@@ -351,10 +351,17 @@ export default function UpdatesScreen() {
 
 						<View style={[styles.rowButtons, { marginTop: 12 }]}>
 							{isDownloading && (
-								<TouchableOpacity onPress={pauseDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
-									<Ionicons name="pause-outline" size={18} color={colors.textSecondary} />
-									<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>{translate('pause', 'Pause')}</Text>
-								</TouchableOpacity>
+								<>
+									<TouchableOpacity onPress={pauseDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
+										<Ionicons name="pause-outline" size={18} color={colors.textSecondary} />
+										<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>{translate('pause', 'Pause')}</Text>
+									</TouchableOpacity>
+
+									<TouchableOpacity onPress={cancelDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
+										<Ionicons name="close-outline" size={18} color={colors.error} />
+										<Text style={[styles.secondaryButtonText, { color: colors.error }]}>{translate('cancel', 'Cancel')}</Text>
+									</TouchableOpacity>
+								</>
 							)}
 
 							{isPaused && (
