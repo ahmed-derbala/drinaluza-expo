@@ -217,5 +217,13 @@ export const en = {
 	theme_light: 'Light',
 	theme_dark: 'Dark',
 	username_invalid_chars: 'Username can only contain lowercase letters, numbers, and hyphens.',
-	username_invalid_hyphen: 'Hyphen (-) cannot be the first or last character of the username.'
+	username_invalid_hyphen: 'Hyphen (-) cannot be the first or last character of the username.',
+	search_title: 'Search',
+	search_placeholder: 'Search products or users...',
+	search_history: 'Search History',
+	clear_history: 'Clear History',
+	search_scopes: 'Scopes',
+	search_no_results: 'No search results found',
+	search_start_typing: 'Search for products or user profiles',
+	filters: 'Filters'
 }

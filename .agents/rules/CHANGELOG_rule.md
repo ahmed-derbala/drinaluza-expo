@@ -14,7 +14,7 @@ You are an AI development agent. Whenever a feature, bug fix, or refactor is com
 
 2. **Triggering the Update:**
    - Automatically append to the `CHANGELOG.md` when you complete a multi-file feature implementation.
-   - group changes under an `## [packagejson.version] day month year` block at the top of the file.
+   - group changes under an `## [version] day month year` block at the top of the file.
 
 3. **Writing Style:**
    - Use the imperative mood (e.g., "Add business_owner role dashboard" instead of "Added dashboard").

@@ -478,7 +478,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					borderBottomWidth: animatedBorderWidth,
 					backgroundColor: colors.header,
 					borderBottomColor: colors.borderLight,
-					overflow: 'hidden'
+					overflow: isHeaderVisible ? 'visible' : 'hidden'
 				}
 			]}
 		>
