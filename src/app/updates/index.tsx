@@ -16,7 +16,24 @@ export default function UpdatesScreen() {
 	const router = useRouter()
 	const { width } = useWindowDimensions()
 
-	const { isChecking, latestRelease, error, downloadProgress, isDownloading, downloadedApks, deviceFreeStorage, checkForUpdates, downloadUpdate, installApk, deleteApk, refreshApkList } = useUpdates()
+	const {
+		isChecking,
+		latestRelease,
+		error,
+		downloadProgress,
+		isDownloading,
+		downloadedApks,
+		deviceFreeStorage,
+		checkForUpdates,
+		downloadUpdate,
+		installApk,
+		deleteApk,
+		refreshApkList,
+		isPaused,
+		pauseDownload,
+		resumeDownload,
+		cancelDownload
+	} = useUpdates()
 
 	const [copied, setCopied] = useState(false)
 
@@ -319,16 +336,41 @@ export default function UpdatesScreen() {
 	}
 
 	const renderNativeActions = () => {
+		const isDownloadingOrPaused = isDownloading || isPaused
+
 		return (
 			<View style={styles.actionsContainer}>
-				{isDownloading ? (
+				{isDownloadingOrPaused ? (
 					<View style={styles.progressContainer}>
 						<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
 							<LinearGradient colors={[colors.primary, '#8B5CF6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
 						</View>
 						<Text style={[styles.progressText, { color: colors.textSecondary }]}>
-							{translate('downloading', 'Downloading')}... {Math.round(downloadProgress * 100)}%
+							{isPaused ? `${translate('paused', 'Paused')}... ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')}... ${Math.round(downloadProgress * 100)}%`}
 						</Text>
+
+						<View style={[styles.rowButtons, { marginTop: 12 }]}>
+							{isDownloading && (
+								<TouchableOpacity onPress={pauseDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
+									<Ionicons name="pause-outline" size={18} color={colors.textSecondary} />
+									<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>{translate('pause', 'Pause')}</Text>
+								</TouchableOpacity>
+							)}
+
+							{isPaused && (
+								<>
+									<TouchableOpacity onPress={resumeDownload} style={[styles.primaryButton, { backgroundColor: colors.primary, flex: 1, height: 44 }]}>
+										<Ionicons name="play-outline" size={18} color="#FFFFFF" />
+										<Text style={styles.primaryButtonText}>{translate('resume', 'Resume')}</Text>
+									</TouchableOpacity>
+
+									<TouchableOpacity onPress={cancelDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
+										<Ionicons name="close-outline" size={18} color={colors.error} />
+										<Text style={[styles.secondaryButtonText, { color: colors.error }]}>{translate('cancel', 'Cancel')}</Text>
+									</TouchableOpacity>
+								</>
+							)}
+						</View>
 					</View>
 				) : (
 					<View style={styles.rowButtons}>

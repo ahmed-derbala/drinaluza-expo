@@ -26,6 +26,10 @@ export interface UpdatesContextProps {
 	deviceFreeStorage: number // bytes
 	checkForUpdates: (manual?: boolean) => Promise<UpdateCheckResult | null>
 	downloadUpdate: () => Promise<string | null>
+	isPaused: boolean
+	pauseDownload: () => Promise<void>
+	resumeDownload: () => Promise<string | null>
+	cancelDownload: () => Promise<void>
 	installApk: (fileUri: string) => Promise<void>
 	deleteApk: (fileUri: string) => Promise<void>
 	refreshApkList: () => Promise<CachedApkMetadata[]>

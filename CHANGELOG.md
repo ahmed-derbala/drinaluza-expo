@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.26.15] - 27 june 2026
+### Added
+- Add pause, resume, and cancel download controls to Updates screen layout.
+- Implement `pauseDownload`, `resumeDownload`, and `cancelDownload` callback logic inside `UpdatesContext.tsx` to handle partial download resume files dynamically.
+
 ## [1.26.14] - 27 june 2026
 ### Added
 - Create SearchScreen with search input, 1-second query debounce, collapsible filters (products and users scopes), and search history persistence.

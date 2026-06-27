@@ -78,6 +78,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const [deviceFreeStorage, setDeviceFreeStorage] = useState(0)
 
 	const activeDownloadRef = useRef<FileSystem.DownloadResumable | null>(null)
+	const [isPaused, setIsPaused] = useState(false)
+	const resumeDataRef = useRef<string | null>(null)
 
 	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
@@ -222,6 +224,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		}
 
 		setIsDownloading(true)
+		setIsPaused(false)
+		resumeDataRef.current = null
 		setDownloadProgress(0)
 		await ensureUpdatesFolder()
 
@@ -263,7 +267,12 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 			return null
 		} catch (err) {
+			if (resumeDataRef.current) {
+				setIsDownloading(false)
+				return null
+			}
 			setIsDownloading(false)
+			setIsPaused(false)
 			setDownloadProgress(0)
 			activeDownloadRef.current = null
 			// Clean up temp file on failure
@@ -272,6 +281,109 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			throw err
 		}
 	}, [latestRelease, refreshApkList, pruneOldApks, installApk])
+
+	// Pause Download
+	const pauseDownload = useCallback(async () => {
+		if (activeDownloadRef.current && isDownloading && !isPaused) {
+			try {
+				const result = await activeDownloadRef.current.pauseAsync()
+				resumeDataRef.current = result.resumeData || null
+				setIsPaused(true)
+				setIsDownloading(false)
+				log({ level: 'info', label: 'UpdatesContext', message: 'Download paused' })
+			} catch (err) {
+				console.error('[UpdatesContext] Failed to pause download:', err)
+			}
+		}
+	}, [isDownloading, isPaused])
+
+	// Resume Download
+	const resumeDownload = useCallback(async (): Promise<string | null> => {
+		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
+			return null
+		}
+
+		setIsDownloading(true)
+		setIsPaused(false)
+		await ensureUpdatesFolder()
+
+		const filename = `drinaluza-${latestRelease.latest_version}.apk`
+		const fileUri = UPDATES_FOLDER + filename
+		const tempFileUri = fileUri + '.tmp'
+
+		try {
+			let downloadResumable: FileSystem.DownloadResumable
+
+			if (resumeDataRef.current) {
+				downloadResumable = FileSystem.createDownloadResumable(
+					latestRelease.download_url,
+					tempFileUri,
+					{},
+					(downloadProgressData) => {
+						const progress = downloadProgressData.totalBytesWritten / downloadProgressData.totalBytesExpectedToWrite
+						setDownloadProgress(isNaN(progress) ? 0 : progress)
+					},
+					resumeDataRef.current
+				)
+			} else {
+				downloadResumable = FileSystem.createDownloadResumable(latestRelease.download_url, tempFileUri, {}, (downloadProgressData) => {
+					const progress = downloadProgressData.totalBytesWritten / downloadProgressData.totalBytesExpectedToWrite
+					setDownloadProgress(isNaN(progress) ? 0 : progress)
+				})
+			}
+
+			activeDownloadRef.current = downloadResumable
+			const downloadResult = await downloadResumable.resumeAsync()
+			activeDownloadRef.current = null
+
+			setIsDownloading(false)
+			setDownloadProgress(1)
+			resumeDataRef.current = null
+
+			if (downloadResult && downloadResult.uri) {
+				await FileSystem.moveAsync({
+					from: downloadResult.uri,
+					to: fileUri
+				})
+
+				await refreshApkList()
+				await installApk(fileUri)
+				return fileUri
+			}
+			return null
+		} catch (err) {
+			if (resumeDataRef.current) {
+				setIsDownloading(false)
+				return null
+			}
+			setIsDownloading(false)
+			setIsPaused(false)
+			setDownloadProgress(0)
+			activeDownloadRef.current = null
+			console.error('[UpdatesContext] File resume download error:', err)
+			throw err
+		}
+	}, [latestRelease, refreshApkList, installApk])
+
+	// Cancel Download completely
+	const cancelDownload = useCallback(async () => {
+		setIsDownloading(false)
+		setIsPaused(false)
+		setDownloadProgress(0)
+		if (activeDownloadRef.current) {
+			try {
+				await activeDownloadRef.current.cancelAsync()
+			} catch (e) {
+				// Ignore
+			}
+			activeDownloadRef.current = null
+		}
+		resumeDataRef.current = null
+		if (latestRelease) {
+			const filename = `drinaluza-${latestRelease.latest_version}.apk.tmp`
+			await FileSystem.deleteAsync(UPDATES_FOLDER + filename, { idempotent: true }).catch(() => {})
+		}
+	}, [latestRelease])
 
 	// Cancel download on unmount to prevent resource memory leak
 	useEffect(() => {
@@ -371,11 +483,32 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			deviceFreeStorage,
 			checkForUpdates,
 			downloadUpdate,
+			isPaused,
+			pauseDownload,
+			resumeDownload,
+			cancelDownload,
 			installApk,
 			deleteApk,
 			refreshApkList
 		}),
-		[isChecking, latestRelease, error, downloadProgress, isDownloading, downloadedApks, deviceFreeStorage, checkForUpdates, downloadUpdate, installApk, deleteApk, refreshApkList]
+		[
+			isChecking,
+			latestRelease,
+			error,
+			downloadProgress,
+			isDownloading,
+			downloadedApks,
+			deviceFreeStorage,
+			checkForUpdates,
+			downloadUpdate,
+			isPaused,
+			pauseDownload,
+			resumeDownload,
+			cancelDownload,
+			installApk,
+			deleteApk,
+			refreshApkList
+		]
 	)
 
 	return <UpdatesContext.Provider value={contextValue}>{children}</UpdatesContext.Provider>

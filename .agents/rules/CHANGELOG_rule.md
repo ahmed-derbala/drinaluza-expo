@@ -14,7 +14,7 @@ You are an AI development agent. Whenever a feature, bug fix, or refactor is com
 
 2. **Triggering the Update:**
    - Automatically append to the `CHANGELOG.md` when you complete a multi-file feature implementation.
-   - group changes under an `## [version] day month year` block at the top of the file.
+   - group changes under an `## [version from package.json] day month year` block at the top of the file.
 
 3. **Writing Style:**
    - Use the imperative mood (e.g., "Add business_owner role dashboard" instead of "Added dashboard").
@@ -24,6 +24,7 @@ You are an AI development agent. Whenever a feature, bug fix, or refactor is com
    - **CRITICAL:** Do not overwrite, modify, or delete any existing historical versions in `CHANGELOG.md`. 
    - prepend a new `## [X.Y.Z] - day month year` block directly beneath the main title description.
    - file size is 200 lines maximum
+   - do not update version in package.json, i will update it manually
 
 ## Target File Structure Example
 Ensure your modifications look exactly like this structure:
