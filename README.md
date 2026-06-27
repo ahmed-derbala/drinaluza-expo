@@ -18,6 +18,18 @@
 
 ---
 
+## 📱 Screenshots
+
+<!-- SCREENSHOTS_START -->
+<p align="center">
+  <img src="docs/screenshots/auth_screen.jpeg" alt="Auth Screen" width="260" style="margin: 10px" />
+  <img src="docs/screenshots/feed_screen.jpeg" alt="Feed Screen" width="260" style="margin: 10px" />
+  <img src="docs/screenshots/update_screen.jpeg" alt="Update Screen" width="260" style="margin: 10px" />
+</p>
+<!-- SCREENSHOTS_END -->
+
+---
+
 ## 🚀 Features
 
 ### 🛍️ For Customers

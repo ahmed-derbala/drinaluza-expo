@@ -1,8 +1,9 @@
 # Changelog
 
-## [1.26.6] - 27 june 2026
+## [1.26.9] - 27 june 2026
 ### Added
 - Add reusable `KeyboardAvoidingWrapper` component under `src/core/keyboard-avoiding-wrapper/` to prevent the on-screen keyboard from obscuring input fields.
+- Add `sync-screenshots.js` script and placeholder comment tags in `README.md` to automatically scan `docs/screenshots/` and update screenshot image layouts during start, dev, and release builds.
 
 ### Changed
 - Replace inline `KeyboardAvoidingView` + `ScrollView` pair in `AuthScreen` with the new shared `KeyboardAvoidingWrapper`.

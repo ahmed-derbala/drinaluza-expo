@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.26.8",
+  "version": "1.26.10",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -16,7 +16,7 @@
     "drinaluza"
   ],
   "scripts": {
-    "sv": "node sync-version.js",
+    "sv": "node sync-version.js && node sync-screenshots.js",
     "releases:changelog": "npm run sv && cp CHANGELOG.md ../drinaluza-expo-releases/ && cd ../drinaluza-expo-releases && git add . && git commit -m 'Update changelog' && git push",
     "releases:apk": "gh release create v$npm_package_version ./builds/$npm_package_name-$npm_package_version.apk --repo ahmed-derbala/drinaluza-expo-releases --title \"Release v$npm_package_version\" --notes-file CHANGELOG.md",
     "frl": "cp .env.sample .env && npm run i && npm run start:local",
@@ -30,9 +30,9 @@
     "build:apk-prod": "npm run env:prod && npm run eas:build-prod-locally && npm run releases:changelog && npm run releases:apk && npm run env:local && npm run ver",
     "build:web": "npm run clean:prod && NODE_ENV=production expo export -p web",
     "start": "expo start",
-    "start:local": "rm -rf .expo && npm run env:local && expo start -c",
-    "dev": "npm run env:local && expo start",
-    "dev:c": "rm -rf .expo && npm run env:local && expo start -c",
+    "start:local": "node sync-screenshots.js && rm -rf .expo && npm run env:local && expo start -c",
+    "dev": "node sync-screenshots.js && npm run env:local && expo start",
+    "dev:c": "node sync-screenshots.js && rm -rf .expo && npm run env:local && expo start -c",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
