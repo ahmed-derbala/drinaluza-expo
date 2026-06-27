@@ -5,6 +5,8 @@ interface LayoutContextType {
 	setTabBarVisible: (visible: boolean) => void
 	isSearchBarVisible: boolean
 	setSearchBarVisible: (visible: boolean) => void
+	isHeaderVisible: boolean
+	setHeaderVisible: (visible: boolean) => void
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined)
@@ -12,8 +14,22 @@ const LayoutContext = createContext<LayoutContextType | undefined>(undefined)
 export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 	const [isTabBarVisible, setTabBarVisible] = useState(true)
 	const [isSearchBarVisible, setSearchBarVisible] = useState(false)
+	const [isHeaderVisible, setHeaderVisible] = useState(true)
 
-	return <LayoutContext.Provider value={{ isTabBarVisible, setTabBarVisible, isSearchBarVisible, setSearchBarVisible }}>{children}</LayoutContext.Provider>
+	return (
+		<LayoutContext.Provider
+			value={{
+				isTabBarVisible,
+				setTabBarVisible,
+				isSearchBarVisible,
+				setSearchBarVisible,
+				isHeaderVisible,
+				setHeaderVisible
+			}}
+		>
+			{children}
+		</LayoutContext.Provider>
+	)
 }
 
 export const useLayout = () => {

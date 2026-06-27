@@ -8,6 +8,7 @@ import { translate } from '@/core/translation'
 import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
+import { useLayout } from '@/core/contexts'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
 import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
 
@@ -178,7 +179,7 @@ export type HeaderActionType =
 			disabled?: boolean
 	  }
 
-export interface SmartScreenHeaderProps {
+export interface SmartHeaderProps {
 	title?: React.ReactNode
 	subtitle?: string
 	showBackButton?: boolean
@@ -206,7 +207,7 @@ export interface SmartScreenHeaderProps {
 // ----------------------------------------
 // 5. SmartScreenHeader Component Implementation
 // ----------------------------------------
-const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
+const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	title,
 	subtitle,
 	showBackButton,
@@ -227,12 +228,28 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 	disableAnimations = false
 }) => {
 	const { colors } = useTheme()
+	const { isHeaderVisible } = useLayout()
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
 	const pathname = usePathname()
 
 	const loadingAnim = useRef(new Animated.Value(0)).current
 	const fadeAnim = useRef(new Animated.Value(0)).current
+	const visibleAnim = useRef(new Animated.Value(1)).current
+
+	// Setup header hide/show animation
+	useEffect(() => {
+		if (disableAnimations) {
+			visibleAnim.setValue(isHeaderVisible ? 1 : 0)
+			return
+		}
+		Animated.timing(visibleAnim, {
+			toValue: isHeaderVisible ? 1 : 0,
+			duration: 200,
+			easing: Easing.bezier(0.2, 0, 0, 1),
+			useNativeDriver: false
+		}).start()
+	}, [isHeaderVisible, visibleAnim, disableAnimations])
 
 	// Resolve actual loading state from both props
 	const isCurrentlyLoading = isLoading || loading
@@ -434,54 +451,85 @@ const SmartScreenHeaderComponent: React.FC<SmartScreenHeaderProps> = ({
 		)
 	}
 
+	const headerHeight = 56 + insets.top
+
+	const animatedHeight = visibleAnim.interpolate({
+		inputRange: [0, 1],
+		outputRange: [0, headerHeight]
+	})
+
+	const animatedOpacity = visibleAnim.interpolate({
+		inputRange: [0, 0.8, 1],
+		outputRange: [0, 0, 1]
+	})
+
+	const animatedBorderWidth = visibleAnim.interpolate({
+		inputRange: [0, 1],
+		outputRange: [0, StyleSheet.hairlineWidth]
+	})
+
 	return (
-		<View
+		<Animated.View
 			style={[
 				styles.headerContainer,
 				{
-					paddingTop: insets.top,
-					backgroundColor: colors.card,
-					borderBottomColor: colors.borderLight
+					height: animatedHeight,
+					opacity: animatedOpacity,
+					borderBottomWidth: animatedBorderWidth,
+					backgroundColor: colors.header,
+					borderBottomColor: colors.borderLight,
+					overflow: 'hidden'
 				}
 			]}
 		>
-			<View style={styles.headerInner}>
-				{/* Left Section: Back button + Title & Subtitle */}
-				<View style={styles.leftSection}>
-					{resolvedHeaderLeft ? resolvedHeaderLeft : resolvedShowBackButton && <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />}
-					<View style={[styles.titleContainerWrapper, (resolvedHeaderLeft || resolvedShowBackButton) && { marginLeft: 12 }]}>{renderTitleSection()}</View>
+			<View
+				style={{
+					height: headerHeight,
+					position: 'absolute',
+					bottom: 0,
+					left: 0,
+					right: 0,
+					paddingTop: insets.top
+				}}
+			>
+				<View style={styles.headerInner}>
+					{/* Left Section: Back button + Title & Subtitle */}
+					<View style={styles.leftSection}>
+						{resolvedHeaderLeft ? resolvedHeaderLeft : resolvedShowBackButton && <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />}
+						<View style={[styles.titleContainerWrapper, (resolvedHeaderLeft || resolvedShowBackButton) && { marginLeft: 12 }]}>{renderTitleSection()}</View>
+					</View>
+
+					{/* Right Section: Actions + Kebab menu (stable container width to guarantee zero layout shifts) */}
+					<View style={styles.rightSection}>
+						{resolvedHeaderRight}
+						{resolvedActions.map((action, idx) => resolveHeaderAction(action, idx))}
+						<SmartKebabMenu />
+					</View>
 				</View>
 
-				{/* Right Section: Actions + Kebab menu (stable container width to guarantee zero layout shifts) */}
-				<View style={styles.rightSection}>
-					{resolvedHeaderRight}
-					{resolvedActions.map((action, idx) => resolveHeaderAction(action, idx))}
-					<SmartKebabMenu />
-				</View>
+				{/* Linear Progress/Loading Bar */}
+				{isCurrentlyLoading && !disableAnimations && (
+					<View style={[styles.loadingBarContainer, { backgroundColor: colors.borderLight || '#1E293B' }]}>
+						<Animated.View
+							style={[
+								styles.loadingBar,
+								{
+									backgroundColor: colors.primary,
+									width: '40%',
+									transform: [{ translateX }]
+								}
+							]}
+						/>
+					</View>
+				)}
 			</View>
-
-			{/* Linear Progress/Loading Bar */}
-			{isCurrentlyLoading && !disableAnimations && (
-				<View style={[styles.loadingBarContainer, { backgroundColor: colors.borderLight || '#1E293B' }]}>
-					<Animated.View
-						style={[
-							styles.loadingBar,
-							{
-								backgroundColor: colors.primary,
-								width: '40%',
-								transform: [{ translateX }]
-							}
-						]}
-					/>
-				</View>
-			)}
-		</View>
+		</Animated.View>
 	)
 }
 
-SmartScreenHeaderComponent.displayName = 'SmartScreenHeader'
+SmartHeaderComponent.displayName = 'SmartHeader'
 
-const MemoizedHeader = React.memo(SmartScreenHeaderComponent) as any
+const MemoizedHeader = React.memo(SmartHeaderComponent) as any
 
 MemoizedHeader.BackButton = HeaderBackButton
 MemoizedHeader.ActionButton = HeaderActionButton
@@ -491,7 +539,7 @@ MemoizedHeader.SearchButton = HeaderSearchButton
 MemoizedHeader.CartButton = HeaderCartButton
 MemoizedHeader.SettingsButton = HeaderSettingsButton
 
-export const SmartScreenHeader = MemoizedHeader as React.NamedExoticComponent<SmartScreenHeaderProps> & {
+export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHeaderProps> & {
 	BackButton: typeof HeaderBackButton
 	ActionButton: typeof HeaderActionButton
 	RefreshButton: typeof HeaderRefreshButton
@@ -500,6 +548,11 @@ export const SmartScreenHeader = MemoizedHeader as React.NamedExoticComponent<Sm
 	CartButton: typeof HeaderCartButton
 	SettingsButton: typeof HeaderSettingsButton
 }
+
+/** @deprecated Use SmartHeader instead */
+export const SmartScreenHeader = SmartHeader
+/** @deprecated Use SmartHeaderProps instead */
+export type SmartScreenHeaderProps = SmartHeaderProps
 
 const styles = StyleSheet.create({
 	headerContainer: {

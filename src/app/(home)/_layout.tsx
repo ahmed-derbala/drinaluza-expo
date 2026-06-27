@@ -9,7 +9,7 @@ import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { SmartHeader } from '@/core/smart-header'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
@@ -38,7 +38,7 @@ export default function HomeLayout() {
 				}}
 				screenOptions={{
 					headerShown: true,
-					header: (props: any) => <SmartScreenHeader {...props} />,
+					header: (props: any) => <SmartHeader {...props} />,
 					tabBarStyle: {
 						position: 'absolute',
 						bottom: 0,

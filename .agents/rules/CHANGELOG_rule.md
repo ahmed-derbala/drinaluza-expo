@@ -2,26 +2,41 @@
 trigger: always_on
 ---
 
-# Rule: CHANGELOG.md Management
+# RULE: AUTOMATIC CHANGELOG UPDATE (CONTEXT-BASED)
 
-## Trigger
-- Evaluate and update `CHANGELOG.md` whenever a feature is completed, a bug is fixed, a breaking change is introduced.
-- Do NOT update the changelog for trivial changes (e.g., fixing typos in code comments, updating internal `.gitignore` rules, or updating agent instructions).
+## Context
+You are an AI development agent. Whenever a feature, bug fix, or refactor is completed or explicitly requested, you must automatically log it in `CHANGELOG.md`. Do NOT use or reference Git history, commits, or diffs for this task. Rely strictly on the immediate context of the files changed in this session or direct user instructions.
 
-## Formatting Standards
-1. **File Format:** Keep changes at the very top of the file, directly under the current version heading, 
-2. **Changelog Format:** Strictly adhere to the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) standard.
-3. **Allowed Groupings:** Categorize changes using *only* these exact subheadings:
-   - `### Added` - For new features.
-   - `### Changed` - For changes in existing functionality.
-   - `### Deprecated` - For soon-to-be-removed features.
-   - `### Removed` - For now-removed features.
-   - `### Fixed` - For any bug fixes.
-   - `### Security` - In case of vulnerabilities.
+## Operational Rules
 
-## Writing Style & Guidelines
-- **Be Concise but Descriptive:** Write clear, one-line bullet points explaining *what* changed and *why*, from a user perspective (not a raw commit message dump).
-- **No Technical Jargon Overload:** Avoid pasting raw stack traces or internal variable names unless necessary for context.
+1. **Format Standard:** - Follow the "Keep a Changelog" standard.
+   - Use the standard categories: `### Added`, `### Changed`, `### Deprecated`, `### Removed`, `### Fixed`, `### Security`.
 
-## File length
-max 100 lines
+2. **Triggering the Update:**
+   - Automatically append to the `CHANGELOG.md` when you complete a multi-file feature implementation.
+   - group changes under an `## [packagejson.version] day month year` block at the top of the file.
+
+3. **Writing Style:**
+   - Use the imperative mood (e.g., "Add business_owner role dashboard" instead of "Added dashboard").
+   - Be concise and focus on the user-facing impact of the change, not low-level code implementation details (e.g., say "Fix token expiration issue" instead of "Change jwt.sign timeout variable").
+
+4. **Preservation:**
+   - **CRITICAL:** Do not overwrite, modify, or delete any existing historical versions in `CHANGELOG.md`. 
+   - prepend a new `## [X.Y.Z] - day month year` block directly beneath the main title description.
+   - file size is 200 lines maximum
+
+## Target File Structure Example
+Ensure your modifications look exactly like this structure:
+
+```markdown
+# Changelog
+
+## [1.26.6] - 27 june 2026
+### Added
+- Feature description here.
+
+### Fixed
+- Bug fix description here.
+
+## [1.0.0] - 1 may 2026
+... historical logs ...

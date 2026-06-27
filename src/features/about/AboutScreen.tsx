@@ -8,7 +8,7 @@ import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { SmartHeader } from '@/core/smart-header'
 
 export default function AboutScreen() {
 	const { colors } = useTheme()
@@ -79,7 +79,7 @@ export default function AboutScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<SmartScreenHeader title={translate('about', 'About')} fallbackRoute="/(home)/feed" />
+			<SmartHeader title={translate('about', 'About')} fallbackRoute="/(home)/feed" />
 
 			<ScrollView
 				style={styles.scrollView}

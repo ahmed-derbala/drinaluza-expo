@@ -1,0 +1,1 @@
+respect rules in .agents/rules/

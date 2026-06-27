@@ -20,7 +20,8 @@ export const darkColors: AppThemeColors = {
 	textTertiary: '#64748B',
 	borderLight: '#1E293B',
 	textOnPrimary: '#FFFFFF',
-	inputBorder: '#334155'
+	inputBorder: '#334155',
+	header: '#080D19'
 }
 
 export const lightColors: AppThemeColors = darkColors

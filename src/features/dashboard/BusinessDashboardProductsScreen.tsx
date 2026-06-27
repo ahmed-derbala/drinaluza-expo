@@ -10,7 +10,7 @@ import { parseError } from '@/core/helpers/errorHandler'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { updateProduct } from '@/features/products/products.api'
@@ -314,7 +314,7 @@ export default function BusinessDashboardProductsScreen() {
 
 	return (
 		<View style={[s.container, { backgroundColor: colors.background }]}>
-			<SmartScreenHeader
+			<SmartHeader
 				title={businessName ? `${businessName} Dashboard` : translate('dashboard_title', 'Dashboard')}
 				subtitle={translate('manage_inventory', 'Manage Products & Stock')}
 				fallbackRoute={`/dashboard?businessSlug=${businessSlug}` as any}

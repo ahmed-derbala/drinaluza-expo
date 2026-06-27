@@ -18,7 +18,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { SmartHeader } from '@/core/smart-header'
 
 // Bypass type issues with FlashList generic components
 const TypedFlashList = FlashList as any
@@ -512,12 +512,10 @@ export default function FeedScreen() {
 			showBackButton: false,
 			isLoading: loading && displayedItems.length === 0,
 			headerActions: [
-				...(!isWeb
-					? [<SmartScreenHeader.ActionButton key="scanner" iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} accessibilityLabel="Scan Barcode" />]
-					: []),
-				<SmartScreenHeader.SearchButton key="search" />,
-				<SmartScreenHeader.CartButton key="cart" badgeCount={cart.length} />,
-				<SmartScreenHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={refreshing} />
+				...(!isWeb ? [<SmartHeader.ActionButton key="scanner" iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} accessibilityLabel="Scan Barcode" />] : []),
+				<SmartHeader.SearchButton key="search" />,
+				<SmartHeader.CartButton key="cart" badgeCount={cart.length} />,
+				<SmartHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={refreshing} />
 			]
 		}),
 		[translate, user, loading, displayedItems.length, isWeb, cart.length, refreshData, refreshing]

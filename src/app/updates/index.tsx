@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { useUpdates } from '@/features/updates'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -400,7 +400,7 @@ export default function UpdatesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<SmartScreenHeader title={translate('updates', 'Updates')} fallbackRoute="/(home)/feed" loading={isChecking} disableAnimations={true} />
+			<SmartHeader title={translate('updates', 'Updates')} fallbackRoute="/(home)/feed" loading={isChecking} disableAnimations={true} />
 
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
 				{renderStatusCard()}

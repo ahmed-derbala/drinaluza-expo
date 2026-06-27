@@ -22,6 +22,7 @@ export interface AppThemeColors {
 	borderLight: string
 	textOnPrimary: string
 	inputBorder: string
+	header: string
 }
 
 declare global {

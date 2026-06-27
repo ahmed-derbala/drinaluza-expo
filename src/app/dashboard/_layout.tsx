@@ -1,12 +1,12 @@
 import { Stack } from 'expo-router'
-import { SmartScreenHeader } from '@/core/smart-screen-header'
+import { SmartHeader } from '@/core/smart-header'
 
 export default function DashboardLayout() {
 	return (
 		<Stack
 			screenOptions={{
 				headerShown: true,
-				header: (props) => <SmartScreenHeader {...props} />,
+				header: (props) => <SmartHeader {...props} />,
 				contentStyle: {
 					backgroundColor: '#000000'
 				}
