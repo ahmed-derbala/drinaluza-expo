@@ -26,7 +26,6 @@
     "env:prod": "cp .env.prod .env",
     "env:local": "cp .env.sample .env",
     "ver": "npm version patch --no-git-tag-version",
-    "build:apk-local": "npm run env:local && export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk && npm run cpapk2gdrive-local",
     "eas:build-prod-locally": "export $(grep -v '^#' .env | xargs) && NODE_ENV=production eas build -p android --profile production --local --output=./builds/$npm_package_name-$npm_package_version.apk",
     "build:apk-prod": "npm run env:prod && npm run eas:build-prod-locally && npm run releases:changelog && npm run releases:apk && npm run env:local && npm run ver",
     "build:web": "npm run clean:prod && NODE_ENV=production expo export -p web",
