@@ -1,5 +1,9 @@
 # Changelog
 
+## [1.27.1] - 27 june 2026
+### Changed
+- Filter out default menu items (Home, Settings, About, Updates) in `SmartKebabMenu` if they match the currently active route path/screen.
+
 ## [1.26.15] - 27 june 2026
 ### Added
 - Add pause, resume, and cancel download controls to Updates screen layout.

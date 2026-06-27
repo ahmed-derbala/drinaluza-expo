@@ -30,8 +30,6 @@ You are an AI development agent. Whenever a feature, bug fix, or refactor is com
 Ensure your modifications look exactly like this structure:
 
 ```markdown
-# Changelog
-
 ## [1.26.6] - 27 june 2026
 ### Added
 - Feature description here.
@@ -41,3 +39,4 @@ Ensure your modifications look exactly like this structure:
 
 ## [1.0.0] - 1 may 2026
 ... historical logs ...
+```

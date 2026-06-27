@@ -148,10 +148,26 @@ export const SmartKebabMenu: React.FC = () => {
 		[router, updatesBadge]
 	)
 
-	// Combine default and screen-registered menu items
+	// Combine default and screen-registered menu items, filtering out the current screen's item
 	const allItems = useMemo(() => {
-		return [...defaultItems, ...screenItems]
-	}, [defaultItems, screenItems])
+		const filteredDefaults = defaultItems.filter((item) => {
+			const cleanPath = pathname.toLowerCase()
+			if (item.key === 'home') {
+				return !(cleanPath === '/' || cleanPath === '/feed' || cleanPath.endsWith('/feed'))
+			}
+			if (item.key === 'settings') {
+				return !(cleanPath === '/settings' || cleanPath.endsWith('/settings'))
+			}
+			if (item.key === 'about') {
+				return !(cleanPath === '/about' || cleanPath.endsWith('/about'))
+			}
+			if (item.key === 'updates') {
+				return !(cleanPath === '/updates' || cleanPath.endsWith('/updates'))
+			}
+			return true
+		})
+		return [...filteredDefaults, ...screenItems]
+	}, [defaultItems, screenItems, pathname])
 
 	const handleItemPress = async (item: SmartKebabMenuItem) => {
 		if (item.disabled) return

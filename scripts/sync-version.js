@@ -7,10 +7,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Define paths to both package.json files
-const repoAPath = path.join(__dirname, 'package.json');
+const repoAPath = path.join(__dirname, '../package.json');
 const repoAName = 'drinaluza-expo'
 // Adjust '../repo-b' to match the actual relative path to Repo B on your machine
-const repoBPath = path.join(__dirname, '../drinaluza-expo-releases/package.json');
+const repoBPath = path.join(__dirname, '../../drinaluza-expo-releases/package.json');
 const repoBName = 'drinaluza-expo-releases'
 
 try {
