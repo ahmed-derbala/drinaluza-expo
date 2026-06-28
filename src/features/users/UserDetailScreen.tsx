@@ -7,6 +7,7 @@ import { useUser } from '../../core/contexts/UserContext'
 import { getUserBySlug } from './users.api'
 import { UserProfile } from './users.interface'
 import ErrorState from '../common/ErrorState'
+import LoadingState from '@/features/common/LoadingState'
 import SmartImage from '@/core/SmartImageViewer'
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -83,9 +84,7 @@ export default function UserDetailScreen() {
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader title={displayTitle} isLoading={true} />
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+				<LoadingState />
 			</View>
 		)
 	}

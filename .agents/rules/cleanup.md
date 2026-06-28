@@ -2,20 +2,197 @@
 trigger: always_on
 ---
 
-You are an expert Senior React Native and Expo developer specializing in clean architecture and performance optimization. Your task is to audit, clean up, and refactor this Expo project. 
+# Project Cleanup & Refactoring
 
-Follow these strict guidelines to ensure a safe and thorough cleanup:
+Perform a complete cleanup and refactoring of the Expo project.
 
-### 1. File & Dependency Audit
-- delete unused components, hooks, utilities, and assets.
-- delete unused dependencies found in `package.json` that are not imported anywhere.
+## Goals
 
-### 2. Code Refactoring & Modernization
-- Refactor legacy components to modern functional components using TypeScript.
-- Optimize component rendering: look for missing `memo`, unnecessary inline functions in props, or redundant state that triggers re-renders.
-- Consolidate duplicate code or inline styles into reusable hooks, utility functions, or a centralized theme/stylesheet configuration.
-- Ensure all asynchronous operations and API calls utilize robust error handling (try/catch) and clean state management (e.g., proper loading/error states).
+Improve code quality, maintainability, consistency, and bundle size without changing application behavior.
 
-### 3. TypeScript & Clean Architecture
-- Fix any explicit or implicit `any` types. Ensure strict typing for component props, navigation parameters, and API responses.
-- Enforce a decoupled, clean architecture pattern (e.g., keeping business logic in custom hooks and separating it from UI components).
+---
+
+## Requirements
+
+### 1. Remove dead code
+
+Delete:
+
+- Unused files
+- Unused components
+- Unused hooks
+- Unused utilities
+- Unused screens
+- Unused assets
+- Unused images
+- Unused icons
+- Unused fonts
+- Unused constants
+- Unused types/interfaces
+- Unused styles
+- Unused functions
+- Unused variables
+- Unused imports
+- Unused exports
+
+Do NOT remove anything referenced dynamically.
+
+---
+
+### 2. Remove unused dependencies
+
+Inspect:
+
+- package.json
+
+Remove packages that are no longer used.
+
+If removing a package requires code changes, perform them safely.
+
+---
+
+### 3. Remove duplicated logic
+
+Whenever similar logic appears multiple times:
+
+- Extract it into:
+  - utility
+  - helper
+  - custom hook
+  - reusable component
+  - service
+  - shared constant
+
+Choose the most appropriate abstraction.
+
+Avoid copy-paste code.
+
+---
+
+### 4. Reusable functions
+
+If the same function or nearly identical implementation exists in multiple places:
+
+Move it into an appropriate shared location.
+
+Import it wherever needed.
+
+Never duplicate identical logic.
+
+---
+
+### 5. Reusable UI
+
+Extract repeated UI into reusable components.
+
+Examples:
+
+- Cards
+- Buttons
+- Dialogs
+- Modals
+- Headers
+- List items
+- Empty states
+- Loading states
+
+---
+
+### 6. Refactor
+
+Improve:
+
+- Naming
+- Readability
+- Folder organization
+- File organization
+- Function size
+- Component size
+- Separation of concerns
+
+Split overly large files into smaller focused modules.
+
+---
+
+### 7. Simplify code
+
+Replace unnecessarily complex code with simpler implementations while preserving behavior.
+
+Remove:
+
+- nested conditions
+- duplicated state
+- redundant effects
+- unnecessary renders
+- unnecessary memoization
+- dead branches
+
+---
+
+### 8. Type safety
+
+Improve TypeScript:
+
+- remove any where possible
+- reuse existing types
+- remove duplicated interfaces
+- improve generic usage
+- improve inferred types
+
+---
+
+### 9. Imports
+
+Organize imports consistently.
+
+Remove:
+
+- duplicate imports
+- unused imports
+- circular imports if possible
+
+---
+
+### 10. Performance
+
+Improve performance where safe.
+
+Examples:
+
+- avoid unnecessary renders
+- memoize expensive computations only when beneficial
+- remove unnecessary useEffect
+- optimize FlatList usage
+- reduce unnecessary object recreation
+
+Do not over-optimize.
+
+---
+
+### 11. Preserve behavior
+
+Do NOT change:
+
+- business logic
+- navigation
+- API contracts
+- UI appearance unless fixing obvious inconsistencies
+
+The application should behave the same.
+
+---
+
+### 12. Verification
+
+Before deleting anything, verify that it is truly unused.
+
+Consider:
+
+- Expo Router
+- dynamic imports
+- lazy loading
+- context providers
+- barrel exports
+- runtime references
+
+Do not remove code that may be referenced indirectly.

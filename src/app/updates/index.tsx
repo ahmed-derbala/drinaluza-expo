@@ -11,6 +11,105 @@ import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
 import { LinearGradient } from 'expo-linear-gradient'
 
+// Helper to render inline styles like bold (**bold**) and inline code (`code`)
+const renderInlineStyles = (text: string, colors: any) => {
+	const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g)
+
+	return parts.map((part, index) => {
+		if (part.startsWith('**') && part.endsWith('**')) {
+			const boldText = part.slice(2, -2)
+			return (
+				<Text key={index} style={{ fontWeight: '700', color: '#FFFFFF' }}>
+					{boldText}
+				</Text>
+			)
+		}
+		if (part.startsWith('`') && part.endsWith('`')) {
+			const codeText = part.slice(1, -1)
+			return (
+				<Text
+					key={index}
+					style={{
+						fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
+						fontSize: 12,
+						backgroundColor: 'rgba(255, 255, 255, 0.08)',
+						color: '#38BDF8',
+						paddingHorizontal: 4,
+						borderRadius: 4
+					}}
+				>
+					{codeText}
+				</Text>
+			)
+		}
+		return part
+	})
+}
+
+const MarkdownRenderer = ({ content, colors }: { content: string; colors: any }) => {
+	if (!content) return null
+
+	const lines = content.split('\n')
+
+	return (
+		<View style={{ gap: 8 }}>
+			{lines.map((line, lineIdx) => {
+				const trimmed = line.trim()
+
+				// Headers (e.g. ### Added)
+				if (trimmed.startsWith('#')) {
+					const match = trimmed.match(/^(#+)\s*(.*)$/)
+					if (match) {
+						const level = match[1].length
+						const text = match[2]
+						const fontSize = level === 1 ? 18 : level === 2 ? 15 : 13
+						const fontWeight = '700'
+						const marginTop = lineIdx > 0 ? 14 : 2
+
+						return (
+							<Text
+								key={lineIdx}
+								style={{
+									fontSize,
+									fontWeight,
+									color: '#FFFFFF',
+									marginTop,
+									marginBottom: 2
+								}}
+							>
+								{text}
+							</Text>
+						)
+					}
+				}
+
+				// Bullet lists (e.g. - Added new screens)
+				if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+					const text = trimmed.replace(/^[-*]\s*/, '')
+					return (
+						<View key={lineIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingLeft: 6, gap: 6, marginVertical: 1 }}>
+							<Text style={{ color: colors.primary || '#38BDF8', fontSize: 14, marginTop: 1 }}>•</Text>
+							<Text style={{ flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 19 }}>{renderInlineStyles(text, colors)}</Text>
+						</View>
+					)
+				}
+
+				// Blank lines spacing
+				if (trimmed === '') {
+					return <View key={lineIdx} style={{ height: 4 }} />
+				}
+
+				// Default paragraph lines
+				return (
+					<Text key={lineIdx} style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 19, marginVertical: 1 }}>
+						{renderInlineStyles(trimmed, colors)}
+					</Text>
+				)
+			})}
+		</View>
+	)
+}
+
 export default function UpdatesScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
@@ -506,9 +605,11 @@ export default function UpdatesScreen() {
 					<View style={[styles.card, { borderColor: colors.borderLight }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('whats_new', "What's New")}</Text>
 						<View style={[styles.changelogBox, { backgroundColor: 'rgba(0,0,0,0.22)', borderColor: 'rgba(255,255,255,0.05)', borderWidth: 1 }]}>
-							<Text style={[styles.changelogText, { color: 'rgba(255,255,255,0.85)', fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' }]}>
-								{latestRelease && latestRelease.changelog !== '' ? latestRelease.changelog : translate('no_changelog', 'No changelog details available.')}
-							</Text>
+							{latestRelease && latestRelease.changelog !== '' ? (
+								<MarkdownRenderer content={latestRelease.changelog} colors={colors} />
+							) : (
+								<Text style={[styles.changelogText, { color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }]}>{translate('no_changelog', 'No changelog details available.')}</Text>
+							)}
 						</View>
 					</View>
 				)}

@@ -1,3 +1,13 @@
+## [1.27.12] - 28 june 2026
+### Changed
+- Relocate `HeaderActionButton` component to `src/core/smart-header/` alongside other core header components.
+- Refactor `PurchasesScreen.tsx` to use the standardized `<EmptyState>` component instead of custom inline empty views.
+- Refactor `ProductDetailScreen.tsx` and `UserDetailScreen.tsx` to use the standardized `<LoadingState>` component.
+
+### Removed
+- Delete unused `HeaderTitle.tsx` component from `src/features/common/`.
+- Delete unused `dotenv` dependency from `package.json`.
+
 ## [1.27.11] - 28 june 2026
 ### Added
 - Move `HeaderRefreshButton` component from `src/features/common/` to `src/core/smart-header/` to make it a self-contained core header subcomponent.
@@ -8,6 +18,7 @@
 - Update import statements in all 12 screen/feature files to import `HeaderRefreshButton` from `@/core/smart-header`.
 - Remove redundant inline "Refresh" button from native actions list in the Updates screen body, and clean up the "Check Updates" and "Refresh" buttons in the Web layout.
 - Redesign the Updates screen with modern glassmorphic card containers, gradient action buttons, pulsing status indicators, and monospace code-styled changelogs.
+- Implement a custom lightweight `MarkdownRenderer` helper in the Updates screen to format rich release log notes (headings, list bullets, bold keywords, and inline code formatting).
 - Refactor all 13 feature screens (including Dashboard, Product/Business lists and details, Settings, Sales, Purchases, Notifications, and Profile) to use standard `headerActions` navigation options instead of hardcoded `headerRight` custom views.
 - Relocate custom header hooks (`headerActions`, `resolvedFallbackRoute`) to the top of `ProductDetailScreen` and `BusinessProductsScreen` before conditional returns to conform to React Rules of Hooks.
 - Render `SmartHeader` directly inside `UserDetailScreen` and set native stack header to hidden to bypass nested router layout mismatches.

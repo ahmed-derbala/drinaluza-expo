@@ -8,6 +8,7 @@ import { FlashList } from '@shopify/flash-list'
 import { useTheme, createShadow } from '../../core/theme'
 import { HeaderRefreshButton } from '@/core/smart-header'
 import ErrorState from '../common/ErrorState'
+import EmptyState from '../common/EmptyState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { orderStatusEnum, orderStatusColors, orderStatusLabels } from '../orders/orderStatus'
@@ -592,16 +593,8 @@ const PurchasesScreen = () => {
 			cancelled: { icon: 'close-circle-outline', title: translate('empty_cancelled', 'No cancelled orders'), sub: translate('empty_cancelled_sub', 'Cancelled or expired orders appear here') }
 		}
 		const config = configs[filter] || configs.cart
-		return (
-			<View style={styles.emptyWrap}>
-				<View style={[styles.emptyIconWrap, { backgroundColor: colors.primary + '12' }]}>
-					<Ionicons name={config.icon as any} size={48} color={colors.primary} />
-				</View>
-				<Text style={[styles.emptyTitle, { color: colors.text }]}>{config.title}</Text>
-				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{config.sub}</Text>
-			</View>
-		)
-	}, [filter, colors, translate, styles, tabLoading])
+		return <EmptyState title={config.title} subtitle={config.sub} iconName={config.icon} style={styles.emptyWrap} />
+	}, [filter, translate, styles, tabLoading])
 
 	const FilterButton = ({ status, label, icon }: { status: FilterStatus; label: string; icon: string }) => {
 		const isActive = filter === status

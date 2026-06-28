@@ -9,7 +9,7 @@ import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useLayout } from '@/core/contexts'
-import HeaderActionButton from '@/features/common/HeaderActionButton'
+import HeaderActionButton from './HeaderActionButton'
 import HeaderRefreshButton from './HeaderRefreshButton'
 
 // Re-export actions for convenience

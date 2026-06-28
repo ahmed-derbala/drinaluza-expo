@@ -11,6 +11,7 @@ import { getProductBySlug } from '@/features/products/products.api'
 import { ProductType } from '@/features/products/products.type'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
+import LoadingState from '@/features/common/LoadingState'
 import { Stack } from 'expo-router'
 import { HeaderRefreshButton } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
@@ -203,10 +204,7 @@ export default function ProductDetailScreen() {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle }} />
-				<View style={styles.loadingContainer}>
-					<ActivityIndicator size="large" color={colors.primary} />
-					<Text style={[styles.loadingText, { color: colors.textSecondary }]}>{translate('loading', 'Loading...')}</Text>
-				</View>
+				<LoadingState />
 			</View>
 		)
 	}

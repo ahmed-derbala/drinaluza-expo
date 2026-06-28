@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.27.11",
+  "version": "1.27.12",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -62,7 +62,7 @@
     "axios": "^1.17.0",
     "babel-preset-expo": "~56.0.14",
     "date-fns": "^4.4.0",
-    "dotenv": "^17.4.2",
+
     "expo": "~56.0.12",
     "expo-asset": "~56.0.16",
     "expo-audio": "~56.0.12",
