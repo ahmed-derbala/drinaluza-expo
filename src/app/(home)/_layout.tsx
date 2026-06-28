@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet } from 'react-native'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 const TabsComponent = Tabs as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -31,7 +32,7 @@ export default function HomeLayout() {
 	const isNotificationsVisible = isAuthenticated
 
 	return (
-		<View style={[styles.container, { backgroundColor: '#000000' }]}>
+		<SafeAreaView style={[styles.container, { backgroundColor: '#000000' }]} edges={['bottom']}>
 			<TabsComponent
 				sceneContainerStyle={{
 					backgroundColor: '#000000'
@@ -157,7 +158,7 @@ export default function HomeLayout() {
 					}}
 				/>
 			</TabsComponent>
-		</View>
+		</SafeAreaView>
 	)
 }
 

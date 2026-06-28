@@ -1,6 +1,7 @@
 import { HeaderRefreshButton } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
 import { useTheme, createShadow } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
@@ -26,6 +27,7 @@ export default function NotificationsScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const { height: windowHeight } = useWindowDimensions()
+	const insets = useSafeAreaInsets()
 	const [notifications, setNotifications] = useState<NotificationItem[]>([])
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
@@ -247,7 +249,7 @@ export default function NotificationsScreen() {
 				data={notifications}
 				renderItem={renderItem}
 				keyExtractor={(item) => item._id}
-				contentContainerStyle={styles.list}
+				contentContainerStyle={[styles.list, { paddingBottom: 90 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}

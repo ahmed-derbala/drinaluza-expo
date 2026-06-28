@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import SmartImage from '@/core/SmartImageViewer'
 import { useRouter, useFocusEffect, useLocalSearchParams, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -33,6 +34,7 @@ const PurchasesScreen = () => {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const params = useLocalSearchParams<{ status?: FilterStatus }>()
+	const insets = useSafeAreaInsets()
 	const [filter, setFilter] = useState<FilterStatus>(params.status || 'cart')
 
 	useEffect(() => {

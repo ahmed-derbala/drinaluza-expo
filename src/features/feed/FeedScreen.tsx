@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getItem, setItem } from '@/core/storage'
 import { FlashList } from '@shopify/flash-list'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
@@ -31,6 +32,7 @@ type CartItem = FeedItem & { quantity: number }
 export default function FeedScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
+	const insets = useSafeAreaInsets()
 
 	// ── Data state ──
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
@@ -274,7 +276,7 @@ export default function FeedScreen() {
 
 	const renderFilterBar = useCallback(() => {
 		return (
-			<View style={styles.filterBar}>
+			<View style={[styles.filterBar, { paddingTop: insets.top }]}>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
 					{categories.map((cat) => {
 						const active = selectedFilter === cat.key
@@ -288,12 +290,12 @@ export default function FeedScreen() {
 				</ScrollView>
 			</View>
 		)
-	}, [categories, selectedFilter, handleFilterSelect])
+	}, [categories, selectedFilter, handleFilterSelect, insets.top])
 
 	const renderSkeletons = useCallback(() => {
 		const count = numColumns * 3
 		return (
-			<ScrollView contentContainerStyle={[styles.skeletonWrap, { paddingHorizontal: padding }]} showsVerticalScrollIndicator={false}>
+			<ScrollView contentContainerStyle={[styles.skeletonWrap, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]} showsVerticalScrollIndicator={false}>
 				{Array.from({ length: count }).map((_, i) => (
 					<View key={`sk-${i}`} style={[styles.skeletonCard, { width: itemWidth, marginHorizontal: gap / 2, marginBottom: 16 }]}>
 						<Animated.View style={[styles.skeletonImg, { opacity: shimmerAnim }]} />
@@ -306,7 +308,7 @@ export default function FeedScreen() {
 				))}
 			</ScrollView>
 		)
-	}, [numColumns, itemWidth, shimmerAnim])
+	}, [numColumns, itemWidth, shimmerAnim, padding, insets.bottom])
 
 	const renderItem = useCallback(
 		({ item }: { item: FeedItem }) => (
@@ -407,7 +409,7 @@ export default function FeedScreen() {
 				) : (
 					<ScrollView
 						style={styles.root}
-						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding }]}
+						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
 						showsVerticalScrollIndicator={false}
 						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
 					>
@@ -451,7 +453,7 @@ export default function FeedScreen() {
 					numColumns={numColumns}
 					estimatedItemSize={260}
 					keyExtractor={(item: FeedItem) => item.slug || item._id}
-					contentContainerStyle={[styles.listContent, { paddingHorizontal: padding }]}
+					contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
 					ListEmptyComponent={renderEmpty}
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
 					showsVerticalScrollIndicator={false}

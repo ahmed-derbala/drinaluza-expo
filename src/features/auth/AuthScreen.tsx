@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { clearAllStorage } from '@/core/storage'
@@ -38,6 +39,7 @@ export default function AuthScreen() {
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { width, height } = useWindowDimensions()
+	const insets = useSafeAreaInsets()
 	const { appLang, setAppLang, translate, refreshUser } = useUser()
 
 	// State variables
@@ -361,7 +363,7 @@ export default function AuthScreen() {
 			<SmartHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/(home)/feed" loading={loading} />
 
 			<KeyboardAvoidingWrapper scrollable scrollViewRef={scrollViewRef} style={styles.flex} contentContainerStyle={styles.scrollContent}>
-				<View style={styles.scrollContentInner}>
+				<View style={[styles.scrollContentInner, { paddingBottom: 40 + insets.bottom }]}>
 					{/* Glassmorphic Auth Panel Container */}
 					<View style={styles.authCard}>
 						<Text style={styles.cardTitle}>{translate('welcome_back', 'Welcome back 👋')}</Text>

@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme } from '@/core/theme'
@@ -22,6 +23,7 @@ export default function SettingsScreen() {
 	const { colors } = useTheme()
 	const { translate } = useUser()
 	const { width } = useWindowDimensions()
+	const insets = useSafeAreaInsets()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
@@ -81,7 +83,7 @@ export default function SettingsScreen() {
 	return (
 		<ScrollView
 			style={styles.container}
-			contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
+			contentContainerStyle={[styles.contentContainer, { paddingBottom: 90 + insets.bottom }, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 			onScroll={onScroll}
 			scrollEventThrottle={16}
 		>

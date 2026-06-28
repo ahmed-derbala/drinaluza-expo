@@ -1,6 +1,7 @@
 import { HeaderRefreshButton } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, Linking, RefreshControl, Platform, ScrollView } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -60,6 +61,7 @@ export default function BusinessDetailsScreen() {
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 	const { width } = useWindowDimensions()
+	const insets = useSafeAreaInsets()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 
@@ -189,7 +191,7 @@ export default function BusinessDetailsScreen() {
 			/>
 			<ScrollView
 				style={styles.container}
-				contentContainerStyle={[styles.scrollContent, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
+				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}

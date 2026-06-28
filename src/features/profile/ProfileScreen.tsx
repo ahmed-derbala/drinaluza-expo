@@ -17,6 +17,7 @@ import {
 	Easing,
 	KeyboardAvoidingView
 } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import * as Clipboard from 'expo-clipboard'
 import { getItem } from '@/core/storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -141,6 +142,7 @@ export default function ProfileScreen() {
 	const isDark = true
 	const { refreshUser, translate, localize } = useUser()
 	const { width } = useWindowDimensions()
+	const insets = useSafeAreaInsets()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 	const styles = createStyles(colors, isDark, isWideScreen, width)
@@ -646,28 +648,9 @@ export default function ProfileScreen() {
 		}
 	}
 
-	if (loading && !userData) {
-		return (
-			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-				<ActivityIndicator size="large" color={colors.primary} />
-			</View>
-		)
-	}
-
-	if (error && !userData) {
-		return (
-			<View style={styles.container}>
-				<Tabs.Screen options={{ title: 'Profile', headerLeft: () => null }} />
-				<ErrorState title={error.title} message={error.message} onRetry={loadProfile} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
-			</View>
-		)
-	}
-
-	if (!userData) return null
-
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
-		if (userData.role === 'customer') {
+		if (userData?.role === 'customer') {
 			actions.push({
 				key: 'request-business',
 				iconName: 'briefcase',
@@ -705,7 +688,26 @@ export default function ProfileScreen() {
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [userData.role, handleRequestBusiness, handleSwitchUser, handleSignOut, cart.length, loadProfile, loading, colors, router])
+	}, [userData?.role, handleRequestBusiness, handleSwitchUser, handleSignOut, cart.length, loadProfile, loading, colors, router])
+
+	if (loading && !userData) {
+		return (
+			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+				<ActivityIndicator size="large" color={colors.primary} />
+			</View>
+		)
+	}
+
+	if (error && !userData) {
+		return (
+			<View style={styles.container}>
+				<Tabs.Screen options={{ title: 'Profile', headerLeft: () => null }} />
+				<ErrorState title={error.title} message={error.message} onRetry={loadProfile} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
+			</View>
+		)
+	}
+
+	if (!userData) return null
 
 	return (
 		<View style={styles.container}>
@@ -713,7 +715,7 @@ export default function ProfileScreen() {
 			<KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<ScrollView
 					style={styles.scrollView}
-					contentContainerStyle={styles.contentContainer}
+					contentContainerStyle={[styles.contentContainer, { paddingBottom: 120 + insets.bottom }]}
 					onScroll={onScroll}
 					scrollEventThrottle={16}
 					keyboardShouldPersistTaps="handled"

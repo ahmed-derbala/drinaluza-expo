@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Platform, Animated, Easing, RefreshControl } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
@@ -26,6 +27,7 @@ export default function SearchScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const { localize } = useUser()
+	const insets = useSafeAreaInsets()
 
 	// Layout responsiveness
 	const { numColumns, gap, padding, itemWidth, isWeb } = useResponsiveGrid()
@@ -512,7 +514,7 @@ export default function SearchScreen() {
 				) : isWeb ? (
 					<ScrollView
 						style={styles.container}
-						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding }]}
+						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
 						showsVerticalScrollIndicator={false}
 						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 					>
@@ -543,7 +545,7 @@ export default function SearchScreen() {
 						numColumns={numColumns}
 						contentContainerStyle={{
 							padding,
-							paddingBottom: 100
+							paddingBottom: 100 + insets.bottom
 						}}
 						ListEmptyComponent={renderEmpty}
 						onEndReached={handleLoadMore}

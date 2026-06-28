@@ -1,6 +1,7 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { useTheme, createShadow } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
@@ -17,6 +18,7 @@ export default function UserDetailScreen() {
 	const { userSlug, name: initialNameParam } = useLocalSearchParams<{ userSlug: string; name?: string }>()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
+	const insets = useSafeAreaInsets()
 
 	const [user, setUser] = useState<UserProfile | null>(null)
 	const [loading, setLoading] = useState(true)
@@ -129,7 +131,7 @@ export default function UserDetailScreen() {
 			/>
 
 			<ScrollView
-				contentContainerStyle={styles.scrollContent}
+				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				showsVerticalScrollIndicator={false}
 			>
