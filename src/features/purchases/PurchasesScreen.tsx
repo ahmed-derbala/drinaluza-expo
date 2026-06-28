@@ -6,8 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { getItem, setItem } from '@/core/storage'
 import { FlashList } from '@shopify/flash-list'
 import { useTheme, createShadow } from '../../core/theme'
-import HeaderTitle from '../common/HeaderTitle'
-import HeaderRefreshButton from '../common/HeaderRefreshButton'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import ErrorState from '../common/ErrorState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
@@ -652,10 +651,20 @@ const PurchasesScreen = () => {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
-				options={{
-					headerTitle: () => <HeaderTitle title={translate('purchases_title', 'Purchases')} subtitle={`${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`} />,
-					headerRight: () => <HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-				}}
+				options={
+					{
+						title: translate('purchases_title', 'Purchases'),
+						subtitle: `${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`,
+						headerActions: [
+							{
+								key: 'refresh',
+								onPress: onRefresh,
+								isRefreshing: refreshing,
+								accessibilityLabel: 'Refresh'
+							}
+						]
+					} as any
+				}
 			/>
 
 			{/* Filter horizontal tabs scroll */}

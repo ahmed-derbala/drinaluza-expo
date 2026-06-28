@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions, Linking, Share } from 'react-native'
+import React, { useEffect, useState, useMemo, useRef } from 'react'
+import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions, Animated, Easing, Share, RefreshControl } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
@@ -37,6 +37,30 @@ export default function UpdatesScreen() {
 
 	const [copied, setCopied] = useState(false)
 
+	// Pulse animation for checking / available updates icon
+	const pulseAnim = useRef(new Animated.Value(1)).current
+
+	useEffect(() => {
+		const animation = Animated.loop(
+			Animated.sequence([
+				Animated.timing(pulseAnim, {
+					toValue: 1.1,
+					duration: 1000,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: Platform.OS !== 'web'
+				}),
+				Animated.timing(pulseAnim, {
+					toValue: 1,
+					duration: 1000,
+					easing: Easing.inOut(Easing.ease),
+					useNativeDriver: Platform.OS !== 'web'
+				})
+			])
+		)
+		animation.start()
+		return () => animation.stop()
+	}, [pulseAnim])
+
 	// Refresh cache list on mount, and trigger fetch automatically on Web
 	useEffect(() => {
 		if (Platform.OS !== 'web') {
@@ -51,7 +75,6 @@ export default function UpdatesScreen() {
 	const maxLayoutWidth = 620
 	const isWide = width > maxLayoutWidth
 
-	// Helper to format bytes into readable strings
 	const formatBytes = (bytes: number): string => {
 		if (bytes <= 0) return '0 B'
 		const k = 1024
@@ -60,7 +83,6 @@ export default function UpdatesScreen() {
 		return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
 	}
 
-	// Helper to format date cleanly
 	const formatDate = (dateStr?: string): string => {
 		if (!dateStr) return ''
 		try {
@@ -77,7 +99,6 @@ export default function UpdatesScreen() {
 		}
 	}
 
-	// Copy to clipboard helper
 	const handleCopyUrl = async () => {
 		if (latestRelease?.download_url) {
 			await Clipboard.setStringAsync(latestRelease.download_url)
@@ -86,7 +107,6 @@ export default function UpdatesScreen() {
 		}
 	}
 
-	// Share download URL helper using native Share API
 	const handleShareUrl = async () => {
 		if (latestRelease?.download_url) {
 			try {
@@ -100,7 +120,6 @@ export default function UpdatesScreen() {
 		}
 	}
 
-	// Share APK file helper with Advisory Dialog recommendation
 	const handleShareApk = async (fileUri: string) => {
 		Alert.alert('Quick Share Advisory', 'We recommend using Quick Share or Bluetooth to share this installer file quickly with nearby devices without using mobile data. Do you want to continue?', [
 			{ text: translate('cancel', 'Cancel'), style: 'cancel' },
@@ -121,7 +140,6 @@ export default function UpdatesScreen() {
 		])
 	}
 
-	// Version comparison: returns true if current version is equal or higher than latest release
 	const isUpToDate = useMemo(() => {
 		if (!latestRelease) return true
 		const cur = config.app.version.split('.').map(Number)
@@ -135,31 +153,24 @@ export default function UpdatesScreen() {
 		return true
 	}, [latestRelease])
 
-	// Check if there is an APK file in local cache whose version matches the latest release version
 	const hasLatestApkInCache = useMemo(() => {
 		if (!latestRelease) return false
 		return downloadedApks.some((apk) => apk.version === latestRelease.latest_version)
 	}, [latestRelease, downloadedApks])
 
-	// Check if there is any installable APK in cache (its version is higher than APP_VERSION)
 	const installableApk = useMemo(() => {
 		return downloadedApks.find((apk) => apk.isInstallable)
 	}, [downloadedApks])
 
-	// Download button state
 	const isDownloadDisabled = isChecking || isDownloading || !latestRelease || isUpToDate || hasLatestApkInCache
-
-	// Install button state (enabled if there's a cached APK with version higher than APP_VERSION)
 	const isInstallDisabled = !installableApk
 
-	// Handler to launch installation of the cached installable APK
 	const handleInstallPress = () => {
 		if (installableApk) {
 			installApk(installableApk.fileUri)
 		}
 	}
 
-	// Handle instant download on web
 	const handleDownloadWeb = () => {
 		if (!latestRelease?.download_url) return
 		const link = document.createElement('a')
@@ -180,7 +191,6 @@ export default function UpdatesScreen() {
 					<Text style={[styles.metaValue, { color: colors.text }]}>{formatBytes(deviceFreeStorage)}</Text>
 				</View>
 
-				{/* Disk Space Warning */}
 				{latestRelease && deviceFreeStorage < latestRelease.size * 1.5 && (
 					<View style={[styles.warningBox, { backgroundColor: colors.error + '1A', borderColor: colors.error }]}>
 						<Ionicons name="warning" size={16} color={colors.error} />
@@ -193,15 +203,15 @@ export default function UpdatesScreen() {
 
 	const renderEnvironmentBadge = () => {
 		const nodeEnv = config.NODE_ENV.toLowerCase()
-		let badgeColors: [string, string] = ['#10B981', '#059669'] // Green
+		let badgeColors: [string, string] = ['#10B981', '#059669']
 		let badgeText = config.NODE_ENV.toUpperCase()
 
 		if (nodeEnv === 'production' || nodeEnv === 'prod') {
-			badgeColors = ['#EF4444', '#DC2626'] // Red
+			badgeColors = ['#EF4444', '#DC2626']
 		} else if (nodeEnv === 'local' || nodeEnv === 'dev' || nodeEnv === 'development') {
-			badgeColors = ['#3B82F6', '#2563EB'] // Blue
+			badgeColors = ['#3B82F6', '#2563EB']
 		} else if (nodeEnv === 'staging') {
-			badgeColors = ['#F59E0B', '#D97706'] // Amber
+			badgeColors = ['#F59E0B', '#D97706']
 		}
 
 		return (
@@ -219,17 +229,23 @@ export default function UpdatesScreen() {
 			: translate('new_version_found', 'A new release is available with new features and fixes.')
 
 		return (
-			<View style={[styles.statusCard, { borderColor: isUpToDate ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)' }]}>
+			<View style={[styles.statusCard, { borderColor: isUpToDate ? 'rgba(16, 185, 129, 0.2)' : 'rgba(14, 165, 233, 0.2)' }]}>
 				<View style={styles.statusRow}>
-					<View style={[styles.statusIndicatorContainer, { backgroundColor: isUpToDate ? 'rgba(16, 185, 129, 0.1)' : 'rgba(59, 130, 246, 0.1)' }]}>
-						{isUpToDate ? <Ionicons name="checkmark-circle" size={40} color="#10B981" /> : <Ionicons name="cloud-download" size={40} color="#3B82F6" style={styles.pulsingIcon} />}
+					<View style={[styles.statusIndicatorContainer, { backgroundColor: isUpToDate ? 'rgba(16, 185, 129, 0.08)' : 'rgba(14, 165, 233, 0.08)' }]}>
+						{isUpToDate ? (
+							<Ionicons name="checkmark-circle" size={38} color="#10B981" />
+						) : (
+							<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+								<Ionicons name="cloud-download" size={38} color="#0EA5E9" />
+							</Animated.View>
+						)}
 					</View>
 					<View style={styles.statusContent}>
 						<View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
 							<Text style={[styles.statusTitle, { color: colors.text }]}>{statusText}</Text>
 							{renderEnvironmentBadge()}
 						</View>
-						<Text style={[styles.statusSubtitle, { color: colors.textTertiary }]}>{statusSubtitle}</Text>
+						<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
 					</View>
 				</View>
 			</View>
@@ -240,15 +256,13 @@ export default function UpdatesScreen() {
 		const latestVer = latestRelease ? `v${latestRelease.latest_version}` : '—'
 		return (
 			<View style={styles.comparisonGrid}>
-				{/* Current Version */}
 				<View style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
 					<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current Version')}</Text>
 					<Text style={[styles.comparisonValue, { color: colors.text }]}>v{config.app.version}</Text>
 				</View>
-				{/* Latest Version */}
 				<View style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
 					<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest Version')}</Text>
-					<Text style={[styles.comparisonValue, { color: isUpToDate ? colors.text : '#3B82F6', fontWeight: 'bold' }]}>{latestVer}</Text>
+					<Text style={[styles.comparisonValue, { color: isUpToDate ? colors.text : '#0EA5E9', fontWeight: '800' }]}>{latestVer}</Text>
 				</View>
 			</View>
 		)
@@ -284,37 +298,20 @@ export default function UpdatesScreen() {
 				<TouchableOpacity
 					disabled={!latestRelease || !latestRelease.download_url}
 					onPress={handleDownloadWeb}
-					style={[
-						styles.primaryButton,
-						{
-							backgroundColor: !latestRelease || !latestRelease.download_url ? colors.surfaceVariant : colors.primary,
-							opacity: !latestRelease || !latestRelease.download_url ? 0.6 : 1
-						}
-					]}
+					style={[styles.primaryButtonTouch, { opacity: !latestRelease || !latestRelease.download_url ? 0.5 : 1 }]}
 				>
-					<Ionicons name="download-outline" size={20} color="#FFFFFF" />
-					<Text style={styles.primaryButtonText}>{translate('download_update', 'Download Update')}</Text>
-				</TouchableOpacity>
-
-				<View style={styles.rowButtons}>
-					<TouchableOpacity onPress={() => checkForUpdates(true)} disabled={isChecking} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1 }]}>
-						{isChecking ? <ActivityIndicator size="small" color={colors.textSecondary} /> : <Ionicons name="search-outline" size={16} color={colors.textSecondary} />}
-						<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>{translate('check_for_updates', 'Check Updates')}</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity
-						onPress={() => {
-							if (typeof window !== 'undefined') {
-								window.location.reload()
-							}
-						}}
-						disabled={isChecking || isUpToDateWeb}
-						style={[styles.secondaryButton, { backgroundColor: isUpToDateWeb ? colors.surfaceVariant : colors.surface, flex: 1, opacity: isUpToDateWeb ? 0.6 : 1 }]}
+					<LinearGradient
+						colors={!latestRelease || !latestRelease.download_url ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'] : ['#0EA5E9', '#2563EB']}
+						start={{ x: 0, y: 0 }}
+						end={{ x: 1, y: 1 }}
+						style={styles.primaryButtonGradient}
 					>
-						<Ionicons name="sync-outline" size={16} color={isUpToDateWeb ? colors.textTertiary : colors.textSecondary} />
-						<Text style={[styles.secondaryButtonText, { color: isUpToDateWeb ? colors.textTertiary : colors.textSecondary }]}>{translate('refresh', 'Refresh')}</Text>
-					</TouchableOpacity>
-				</View>
+						<Ionicons name="download-outline" size={20} color={!latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF'} />
+						<Text style={[styles.primaryButtonText, { color: !latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF' }]}>
+							{translate('download_update', 'Download Update')}
+						</Text>
+					</LinearGradient>
+				</TouchableOpacity>
 
 				<TouchableOpacity
 					disabled={!latestRelease || !latestRelease.download_url}
@@ -342,8 +339,8 @@ export default function UpdatesScreen() {
 			<View style={styles.actionsContainer}>
 				{isDownloadingOrPaused ? (
 					<View style={styles.progressContainer}>
-						<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
-							<LinearGradient colors={[colors.primary, '#8B5CF6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
+						<View style={[styles.progressBarBg, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
+							<LinearGradient colors={['#0EA5E9', '#8B5CF6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
 						</View>
 						<Text style={[styles.progressText, { color: colors.textSecondary }]}>
 							{isPaused ? `${translate('paused', 'Paused')}... ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')}... ${Math.round(downloadProgress * 100)}%`}
@@ -366,9 +363,11 @@ export default function UpdatesScreen() {
 
 							{isPaused && (
 								<>
-									<TouchableOpacity onPress={resumeDownload} style={[styles.primaryButton, { backgroundColor: colors.primary, flex: 1, height: 44 }]}>
-										<Ionicons name="play-outline" size={18} color="#FFFFFF" />
-										<Text style={styles.primaryButtonText}>{translate('resume', 'Resume')}</Text>
+									<TouchableOpacity onPress={resumeDownload} style={[styles.primaryButtonTouch, { flex: 1 }]}>
+										<LinearGradient colors={['#0EA5E9', '#2563EB']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.primaryButtonGradient, { height: 44 }]}>
+											<Ionicons name="play-outline" size={18} color="#FFFFFF" />
+											<Text style={styles.primaryButtonText}>{translate('resume', 'Resume')}</Text>
+										</LinearGradient>
 									</TouchableOpacity>
 
 									<TouchableOpacity onPress={cancelDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
@@ -381,40 +380,32 @@ export default function UpdatesScreen() {
 					</View>
 				) : (
 					<View style={styles.rowButtons}>
-						<TouchableOpacity
-							disabled={isDownloadDisabled}
-							onPress={downloadUpdate}
-							style={[
-								styles.primaryButton,
-								{
-									backgroundColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary,
-									flex: 1,
-									opacity: isDownloadDisabled ? 0.6 : 1
-								}
-							]}
-						>
-							<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : '#FFFFFF'} />
-							<Text style={[styles.primaryButtonText, { color: isDownloadDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
-								{translate('download', 'Download')}
-							</Text>
+						<TouchableOpacity disabled={isDownloadDisabled} onPress={downloadUpdate} style={[styles.primaryButtonTouch, { flex: 1, opacity: isDownloadDisabled ? 0.5 : 1 }]}>
+							<LinearGradient
+								colors={isDownloadDisabled ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'] : ['#0EA5E9', '#2563EB']}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.primaryButtonGradient}
+							>
+								<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : '#FFFFFF'} />
+								<Text style={[styles.primaryButtonText, { color: isDownloadDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
+									{translate('download', 'Download')}
+								</Text>
+							</LinearGradient>
 						</TouchableOpacity>
 
-						<TouchableOpacity
-							disabled={isInstallDisabled}
-							onPress={handleInstallPress}
-							style={[
-								styles.primaryButton,
-								{
-									backgroundColor: isInstallDisabled ? colors.surfaceVariant : colors.success,
-									flex: 1,
-									opacity: isInstallDisabled ? 0.6 : 1
-								}
-							]}
-						>
-							<Ionicons name="rocket-outline" size={20} color={isInstallDisabled ? colors.textTertiary : '#FFFFFF'} />
-							<Text style={[styles.primaryButtonText, { color: isInstallDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
-								{translate('install', 'Install')}
-							</Text>
+						<TouchableOpacity disabled={isInstallDisabled} onPress={handleInstallPress} style={[styles.primaryButtonTouch, { flex: 1, opacity: isInstallDisabled ? 0.5 : 1 }]}>
+							<LinearGradient
+								colors={isInstallDisabled ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'] : ['#10B981', '#059669']}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 1 }}
+								style={styles.primaryButtonGradient}
+							>
+								<Ionicons name="rocket-outline" size={20} color={isInstallDisabled ? colors.textTertiary : '#FFFFFF'} />
+								<Text style={[styles.primaryButtonText, { color: isInstallDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
+									{translate('install', 'Install')}
+								</Text>
+							</LinearGradient>
 						</TouchableOpacity>
 					</View>
 				)}
@@ -434,13 +425,6 @@ export default function UpdatesScreen() {
 								{translate('share_url', 'Share Link')}
 							</Text>
 						</TouchableOpacity>
-
-						<TouchableOpacity onPress={() => checkForUpdates(true)} disabled={isChecking} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1 }]}>
-							<Ionicons name="sync-outline" size={16} color={colors.textSecondary} />
-							<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]} numberOfLines={1}>
-								{translate('refresh', 'Refresh')}
-							</Text>
-						</TouchableOpacity>
 					</View>
 				)}
 			</View>
@@ -449,7 +433,24 @@ export default function UpdatesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<SmartHeader title={translate('updates', 'Updates')} fallbackRoute="/(home)/feed" loading={isChecking} disableAnimations={true} />
+			<SmartHeader
+				title={translate('updates', 'Updates')}
+				fallbackRoute="/(home)/feed"
+				loading={isChecking}
+				disableAnimations={true}
+				headerActions={[
+					<SmartHeader.RefreshButton
+						key="refresh"
+						onRefresh={async () => {
+							await checkForUpdates(true)
+							if (Platform.OS === 'web' && typeof window !== 'undefined') {
+								window.location.reload()
+							}
+						}}
+						isRefreshing={isChecking}
+					/>
+				]}
+			/>
 
 			<ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
 				{renderStatusCard()}
@@ -469,24 +470,29 @@ export default function UpdatesScreen() {
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
 						<View style={styles.apkSection}>
 							{downloadedApks.map((apk) => (
-								<View key={apk.filename} style={[styles.apkItem, { borderColor: colors.borderLight }]}>
-									<View style={styles.apkInfo}>
-										<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1}>
-											{apk.filename}
-										</Text>
-										<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
-											v{apk.version} • {formatBytes(apk.size)}
-										</Text>
+								<View key={apk.filename} style={[styles.apkItem, { borderColor: 'rgba(255, 255, 255, 0.05)' }]}>
+									<View style={styles.apkInfoContainer}>
+										<View style={[styles.apkIconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.08)' }]}>
+											<Ionicons name="logo-android" size={18} color="#0EA5E9" />
+										</View>
+										<View style={styles.apkInfo}>
+											<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1}>
+												{apk.filename}
+											</Text>
+											<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
+												v{apk.version} • {formatBytes(apk.size)}
+											</Text>
+										</View>
 									</View>
 									<View style={styles.apkActions}>
 										{/* Share APK Button */}
-										<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: colors.primaryContainer }]}>
-											<Ionicons name="share-social-outline" size={18} color={colors.primary} />
+										<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: 'rgba(14, 165, 233, 0.08)' }]}>
+											<Ionicons name="share-social-outline" size={16} color="#0EA5E9" />
 										</TouchableOpacity>
 
 										{/* Delete Button */}
-										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: colors.error + '1F' }]}>
-											<Ionicons name="trash-outline" size={18} color={colors.error} />
+										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)' }]}>
+											<Ionicons name="trash-outline" size={16} color="#EF4444" />
 										</TouchableOpacity>
 									</View>
 								</View>
@@ -499,8 +505,8 @@ export default function UpdatesScreen() {
 				{(isWeb || (latestRelease && latestRelease.changelog !== '')) && (
 					<View style={[styles.card, { borderColor: colors.borderLight }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('whats_new', "What's New")}</Text>
-						<View style={[styles.changelogBox, { backgroundColor: colors.surface }]}>
-							<Text style={[styles.changelogText, { color: colors.text }]}>
+						<View style={[styles.changelogBox, { backgroundColor: 'rgba(0,0,0,0.22)', borderColor: 'rgba(255,255,255,0.05)', borderWidth: 1 }]}>
+							<Text style={[styles.changelogText, { color: 'rgba(255,255,255,0.85)', fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace' }]}>
 								{latestRelease && latestRelease.changelog !== '' ? latestRelease.changelog : translate('no_changelog', 'No changelog details available.')}
 							</Text>
 						</View>
@@ -509,7 +515,7 @@ export default function UpdatesScreen() {
 
 				{/* Error Status Box */}
 				{error && (
-					<View style={[styles.errorBox, { backgroundColor: colors.error + '1A', borderColor: colors.error }]}>
+					<View style={[styles.errorBox, { backgroundColor: colors.error + '12', borderColor: colors.error }]}>
 						<Ionicons name="alert-circle-outline" size={20} color={colors.error} />
 						<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
 					</View>
@@ -529,10 +535,17 @@ const styles = StyleSheet.create({
 		gap: 16
 	},
 	statusCard: {
-		borderRadius: 20,
+		borderRadius: 24,
 		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.08)',
 		padding: 20,
-		backgroundColor: '#1E293B' // Glassy slate card
+		backgroundColor: 'rgba(30, 41, 59, 0.45)', // Translucent dark card
+		...Platform.select({
+			web: {
+				backdropFilter: 'blur(20px)',
+				WebkitBackdropFilter: 'blur(20px)'
+			} as any
+		})
 	},
 	statusRow: {
 		flexDirection: 'row',
@@ -540,9 +553,9 @@ const styles = StyleSheet.create({
 		gap: 16
 	},
 	statusIndicatorContainer: {
-		width: 64,
-		height: 64,
-		borderRadius: 32,
+		width: 60,
+		height: 60,
+		borderRadius: 30,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
@@ -578,13 +591,20 @@ const styles = StyleSheet.create({
 	},
 	comparisonCard: {
 		flex: 1,
-		borderRadius: 16,
+		borderRadius: 20,
 		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.08)',
 		padding: 16,
-		backgroundColor: '#1E293B',
+		backgroundColor: 'rgba(30, 41, 59, 0.45)',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: 4
+		gap: 6,
+		...Platform.select({
+			web: {
+				backdropFilter: 'blur(20px)',
+				WebkitBackdropFilter: 'blur(20px)'
+			} as any
+		})
 	},
 	comparisonLabel: {
 		fontSize: 11,
@@ -598,10 +618,17 @@ const styles = StyleSheet.create({
 		letterSpacing: -0.5
 	},
 	card: {
-		borderRadius: 16,
+		borderRadius: 20,
 		borderWidth: 1,
-		padding: 16,
-		backgroundColor: '#1C2541' // Deep sleep slate card background
+		borderColor: 'rgba(255, 255, 255, 0.08)',
+		padding: 20,
+		backgroundColor: 'rgba(28, 37, 65, 0.45)', // Translucent deep slate
+		...Platform.select({
+			web: {
+				backdropFilter: 'blur(20px)',
+				WebkitBackdropFilter: 'blur(20px)'
+			} as any
+		})
 	},
 	sectionTitle: {
 		fontSize: 12,
@@ -639,18 +666,24 @@ const styles = StyleSheet.create({
 		gap: 12,
 		width: '100%'
 	},
-	primaryButton: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-		height: 50,
-		borderRadius: 14,
+	primaryButtonTouch: {
+		width: '100%',
+		borderRadius: 16,
+		overflow: 'hidden',
 		...Platform.select({
 			web: {
 				cursor: 'pointer'
 			} as any
 		})
+	},
+	primaryButtonGradient: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		gap: 8,
+		height: 50,
+		paddingHorizontal: 16,
+		width: '100%'
 	},
 	primaryButtonText: {
 		color: '#FFFFFF',
@@ -662,11 +695,15 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		gap: 6,
-		height: 44,
-		borderRadius: 12,
+		height: 46,
+		borderRadius: 14,
+		borderWidth: 1,
+		borderColor: 'rgba(255, 255, 255, 0.08)',
+		backgroundColor: 'rgba(255, 255, 255, 0.02)',
 		...Platform.select({
 			web: {
-				cursor: 'pointer'
+				cursor: 'pointer',
+				transition: 'background-color 0.15s ease, border-color 0.15s ease'
 			} as any
 		})
 	},
@@ -706,12 +743,12 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	changelogBox: {
-		borderRadius: 12,
-		padding: 12,
+		borderRadius: 14,
+		padding: 14,
 		minHeight: 80
 	},
 	changelogText: {
-		fontSize: 14,
+		fontSize: 13,
 		lineHeight: 20
 	},
 	errorBox: {
@@ -728,7 +765,8 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	apkSection: {
-		marginTop: 4
+		marginTop: 4,
+		gap: 4
 	},
 	apkItem: {
 		flexDirection: 'row',
@@ -737,9 +775,22 @@ const styles = StyleSheet.create({
 		paddingVertical: 12,
 		borderBottomWidth: 1
 	},
-	apkInfo: {
+	apkInfoContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
 		flex: 1,
+		gap: 12,
 		marginRight: 8
+	},
+	apkIconWrap: {
+		width: 36,
+		height: 36,
+		borderRadius: 10,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	apkInfo: {
+		flex: 1
 	},
 	apkTitle: {
 		fontSize: 14,
@@ -765,8 +816,5 @@ const styles = StyleSheet.create({
 				cursor: 'pointer'
 			} as any
 		})
-	},
-	pulsingIcon: {
-		transform: [{ scale: 1 }]
 	}
 })

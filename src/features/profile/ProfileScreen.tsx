@@ -29,9 +29,8 @@ import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import { HeaderRefreshButton, HeaderActionButton } from '@/core/smart-header'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
-import HeaderActionButton from '@/features/common/HeaderActionButton'
 import LoadingState from '@/features/common/LoadingState'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
@@ -666,19 +665,51 @@ export default function ProfileScreen() {
 
 	if (!userData) return null
 
-	const headerRightActions = (
-		<View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-			{userData.role === 'customer' && <HeaderActionButton iconName="briefcase" onPress={handleRequestBusiness} accessibilityLabel="Request Business" />}
-			<HeaderActionButton iconName="people" iconColor={colors.text} backgroundColor={colors.text + '05'} onPress={handleSwitchUser} accessibilityLabel="Switch User Account" />
-			<HeaderActionButton iconName="log-out" iconColor={colors.error} backgroundColor={colors.error + '10'} onPress={handleSignOut} accessibilityLabel="Sign Out" />
-			<HeaderActionButton iconName="cart-outline" onPress={() => router.push('/profile/purchases?status=cart')} badgeCount={cart.length} accessibilityLabel="View Cart" />
-			<HeaderRefreshButton onRefresh={loadProfile} isRefreshing={loading} size={20} style={[styles.headerActionButton, { backgroundColor: colors.surface }]} />
-		</View>
-	)
+	const headerActions = useMemo(() => {
+		const actions: any[] = []
+		if (userData.role === 'customer') {
+			actions.push({
+				key: 'request-business',
+				iconName: 'briefcase',
+				onPress: handleRequestBusiness,
+				accessibilityLabel: 'Request Business'
+			})
+		}
+		actions.push({
+			key: 'switch-user',
+			iconName: 'people',
+			iconColor: colors.text,
+			backgroundColor: colors.text + '05',
+			onPress: handleSwitchUser,
+			accessibilityLabel: 'Switch User Account'
+		})
+		actions.push({
+			key: 'sign-out',
+			iconName: 'log-out',
+			iconColor: colors.error,
+			backgroundColor: colors.error + '10',
+			onPress: handleSignOut,
+			accessibilityLabel: 'Sign Out'
+		})
+		actions.push({
+			key: 'cart',
+			iconName: 'cart-outline',
+			badgeCount: cart.length,
+			onPress: () => router.push('/profile/purchases?status=cart'),
+			accessibilityLabel: 'View Cart'
+		})
+		actions.push({
+			key: 'refresh',
+			onPress: loadProfile,
+			isRefreshing: loading,
+			accessibilityLabel: 'Refresh'
+		})
+		return actions
+	}, [userData.role, handleRequestBusiness, handleSwitchUser, handleSignOut, cart.length, loadProfile, loading, colors, router])
 
 	return (
 		<View style={styles.container}>
-			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerRight: () => headerRightActions }} />
+			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerActions: headerActions } as any} />
 			<KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<ScrollView
 					style={styles.scrollView}

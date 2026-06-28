@@ -1,5 +1,4 @@
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import HeaderTitle from '@/features/common/HeaderTitle'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
@@ -227,20 +226,21 @@ export default function NotificationsScreen() {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Tabs.Screen
-				options={{
-					headerTitle: () => (
-						<HeaderTitle
-							title={translate('notifications_title', 'Notifications')}
-							subtitle={`${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`}
-						/>
-					),
-					headerLeft: () => null,
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
+				options={
+					{
+						title: translate('notifications_title', 'Notifications'),
+						subtitle: `${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`,
+						headerLeft: () => null,
+						headerActions: [
+							{
+								key: 'refresh',
+								onPress: onRefresh,
+								isRefreshing: refreshing,
+								accessibilityLabel: 'Refresh'
+							}
+						]
+					} as any
+				}
 			/>
 
 			<FlashList

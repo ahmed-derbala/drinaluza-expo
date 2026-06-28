@@ -8,7 +8,7 @@ import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
-import HeaderRefreshButton from '../common/HeaderRefreshButton'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
@@ -364,6 +364,35 @@ export default function BusinessProductsScreen() {
 		return { all: products.length, inStock, lowStock, outOfStock }
 	}, [products])
 
+	const headerActions = useMemo(() => {
+		const actions: any[] = []
+		if (isDashboard) {
+			if (businessSlug) {
+				actions.push({
+					key: 'sales',
+					iconName: 'trending-up',
+					onPress: () => router.push(`/dashboard/${businessSlug}/sales` as any),
+					accessibilityLabel: 'Sales Stats'
+				})
+			}
+		} else {
+			actions.push({
+				key: 'cart',
+				iconName: 'cart-outline',
+				badgeCount: cart.length,
+				onPress: () => router.push('/profile/purchases?status=cart' as any),
+				accessibilityLabel: 'View Cart'
+			})
+		}
+		actions.push({
+			key: 'refresh',
+			onPress: handleRefresh,
+			isRefreshing: refreshing,
+			accessibilityLabel: 'Refresh'
+		})
+		return actions
+	}, [isDashboard, businessSlug, cart.length, handleRefresh, refreshing, router])
+
 	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
 		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },
 		{ key: 'inStock', label: translate('in_stock', 'In Stock'), color: colors.success, count: counts.inStock },
@@ -417,72 +446,12 @@ export default function BusinessProductsScreen() {
 	return (
 		<View style={[s.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
-				options={{
-					title: headerTitle,
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							{isDashboard && (
-								<TouchableOpacity
-									style={{
-										width: 40,
-										height: 40,
-										borderRadius: 10,
-										backgroundColor: colors.surface,
-										justifyContent: 'center',
-										alignItems: 'center',
-										borderWidth: 1,
-										borderColor: colors.border || 'transparent'
-									}}
-									onPress={() => {
-										if (businessSlug) {
-											router.push(`/dashboard/${businessSlug}/sales` as any)
-										}
-									}}
-								>
-									<Ionicons name="trending-up" size={20} color={colors.primary} />
-								</TouchableOpacity>
-							)}
-							{!isDashboard && (
-								<TouchableOpacity
-									style={{
-										width: 40,
-										height: 40,
-										borderRadius: 10,
-										backgroundColor: colors.surface,
-										justifyContent: 'center',
-										alignItems: 'center',
-										borderWidth: 1,
-										borderColor: colors.border || 'transparent'
-									}}
-									onPress={() => router.push('/profile/purchases?status=cart' as any)}
-								>
-									<Ionicons name="cart-outline" size={20} color={colors.primary} />
-									{cart.length > 0 && (
-										<View
-											style={{
-												position: 'absolute',
-												top: -6,
-												right: -6,
-												backgroundColor: colors.error || '#ef4444',
-												borderRadius: 10,
-												minWidth: 20,
-												height: 20,
-												justifyContent: 'center',
-												alignItems: 'center',
-												paddingHorizontal: 4,
-												borderWidth: 1.5,
-												borderColor: colors.surface
-											}}
-										>
-											<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-										</View>
-									)}
-								</TouchableOpacity>
-							)}
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
+				options={
+					{
+						title: headerTitle,
+						headerActions: headerActions
+					} as any
+				}
 			/>
 
 			{/* Search bar */}

@@ -126,8 +126,7 @@ const styles = StyleSheet.create({
 		height: 36,
 		borderRadius: 10,
 		justifyContent: 'center',
-		alignItems: 'center',
-		marginRight: Platform.OS === 'ios' ? 0 : 8
+		alignItems: 'center'
 	}
 })
 

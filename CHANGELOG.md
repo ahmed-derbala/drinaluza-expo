@@ -1,3 +1,18 @@
+## [1.27.11] - 28 june 2026
+### Added
+- Move `HeaderRefreshButton` component from `src/features/common/` to `src/core/smart-header/` to make it a self-contained core header subcomponent.
+- Show standard `SmartHeader.RefreshButton` on the header of the Updates screen.
+
+### Changed
+- Remove platform-specific `marginRight` layout styles from `HeaderRefreshButton` to enforce spacing consistency via parent layout container.
+- Update import statements in all 12 screen/feature files to import `HeaderRefreshButton` from `@/core/smart-header`.
+- Remove redundant inline "Refresh" button from native actions list in the Updates screen body, and clean up the "Check Updates" and "Refresh" buttons in the Web layout.
+- Redesign the Updates screen with modern glassmorphic card containers, gradient action buttons, pulsing status indicators, and monospace code-styled changelogs.
+- Refactor all 13 feature screens (including Dashboard, Product/Business lists and details, Settings, Sales, Purchases, Notifications, and Profile) to use standard `headerActions` navigation options instead of hardcoded `headerRight` custom views.
+- Relocate custom header hooks (`headerActions`, `resolvedFallbackRoute`) to the top of `ProductDetailScreen` and `BusinessProductsScreen` before conditional returns to conform to React Rules of Hooks.
+- Render `SmartHeader` directly inside `UserDetailScreen` and set native stack header to hidden to bypass nested router layout mismatches.
+- Update the custom `SmartHeader.RefreshButton` on the Updates screen to execute both update checks and browser page reloading under Web platforms.
+
 ## [1.27.9] - 28 june 2026
 ### Added
 - Create `useResponsiveGrid` custom hook under `src/core/hooks/` to standardize column calculations and card layout boundaries.

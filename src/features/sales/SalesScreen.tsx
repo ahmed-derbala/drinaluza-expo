@@ -1,4 +1,4 @@
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme, createShadow } from '@/core/theme'
@@ -242,7 +242,21 @@ export default function SalesScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Stack.Screen options={{ title: 'Sales', headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} /> }} />
+			<Stack.Screen
+				options={
+					{
+						title: 'Sales',
+						headerActions: [
+							{
+								key: 'refresh',
+								onPress: handleRefresh,
+								isRefreshing: refreshing,
+								accessibilityLabel: 'Refresh'
+							}
+						]
+					} as any
+				}
+			/>
 
 			{/* Status Filter */}
 			<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>

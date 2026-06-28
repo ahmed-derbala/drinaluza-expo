@@ -1,5 +1,4 @@
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import HeaderTitle from '@/features/common/HeaderTitle'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -109,30 +108,42 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 		loadDashboard(selectedProfile ?? undefined)
 	}, [loadDashboard, selectedProfile])
 
-	const headerRightActions = useMemo(() => {
+	const headerActions = useMemo(() => {
 		if (!dashboardData || !isBusinessDashboard(dashboardData)) {
-			return (
-				<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-					<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-				</View>
-			)
+			return [
+				{
+					key: 'refresh',
+					onPress: onRefresh,
+					isRefreshing: refreshing,
+					accessibilityLabel: 'Refresh'
+				}
+			]
 		}
 
 		const business = dashboardData.business
-		return (
-			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-				{business.slug && (
-					<TouchableOpacity onPress={() => router.push(`/dashboard/${business.slug}/sales` as never)} activeOpacity={0.7} style={styles.headerIconBtn}>
-						<Ionicons name="trending-up" size={22} color={colors.primary} />
-					</TouchableOpacity>
-				)}
-				<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
-					<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
-				</TouchableOpacity>
-				<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
-			</View>
-		)
-	}, [dashboardData, refreshing, onRefresh, colors.primary, styles.headerIconBtn])
+		const actions: any[] = []
+		if (business.slug) {
+			actions.push({
+				key: 'sales',
+				iconName: 'trending-up',
+				onPress: () => router.push(`/dashboard/${business.slug}/sales` as never),
+				accessibilityLabel: 'Sales Stats'
+			})
+		}
+		actions.push({
+			key: 'qr-code',
+			iconName: 'qr-code-outline',
+			onPress: () => setShowQRCode(true),
+			accessibilityLabel: 'QR Code'
+		})
+		actions.push({
+			key: 'refresh',
+			onPress: onRefresh,
+			isRefreshing: refreshing,
+			accessibilityLabel: 'Refresh'
+		})
+		return actions
+	}, [dashboardData, refreshing, onRefresh, router])
 
 	const handleSelectProfile = useCallback(
 		(profile: DashboardProfile) => {
@@ -198,21 +209,21 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Tabs.Screen
-				options={{
-					headerTitle: () => (
-						<HeaderTitle
-							title={translate('dashboard', 'Dashboard')}
-							subtitle={user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back')}
-						/>
-					),
-					headerLeft: () => null,
-					headerRight: () => headerRightActions
-				}}
+				options={
+					{
+						title: translate('dashboard', 'Dashboard'),
+						subtitle: user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back'),
+						headerLeft: () => null,
+						headerActions: headerActions
+					} as any
+				}
 			/>
 			<Stack.Screen
-				options={{
-					headerRight: () => headerRightActions
-				}}
+				options={
+					{
+						headerActions: headerActions
+					} as any
+				}
 			/>
 
 			<ScrollView

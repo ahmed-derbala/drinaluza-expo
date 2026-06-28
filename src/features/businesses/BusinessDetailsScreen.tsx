@@ -1,4 +1,4 @@
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, Linking, RefreshControl, Platform, ScrollView } from 'react-native'
 
@@ -166,34 +166,26 @@ export default function BusinessDetailsScreen() {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
-				options={{
-					title: displayTitle,
-					headerLeft: () => {
-						if (router.canGoBack()) return null
-						return (
-							<TouchableOpacity
-								style={{
-									flexDirection: 'row',
-									alignItems: 'center',
-									marginLeft: Platform.OS === 'ios' ? 8 : 0,
-									gap: 4
-								}}
-								onPress={() => router.replace('/(home)/feed' as any)}
-							>
-								<Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={24} color={colors.primary} />
-								{Platform.OS === 'ios' && <Text style={{ color: colors.primary, fontSize: 17 }}>{translate('back', 'Back')}</Text>}
-							</TouchableOpacity>
-						)
-					},
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7} style={styles.headerIconBtn}>
-								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
-							</TouchableOpacity>
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
+				options={
+					{
+						title: displayTitle,
+						fallbackRoute: '/(home)/feed',
+						headerActions: [
+							{
+								key: 'qr-code',
+								iconName: 'qr-code-outline',
+								onPress: () => setShowQRCode(true),
+								accessibilityLabel: 'QR Code'
+							},
+							{
+								key: 'refresh',
+								onPress: handleRefresh,
+								isRefreshing: refreshing,
+								accessibilityLabel: 'Refresh'
+							}
+						]
+					} as any
+				}
 			/>
 			<ScrollView
 				style={styles.container}

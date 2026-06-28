@@ -12,7 +12,7 @@ import { ProductType } from '@/features/products/products.type'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
-import HeaderRefreshButton from '../common/HeaderRefreshButton'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -148,6 +148,57 @@ export default function ProductDetailScreen() {
 		}
 	}
 
+	const headerActions = useMemo(() => {
+		const actions: any[] = []
+		if (isDashboard) {
+			const slug = businessSlug || product?.business?.slug
+			if (slug) {
+				actions.push({
+					key: 'sales',
+					iconName: 'trending-up',
+					onPress: () => router.push(`/dashboard/${slug}/sales?productSlug=${product?.slug || productSlug}` as any),
+					accessibilityLabel: 'Sales Stats'
+				})
+			}
+			actions.push({
+				key: 'edit',
+				iconName: 'pencil',
+				onPress: () => router.push(`${pathname}/edit` as any),
+				accessibilityLabel: 'Edit Product'
+			})
+		}
+		actions.push({
+			key: 'qr-code',
+			iconName: 'qr-code-outline',
+			onPress: () => setShowQRCode(true),
+			accessibilityLabel: 'QR Code'
+		})
+		if (!isDashboard) {
+			actions.push({
+				key: 'cart',
+				iconName: 'cart-outline',
+				badgeCount: cart.length,
+				onPress: () => router.push('/profile/purchases?status=cart' as any),
+				accessibilityLabel: 'View Cart'
+			})
+		}
+		actions.push({
+			key: 'refresh',
+			onPress: handleRefresh,
+			isRefreshing: refreshing,
+			accessibilityLabel: 'Refresh'
+		})
+		return actions
+	}, [isDashboard, businessSlug, product, productSlug, pathname, cart.length, handleRefresh, refreshing, router])
+
+	const resolvedFallbackRoute = useMemo(() => {
+		const fallbackRoute = `/businesses/${businessSlug || product?.business?.slug || ''}`
+		if (businessSlug || product?.business?.slug) {
+			return fallbackRoute
+		}
+		return '/(home)/feed'
+	}, [businessSlug, product])
+
 	if (loading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -205,132 +256,15 @@ export default function ProductDetailScreen() {
 	const stockStatus = getStockStatus()
 
 	return (
-		<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
+		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
-				options={{
-					title: displayTitle,
-					headerLeft: () => {
-						if (router.canGoBack()) return null
-						const fallbackRoute = `/businesses/${businessSlug || product?.business?.slug || ''}`
-						return (
-							<TouchableOpacity
-								style={{
-									flexDirection: 'row',
-									alignItems: 'center',
-									marginLeft: Platform.OS === 'ios' ? 8 : 0,
-									gap: 4
-								}}
-								onPress={() => {
-									if (businessSlug || product?.business?.slug) {
-										router.replace(fallbackRoute as any)
-									} else {
-										router.replace('/(home)/feed' as any)
-									}
-								}}
-							>
-								<Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={24} color={colors.primary} />
-								{Platform.OS === 'ios' && <Text style={{ color: colors.primary, fontSize: 17 }}>{translate('back', 'Back')}</Text>}
-							</TouchableOpacity>
-						)
-					},
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							{isDashboard && (
-								<>
-									<TouchableOpacity
-										style={{
-											width: 40,
-											height: 40,
-											borderRadius: 10,
-											backgroundColor: colors.surface,
-											justifyContent: 'center',
-											alignItems: 'center',
-											borderWidth: 1,
-											borderColor: colors.border || 'transparent'
-										}}
-										onPress={() => {
-											const slug = businessSlug || product?.business?.slug
-											if (slug) {
-												router.push(`/dashboard/${slug}/sales?productSlug=${product?.slug || productSlug}` as any)
-											}
-										}}
-									>
-										<Ionicons name="trending-up" size={20} color={colors.primary} />
-									</TouchableOpacity>
-									<TouchableOpacity
-										style={{
-											width: 40,
-											height: 40,
-											borderRadius: 10,
-											backgroundColor: colors.surface,
-											justifyContent: 'center',
-											alignItems: 'center',
-											borderWidth: 1,
-											borderColor: colors.border || 'transparent'
-										}}
-										onPress={() => router.push(`${pathname}/edit` as any)}
-									>
-										<Ionicons name="pencil" size={20} color={colors.primary} />
-									</TouchableOpacity>
-								</>
-							)}
-							<TouchableOpacity
-								style={{
-									width: 40,
-									height: 40,
-									borderRadius: 10,
-									backgroundColor: colors.surface,
-									justifyContent: 'center',
-									alignItems: 'center',
-									borderWidth: 1,
-									borderColor: colors.border || 'transparent'
-								}}
-								onPress={() => setShowQRCode(true)}
-								activeOpacity={0.7}
-							>
-								<Ionicons name="qr-code-outline" size={20} color={colors.primary} />
-							</TouchableOpacity>
-							{!isDashboard && (
-								<TouchableOpacity
-									style={{
-										width: 40,
-										height: 40,
-										borderRadius: 10,
-										backgroundColor: colors.surface,
-										justifyContent: 'center',
-										alignItems: 'center',
-										borderWidth: 1,
-										borderColor: colors.border || 'transparent'
-									}}
-									onPress={() => router.push('/profile/purchases?status=cart' as any)}
-								>
-									<Ionicons name="cart-outline" size={20} color={colors.primary} />
-									{cart.length > 0 && (
-										<View
-											style={{
-												position: 'absolute',
-												top: -6,
-												right: -6,
-												backgroundColor: colors.error || '#ef4444',
-												borderRadius: 10,
-												minWidth: 20,
-												height: 20,
-												justifyContent: 'center',
-												alignItems: 'center',
-												paddingHorizontal: 4,
-												borderWidth: 1.5,
-												borderColor: colors.surface
-											}}
-										>
-											<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-										</View>
-									)}
-								</TouchableOpacity>
-							)}
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
+				options={
+					{
+						title: displayTitle,
+						fallbackRoute: resolvedFallbackRoute as any,
+						headerActions: headerActions
+					} as any
+				}
 			/>
 
 			<ScrollView

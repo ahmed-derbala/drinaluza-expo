@@ -1,5 +1,4 @@
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
-import HeaderTitle from '@/features/common/HeaderTitle'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
@@ -700,15 +699,20 @@ export default function BusinessesListScreen() {
 	return (
 		<View style={styles.container as ViewStyle}>
 			<Stack.Screen
-				options={{
-					headerTitle: () => (
-						<HeaderTitle
-							title={translate('discover_businesses', 'Discover Businesses')}
-							subtitle={`${businesses.length} ${businesses.length === 1 ? translate('business_product', 'business') : translate('business_products_plural', 'businesses')} ${translate('businesses_available', 'available near you')}`}
-						/>
-					),
-					headerRight: () => <HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-				}}
+				options={
+					{
+						title: translate('discover_businesses', 'Discover Businesses'),
+						subtitle: `${businesses.length} ${businesses.length === 1 ? translate('business_product', 'business') : translate('business_products_plural', 'businesses')} ${translate('businesses_available', 'available near you')}`,
+						headerActions: [
+							{
+								key: 'refresh',
+								onPress: handleRefresh,
+								isRefreshing: refreshing,
+								accessibilityLabel: 'Refresh'
+							}
+						]
+					} as any
+				}
 			/>
 			<FlashList
 				key={`cols-${numColumns}`}

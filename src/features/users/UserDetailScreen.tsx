@@ -1,4 +1,4 @@
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, ActivityIndicator, ScrollView, Platform, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
@@ -80,9 +80,12 @@ export default function UserDetailScreen() {
 
 	if (loading && !user) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
-				<Stack.Screen options={{ title: displayTitle }} />
-				<ActivityIndicator size="large" color={colors.primary} />
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<Stack.Screen options={{ headerShown: false }} />
+				<SmartHeader title={displayTitle} isLoading={true} />
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+					<ActivityIndicator size="large" color={colors.primary} />
+				</View>
 			</View>
 		)
 	}
@@ -90,7 +93,8 @@ export default function UserDetailScreen() {
 	if (error || !user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: displayTitle }} />
+				<Stack.Screen options={{ headerShown: false }} />
+				<SmartHeader title={displayTitle} />
 				<ErrorState
 					title={error?.title || translate('not_found', 'Not Found')}
 					message={error?.message || translate('user_not_found', 'User not found')}
@@ -103,18 +107,26 @@ export default function UserDetailScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Stack.Screen
-				options={{
-					title: displayTitle,
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-							<TouchableOpacity onPress={() => setShowQRCode(true)} activeOpacity={0.7}>
-								<Ionicons name="qr-code-outline" size={22} color={colors.primary} />
-							</TouchableOpacity>
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
+			<Stack.Screen options={{ headerShown: false }} />
+			<SmartHeader
+				title={displayTitle}
+				headerActions={
+					[
+						{
+							key: 'qr-code',
+							iconName: 'qr-code-outline',
+							onPress: () => setShowQRCode(true),
+							accessibilityLabel: 'QR Code'
+						},
+						{
+							key: 'refresh',
+							onPress: handleRefresh,
+							isRefreshing: refreshing,
+							accessibilityLabel: 'Refresh'
+						}
+					] as any[]
+				}
+				fallbackRoute="/(home)/feed"
 			/>
 
 			<ScrollView

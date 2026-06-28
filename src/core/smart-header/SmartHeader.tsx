@@ -10,7 +10,7 @@ import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useLayout } from '@/core/contexts'
 import HeaderActionButton from '@/features/common/HeaderActionButton'
-import HeaderRefreshButton from '@/features/common/HeaderRefreshButton'
+import HeaderRefreshButton from './HeaderRefreshButton'
 
 // Re-export actions for convenience
 export { HeaderActionButton, HeaderRefreshButton }
@@ -495,7 +495,9 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 				<View style={styles.headerInner}>
 					{/* Left Section: Back button + Title & Subtitle */}
 					<View style={styles.leftSection}>
-						{resolvedHeaderLeft ? resolvedHeaderLeft : resolvedShowBackButton && <HeaderBackButton onPress={onBackPress} fallbackRoute={fallbackRoute || '/feed'} />}
+						{resolvedHeaderLeft
+							? resolvedHeaderLeft
+							: resolvedShowBackButton && <HeaderBackButton onPress={onBackPress ?? options?.onBackPress} fallbackRoute={fallbackRoute ?? options?.fallbackRoute ?? '/feed'} />}
 						<View style={[styles.titleContainerWrapper, (resolvedHeaderLeft || resolvedShowBackButton) && { marginLeft: 12 }]}>{renderTitleSection()}</View>
 					</View>
 

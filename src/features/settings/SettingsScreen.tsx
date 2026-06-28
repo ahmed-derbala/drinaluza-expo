@@ -86,14 +86,19 @@ export default function SettingsScreen() {
 			scrollEventThrottle={16}
 		>
 			<Tabs.Screen
-				options={{
-					title: translate('settings', 'Settings'),
-					headerRight: () => (
-						<TouchableOpacity onPress={fetchServerInfo} disabled={loading} style={{ marginRight: 16 }}>
-							{loading ? <ActivityIndicator size="small" color={colors.text} /> : <Ionicons name="refresh" size={24} color={colors.text} />}
-						</TouchableOpacity>
-					)
-				}}
+				options={
+					{
+						title: translate('settings', 'Settings'),
+						headerActions: [
+							{
+								key: 'refresh',
+								onPress: fetchServerInfo,
+								isRefreshing: loading,
+								accessibilityLabel: 'Refresh'
+							}
+						]
+					} as any
+				}
 			/>
 			<View style={{ height: 16 }} />
 

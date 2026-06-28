@@ -9,7 +9,7 @@ import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
 import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
-import HeaderRefreshButton from '../common/HeaderRefreshButton'
+import { HeaderRefreshButton } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
@@ -132,52 +132,33 @@ export default function ProductsListScreen() {
 		[numColumns, handleAddToCart, gap]
 	)
 
+	const headerActions = useMemo(() => {
+		return [
+			{
+				key: 'cart',
+				iconName: 'cart-outline',
+				badgeCount: cart.length,
+				onPress: () => router.push('/profile/purchases?status=cart' as any),
+				accessibilityLabel: 'View Cart'
+			},
+			{
+				key: 'refresh',
+				onPress: handleRefresh,
+				isRefreshing: refreshing,
+				accessibilityLabel: 'Refresh'
+			}
+		]
+	}, [cart.length, handleRefresh, refreshing, router])
+
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
-				options={{
-					title: translate('products', 'Products'),
-					headerRight: () => (
-						<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-							<TouchableOpacity
-								style={{
-									width: 40,
-									height: 40,
-									borderRadius: 10,
-									backgroundColor: colors.surface,
-									justifyContent: 'center',
-									alignItems: 'center',
-									borderWidth: 1,
-									borderColor: colors.border || 'transparent'
-								}}
-								onPress={() => router.push('/profile/purchases?status=cart' as any)}
-							>
-								<Ionicons name="cart-outline" size={20} color={colors.primary} />
-								{cart.length > 0 && (
-									<View
-										style={{
-											position: 'absolute',
-											top: -6,
-											right: -6,
-											backgroundColor: colors.error || '#ef4444',
-											borderRadius: 10,
-											minWidth: 20,
-											height: 20,
-											justifyContent: 'center',
-											alignItems: 'center',
-											paddingHorizontal: 4,
-											borderWidth: 1.5,
-											borderColor: colors.surface
-										}}
-									>
-										<Text style={{ color: '#fff', fontSize: 10, fontWeight: 'bold' }}>{cart.length}</Text>
-									</View>
-								)}
-							</TouchableOpacity>
-							<HeaderRefreshButton onRefresh={handleRefresh} isRefreshing={refreshing} />
-						</View>
-					)
-				}}
+				options={
+					{
+						title: translate('products', 'Products'),
+						headerActions: headerActions
+					} as any
+				}
 			/>
 
 			{error ? (
