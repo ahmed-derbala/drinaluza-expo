@@ -7,6 +7,7 @@ import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
 
 import FeedCard from '@/features/feed/feed.card'
+import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import { Ionicons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
 import { toast } from '@/features/common/Toast'
@@ -15,6 +16,7 @@ import { getGeoCoordinates } from '@/core/helpers/maps'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
@@ -22,125 +24,6 @@ import { SmartHeader } from '@/core/smart-header'
 
 // Bypass type issues with FlashList generic components
 const TypedFlashList = FlashList as any
-
-// ─── Contact enrichment cache ───────────────────────────────────────────────────
-const businessContactCache = new Map<string, any>()
-
-const enrichFeedContacts = async (items: FeedItem[], updateState: (items: FeedItem[]) => void) => {
-	const localContacts = new Map<string, any>()
-	const localLocations = new Map<string, any>()
-
-	for (const item of items) {
-		if (item.card?.kind === 'business') {
-			const bSlug = item.business?.slug || item.slug
-			if (bSlug) {
-				if (item.contact) {
-					localContacts.set(bSlug, item.contact)
-					businessContactCache.set(bSlug, item.contact)
-				}
-				if (item.business?.location) {
-					localLocations.set(bSlug, item.business.location)
-					businessContactCache.set(`${bSlug}_location`, item.business.location)
-				}
-			}
-		}
-		if (item.card?.kind === 'user' && item.contact && item.role === 'business_owner') {
-			const ownerSlug = item.slug
-			if (ownerSlug) {
-				localContacts.set(ownerSlug, item.contact)
-				businessContactCache.set(ownerSlug, item.contact)
-			}
-		}
-	}
-
-	let hasUpdates = false
-	const enriched = items.map((item) => {
-		if (item.card?.kind === 'product' && item.business) {
-			const bSlug = item.business.slug
-			const ownerSlug = item.business.owner?.slug
-			const contact = businessContactCache.get(bSlug) || localContacts.get(bSlug) || businessContactCache.get(ownerSlug) || localContacts.get(ownerSlug)
-			const location = businessContactCache.get(`${bSlug}_location`) || localLocations.get(bSlug)
-
-			const hasNewContact = contact && !item.business.contact
-			const hasNewLocation = location && !getGeoCoordinates(item.business.location)
-
-			if (hasNewContact || hasNewLocation) {
-				hasUpdates = true
-				return {
-					...item,
-					business: {
-						...item.business,
-						...(hasNewContact ? { contact } : {}),
-						...(hasNewLocation ? { location } : {})
-					}
-				}
-			}
-		}
-		return item
-	})
-
-	if (hasUpdates) {
-		updateState(enriched)
-	}
-
-	const missingSlugs = new Set<string>()
-	for (const item of enriched) {
-		if (item.card?.kind === 'product' && item.business && !item.business.contact) {
-			const bSlug = item.business.slug
-			if (bSlug && !businessContactCache.has(bSlug)) {
-				missingSlugs.add(bSlug)
-			}
-		}
-	}
-
-	if (missingSlugs.size === 0) return
-
-	try {
-		const { getBusinessBySlug } = require('@/features/businesses/businesses.api')
-		await Promise.all(
-			Array.from(missingSlugs).map(async (slug) => {
-				try {
-					const res = await getBusinessBySlug(slug)
-					if (res?.data) {
-						if (res.data.contact) {
-							businessContactCache.set(slug, res.data.contact)
-						}
-						if (res.data.location) {
-							businessContactCache.set(`${slug}_location`, res.data.location)
-						}
-					}
-				} catch (err) {
-					console.warn(`[FeedScreen] Failed to fetch contact for business: ${slug}`, err)
-				}
-			})
-		)
-
-		const fullyEnriched = enriched.map((item) => {
-			if (item.card?.kind === 'product' && item.business && !item.business.contact) {
-				const bSlug = item.business.slug
-				const ownerSlug = item.business.owner?.slug
-				const contact = businessContactCache.get(bSlug) || businessContactCache.get(ownerSlug)
-				const location = businessContactCache.get(`${bSlug}_location`)
-
-				if (contact || location) {
-					return {
-						...item,
-						business: {
-							...item.business,
-							...(contact ? { contact } : {}),
-							...(location ? { location } : {})
-						}
-					}
-				}
-			}
-			return item
-		})
-
-		updateState(fullyEnriched)
-	} catch (e) {
-		console.warn('[FeedScreen] Contact enrichment error:', e)
-	}
-}
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -158,20 +41,7 @@ export default function FeedScreen() {
 	const [isScannerVisible, setIsScannerVisible] = useState(false)
 
 	// ── Layout ──
-	const { width } = useWindowDimensions()
-	const numColumns = useMemo(() => {
-		if (width < 500) return 1
-		if (width < 800) return 2
-		if (width < 1100) return 3
-		if (width < 1440) return 4
-		return 5
-	}, [width])
-
-	const gap = 16
-	const padding = 16
-	const itemWidth = useMemo(() => {
-		return (width - padding * 2 - gap * (numColumns - 1)) / numColumns
-	}, [width, padding, gap, numColumns])
+	const { numColumns, gap, padding, itemWidth } = useResponsiveGrid()
 
 	// ── Routing / Pagination ──
 	const isWeb = Platform.OS === 'web'

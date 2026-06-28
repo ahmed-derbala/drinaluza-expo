@@ -147,6 +147,7 @@ export default function HomeLayout() {
 				<Tabs.Screen
 					name="settings"
 					options={{
+						href: null,
 						tabBarIcon: ({ color, focused }) => (
 							<View style={focused ? styles.activeIconContainer : undefined}>
 								<Ionicons name={focused ? 'settings' : 'settings-outline'} size={iconSize} color={color} />

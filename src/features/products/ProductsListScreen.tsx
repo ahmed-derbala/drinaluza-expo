@@ -15,6 +15,7 @@ import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useTheme } from '@/core/theme'
 import { toast } from '@/features/common/Toast'
+import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { getToken } from '@/core/storage'
 
 export default function ProductsListScreen() {
@@ -33,19 +34,7 @@ export default function ProductsListScreen() {
 
 	const [cart, setCart] = useState<any[]>([])
 
-	const { width } = useWindowDimensions()
-
-	const numColumns = useMemo(() => {
-		if (width < 500) return 1
-		if (width < 800) return 2
-		if (width < 1100) return 3
-		if (width < 1440) return 4
-		return 5
-	}, [width])
-
-	const gap = 16
-	const padding = 16
-	const itemWidth = (width - padding * 2 - gap * (numColumns - 1)) / numColumns
+	const { numColumns, gap, padding, itemWidth } = useResponsiveGrid()
 
 	const loadCart = async () => {
 		try {

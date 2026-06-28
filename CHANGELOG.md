@@ -1,4 +1,13 @@
-# Changelog
+## [1.27.9] - 28 june 2026
+### Added
+- Create `useResponsiveGrid` custom hook under `src/core/hooks/` to standardize column calculations and card layout boundaries.
+- Create `feed.helpers.ts` under `src/features/feed/` to house the reusable `enrichFeedContacts` utility.
+
+### Changed
+- Refactor `FeedScreen.tsx`, `SearchScreen.tsx`, and `ProductsListScreen.tsx` to use the centralized `useResponsiveGrid` hook.
+- Align `SearchScreen.tsx` to render using the same responsive grid layout on Web as `FeedScreen.tsx`, preventing search cards from stretching too wide on desktop monitors.
+- Integrate contact/location enrichment inside `SearchScreen.tsx` so product card contacts are resolved and displayed correctly for search results.
+- Hide the Settings tab from the bottom tab bar navigation in `src/app/(home)/_layout.tsx` while keeping its route active.
 
 ## [1.27.5] - 27 june 2026
 ### Removed

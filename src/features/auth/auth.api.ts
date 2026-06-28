@@ -271,8 +271,7 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 export const signUp = async (slug: string, password: string, userData: Partial<AuthResponse['data']['user']> = {}, saveAccount?: boolean, needPassword?: boolean): Promise<AuthResponse> => {
 	try {
 		const apiClient = getApiClient()
-		// Endpoint: /auth/singup
-		const response = await apiClient.post<AuthResponse>('/auth/singup', {
+		const response = await apiClient.post<AuthResponse>('/auth/signup', {
 			slug,
 			password,
 			...userData

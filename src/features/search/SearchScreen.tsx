@@ -13,8 +13,10 @@ import { getItem, setItem, getToken } from '@/core/storage'
 import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
 import { logError, parseError } from '@/core/helpers/errorHandler'
+import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { SmartHeader } from '@/core/smart-header'
 import FeedCard from '@/features/feed/feed.card'
+import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import { FeedItem } from '@/features/feed/feed.interface'
 import { searchApi } from './search.api'
 
@@ -24,16 +26,9 @@ export default function SearchScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const { localize } = useUser()
-	const { width } = useWindowDimensions()
 
 	// Layout responsiveness
-	const isWeb = Platform.OS === 'web'
-	const maxWidth = 800
-	const isWideScreen = width > maxWidth
-	const numColumns = width > 600 ? 2 : 1
-	const gap = 16
-	const padding = 16
-	const itemWidth = isWideScreen ? (maxWidth - padding * 2 - gap) / 2 : (width - padding * 2 - gap * (numColumns - 1)) / numColumns
+	const { numColumns, gap, padding, itemWidth, isWeb } = useResponsiveGrid()
 
 	// Search states
 	const [query, setQuery] = useState('')
@@ -165,9 +160,14 @@ export default function SearchScreen() {
 				}
 
 				if (shouldAppend) {
-					setResults((prev) => [...prev, ...mappedDocs])
+					setResults((prev) => {
+						const updated = [...prev, ...mappedDocs]
+						enrichFeedContacts(updated, setResults)
+						return updated
+					})
 				} else {
 					setResults(mappedDocs)
+					enrichFeedContacts(mappedDocs, setResults)
 				}
 
 				// Add successful search query to history
@@ -507,6 +507,33 @@ export default function SearchScreen() {
 			<View style={styles.contentWrap}>
 				{loading && results.length === 0 ? (
 					renderSkeletons()
+				) : results.length === 0 ? (
+					renderEmpty()
+				) : isWeb ? (
+					<ScrollView
+						style={styles.container}
+						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding }]}
+						showsVerticalScrollIndicator={false}
+						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+					>
+						<View style={styles.webGridContainer}>
+							{results.map((item, index) => (
+								<View
+									key={item._id || index}
+									style={[
+										styles.webGridItem,
+										{
+											width: `${100 / numColumns}%`,
+											paddingHorizontal: gap / 2,
+											marginBottom: 16
+										}
+									]}
+								>
+									<FeedCard item={item} addToCart={handleAddToCart} />
+								</View>
+							))}
+						</View>
+					</ScrollView>
 				) : (
 					<TypedFlashList
 						data={results}
@@ -712,5 +739,17 @@ const styles = StyleSheet.create({
 		borderRadius: 6,
 		backgroundColor: 'rgba(255, 255, 255, 0.05)',
 		marginTop: 4
-	}
+	},
+	listContent: {
+		paddingTop: 12,
+		paddingBottom: 120
+	},
+	webGridContainer: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		width: '100%'
+	},
+	webGridItem: {
+		boxSizing: 'border-box'
+	} as any
 })
