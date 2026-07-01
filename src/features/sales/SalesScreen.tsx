@@ -4,7 +4,7 @@ import { View, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimension
 import { useTheme, createShadow } from '@/core/theme'
 import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
-import { useFocusEffect, useLocalSearchParams, Stack, useRouter } from 'expo-router'
+import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/features/orders/orderStatus'
@@ -53,6 +53,7 @@ export default function SalesScreen() {
 	const isFirstLoad = useRef(true)
 	const { width } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
+	const navigation = useNavigation()
 
 	// Responsive layout
 	const isTablet = width >= 768
@@ -244,90 +245,87 @@ export default function SalesScreen() {
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
-				options={
-					{
-						title: 'Sales',
-						headerTransparent: true,
-						headerStyle: {
-							height: 56 + insets.top + 52
-						},
-						headerBottomHeight: 52,
-						headerBottom: (
-							<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border, height: 52, borderBottomWidth: 0, paddingVertical: 0 }]}>
-								<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.filterRow} style={styles.filterScroll}>
-									{statusOptions.map((opt) => {
-										const isSelected = selectedStatus === opt.value
-										const count = statusCounts[opt.value] ?? 0
-										const showCount = count > 0 || opt.value === 'all'
+				options={{
+					headerShown: false
+				}}
+			/>
 
-										return (
-											<TouchableOpacity
-												key={opt.value}
-												onPress={() => handleStatusChange(opt.value)}
-												activeOpacity={0.7}
+			{/* Manually render SmartHeader to bypass React Navigation native wrapper touch restrictions */}
+			<SmartHeader
+				navigation={navigation}
+				title="Sales"
+				back={navigation.canGoBack() ? { title: 'Back' } : undefined}
+				headerBottomHeight={52}
+				options={{
+					onRefresh: handleRefresh,
+					isRefreshing: refreshing
+				}}
+				headerActions={['refresh']}
+				headerBottom={
+					<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border, height: 52, borderBottomWidth: 0, paddingVertical: 0 }]}>
+						<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.filterRow} style={styles.filterScroll} keyboardShouldPersistTaps="handled">
+							{statusOptions.map((opt) => {
+								const isSelected = selectedStatus === opt.value
+								const count = statusCounts[opt.value] ?? 0
+								const showCount = count > 0 || opt.value === 'all'
+
+								return (
+									<TouchableOpacity
+										key={opt.value}
+										onPress={() => handleStatusChange(opt.value)}
+										activeOpacity={0.75}
+										style={[
+											styles.filterChip,
+											{
+												backgroundColor: isSelected ? colors.primary + '15' : colors.card,
+												borderColor: isSelected ? colors.primary : colors.border,
+												...Platform.select({
+													web: {
+														boxShadow: isSelected ? `0 2px 8px ${colors.primary}20` : '0 1px 3px rgba(0, 0, 0, 0.05)'
+													}
+												})
+											}
+										]}
+									>
+										{tabLoading[opt.value] && isSelected && <ActivityIndicator size="small" color={colors.primary} style={styles.filterLoader} />}
+										<Text
+											style={[
+												styles.filterChipText,
+												{
+													color: isSelected ? colors.primary : colors.textSecondary,
+													fontWeight: isSelected ? '700' : '600'
+												}
+											]}
+											numberOfLines={1}
+										>
+											{opt.label}
+										</Text>
+										{showCount && (
+											<View
 												style={[
-													styles.filterChip,
+													styles.countBadge,
 													{
-														backgroundColor: isSelected ? colors.primary : colors.card,
-														borderColor: isSelected ? colors.primary : colors.border,
-														...Platform.select({
-															web: {
-																boxShadow: isSelected ? `0 2px 8px ${colors.primary}40` : '0 1px 3px rgba(0, 0, 0, 0.1)'
-															}
-														})
+														backgroundColor: isSelected ? colors.primary : colors.border
 													}
 												]}
 											>
-												{tabLoading[opt.value] && isSelected && <ActivityIndicator size="small" color={colors.textOnPrimary} style={styles.filterLoader} />}
 												<Text
 													style={[
-														styles.filterChipText,
+														styles.countText,
 														{
-															color: isSelected ? colors.textOnPrimary : colors.text,
-															fontWeight: isSelected ? '700' : '600'
+															color: isSelected ? colors.textOnPrimary : colors.textSecondary
 														}
 													]}
-													numberOfLines={1}
 												>
-													{opt.label}
+													{count}
 												</Text>
-												{showCount && (
-													<View
-														style={[
-															styles.countBadge,
-															{
-																backgroundColor: isSelected ? colors.textOnPrimary + '20' : colors.primary + '15'
-															}
-														]}
-													>
-														<Text
-															style={[
-																styles.countText,
-																{
-																	color: isSelected ? colors.textOnPrimary : colors.primary,
-																	fontWeight: '700'
-																}
-															]}
-														>
-															{count}
-														</Text>
-													</View>
-												)}
-											</TouchableOpacity>
-										)
-									})}
-								</ScrollView>
-							</View>
-						),
-						headerActions: [
-							{
-								key: 'refresh',
-								onPress: handleRefresh,
-								isRefreshing: refreshing,
-								accessibilityLabel: 'Refresh'
-							}
-						]
-					} as any
+											</View>
+										)}
+									</TouchableOpacity>
+								)
+							})}
+						</ScrollView>
+					</View>
 				}
 			/>
 
@@ -411,32 +409,34 @@ const styles = StyleSheet.create({
 	filterChip: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingHorizontal: 14,
-		paddingVertical: 8,
-		borderRadius: 24,
+		paddingHorizontal: 12,
+		paddingVertical: 6,
+		borderRadius: 20,
 		borderWidth: 1.5,
-		minHeight: 40,
-		gap: 8,
-		...createShadow({ offsetY: 2, opacity: 0.08, radius: 4, elevation: 2 })
+		minHeight: 36,
+		gap: 6,
+		...createShadow({ offsetY: 1, opacity: 0.05, radius: 2, elevation: 1 })
 	},
 	filterLoader: {
-		marginRight: -4
+		marginRight: -2
 	},
 	filterChipText: {
-		fontSize: 14,
-		letterSpacing: 0.2
+		fontSize: 13,
+		letterSpacing: 0.1
 	},
 	countBadge: {
-		paddingHorizontal: 8,
-		paddingVertical: 2,
-		borderRadius: 12,
-		minWidth: 24,
+		paddingHorizontal: 6,
+		paddingVertical: 1,
+		borderRadius: 10,
+		minWidth: 20,
 		alignItems: 'center',
-		justifyContent: 'center'
+		justifyContent: 'center',
+		marginLeft: 2
 	},
 	countText: {
-		fontSize: 12,
-		lineHeight: 16
+		fontSize: 10,
+		fontWeight: '700',
+		lineHeight: 14
 	},
 	listContent: {
 		padding: 16,
