@@ -60,7 +60,7 @@ export default function UserCard({ item }: UserCardProps) {
 				</View>
 
 				<View style={styles.headerInfo}>
-					<Text style={styles.userName} numberOfLines={1}>
+					<Text style={styles.userName} numberOfLines={2}>
 						{userName}
 					</Text>
 
@@ -89,19 +89,17 @@ export default function UserCard({ item }: UserCardProps) {
 
 			{/* Footer: slug + contact actions */}
 			<View style={styles.footer}>
-				{item.slug ? (
-					<View style={styles.slugWrap}>
+				{item.slug && (
+					<View style={styles.slugRow}>
 						<Text style={styles.slugAt}>@</Text>
-						<Text style={styles.slugText} numberOfLines={1}>
+						<Text style={styles.slugText} numberOfLines={2}>
 							{item.slug}
 						</Text>
 					</View>
-				) : (
-					<View />
 				)}
 
 				{hasContact && (
-					<View style={styles.contactRow}>
+					<View style={styles.contactActionsRow}>
 						{item.contact?.phone && (
 							<TouchableOpacity style={styles.contactBtn} onPress={handleCall} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
 								<Ionicons name="call-outline" size={16} color="#0EA5E9" />
@@ -216,16 +214,16 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	footer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
+		flexDirection: 'column',
+		alignItems: 'stretch',
 		paddingTop: 10,
 		borderTopWidth: StyleSheet.hairlineWidth,
 		borderTopColor: 'rgba(255, 255, 255, 0.08)'
 	},
-	slugWrap: {
+	slugRow: {
 		flexDirection: 'row',
-		alignItems: 'center'
+		alignItems: 'center',
+		width: '100%'
 	},
 	slugAt: {
 		fontSize: 13,
@@ -235,12 +233,16 @@ const styles = StyleSheet.create({
 	slugText: {
 		fontSize: 12,
 		color: 'rgba(255, 255, 255, 0.45)',
-		fontWeight: '500'
+		fontWeight: '500',
+		flex: 1
 	},
-	contactRow: {
+	contactActionsRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 6
+		justifyContent: 'flex-end',
+		gap: 6,
+		marginTop: 8,
+		width: '100%'
 	},
 	contactBtn: {
 		width: 36,

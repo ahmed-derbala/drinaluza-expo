@@ -403,10 +403,10 @@ export default function AuthScreen() {
 														<SmartImage source={account.photoUrl} style={styles.accountPhoto} entityType="user" />
 													</View>
 													<View style={styles.accountDetails}>
-														<Text style={styles.accountName} numberOfLines={1}>
+														<Text style={styles.accountName} numberOfLines={2}>
 															{getAccountDisplayName(account)}
 														</Text>
-														<Text style={styles.accountSlug} numberOfLines={1}>
+														<Text style={styles.accountSlug} numberOfLines={2}>
 															@{account.slug}
 														</Text>
 														<Text style={styles.accountDate} numberOfLines={1}>

@@ -266,7 +266,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 											<Text style={[styles.profileKind, { color: colors.textTertiary }]} numberOfLines={1}>
 												{profile.kind === 'personal' ? translate('dashboard.personal', 'Personal') : translate('dashboard.business', 'Business')}
 											</Text>
-											<Text style={[styles.profileName, { color: colors.text }]} numberOfLines={1}>
+											<Text style={[styles.profileName, { color: colors.text }]} numberOfLines={2}>
 												{getProfileLabel(profile)}
 											</Text>
 										</View>
@@ -446,10 +446,10 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 							>
 								<SmartImage source={thumb} style={styles.customerAvatar} entityType="user" />
 								<View style={styles.customerChipText}>
-									<Text style={[styles.customerNameText, { color: colors.text }]} numberOfLines={1}>
+									<Text style={[styles.customerNameText, { color: colors.text }]} numberOfLines={2}>
 										{localize(customer.name)}
 									</Text>
-									<Text style={[styles.customerSlugText, { color: colors.textSecondary }]} numberOfLines={1}>
+									<Text style={[styles.customerSlugText, { color: colors.textSecondary }]} numberOfLines={2}>
 										@{customer.slug}
 									</Text>
 									{customer.address?.city && (

@@ -108,19 +108,24 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						</View>
 					)}
 					<View style={styles.bizInfo}>
-						<Text style={styles.bizName} numberOfLines={1}>
+						<Text style={styles.bizName} numberOfLines={2}>
 							{localize(item.business?.name)}
 						</Text>
 						{item.business?.slug ? (
-							<Text style={styles.bizSlug} numberOfLines={1}>
+							<Text style={styles.bizSlug} numberOfLines={2}>
 								@{item.business.slug}
 							</Text>
 						) : null}
 					</View>
 				</TouchableOpacity>
-
-				<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
 			</View>
+
+			{/* Contact buttons row below name/slug */}
+			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.email || item.business?.location || item.business?.address) && (
+				<View style={styles.bizContactRow}>
+					<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
+				</View>
+			)}
 
 			{/* Address */}
 			{addressLine ? (
@@ -156,7 +161,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 			{/* ── Body ── */}
 			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 				{secondaryNames.length > 0 && (
-					<Text style={styles.altName} numberOfLines={1}>
+					<Text style={styles.altName} numberOfLines={2}>
 						{secondaryNames.join(' · ')}
 					</Text>
 				)}
@@ -234,10 +239,16 @@ const styles = StyleSheet.create({
 	bizRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'space-between',
 		paddingHorizontal: 12,
 		paddingTop: 12,
 		paddingBottom: 4
+	},
+	bizContactRow: {
+		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		paddingHorizontal: 12,
+		paddingBottom: 8,
+		marginTop: -4
 	},
 	bizLeft: {
 		flexDirection: 'row',

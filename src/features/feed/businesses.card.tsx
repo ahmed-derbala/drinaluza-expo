@@ -40,19 +40,24 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 						</View>
 					)}
 					<View style={styles.bizInfo}>
-						<Text style={styles.bizName} numberOfLines={1}>
+						<Text style={styles.bizName} numberOfLines={2}>
 							{businessName}
 						</Text>
 						{businessSlug ? (
-							<Text style={styles.bizSlug} numberOfLines={1}>
+							<Text style={styles.bizSlug} numberOfLines={2}>
 								@{businessSlug}
 							</Text>
 						) : null}
 					</View>
 				</TouchableOpacity>
-
-				<ContactButtons contact={item.contact} location={item.business?.location} address={item.business?.address} />
 			</View>
+
+			{/* Contact buttons row below name/slug */}
+			{(item.contact?.phone?.fullNumber || item.contact?.whatsapp || item.contact?.email || item.business?.location || item.business?.address) && (
+				<View style={styles.bizContactRow}>
+					<ContactButtons contact={item.contact} location={item.business?.location} address={item.business?.address} />
+				</View>
+			)}
 
 			{/* ── Address row ── */}
 			{addressLine ? (
@@ -109,10 +114,16 @@ const styles = StyleSheet.create({
 	headerRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'space-between',
 		paddingHorizontal: 12,
 		paddingTop: 10,
 		paddingBottom: 6
+	},
+	bizContactRow: {
+		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		paddingHorizontal: 12,
+		paddingBottom: 8,
+		marginTop: -4
 	},
 	bizLeft: {
 		flexDirection: 'row',

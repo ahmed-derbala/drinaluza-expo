@@ -79,12 +79,12 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 						</View>
 					)}
 					{showOwner && showExtended && ownerName && (
-						<Text style={styles.businessOwnerLabel as TextStyle} numberOfLines={1}>
+						<Text style={styles.businessOwnerLabel as TextStyle} numberOfLines={2}>
 							{ownerName}
 						</Text>
 					)}
 					{showOwner && (
-						<Text style={styles.ownerName as TextStyle} numberOfLines={1}>
+						<Text style={styles.ownerName as TextStyle} numberOfLines={2}>
 							@{ownerSlug}
 						</Text>
 					)}

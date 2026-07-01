@@ -3,6 +3,10 @@
 - Prevent update download progress percentage from jumping to 100% when paused.
 - Keep update download from starting from the beginning on app restart by persisting download progress and preventing premature cleanup of resume data on pause or cancel.
 
+### Changed
+- Allow user, business, product, and account names and slugs to wrap to 2 lines instead of truncating at 1 to gracefully support lengths of up to 50 characters.
+- Stack contact actions on separate rows below names and slugs in card layouts (users, businesses, and products) to maximize width and avoid truncation.
+
 ## [1.27.12] - 28 june 2026
 ### Changed
 - Relocate `HeaderActionButton` component to `src/core/smart-header/` alongside other core header components.
