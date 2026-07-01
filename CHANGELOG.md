@@ -4,10 +4,20 @@
 - Keep update download from starting from the beginning on app restart by persisting download progress and preventing premature cleanup of resume data on pause or cancel.
 - Fix resume download failing after app restart by converting JSON-deserialized `resumeData` back to its expected string format on startup.
 - Fix premature function exits in download catch blocks by removing redundant `resumeData` checks and relying strictly on explicit pause flags.
+- Fix `SmartHeader` being hidden on `/users/:userSlug` and `/businesses/:businessSlug` detail screens by resetting header and tab bar visibility states to `true` on route changes.
+- Fix screen and list flickering during scrolls by positioning `SmartHeader` absolutely on Mobile and using native `translateY` translations to completely eliminate height layout shifts.
+
+### Added
+- Add reusable scroll views `SmartHeader.ScrollView`, `SmartHeader.FlatList`, and `SmartHeader.FlashList` to automatically manage and hide/show `SmartHeader` on scroll down, which now automatically inject correct top padding and indicator offsets on mobile platforms.
 
 ### Changed
 - Allow user, business, product, and account names and slugs to wrap to 2 lines instead of truncating at 1 to gracefully support lengths of up to 50 characters.
 - Stack contact actions on separate rows below names and slugs in card layouts (users, businesses, and products) to maximize width and avoid truncation.
+- Optimize `SmartHeader` hide/show scroll transitions using native-driven (`useNativeDriver: true`) `translateY` translation and opacity transitions for smooth 60fps frame rates.
+
+### Removed
+- Remove category filter bar from the top of the Feed screen.
+
 
 ## [1.27.12] - 28 june 2026
 ### Changed

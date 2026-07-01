@@ -16,7 +16,6 @@ import { parseError, logError } from '@/core/helpers/errorHandler'
 import { getGeoCoordinates } from '@/core/helpers/maps'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
@@ -76,18 +75,6 @@ export default function FeedScreen() {
 
 	// ── Context ──
 	const { user, localize, translate } = useUser()
-	const { onScroll } = useScrollHandler()
-
-	// ── Filter categories ──
-	const categories = useMemo(
-		() => [
-			{ key: 'all', label: translate('all', 'All'), icon: 'apps-outline' },
-			{ key: 'products', label: translate('products', 'Products'), icon: 'fish-outline' },
-			{ key: 'businesses', label: translate('businesses', 'Businesses'), icon: 'storefront-outline' },
-			{ key: 'users', label: translate('people', 'People'), icon: 'people-outline' }
-		],
-		[translate]
-	)
 
 	// ── Skeleton pulse ──
 	const shimmerAnim = useRef(new Animated.Value(0.35)).current
@@ -208,19 +195,6 @@ export default function FeedScreen() {
 		}
 	}, [hasMore, loading, isLoadingMore, mobilePage, isWeb, selectedFilter])
 
-	// ── Filter select ──
-	const handleFilterSelect = useCallback(
-		(filterKey: string) => {
-			router.setParams({ filter: filterKey, page: '1' })
-			if (!isWeb) {
-				setMobilePage(1)
-				setHasMore(true)
-				fetchFeed(1, false, filterKey)
-			}
-		},
-		[isWeb, router, fetchFeed]
-	)
-
 	// ── Add to cart ──
 	const addToCart = useCallback(
 		async (item: FeedItem, quantity: number) => {
@@ -273,24 +247,6 @@ export default function FeedScreen() {
 	// ═══════════════════════════════════════════════════════════════════════════════
 	// ── Render helpers ──
 	// ═══════════════════════════════════════════════════════════════════════════════
-
-	const renderFilterBar = useCallback(() => {
-		return (
-			<View style={[styles.filterBar, { paddingTop: insets.top }]}>
-				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterScroll}>
-					{categories.map((cat) => {
-						const active = selectedFilter === cat.key
-						return (
-							<TouchableOpacity key={cat.key} style={[styles.filterPill, active && styles.filterPillActive]} onPress={() => handleFilterSelect(cat.key)} activeOpacity={0.75}>
-								<Ionicons name={cat.icon as any} size={14} color={active ? '#fff' : 'rgba(255, 255, 255, 0.4)'} />
-								<Text style={[styles.filterPillText, active && styles.filterPillTextActive]}>{cat.label}</Text>
-							</TouchableOpacity>
-						)
-					})}
-				</ScrollView>
-			</View>
-		)
-	}, [categories, selectedFilter, handleFilterSelect, insets.top])
 
 	const renderSkeletons = useCallback(() => {
 		const count = numColumns * 3
@@ -400,7 +356,6 @@ export default function FeedScreen() {
 		return (
 			<View style={styles.root}>
 				<Tabs.Screen options={headerOptions as any} />
-				{renderFilterBar()}
 
 				{loading && displayedItems.length === 0 ? (
 					renderSkeletons()
@@ -441,12 +396,11 @@ export default function FeedScreen() {
 	return (
 		<View style={styles.root}>
 			<Tabs.Screen options={headerOptions as any} />
-			{renderFilterBar()}
 
 			{loading && displayedItems.length === 0 ? (
 				renderSkeletons()
 			) : (
-				<TypedFlashList
+				<SmartHeader.FlashList
 					style={{ backgroundColor: 'transparent' }}
 					data={displayedItems}
 					renderItem={renderItem}
@@ -458,10 +412,8 @@ export default function FeedScreen() {
 					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
 					showsVerticalScrollIndicator={false}
 					keyboardShouldPersistTaps="handled"
-					onScroll={onScroll}
-					scrollEventThrottle={16}
 					onEndReached={handleLoadMore}
-					onEndReachedThreshold={0.5}
+					onEndReachedThreshold={0.2}
 					ListFooterComponent={isLoadingMore ? <ActivityIndicator size="small" color="#0EA5E9" style={{ paddingVertical: 24 }} /> : null}
 				/>
 			)}
@@ -475,42 +427,6 @@ const styles = StyleSheet.create({
 	root: {
 		flex: 1,
 		backgroundColor: '#0A0E1A'
-	},
-	// ── Filter bar ──
-	filterBar: {
-		backgroundColor: 'rgba(10, 14, 26, 0.85)',
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: 'rgba(255, 255, 255, 0.08)'
-	},
-	filterScroll: {
-		paddingHorizontal: 16,
-		paddingTop: 10,
-		paddingBottom: 12,
-		gap: 8
-	},
-	filterPill: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 6,
-		paddingHorizontal: 16,
-		paddingVertical: 8,
-		borderRadius: 22,
-		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
-		backgroundColor: 'rgba(255, 255, 255, 0.02)'
-	},
-	filterPillActive: {
-		backgroundColor: '#0EA5E9',
-		borderColor: '#0EA5E9'
-	},
-	filterPillText: {
-		fontSize: 13,
-		fontWeight: '600',
-		color: 'rgba(255, 255, 255, 0.5)'
-	},
-	filterPillTextActive: {
-		color: '#ffffff',
-		fontWeight: '700'
 	},
 	// ── Grid Layouts ──
 	listContent: {

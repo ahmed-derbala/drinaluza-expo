@@ -1,5 +1,21 @@
-import React, { useEffect, useRef, useMemo } from 'react'
-import { StyleSheet, View, Text, Platform, Animated, Easing, useWindowDimensions, ActivityIndicator, Pressable } from 'react-native'
+import React, { useEffect, useRef, useMemo, useCallback } from 'react'
+import {
+	StyleSheet,
+	View,
+	Text,
+	Platform,
+	Animated,
+	Easing,
+	useWindowDimensions,
+	ActivityIndicator,
+	Pressable,
+	ScrollView as RNScrollView,
+	FlatList as RNFlatList,
+	ScrollViewProps,
+	FlatListProps
+} from 'react-native'
+import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
+import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Href, usePathname } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -228,16 +244,22 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	disableAnimations = false
 }) => {
 	const { colors } = useTheme()
-	const { isHeaderVisible } = useLayout()
+	const { isHeaderVisible, setHeaderVisible, setTabBarVisible } = useLayout()
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
 	const pathname = usePathname()
 
 	const loadingAnim = useRef(new Animated.Value(0)).current
 	const fadeAnim = useRef(new Animated.Value(0)).current
+
+	// Ensure header and tab bar are visible on route changes to prevent hidden headers carrying over from previous screen scrolls
+	useEffect(() => {
+		setHeaderVisible(true)
+		setTabBarVisible(true)
+	}, [pathname, setHeaderVisible, setTabBarVisible])
 	const visibleAnim = useRef(new Animated.Value(1)).current
 
-	// Setup header hide/show animation
+	// Setup header hide/show animation (runs natively via translateY & opacity)
 	useEffect(() => {
 		if (disableAnimations) {
 			visibleAnim.setValue(isHeaderVisible ? 1 : 0)
@@ -247,7 +269,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 			toValue: isHeaderVisible ? 1 : 0,
 			duration: 200,
 			easing: Easing.bezier(0.2, 0, 0, 1),
-			useNativeDriver: false
+			useNativeDriver: true
 		}).start()
 	}, [isHeaderVisible, visibleAnim, disableAnimations])
 
@@ -453,19 +475,14 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 
 	const headerHeight = 56 + insets.top
 
-	const animatedHeight = visibleAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [0, headerHeight]
-	})
-
 	const animatedOpacity = visibleAnim.interpolate({
 		inputRange: [0, 0.8, 1],
 		outputRange: [0, 0, 1]
 	})
 
-	const animatedBorderWidth = visibleAnim.interpolate({
+	const animatedTranslateY = visibleAnim.interpolate({
 		inputRange: [0, 1],
-		outputRange: [0, StyleSheet.hairlineWidth]
+		outputRange: [-headerHeight, 0]
 	})
 
 	return (
@@ -473,9 +490,10 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 			style={[
 				styles.headerContainer,
 				{
-					height: animatedHeight,
+					height: headerHeight,
 					opacity: animatedOpacity,
-					borderBottomWidth: animatedBorderWidth,
+					transform: [{ translateY: animatedTranslateY }],
+					borderBottomWidth: StyleSheet.hairlineWidth,
 					backgroundColor: colors.header,
 					borderBottomColor: colors.borderLight,
 					overflow: isHeaderVisible ? 'visible' : 'hidden'
@@ -531,6 +549,134 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 
 SmartHeaderComponent.displayName = 'SmartHeader'
 
+// ----------------------------------------
+// 5. Reusable Scroll Wrappers that auto-hide the header and handle padding
+// ----------------------------------------
+export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
+	({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
+		const { onScroll } = useScrollHandler()
+		const insets = useSafeAreaInsets()
+		const headerHeight = 56 + insets.top
+
+		const handleScroll = useCallback(
+			(event: any) => {
+				onScroll(event)
+				if (customOnScroll) {
+					customOnScroll(event)
+				}
+			},
+			[onScroll, customOnScroll]
+		)
+
+		const mergedContentContainerStyle = useMemo(() => {
+			if (Platform.OS === 'web') return contentContainerStyle
+			return [{ paddingTop: headerHeight }, contentContainerStyle]
+		}, [headerHeight, contentContainerStyle])
+
+		const mergedScrollIndicatorInsets = useMemo(() => {
+			if (Platform.OS === 'web') return scrollIndicatorInsets
+			return {
+				top: headerHeight,
+				...scrollIndicatorInsets
+			}
+		}, [headerHeight, scrollIndicatorInsets])
+
+		return (
+			<RNScrollView
+				ref={ref}
+				onScroll={handleScroll}
+				scrollEventThrottle={scrollEventThrottle}
+				contentContainerStyle={mergedContentContainerStyle}
+				scrollIndicatorInsets={mergedScrollIndicatorInsets}
+				{...props}
+			/>
+		)
+	}
+)
+SmartScrollView.displayName = 'SmartHeader.ScrollView'
+
+export const SmartFlatList = React.forwardRef<RNFlatList, FlatListProps<any>>(({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
+	const { onScroll } = useScrollHandler()
+	const insets = useSafeAreaInsets()
+	const headerHeight = 56 + insets.top
+
+	const handleScroll = useCallback(
+		(event: any) => {
+			onScroll(event)
+			if (customOnScroll) {
+				customOnScroll(event)
+			}
+		},
+		[onScroll, customOnScroll]
+	)
+
+	const mergedContentContainerStyle = useMemo(() => {
+		if (Platform.OS === 'web') return contentContainerStyle
+		return [{ paddingTop: headerHeight }, contentContainerStyle]
+	}, [headerHeight, contentContainerStyle])
+
+	const mergedScrollIndicatorInsets = useMemo(() => {
+		if (Platform.OS === 'web') return scrollIndicatorInsets
+		return {
+			top: headerHeight,
+			...scrollIndicatorInsets
+		}
+	}, [headerHeight, scrollIndicatorInsets])
+
+	return (
+		<RNFlatList
+			ref={ref}
+			onScroll={handleScroll}
+			scrollEventThrottle={scrollEventThrottle}
+			contentContainerStyle={mergedContentContainerStyle}
+			scrollIndicatorInsets={mergedScrollIndicatorInsets}
+			{...props}
+		/>
+	)
+})
+SmartFlatList.displayName = 'SmartHeader.FlatList'
+
+export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
+	const { onScroll } = useScrollHandler()
+	const insets = useSafeAreaInsets()
+	const headerHeight = 56 + insets.top
+
+	const handleScroll = useCallback(
+		(event: any) => {
+			onScroll(event)
+			if (customOnScroll) {
+				customOnScroll(event)
+			}
+		},
+		[onScroll, customOnScroll]
+	)
+
+	const mergedContentContainerStyle = useMemo(() => {
+		if (Platform.OS === 'web') return contentContainerStyle
+		return [{ paddingTop: headerHeight }, contentContainerStyle]
+	}, [headerHeight, contentContainerStyle])
+
+	const mergedScrollIndicatorInsets = useMemo(() => {
+		if (Platform.OS === 'web') return scrollIndicatorInsets
+		return {
+			top: headerHeight,
+			...scrollIndicatorInsets
+		}
+	}, [headerHeight, scrollIndicatorInsets])
+
+	return (
+		<ShopifyFlashList
+			ref={ref}
+			onScroll={handleScroll}
+			scrollEventThrottle={scrollEventThrottle}
+			contentContainerStyle={mergedContentContainerStyle as any}
+			scrollIndicatorInsets={mergedScrollIndicatorInsets}
+			{...props}
+		/>
+	)
+})
+SmartFlashList.displayName = 'SmartHeader.FlashList'
+
 const MemoizedHeader = React.memo(SmartHeaderComponent) as any
 
 MemoizedHeader.BackButton = HeaderBackButton
@@ -540,6 +686,9 @@ MemoizedHeader.NotificationsButton = HeaderNotificationsButton
 MemoizedHeader.SearchButton = HeaderSearchButton
 MemoizedHeader.CartButton = HeaderCartButton
 MemoizedHeader.SettingsButton = HeaderSettingsButton
+MemoizedHeader.ScrollView = SmartScrollView
+MemoizedHeader.FlatList = SmartFlatList
+MemoizedHeader.FlashList = SmartFlashList
 
 export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHeaderProps> & {
 	BackButton: typeof HeaderBackButton
@@ -549,6 +698,9 @@ export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHea
 	SearchButton: typeof HeaderSearchButton
 	CartButton: typeof HeaderCartButton
 	SettingsButton: typeof HeaderSettingsButton
+	ScrollView: any
+	FlatList: any
+	FlashList: any
 }
 
 /** @deprecated Use SmartHeader instead */
@@ -563,12 +715,20 @@ const styles = StyleSheet.create({
 		zIndex: 100,
 		...Platform.select({
 			ios: {
+				position: 'absolute',
+				top: 0,
+				left: 0,
+				right: 0,
 				shadowColor: '#000000',
 				shadowOffset: { width: 0, height: 1 },
 				shadowOpacity: 0.15,
 				shadowRadius: 2
 			},
 			android: {
+				position: 'absolute',
+				top: 0,
+				left: 0,
+				right: 0,
 				elevation: 2
 			},
 			web: {
