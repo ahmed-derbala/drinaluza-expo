@@ -66,7 +66,7 @@ export default function EditBusinessScreen() {
 			setWhatsapp(biz.contact?.whatsapp || '')
 			setEmail(biz.contact?.email || '')
 
-			const coords = biz.location?.coordinates
+			const coords = biz.location?.geo?.coordinates ?? (biz.location as any)?.coordinates
 			if (coords && coords.length === 2) {
 				setLongitude(coords[0].toString())
 				setLatitude(coords[1].toString())

@@ -81,6 +81,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const activeDownloadRef = useRef<FileSystem.DownloadResumable | null>(null)
 	const [isPaused, setIsPaused] = useState(false)
 	const resumeDataRef = useRef<string | null>(null)
+	const isPausingRef = useRef(false)
+	const isCancellingRef = useRef(false)
 
 	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
@@ -228,6 +230,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		setIsPaused(false)
 		resumeDataRef.current = null
 		await removeItem('download_resume_data')
+		await removeItem('download_progress')
 		setDownloadProgress(0)
 		await ensureUpdatesFolder()
 
@@ -249,11 +252,22 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			const downloadResult = await downloadResumable.downloadAsync()
 			activeDownloadRef.current = null
 
-			setIsDownloading(false)
-			setDownloadProgress(1)
-			await removeItem('download_resume_data')
+			// Check if we are pausing or cancelling
+			if (isPausingRef.current) {
+				log({ level: 'info', label: 'UpdatesContext', message: 'downloadUpdate: download was paused, exiting early' })
+				return null
+			}
+			if (isCancellingRef.current) {
+				log({ level: 'info', label: 'UpdatesContext', message: 'downloadUpdate: download was cancelled, exiting early' })
+				return null
+			}
 
 			if (downloadResult && downloadResult.uri) {
+				setIsDownloading(false)
+				setDownloadProgress(1)
+				await removeItem('download_resume_data')
+				await removeItem('download_progress')
+
 				// Rename temp file to final .apk file on successful completion
 				await FileSystem.moveAsync({
 					from: downloadResult.uri,
@@ -261,17 +275,18 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				})
 
 				await refreshApkList()
-				// Automatically prune other older cached APK releases (disabled to show all downloaded APKs)
-				// await pruneOldApks(latestRelease.latest_version)
-
 				// Automatically launch package installer when download is complete
 				await installApk(fileUri)
 				return fileUri
+			} else {
+				throw new Error('Download completed with empty or invalid result.')
 			}
-			return null
 		} catch (err) {
-			if (resumeDataRef.current) {
+			if (isPausingRef.current || resumeDataRef.current) {
 				setIsDownloading(false)
+				return null
+			}
+			if (isCancellingRef.current) {
 				return null
 			}
 			setIsDownloading(false)
@@ -279,6 +294,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setDownloadProgress(0)
 			activeDownloadRef.current = null
 			await removeItem('download_resume_data')
+			await removeItem('download_progress')
 			// Clean up temp file on failure
 			await FileSystem.deleteAsync(tempFileUri, { idempotent: true }).catch(() => {})
 			console.error('[UpdatesContext] File download error:', err)
@@ -289,6 +305,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Pause Download
 	const pauseDownload = useCallback(async () => {
 		if (activeDownloadRef.current && isDownloading && !isPaused) {
+			isPausingRef.current = true
 			try {
 				const result = await activeDownloadRef.current.pauseAsync()
 				const resumeData = result.resumeData || null
@@ -297,13 +314,16 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				setIsDownloading(false)
 				if (resumeData) {
 					await setItem('download_resume_data', resumeData)
+					await setItem('download_progress', downloadProgress)
 				}
 				log({ level: 'info', label: 'UpdatesContext', message: 'Download paused' })
 			} catch (err) {
 				console.error('[UpdatesContext] Failed to pause download:', err)
+			} finally {
+				isPausingRef.current = false
 			}
 		}
-	}, [isDownloading, isPaused])
+	}, [isDownloading, isPaused, downloadProgress])
 
 	// Resume Download
 	const resumeDownload = useCallback(async (): Promise<string | null> => {
@@ -344,12 +364,23 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			const downloadResult = await downloadResumable.resumeAsync()
 			activeDownloadRef.current = null
 
-			setIsDownloading(false)
-			setDownloadProgress(1)
-			resumeDataRef.current = null
-			await removeItem('download_resume_data')
+			// Check if we are pausing or cancelling
+			if (isPausingRef.current) {
+				log({ level: 'info', label: 'UpdatesContext', message: 'resumeDownload: download was paused, exiting early' })
+				return null
+			}
+			if (isCancellingRef.current) {
+				log({ level: 'info', label: 'UpdatesContext', message: 'resumeDownload: download was cancelled, exiting early' })
+				return null
+			}
 
 			if (downloadResult && downloadResult.uri) {
+				setIsDownloading(false)
+				setDownloadProgress(1)
+				resumeDataRef.current = null
+				await removeItem('download_resume_data')
+				await removeItem('download_progress')
+
 				await FileSystem.moveAsync({
 					from: downloadResult.uri,
 					to: fileUri
@@ -358,11 +389,15 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				await refreshApkList()
 				await installApk(fileUri)
 				return fileUri
+			} else {
+				throw new Error('Resume download completed with empty or invalid result.')
 			}
-			return null
 		} catch (err) {
-			if (resumeDataRef.current) {
+			if (isPausingRef.current || resumeDataRef.current) {
 				setIsDownloading(false)
+				return null
+			}
+			if (isCancellingRef.current) {
 				return null
 			}
 			setIsDownloading(false)
@@ -370,6 +405,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setDownloadProgress(0)
 			activeDownloadRef.current = null
 			await removeItem('download_resume_data')
+			await removeItem('download_progress')
 			console.error('[UpdatesContext] File resume download error:', err)
 			throw err
 		}
@@ -377,22 +413,28 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 	// Cancel Download completely
 	const cancelDownload = useCallback(async () => {
-		setIsDownloading(false)
-		setIsPaused(false)
-		setDownloadProgress(0)
-		if (activeDownloadRef.current) {
-			try {
-				await activeDownloadRef.current.cancelAsync()
-			} catch (e) {
-				// Ignore
+		isCancellingRef.current = true
+		try {
+			setIsDownloading(false)
+			setIsPaused(false)
+			setDownloadProgress(0)
+			if (activeDownloadRef.current) {
+				try {
+					await activeDownloadRef.current.cancelAsync()
+				} catch (e) {
+					// Ignore
+				}
+				activeDownloadRef.current = null
 			}
-			activeDownloadRef.current = null
-		}
-		resumeDataRef.current = null
-		await removeItem('download_resume_data')
-		if (latestRelease) {
-			const filename = `drinaluza-${latestRelease.latest_version}.apk.tmp`
-			await FileSystem.deleteAsync(UPDATES_FOLDER + filename, { idempotent: true }).catch(() => {})
+			resumeDataRef.current = null
+			await removeItem('download_resume_data')
+			await removeItem('download_progress')
+			if (latestRelease) {
+				const filename = `drinaluza-${latestRelease.latest_version}.apk.tmp`
+				await FileSystem.deleteAsync(UPDATES_FOLDER + filename, { idempotent: true }).catch(() => {})
+			}
+		} finally {
+			isCancellingRef.current = false
 		}
 	}, [latestRelease])
 
@@ -482,6 +524,10 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				if (savedResumeData) {
 					resumeDataRef.current = savedResumeData
 					setIsPaused(true)
+					const savedProgress = await getItem<number>('download_progress')
+					if (savedProgress !== null && !isNaN(savedProgress)) {
+						setDownloadProgress(savedProgress)
+					}
 				}
 			} catch (e) {
 				console.warn('[UpdatesContext] Failed to load saved download resume data:', e)

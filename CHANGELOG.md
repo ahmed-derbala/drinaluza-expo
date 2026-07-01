@@ -1,3 +1,8 @@
+## [1.27.17] - 1 july 2026
+### Fixed
+- Prevent update download progress percentage from jumping to 100% when paused.
+- Keep update download from starting from the beginning on app restart by persisting download progress and preventing premature cleanup of resume data on pause or cancel.
+
 ## [1.27.12] - 28 june 2026
 ### Changed
 - Relocate `HeaderActionButton` component to `src/core/smart-header/` alongside other core header components.
