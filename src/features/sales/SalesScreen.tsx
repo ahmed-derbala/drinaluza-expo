@@ -1,8 +1,7 @@
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { SmartHeader } from '@/core/smart-header'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme, createShadow } from '@/core/theme'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter } from 'expo-router'
@@ -10,6 +9,8 @@ import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/features/orders/orderStatus'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 const ITEMS_PER_PAGE = 10
 
@@ -51,7 +52,7 @@ export default function SalesScreen() {
 
 	const isFirstLoad = useRef(true)
 	const { width } = useWindowDimensions()
-	const { onScroll } = useScrollHandler()
+	const insets = useSafeAreaInsets()
 
 	// Responsive layout
 	const isTablet = width >= 768
@@ -246,6 +247,78 @@ export default function SalesScreen() {
 				options={
 					{
 						title: 'Sales',
+						headerTransparent: true,
+						headerStyle: {
+							height: 56 + insets.top + 52
+						},
+						headerBottomHeight: 52,
+						headerBottom: (
+							<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border, height: 52, borderBottomWidth: 0, paddingVertical: 0 }]}>
+								<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.filterRow} style={styles.filterScroll}>
+									{statusOptions.map((opt) => {
+										const isSelected = selectedStatus === opt.value
+										const count = statusCounts[opt.value] ?? 0
+										const showCount = count > 0 || opt.value === 'all'
+
+										return (
+											<TouchableOpacity
+												key={opt.value}
+												onPress={() => handleStatusChange(opt.value)}
+												activeOpacity={0.7}
+												style={[
+													styles.filterChip,
+													{
+														backgroundColor: isSelected ? colors.primary : colors.card,
+														borderColor: isSelected ? colors.primary : colors.border,
+														...Platform.select({
+															web: {
+																boxShadow: isSelected ? `0 2px 8px ${colors.primary}40` : '0 1px 3px rgba(0, 0, 0, 0.1)'
+															}
+														})
+													}
+												]}
+											>
+												{tabLoading[opt.value] && isSelected && <ActivityIndicator size="small" color={colors.textOnPrimary} style={styles.filterLoader} />}
+												<Text
+													style={[
+														styles.filterChipText,
+														{
+															color: isSelected ? colors.textOnPrimary : colors.text,
+															fontWeight: isSelected ? '700' : '600'
+														}
+													]}
+													numberOfLines={1}
+												>
+													{opt.label}
+												</Text>
+												{showCount && (
+													<View
+														style={[
+															styles.countBadge,
+															{
+																backgroundColor: isSelected ? colors.textOnPrimary + '20' : colors.primary + '15'
+															}
+														]}
+													>
+														<Text
+															style={[
+																styles.countText,
+																{
+																	color: isSelected ? colors.textOnPrimary : colors.primary,
+																	fontWeight: '700'
+																}
+															]}
+														>
+															{count}
+														</Text>
+													</View>
+												)}
+											</TouchableOpacity>
+										)
+									})}
+								</ScrollView>
+							</View>
+						),
 						headerActions: [
 							{
 								key: 'refresh',
@@ -258,114 +331,45 @@ export default function SalesScreen() {
 				}
 			/>
 
-			{/* Status Filter */}
-			<View style={[styles.filterContainer, { backgroundColor: colors.surface, borderBottomColor: colors.border }]}>
-				<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.filterRow} style={styles.filterScroll}>
-					{statusOptions.map((opt) => {
-						const isSelected = selectedStatus === opt.value
-						const count = statusCounts[opt.value] ?? 0
-						const showCount = count > 0 || opt.value === 'all'
-
-						return (
-							<TouchableOpacity
-								key={opt.value}
-								onPress={() => handleStatusChange(opt.value)}
-								activeOpacity={0.7}
-								style={[
-									styles.filterChip,
-									{
-										backgroundColor: isSelected ? colors.primary : colors.card,
-										borderColor: isSelected ? colors.primary : colors.border,
-										...Platform.select({
-											web: {
-												boxShadow: isSelected ? `0 2px 8px ${colors.primary}40` : '0 1px 3px rgba(0, 0, 0, 0.1)'
-											}
-										})
-									}
-								]}
-							>
-								{tabLoading[opt.value] && isSelected && <ActivityIndicator size="small" color={colors.textOnPrimary} style={styles.filterLoader} />}
-								<Text
-									style={[
-										styles.filterChipText,
-										{
-											color: isSelected ? colors.textOnPrimary : colors.text,
-											fontWeight: isSelected ? '700' : '600'
-										}
-									]}
-									numberOfLines={1}
-								>
-									{opt.label}
-								</Text>
-								{showCount && (
-									<View
-										style={[
-											styles.countBadge,
-											{
-												backgroundColor: isSelected ? colors.textOnPrimary + '20' : colors.primary + '15'
-											}
-										]}
-									>
-										<Text
-											style={[
-												styles.countText,
-												{
-													color: isSelected ? colors.textOnPrimary : colors.primary,
-													fontWeight: '700'
-												}
-											]}
-										>
-											{count}
-										</Text>
-									</View>
-								)}
-							</TouchableOpacity>
-						)
-					})}
-				</ScrollView>
-			</View>
-
-			{/* Active Filters Info Banner */}
-			{(customerSlug || productSlug) && (
-				<View style={[styles.activeFiltersBanner, { backgroundColor: colors.primaryContainer, borderColor: colors.primary }]}>
-					<View style={styles.activeFiltersLeft}>
-						<Ionicons name="funnel-outline" size={18} color={colors.primary} />
-						<View style={{ flex: 1 }}>
-							<Text style={[styles.activeFiltersTitle, { color: colors.text }]}>Filtered Sales</Text>
-							<Text style={[styles.activeFiltersSubtitle, { color: colors.textSecondary }]}>
-								Showing sales for {customerSlug ? `Customer: @${customerSlug}` : ''}
-								{customerSlug && productSlug ? ' • ' : ''}
-								{productSlug ? `Product: @${productSlug}` : ''}
-							</Text>
-						</View>
-					</View>
-					<TouchableOpacity
-						onPress={() => {
-							router.setParams({ customerSlug: '', productSlug: '' })
-						}}
-						style={[styles.clearFilterBtn, { backgroundColor: colors.surface }]}
-						activeOpacity={0.7}
-					>
-						<Ionicons name="close" size={16} color={colors.primary} />
-						<Text style={[styles.clearFilterText, { color: colors.primary }]}>Clear</Text>
-					</TouchableOpacity>
-				</View>
-			)}
-
 			{/* Sales List */}
-			<FlashList
+			<SmartHeader.FlashList
 				data={displayData}
 				renderItem={renderItem}
-				keyExtractor={(item) => item._id}
+				keyExtractor={(item: Sale) => item._id}
 				key={numColumns}
 				numColumns={numColumns}
 				contentContainerStyle={[styles.listContent, numColumns > 1 && { paddingHorizontal: 8 }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-				onScroll={onScroll}
-				scrollEventThrottle={16}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
 				ListFooterComponent={renderFooter}
+				ListHeaderComponent={
+					customerSlug || productSlug ? (
+						<View style={[styles.activeFiltersBanner, { backgroundColor: colors.primaryContainer, borderColor: colors.primary, marginBottom: 12 }]}>
+							<View style={styles.activeFiltersLeft}>
+								<Ionicons name="funnel-outline" size={18} color={colors.primary} />
+								<View style={{ flex: 1 }}>
+									<Text style={[styles.activeFiltersTitle, { color: colors.text }]}>Filtered Sales</Text>
+									<Text style={[styles.activeFiltersSubtitle, { color: colors.textSecondary }]}>
+										Showing sales for {customerSlug ? `Customer: @${customerSlug}` : ''}
+										{customerSlug && productSlug ? ' • ' : ''}
+										{productSlug ? `Product: @${productSlug}` : ''}
+									</Text>
+								</View>
+							</View>
+							<TouchableOpacity
+								onPress={() => {
+									router.setParams({ customerSlug: '', productSlug: '' })
+								}}
+								style={[styles.clearFilterBtn, { backgroundColor: colors.surface }]}
+								activeOpacity={0.7}
+							>
+								<Ionicons name="close" size={16} color={colors.primary} />
+								<Text style={[styles.clearFilterText, { color: colors.primary }]}>Clear</Text>
+							</TouchableOpacity>
+						</View>
+					) : null
+				}
 				ListEmptyComponent={
 					tabLoading[selectedStatus] ? (
 						<View style={styles.emptyContainer}>
@@ -391,19 +395,13 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	filterContainer: {
-		paddingVertical: 14,
+		height: 52,
 		paddingHorizontal: 4,
-		borderBottomWidth: 1,
-		...Platform.select({
-			web: {
-				position: 'sticky',
-				top: 0,
-				zIndex: 10
-			}
-		})
+		justifyContent: 'center'
 	},
 	filterScroll: {
-		flexGrow: 0
+		flexGrow: 0,
+		width: '100%'
 	},
 	filterRow: {
 		paddingHorizontal: 12,

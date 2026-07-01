@@ -6,14 +6,21 @@
 - Fix premature function exits in download catch blocks by removing redundant `resumeData` checks and relying strictly on explicit pause flags.
 - Fix `SmartHeader` being hidden on `/users/:userSlug` and `/businesses/:businessSlug` detail screens by resetting header and tab bar visibility states to `true` on route changes.
 - Fix screen and list flickering during scrolls by positioning `SmartHeader` absolutely on Mobile and using native `translateY` translations to completely eliminate height layout shifts.
+- Fix status filter bar staying visible in Sales screen on scroll down by using a dynamic key matching `headerHeight` on the container `Animated.View` to force re-serialization of translateY interpolation ranges to the native driver.
+- Fix status filter bar scrolling and tap clicks being blocked on iOS/Mobile by configuring `headerTransparent: true` and explicitly setting the `headerStyle.height` option to match the expanded header height in `SalesScreen` stack options to prevent clipping.
+- Fix status filter bar horizontal scroll lock on Mobile by setting `width: '100%'` style constraints on the ScrollView container to prevent it from matching content dimensions.
 
 ### Added
 - Add reusable scroll views `SmartHeader.ScrollView`, `SmartHeader.FlatList`, and `SmartHeader.FlashList` to automatically manage and hide/show `SmartHeader` on scroll down, which now automatically inject correct top padding and indicator offsets on mobile platforms.
+- Add support for screen-specific bottom node sections (`headerBottom` and `headerBottomHeight`) inside `SmartHeader` to slide filter bars or sub-headers together natively.
+- Add dynamically updated `headerHeight` tracking inside `LayoutContext` to coordinate container heights with scroll offsets.
 
 ### Changed
 - Allow user, business, product, and account names and slugs to wrap to 2 lines instead of truncating at 1 to gracefully support lengths of up to 50 characters.
 - Stack contact actions on separate rows below names and slugs in card layouts (users, businesses, and products) to maximize width and avoid truncation.
 - Optimize `SmartHeader` hide/show scroll transitions using native-driven (`useNativeDriver: true`) `translateY` translation and opacity transitions for smooth 60fps frame rates.
+- Integrate the Sales screen status filter bar directly into `SmartHeader` as a bottom content node so it hides/shows inline with scrolling and never causes screen layout shifts.
+- Refactor the Sales screen lists to use `SmartHeader.FlashList` and embed the active filters info banner in the list's `ListHeaderComponent`.
 
 ### Removed
 - Remove category filter bar from the top of the Feed screen.

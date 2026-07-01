@@ -207,6 +207,8 @@ export interface SmartHeaderProps {
 	centerLeftOffset?: number
 	centerRightOffset?: number
 	disableAnimations?: boolean
+	headerBottom?: React.ReactNode
+	headerBottomHeight?: number
 
 	// Backward compatibility props
 	loading?: boolean
@@ -241,13 +243,24 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	route,
 	navigation,
 	back,
-	disableAnimations = false
+	disableAnimations = false,
+	headerBottom,
+	headerBottomHeight
 }) => {
 	const { colors } = useTheme()
-	const { isHeaderVisible, setHeaderVisible, setTabBarVisible } = useLayout()
+	const { isHeaderVisible, setHeaderVisible, setTabBarVisible, setHeaderHeight } = useLayout()
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
 	const pathname = usePathname()
+
+	const resolvedBottom = headerBottom ?? options?.headerBottom
+	const resolvedBottomHeight = headerBottomHeight ?? options?.headerBottomHeight ?? 0
+	const headerHeight = 56 + insets.top + resolvedBottomHeight
+
+	// Keep layout context headerHeight state updated
+	useEffect(() => {
+		setHeaderHeight(headerHeight)
+	}, [headerHeight, setHeaderHeight])
 
 	const loadingAnim = useRef(new Animated.Value(0)).current
 	const fadeAnim = useRef(new Animated.Value(0)).current
@@ -473,8 +486,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		)
 	}
 
-	const headerHeight = 56 + insets.top
-
 	const animatedOpacity = visibleAnim.interpolate({
 		inputRange: [0, 0.8, 1],
 		outputRange: [0, 0, 1]
@@ -487,6 +498,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 
 	return (
 		<Animated.View
+			key={`header-${headerHeight}`}
 			style={[
 				styles.headerContainer,
 				{
@@ -527,6 +539,9 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					</View>
 				</View>
 
+				{/* Custom Bottom Content (e.g. status filter bar in sales screen) */}
+				{resolvedBottom && <View style={{ height: resolvedBottomHeight, width: '100%' }}>{resolvedBottom}</View>}
+
 				{/* Linear Progress/Loading Bar */}
 				{isCurrentlyLoading && !disableAnimations && (
 					<View style={[styles.loadingBarContainer, { backgroundColor: colors.borderLight || '#1E293B' }]}>
@@ -555,8 +570,7 @@ SmartHeaderComponent.displayName = 'SmartHeader'
 export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 	({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
 		const { onScroll } = useScrollHandler()
-		const insets = useSafeAreaInsets()
-		const headerHeight = 56 + insets.top
+		const { headerHeight } = useLayout()
 
 		const handleScroll = useCallback(
 			(event: any) => {
@@ -597,8 +611,7 @@ SmartScrollView.displayName = 'SmartHeader.ScrollView'
 
 export const SmartFlatList = React.forwardRef<RNFlatList, FlatListProps<any>>(({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
 	const { onScroll } = useScrollHandler()
-	const insets = useSafeAreaInsets()
-	const headerHeight = 56 + insets.top
+	const { headerHeight } = useLayout()
 
 	const handleScroll = useCallback(
 		(event: any) => {
@@ -638,8 +651,7 @@ SmartFlatList.displayName = 'SmartHeader.FlatList'
 
 export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
 	const { onScroll } = useScrollHandler()
-	const insets = useSafeAreaInsets()
-	const headerHeight = 56 + insets.top
+	const { headerHeight } = useLayout()
 
 	const handleScroll = useCallback(
 		(event: any) => {
