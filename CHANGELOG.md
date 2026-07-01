@@ -2,6 +2,8 @@
 ### Fixed
 - Prevent update download progress percentage from jumping to 100% when paused.
 - Keep update download from starting from the beginning on app restart by persisting download progress and preventing premature cleanup of resume data on pause or cancel.
+- Fix resume download failing after app restart by converting JSON-deserialized `resumeData` back to its expected string format on startup.
+- Fix premature function exits in download catch blocks by removing redundant `resumeData` checks and relying strictly on explicit pause flags.
 
 ### Changed
 - Allow user, business, product, and account names and slugs to wrap to 2 lines instead of truncating at 1 to gracefully support lengths of up to 50 characters.

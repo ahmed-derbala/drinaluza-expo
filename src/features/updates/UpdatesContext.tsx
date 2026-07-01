@@ -282,7 +282,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				throw new Error('Download completed with empty or invalid result.')
 			}
 		} catch (err) {
-			if (isPausingRef.current || resumeDataRef.current) {
+			if (isPausingRef.current) {
 				setIsDownloading(false)
 				return null
 			}
@@ -393,7 +393,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				throw new Error('Resume download completed with empty or invalid result.')
 			}
 		} catch (err) {
-			if (isPausingRef.current || resumeDataRef.current) {
+			if (isPausingRef.current) {
 				setIsDownloading(false)
 				return null
 			}
@@ -520,9 +520,9 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			await performStartupCleanup()
 			await refreshApkList()
 			try {
-				const savedResumeData = await getItem<string>('download_resume_data')
+				const savedResumeData = await getItem<any>('download_resume_data')
 				if (savedResumeData) {
-					resumeDataRef.current = savedResumeData
+					resumeDataRef.current = typeof savedResumeData === 'string' ? savedResumeData : JSON.stringify(savedResumeData)
 					setIsPaused(true)
 					const savedProgress = await getItem<number>('download_progress')
 					if (savedProgress !== null && !isNaN(savedProgress)) {
