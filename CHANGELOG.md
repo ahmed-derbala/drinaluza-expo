@@ -8,6 +8,10 @@
 - Fix `SmartHeader` staying stuck in loading animation state on `/businesses/:businessSlug` screen by explicitly passing `isLoading: false` in the loaded screen stack options to clear React Navigation's merged option cache.
 - Fix `SmartHeader` obscuring top screen content across all app screens (including Feed, Search, Settings, Profile, Dashboard, Products, Businesses, Notifications, Purchases, and the `/products/:productSlug` details screen) by replacing standard scroll/list views with their `SmartHeader` equivalents and applying dynamic Y-offsets on root container views.
 
+### Added
+- Calculate and display remaining download time and download speed during OTA updates on native.
+- Modernize the updates screen layout, using rich LinearGradients, transparent borders, and consistent translucent dark glassmorphism card styling.
+
 ### Changed
 - Navigate to the global product details route (`/products/:productSlug`) instead of the business-nested route when pressing a product card on the feed screen.
 

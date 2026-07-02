@@ -135,6 +135,63 @@ export default function UpdatesScreen() {
 	} = useUpdates()
 
 	const [copied, setCopied] = useState(false)
+	const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null)
+	const [remainingTime, setRemainingTime] = useState<number | null>(null)
+	const prevProgressRef = useRef(downloadProgress)
+	const prevTimeRef = useRef<number | null>(null)
+
+	useEffect(() => {
+		if (!isDownloading || isPaused) {
+			setDownloadSpeed(null)
+			setRemainingTime(null)
+			prevTimeRef.current = null
+			return
+		}
+
+		const now = Date.now()
+		if (prevTimeRef.current === null) {
+			prevTimeRef.current = now
+			prevProgressRef.current = downloadProgress
+			return
+		}
+
+		const timeDiff = (now - prevTimeRef.current) / 1000 // in seconds
+		if (timeDiff >= 0.5) {
+			const progressDiff = downloadProgress - prevProgressRef.current
+			if (progressDiff > 0 && latestRelease) {
+				const bytesDiff = progressDiff * latestRelease.size
+				const currentSpeed = bytesDiff / timeDiff // bytes per second
+
+				setDownloadSpeed((prevSpeed) => {
+					if (prevSpeed === null) return currentSpeed
+					return prevSpeed * 0.7 + currentSpeed * 0.3
+				})
+
+				const remainingBytes = (1 - downloadProgress) * latestRelease.size
+				const speedToUse = downloadSpeed || currentSpeed
+				if (speedToUse > 0) {
+					setRemainingTime(Math.max(0, Math.round(remainingBytes / speedToUse)))
+				}
+			}
+			prevTimeRef.current = now
+			prevProgressRef.current = downloadProgress
+		}
+	}, [downloadProgress, isDownloading, isPaused, latestRelease, downloadSpeed])
+
+	const formatRemainingTime = (seconds: number | null): string => {
+		if (seconds === null) return ''
+		if (seconds < 60) {
+			return `${seconds}s ${translate('remaining', 'remaining')}`
+		}
+		const minutes = Math.floor(seconds / 60)
+		const remainingSeconds = seconds % 60
+		return `${minutes}m ${remainingSeconds}s ${translate('remaining', 'remaining')}`
+	}
+
+	const formatSpeed = (speedBytesPerSec: number | null): string => {
+		if (speedBytesPerSec === null || speedBytesPerSec <= 0) return ''
+		return `${formatBytes(speedBytesPerSec)}/s`
+	}
 
 	// Pulse animation for checking / available updates icon
 	const pulseAnim = useRef(new Animated.Value(1)).current
@@ -327,26 +384,32 @@ export default function UpdatesScreen() {
 			? translate('running_latest', 'You are running the latest version of Drinaluza.')
 			: translate('new_version_found', 'A new release is available with new features and fixes.')
 
+		const cardGradients = (isUpToDate ? ['rgba(16, 185, 129, 0.12)', 'rgba(16, 185, 129, 0.02)'] : ['rgba(14, 165, 233, 0.16)', 'rgba(139, 92, 246, 0.03)']) as [string, string]
+
+		const borderColor = isUpToDate ? 'rgba(16, 185, 129, 0.3)' : 'rgba(14, 165, 233, 0.3)'
+
 		return (
-			<View style={[styles.statusCard, { borderColor: isUpToDate ? 'rgba(16, 185, 129, 0.2)' : 'rgba(14, 165, 233, 0.2)' }]}>
-				<View style={styles.statusRow}>
-					<View style={[styles.statusIndicatorContainer, { backgroundColor: isUpToDate ? 'rgba(16, 185, 129, 0.08)' : 'rgba(14, 165, 233, 0.08)' }]}>
-						{isUpToDate ? (
-							<Ionicons name="checkmark-circle" size={38} color="#10B981" />
-						) : (
-							<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-								<Ionicons name="cloud-download" size={38} color="#0EA5E9" />
-							</Animated.View>
-						)}
-					</View>
-					<View style={styles.statusContent}>
-						<View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-							<Text style={[styles.statusTitle, { color: colors.text }]}>{statusText}</Text>
-							{renderEnvironmentBadge()}
+			<View style={{ borderRadius: 24, overflow: 'hidden' }}>
+				<LinearGradient colors={cardGradients} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.statusCard, { borderColor }]}>
+					<View style={styles.statusRow}>
+						<View style={[styles.statusIndicatorContainer, { backgroundColor: isUpToDate ? 'rgba(16, 185, 129, 0.1)' : 'rgba(14, 165, 233, 0.1)' }]}>
+							{isUpToDate ? (
+								<Ionicons name="checkmark-circle" size={38} color="#10B981" />
+							) : (
+								<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+									<Ionicons name="cloud-download" size={38} color="#0EA5E9" />
+								</Animated.View>
+							)}
 						</View>
-						<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
+						<View style={styles.statusContent}>
+							<View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+								<Text style={[styles.statusTitle, { color: colors.text }]}>{statusText}</Text>
+								{renderEnvironmentBadge()}
+							</View>
+							<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
+						</View>
 					</View>
-				</View>
+				</LinearGradient>
 			</View>
 		)
 	}
@@ -355,13 +418,20 @@ export default function UpdatesScreen() {
 		const latestVer = latestRelease ? `v${latestRelease.latest_version}` : '—'
 		return (
 			<View style={styles.comparisonGrid}>
-				<View style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
-					<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current Version')}</Text>
-					<Text style={[styles.comparisonValue, { color: colors.text }]}>v{config.app.version}</Text>
+				<View style={{ flex: 1, borderRadius: 20, overflow: 'hidden' }}>
+					<LinearGradient colors={['rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.01)']} style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
+						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current Version')}</Text>
+						<Text style={[styles.comparisonValue, { color: colors.text }]}>v{config.app.version}</Text>
+					</LinearGradient>
 				</View>
-				<View style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
-					<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest Version')}</Text>
-					<Text style={[styles.comparisonValue, { color: isUpToDate ? colors.text : '#0EA5E9', fontWeight: '800' }]}>{latestVer}</Text>
+				<View style={{ flex: 1, borderRadius: 20, overflow: 'hidden' }}>
+					<LinearGradient
+						colors={!isUpToDate ? ['rgba(14, 165, 233, 0.1)', 'rgba(14, 165, 233, 0.01)'] : ['rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.01)']}
+						style={[styles.comparisonCard, { borderColor: !isUpToDate ? 'rgba(14, 165, 233, 0.25)' : colors.borderLight }]}
+					>
+						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest Version')}</Text>
+						<Text style={[styles.comparisonValue, { color: isUpToDate ? colors.text : '#0EA5E9', fontWeight: '800' }]}>{latestVer}</Text>
+					</LinearGradient>
 				</View>
 			</View>
 		)
@@ -442,8 +512,23 @@ export default function UpdatesScreen() {
 							<LinearGradient colors={['#0EA5E9', '#8B5CF6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
 						</View>
 						<Text style={[styles.progressText, { color: colors.textSecondary }]}>
-							{isPaused ? `${translate('paused', 'Paused')}... ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')}... ${Math.round(downloadProgress * 100)}%`}
+							{isPaused ? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`}
 						</Text>
+
+						{isDownloading && (downloadSpeed !== null || remainingTime !== null) && (
+							<View style={styles.downloadMetaRow}>
+								{downloadSpeed !== null && (
+									<Text style={[styles.downloadMetaText, { color: colors.textTertiary }]}>
+										<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} /> {formatSpeed(downloadSpeed)}
+									</Text>
+								)}
+								{remainingTime !== null && (
+									<Text style={[styles.downloadMetaText, { color: colors.textTertiary }]}>
+										<Ionicons name="time-outline" size={12} color={colors.textTertiary} /> {formatRemainingTime(remainingTime)}
+									</Text>
+								)}
+							</View>
+						)}
 
 						<View style={[styles.rowButtons, { marginTop: 12 }]}>
 							{isDownloading && (
@@ -638,9 +723,7 @@ const styles = StyleSheet.create({
 	statusCard: {
 		borderRadius: 24,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
 		padding: 20,
-		backgroundColor: 'rgba(30, 41, 59, 0.45)', // Translucent dark card
 		...Platform.select({
 			web: {
 				backdropFilter: 'blur(20px)',
@@ -694,18 +777,10 @@ const styles = StyleSheet.create({
 		flex: 1,
 		borderRadius: 20,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
 		padding: 16,
-		backgroundColor: 'rgba(30, 41, 59, 0.45)',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: 6,
-		...Platform.select({
-			web: {
-				backdropFilter: 'blur(20px)',
-				WebkitBackdropFilter: 'blur(20px)'
-			} as any
-		})
+		gap: 6
 	},
 	comparisonLabel: {
 		fontSize: 11,
@@ -723,13 +798,27 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: 'rgba(255, 255, 255, 0.08)',
 		padding: 20,
-		backgroundColor: 'rgba(28, 37, 65, 0.45)', // Translucent deep slate
+		backgroundColor: 'rgba(15, 23, 42, 0.55)', // Translucent sleek glass background
 		...Platform.select({
 			web: {
 				backdropFilter: 'blur(20px)',
 				WebkitBackdropFilter: 'blur(20px)'
 			} as any
 		})
+	},
+	downloadMetaRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginTop: 2,
+		paddingHorizontal: 4
+	},
+	downloadMetaText: {
+		fontSize: 12,
+		fontWeight: '600',
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4
 	},
 	sectionTitle: {
 		fontSize: 12,
