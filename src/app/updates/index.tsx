@@ -477,7 +477,7 @@ export default function UpdatesScreen() {
 					>
 						<Ionicons name="download-outline" size={20} color={!latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF'} />
 						<Text style={[styles.primaryButtonText, { color: !latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF' }]}>
-							{translate('download_update', 'Download Update')}
+							{translate('download_update', 'Download Update')} {latestRelease?.latest_version ? `(v${latestRelease.latest_version})` : ''}
 						</Text>
 					</LinearGradient>
 				</TouchableOpacity>
@@ -573,7 +573,7 @@ export default function UpdatesScreen() {
 							>
 								<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : '#FFFFFF'} />
 								<Text style={[styles.primaryButtonText, { color: isDownloadDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
-									{translate('download', 'Download')}
+									{translate('download', 'Download')} {latestRelease?.latest_version ? `v${latestRelease.latest_version}` : ''}
 								</Text>
 							</LinearGradient>
 						</TouchableOpacity>
@@ -587,7 +587,7 @@ export default function UpdatesScreen() {
 							>
 								<Ionicons name="rocket-outline" size={20} color={isInstallDisabled ? colors.textTertiary : '#FFFFFF'} />
 								<Text style={[styles.primaryButtonText, { color: isInstallDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
-									{translate('install', 'Install')}
+									{translate('install', 'Install')} {installableApk?.version ? `v${installableApk.version}` : ''}
 								</Text>
 							</LinearGradient>
 						</TouchableOpacity>

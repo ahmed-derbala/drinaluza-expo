@@ -11,6 +11,8 @@
 ### Added
 - Calculate and display remaining download time and download speed during OTA updates on native.
 - Modernize the updates screen layout, using rich LinearGradients, transparent borders, and consistent translucent dark glassmorphism card styling.
+- Check for a downloaded installable update APK on startup and automatically trigger its installation if found.
+- Display update release version numbers on the updates screen action buttons (Download/Install).
 
 ### Changed
 - Navigate to the global product details route (`/products/:productSlug`) instead of the business-nested route when pressing a product card on the feed screen.
