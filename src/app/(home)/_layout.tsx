@@ -1,13 +1,13 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
-import { View, Platform, StyleSheet } from 'react-native'
+import { View, Platform, StyleSheet, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const TabsComponent = Tabs as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { useTheme, createShadow, createColorShadow } from '@/core/theme'
+import { useTheme } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
@@ -21,15 +21,25 @@ export default function HomeLayout() {
 	// Derive auth state from UserContext — single source of truth, no extra token read
 	const isAuthenticated = !!user
 	const { notificationCount } = useNotification()
+	const isDashboardVisible = isAuthenticated && user?.role === 'business_owner'
+	const isNotificationsVisible = isAuthenticated
+	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0) + (isNotificationsVisible ? 1 : 0)
+	const barWidth = activeTabsCount * 48
+	const { width: screenWidth } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 
 	useEffect(() => {
 		setTabBarVisible(true)
 	}, [pathname, setTabBarVisible])
 
-	const iconSize = Platform.select({ ios: 20, android: 22, web: 20 })
-	const isDashboardVisible = isAuthenticated && user?.role === 'business_owner'
-	const isNotificationsVisible = isAuthenticated
+	const renderTabBarIcon = (focusedIcon: string, unfocusedIcon: string, iconType: 'material' | 'ionicons', color: any, focused: boolean) => {
+		const iconColor = focused ? colors.primary : colors.textTertiary
+		return iconType === 'material' ? (
+			<MaterialIcons name={(focused ? focusedIcon : unfocusedIcon) as any} size={20} color={iconColor} />
+		) : (
+			<Ionicons name={(focused ? focusedIcon : unfocusedIcon) as any} size={20} color={iconColor} />
+		)
+	}
 
 	return (
 		<SafeAreaView style={[styles.container, { backgroundColor: '#000000' }]} edges={['bottom']}>
@@ -42,61 +52,75 @@ export default function HomeLayout() {
 					header: (props: any) => <SmartHeader {...props} />,
 					tabBarStyle: {
 						position: 'absolute',
-						bottom: 0,
+						bottom: Platform.select({
+							ios: insets.bottom > 0 ? insets.bottom + 6 : 10,
+							android: 10,
+							web: 14
+						}),
 						left: 0,
 						right: 0,
-						backgroundColor: colors.background,
-						borderTopColor: colors.primary,
-						borderTopWidth: 1.5,
-						height: Platform.select({
-							ios: 44 + insets.bottom,
-							android: 36 + insets.bottom,
-							web: 48
-						}),
-						paddingBottom: insets.bottom,
-						paddingTop: Platform.select({
-							ios: insets.bottom > 0 ? 2 : 0,
-							android: 0,
-							web: 0
-						}),
+						height: 44,
+						backgroundColor: 'transparent',
+						borderTopWidth: 0,
+						borderTopColor: 'transparent',
+						paddingBottom: 0,
+						paddingTop: 0,
+						paddingHorizontal: (screenWidth - barWidth) / 2,
 						transform: [{ translateY: isTabBarVisible ? 0 : 120 }],
 						opacity: isTabBarVisible ? 1 : 0,
-						...Platform.select({
-							ios: {
-								shadowColor: colors.primary,
-								shadowOffset: { width: 0, height: -3 },
-								shadowOpacity: 0.12,
-								shadowRadius: 6
-							},
-							android: {
-								elevation: 8
-							},
-							web: {
-								boxShadow: `0 -3px 10px ${colors.primary}18`
-							}
-						})
+						elevation: 0,
+						shadowColor: 'transparent'
 					},
+					tabBarBackground: () => (
+						<View
+							style={{
+								position: 'absolute',
+								left: (screenWidth - barWidth) / 2,
+								width: barWidth,
+								height: '100%',
+								backgroundColor: 'rgba(15, 23, 42, 0.6)',
+								borderRadius: 22,
+								...Platform.select({
+									ios: {
+										shadowColor: 'rgba(0, 0, 0, 0.5)',
+										shadowOffset: { width: 0, height: 4 },
+										shadowOpacity: 1,
+										shadowRadius: 16
+									},
+									android: {
+										elevation: 12
+									},
+									web: {
+										boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)'
+									}
+								})
+							}}
+						/>
+					),
 					tabBarActiveTintColor: colors.primary,
 					tabBarInactiveTintColor: colors.textTertiary,
 					tabBarHideOnKeyboard: Platform.OS === 'android',
 					tabBarShowLabel: false,
+					tabBarItemStyle: {
+						flex: 1,
+						justifyContent: 'center',
+						alignItems: 'center',
+						height: '100%',
+						padding: 0,
+						margin: 0
+					},
 					tabBarIconStyle: {
-						marginTop: Platform.select({
-							ios: 0,
-							android: 1,
-							web: 0
-						})
+						justifyContent: 'center',
+						alignItems: 'center',
+						marginTop: 0,
+						marginBottom: 0
 					}
 				}}
 			>
 				<Tabs.Screen
 					name="feed"
 					options={{
-						tabBarIcon: ({ color, focused }) => (
-							<View style={focused ? styles.activeIconContainer : undefined}>
-								<MaterialIcons name="home" size={iconSize} color={color} />
-							</View>
-						),
+						tabBarIcon: ({ color, focused }) => renderTabBarIcon('home', 'home-outline', 'ionicons', color, focused),
 						tabBarAccessibilityLabel: translate('feed', 'Feed')
 					}}
 				/>
@@ -104,11 +128,7 @@ export default function HomeLayout() {
 					name="dashboard"
 					options={{
 						href: isDashboardVisible ? '/dashboard' : null,
-						tabBarIcon: ({ color, focused }) => (
-							<View style={focused ? styles.activeIconContainer : undefined}>
-								<MaterialIcons name="dashboard" size={iconSize} color={color} />
-							</View>
-						),
+						tabBarIcon: ({ color, focused }) => renderTabBarIcon('grid', 'grid-outline', 'ionicons', color, focused),
 						tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
 					}}
 				/>
@@ -120,28 +140,20 @@ export default function HomeLayout() {
 						tabBarBadgeStyle: {
 							backgroundColor: colors.error,
 							color: '#fff',
-							fontSize: 10,
-							minWidth: 18,
-							height: 18,
-							borderRadius: 9,
-							lineHeight: 18
+							fontSize: 9,
+							minWidth: 16,
+							height: 16,
+							borderRadius: 8,
+							lineHeight: 16
 						},
-						tabBarIcon: ({ color, focused }) => (
-							<View style={focused ? styles.activeIconContainer : undefined}>
-								<Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={iconSize} color={color} />
-							</View>
-						),
+						tabBarIcon: ({ color, focused }) => renderTabBarIcon('notifications', 'notifications-outline', 'ionicons', color, focused),
 						tabBarAccessibilityLabel: translate('notifications', 'Notifications')
 					}}
 				/>
 				<Tabs.Screen
 					name="profile"
 					options={{
-						tabBarIcon: ({ color, focused }) => (
-							<View style={focused ? styles.activeIconContainer : undefined}>
-								<MaterialIcons name={focused ? 'person' : 'person-outline'} size={iconSize} color={color} />
-							</View>
-						),
+						tabBarIcon: ({ color, focused }) => renderTabBarIcon('person', 'person-outline', 'ionicons', color, focused),
 						tabBarAccessibilityLabel: translate('profile', 'Profile')
 					}}
 				/>
@@ -149,11 +161,7 @@ export default function HomeLayout() {
 					name="settings"
 					options={{
 						href: null,
-						tabBarIcon: ({ color, focused }) => (
-							<View style={focused ? styles.activeIconContainer : undefined}>
-								<Ionicons name={focused ? 'settings' : 'settings-outline'} size={iconSize} color={color} />
-							</View>
-						),
+						tabBarIcon: ({ color, focused }) => renderTabBarIcon('settings', 'settings-outline', 'ionicons', color, focused),
 						tabBarAccessibilityLabel: translate('settings', 'Settings')
 					}}
 				/>
@@ -165,13 +173,5 @@ export default function HomeLayout() {
 const styles = StyleSheet.create({
 	container: {
 		flex: 1
-	},
-	activeIconContainer: {
-		width: 32,
-		height: 32,
-		borderRadius: 8,
-		backgroundColor: 'rgba(56, 189, 248, 0.15)',
-		justifyContent: 'center',
-		alignItems: 'center'
 	}
 })

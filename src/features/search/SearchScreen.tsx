@@ -392,7 +392,7 @@ export default function SearchScreen() {
 	}, [numColumns, itemWidth, shimmerAnim])
 
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'web' ? 0 : headerHeight }]}>
+		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: headerHeight }]}>
 			<SmartHeader title={translate('search_title', 'Search')} fallbackRoute="/(home)/feed" />
 
 			{/* Search input container */}

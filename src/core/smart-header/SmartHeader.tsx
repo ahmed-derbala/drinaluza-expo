@@ -272,19 +272,10 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	}, [pathname, setHeaderVisible, setTabBarVisible])
 	const visibleAnim = useRef(new Animated.Value(1)).current
 
-	// Setup header hide/show animation (runs natively via translateY & opacity)
+	// Setup header hide/show instantly (no animation to prevent screen flickering/lag)
 	useEffect(() => {
-		if (disableAnimations) {
-			visibleAnim.setValue(isHeaderVisible ? 1 : 0)
-			return
-		}
-		Animated.timing(visibleAnim, {
-			toValue: isHeaderVisible ? 1 : 0,
-			duration: 200,
-			easing: Easing.bezier(0.2, 0, 0, 1),
-			useNativeDriver: true
-		}).start()
-	}, [isHeaderVisible, visibleAnim, disableAnimations])
+		visibleAnim.setValue(isHeaderVisible ? 1 : 0)
+	}, [isHeaderVisible, visibleAnim])
 
 	// Resolve actual loading state from both props and navigation options
 	const isCurrentlyLoading = isLoading || loading || options?.isLoading || options?.loading || options?.isRefreshing
@@ -587,7 +578,6 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 		)
 
 		const mergedContentContainerStyle = useMemo(() => {
-			if (Platform.OS === 'web') return contentContainerStyle
 			const flattened = StyleSheet.flatten(contentContainerStyle) || {}
 			const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
 			return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
@@ -630,7 +620,6 @@ export const SmartFlatList = React.forwardRef<RNFlatList, FlatListProps<any>>(({
 	)
 
 	const mergedContentContainerStyle = useMemo(() => {
-		if (Platform.OS === 'web') return contentContainerStyle
 		const flattened = StyleSheet.flatten(contentContainerStyle) || {}
 		const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
 		return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
@@ -672,7 +661,6 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 	)
 
 	const mergedContentContainerStyle = useMemo(() => {
-		if (Platform.OS === 'web') return contentContainerStyle
 		const flattened = StyleSheet.flatten(contentContainerStyle) || {}
 		const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
 		return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
@@ -732,30 +720,22 @@ export type SmartScreenHeaderProps = SmartHeaderProps
 
 const styles = StyleSheet.create({
 	headerContainer: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
 		width: '100%',
 		borderBottomWidth: StyleSheet.hairlineWidth,
 		zIndex: 100,
 		...Platform.select({
 			ios: {
-				position: 'absolute',
-				top: 0,
-				left: 0,
-				right: 0,
 				shadowColor: '#000000',
 				shadowOffset: { width: 0, height: 1 },
 				shadowOpacity: 0.15,
 				shadowRadius: 2
 			},
 			android: {
-				position: 'absolute',
-				top: 0,
-				left: 0,
-				right: 0,
 				elevation: 2
-			},
-			web: {
-				position: 'sticky',
-				top: 0
 			}
 		})
 	},

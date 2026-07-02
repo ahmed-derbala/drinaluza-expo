@@ -362,7 +362,7 @@ export default function FeedScreen() {
 				) : displayedItems.length === 0 ? (
 					renderEmpty()
 				) : (
-					<ScrollView
+					<SmartHeader.ScrollView
 						style={styles.root}
 						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
 						showsVerticalScrollIndicator={false}
@@ -386,7 +386,7 @@ export default function FeedScreen() {
 							))}
 						</View>
 						{renderWebPagination()}
-					</ScrollView>
+					</SmartHeader.ScrollView>
 				)}
 				<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
 			</View>

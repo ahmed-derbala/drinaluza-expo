@@ -8,6 +8,15 @@
 - Fix `SmartHeader` staying stuck in loading animation state on `/businesses/:businessSlug` screen by explicitly passing `isLoading: false` in the loaded screen stack options to clear React Navigation's merged option cache.
 - Fix `SmartHeader` obscuring top screen content across all app screens (including Feed, Search, Settings, Profile, Dashboard, Products, Businesses, Notifications, Purchases, and the `/products/:productSlug` details screen) by replacing standard scroll/list views with their `SmartHeader` equivalents and applying dynamic Y-offsets on root container views.
 - Fix flash of home/feed screen and remove splash/loading screen on launch by redirecting instantly to the feed route on startup and performing OTA update checks asynchronously in the background without blocking layout mounting.
+- Fix web version of `FeedScreen` layout overlapping `SmartHeader` by replacing standard `ScrollView` with `SmartHeader.ScrollView` in the web rendering block to automatically inherit and apply the `headerHeight` top padding offset.
+- Fix web version of `SmartHeader` leaving a blank/black space when scrolling down by standardizing its layout positioning style to `absolute` across all platforms, and applying the corresponding `headerHeight` top padding offset in web list and scroll wrappers to match mobile behavior.
+- Fix web version of `SmartHeader` and bottom navigation bar not hiding/showing on scroll by binding a document-level capture-phase scroll listener inside `useScrollHandler` on the web to capture scroll offsets from nested overflow divs.
+- Fix header and bottom navigation bar scroll hiding/showing transitions to trigger instantly with zero animation or transitions on all platforms, preventing screen layout flickering and aligning behavior across all screens.
+- Fix bottom navigation bar icon centering and alignment across active/inactive states by introducing a unified `renderTabBarIcon` helper that wraps all icons in identical layout containers and configuring centered flexbox options in `tabBarItemStyle` and `tabBarIconStyle`.
+
+### Changed
+- Redesign the dash (bottom navigation bar) from scratch with a modern minimal aesthetic. Use a clean frosted-glass floating pill centered via `tabBarBackground` (`alignSelf: 'center'`, `width: barWidth` at 48px per tab) with no visible borders, a deeper semi-transparent slate background (`rgba(15, 23, 42, 0.6)`), soft ambient shadow, and uniform 44px height. Simplify icons to Ionicons outline/filled pairs at 20px with color-only active state (no wrapper containers, dots, or borders). Remove unused style definitions and imports.
+- Improve updates screen layout design to use a premium modern aesthetic, featuring an elevated status card with double glow-rings, a centered comparison chevron transition, inline icons on release details row elements, and sleeker button contours.
 
 ### Added
 - Calculate and display remaining download time and download speed during OTA updates on native.

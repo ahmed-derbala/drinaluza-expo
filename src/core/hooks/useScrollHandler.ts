@@ -1,5 +1,5 @@
-import { useRef, useCallback } from 'react'
-import { NativeScrollEvent, NativeSyntheticEvent } from 'react-native'
+import { useRef, useCallback, useEffect } from 'react'
+import { NativeScrollEvent, NativeSyntheticEvent, Platform } from 'react-native'
 import { useLayout } from '../contexts/LayoutContext'
 
 /**
@@ -117,6 +117,42 @@ export const useScrollHandler = (
 		},
 		[setTabBarVisible, setHeaderVisible, threshold, scrollUpThreshold, debounceMs]
 	)
+
+	useEffect(() => {
+		if (Platform.OS !== 'web' || typeof window === 'undefined' || typeof document === 'undefined') return
+
+		const handleWebScroll = (e: Event) => {
+			const target = e.target
+			if (!target) return
+
+			let currentOffset = 0
+			if (target === document || target === window) {
+				currentOffset = window.scrollY || document.documentElement.scrollTop || 0
+			} else {
+				const htmlTarget = target as HTMLElement
+				if (typeof htmlTarget.scrollTop === 'number') {
+					currentOffset = htmlTarget.scrollTop
+				} else {
+					return
+				}
+			}
+
+			const mockEvent = {
+				nativeEvent: {
+					contentOffset: {
+						y: currentOffset
+					}
+				}
+			} as any
+			onScroll(mockEvent)
+		}
+
+		// Use capture phase to intercept scroll events from any nested scrollable divs/containers on the web page
+		document.addEventListener('scroll', handleWebScroll, { capture: true, passive: true })
+		return () => {
+			document.removeEventListener('scroll', handleWebScroll, { capture: true })
+		}
+	}, [onScroll])
 
 	return { onScroll }
 }

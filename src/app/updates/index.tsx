@@ -384,22 +384,25 @@ export default function UpdatesScreen() {
 			? translate('running_latest', 'You are running the latest version of Drinaluza.')
 			: translate('new_version_found', 'A new release is available with new features and fixes.')
 
-		const cardGradients = (isUpToDate ? ['rgba(16, 185, 129, 0.12)', 'rgba(16, 185, 129, 0.02)'] : ['rgba(14, 165, 233, 0.16)', 'rgba(139, 92, 246, 0.03)']) as [string, string]
-
-		const borderColor = isUpToDate ? 'rgba(16, 185, 129, 0.3)' : 'rgba(14, 165, 233, 0.3)'
+		const accentColor = isUpToDate ? '#10B981' : '#0EA5E9'
+		const cardGradients = (isUpToDate ? ['rgba(16, 185, 129, 0.14)', 'rgba(16, 185, 129, 0.02)'] : ['rgba(14, 165, 233, 0.18)', 'rgba(139, 92, 246, 0.04)']) as [string, string]
+		const borderColor = isUpToDate ? 'rgba(16, 185, 129, 0.25)' : 'rgba(14, 165, 233, 0.25)'
 
 		return (
-			<View style={{ borderRadius: 24, overflow: 'hidden' }}>
+			<View style={{ borderRadius: 26, overflow: 'hidden' }}>
 				<LinearGradient colors={cardGradients} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.statusCard, { borderColor }]}>
 					<View style={styles.statusRow}>
-						<View style={[styles.statusIndicatorContainer, { backgroundColor: isUpToDate ? 'rgba(16, 185, 129, 0.1)' : 'rgba(14, 165, 233, 0.1)' }]}>
-							{isUpToDate ? (
-								<Ionicons name="checkmark-circle" size={38} color="#10B981" />
-							) : (
-								<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-									<Ionicons name="cloud-download" size={38} color="#0EA5E9" />
-								</Animated.View>
-							)}
+						{/* Outer glow ring */}
+						<View style={[styles.statusGlowRing, { borderColor: accentColor + '20' }]}>
+							<View style={[styles.statusIndicatorContainer, { backgroundColor: accentColor + '15' }]}>
+								{isUpToDate ? (
+									<Ionicons name="checkmark-circle" size={44} color={accentColor} />
+								) : (
+									<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+										<Ionicons name="cloud-download" size={44} color={accentColor} />
+									</Animated.View>
+								)}
+							</View>
 						</View>
 						<View style={styles.statusContent}>
 							<View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
@@ -407,6 +410,9 @@ export default function UpdatesScreen() {
 								{renderEnvironmentBadge()}
 							</View>
 							<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
+							<View style={[styles.versionPill, { backgroundColor: accentColor + '12', borderColor: accentColor + '30' }]}>
+								<Text style={[styles.versionPillText, { color: accentColor }]}>v{config.app.version}</Text>
+							</View>
 						</View>
 					</View>
 				</LinearGradient>
@@ -418,18 +424,36 @@ export default function UpdatesScreen() {
 		const latestVer = latestRelease ? `v${latestRelease.latest_version}` : '—'
 		return (
 			<View style={styles.comparisonGrid}>
-				<View style={{ flex: 1, borderRadius: 20, overflow: 'hidden' }}>
-					<LinearGradient colors={['rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.01)']} style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
-						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current Version')}</Text>
+				<View style={{ flex: 1, borderRadius: 22, overflow: 'hidden' }}>
+					<LinearGradient colors={['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.01)']} style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
+						<Ionicons name="phone-portrait-outline" size={18} color={colors.textTertiary} style={{ marginBottom: 4 }} />
+						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current')}</Text>
 						<Text style={[styles.comparisonValue, { color: colors.text }]}>v{config.app.version}</Text>
 					</LinearGradient>
 				</View>
-				<View style={{ flex: 1, borderRadius: 20, overflow: 'hidden' }}>
+
+				{/* Arrow indicator */}
+				<View style={styles.comparisonArrow}>
+					{!isUpToDate ? (
+						<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+							<View style={[styles.arrowCircle, { backgroundColor: 'rgba(14, 165, 233, 0.15)', borderColor: 'rgba(14, 165, 233, 0.3)' }]}>
+								<Ionicons name="arrow-forward" size={16} color="#0EA5E9" />
+							</View>
+						</Animated.View>
+					) : (
+						<View style={[styles.arrowCircle, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: colors.borderLight }]}>
+							<Ionicons name="checkmark" size={16} color={colors.textTertiary} />
+						</View>
+					)}
+				</View>
+
+				<View style={{ flex: 1, borderRadius: 22, overflow: 'hidden' }}>
 					<LinearGradient
-						colors={!isUpToDate ? ['rgba(14, 165, 233, 0.1)', 'rgba(14, 165, 233, 0.01)'] : ['rgba(255, 255, 255, 0.04)', 'rgba(255, 255, 255, 0.01)']}
-						style={[styles.comparisonCard, { borderColor: !isUpToDate ? 'rgba(14, 165, 233, 0.25)' : colors.borderLight }]}
+						colors={!isUpToDate ? ['rgba(14, 165, 233, 0.12)', 'rgba(14, 165, 233, 0.02)'] : ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.01)']}
+						style={[styles.comparisonCard, { borderColor: !isUpToDate ? 'rgba(14, 165, 233, 0.3)' : colors.borderLight }]}
 					>
-						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest Version')}</Text>
+						<Ionicons name="cloud-outline" size={18} color={!isUpToDate ? '#0EA5E9' : colors.textTertiary} style={{ marginBottom: 4 }} />
+						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest')}</Text>
 						<Text style={[styles.comparisonValue, { color: isUpToDate ? colors.text : '#0EA5E9', fontWeight: '800' }]}>{latestVer}</Text>
 					</LinearGradient>
 				</View>
@@ -443,17 +467,32 @@ export default function UpdatesScreen() {
 			<View style={[styles.card, { borderColor: colors.borderLight }]}>
 				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('release_details', 'Release Details')}</Text>
 				<View style={styles.metaRow}>
-					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('published_date', 'Published Date')}</Text>
+					<View style={styles.metaLabelRow}>
+						<View style={[styles.metaIconWrap, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
+							<Ionicons name="calendar-outline" size={14} color="#3B82F6" />
+						</View>
+						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('published_date', 'Published')}</Text>
+					</View>
 					<Text style={[styles.metaValue, { color: colors.text }]}>{formatDate(latestRelease.published_at)}</Text>
 				</View>
 				<View style={styles.metaDivider} />
 				<View style={styles.metaRow}>
-					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('file_size', 'Download Size')}</Text>
+					<View style={styles.metaLabelRow}>
+						<View style={[styles.metaIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
+							<Ionicons name="cube-outline" size={14} color="#8B5CF6" />
+						</View>
+						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('file_size', 'Download Size')}</Text>
+					</View>
 					<Text style={[styles.metaValue, { color: colors.text }]}>{formatBytes(latestRelease.size)}</Text>
 				</View>
 				<View style={styles.metaDivider} />
 				<View style={styles.metaRow}>
-					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('total_downloads', 'Total Downloads')}</Text>
+					<View style={styles.metaLabelRow}>
+						<View style={[styles.metaIconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.1)' }]}>
+							<Ionicons name="download-outline" size={14} color="#0EA5E9" />
+						</View>
+						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('total_downloads', 'Downloads')}</Text>
+					</View>
 					<Text style={[styles.metaValue, { color: colors.text }]}>{latestRelease.download_count}</Text>
 				</View>
 			</View>
@@ -718,10 +757,10 @@ const styles = StyleSheet.create({
 	scrollContent: {
 		padding: 16,
 		paddingBottom: 40,
-		gap: 16
+		gap: 20
 	},
 	statusCard: {
-		borderRadius: 24,
+		borderRadius: 26,
 		borderWidth: 1,
 		padding: 20,
 		...Platform.select({
@@ -735,6 +774,13 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 16
+	},
+	statusGlowRing: {
+		padding: 4,
+		borderRadius: 38,
+		borderWidth: 1,
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
 	statusIndicatorContainer: {
 		width: 60,
@@ -756,6 +802,18 @@ const styles = StyleSheet.create({
 		fontSize: 13,
 		lineHeight: 18
 	},
+	versionPill: {
+		alignSelf: 'flex-start',
+		paddingHorizontal: 8,
+		paddingVertical: 2,
+		borderRadius: 8,
+		borderWidth: 1,
+		marginTop: 4
+	},
+	versionPillText: {
+		fontSize: 11,
+		fontWeight: '600'
+	},
 	badgeContainer: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -771,11 +829,12 @@ const styles = StyleSheet.create({
 	},
 	comparisonGrid: {
 		flexDirection: 'row',
-		gap: 12
+		alignItems: 'center',
+		gap: 10
 	},
 	comparisonCard: {
 		flex: 1,
-		borderRadius: 20,
+		borderRadius: 22,
 		borderWidth: 1,
 		padding: 16,
 		alignItems: 'center',
@@ -793,8 +852,21 @@ const styles = StyleSheet.create({
 		fontWeight: '700',
 		letterSpacing: -0.5
 	},
+	comparisonArrow: {
+		justifyContent: 'center',
+		alignItems: 'center',
+		width: 32
+	},
+	arrowCircle: {
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		borderWidth: 1,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
 	card: {
-		borderRadius: 20,
+		borderRadius: 24,
 		borderWidth: 1,
 		borderColor: 'rgba(255, 255, 255, 0.08)',
 		padding: 20,
@@ -833,6 +905,18 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		paddingVertical: 8
 	},
+	metaLabelRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8
+	},
+	metaIconWrap: {
+		width: 24,
+		height: 24,
+		borderRadius: 6,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
 	metaLabel: {
 		fontSize: 13,
 		fontWeight: '500'
@@ -858,7 +942,7 @@ const styles = StyleSheet.create({
 	},
 	primaryButtonTouch: {
 		width: '100%',
-		borderRadius: 16,
+		borderRadius: 20,
 		overflow: 'hidden',
 		...Platform.select({
 			web: {
@@ -871,7 +955,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		gap: 8,
-		height: 50,
+		height: 52,
 		paddingHorizontal: 16,
 		width: '100%'
 	},
@@ -885,8 +969,8 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		gap: 6,
-		height: 46,
-		borderRadius: 14,
+		height: 48,
+		borderRadius: 18,
 		borderWidth: 1,
 		borderColor: 'rgba(255, 255, 255, 0.08)',
 		backgroundColor: 'rgba(255, 255, 255, 0.02)',
@@ -905,13 +989,13 @@ const styles = StyleSheet.create({
 		gap: 8
 	},
 	progressBarBg: {
-		height: 10,
-		borderRadius: 5,
+		height: 8,
+		borderRadius: 4,
 		overflow: 'hidden'
 	},
 	progressBarFill: {
 		height: '100%',
-		borderRadius: 5
+		borderRadius: 4
 	},
 	progressText: {
 		fontSize: 12,
@@ -933,8 +1017,8 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	changelogBox: {
-		borderRadius: 14,
-		padding: 14,
+		borderRadius: 16,
+		padding: 16,
 		minHeight: 80
 	},
 	changelogText: {
