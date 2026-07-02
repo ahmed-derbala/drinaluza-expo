@@ -286,8 +286,9 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		}).start()
 	}, [isHeaderVisible, visibleAnim, disableAnimations])
 
-	// Resolve actual loading state from both props
-	const isCurrentlyLoading = isLoading || loading
+	// Resolve actual loading state from both props and navigation options
+	const isCurrentlyLoading = isLoading || loading || options?.isLoading || options?.loading || options?.isRefreshing
+	const resolvedSubtitle = subtitle ?? options?.subtitle
 
 	// Setup top linear progress bar animation if loading
 	useEffect(() => {
@@ -449,40 +450,43 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	})
 
 	const renderTitleSection = () => {
-		if (isCurrentlyLoading) {
-			const titleLineHeight = Platform.OS === 'ios' ? 22 : 24
-			return (
-				<View style={styles.titleContainer}>
-					<View style={{ height: titleLineHeight, justifyContent: 'center' }}>
-						<SkeletonBlock width={120} height={16} borderRadius={4} disableAnimations={disableAnimations} />
-					</View>
-					{subtitle ? (
-						<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
-							<SkeletonBlock width={80} height={10} borderRadius={3} disableAnimations={disableAnimations} />
-						</View>
-					) : null}
-				</View>
-			)
-		}
-
 		if (React.isValidElement(resolvedTitle)) {
 			return resolvedTitle
 		}
 
+		const titleLineHeight = Platform.OS === 'ios' ? 22 : 24
+
 		return (
-			<Animated.View style={[styles.titleContainer, { opacity: disableAnimations ? 1 : fadeAnim }]}>
-				<View style={styles.titleRow}>
-					<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-						{resolvedTitle}
-					</Text>
-					{loading && <ActivityIndicator size="small" color={colors.primary} style={styles.titleSpinner} />}
+			<View style={styles.titleContainer}>
+				{/* Title Wrapper */}
+				<View style={{ height: titleLineHeight, justifyContent: 'center' }}>
+					{isCurrentlyLoading ? (
+						<SkeletonBlock width={120} height={16} borderRadius={4} disableAnimations={disableAnimations} />
+					) : (
+						<Animated.View style={[styles.titleRow, { opacity: disableAnimations ? 1 : fadeAnim }]}>
+							<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+								{resolvedTitle}
+							</Text>
+							{loading && <ActivityIndicator size="small" color={colors.primary} style={styles.titleSpinner} />}
+						</Animated.View>
+					)}
 				</View>
-				{subtitle ? (
-					<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-						{subtitle}
-					</Text>
+
+				{/* Subtitle Wrapper */}
+				{resolvedSubtitle ? (
+					<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
+						{isCurrentlyLoading ? (
+							<SkeletonBlock width={80} height={10} borderRadius={3} disableAnimations={disableAnimations} />
+						) : (
+							<Animated.View style={{ opacity: disableAnimations ? 1 : fadeAnim }}>
+								<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+									{resolvedSubtitle}
+								</Text>
+							</Animated.View>
+						)}
+					</View>
 				) : null}
-			</Animated.View>
+			</View>
 		)
 	}
 
@@ -768,8 +772,9 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'flex-end',
-		minWidth: 140, // stable container minimum width to prevent title truncation jumping
+		width: 180, // stable container width to guarantee zero layout shifts
 		flexShrink: 0,
+		flexGrow: 0,
 		zIndex: 2,
 		minHeight: 38,
 		gap: 8

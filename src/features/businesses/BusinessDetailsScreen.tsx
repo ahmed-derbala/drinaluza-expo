@@ -121,7 +121,15 @@ export default function BusinessDetailsScreen() {
 	if (loading) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: displayTitle }} />
+				<Stack.Screen
+					options={
+						{
+							title: displayTitle,
+							subtitle: `@${businessSlug}`,
+							isLoading: true
+						} as any
+					}
+				/>
 				<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>

@@ -1,3 +1,10 @@
+## [1.27.23] - 2 july 2026
+### Fixed
+- Fix update package corruption and incorrect download percentage display when resuming an interrupted update download on app restart by tracking active download states via a local storage key and executing startup cleanup of incomplete/stale `.tmp` files.
+- Fix visual layout shifts (horizontal and vertical) in `SmartHeader` by introducing stable width boundaries on the actions section and aligning loading placeholders to the exact line heights of expected title and subtitle text components.
+- Pass expected subtitle metadata dynamically to `SmartHeader` in user and business detail loading states to reserve skeleton loader layout boundaries and prevent vertical jumps when data loading completes.
+- Fix updates screen content being obscured by the absolute-positioned `SmartHeader` by replacing standard `ScrollView` with `SmartHeader.ScrollView` to automatically apply the correct top padding.
+
 ## [1.27.17] - 1 july 2026
 ### Fixed
 - Prevent update download progress percentage from jumping to 100% when paused.

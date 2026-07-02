@@ -85,7 +85,7 @@ export default function UserDetailScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader title={displayTitle} isLoading={true} />
+				<SmartHeader title={displayTitle} subtitle={`@${userSlug}`} isLoading={true} />
 				<LoadingState />
 			</View>
 		)

@@ -231,6 +231,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		resumeDataRef.current = null
 		await removeItem('download_resume_data')
 		await removeItem('download_progress')
+		await setItem('download_status', 'downloading')
 		setDownloadProgress(0)
 		await ensureUpdatesFolder()
 
@@ -295,6 +296,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			activeDownloadRef.current = null
 			await removeItem('download_resume_data')
 			await removeItem('download_progress')
+			await removeItem('download_status')
 			// Clean up temp file on failure
 			await FileSystem.deleteAsync(tempFileUri, { idempotent: true }).catch(() => {})
 			console.error('[UpdatesContext] File download error:', err)
@@ -313,6 +315,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				setIsPaused(true)
 				setIsDownloading(false)
 				if (resumeData) {
+					await setItem('download_status', 'paused')
 					await setItem('download_resume_data', resumeData)
 					await setItem('download_progress', downloadProgress)
 				}
@@ -333,6 +336,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 		setIsDownloading(true)
 		setIsPaused(false)
+		await setItem('download_status', 'downloading')
 		await ensureUpdatesFolder()
 
 		const filename = `drinaluza-${latestRelease.latest_version}.apk`
@@ -380,6 +384,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				resumeDataRef.current = null
 				await removeItem('download_resume_data')
 				await removeItem('download_progress')
+				await removeItem('download_status')
 
 				await FileSystem.moveAsync({
 					from: downloadResult.uri,
@@ -406,6 +411,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			activeDownloadRef.current = null
 			await removeItem('download_resume_data')
 			await removeItem('download_progress')
+			await removeItem('download_status')
 			console.error('[UpdatesContext] File resume download error:', err)
 			throw err
 		}
@@ -429,6 +435,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			resumeDataRef.current = null
 			await removeItem('download_resume_data')
 			await removeItem('download_progress')
+			await removeItem('download_status')
 			if (latestRelease) {
 				const filename = `drinaluza-${latestRelease.latest_version}.apk.tmp`
 				await FileSystem.deleteAsync(UPDATES_FOLDER + filename, { idempotent: true }).catch(() => {})
@@ -460,12 +467,27 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 			const validApks: { filename: string; version: string }[] = []
 
+			const downloadStatus = await getItem<string>('download_status')
+			const isPausedStatus = downloadStatus === 'paused'
+
+			if (!isPausedStatus) {
+				await removeItem('download_resume_data')
+				await removeItem('download_progress')
+				await removeItem('download_status')
+			}
+
 			for (const file of files) {
 				const filePath = UPDATES_FOLDER + file
 
-				// 1. Keep .tmp files (incomplete downloads) for potential resume on app startup
+				// 1. Handle .tmp files (incomplete downloads)
 				if (file.endsWith('.tmp')) {
-					continue
+					if (isPausedStatus) {
+						continue
+					} else {
+						log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting incomplete/interrupted download file ${file}` })
+						await FileSystem.deleteAsync(filePath, { idempotent: true })
+						continue
+					}
 				}
 
 				// 2. Only process .apk files, delete anything else unexpected

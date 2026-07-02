@@ -551,7 +551,7 @@ export default function UpdatesScreen() {
 				]}
 			/>
 
-			<ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
+			<SmartHeader.ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
 				{renderStatusCard()}
 
 				{renderVersionComparison()}
@@ -621,7 +621,7 @@ export default function UpdatesScreen() {
 						<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
 					</View>
 				)}
-			</ScrollView>
+			</SmartHeader.ScrollView>
 		</View>
 	)
 }
