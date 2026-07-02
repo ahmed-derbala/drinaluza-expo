@@ -410,9 +410,6 @@ export default function UpdatesScreen() {
 								{renderEnvironmentBadge()}
 							</View>
 							<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
-							<View style={[styles.versionPill, { backgroundColor: accentColor + '12', borderColor: accentColor + '30' }]}>
-								<Text style={[styles.versionPillText, { color: accentColor }]}>v{config.app.version}</Text>
-							</View>
 						</View>
 					</View>
 				</LinearGradient>
