@@ -27,7 +27,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	}
 
 	return (
-		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.88}>
+		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={1}>
 			{/* ── Business header row ── */}
 			<View style={styles.headerRow}>
 				{/* Left: avatar + name + slug */}
@@ -52,13 +52,6 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 				</TouchableOpacity>
 			</View>
 
-			{/* Contact buttons row below name/slug */}
-			{(item.contact?.phone?.fullNumber || item.contact?.whatsapp || item.contact?.email || item.business?.location || item.business?.address) && (
-				<View style={styles.bizContactRow}>
-					<ContactButtons contact={item.contact} location={item.business?.location} address={item.business?.address} />
-				</View>
-			)}
-
 			{/* ── Address row ── */}
 			{addressLine ? (
 				<View style={styles.addressRow}>
@@ -68,6 +61,13 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 					</Text>
 				</View>
 			) : null}
+
+			{/* Contact buttons row below name/slug */}
+			{(item.contact?.phone?.fullNumber || item.contact?.whatsapp || item.contact?.email || item.business?.location || item.business?.address) && (
+				<View style={styles.bizContactRow}>
+					<ContactButtons contact={item.contact} location={item.business?.location} address={item.business?.address} />
+				</View>
+			)}
 
 			{/* ── Banner image ── */}
 			<View style={styles.banner}>

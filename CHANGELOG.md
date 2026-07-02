@@ -16,6 +16,8 @@
 
 ### Changed
 - Navigate to the global product details route (`/products/:productSlug`) instead of the business-nested route when pressing a product card on the feed screen.
+- Position the address info block above the contact buttons row in feed cards (products and businesses).
+- Remove press and click scaling/opacity animations on feed screen cards (products, businesses, and users).
 
 ## [1.27.17] - 1 july 2026
 ### Fixed

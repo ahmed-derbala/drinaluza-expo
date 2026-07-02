@@ -51,7 +51,7 @@ export default function UserCard({ item }: UserCardProps) {
 	}
 
 	return (
-		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.88}>
+		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={1}>
 			{/* Header: Avatar + Info */}
 			<View style={styles.header}>
 				<View style={styles.avatarWrap}>

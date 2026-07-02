@@ -91,12 +91,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable
-			style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-			onPress={handleProductPress}
-			accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
-			accessibilityLabel={mainName}
-		>
+		<Pressable style={styles.card} onPress={handleProductPress} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
 			{/* ── Business header ── */}
 			<View style={styles.bizRow}>
 				<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
@@ -120,13 +115,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 				</TouchableOpacity>
 			</View>
 
-			{/* Contact buttons row below name/slug */}
-			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.email || item.business?.location || item.business?.address) && (
-				<View style={styles.bizContactRow}>
-					<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
-				</View>
-			)}
-
 			{/* Address */}
 			{addressLine ? (
 				<View style={styles.addressRow}>
@@ -136,6 +124,13 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 					</Text>
 				</View>
 			) : null}
+
+			{/* Contact buttons row below name/slug */}
+			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.email || item.business?.location || item.business?.address) && (
+				<View style={styles.bizContactRow}>
+					<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
+				</View>
+			)}
 
 			{/* ── Product image ── */}
 			<View style={styles.imgWrap}>
