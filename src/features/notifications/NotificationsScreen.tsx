@@ -1,4 +1,4 @@
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -245,10 +245,10 @@ export default function NotificationsScreen() {
 				}
 			/>
 
-			<FlashList
+			<SmartHeader.FlashList
 				data={notifications}
 				renderItem={renderItem}
-				keyExtractor={(item) => item._id}
+				keyExtractor={(item: NotificationItem) => item._id}
 				contentContainerStyle={[styles.list, { paddingBottom: 90 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}

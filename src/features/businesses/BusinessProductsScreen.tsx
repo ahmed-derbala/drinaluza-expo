@@ -8,7 +8,7 @@ import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
@@ -522,7 +522,7 @@ export default function BusinessProductsScreen() {
 			)}
 
 			{/* Grid */}
-			<FlatList
+			<SmartHeader.FlatList
 				key={`grid-${numColumns}`}
 				data={filteredProducts}
 				renderItem={renderItem}

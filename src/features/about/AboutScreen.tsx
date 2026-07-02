@@ -81,7 +81,7 @@ export default function AboutScreen() {
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<SmartHeader title={translate('about', 'About')} fallbackRoute="/(home)/feed" />
 
-			<ScrollView
+			<SmartHeader.ScrollView
 				style={styles.scrollView}
 				contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				onScroll={onScroll}
@@ -159,7 +159,7 @@ export default function AboutScreen() {
 					<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 					<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 				</View>
-			</ScrollView>
+			</SmartHeader.ScrollView>
 		</View>
 	)
 }

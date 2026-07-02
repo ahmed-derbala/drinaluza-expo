@@ -1,4 +1,4 @@
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
@@ -714,7 +714,7 @@ export default function BusinessesListScreen() {
 					} as any
 				}
 			/>
-			<FlashList
+			<SmartHeader.FlashList
 				key={`cols-${numColumns}`}
 				data={businesses}
 				renderItem={renderBusinessCard}

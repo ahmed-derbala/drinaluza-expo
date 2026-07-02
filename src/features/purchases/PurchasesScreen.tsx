@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { getItem, setItem } from '@/core/storage'
 import { FlashList } from '@shopify/flash-list'
 import { useTheme, createShadow } from '../../core/theme'
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '../common/ErrorState'
 import EmptyState from '../common/EmptyState'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
@@ -674,7 +674,7 @@ const PurchasesScreen = () => {
 			</View>
 
 			{/* Grid container */}
-			<FlashList
+			<SmartHeader.FlashList
 				key={numColumns}
 				data={displayData}
 				numColumns={numColumns}

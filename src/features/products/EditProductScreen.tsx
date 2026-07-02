@@ -14,6 +14,7 @@ import { showAlert } from '@/core/helpers/popup'
 import { translate } from '@/core/translation'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
+import { SmartHeader } from '@/core/smart-header'
 
 export default function EditProductScreen() {
 	const router = useRouter()
@@ -365,7 +366,7 @@ export default function EditProductScreen() {
 			<Stack.Screen options={{ title: translate('edit_product', 'Edit Product') }} />
 
 			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-				<ScrollView style={styles.form} contentContainerStyle={styles.formContent} onScroll={onScroll} scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
+				<SmartHeader.ScrollView style={styles.form} contentContainerStyle={styles.formContent} onScroll={onScroll} scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
 					{/* GENERAL INFO CARD */}
 					<View style={styles.card}>
 						<Text style={styles.cardTitle}>{translate('general_info', 'General Info')}</Text>
@@ -640,7 +641,7 @@ export default function EditProductScreen() {
 							)}
 						</TouchableOpacity>
 					</View>
-				</ScrollView>
+				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
 
 			{/* Businesses Modal */}

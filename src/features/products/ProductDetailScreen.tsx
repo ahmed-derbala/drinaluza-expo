@@ -14,7 +14,7 @@ import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
 import { Stack } from 'expo-router'
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -267,7 +267,7 @@ export default function ProductDetailScreen() {
 				}
 			/>
 
-			<ScrollView
+			<SmartHeader.ScrollView
 				style={styles.container}
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }, width > 800 && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -448,7 +448,7 @@ export default function ProductDetailScreen() {
 
 				{/* Bottom Spacing */}
 				<View style={styles.bottomSpacing} />
-			</ScrollView>
+			</SmartHeader.ScrollView>
 
 			{/* QR Code Viewer Modal */}
 			{product && (

@@ -323,7 +323,7 @@ export default function BusinessDashboardProductsScreen() {
 				isLoading={loading && !refreshing}
 			/>
 
-			<ScrollView
+			<SmartHeader.ScrollView
 				style={s.scrollView}
 				contentContainerStyle={s.scrollContent}
 				keyboardShouldPersistTaps="handled"
@@ -470,7 +470,7 @@ export default function BusinessDashboardProductsScreen() {
 						<FlashList data={filteredProducts} renderItem={renderProductCard} numColumns={numColumns} keyExtractor={(item) => item._id} contentContainerStyle={s.listScrollContent} />
 					)}
 				</View>
-			</ScrollView>
+			</SmartHeader.ScrollView>
 
 			{/* QR Modal integration */}
 			{selectedProductForQR && (

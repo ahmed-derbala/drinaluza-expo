@@ -251,7 +251,7 @@ export default function FeedScreen() {
 	const renderSkeletons = useCallback(() => {
 		const count = numColumns * 3
 		return (
-			<ScrollView contentContainerStyle={[styles.skeletonWrap, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]} showsVerticalScrollIndicator={false}>
+			<SmartHeader.ScrollView contentContainerStyle={[styles.skeletonWrap, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]} showsVerticalScrollIndicator={false}>
 				{Array.from({ length: count }).map((_, i) => (
 					<View key={`sk-${i}`} style={[styles.skeletonCard, { width: itemWidth, marginHorizontal: gap / 2, marginBottom: 16 }]}>
 						<Animated.View style={[styles.skeletonImg, { opacity: shimmerAnim }]} />
@@ -262,7 +262,7 @@ export default function FeedScreen() {
 						</View>
 					</View>
 				))}
-			</ScrollView>
+			</SmartHeader.ScrollView>
 		)
 	}, [numColumns, itemWidth, shimmerAnim, padding, insets.bottom])
 

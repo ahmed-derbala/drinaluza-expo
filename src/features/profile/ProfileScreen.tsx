@@ -30,7 +30,7 @@ import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
-import { HeaderRefreshButton, HeaderActionButton } from '@/core/smart-header'
+import { HeaderRefreshButton, HeaderActionButton, SmartHeader } from '@/core/smart-header'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import LoadingState from '@/features/common/LoadingState'
 import EmptyState from '@/features/common/EmptyState'
@@ -713,7 +713,7 @@ export default function ProfileScreen() {
 		<View style={styles.container}>
 			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerActions: headerActions } as any} />
 			<KeyboardAvoidingView style={styles.container} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-				<ScrollView
+				<SmartHeader.ScrollView
 					style={styles.scrollView}
 					contentContainerStyle={[styles.contentContainer, { paddingBottom: 120 + insets.bottom }]}
 					onScroll={onScroll}
@@ -1673,7 +1673,7 @@ export default function ProfileScreen() {
 
 					{/* Reviews Section */}
 					{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
-				</ScrollView>
+				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
 
 			{/* Business Name Modal */}

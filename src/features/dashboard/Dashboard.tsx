@@ -1,4 +1,4 @@
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -228,7 +228,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 				}
 			/>
 
-			<ScrollView
+			<SmartHeader.ScrollView
 				contentContainerStyle={[styles.scrollContent, { paddingBottom: 90 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}
@@ -287,7 +287,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 				{dashboardData && isBusinessDashboard(dashboardData) && (
 					<BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} onRefresh={onRefresh} refreshing={refreshing} />
 				)}
-			</ScrollView>
+			</SmartHeader.ScrollView>
 			{dashboardData && isBusinessDashboard(dashboardData) && (
 				<QRCodeModal
 					visible={showQRCode}

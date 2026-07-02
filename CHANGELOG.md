@@ -6,6 +6,10 @@
 - Fix updates screen content being obscured by the absolute-positioned `SmartHeader` by replacing standard `ScrollView` with `SmartHeader.ScrollView` to automatically apply the correct top padding.
 - Fix `SmartHeader` obscuring the top screen content on `/users/:userSlug` and `/businesses/:businessSlug` detail screens by replacing standard `ScrollView` with `SmartHeader.ScrollView` and implementing style-merging in scroll wrappers to add `headerHeight` to custom `paddingTop` margins instead of letting them override it.
 - Fix `SmartHeader` staying stuck in loading animation state on `/businesses/:businessSlug` screen by explicitly passing `isLoading: false` in the loaded screen stack options to clear React Navigation's merged option cache.
+- Fix `SmartHeader` obscuring top screen content across all app screens (including Feed, Search, Settings, Profile, Dashboard, Products, Businesses, Notifications, Purchases, and the `/products/:productSlug` details screen) by replacing standard scroll/list views with their `SmartHeader` equivalents and applying dynamic Y-offsets on root container views.
+
+### Changed
+- Navigate to the global product details route (`/products/:productSlug`) instead of the business-nested route when pressing a product card on the feed screen.
 
 ## [1.27.17] - 1 july 2026
 ### Fixed

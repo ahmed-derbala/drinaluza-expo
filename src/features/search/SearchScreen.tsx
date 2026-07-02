@@ -16,6 +16,7 @@ import { log } from '@/core/log'
 import { logError, parseError } from '@/core/helpers/errorHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { SmartHeader } from '@/core/smart-header'
+import { useLayout } from '@/core/contexts/LayoutContext'
 import FeedCard from '@/features/feed/feed.card'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import { FeedItem } from '@/features/feed/feed.interface'
@@ -25,6 +26,7 @@ type CartItem = FeedItem & { quantity: number }
 
 export default function SearchScreen() {
 	const { colors } = useTheme()
+	const { headerHeight } = useLayout()
 	const router = useRouter()
 	const { localize } = useUser()
 	const insets = useSafeAreaInsets()
@@ -390,7 +392,7 @@ export default function SearchScreen() {
 	}, [numColumns, itemWidth, shimmerAnim])
 
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background }]}>
+		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: Platform.OS === 'web' ? 0 : headerHeight }]}>
 			<SmartHeader title={translate('search_title', 'Search')} fallbackRoute="/(home)/feed" />
 
 			{/* Search input container */}

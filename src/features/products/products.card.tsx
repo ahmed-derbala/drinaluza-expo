@@ -63,7 +63,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 	const handleProductPress = () => {
 		if (item.slug) {
-			if (pathname.startsWith('/products')) {
+			if (pathname.startsWith('/products') || pathname.includes('/feed') || pathname === '/') {
 				router.push(`/products/${item.slug}` as any)
 			} else if (item.business?.slug) {
 				router.push(`/businesses/${item.business.slug}/products/${item.slug}` as any)

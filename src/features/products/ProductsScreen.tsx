@@ -1,4 +1,4 @@
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, FlatList, ActivityIndicator, RefreshControl, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
@@ -125,10 +125,10 @@ export default function ProductsScreen() {
 				}
 			/>
 
-			<FlatList
+			<SmartHeader.FlatList
 				data={products}
-				renderItem={({ item }) => <ProductCard item={item} addToCart={handleAddToCart} />}
-				keyExtractor={(item) => item._id}
+				renderItem={({ item }: { item: ProductFeedItem }) => <ProductCard item={item} addToCart={handleAddToCart} />}
+				keyExtractor={(item: ProductFeedItem) => item._id}
 				contentContainerStyle={styles.list}
 				showsVerticalScrollIndicator={false}
 				onScroll={onScroll}

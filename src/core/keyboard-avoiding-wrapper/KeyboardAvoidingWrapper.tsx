@@ -1,6 +1,7 @@
 import React, { memo } from 'react'
 import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View, type KeyboardAvoidingViewProps, type ScrollViewProps, type StyleProp, type ViewStyle } from 'react-native'
 import type { RefObject } from 'react'
+import { SmartHeader } from '@/core/smart-header'
 
 export interface KeyboardAvoidingWrapperProps {
 	/** Children to render inside the wrapper */
@@ -100,7 +101,7 @@ const KeyboardAvoidingWrapper = memo(function KeyboardAvoidingWrapper({
 	return (
 		<KeyboardAvoidingView style={[styles.flex, style]} behavior={resolvedBehavior} keyboardVerticalOffset={keyboardVerticalOffset} enabled={enabled}>
 			{scrollable ? (
-				<ScrollView
+				<SmartHeader.ScrollView
 					ref={scrollViewRef}
 					style={styles.flex}
 					contentContainerStyle={[styles.grow, contentContainerStyle]}
@@ -109,7 +110,7 @@ const KeyboardAvoidingWrapper = memo(function KeyboardAvoidingWrapper({
 					{...scrollViewProps}
 				>
 					{children}
-				</ScrollView>
+				</SmartHeader.ScrollView>
 			) : (
 				<View style={styles.flex}>{children}</View>
 			)}

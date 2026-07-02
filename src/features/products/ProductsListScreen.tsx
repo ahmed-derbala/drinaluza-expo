@@ -9,7 +9,7 @@ import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
 import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
@@ -164,7 +164,7 @@ export default function ProductsListScreen() {
 			{error ? (
 				<ErrorState title={error.title} message={error.message} onRetry={handleRefresh} />
 			) : (
-				<FlashList
+				<SmartHeader.FlashList
 					data={products}
 					key={numColumns}
 					numColumns={numColumns}

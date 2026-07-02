@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
+import { SmartHeader } from '@/core/smart-header'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
@@ -81,7 +82,7 @@ export default function SettingsScreen() {
 	}
 
 	return (
-		<ScrollView
+		<SmartHeader.ScrollView
 			style={styles.container}
 			contentContainerStyle={[styles.contentContainer, { paddingBottom: 90 + insets.bottom }, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 			onScroll={onScroll}
@@ -123,7 +124,7 @@ export default function SettingsScreen() {
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>
 				<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
 			</View>
-		</ScrollView>
+		</SmartHeader.ScrollView>
 	)
 }
 
