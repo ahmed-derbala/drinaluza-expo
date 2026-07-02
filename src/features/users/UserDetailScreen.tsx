@@ -130,7 +130,7 @@ export default function UserDetailScreen() {
 				fallbackRoute="/(home)/feed"
 			/>
 
-			<ScrollView
+			<SmartHeader.ScrollView
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				showsVerticalScrollIndicator={false}
@@ -215,7 +215,7 @@ export default function UserDetailScreen() {
 						</View>
 					</View>
 				)}
-			</ScrollView>
+			</SmartHeader.ScrollView>
 
 			{/* QR Code Viewer Modal */}
 			{user && (

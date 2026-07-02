@@ -588,7 +588,9 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 
 		const mergedContentContainerStyle = useMemo(() => {
 			if (Platform.OS === 'web') return contentContainerStyle
-			return [{ paddingTop: headerHeight }, contentContainerStyle]
+			const flattened = StyleSheet.flatten(contentContainerStyle) || {}
+			const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
+			return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
 		}, [headerHeight, contentContainerStyle])
 
 		const mergedScrollIndicatorInsets = useMemo(() => {
@@ -629,7 +631,9 @@ export const SmartFlatList = React.forwardRef<RNFlatList, FlatListProps<any>>(({
 
 	const mergedContentContainerStyle = useMemo(() => {
 		if (Platform.OS === 'web') return contentContainerStyle
-		return [{ paddingTop: headerHeight }, contentContainerStyle]
+		const flattened = StyleSheet.flatten(contentContainerStyle) || {}
+		const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
+		return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
 	}, [headerHeight, contentContainerStyle])
 
 	const mergedScrollIndicatorInsets = useMemo(() => {
@@ -669,7 +673,9 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 
 	const mergedContentContainerStyle = useMemo(() => {
 		if (Platform.OS === 'web') return contentContainerStyle
-		return [{ paddingTop: headerHeight }, contentContainerStyle]
+		const flattened = StyleSheet.flatten(contentContainerStyle) || {}
+		const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
+		return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
 	}, [headerHeight, contentContainerStyle])
 
 	const mergedScrollIndicatorInsets = useMemo(() => {

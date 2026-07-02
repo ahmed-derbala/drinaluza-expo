@@ -1,4 +1,4 @@
-import { HeaderRefreshButton } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, Linking, RefreshControl, Platform, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -179,6 +179,8 @@ export default function BusinessDetailsScreen() {
 				options={
 					{
 						title: displayTitle,
+						subtitle: `@${business.slug}`,
+						isLoading: false,
 						fallbackRoute: '/(home)/feed',
 						headerActions: [
 							{
@@ -197,7 +199,7 @@ export default function BusinessDetailsScreen() {
 					} as any
 				}
 			/>
-			<ScrollView
+			<SmartHeader.ScrollView
 				style={styles.container}
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -319,7 +321,7 @@ export default function BusinessDetailsScreen() {
 
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
-			</ScrollView>
+			</SmartHeader.ScrollView>
 
 			{/* QR Code Viewer Modal */}
 			{business && (

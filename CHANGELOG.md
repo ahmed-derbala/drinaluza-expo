@@ -4,6 +4,8 @@
 - Fix visual layout shifts (horizontal and vertical) in `SmartHeader` by introducing stable width boundaries on the actions section and aligning loading placeholders to the exact line heights of expected title and subtitle text components.
 - Pass expected subtitle metadata dynamically to `SmartHeader` in user and business detail loading states to reserve skeleton loader layout boundaries and prevent vertical jumps when data loading completes.
 - Fix updates screen content being obscured by the absolute-positioned `SmartHeader` by replacing standard `ScrollView` with `SmartHeader.ScrollView` to automatically apply the correct top padding.
+- Fix `SmartHeader` obscuring the top screen content on `/users/:userSlug` and `/businesses/:businessSlug` detail screens by replacing standard `ScrollView` with `SmartHeader.ScrollView` and implementing style-merging in scroll wrappers to add `headerHeight` to custom `paddingTop` margins instead of letting them override it.
+- Fix `SmartHeader` staying stuck in loading animation state on `/businesses/:businessSlug` screen by explicitly passing `isLoading: false` in the loaded screen stack options to clear React Navigation's merged option cache.
 
 ## [1.27.17] - 1 july 2026
 ### Fixed
