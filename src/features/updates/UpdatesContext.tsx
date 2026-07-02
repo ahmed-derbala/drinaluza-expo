@@ -540,19 +540,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	useEffect(() => {
 		const init = async () => {
 			await performStartupCleanup()
-			const apks = await refreshApkList()
-
-			// Check if we have an update ready to install (newer than current version)
-			const installable = apks.find((apk) => apk.isInstallable)
-			if (installable) {
-				log({ level: 'info', label: 'UpdatesContext', message: `Startup: found update ready to install: ${installable.filename}. Triggering installation.` })
-				// Trigger installation after a short delay to ensure app UI is mounted/ready
-				setTimeout(() => {
-					installApk(installable.fileUri).catch((e) => {
-						console.warn('[UpdatesContext] Auto-installation on startup failed:', e)
-					})
-				}, 1000)
-			}
+			await refreshApkList()
 
 			try {
 				const savedResumeData = await getItem<any>('download_resume_data')
@@ -569,7 +557,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 		}
 		init()
-	}, [performStartupCleanup, refreshApkList, installApk])
+	}, [performStartupCleanup, refreshApkList])
 
 	const contextValue = useMemo(
 		() => ({
