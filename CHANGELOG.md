@@ -7,6 +7,7 @@
 - Fix `SmartHeader` obscuring the top screen content on `/users/:userSlug` and `/businesses/:businessSlug` detail screens by replacing standard `ScrollView` with `SmartHeader.ScrollView` and implementing style-merging in scroll wrappers to add `headerHeight` to custom `paddingTop` margins instead of letting them override it.
 - Fix `SmartHeader` staying stuck in loading animation state on `/businesses/:businessSlug` screen by explicitly passing `isLoading: false` in the loaded screen stack options to clear React Navigation's merged option cache.
 - Fix `SmartHeader` obscuring top screen content across all app screens (including Feed, Search, Settings, Profile, Dashboard, Products, Businesses, Notifications, Purchases, and the `/products/:productSlug` details screen) by replacing standard scroll/list views with their `SmartHeader` equivalents and applying dynamic Y-offsets on root container views.
+- Fix flash of home/feed screen and remove splash/loading screen on launch by redirecting instantly to the feed route on startup and performing OTA update checks asynchronously in the background without blocking layout mounting.
 
 ### Added
 - Calculate and display remaining download time and download speed during OTA updates on native.

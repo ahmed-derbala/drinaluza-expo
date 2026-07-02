@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router'
+import { Stack } from 'expo-router'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, ActivityIndicator, Platform } from 'react-native'
@@ -24,7 +24,6 @@ import { AppThemeProvider, useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
-	const router = useRouter()
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
@@ -33,30 +32,24 @@ function RootLayoutContent() {
 			}
 
 			try {
-				const release = await checkForUpdates(false)
-				if (release) {
-					const hasNewerRelease = isVersionGreater(release.latest_version, config.app.version)
-					if (hasNewerRelease) {
-						// There is a newer version! Redirect to updates page
-						router.replace('/updates' as any)
-						return
-					} else {
-						// Current version is equal or higher! Check for ready downloaded APKs
-						const freshApks = await refreshApkList()
-						const installableApk = freshApks.find((apk) => apk.isInstallable)
-						if (installableApk) {
-							// Trigger package installation
-							await installApk(installableApk.fileUri)
-						}
-					}
+				// 1. Instantly check if there is a downloaded APK ready to install (no network delay)
+				const freshApks = await refreshApkList()
+				const installableApk = freshApks.find((apk) => apk.isInstallable)
+				if (installableApk) {
+					// Trigger package installation
+					await installApk(installableApk.fileUri)
+					return
 				}
+
+				// 2. Otherwise, perform network check for new updates in the background
+				await checkForUpdates(false)
 			} catch (e) {
-				console.warn('[StartupGate] Startup update check failed:', e)
+				console.warn('[StartupGate] Startup check failed:', e)
 			}
 		}
 
 		performStartupCheck()
-	}, [])
+	}, [checkForUpdates, refreshApkList, installApk])
 
 	return (
 		<ErrorBoundary>
