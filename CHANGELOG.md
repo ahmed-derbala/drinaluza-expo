@@ -6,6 +6,10 @@
 - Restrict `SmartImageViewer` from rendering any background color under/behind loaded images by stripping the `backgroundColor` style parameter from both style and containerStyle props, and clean up background colors in product card and business banner image wrappers.
 - Remove unused screen file `src/features/products/ProductsScreen.tsx`.
 - Migrate `BusinessProductsScreen.tsx` list grid to `SmartHeader.FlashList` with an estimatedItemSize of 240px to optimize view recycling and scroll frame rates.
+- Update the updates manager page to use the theme's blue/info colors for the download progress bar gradient.
+- Enforce consistent card background color across all feed components (ProductCard, BusinessCard, UserCard) by migrating them from hardcoded background hexes to dynamic theme colors (colors.card).
+- Remove all references and code traces of LightTheme, lightColors, and ThemeMode toggling state/storage, locking the application to DarkTheme exclusively.
+- Rename `darkColors` to `colors` in `colors.ts` and update all theme contexts to export/import only `colors` to streamline theme references.
 - Resolve strict TypeScript compile warnings by cleaning up unused imports and state variables in `UpdatesContext.tsx`, `SmartImageViewer/index.tsx`, `UserDetailScreen.tsx`, `SalesScreen.tsx`, and `BusinessProductsScreen.tsx`.
 
 ## [1.27.36] - 3 july 2026

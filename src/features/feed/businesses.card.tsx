@@ -6,6 +6,7 @@ import { BusinessFeedItem } from './feed.interface'
 import { useRouter } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 import ContactButtons from '@/features/common/ContactButtons'
+import { useTheme } from '@/core/theme'
 
 type BusinessCardProps = {
 	item: BusinessFeedItem
@@ -13,6 +14,7 @@ type BusinessCardProps = {
 
 export default function BusinessCard({ item }: BusinessCardProps) {
 	const { localize, translate } = useUser()
+	const { colors } = useTheme()
 	const router = useRouter()
 
 	const businessName = localize(item.name) || localize(item.business?.name) || translate('business', 'Business')
@@ -27,7 +29,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 	}
 
 	return (
-		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={1}>
+		<TouchableOpacity style={[styles.card, { backgroundColor: colors.card }]} onPress={handlePress} activeOpacity={1}>
 			{/* ── Business header row ── */}
 			<View style={styles.headerRow}>
 				{/* Left: avatar + name + slug */}
@@ -97,7 +99,6 @@ const styles = StyleSheet.create({
 	card: {
 		flex: 1,
 		borderRadius: 20,
-		backgroundColor: 'rgba(15, 23, 42, 0.65)',
 		borderWidth: 1,
 		borderColor: '#0EA5E9',
 		overflow: 'hidden',

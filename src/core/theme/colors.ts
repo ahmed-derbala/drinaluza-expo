@@ -1,9 +1,9 @@
 import { AppThemeColors } from './types'
 
-export const darkColors: AppThemeColors = {
+export const colors: AppThemeColors = {
 	primary: '#0EA5E9',
 	background: '#000000',
-	card: '#1C2541',
+	card: '#000000',
 	text: '#F8FAFC',
 	border: '#3A506B',
 	notification: '#F43F5E',
@@ -23,8 +23,3 @@ export const darkColors: AppThemeColors = {
 	inputBorder: '#334155',
 	header: '#080D19'
 }
-
-export const lightColors: AppThemeColors = darkColors
-
-// Static export for legacy compatibility or background splash styling
-export const colors = darkColors

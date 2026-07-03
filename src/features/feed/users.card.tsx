@@ -5,6 +5,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { UserFeedItem } from './feed.interface'
 import { useUser } from '../../core/contexts/UserContext'
 import { useRouter } from 'expo-router'
+import { useTheme } from '@/core/theme'
 
 type UserCardProps = {
 	item: UserFeedItem
@@ -19,6 +20,7 @@ const ROLE_CONFIG: Record<string, { icon: string; label: string; color: string }
 
 export default function UserCard({ item }: UserCardProps) {
 	const { localize, translate } = useUser()
+	const { colors } = useTheme()
 	const router = useRouter()
 
 	const userName = localize(item.name) || item.slug || translate('user', 'User')
@@ -51,7 +53,7 @@ export default function UserCard({ item }: UserCardProps) {
 	}
 
 	return (
-		<TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={1}>
+		<TouchableOpacity style={[styles.card, { backgroundColor: colors.card }]} onPress={handlePress} activeOpacity={1}>
 			{/* Header: Avatar + Info */}
 			<View style={styles.header}>
 				<View style={styles.avatarWrap}>
@@ -127,7 +129,6 @@ const styles = StyleSheet.create({
 	card: {
 		flex: 1,
 		borderRadius: 20,
-		backgroundColor: 'rgba(15, 23, 42, 0.65)',
 		borderWidth: 1,
 		borderColor: '#0EA5E9',
 		padding: 14,

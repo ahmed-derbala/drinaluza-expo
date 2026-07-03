@@ -1,8 +1,8 @@
 import { useTheme as useNavigationTheme } from 'expo-router/react-navigation'
 import { Platform } from 'react-native'
 
-export { AppThemeProvider, LightTheme, DarkTheme, useThemeContext } from './provider'
-export { colors, lightColors, darkColors } from './colors'
+export { AppThemeProvider, DarkTheme, useThemeContext } from './provider'
+export { colors } from './colors'
 export type { AppThemeColors } from './types'
 
 /**

@@ -6,6 +6,7 @@ import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 import ContactButtons from '@/features/common/ContactButtons'
+import { useTheme } from '@/core/theme'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -14,6 +15,7 @@ type ProductCardProps = {
 
 export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const { localize, currency, formatPrice, translate } = useUser()
+	const { colors } = useTheme()
 	const router = useRouter()
 	const pathname = usePathname()
 	const { width } = useWindowDimensions()
@@ -90,7 +92,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable style={styles.card} onPress={handleProductPress} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
+		<Pressable style={[styles.card, { backgroundColor: colors.card }]} onPress={handleProductPress} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
 			{/* ── Business header ── */}
 			<View style={styles.bizRow}>
 				<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
@@ -211,7 +213,6 @@ const styles = StyleSheet.create({
 	card: {
 		flex: 1,
 		borderRadius: 20,
-		backgroundColor: 'rgba(15, 23, 42, 0.65)',
 		borderWidth: 1,
 		borderColor: '#0EA5E9',
 		overflow: 'hidden',

@@ -1,5 +1,4 @@
-import React, { useEffect } from 'react'
-import { StyleSheet } from 'react-native'
+import { useEffect } from 'react'
 import { useRouter } from 'expo-router'
 
 export default function Index() {
@@ -11,12 +10,3 @@ export default function Index() {
 
 	return null
 }
-
-const styles = StyleSheet.create({
-	container: {
-		flex: 1,
-		backgroundColor: '#000000',
-		justifyContent: 'center',
-		alignItems: 'center'
-	}
-})

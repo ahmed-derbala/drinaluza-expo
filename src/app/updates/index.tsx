@@ -545,7 +545,12 @@ export default function UpdatesScreen() {
 				{isDownloadingOrPaused ? (
 					<View style={styles.progressContainer}>
 						<View style={[styles.progressBarBg, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
-							<LinearGradient colors={['#0EA5E9', '#8B5CF6']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
+							<LinearGradient
+								colors={[colors.primary, colors.info || '#3B82F6']}
+								start={{ x: 0, y: 0 }}
+								end={{ x: 1, y: 0 }}
+								style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]}
+							/>
 						</View>
 						<Text style={[styles.progressText, { color: colors.textSecondary }]}>
 							{isPaused ? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`}
