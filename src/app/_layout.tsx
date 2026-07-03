@@ -52,12 +52,14 @@ function RootLayoutContent() {
 		performStartupCheck()
 	}, [checkForUpdates, refreshApkList, installApk, router])
 
+	const { colors } = useTheme()
+
 	return (
 		<ErrorBoundary>
 			<Stack
 				screenOptions={{
 					contentStyle: {
-						backgroundColor: '#000000'
+						backgroundColor: colors.background
 					}
 				}}
 			>

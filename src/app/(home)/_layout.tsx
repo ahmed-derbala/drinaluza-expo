@@ -42,10 +42,10 @@ export default function HomeLayout() {
 	}
 
 	return (
-		<SafeAreaView style={[styles.container, { backgroundColor: '#000000' }]} edges={['bottom']}>
+		<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
 			<TabsComponent
 				sceneContainerStyle={{
-					backgroundColor: '#000000'
+					backgroundColor: colors.background
 				}}
 				screenOptions={{
 					headerShown: true,

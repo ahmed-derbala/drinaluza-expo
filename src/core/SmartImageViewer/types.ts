@@ -24,7 +24,7 @@ export interface SmartImageProps {
 	/**
 	 * How the image should fit within its container.
 	 * Maps to expo-image's `contentFit` prop.
-	 * @default 'cover'
+	 * @default 'contain'
 	 */
 	contentFit?: ImageContentFit
 

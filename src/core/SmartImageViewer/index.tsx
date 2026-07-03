@@ -6,23 +6,10 @@ import type { SmartImageProps } from './types'
 
 /**
  * Maps legacy `resizeMode` values to expo-image's `contentFit`.
+ * Always returns 'contain' to ensure images are fully displayed without cropping.
  */
 function resolveContentFit(contentFit?: ImageContentFit, resizeMode?: SmartImageProps['resizeMode']): ImageContentFit {
-	if (contentFit) return contentFit
-	if (!resizeMode) return 'cover'
-
-	switch (resizeMode) {
-		case 'cover':
-			return 'cover'
-		case 'contain':
-			return 'contain'
-		case 'stretch':
-			return 'fill'
-		case 'center':
-			return 'none'
-		default:
-			return 'cover'
-	}
+	return 'contain'
 }
 
 /**
@@ -189,13 +176,14 @@ const styles = StyleSheet.create({
 })
 
 /**
- * Memoized SmartImage component.
+ * Memoized SmartImageViewer component.
  *
  * Safe for use in FlatList, FlashList, product grids, chat messages,
  * thumbnails, and fullscreen previews. Prevents unnecessary rerenders
  * when parent components update unrelated state.
  */
-const SmartImage = React.memo(SmartImageComponent)
+const SmartImageViewer = React.memo(SmartImageComponent)
 
-export default SmartImage
+export default SmartImageViewer
+export { SmartImageViewer as SmartImage }
 export type { SmartImageProps, SmartImageEntityType } from './types'

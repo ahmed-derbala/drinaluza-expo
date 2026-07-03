@@ -1,6 +1,13 @@
+## [1.27.37] - 3 july 2026
+### Changed
+- Update `FeedScreen` background styling to dynamically retrieve and apply the theme background color `colors.background` instead of using a hardcoded `#0A0E1A` hex color.
+- Update `SmartImageViewer` to enforce the `contain` fit mode, ensuring images display fully across the entire app without any cropping.
+- Ensure all screens use the centralized `SmartImageViewer` component for rendering images, and export both `SmartImageViewer` and `SmartImage` for clean import naming.
+
 ## [1.27.36] - 3 july 2026
 ### Changed
 - Relocate the product name in `ProductCard` from the image overlay to the card body below the image on the left. Remove the now-unused linear gradient and clean up dependencies.
+- Refactor the screen stack wrappers in `src/app/_layout.tsx`, `src/app/(home)/_layout.tsx`, `src/app/dashboard/_layout.tsx`, `src/app/businesses/_layout.tsx`, `src/app/products/_layout.tsx`, and `src/app/users/_layout.tsx` to dynamically query and apply the theme background color `colors.background` instead of using a hardcoded black background.
 
 ### Added
 - Redirect the application automatically to the updates screen on startup if there is a new release version available to download or a downloaded APK ready to install.

@@ -354,7 +354,7 @@ export default function FeedScreen() {
 	// ═══════════════════════════════════════════════════════════════════════════════
 	if (isWeb) {
 		return (
-			<View style={styles.root}>
+			<View style={[styles.root, { backgroundColor: colors.background }]}>
 				<Tabs.Screen options={headerOptions as any} />
 
 				{loading && displayedItems.length === 0 ? (
@@ -363,7 +363,7 @@ export default function FeedScreen() {
 					renderEmpty()
 				) : (
 					<SmartHeader.ScrollView
-						style={styles.root}
+						style={[styles.root, { backgroundColor: colors.background }]}
 						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
 						showsVerticalScrollIndicator={false}
 						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
@@ -394,7 +394,7 @@ export default function FeedScreen() {
 	}
 
 	return (
-		<View style={styles.root}>
+		<View style={[styles.root, { backgroundColor: colors.background }]}>
 			<Tabs.Screen options={headerOptions as any} />
 
 			{loading && displayedItems.length === 0 ? (
@@ -425,8 +425,7 @@ export default function FeedScreen() {
 
 const styles = StyleSheet.create({
 	root: {
-		flex: 1,
-		backgroundColor: '#0A0E1A'
+		flex: 1
 	},
 	// ── Grid Layouts ──
 	listContent: {
