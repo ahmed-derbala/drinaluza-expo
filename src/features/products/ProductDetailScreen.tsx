@@ -1,11 +1,10 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native'
+import { useEffect, useState, useCallback, useMemo } from 'react'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-
-import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
+import { useLocalSearchParams, useRouter, usePathname, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug } from '@/features/products/products.api'
@@ -13,14 +12,14 @@ import { ProductType } from '@/features/products/products.type'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
-import { Stack } from 'expo-router'
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
+import { config } from '@/config'
 
 export default function ProductDetailScreen() {
 	const { productSlug, businessSlug } = useLocalSearchParams<{ productSlug: string; businessSlug?: string }>()
@@ -29,7 +28,7 @@ export default function ProductDetailScreen() {
 	const { localize, translate, currency, formatPrice } = useUser()
 	const { onScroll } = useScrollHandler()
 	const { setTabBarVisible } = useLayout()
-	const { width } = useWindowDimensions()
+	const { width, height } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 	const pathname = usePathname()
 	const isDashboard = pathname.includes('/dashboard')
@@ -43,6 +42,9 @@ export default function ProductDetailScreen() {
 	const [showQRCode, setShowQRCode] = useState(false)
 
 	const displayTitle = product ? localize(product.name) : translate('loading', 'Loading...')
+	const isLandscape = width > height
+	const isLargeScreen = width > 800 && height > 600
+	const imageHeight = isLandscape ? (isLargeScreen ? 380 : 200) : 380
 
 	// effect to initialize quantity once product loads
 	useEffect(() => {
@@ -79,7 +81,12 @@ export default function ProductDetailScreen() {
 			const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + quantity } : b)) : [...cart, { ...product, quantity }]
 			setCart(newCart)
 			await setItem('cart', newCart)
-			toast.show({ title: 'Success', message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: '/profile/purchases?status=cart' })
+			toast.show({
+				title: 'Success',
+				message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
+				color: '#10B981',
+				screen: '/profile/purchases?status=cart'
+			})
 		} catch {
 			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
 		}
@@ -249,11 +256,200 @@ export default function ProductDetailScreen() {
 	const isOutOfStock = stockQty === 0
 
 	const getStockStatus = () => {
-		if (isOutOfStock) return { color: '#EF4444', bgColor: '#EF444415', label: translate('out_of_stock', 'Out of Stock'), icon: 'alert-circle' as const }
-		if (isLowStock) return { color: '#F59E0B', bgColor: '#F59E0B15', label: translate('low_stock', 'Low Stock'), icon: 'warning' as const }
-		return { color: '#10B981', bgColor: '#10B98115', label: translate('in_stock', 'In Stock'), icon: 'checkmark-circle' as const }
+		if (isOutOfStock) return { color: colors.error, bgColor: colors.error + '12', label: translate('out_of_stock', 'Out of Stock'), icon: 'alert-circle' as const }
+		if (isLowStock) return { color: colors.warning, bgColor: colors.warning + '12', label: translate('low_stock', 'Low Stock'), icon: 'warning' as const }
+		return { color: colors.success, bgColor: colors.success + '12', label: translate('in_stock', 'In Stock'), icon: 'checkmark-circle' as const }
 	}
 	const stockStatus = getStockStatus()
+
+	// ─── Render Components ─────────────────────────────────────────────────────────
+
+	const renderHeroImage = () => (
+		<View style={[styles.imageContainer, { height: imageHeight }]}>
+			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
+			{!isAvailable && (
+				<View style={styles.unavailableOverlay}>
+					<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
+				</View>
+			)}
+			<LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.imageGradient}>
+				<View style={[styles.stockBadge, { backgroundColor: stockStatus.bgColor, borderColor: stockStatus.color + '40' }]}>
+					<View style={[styles.stockDot, { backgroundColor: stockStatus.color }]} />
+					<Text style={[styles.stockText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
+				</View>
+			</LinearGradient>
+		</View>
+	)
+
+	const renderInfoSection = () => (
+		<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+			{/* Product Name */}
+			<Text style={[styles.productName, { color: colors.text }]}>{localize(product.name)}</Text>
+			{(product.name?.tn_latn || product.name?.tn_arab) && (
+				<Text style={[styles.productNameSecondary, { color: colors.textSecondary }]}>
+					{product.name?.tn_latn} {product.name?.tn_arab && `• ${product.name?.tn_arab}`}
+				</Text>
+			)}
+
+			{/* Price Details */}
+			<View style={[styles.priceSection, { borderBottomColor: colors.borderLight }]}>
+				<Text style={[styles.priceLabel, { color: colors.textTertiary }]}>{translate('price', 'Price')}</Text>
+				<View style={styles.priceContainer}>
+					<Text style={[styles.priceValue, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
+					<Text style={[styles.priceUnit, { color: colors.textSecondary }]}>/ {product.unit?.measure || translate('unit', 'unit')}</Text>
+				</View>
+				<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
+					{translate('min', 'Min')}: {product.unit?.min || 1} - {translate('max', 'Max')}: {product.unit?.max || '∞'} {product.unit?.measure || ''}
+				</Text>
+			</View>
+
+			{/* Stock Details */}
+			<View style={[styles.stockSection, { backgroundColor: colors.surfaceVariant }]}>
+				<View style={styles.stockRow}>
+					<Ionicons name="cube-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+					<Text style={[styles.stockLabel, { color: colors.textSecondary }]}>{translate('stock_quantity', 'Stock Quantity')}</Text>
+					<Text style={[styles.stockValue, { color: colors.text }]}>{stockQty}</Text>
+				</View>
+				<View style={[styles.stockRow, { marginBottom: 0 }]}>
+					<Ionicons name="alert-circle-outline" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+					<Text style={[styles.stockLabel, { color: colors.textSecondary }]}>{translate('min_threshold', 'Min Threshold')}</Text>
+					<Text style={[styles.stockValue, { color: colors.text }]}>{minThreshold}</Text>
+				</View>
+			</View>
+
+			{/* Status */}
+			<View style={[styles.statusRow, { borderBottomColor: colors.borderLight }]}>
+				<Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{translate('status', 'Status')}</Text>
+				<View style={[styles.statusBadgeTouch, { backgroundColor: isAvailable ? colors.success + '15' : colors.error + '15' }]}>
+					<Text style={[styles.statusText, { color: isAvailable ? colors.success : colors.error }]}>
+						{product.state?.code === 'active' ? translate('active', 'Active') : translate('inactive', 'Inactive')}
+					</Text>
+				</View>
+			</View>
+
+			{/* Interactive Cart panel */}
+			{isAvailable && !isDashboard && (
+				<View style={[styles.checkoutPanel, { borderTopColor: colors.borderLight }]}>
+					<View style={styles.checkoutTotalCol}>
+						<Text style={[styles.checkoutTotalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
+						<Text style={[styles.checkoutTotalPrice, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
+					</View>
+
+					<View style={styles.checkoutActionsCol}>
+						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.borderLight }]}>
+							<TouchableOpacity onPress={decrement} style={styles.stepperBtn} activeOpacity={0.6}>
+								<MaterialIcons name="remove" size={18} color={colors.text} />
+							</TouchableOpacity>
+							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
+							<TouchableOpacity onPress={increment} style={styles.stepperBtn} activeOpacity={0.6}>
+								<MaterialIcons name="add" size={18} color={colors.text} />
+							</TouchableOpacity>
+						</View>
+
+						<TouchableOpacity style={[styles.cartSubmitBtn, { backgroundColor: colors.primary }]} onPress={handleAddToCart} activeOpacity={0.85}>
+							<MaterialIcons name="add-shopping-cart" size={20} color={colors.textOnPrimary || '#FFFFFF'} />
+						</TouchableOpacity>
+					</View>
+				</View>
+			)}
+		</View>
+	)
+
+	const renderMetadataSection = () => (
+		<View style={styles.metadataContainer}>
+			{/* Business store info */}
+			<TouchableOpacity onPress={handleBusinessNavPress} style={[styles.metaCard, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.75}>
+				<View style={styles.metaCardHeader}>
+					<View style={styles.metaCardTitleWrap}>
+						<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
+							<MaterialIcons name="store" size={16} color={colors.primary} />
+						</View>
+						<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('business', 'Business')}</Text>
+					</View>
+					<Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+				</View>
+				<Text style={[styles.metaCardName, { color: colors.text }]}>{localize(product.business?.name)}</Text>
+				{product.business?.address && (
+					<Text style={[styles.metaCardSub, { color: colors.textSecondary }]}>
+						{product.business.address.city}, {product.business.address.country}
+					</Text>
+				)}
+			</TouchableOpacity>
+
+			{/* Owner profile card */}
+			{product.business?.owner && (
+				<TouchableOpacity onPress={handleOwnerPress} style={[styles.metaCard, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.75}>
+					<View style={styles.metaCardHeader}>
+						<View style={styles.metaCardTitleWrap}>
+							<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
+								<MaterialIcons name="person" size={16} color={colors.primary} />
+							</View>
+							<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('owner', 'Owner')}</Text>
+						</View>
+						<Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />
+					</View>
+					<Text style={[styles.metaCardName, { color: colors.text }]}>{localize(product.business.owner.name)}</Text>
+				</TouchableOpacity>
+			)}
+
+			{/* Default product profile */}
+			{product.defaultProduct && (
+				<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={styles.metaCardHeader}>
+						<View style={styles.metaCardTitleWrap}>
+							<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
+								<Ionicons name="fish-outline" size={16} color={colors.primary} />
+							</View>
+							<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('default_product', 'Default Product')}</Text>
+						</View>
+					</View>
+					<Text style={[styles.metaCardName, { color: colors.text }]}>{localize(product.defaultProduct.name)}</Text>
+				</View>
+			)}
+
+			{/* Search Terms / keywords */}
+			{product.searchTerms && product.searchTerms.length > 0 && (
+				<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<Text style={[styles.metaCardTitleStatic, { color: colors.textTertiary }]}>{translate('search_keywords', 'Search Keywords')}</Text>
+					<View style={styles.tagWrap}>
+						{product.searchTerms.map((keyword, index) => (
+							<View key={index} style={[styles.tagItem, { backgroundColor: colors.surfaceVariant }]}>
+								<Text style={[styles.tagText, { color: colors.textSecondary }]}>{keyword}</Text>
+							</View>
+						))}
+					</View>
+				</View>
+			)}
+
+			{/* Availability scheduling */}
+			{product.availability && (
+				<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={styles.metaCardHeader}>
+						<View style={styles.metaCardTitleWrap}>
+							<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
+								<Ionicons name="calendar-outline" size={16} color={colors.primary} />
+							</View>
+							<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('availability', 'Availability')}</Text>
+						</View>
+					</View>
+					<Text style={[styles.availabilityText, { color: colors.textSecondary }]}>
+						{translate('available_from', 'Available from')}: {new Date(product.availability.startDate).toLocaleDateString()}
+					</Text>
+					{product.availability.endDate && (
+						<Text style={[styles.availabilityText, { color: colors.textSecondary }]}>
+							{translate('available_until', 'Available until')}: {new Date(product.availability.endDate).toLocaleDateString()}
+						</Text>
+					)}
+				</View>
+			)}
+
+			{/* Product Identifier info */}
+			<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<Text style={[styles.metaCardTitleStatic, { color: colors.textTertiary }]}>{translate('product_slug', 'Product ID')}</Text>
+				<Text style={[styles.slugValue, { color: colors.text }]}>{product.slug}</Text>
+			</View>
+		</View>
+	)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -269,193 +465,45 @@ export default function ProductDetailScreen() {
 
 			<SmartHeader.ScrollView
 				style={styles.container}
-				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }, width > 800 && { maxWidth: 800, alignSelf: 'center', width: '100%' }]}
+				contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}
 			>
-				{/* Product Image */}
-				<View style={styles.imageContainer}>
-					<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
-					{!isAvailable && (
-						<View style={styles.unavailableOverlay}>
-							<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
+				{isLargeScreen ? (
+					/* ─── Desktop / Web Split Column layout ─── */
+					<View style={styles.splitLayoutContainer}>
+						{/* Left Column */}
+						<View style={styles.leftColumn}>
+							{renderHeroImage()}
+							{renderMetadataSection()}
 						</View>
-					)}
-					<LinearGradient colors={['transparent', 'rgba(0,0,0,0.7)']} style={styles.imageGradient}>
-						<View style={styles.stockBadge}>
-							<Ionicons name={stockStatus.icon} size={14} color={stockStatus.color} />
-							<Text style={[styles.stockText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
-						</View>
-					</LinearGradient>
-				</View>
 
-				{/* Product Info Card */}
-				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
-					{/* Product Name */}
-					<Text style={[styles.productName, { color: colors.text }]}>{localize(product.name)}</Text>
-					{(product.name?.tn_latn || product.name?.tn_arab) && (
-						<Text style={[styles.productNameSecondary, { color: colors.textSecondary }]}>
-							{product.name?.tn_latn} {product.name?.tn_arab && `• ${product.name?.tn_arab}`}
-						</Text>
-					)}
-
-					{/* Price */}
-					<View style={styles.priceSection}>
-						<Text style={[styles.priceLabel, { color: colors.textSecondary }]}>{translate('price', 'Price')}</Text>
-						<View style={styles.priceContainer}>
-							<Text style={[styles.priceValue, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
-							<Text style={[styles.priceUnit, { color: colors.textTertiary }]}>/ {product.unit?.measure || translate('unit', 'unit')}</Text>
-						</View>
-						<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
-							{translate('min', 'Min')}: {product.unit?.min || 1} - {translate('max', 'Max')}: {product.unit?.max || '∞'} {product.unit?.measure || ''}
-						</Text>
-					</View>
-
-					{/* Stock Info */}
-					<View style={[styles.stockSection, { backgroundColor: colors.surface }]}>
-						<View style={styles.stockRow}>
-							<Ionicons name="cube-outline" size={20} color={colors.textSecondary} />
-							<Text style={[styles.stockLabel, { color: colors.textSecondary }]}>{translate('stock_quantity', 'Stock Quantity')}</Text>
-							<Text style={[styles.stockValue, { color: colors.text }]}>{stockQty}</Text>
-						</View>
-						<View style={styles.stockRow}>
-							<Ionicons name="alert-circle-outline" size={20} color={colors.textSecondary} />
-							<Text style={[styles.stockLabel, { color: colors.textSecondary }]}>{translate('min_threshold', 'Min Threshold')}</Text>
-							<Text style={[styles.stockValue, { color: colors.text }]}>{minThreshold}</Text>
+						{/* Right Column */}
+						<View style={styles.rightColumn}>
+							{renderInfoSection()}
+							{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 						</View>
 					</View>
-
-					{/* Status */}
-					<View style={styles.statusRow}>
-						<Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{translate('status', 'Status')}</Text>
-						<View style={[styles.statusBadge, { backgroundColor: isAvailable ? '#10B98120' : '#EF444420' }]}>
-							<Text style={[styles.statusText, { color: isAvailable ? '#10B981' : '#EF4444' }]}>
-								{product.state?.code === 'active' ? translate('active', 'Active') : translate('inactive', 'Inactive')}
-							</Text>
-						</View>
-					</View>
-
-					{/* Add to Cart Actions */}
-					{isAvailable && !isDashboard && (
-						<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 16, paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' }}>
-							<View>
-								<Text style={{ fontSize: 12, fontWeight: '600', textTransform: 'uppercase', color: colors.textSecondary, marginBottom: 2 }}>{translate('total', 'Total')}</Text>
-								<Text style={{ fontSize: 20, fontWeight: '800', color: colors.primary }}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
-							</View>
-							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceVariant, borderRadius: 10, padding: 2 }}>
-									<TouchableOpacity onPress={decrement} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
-										<MaterialIcons name="remove" size={20} color={colors.text} />
-									</TouchableOpacity>
-									<Text style={{ fontSize: 16, fontWeight: '700', color: colors.text, minWidth: 32, textAlign: 'center' }}>{quantity}</Text>
-									<TouchableOpacity onPress={increment} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
-										<MaterialIcons name="add" size={20} color={colors.text} />
-									</TouchableOpacity>
-								</View>
-
-								<TouchableOpacity
-									style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' }}
-									onPress={handleAddToCart}
-									activeOpacity={0.8}
-								>
-									<MaterialIcons name="add-shopping-cart" size={22} color={colors.textOnPrimary || '#0F172A'} />
-								</TouchableOpacity>
-							</View>
-						</View>
-					)}
-				</View>
-
-				{/* Business Info Card */}
-				<TouchableOpacity onPress={handleBusinessNavPress} style={[styles.businessCard, { backgroundColor: colors.card }]}>
-					<View style={styles.sectionHeader}>
-						<MaterialIcons name="store" size={20} color={colors.primary} />
-						<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('business', 'Business')}</Text>
-						<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-					</View>
-					<Text style={[styles.businessName, { color: colors.text }]}>{localize(product.business?.name)}</Text>
-					{product.business?.address && (
-						<Text style={[styles.businessAddress, { color: colors.textSecondary }]}>
-							{product.business.address.city}, {product.business.address.country}
-						</Text>
-					)}
-				</TouchableOpacity>
-
-				{/* Owner Info Card */}
-				{product.business?.owner && (
-					<TouchableOpacity onPress={handleOwnerPress} style={[styles.businessCard, { backgroundColor: colors.card }]}>
-						<View style={styles.sectionHeader}>
-							<MaterialIcons name="person" size={20} color={colors.primary} />
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('owner', 'Owner')}</Text>
-							<Ionicons name="chevron-forward" size={20} color={colors.textSecondary} />
-						</View>
-						<Text style={[styles.businessName, { color: colors.text }]}>{localize(product.business.owner.name)}</Text>
-					</TouchableOpacity>
-				)}
-
-				{/* Default Product Info */}
-				{product.defaultProduct && (
-					<View style={[styles.defaultProductCard, { backgroundColor: colors.card }]}>
-						<View style={styles.sectionHeader}>
-							<Ionicons name="fish-outline" size={20} color={colors.primary} />
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('default_product', 'Default Product')}</Text>
-						</View>
-						<Text style={[styles.businessName, { color: colors.text }]}>{localize(product.defaultProduct.name)}</Text>
+				) : (
+					/* ─── Mobile Stacked layout ─── */
+					<View style={styles.mobileLayoutContainer}>
+						{renderHeroImage()}
+						{renderInfoSection()}
+						{renderMetadataSection()}
+						{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 					</View>
 				)}
-
-				{/* Search Keywords */}
-				{product.searchTerms && product.searchTerms.length > 0 && (
-					<View style={[styles.keywordsCard, { backgroundColor: colors.card }]}>
-						<Text style={[styles.keywordsTitle, { color: colors.text }]}>{translate('search_keywords', 'Search Keywords')}</Text>
-						<View style={styles.keywordsContainer}>
-							{product.searchTerms.map((keyword, index) => (
-								<View key={index} style={[styles.keywordBadge, { backgroundColor: colors.surface }]}>
-									<Text style={[styles.keywordText, { color: colors.textSecondary }]}>{keyword}</Text>
-								</View>
-							))}
-						</View>
-					</View>
-				)}
-
-				{/* Availability */}
-				{product.availability && (
-					<View style={[styles.availabilityCard, { backgroundColor: colors.card }]}>
-						<View style={styles.sectionHeader}>
-							<Ionicons name="calendar-outline" size={20} color={colors.primary} />
-							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('availability', 'Availability')}</Text>
-						</View>
-						<Text style={[styles.availabilityText, { color: colors.textSecondary }]}>
-							{translate('available_from', 'Available from')}: {new Date(product.availability.startDate).toLocaleDateString()}
-						</Text>
-						{product.availability.endDate && (
-							<Text style={[styles.availabilityText, { color: colors.textSecondary }]}>
-								{translate('available_until', 'Available until')}: {new Date(product.availability.endDate).toLocaleDateString()}
-							</Text>
-						)}
-					</View>
-				)}
-
-				{/* Product Slug */}
-				<View style={[styles.slugCard, { backgroundColor: colors.card }]}>
-					<Text style={[styles.slugLabel, { color: colors.textSecondary }]}>{translate('product_slug', 'Product ID')}</Text>
-					<Text style={[styles.slugValue, { color: colors.text }]}>{product.slug}</Text>
-				</View>
-
-				{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
-
-				{/* Bottom Spacing */}
-				<View style={styles.bottomSpacing} />
 			</SmartHeader.ScrollView>
 
-			{/* QR Code Viewer Modal */}
+			{/* QR Code Modal */}
 			{product && (
 				<QRCodeModal
 					visible={showQRCode}
 					onClose={() => setShowQRCode(false)}
-					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/p/${product.slug}`}
+					value={`${config.frontend.url}/p/${product.slug}`}
 					title={localize(product.name)}
 					subtitle={`${product.slug}`}
 					filenamePrefix={`product_${product.slug}`}
@@ -469,25 +517,37 @@ const styles = StyleSheet.create({
 	container: {
 		flex: 1
 	},
-	loadingContainer: {
-		flex: 1,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	loadingText: {
-		marginTop: 16,
-		fontSize: 16
-	},
 	scrollContent: {
-		padding: 16
+		alignSelf: 'center',
+		width: '100%',
+		maxWidth: 1200,
+		paddingHorizontal: 16
+	},
+	splitLayoutContainer: {
+		flexDirection: 'row',
+		width: '100%',
+		gap: 24,
+		marginTop: 8
+	},
+	leftColumn: {
+		flex: 1.1,
+		gap: 16
+	},
+	rightColumn: {
+		flex: 0.9,
+		gap: 16
+	},
+	mobileLayoutContainer: {
+		width: '100%',
+		gap: 16
 	},
 	imageContainer: {
 		width: '100%',
-		height: 280,
-		borderRadius: 20,
+		height: 380,
+		borderRadius: 24,
 		overflow: 'hidden',
 		position: 'relative',
-		marginBottom: 16
+		...createShadow({ offsetY: 4, opacity: 0.2, radius: 12, elevation: 4 })
 	},
 	productImage: {
 		width: '100%',
@@ -495,197 +555,266 @@ const styles = StyleSheet.create({
 	},
 	unavailableOverlay: {
 		...StyleSheet.absoluteFill,
-		backgroundColor: 'rgba(0,0,0,0.6)',
+		backgroundColor: 'rgba(0,0,0,0.7)',
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	unavailableText: {
 		color: '#EF4444',
-		fontSize: 20,
-		fontWeight: '700',
-		textTransform: 'uppercase'
+		fontSize: 22,
+		fontWeight: '800',
+		textTransform: 'uppercase',
+		letterSpacing: 1.5
 	},
 	imageGradient: {
 		position: 'absolute',
 		bottom: 0,
 		left: 0,
 		right: 0,
-		height: 80,
+		height: 120,
 		justifyContent: 'flex-end',
-		padding: 16
+		padding: 20
 	},
 	stockBadge: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: 'rgba(255,255,255,0.9)',
 		paddingHorizontal: 12,
 		paddingVertical: 6,
 		borderRadius: 20,
-		alignSelf: 'flex-start'
+		alignSelf: 'flex-start',
+		borderWidth: 1
+	},
+	stockDot: {
+		width: 8,
+		height: 8,
+		borderRadius: 4,
+		marginRight: 6
 	},
 	stockText: {
 		fontSize: 12,
-		fontWeight: '600',
-		marginLeft: 6
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5
 	},
 	infoCard: {
-		borderRadius: 20,
-		padding: 20,
-		marginBottom: 16,
-		borderWidth: 1.5
+		borderRadius: 24,
+		padding: 24,
+		borderWidth: 1,
+		...createShadow({ offsetY: 2, opacity: 0.08, radius: 6, elevation: 2 })
 	},
 	productName: {
-		fontSize: 24,
-		fontWeight: '700',
-		marginBottom: 4
+		fontSize: 28,
+		fontWeight: '800',
+		letterSpacing: -0.5,
+		marginBottom: 6
 	},
 	productNameSecondary: {
 		fontSize: 14,
-		marginBottom: 16
+		fontWeight: '500',
+		marginBottom: 20
 	},
 	priceSection: {
-		marginBottom: 16,
-		paddingBottom: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: 'rgba(0,0,0,0.1)'
+		marginBottom: 20,
+		paddingBottom: 20,
+		borderBottomWidth: 1
 	},
 	priceLabel: {
-		fontSize: 12,
+		fontSize: 11,
 		textTransform: 'uppercase',
-		fontWeight: '600',
-		marginBottom: 4
+		fontWeight: '700',
+		letterSpacing: 1,
+		marginBottom: 6
 	},
 	priceContainer: {
 		flexDirection: 'row',
 		alignItems: 'baseline'
 	},
 	priceValue: {
-		fontSize: 32,
-		fontWeight: '800'
+		fontSize: 36,
+		fontWeight: '900',
+		letterSpacing: -1
 	},
 	priceUnit: {
 		fontSize: 16,
-		marginLeft: 4
+		fontWeight: '500',
+		marginLeft: 6
 	},
 	quantityRange: {
 		fontSize: 13,
-		marginTop: 4
+		marginTop: 6,
+		fontWeight: '500'
 	},
 	stockSection: {
-		borderRadius: 12,
+		borderRadius: 16,
 		padding: 16,
-		marginBottom: 16
+		marginBottom: 20,
+		gap: 12
 	},
 	stockRow: {
 		flexDirection: 'row',
-		alignItems: 'center',
-		marginBottom: 8
+		alignItems: 'center'
 	},
 	stockLabel: {
 		fontSize: 14,
-		marginLeft: 8,
+		fontWeight: '500',
 		flex: 1
 	},
 	stockValue: {
-		fontSize: 16,
+		fontSize: 15,
 		fontWeight: '700'
 	},
 	statusRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'space-between'
+		justifyContent: 'space-between',
+		marginBottom: 16
 	},
 	statusLabel: {
-		fontSize: 14
+		fontSize: 14,
+		fontWeight: '500'
 	},
-	statusBadge: {
+	statusBadgeTouch: {
 		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 12
+		paddingVertical: 5,
+		borderRadius: 10
 	},
 	statusText: {
-		fontSize: 12,
-		fontWeight: '600',
-		textTransform: 'uppercase'
+		fontSize: 11,
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 0.5
 	},
-	businessCard: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 12
-	},
-	sectionHeader: {
+	checkoutPanel: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		marginBottom: 8
+		justifyContent: 'space-between',
+		marginTop: 20,
+		paddingTop: 20,
+		borderTopWidth: 1
 	},
-	sectionTitle: {
-		fontSize: 14,
-		fontWeight: '600',
+	checkoutTotalCol: {
+		flex: 1
+	},
+	checkoutTotalLabel: {
+		fontSize: 10,
+		fontWeight: '700',
 		textTransform: 'uppercase',
-		flex: 1,
-		marginLeft: 8
+		letterSpacing: 0.8,
+		marginBottom: 2
 	},
-	businessName: {
+	checkoutTotalPrice: {
+		fontSize: 22,
+		fontWeight: '900',
+		letterSpacing: -0.5
+	},
+	checkoutActionsCol: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 12
+	},
+	stepperContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		borderRadius: 12,
+		padding: 3,
+		borderWidth: 1
+	},
+	stepperBtn: {
+		width: 36,
+		height: 36,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	stepperText: {
 		fontSize: 16,
-		fontWeight: '600'
+		fontWeight: '800',
+		minWidth: 32,
+		textAlign: 'center'
 	},
-	businessAddress: {
+	cartSubmitBtn: {
+		width: 46,
+		height: 46,
+		borderRadius: 14,
+		justifyContent: 'center',
+		alignItems: 'center',
+		...Platform.select({ web: { boxShadow: '0 4px 12px rgba(14,165,233,0.35)' } as any })
+	},
+	metadataContainer: {
+		gap: 12
+	},
+	metaCard: {
+		borderRadius: 16,
+		padding: 16,
+		borderWidth: 1,
+		...createShadow({ offsetY: 1, opacity: 0.05, radius: 4, elevation: 1 })
+	},
+	metaCardStatic: {
+		borderRadius: 16,
+		padding: 16,
+		borderWidth: 1
+	},
+	metaCardHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		marginBottom: 10
+	},
+	metaCardTitleWrap: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8
+	},
+	metaCardIconBg: {
+		width: 24,
+		height: 24,
+		borderRadius: 6,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	metaCardTitle: {
+		fontSize: 11,
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 0.8
+	},
+	metaCardTitleStatic: {
+		fontSize: 11,
+		fontWeight: '700',
+		textTransform: 'uppercase',
+		letterSpacing: 0.8,
+		marginBottom: 10
+	},
+	metaCardName: {
+		fontSize: 16,
+		fontWeight: '700'
+	},
+	metaCardSub: {
 		fontSize: 13,
-		marginTop: 2
+		marginTop: 3,
+		fontWeight: '500'
 	},
-	defaultProductCard: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 12
-	},
-	keywordsCard: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 12
-	},
-	keywordsTitle: {
-		fontSize: 14,
-		fontWeight: '600',
-		marginBottom: 12
-	},
-	keywordsContainer: {
+	tagWrap: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
 		gap: 8
 	},
-	keywordBadge: {
+	tagItem: {
 		paddingHorizontal: 10,
-		paddingVertical: 6,
+		paddingVertical: 5,
 		borderRadius: 8
 	},
-	keywordText: {
-		fontSize: 12
-	},
-	availabilityCard: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 12
+	tagText: {
+		fontSize: 12,
+		fontWeight: '600'
 	},
 	availabilityText: {
 		fontSize: 14,
-		marginBottom: 4
-	},
-	slugCard: {
-		borderRadius: 16,
-		padding: 16,
-		marginBottom: 12
-	},
-	slugLabel: {
-		fontSize: 12,
-		textTransform: 'uppercase',
-		fontWeight: '600',
+		fontWeight: '500',
 		marginBottom: 4
 	},
 	slugValue: {
 		fontSize: 14,
-		fontWeight: '500'
-	},
-	bottomSpacing: {
-		height: 40
+		fontWeight: '600',
+		fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace'
 	}
 })
