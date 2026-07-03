@@ -1,3 +1,16 @@
+## [1.27.43] - 3 july 2026
+### Added
+- Redesign `ProductDetailScreen.tsx` from scratch with responsive split-column layout on web/tablets, full-bleed hero banner images, glowing stock status indicators, and clean stepper controls.
+- Add user-friendly, localized formatting for raw network exceptions inside the updates screen error container.
+
+### Changed
+- Wrap the bottom navigation tab bar (`dash`) inside a custom `tabBar` wrapper view of fixed `barWidth` centered using standard flex layout rules, fixing layout offsets and centering issues under Android RTL and landscape notches.
+- Add `@react-navigation/bottom-tabs` to package.json dependencies to resolve TypeScript layout compilation typings.
+- Optimize `ProductDetailScreen.tsx` layout and hero banner height dynamically for landscape mobile viewports.
+- Enforce environment variables rules in `ProductDetailScreen.tsx` by resolving frontend URLs from centralized `config.frontend.url` configurations.
+- Fix update checker Android mount bug where launching directly into updates screen skipped network update checks.
+- Move the settings route configuration (`settings.tsx`) outside the `(home)` layout (tab bar shell) and delete the settings tab screen definition from `_layout.tsx` entirely, removing the settings tab from the dash.
+
 ## [1.27.37] - 3 july 2026
 ### Changed
 - Update `FeedScreen` background styling to dynamically retrieve and apply the theme background color `colors.background` instead of using a hardcoded `#0A0E1A` hex color.
@@ -10,12 +23,8 @@
 - Enforce consistent card background color across all feed components (ProductCard, BusinessCard, UserCard) by migrating them from hardcoded background hexes to dynamic theme colors (colors.card).
 - Remove all references and code traces of LightTheme, lightColors, and ThemeMode toggling state/storage, locking the application to DarkTheme exclusively.
 - Rename `darkColors` to `colors` in `colors.ts` and update all theme contexts to export/import only `colors` to streamline theme references.
-- Redesign `ProductDetailScreen.tsx` from scratch with responsive split-column layout on web/tablets, full-bleed hero banner images, glowing stock status indicators, and clean stepper controls.
-- Optimize `ProductDetailScreen.tsx` layout and hero banner height for landscape mode, ensuring a stacked vertical layout on mobile devices in landscape and a reduced, screen-fitted image height.
-- Enforce environment variables rule in `ProductDetailScreen.tsx` by migrating direct `process.env` access to `config.frontend.url`.
-- Translate and format raw network errors (e.g. `java.net.UnknownHostException`) to a user-friendly, localized message ("Unable to connect to the server. Please check your internet connection.") inside the updates screen error box.
-- Fix update checker bug on Android where routing directly to `/updates` because of a local installable APK would skip fetching the latest release context from the network, disabling the download button and hiding release changelogs. Now `checkForUpdates()` runs on mount on all platforms.
 - Resolve strict TypeScript compile warnings by cleaning up unused imports and state variables in `UpdatesContext.tsx`, `SmartImageViewer/index.tsx`, `UserDetailScreen.tsx`, `SalesScreen.tsx`, and `BusinessProductsScreen.tsx`.
+
 
 ## [1.27.36] - 3 july 2026
 ### Changed

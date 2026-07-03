@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
-import { View, Platform, StyleSheet, useWindowDimensions } from 'react-native'
+import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 const TabsComponent = Tabs as any
@@ -25,7 +25,6 @@ export default function HomeLayout() {
 	const isNotificationsVisible = isAuthenticated
 	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0) + (isNotificationsVisible ? 1 : 0)
 	const barWidth = activeTabsCount * 48
-	const { width: screenWidth } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 
 	useEffect(() => {
@@ -47,74 +46,114 @@ export default function HomeLayout() {
 				sceneContainerStyle={{
 					backgroundColor: colors.background
 				}}
-				screenOptions={{
-					headerShown: true,
-					header: (props: any) => <SmartHeader {...props} />,
-					tabBarStyle: {
-						position: 'absolute',
-						bottom: Platform.select({
-							ios: insets.bottom > 0 ? insets.bottom + 6 : 10,
-							android: 10,
-							web: 14
-						}),
-						left: 0,
-						right: 0,
-						height: 44,
-						backgroundColor: 'transparent',
-						borderTopWidth: 0,
-						borderTopColor: 'transparent',
-						paddingBottom: 0,
-						paddingTop: 0,
-						paddingHorizontal: (screenWidth - barWidth) / 2,
-						transform: [{ translateY: isTabBarVisible ? 0 : 120 }],
-						opacity: isTabBarVisible ? 1 : 0,
-						elevation: 0,
-						shadowColor: 'transparent'
-					},
-					tabBarBackground: () => (
+				tabBar={(props: any) => {
+					const { state, descriptors, navigation } = props
+					return (
 						<View
 							style={{
 								position: 'absolute',
-								left: (screenWidth - barWidth) / 2,
-								width: barWidth,
-								height: '100%',
-								backgroundColor: 'rgba(15, 23, 42, 0.6)',
-								borderRadius: 22,
-								...Platform.select({
-									ios: {
-										shadowColor: 'rgba(0, 0, 0, 0.5)',
-										shadowOffset: { width: 0, height: 4 },
-										shadowOpacity: 1,
-										shadowRadius: 16
-									},
-									android: {
-										elevation: 12
-									},
-									web: {
-										boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)'
-									}
-								})
+								bottom: Platform.select({
+									ios: insets.bottom > 0 ? insets.bottom + 6 : 10,
+									android: 10,
+									web: 14
+								}),
+								left: 0,
+								right: 0,
+								alignItems: 'center',
+								backgroundColor: 'transparent',
+								transform: [{ translateY: isTabBarVisible ? 0 : 120 }],
+								opacity: isTabBarVisible ? 1 : 0
 							}}
-						/>
-					),
-					tabBarActiveTintColor: colors.primary,
-					tabBarInactiveTintColor: colors.textTertiary,
-					tabBarHideOnKeyboard: Platform.OS === 'android',
-					tabBarShowLabel: false,
-					tabBarItemStyle: {
-						flex: 1,
-						justifyContent: 'center',
-						alignItems: 'center',
-						height: '100%',
-						padding: 0,
-						margin: 0
-					},
-					tabBarIconStyle: {
-						justifyContent: 'center',
-						alignItems: 'center',
-						marginTop: 0,
-						marginBottom: 0
-					}
+						>
+							<View
+								style={{
+									width: barWidth,
+									height: 44,
+									flexDirection: 'row',
+									backgroundColor: 'rgba(15, 23, 42, 0.6)',
+									borderRadius: 22,
+									borderWidth: 0,
+									...Platform.select({
+										ios: {
+											shadowColor: 'rgba(0, 0, 0, 0.5)',
+											shadowOffset: { width: 0, height: 4 },
+											shadowOpacity: 1,
+											shadowRadius: 16
+										},
+										android: {
+											elevation: 12
+										},
+										web: {
+											boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)'
+										}
+									})
+								}}
+							>
+								{state.routes.map((route: any, index: number) => {
+									const { options } = descriptors[route.key]
+									const isFocused = state.index === index
+
+									// Skip rendering items hidden by href: null
+									if (options.href === null) return null
+
+									const onPress = () => {
+										const event = navigation.emit({
+											type: 'tabPress',
+											target: route.key,
+											canPreventDefault: true
+										})
+
+										if (!isFocused && !event.defaultPrevented) {
+											navigation.navigate(route.name, route.params)
+										}
+									}
+
+									const color = isFocused ? colors.primary : colors.textTertiary
+									const icon = options.tabBarIcon ? options.tabBarIcon({ focused: isFocused, color }) : null
+
+									return (
+										<TouchableOpacity
+											key={route.key}
+											onPress={onPress}
+											activeOpacity={0.7}
+											style={{
+												flex: 1,
+												justifyContent: 'center',
+												alignItems: 'center',
+												height: '100%',
+												position: 'relative'
+											}}
+											accessibilityRole="button"
+											accessibilityState={isFocused ? { selected: true } : {}}
+											accessibilityLabel={options.tabBarAccessibilityLabel}
+										>
+											{icon}
+											{options.tabBarBadge !== undefined && (
+												<View
+													style={[
+														options.tabBarBadgeStyle,
+														{
+															position: 'absolute',
+															top: 4,
+															right: 10,
+															justifyContent: 'center',
+															alignItems: 'center'
+														}
+													]}
+												>
+													<Text style={{ color: '#fff', fontSize: 9, fontWeight: '700', lineHeight: 12 }}>{options.tabBarBadge}</Text>
+												</View>
+											)}
+										</TouchableOpacity>
+									)
+								})}
+							</View>
+						</View>
+					)
+				}}
+				screenOptions={{
+					headerShown: true,
+					header: (props: any) => <SmartHeader {...props} />
 				}}
 			>
 				<Tabs.Screen
@@ -155,14 +194,6 @@ export default function HomeLayout() {
 					options={{
 						tabBarIcon: ({ color, focused }) => renderTabBarIcon('person', 'person-outline', 'ionicons', color, focused),
 						tabBarAccessibilityLabel: translate('profile', 'Profile')
-					}}
-				/>
-				<Tabs.Screen
-					name="settings"
-					options={{
-						href: null,
-						tabBarIcon: ({ color, focused }) => renderTabBarIcon('settings', 'settings-outline', 'ionicons', color, focused),
-						tabBarAccessibilityLabel: translate('settings', 'Settings')
 					}}
 				/>
 			</TabsComponent>
