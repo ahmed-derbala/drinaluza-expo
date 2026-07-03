@@ -185,8 +185,7 @@ const styles = StyleSheet.create({
 	banner: {
 		width: '100%',
 		aspectRatio: 2.4,
-		position: 'relative',
-		backgroundColor: 'rgba(255, 255, 255, 0.02)'
+		position: 'relative'
 	},
 	bannerImg: {
 		width: '100%',

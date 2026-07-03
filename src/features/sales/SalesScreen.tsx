@@ -1,16 +1,13 @@
 import { SmartHeader } from '@/core/smart-header'
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
+import { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, Text, ScrollView, TouchableOpacity, Platform } from 'react-native'
 import { useTheme, createShadow } from '@/core/theme'
 import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
-import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
 import { orderStatusEnum, orderStatusLabels } from '@/features/orders/orderStatus'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 
 const ITEMS_PER_PAGE = 10
 
@@ -29,12 +26,10 @@ export default function SalesScreen() {
 		salesStateRef.current = salesState
 	}, [salesState])
 
-	const [allSales, setAllSales] = useState<Sale[]>([]) // Store all sales for counting
 	const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
 	const [initialLoading, setInitialLoading] = useState(true)
 	const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({})
 	const [refreshing, setRefreshing] = useState(false)
-	const [filtering, setFiltering] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string } | null>(null)
 	const [pageState, setPageState] = useState<Record<string, number>>({})
 	const [hasMoreState, setHasMoreState] = useState<Record<string, boolean>>({})
@@ -52,11 +47,9 @@ export default function SalesScreen() {
 
 	const isFirstLoad = useRef(true)
 	const { width } = useWindowDimensions()
-	const insets = useSafeAreaInsets()
 	const navigation = useNavigation()
 
 	// Responsive layout
-	const isTablet = width >= 768
 	const isDesktop = width >= 1024
 	const numColumns = isDesktop ? 2 : 1
 
@@ -84,7 +77,6 @@ export default function SalesScreen() {
 			const response = await getSales(businessSlug as string, 1, 1000, undefined, customerSlug, productSlug)
 			if (response && response.data && Array.isArray(response.data.docs)) {
 				const allSalesData = response.data.docs
-				setAllSales(allSalesData)
 
 				// Calculate counts for each status from loaded data
 				const counts: Record<string, number> = {
@@ -102,16 +94,12 @@ export default function SalesScreen() {
 	}, [businessSlug, customerSlug, productSlug])
 
 	const loadSales = useCallback(
-		async (pageNum = 1, isRefreshing = false, statusVal = selectedStatus, isFiltering = false) => {
+		async (pageNum = 1, isRefreshing = false, statusVal = selectedStatus) => {
 			try {
 				if (pageNum === 1) {
-					if (isFiltering) {
-						setFiltering(true)
-					} else {
-						// Only show loading spinner if we don't have data for this status yet
-						if (!isRefreshing && !salesStateRef.current[statusVal]?.length) {
-							setTabLoading((prev) => ({ ...prev, [statusVal]: true }))
-						}
+					// Only show loading spinner if we don't have data for this status yet
+					if (!isRefreshing && !salesStateRef.current[statusVal]?.length) {
+						setTabLoading((prev) => ({ ...prev, [statusVal]: true }))
 					}
 					setError(null)
 				} else {
@@ -161,7 +149,6 @@ export default function SalesScreen() {
 				setInitialLoading(false)
 				setRefreshing(false)
 				setLoadingMore(false)
-				setFiltering(false)
 				setTabLoading((prev) => ({ ...prev, [statusVal]: false }))
 			}
 		},

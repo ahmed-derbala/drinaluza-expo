@@ -3,6 +3,10 @@
 - Update `FeedScreen` background styling to dynamically retrieve and apply the theme background color `colors.background` instead of using a hardcoded `#0A0E1A` hex color.
 - Update `SmartImageViewer` to enforce the `contain` fit mode, ensuring images display fully across the entire app without any cropping.
 - Ensure all screens use the centralized `SmartImageViewer` component for rendering images, and export both `SmartImageViewer` and `SmartImage` for clean import naming.
+- Restrict `SmartImageViewer` from rendering any background color under/behind loaded images by stripping the `backgroundColor` style parameter from both style and containerStyle props, and clean up background colors in product card and business banner image wrappers.
+- Remove unused screen file `src/features/products/ProductsScreen.tsx`.
+- Migrate `BusinessProductsScreen.tsx` list grid to `SmartHeader.FlashList` with an estimatedItemSize of 240px to optimize view recycling and scroll frame rates.
+- Resolve strict TypeScript compile warnings by cleaning up unused imports and state variables in `UpdatesContext.tsx`, `SmartImageViewer/index.tsx`, `UserDetailScreen.tsx`, `SalesScreen.tsx`, and `BusinessProductsScreen.tsx`.
 
 ## [1.27.36] - 3 july 2026
 ### Changed

@@ -292,8 +292,7 @@ const styles = StyleSheet.create({
 	imgWrap: {
 		width: '100%',
 		aspectRatio: 1.35,
-		position: 'relative',
-		backgroundColor: 'rgba(255, 255, 255, 0.02)'
+		position: 'relative'
 	},
 	img: {
 		width: '100%',

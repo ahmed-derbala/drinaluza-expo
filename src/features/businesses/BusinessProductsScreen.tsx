@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react'
+import { useEffect, useState, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -8,7 +8,7 @@ import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
@@ -235,12 +235,9 @@ export default function BusinessProductsScreen() {
 	const { onScroll } = useScrollHandler()
 
 	// Responsive
-	const isSmallMobile = width < BP.mobile
-	const isMobile = width < BP.tablet
 	const isTablet = width >= BP.tablet && width < BP.desktop
 	const isDesktop = width >= BP.desktop
 	const isWide = width >= BP.wide
-	const isLandscape = width > height
 
 	const numColumns = useMemo(() => {
 		// Intelligently calculate columns to ensure cards have enough width for all UI elements
@@ -402,8 +399,7 @@ export default function BusinessProductsScreen() {
 
 	// Render item
 	const renderItem = useCallback(
-		({ item, index }: { item: Product; index: number }) => {
-			const pct = numColumns === 1 ? 100 : (100 - (numColumns - 1) * (cardGap / (contentMaxWidth - horizontalPadding * 2)) * 100) / numColumns
+		({ item }: { item: Product }) => {
 			return (
 				<View
 					style={{
@@ -522,7 +518,7 @@ export default function BusinessProductsScreen() {
 			)}
 
 			{/* Grid */}
-			<SmartHeader.FlatList
+			<SmartHeader.FlashList
 				key={`grid-${numColumns}`}
 				data={filteredProducts}
 				renderItem={renderItem}
@@ -536,6 +532,7 @@ export default function BusinessProductsScreen() {
 					alignSelf: 'center',
 					width: '100%'
 				}}
+				estimatedItemSize={240}
 				columnWrapperStyle={numColumns > 1 ? { gap: cardGap * 0.6, justifyContent: 'flex-start' } : undefined}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onScroll={onScroll}

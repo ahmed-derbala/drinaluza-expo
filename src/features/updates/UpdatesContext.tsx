@@ -1,7 +1,6 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Platform, Alert } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
-import * as Sharing from 'expo-sharing'
 import { config } from '@/config'
 import { log } from '@/core/log'
 import { getItem, setItem, removeItem } from '@/core/storage'
@@ -144,31 +143,27 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		}
 	}, [])
 
-	// Trigger Check for Updates
-	const checkForUpdates = useCallback(
-		async (manual = false): Promise<UpdateCheckResult | null> => {
-			setIsChecking(true)
-			setError(null)
-			try {
-				const result = await checkUpdatesApi(config.updateCheckUrl)
-				setLatestRelease(result)
-				setIsChecking(false)
+	const checkForUpdates = useCallback(async (): Promise<UpdateCheckResult | null> => {
+		setIsChecking(true)
+		setError(null)
+		try {
+			const result = await checkUpdatesApi(config.updateCheckUrl)
+			setLatestRelease(result)
+			setIsChecking(false)
 
-				if (Platform.OS !== 'web') {
-					await refreshApkList()
-					// Run a proactive cleanup of stale APK cache files (disabled to show all downloaded APKs)
-					// await pruneOldApks(result.latest_version)
-				}
-				return result
-			} catch (err: any) {
-				console.warn('[UpdatesContext] Update check encountered network/timeout error:', err)
-				setError(err?.message || 'Failed to check for updates.')
-				setIsChecking(false)
-				return null
+			if (Platform.OS !== 'web') {
+				await refreshApkList()
+				// Run a proactive cleanup of stale APK cache files (disabled to show all downloaded APKs)
+				// await pruneOldApks(result.latest_version)
 			}
-		},
-		[refreshApkList, pruneOldApks]
-	)
+			return result
+		} catch (err: any) {
+			console.warn('[UpdatesContext] Update check encountered network/timeout error:', err)
+			setError(err?.message || 'Failed to check for updates.')
+			setIsChecking(false)
+			return null
+		}
+	}, [refreshApkList, pruneOldApks])
 
 	// Install Android APK
 	const installApk = useCallback(async (fileUri: string) => {

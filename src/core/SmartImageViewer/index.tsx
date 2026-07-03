@@ -8,7 +8,7 @@ import type { SmartImageProps } from './types'
  * Maps legacy `resizeMode` values to expo-image's `contentFit`.
  * Always returns 'contain' to ensure images are fully displayed without cropping.
  */
-function resolveContentFit(contentFit?: ImageContentFit, resizeMode?: SmartImageProps['resizeMode']): ImageContentFit {
+function resolveContentFit(_contentFit?: ImageContentFit, _resizeMode?: SmartImageProps['resizeMode']): ImageContentFit {
 	return 'contain'
 }
 
@@ -66,6 +66,28 @@ function SmartImageComponent({
 
 	// Resolve content fit from contentFit or legacy resizeMode
 	const resolvedContentFit = useMemo(() => resolveContentFit(contentFit, resizeMode), [contentFit, resizeMode])
+
+	// Strip backgroundColor from style prop to ensure no background color is used
+	const cleanedStyle = useMemo(() => {
+		if (!style) return undefined
+		const flattened = StyleSheet.flatten(style)
+		if (flattened && 'backgroundColor' in flattened) {
+			const { backgroundColor: _, ...rest } = flattened as any
+			return rest
+		}
+		return flattened
+	}, [style])
+
+	// Strip backgroundColor from containerStyle prop
+	const cleanedContainerStyle = useMemo(() => {
+		if (!containerStyle) return undefined
+		const flattened = StyleSheet.flatten(containerStyle)
+		if (flattened && 'backgroundColor' in flattened) {
+			const { backgroundColor: _, ...rest } = flattened as any
+			return rest
+		}
+		return flattened
+	}, [containerStyle])
 
 	// Build dimension overrides from explicit width/height/borderRadius props
 	const dimensionStyle = useMemo(() => {
@@ -145,7 +167,7 @@ function SmartImageComponent({
 	const imageElement = (
 		<Image
 			source={imageSource}
-			style={[styles.image, style, dimensionStyle]}
+			style={[styles.image, cleanedStyle, dimensionStyle]}
 			contentFit={showFallback ? 'contain' : resolvedContentFit}
 			placeholder={showFallback ? undefined : placeholder || { blurhash: DEFAULT_BLURHASH }}
 			transition={showFallback ? undefined : { duration: DEFAULT_TRANSITION_DURATION }}
@@ -160,8 +182,8 @@ function SmartImageComponent({
 	)
 
 	// Wrap in container View if containerStyle is provided
-	if (containerStyle) {
-		return <View style={containerStyle}>{imageElement}</View>
+	if (cleanedContainerStyle) {
+		return <View style={cleanedContainerStyle}>{imageElement}</View>
 	}
 
 	return imageElement
