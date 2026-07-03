@@ -13,6 +13,7 @@
 - Redesign `ProductDetailScreen.tsx` from scratch with responsive split-column layout on web/tablets, full-bleed hero banner images, glowing stock status indicators, and clean stepper controls.
 - Optimize `ProductDetailScreen.tsx` layout and hero banner height for landscape mode, ensuring a stacked vertical layout on mobile devices in landscape and a reduced, screen-fitted image height.
 - Enforce environment variables rule in `ProductDetailScreen.tsx` by migrating direct `process.env` access to `config.frontend.url`.
+- Translate and format raw network errors (e.g. `java.net.UnknownHostException`) to a user-friendly, localized message ("Unable to connect to the server. Please check your internet connection.") inside the updates screen error box.
 - Fix update checker bug on Android where routing directly to `/updates` because of a local installable APK would skip fetching the latest release context from the network, disabling the download button and hiding release changelogs. Now `checkForUpdates()` runs on mount on all platforms.
 - Resolve strict TypeScript compile warnings by cleaning up unused imports and state variables in `UpdatesContext.tsx`, `SmartImageViewer/index.tsx`, `UserDetailScreen.tsx`, `SalesScreen.tsx`, and `BusinessProductsScreen.tsx`.
 

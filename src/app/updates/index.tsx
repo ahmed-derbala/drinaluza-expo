@@ -110,6 +110,21 @@ const MarkdownRenderer = ({ content, colors }: { content: string; colors: any })
 	)
 }
 
+function isNetworkError(msg: string | null | undefined): boolean {
+	if (!msg) return false
+	const lowercase = msg.toLowerCase()
+	return (
+		lowercase.includes('unknownhostexception') ||
+		lowercase.includes('unable to resolve host') ||
+		lowercase.includes('network error') ||
+		lowercase.includes('fetch failed') ||
+		lowercase.includes('timeout') ||
+		lowercase.includes('failed to fetch') ||
+		lowercase.includes('net::err') ||
+		lowercase.includes('connection')
+	)
+}
+
 export default function UpdatesScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
@@ -743,7 +758,9 @@ export default function UpdatesScreen() {
 				{error && (
 					<View style={[styles.errorBox, { backgroundColor: colors.error + '12', borderColor: colors.error }]}>
 						<Ionicons name="alert-circle-outline" size={20} color={colors.error} />
-						<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+						<Text style={[styles.errorText, { color: colors.error }]}>
+							{isNetworkError(error) ? translate('network_error_message', 'Unable to connect to the server. Please check your internet connection.') : error}
+						</Text>
 					</View>
 				)}
 			</SmartHeader.ScrollView>
