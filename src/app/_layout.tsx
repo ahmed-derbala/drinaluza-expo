@@ -1,4 +1,4 @@
-import { Stack } from 'expo-router'
+import { Stack, useRouter } from 'expo-router'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, ActivityIndicator, Platform } from 'react-native'
@@ -24,32 +24,33 @@ import { AppThemeProvider, useTheme } from '@/core/theme'
 
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
+	const router = useRouter()
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
-			if (Platform.OS !== 'android') {
-				return
-			}
-
 			try {
 				// 1. Instantly check if there is a downloaded APK ready to install (no network delay)
-				const freshApks = await refreshApkList()
-				const installableApk = freshApks.find((apk) => apk.isInstallable)
-				if (installableApk) {
-					// Trigger package installation
-					await installApk(installableApk.fileUri)
-					return
+				if (Platform.OS === 'android') {
+					const freshApks = await refreshApkList()
+					const installableApk = freshApks.find((apk) => apk.isInstallable)
+					if (installableApk) {
+						router.replace('/updates')
+						return
+					}
 				}
 
-				// 2. Otherwise, perform network check for new updates in the background
-				await checkForUpdates(false)
+				// 2. Otherwise, perform network check for new updates
+				const result = await checkForUpdates(false)
+				if (result && isVersionGreater(result.latest_version, config.app.version)) {
+					router.replace('/updates')
+				}
 			} catch (e) {
 				console.warn('[StartupGate] Startup check failed:', e)
 			}
 		}
 
 		performStartupCheck()
-	}, [checkForUpdates, refreshApkList, installApk])
+	}, [checkForUpdates, refreshApkList, installApk, router])
 
 	return (
 		<ErrorBoundary>

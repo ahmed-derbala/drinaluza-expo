@@ -1,3 +1,10 @@
+## [1.27.36] - 3 july 2026
+### Changed
+- Relocate the product name in `ProductCard` from the image overlay to the card body below the image on the left. Remove the now-unused linear gradient and clean up dependencies.
+
+### Added
+- Redirect the application automatically to the updates screen on startup if there is a new release version available to download or a downloaded APK ready to install.
+
 ## [1.27.23] - 2 july 2026
 ### Fixed
 - Fix update package corruption and incorrect download percentage display when resuming an interrupted update download on app restart by tracking active download states via a local storage key and executing startup cleanup of incomplete/stale `.tmp` files.

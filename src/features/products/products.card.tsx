@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
@@ -136,12 +135,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 			<View style={styles.imgWrap}>
 				<SmartImage source={imageUrl} style={styles.img} resizeMode="cover" entityType="product" />
 
-				<LinearGradient colors={['transparent', 'rgba(5,10,25,0.90)']} locations={[0.3, 1]} style={styles.imgOverlayBottom}>
-					<Text style={styles.productNameOver} numberOfLines={2}>
-						{mainName}
-					</Text>
-				</LinearGradient>
-
 				{/* Stock overlay for out-of-stock / low-stock */}
 				{(isOutOfStock || isLowStock) && (
 					<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent' }]}>
@@ -155,6 +148,10 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 			{/* ── Body ── */}
 			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
+				<Text style={styles.productName} numberOfLines={2}>
+					{mainName}
+				</Text>
+
 				{secondaryNames.length > 0 && (
 					<Text style={styles.altName} numberOfLines={2}>
 						{secondaryNames.join(' · ')}
@@ -302,29 +299,11 @@ const styles = StyleSheet.create({
 		width: '100%',
 		height: '100%'
 	},
-	imgOverlayBottom: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		paddingHorizontal: 10,
-		paddingBottom: 10,
-		paddingTop: 32
-	},
-	productNameOver: {
-		fontSize: 16,
-		fontWeight: '800',
+	productName: {
+		fontSize: 15,
+		fontWeight: '700',
 		color: '#FFF',
-		...Platform.select({
-			web: {
-				textShadow: '0px 1px 2px rgba(0,0,0,0.5)'
-			} as any,
-			default: {
-				textShadowColor: 'rgba(0,0,0,0.5)',
-				textShadowOffset: { width: 0, height: 1 },
-				textShadowRadius: 2
-			}
-		})
+		textAlign: 'left'
 	},
 	stockOverlay: {
 		...StyleSheet.absoluteFill,
