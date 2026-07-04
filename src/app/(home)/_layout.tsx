@@ -1,14 +1,10 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname } from 'expo-router'
 import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context'
-
-const TabsComponent = Tabs as any
-import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme } from '@/core/theme'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
 
@@ -18,45 +14,27 @@ export default function HomeLayout() {
 	const { translate, user } = useUser()
 	const pathname = usePathname()
 	useBackButton()
-	// Derive auth state from UserContext — single source of truth, no extra token read
 	const isAuthenticated = !!user
 	const { notificationCount } = useNotification()
 	const isDashboardVisible = isAuthenticated && user?.role === 'business_owner'
 	const isNotificationsVisible = isAuthenticated
 	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0) + (isNotificationsVisible ? 1 : 0)
-	const barWidth = activeTabsCount * 48
-	const insets = useSafeAreaInsets()
+	const barWidth = activeTabsCount * 56
 
 	useEffect(() => {
 		setTabBarVisible(true)
 	}, [pathname, setTabBarVisible])
 
-	const renderTabBarIcon = (focusedIcon: string, unfocusedIcon: string, iconType: 'material' | 'ionicons', color: any, focused: boolean) => {
-		const iconColor = focused ? colors.primary : colors.textTertiary
-		return iconType === 'material' ? (
-			<MaterialIcons name={(focused ? focusedIcon : unfocusedIcon) as any} size={20} color={iconColor} />
-		) : (
-			<Ionicons name={(focused ? focusedIcon : unfocusedIcon) as any} size={20} color={iconColor} />
-		)
-	}
-
 	return (
-		<SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['bottom']}>
-			<TabsComponent
-				sceneContainerStyle={{
-					backgroundColor: colors.background
-				}}
+		<View style={styles.container}>
+			<Tabs
 				tabBar={(props: any) => {
 					const { state, descriptors, navigation } = props
 					return (
 						<View
 							style={{
 								position: 'absolute',
-								bottom: Platform.select({
-									ios: insets.bottom > 0 ? insets.bottom + 6 : 10,
-									android: 10,
-									web: 14
-								}),
+								bottom: 16,
 								left: 0,
 								right: 0,
 								alignItems: 'center',
@@ -68,11 +46,12 @@ export default function HomeLayout() {
 							<View
 								style={{
 									width: barWidth,
-									height: 44,
+									height: 52,
 									flexDirection: 'row',
-									backgroundColor: 'rgba(15, 23, 42, 0.6)',
-									borderRadius: 22,
-									borderWidth: 0,
+									backgroundColor: 'rgba(20, 20, 20, 0.85)',
+									borderRadius: 26,
+									borderWidth: 1,
+									borderColor: 'rgba(255, 255, 255, 0.12)',
 									...Platform.select({
 										ios: {
 											shadowColor: 'rgba(0, 0, 0, 0.5)',
@@ -84,7 +63,8 @@ export default function HomeLayout() {
 											elevation: 12
 										},
 										web: {
-											boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)'
+											boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)',
+											backdropFilter: 'blur(20px)'
 										}
 									})
 								}}
@@ -93,8 +73,7 @@ export default function HomeLayout() {
 									const { options } = descriptors[route.key]
 									const isFocused = state.index === index
 
-									// Skip rendering items hidden by href: null
-									if (options.href === null) return null
+									if (options.isVisible === false) return null
 
 									const onPress = () => {
 										const event = navigation.emit({
@@ -134,8 +113,8 @@ export default function HomeLayout() {
 														options.tabBarBadgeStyle,
 														{
 															position: 'absolute',
-															top: 4,
-															right: 10,
+															top: 6,
+															right: 12,
 															justifyContent: 'center',
 															alignItems: 'center'
 														}
@@ -158,46 +137,58 @@ export default function HomeLayout() {
 			>
 				<Tabs.Screen
 					name="feed"
-					options={{
-						tabBarIcon: ({ color, focused }) => renderTabBarIcon('home', 'home-outline', 'ionicons', color, focused),
-						tabBarAccessibilityLabel: translate('feed', 'Feed')
-					}}
+					options={
+						{
+							isVisible: true,
+							tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <Ionicons name={focused ? 'home' : 'home-outline'} size={22} color={color} />,
+							tabBarAccessibilityLabel: translate('feed', 'Feed')
+						} as any
+					}
 				/>
 				<Tabs.Screen
 					name="dashboard"
-					options={{
-						href: isDashboardVisible ? '/dashboard' : null,
-						tabBarIcon: ({ color, focused }) => renderTabBarIcon('grid', 'grid-outline', 'ionicons', color, focused),
-						tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
-					}}
+					options={
+						{
+							href: isDashboardVisible ? '/dashboard' : null,
+							isVisible: isDashboardVisible,
+							tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />,
+							tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
+						} as any
+					}
 				/>
 				<Tabs.Screen
 					name="notifications"
-					options={{
-						href: isNotificationsVisible ? '/notifications' : null,
-						tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
-						tabBarBadgeStyle: {
-							backgroundColor: colors.error,
-							color: '#fff',
-							fontSize: 9,
-							minWidth: 16,
-							height: 16,
-							borderRadius: 8,
-							lineHeight: 16
-						},
-						tabBarIcon: ({ color, focused }) => renderTabBarIcon('notifications', 'notifications-outline', 'ionicons', color, focused),
-						tabBarAccessibilityLabel: translate('notifications', 'Notifications')
-					}}
+					options={
+						{
+							href: isNotificationsVisible ? '/notifications' : null,
+							isVisible: isNotificationsVisible,
+							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
+							tabBarBadgeStyle: {
+								backgroundColor: colors.error,
+								color: '#fff',
+								fontSize: 9,
+								minWidth: 16,
+								height: 16,
+								borderRadius: 8,
+								lineHeight: 16
+							},
+							tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={22} color={color} />,
+							tabBarAccessibilityLabel: translate('notifications', 'Notifications')
+						} as any
+					}
 				/>
 				<Tabs.Screen
 					name="profile"
-					options={{
-						tabBarIcon: ({ color, focused }) => renderTabBarIcon('person', 'person-outline', 'ionicons', color, focused),
-						tabBarAccessibilityLabel: translate('profile', 'Profile')
-					}}
+					options={
+						{
+							isVisible: true,
+							tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <Ionicons name={focused ? 'person' : 'person-outline'} size={22} color={color} />,
+							tabBarAccessibilityLabel: translate('profile', 'Profile')
+						} as any
+					}
 				/>
-			</TabsComponent>
-		</SafeAreaView>
+			</Tabs>
+		</View>
 	)
 }
 

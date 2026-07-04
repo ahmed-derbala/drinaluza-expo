@@ -4,12 +4,14 @@
 - Add user-friendly, localized formatting for raw network exceptions inside the updates screen error container.
 
 ### Changed
-- Wrap the bottom navigation tab bar (`dash`) inside a custom `tabBar` wrapper view of fixed `barWidth` centered using standard flex layout rules, fixing layout offsets and centering issues under Android RTL and landscape notches.
-- Add `@react-navigation/bottom-tabs` to package.json dependencies to resolve TypeScript layout compilation typings.
+- Configure the bottom navigation tab bar (`dash`) as a floating, centered GNOME-style capsule (dock) centered natively via a full-width container wrapper with `alignItems: 'center'`, ensuring it is always centered on portrait and landscape orientations without any rotation lag or safe-area layout offsets.
 - Optimize `ProductDetailScreen.tsx` layout and hero banner height dynamically for landscape mobile viewports.
 - Enforce environment variables rules in `ProductDetailScreen.tsx` by resolving frontend URLs from centralized `config.frontend.url` configurations.
 - Fix update checker Android mount bug where launching directly into updates screen skipped network update checks.
 - Move the settings route configuration (`settings.tsx`) outside the `(home)` layout (tab bar shell) and delete the settings tab screen definition from `_layout.tsx` entirely, removing the settings tab from the dash.
+- Remove dynamic conditional wraps from all `<Tabs.Screen>` children of the home layout navigator to resolve the 'Layout children must be of type Screen' console warnings, mapping tab visibility strictly via static screen declarations with standard `options.href` parameter checks in the custom tab bar renderer.
+- Enable hide-on-scroll functionality for the bottom navigation tab bar (dash) by linking layout's scroll-visibility state (`isTabBarVisible`) to CSS translation and opacity transition transforms on the floating wrapper.
+- Enforce layout filtration rules to ensure the dashboard tab icon is shown in the bottom tab bar (dash) only if the user role is `business_owner`, utilizing a custom `options.isVisible` property (cast as `any` and explicitly typed at callback levels to bypass strict routing schema typechecks) to prevent dynamic `options.href` mutations from showing the tab to customer roles.
 
 ## [1.27.37] - 3 july 2026
 ### Changed
