@@ -40,6 +40,12 @@ export default function NotificationsScreen() {
 
 	const checkPermissions = useCallback(async () => {
 		if (Platform.OS === 'web') return
+
+		const Constants = require('expo-constants').default
+		if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+			return
+		}
+
 		try {
 			const Notifications = require('expo-notifications')
 			const { status } = await Notifications.getPermissionsAsync()
@@ -50,6 +56,16 @@ export default function NotificationsScreen() {
 	}, [])
 
 	const requestNotificationPermission = async () => {
+		const Constants = require('expo-constants').default
+		if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
+			const { Alert } = require('react-native')
+			Alert.alert(
+				translate('expo_go_push_unsupported_title', 'Expo Go Limitation'),
+				translate('expo_go_push_unsupported_desc', 'Remote push notifications are not supported in Expo Go on Android. Please use a standalone build to test push features.')
+			)
+			return
+		}
+
 		try {
 			const Notifications = require('expo-notifications')
 			const { status } = await Notifications.requestPermissionsAsync()

@@ -1,6 +1,7 @@
 ## [1.27.47] - 5 july 2026
 ### Added
 - Check push notification permissions dynamically when the `NotificationsScreen` mounts or gains focus. Render an interactive warning banner at the top of the notifications list if permissions are currently disabled, allowing the user to request permission immediately upon tap.
+- Add Expo Go appOwnership guards inside notification permission validation hooks to bypass check operations and show friendly limitation alerts inside Expo Go clients on Android, preventing native push API crashes.
 
 ## [1.27.46] - 5 july 2026
 ### Changed

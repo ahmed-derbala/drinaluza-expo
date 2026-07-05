@@ -228,5 +228,7 @@ export const en = {
 	filters: 'Filters',
 	min_android_version: 'Min Android Version',
 	notifications_disabled_title: 'Notifications Disabled',
-	notifications_disabled_desc: 'Tap here to allow notifications and get real-time updates.'
+	notifications_disabled_desc: 'Tap here to allow notifications and get real-time updates.',
+	expo_go_push_unsupported_title: 'Expo Go Limitation',
+	expo_go_push_unsupported_desc: 'Remote push notifications are not supported in Expo Go on Android. Please use a standalone build to test push features.'
 }
