@@ -242,6 +242,7 @@ export default function UpdatesScreen() {
 
 	const isAndroid = Platform.OS === 'android'
 	const isWeb = Platform.OS === 'web'
+	const isWebAndroid = Platform.OS === 'web' && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '')
 	const maxLayoutWidth = 620
 	const isWide = width > maxLayoutWidth
 
@@ -353,24 +354,44 @@ export default function UpdatesScreen() {
 	}
 
 	const renderAndroidSection = () => {
+		let isSupported = false
+		if (Platform.OS === 'android') {
+			const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10)
+			isSupported = apiLevel >= 23
+		} else if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+			const match = navigator.userAgent.match(/Android\s([0-9\.]+)/)
+			if (match) {
+				const majorVersion = parseFloat(match[1])
+				isSupported = majorVersion >= 6.0
+			}
+		}
+
 		return (
 			<View style={[styles.card, { borderColor: colors.borderLight }]}>
 				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('device_status', 'Device Status')}</Text>
+
+				{!isWebAndroid && (
+					<View style={styles.metaRow}>
+						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+						<Text
+							style={[
+								styles.metaValue,
+								{
+									color: deviceFreeStorage > config.updates.minFreeStorage * 1024 * 1024 ? colors.success : colors.error
+								}
+							]}
+						>
+							{formatBytes(deviceFreeStorage)}
+						</Text>
+					</View>
+				)}
+
 				<View style={styles.metaRow}>
-					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
-					<Text
-						style={[
-							styles.metaValue,
-							{
-								color: deviceFreeStorage > config.updates.minFreeStorage * 1024 * 1024 ? colors.success : colors.error
-							}
-						]}
-					>
-						{formatBytes(deviceFreeStorage)}
-					</Text>
+					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('min_android_version', 'Min Android Version')}</Text>
+					<Text style={[styles.metaValue, { color: isSupported ? colors.success : colors.error }]}>6.0 (API 23)</Text>
 				</View>
 
-				{latestRelease && deviceFreeStorage < latestRelease.size * 1.5 && (
+				{!isWebAndroid && latestRelease && deviceFreeStorage < latestRelease.size * 1.5 && (
 					<View style={[styles.warningBox, { backgroundColor: colors.error + '1A', borderColor: colors.error }]}>
 						<Ionicons name="warning" size={16} color={colors.error} />
 						<Text style={[styles.warningText, { color: colors.error }]}>{translate('low_space_warning', 'Your device is low on storage space. The download might fail.')}</Text>
@@ -568,11 +589,14 @@ export default function UpdatesScreen() {
 				{isDownloadingOrPaused ? (
 					<View style={styles.progressContainer}>
 						<View style={[styles.progressBarBg, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
-							<LinearGradient
-								colors={[colors.primary, colors.info || '#3B82F6']}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 0 }}
-								style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%` }]}
+							<View
+								style={[
+									styles.progressBarFill,
+									{
+										width: `${Math.round(downloadProgress * 100)}%`,
+										backgroundColor: colors.primary
+									}
+								]}
 							/>
 						</View>
 						<Text style={[styles.progressText, { color: colors.textSecondary }]}>
@@ -709,8 +733,8 @@ export default function UpdatesScreen() {
 
 				{renderReleaseMetaList()}
 
-				{/* Free storage / space warnings on Android */}
-				{isAndroid && renderAndroidSection()}
+				{/* Free storage / space warnings on Android / Android browsers */}
+				{(isAndroid || isWebAndroid) && renderAndroidSection()}
 
 				{/* Cached APK installers list */}
 				{downloadedApks.length > 0 && (

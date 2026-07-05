@@ -225,5 +225,6 @@ export const en = {
 	search_scopes: 'Scopes',
 	search_no_results: 'No search results found',
 	search_start_typing: 'Search for products or user profiles',
-	filters: 'Filters'
+	filters: 'Filters',
+	min_android_version: 'Min Android Version'
 }

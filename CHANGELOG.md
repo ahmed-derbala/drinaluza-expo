@@ -1,3 +1,8 @@
+## [1.27.46] - 5 july 2026
+### Changed
+- Simplify the updates screen download progress bar fill by replacing the LinearGradient with a solid View styled with the `colors.primary` theme color.
+- Style the "Min Android Version" metadata value dynamically to render green if the active system is supported (Android 6.0/API 23+), or red if unsupported. On web browsers running on Android, display this card with the Min Android Version row only, hiding storage details.
+
 ## [1.27.45] - 5 july 2026
 ### Fixed
 - Register the root settings route under the custom `SmartHeader` component inside `src/app/_layout.tsx`, and update `SettingsScreen.tsx` to dynamically configure header parameters and action items using `<Stack.Screen>` instead of `<Tabs.Screen>`.
