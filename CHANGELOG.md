@@ -1,3 +1,8 @@
+## [1.27.50] - 5 july 2026
+### Fixed
+- Sort ready-to-install cached APKs descending by version on the updates screen, ensuring the primary "Install" action button always targets the highest available downloaded installer rather than the first matching item in files scan logs.
+- Sort the "Cached APK Installers" list on the updates screen descending by version, ensuring the latest downloaded APK files are displayed first at the top of the installers card.
+
 ## [1.27.48] - 5 july 2026
 ### Changed
 - Render an interactive alert button inside `SmartHeader` when push notifications are disabled on the notifications screen, allowing users to quickly request notification permissions directly from the screen header.

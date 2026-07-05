@@ -6,7 +6,7 @@ import * as Sharing from 'expo-sharing'
 import { useRouter } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { useUpdates } from '@/features/updates'
+import { useUpdates, isVersionGreater } from '@/features/updates'
 import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -330,9 +330,21 @@ export default function UpdatesScreen() {
 	}, [latestRelease, downloadedApks])
 
 	const installableApk = useMemo(() => {
-		return downloadedApks.find((apk) => apk.isInstallable)
+		const installables = downloadedApks.filter((apk) => apk.isInstallable)
+		if (installables.length === 0) return undefined
+		return [...installables].sort((a, b) => {
+			if (isVersionGreater(a.version, b.version)) return -1
+			if (isVersionGreater(b.version, a.version)) return 1
+			return 0
+		})[0]
 	}, [downloadedApks])
-
+	const sortedApks = useMemo(() => {
+		return [...downloadedApks].sort((a, b) => {
+			if (isVersionGreater(a.version, b.version)) return -1
+			if (isVersionGreater(b.version, a.version)) return 1
+			return 0
+		})
+	}, [downloadedApks])
 	const isDownloadDisabled = isChecking || isDownloading || !latestRelease || isUpToDate || hasLatestApkInCache
 	const isInstallDisabled = !installableApk
 
@@ -737,11 +749,11 @@ export default function UpdatesScreen() {
 				{(isAndroid || isWebAndroid) && renderAndroidSection()}
 
 				{/* Cached APK installers list */}
-				{downloadedApks.length > 0 && (
+				{sortedApks.length > 0 && (
 					<View style={[styles.card, { borderColor: colors.borderLight }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
 						<View style={styles.apkSection}>
-							{downloadedApks.map((apk) => (
+							{sortedApks.map((apk) => (
 								<View key={apk.filename} style={[styles.apkItem, { borderColor: 'rgba(255, 255, 255, 0.05)' }]}>
 									<View style={styles.apkInfoContainer}>
 										<View style={[styles.apkIconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.08)' }]}>
