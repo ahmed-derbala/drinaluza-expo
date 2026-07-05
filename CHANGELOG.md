@@ -1,3 +1,9 @@
+## [1.27.48] - 5 july 2026
+### Changed
+- Render an interactive alert button inside `SmartHeader` when push notifications are disabled on the notifications screen, allowing users to quickly request notification permissions directly from the screen header.
+- Extend `SmartHeader` action mapping configurations to support customizable action `backgroundColor` and `iconColor` overrides.
+- Fix API response interceptor behavior inside `src/core/api/index.ts` to cleanly redirect the user to the auth screen (`/auth`) upon receiving a `401 Unauthorized` status code. Specifically, corrected the `isOnAuthPage` checker to prevent the index route (`/`) from falsely blocking redirects during startup authorization checks.
+
 ## [1.27.47] - 5 july 2026
 ### Added
 - Check push notification permissions dynamically when the `NotificationsScreen` mounts or gains focus. Render an interactive warning banner at the top of the notifications list if permissions are currently disabled, allowing the user to request permission immediately upon tap.

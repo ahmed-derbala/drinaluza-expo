@@ -426,7 +426,8 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					badgeCount={config.badgeCount}
 					onPress={config.onPress}
 					accessibilityLabel={config.accessibilityLabel}
-					backgroundColor={colors.surface}
+					backgroundColor={config.backgroundColor || colors.surface}
+					iconColor={config.iconColor}
 					size={40}
 				/>
 			)

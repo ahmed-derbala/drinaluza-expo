@@ -54,7 +54,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 				// @ts-ignore - Check window for Web environment
 				if (typeof window !== 'undefined' && window.location) {
 					const path = (window.location.pathname + window.location.hash).toLowerCase()
-					isOnAuthPage = path.includes('/auth') || path === '/' || path === '/' || path === '#/'
+					isOnAuthPage = path.includes('/auth')
 				}
 
 				try {

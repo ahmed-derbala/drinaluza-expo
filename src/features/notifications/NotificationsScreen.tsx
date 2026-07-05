@@ -1,5 +1,5 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
@@ -264,6 +264,27 @@ export default function NotificationsScreen() {
 		)
 	}
 
+	const headerActions = useMemo(() => {
+		const actions: any[] = []
+		if (permissionGranted === false) {
+			actions.push({
+				key: 'allow-push',
+				iconName: 'notifications-off-outline',
+				onPress: requestNotificationPermission,
+				accessibilityLabel: translate('notifications_disabled_title', 'Notifications Disabled'),
+				iconColor: colors.warning,
+				backgroundColor: colors.warning + '1A'
+			})
+		}
+		actions.push({
+			key: 'refresh',
+			onPress: onRefresh,
+			isRefreshing: refreshing,
+			accessibilityLabel: 'Refresh'
+		})
+		return actions
+	}, [permissionGranted, refreshing, colors.warning, translate, onRefresh])
+
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Tabs.Screen
@@ -272,14 +293,7 @@ export default function NotificationsScreen() {
 						title: translate('notifications_title', 'Notifications'),
 						subtitle: `${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`,
 						headerLeft: () => null,
-						headerActions: [
-							{
-								key: 'refresh',
-								onPress: onRefresh,
-								isRefreshing: refreshing,
-								accessibilityLabel: 'Refresh'
-							}
-						]
+						headerActions: headerActions
 					} as any
 				}
 			/>
