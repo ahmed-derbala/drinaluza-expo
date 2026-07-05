@@ -2,6 +2,7 @@
 ### Fixed
 - Sort ready-to-install cached APKs descending by version on the updates screen, ensuring the primary "Install" action button always targets the highest available downloaded installer rather than the first matching item in files scan logs.
 - Sort the "Cached APK Installers" list on the updates screen descending by version, ensuring the latest downloaded APK files are displayed first at the top of the installers card.
+- Remove the redundant "Notifications Disabled" warning list header banner from the notifications list view, relying on the compact warning icon inside the `SmartHeader` right actions area instead.
 
 ## [1.27.48] - 5 july 2026
 ### Changed
