@@ -1,3 +1,11 @@
+## [1.27.45] - 5 july 2026
+### Fixed
+- Register the root settings route under the custom `SmartHeader` component inside `src/app/_layout.tsx`, and update `SettingsScreen.tsx` to dynamically configure header parameters and action items using `<Stack.Screen>` instead of `<Tabs.Screen>`.
+- Implement document-level outside click listener on web inside `SmartKebabMenu.tsx` to ensure the menu closes when a user clicks anywhere outside of the dropdown container.
+
+### Changed
+- Reorganize static settings data (LANGUAGES, CURRENCIES, and SOCIAL_PLATFORMS) by moving them from `src/config/settings.ts` to a newly created constants directory `src/core/constants/settings.ts` to cleanly decouple static UI configurations from dynamic environment variables.
+
 ## [1.27.43] - 3 july 2026
 ### Added
 - Redesign `ProductDetailScreen.tsx` from scratch with responsive split-column layout on web/tablets, full-bleed hero banner images, glowing stock status indicators, and clean stepper controls.

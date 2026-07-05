@@ -147,7 +147,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		setIsChecking(true)
 		setError(null)
 		try {
-			const result = await checkUpdatesApi(config.updateCheckUrl)
+			const result = await checkUpdatesApi(config.updates.checkUrl)
 			setLatestRelease(result)
 			setIsChecking(false)
 

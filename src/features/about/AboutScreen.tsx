@@ -153,7 +153,7 @@ export default function AboutScreen() {
 				<View style={styles.footer}>
 					<View style={styles.versionBadge}>
 						<Text style={styles.versionText}>
-							v{config.app.version} • {config.NODE_ENV}
+							v{config.app.version} • {config.nodeEnv}
 						</Text>
 					</View>
 					<Text style={styles.copyright}>© 2026 Drinaluza</Text>

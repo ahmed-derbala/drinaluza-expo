@@ -1,4 +1,4 @@
-import { Tabs } from 'expo-router'
+import { Stack } from 'expo-router'
 import React, { useState, useEffect, useMemo } from 'react'
 import { SmartHeader } from '@/core/smart-header'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensions, ActivityIndicator } from 'react-native'
@@ -88,7 +88,7 @@ export default function SettingsScreen() {
 			onScroll={onScroll}
 			scrollEventThrottle={16}
 		>
-			<Tabs.Screen
+			<Stack.Screen
 				options={
 					{
 						title: translate('settings', 'Settings'),
@@ -118,7 +118,7 @@ export default function SettingsScreen() {
 			<View style={styles.footer}>
 				<View style={styles.versionBadge}>
 					<Text style={styles.versionText}>
-						v{config.app.version} • {config.NODE_ENV}
+						v{config.app.version} • {config.nodeEnv}
 					</Text>
 				</View>
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>

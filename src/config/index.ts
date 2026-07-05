@@ -20,7 +20,10 @@ export const config = {
 	frontend: {
 		url: process.env.EXPO_PUBLIC_FRONTEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.vercel.app'
 	},
-	updateCheckUrl:
-		process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
-	NODE_ENV: process.env.EXPO_PUBLIC_NODE_ENV || Constants.expoConfig?.extra?.NODE_ENV || 'local'
+	updates: {
+		checkUrl:
+			process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
+		minFreeStorage: Number(process.env.EXPO_PUBLIC_UPDATE_MIN_FREE_STORAGE_MB || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_MIN_FREE_STORAGE_MB || 1000)
+	},
+	nodeEnv: process.env.EXPO_PUBLIC_NODE_ENV || Constants.expoConfig?.extra?.NODE_ENV || 'local'
 }

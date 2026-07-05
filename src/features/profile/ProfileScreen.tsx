@@ -46,7 +46,7 @@ import { log } from '@/core/log'
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
-import { LANGUAGES, SOCIAL_PLATFORMS } from '@/config/settings'
+import { LANGUAGES, SOCIAL_PLATFORMS } from '@/core/constants/settings'
 
 // Components moved outside to prevent re-creation on render
 const Section = ({

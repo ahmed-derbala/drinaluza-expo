@@ -21,6 +21,7 @@ import { UpdatesProvider } from '@/features/updates'
 
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme } from '@/core/theme'
+import { SmartHeader } from '@/core/smart-header'
 
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
@@ -73,6 +74,13 @@ function RootLayoutContent() {
 				<Stack.Screen name="users" options={{ headerShown: false }} />
 				<Stack.Screen name="about/index" options={{ headerShown: false }} />
 				<Stack.Screen name="updates/index" options={{ headerShown: false }} />
+				<Stack.Screen
+					name="settings"
+					options={{
+						headerShown: true,
+						header: (props: any) => <SmartHeader {...props} />
+					}}
+				/>
 			</Stack>
 		</ErrorBoundary>
 	)

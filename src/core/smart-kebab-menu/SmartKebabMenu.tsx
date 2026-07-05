@@ -25,6 +25,7 @@ export const SmartKebabMenu: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false)
 	const scaleAnim = useRef(new Animated.Value(0)).current
 	const opacityAnim = useRef(new Animated.Value(0)).current
+	const containerRef = useRef<any>(null)
 
 	// Toggle menu open/close
 	const toggleMenu = () => {
@@ -90,6 +91,22 @@ export const SmartKebabMenu: React.FC = () => {
 		window.addEventListener('keydown', handleKeyDown)
 		return () => {
 			window.removeEventListener('keydown', handleKeyDown)
+		}
+	}, [isOpen])
+
+	// 4. Web outside click listener to close menu
+	useEffect(() => {
+		if (!isOpen || Platform.OS !== 'web') return
+
+		const handleOutsideClick = (e: MouseEvent) => {
+			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+				closeMenu()
+			}
+		}
+
+		document.addEventListener('mousedown', handleOutsideClick)
+		return () => {
+			document.removeEventListener('mousedown', handleOutsideClick)
 		}
 	}, [isOpen])
 
@@ -205,7 +222,7 @@ export const SmartKebabMenu: React.FC = () => {
 	]
 
 	return (
-		<View style={styles.container}>
+		<View ref={containerRef} style={styles.container}>
 			{/* Kebab Icon Button */}
 			<Pressable
 				onPress={toggleMenu}

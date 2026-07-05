@@ -358,7 +358,16 @@ export default function UpdatesScreen() {
 				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('device_status', 'Device Status')}</Text>
 				<View style={styles.metaRow}>
 					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
-					<Text style={[styles.metaValue, { color: colors.text }]}>{formatBytes(deviceFreeStorage)}</Text>
+					<Text
+						style={[
+							styles.metaValue,
+							{
+								color: deviceFreeStorage > config.updates.minFreeStorage * 1024 * 1024 ? colors.success : colors.error
+							}
+						]}
+					>
+						{formatBytes(deviceFreeStorage)}
+					</Text>
 				</View>
 
 				{latestRelease && deviceFreeStorage < latestRelease.size * 1.5 && (
@@ -372,9 +381,9 @@ export default function UpdatesScreen() {
 	}
 
 	const renderEnvironmentBadge = () => {
-		const nodeEnv = config.NODE_ENV.toLowerCase()
+		const nodeEnv = config.nodeEnv.toLowerCase()
 		let badgeColors: [string, string] = ['#10B981', '#059669']
-		let badgeText = config.NODE_ENV.toUpperCase()
+		let badgeText = config.nodeEnv.toUpperCase()
 
 		if (nodeEnv === 'production' || nodeEnv === 'prod') {
 			badgeColors = ['#EF4444', '#DC2626']
