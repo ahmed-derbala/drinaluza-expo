@@ -1,6 +1,6 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
 import { useTheme, createShadow } from '@/core/theme'
@@ -34,8 +34,30 @@ export default function NotificationsScreen() {
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null)
 	const { translate, localize } = useUser()
 	const { onScroll } = useScrollHandler()
+
+	const checkPermissions = useCallback(async () => {
+		if (Platform.OS === 'web') return
+		try {
+			const Notifications = require('expo-notifications')
+			const { status } = await Notifications.getPermissionsAsync()
+			setPermissionGranted(status === 'granted')
+		} catch (err) {
+			console.warn('[NotificationsScreen] Failed to check permissions:', err)
+		}
+	}, [])
+
+	const requestNotificationPermission = async () => {
+		try {
+			const Notifications = require('expo-notifications')
+			const { status } = await Notifications.requestPermissionsAsync()
+			setPermissionGranted(status === 'granted')
+		} catch (err) {
+			console.warn('[NotificationsScreen] Failed to request permissions:', err)
+		}
+	}
 
 	const loadNotifications = useCallback(async (pageNum: number = 1, isRefresh: boolean = false) => {
 		try {
@@ -70,7 +92,8 @@ export default function NotificationsScreen() {
 	useFocusEffect(
 		useCallback(() => {
 			loadNotifications(1, true)
-		}, [])
+			checkPermissions()
+		}, [loadNotifications, checkPermissions])
 	)
 
 	const onRefresh = useCallback(() => {
@@ -255,6 +278,34 @@ export default function NotificationsScreen() {
 				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.2}
+				ListHeaderComponent={
+					permissionGranted === false ? (
+						<TouchableOpacity
+							activeOpacity={0.8}
+							onPress={requestNotificationPermission}
+							style={[
+								{
+									backgroundColor: colors.warning + '1A',
+									borderColor: colors.warning,
+									borderWidth: 1,
+									borderRadius: 16,
+									padding: 14,
+									marginBottom: 16,
+									flexDirection: 'row',
+									alignItems: 'center',
+									gap: 12
+								}
+							]}
+						>
+							<Ionicons name="notifications-off" size={22} color={colors.warning} />
+							<View style={{ flex: 1 }}>
+								<Text style={{ color: colors.text, fontWeight: '700', fontSize: 14, marginBottom: 2 }}>{translate('notifications_disabled_title', 'Notifications Disabled')}</Text>
+								<Text style={{ color: colors.textSecondary, fontSize: 12 }}>{translate('notifications_disabled_desc', 'Tap here to allow notifications and get real-time updates.')}</Text>
+							</View>
+							<Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
+						</TouchableOpacity>
+					) : null
+				}
 				ListEmptyComponent={
 					!loading ? (
 						<View style={styles.emptyContainer}>

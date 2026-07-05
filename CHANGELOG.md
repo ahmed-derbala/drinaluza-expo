@@ -1,3 +1,7 @@
+## [1.27.47] - 5 july 2026
+### Added
+- Check push notification permissions dynamically when the `NotificationsScreen` mounts or gains focus. Render an interactive warning banner at the top of the notifications list if permissions are currently disabled, allowing the user to request permission immediately upon tap.
+
 ## [1.27.46] - 5 july 2026
 ### Changed
 - Simplify the updates screen download progress bar fill by replacing the LinearGradient with a solid View styled with the `colors.primary` theme color.

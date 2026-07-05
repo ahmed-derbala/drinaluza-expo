@@ -226,5 +226,7 @@ export const en = {
 	search_no_results: 'No search results found',
 	search_start_typing: 'Search for products or user profiles',
 	filters: 'Filters',
-	min_android_version: 'Min Android Version'
+	min_android_version: 'Min Android Version',
+	notifications_disabled_title: 'Notifications Disabled',
+	notifications_disabled_desc: 'Tap here to allow notifications and get real-time updates.'
 }
