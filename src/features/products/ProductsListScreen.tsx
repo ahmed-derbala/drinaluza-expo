@@ -115,7 +115,7 @@ export default function ProductsListScreen() {
 
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `Added to cart`, color: '#10B981', screen: '/profile/purchases?status=cart' })
+				toast.show({ title: 'Success', message: `Added to cart`, color: '#10B981', screen: '/purchases?status=cart' })
 			} catch {
 				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 			}
@@ -138,7 +138,7 @@ export default function ProductsListScreen() {
 				key: 'cart',
 				iconName: 'cart-outline',
 				badgeCount: cart.length,
-				onPress: () => router.push('/profile/purchases?status=cart' as any),
+				onPress: () => router.push('/purchases?status=cart' as any),
 				accessibilityLabel: 'View Cart'
 			},
 			{

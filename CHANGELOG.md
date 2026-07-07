@@ -1,3 +1,9 @@
+## [1.27.52] - 7 july 2026
+### Changed
+- Update the download button label on the web version of the Updates screen to explicitly show "Download Android APK" followed by the target release version.
+- Relocate the purchases screen route from `/profile/purchases` to the root route `/purchases` to make it accessible directly. Updated root layout stack configurations and all redirect links across feed, business, search, and profile screens.
+- Move the status filter ScrollView inside the `headerBottom` option of `Stack.Screen` in `PurchasesScreen.tsx`. This aligns the layout with `SmartHeader` specifications, resolving the visual overlap issue where the absolutely positioned header covered the filter tabs bar.
+
 ## [1.27.51] - 7 july 2026
 ### Changed
 - Update the notification status action button icon in the `NotificationsScreen` header from `notifications-off-outline` to `notifications-outline` styled in warning colors to clearly denote status warnings rather than misleading users into thinking tapping the button disables notifications.

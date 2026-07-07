@@ -75,6 +75,13 @@ function RootLayoutContent() {
 				<Stack.Screen name="about/index" options={{ headerShown: false }} />
 				<Stack.Screen name="updates/index" options={{ headerShown: false }} />
 				<Stack.Screen
+					name="purchases"
+					options={{
+						headerShown: true,
+						header: (props: any) => <SmartHeader {...props} />
+					}}
+				/>
+				<Stack.Screen
 					name="settings"
 					options={{
 						headerShown: true,

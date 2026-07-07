@@ -678,7 +678,7 @@ export default function ProfileScreen() {
 			key: 'cart',
 			iconName: 'cart-outline',
 			badgeCount: cart.length,
-			onPress: () => router.push('/profile/purchases?status=cart'),
+			onPress: () => router.push('/purchases?status=cart'),
 			accessibilityLabel: 'View Cart'
 		})
 		actions.push({

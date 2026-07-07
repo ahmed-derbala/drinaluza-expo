@@ -113,7 +113,7 @@ export const HeaderCartButton: React.FC<HeaderCartButtonProps> = React.memo(({ b
 	return (
 		<HeaderActionButton
 			iconName="cart-outline"
-			onPress={() => router.push('/profile/purchases?status=cart')}
+			onPress={() => router.push('/purchases?status=cart')}
 			badgeCount={badgeCount}
 			accessibilityLabel={translate('view_cart', 'View Cart')}
 			backgroundColor={colors.surface}

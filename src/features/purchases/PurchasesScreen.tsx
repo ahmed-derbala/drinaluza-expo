@@ -650,6 +650,24 @@ const PurchasesScreen = () => {
 					{
 						title: translate('purchases_title', 'Purchases'),
 						subtitle: `${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}`,
+						headerBottomHeight: 52,
+						headerBottom: (
+							<View style={[styles.filterContainer, { backgroundColor: colors.card, borderBottomColor: colors.border, borderBottomWidth: 1 }]}>
+								<ScrollView
+									horizontal
+									showsHorizontalScrollIndicator={Platform.OS === 'web'}
+									contentContainerStyle={styles.filterScrollRow}
+									style={styles.filterScroll}
+									keyboardShouldPersistTaps="handled"
+								>
+									<FilterButton status="cart" label={translate('cart', 'Cart')} icon="cart-outline" />
+									<FilterButton status="pending" label={translate('pending', 'Pending')} icon="hourglass-outline" />
+									<FilterButton status="processing" label={translate('active', 'Active')} icon="sync-outline" />
+									<FilterButton status="completed" label={translate('done', 'Done')} icon="checkmark-circle-outline" />
+									<FilterButton status="cancelled" label={translate('cancelled', 'Cancelled')} icon="close-outline" />
+								</ScrollView>
+							</View>
+						),
 						headerActions: [
 							{
 								key: 'refresh',
@@ -661,17 +679,6 @@ const PurchasesScreen = () => {
 					} as any
 				}
 			/>
-
-			{/* Filter horizontal tabs scroll */}
-			<View style={{ borderBottomWidth: 1, borderBottomColor: colors.border }}>
-				<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.filterScrollRow}>
-					<FilterButton status="cart" label={translate('cart', 'Cart')} icon="cart-outline" />
-					<FilterButton status="pending" label={translate('pending', 'Pending')} icon="hourglass-outline" />
-					<FilterButton status="processing" label={translate('active', 'Active')} icon="sync-outline" />
-					<FilterButton status="completed" label={translate('done', 'Done')} icon="checkmark-circle-outline" />
-					<FilterButton status="cancelled" label={translate('cancelled', 'Cancelled')} icon="close-outline" />
-				</ScrollView>
-			</View>
 
 			{/* Grid container */}
 			<SmartHeader.FlashList
@@ -698,7 +705,16 @@ const createStyles = (colors: any, width: number, numColumns: number, cardGap: n
 	return StyleSheet.create({
 		container: { flex: 1 },
 		centered: { justifyContent: 'center', alignItems: 'center' },
-		filterScrollRow: { paddingHorizontal: 16, paddingVertical: 14, gap: 10, alignItems: 'center' },
+		filterContainer: {
+			height: 52,
+			width: '100%',
+			justifyContent: 'center'
+		},
+		filterScroll: {
+			flexGrow: 0,
+			width: '100%'
+		},
+		filterScrollRow: { paddingHorizontal: 16, paddingVertical: 0, gap: 10, alignItems: 'center' },
 		filterTabBtn: {
 			flexDirection: 'row',
 			alignItems: 'center',

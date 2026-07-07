@@ -314,7 +314,7 @@ export default function SearchScreen() {
 					title: 'Success',
 					message: `${localize(item.name) || 'Product'} added to cart`,
 					color: colors.success,
-					screen: '/profile/purchases?status=cart'
+					screen: '/purchases?status=cart'
 				})
 			} catch (err) {
 				log({ level: 'error', label: 'SearchScreen', message: 'Failed to add to cart', error: err })

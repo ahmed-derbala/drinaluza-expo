@@ -569,7 +569,7 @@ export default function UpdatesScreen() {
 					>
 						<Ionicons name="download-outline" size={20} color={!latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF'} />
 						<Text style={[styles.primaryButtonText, { color: !latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF' }]}>
-							{translate('download_update', 'Download Update')} {latestRelease?.latest_version ? `(v${latestRelease.latest_version})` : ''}
+							{translate('download_android_apk', 'Download Android APK')} {latestRelease?.latest_version ? `v${latestRelease.latest_version}` : ''}
 						</Text>
 					</LinearGradient>
 				</TouchableOpacity>

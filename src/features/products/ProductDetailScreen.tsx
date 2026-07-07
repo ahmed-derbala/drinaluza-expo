@@ -85,7 +85,7 @@ export default function ProductDetailScreen() {
 				title: 'Success',
 				message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
 				color: '#10B981',
-				screen: '/profile/purchases?status=cart'
+				screen: '/purchases?status=cart'
 			})
 		} catch {
 			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
@@ -188,7 +188,7 @@ export default function ProductDetailScreen() {
 				key: 'cart',
 				iconName: 'cart-outline',
 				badgeCount: cart.length,
-				onPress: () => router.push('/profile/purchases?status=cart' as any),
+				onPress: () => router.push('/purchases?status=cart' as any),
 				accessibilityLabel: 'View Cart'
 			})
 		}
