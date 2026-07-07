@@ -269,7 +269,7 @@ export default function NotificationsScreen() {
 		if (permissionGranted === false) {
 			actions.push({
 				key: 'allow-push',
-				iconName: 'notifications-off-outline',
+				iconName: 'notifications-outline',
 				onPress: requestNotificationPermission,
 				accessibilityLabel: translate('notifications_disabled_title', 'Notifications Disabled'),
 				iconColor: colors.warning,
