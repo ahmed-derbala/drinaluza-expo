@@ -6,7 +6,7 @@ import { getSales, Sale } from '@/features/sales/sales.api'
 import SaleCard from '@/features/sales/SaleCard'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
 import ErrorState from '@/features/common/ErrorState'
-import { orderStatusEnum, orderStatusLabels } from '@/features/orders/orderStatus'
+import { ORDER_STATUSES, orderStatusLabels } from '@/features/orders/orders-statuses'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 
 const ITEMS_PER_PAGE = 10
@@ -56,15 +56,15 @@ export default function SalesScreen() {
 	const statusOptions = useMemo(
 		() => [
 			{ value: 'all', label: 'All Sales' },
-			{ value: orderStatusEnum.PENDING_SHOP_CONFIRMATION, label: orderStatusLabels[orderStatusEnum.PENDING_SHOP_CONFIRMATION] },
-			{ value: orderStatusEnum.CONFIRMED_BY_SHOP, label: orderStatusLabels[orderStatusEnum.CONFIRMED_BY_SHOP] },
-			{ value: orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER, label: orderStatusLabels[orderStatusEnum.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER] },
-			{ value: orderStatusEnum.DELIVERING_TO_CUSTOMER, label: orderStatusLabels[orderStatusEnum.DELIVERING_TO_CUSTOMER] },
-			{ value: orderStatusEnum.DELIVERED_TO_CUSTOMER, label: orderStatusLabels[orderStatusEnum.DELIVERED_TO_CUSTOMER] },
-			{ value: orderStatusEnum.RECEIVED_BY_CUSTOMER, label: orderStatusLabels[orderStatusEnum.RECEIVED_BY_CUSTOMER] },
-			{ value: orderStatusEnum.RESERVATION_EXPIRED, label: orderStatusLabels[orderStatusEnum.RESERVATION_EXPIRED] },
-			{ value: orderStatusEnum.CANCELLED_BY_CUSTOMER, label: orderStatusLabels[orderStatusEnum.CANCELLED_BY_CUSTOMER] },
-			{ value: orderStatusEnum.CANCELLED_BY_SHOP, label: orderStatusLabels[orderStatusEnum.CANCELLED_BY_SHOP] }
+			{ value: ORDER_STATUSES.PENDING_SHOP_CONFIRMATION, label: orderStatusLabels[ORDER_STATUSES.PENDING_SHOP_CONFIRMATION] },
+			{ value: ORDER_STATUSES.CONFIRMED_BY_SHOP, label: orderStatusLabels[ORDER_STATUSES.CONFIRMED_BY_SHOP] },
+			{ value: ORDER_STATUSES.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER] },
+			{ value: ORDER_STATUSES.DELIVERING_TO_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.DELIVERING_TO_CUSTOMER] },
+			{ value: ORDER_STATUSES.DELIVERED_TO_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.DELIVERED_TO_CUSTOMER] },
+			{ value: ORDER_STATUSES.RECEIVED_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.RECEIVED_BY_CUSTOMER] },
+			{ value: ORDER_STATUSES.RESERVATION_EXPIRED, label: orderStatusLabels[ORDER_STATUSES.RESERVATION_EXPIRED] },
+			{ value: ORDER_STATUSES.CANCELLED_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.CANCELLED_BY_CUSTOMER] },
+			{ value: ORDER_STATUSES.CANCELLED_BY_SHOP, label: orderStatusLabels[ORDER_STATUSES.CANCELLED_BY_SHOP] }
 		],
 		[]
 	)

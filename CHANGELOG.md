@@ -1,8 +1,22 @@
+## [1.27.54] - 7 july 2026
+### Changed
+- Reimplement the Purchases screen based on `SalesScreen.tsx` at `/purchases` as a single route screen using `status` query parameters (e.g. `/purchases?status=pending`).
+- Revert directory-based nested routing folders under `src/app/purchases/` and restore `src/app/purchases.tsx` flat route.
+- Implement horizontal status filter ScrollView inside `SmartHeader`'s `headerBottom` parameter in `PurchasesScreen.tsx`, matching the `SalesScreen` pattern.
+- Integrate `ORDER_STATUSES` from `src/features/orders/orders-statuses.ts` for order status rendering and tracking.
+- Revert all in-app navigation routes pointing to `/purchases/cart` back to `/purchases?status=cart` across feed, product, business, profile, search, and SmartHeader modules.
+- Rename `src/features/orders/orderStatus.ts` to `src/features/orders/orders-statuses.ts` and rename `orderStatusEnum` to `ORDER_STATUSES`.
+- Clean up unused/untracked files under `src/features/purchases/` and `src/app/purchases/`.
+## [1.27.53] - 7 july 2026
+### Changed
+- Refactor the Purchases / Orders screen to extract isolated `CartTabContent` and `PurchasesTabContent` sub-components. This decouples tab layout and data fetching logic, guaranteeing that active tabs fetch data independently without triggering unnecessary re-renders or requests in unrelated tabs, in compliance with project tab rendering guidelines.
+
 ## [1.27.52] - 7 july 2026
 ### Changed
 - Update the download button label on the web version of the Updates screen to explicitly show "Download Android APK" followed by the target release version.
 - Relocate the purchases screen route from `/profile/purchases` to the root route `/purchases` to make it accessible directly. Updated root layout stack configurations and all redirect links across feed, business, search, and profile screens.
 - Move the status filter ScrollView inside the `headerBottom` option of `Stack.Screen` in `PurchasesScreen.tsx`. This aligns the layout with `SmartHeader` specifications, resolving the visual overlap issue where the absolutely positioned header covered the filter tabs bar.
+- Redesign the Purchases screen visual structure. Upgraded cards with rounded corners, subtle translucent borders, a dual-ring transit progress timeline step tracker, customized circular quantity controls, and a vibrant linear gradient checkout button.
 
 ## [1.27.51] - 7 july 2026
 ### Changed
