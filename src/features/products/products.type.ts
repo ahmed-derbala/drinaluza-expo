@@ -1,4 +1,4 @@
-import { LocalizedName } from '../businesses/businesses.interface'
+import { LocalizedName, ProductSpecs } from '../businesses/businesses.interface'
 
 interface RatingBreakdown {
 	1: number
@@ -89,6 +89,7 @@ export type ProductType = {
 	rating?: Rating
 	slug: string
 	qrcode?: string | { url: string }
+	specs?: ProductSpecs
 	createdAt: string
 	updatedAt: string
 }

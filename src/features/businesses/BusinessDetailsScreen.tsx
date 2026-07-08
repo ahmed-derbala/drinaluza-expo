@@ -26,6 +26,23 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 	const rating = product.rating?.average || 0
 	const ratingCount = product.rating?.count || 0
 
+	const { translate } = useUser()
+	const getCaliberLabel = (c: number) => {
+		switch (c) {
+			case 1:
+				return translate('caliber_very_small', 'Very Small')
+			case 2:
+				return translate('caliber_small', 'Small')
+			case 3:
+				return translate('caliber_medium', 'Medium')
+			case 4:
+				return translate('caliber_large', 'Large')
+			case 5:
+				return translate('caliber_very_large', 'Very Large')
+			default:
+				return translate('caliber_medium', 'Medium')
+		}
+	}
 	return (
 		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]} activeOpacity={0.8} onPress={onPress}>
 			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.productImageContainer} />
@@ -45,6 +62,24 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 					<Text style={[styles.productCurrency, { color: colors.primary }]}> TND</Text>
 					<Text style={[styles.productUnit, { color: colors.textTertiary }]}>/{product.unit?.measure || 'unit'}</Text>
 				</View>
+
+				{/* Specifications (Caliber & Origin) */}
+				{(product.specs?.caliber || product.specs?.origin?.city) && (
+					<View style={styles.specsCardRow}>
+						{product.specs?.caliber ? (
+							<View style={[styles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
+								<Ionicons name="options-outline" size={10} color={colors.primary} />
+								<Text style={[styles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(product.specs.caliber)}</Text>
+							</View>
+						) : null}
+						{product.specs?.origin?.city ? (
+							<View style={[styles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)' }]}>
+								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+								<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{product.specs.origin.city}</Text>
+							</View>
+						) : null}
+					</View>
+				)}
 				{isOutOfStock && (
 					<View style={[styles.outOfStockBadge, { backgroundColor: '#EF444415' }]}>
 						<Text style={styles.outOfStockText}>Out of Stock</Text>
@@ -600,5 +635,38 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		fontWeight: '500',
 		marginTop: 1
+	},
+	specsCardRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 6,
+		marginTop: 4,
+		alignItems: 'center'
+	},
+	caliberChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3
+	},
+	caliberChipText: {
+		fontSize: 10,
+		fontWeight: '700'
+	},
+	originChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3,
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.05)'
+	},
+	originChipText: {
+		fontSize: 10,
+		fontWeight: '600'
 	}
 })

@@ -128,6 +128,22 @@ export type BusinessProductsResponse = {
 	}
 }
 
+export interface ProductSpecs {
+	singlePieceMetrics?: {
+		length?: number
+		weight?: number
+	}
+	caliber: 1 | 2 | 3 | 4 | 5
+	origin?: {
+		street?: string
+		city?: string
+		state?: string
+		region?: string
+		postalCode?: string
+		country?: string
+	}
+}
+
 export interface Product {
 	_id: string
 	business: Business
@@ -184,6 +200,7 @@ export interface Product {
 	slug: string
 	createdAt: string
 	updatedAt: string
+	specs?: ProductSpecs
 	__v?: number
 }
 

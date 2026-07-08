@@ -1,3 +1,14 @@
+## [1.27.55] - 8 july 2026
+### Added
+- Add support for new product specifications (`SpecsSchema` containing length, weight, caliber, and origin).
+- Define the `ProductSpecs` interface in `businesses.interface.ts` and add `specs?: ProductSpecs` fields across `Product` in `businesses.interface.ts`, `Product` in `orders.interface.ts`, `ProductType` in `products.type.ts`, and `FeedItem` in `feed.interface.ts` (renaming specs `grade` to `caliber`).
+- Redesign the `ProductDetailScreen.tsx` metadata section to display product specifications (piece length, weight, a localized caliber size pill badge, and country/city origin of the seafood product).
+- Show specifications (caliber size badge and origin location chip) directly inside the product cards in `products.card.tsx`, `BusinessProductsScreen.tsx`, and `BusinessDetailsScreen.tsx`.
+- Include `specs` properties during feed items data normalization inside `feed.api.ts` to ensure cards display specs inside the feed screen.
+
+### Fixed
+- Refine state-driven focus logic in `AuthScreen.tsx` by implementing a recursive retry mechanism (`focusWithRetry`), clearing the password field on quick switch failures, adding `keyboardShouldPersistTaps="handled"` to the nested ScrollViews, and adding console logging to trace the Android focus timeline.
+
 ## [1.27.54] - 7 july 2026
 ### Changed
 - Reimplement the Purchases screen based on `SalesScreen.tsx` at `/purchases` as a single route screen using `status` query parameters (e.g. `/purchases?status=pending`).

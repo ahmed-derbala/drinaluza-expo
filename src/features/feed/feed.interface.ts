@@ -1,4 +1,4 @@
-import { LocalizedName } from '../businesses/businesses.interface'
+import { LocalizedName, ProductSpecs } from '../businesses/businesses.interface'
 
 interface RatingBreakdown {
 	1: number
@@ -163,6 +163,7 @@ export interface FeedItem {
 	location?: BusinessLocation
 	businesses?: string[]
 	rating?: Rating
+	specs?: ProductSpecs
 }
 
 export interface ProductFeedItem extends FeedItem {

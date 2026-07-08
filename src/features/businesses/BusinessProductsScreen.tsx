@@ -47,6 +47,22 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	const maxQuantity = item.unit?.max || Infinity
 	const step = item.unit?.step || 1
 	const [quantity, setQuantity] = useState(minQty)
+	const getCaliberLabel = (c: number) => {
+		switch (c) {
+			case 1:
+				return translate('caliber_very_small', 'Very Small')
+			case 2:
+				return translate('caliber_small', 'Small')
+			case 3:
+				return translate('caliber_medium', 'Medium')
+			case 4:
+				return translate('caliber_large', 'Large')
+			case 5:
+				return translate('caliber_very_large', 'Very Large')
+			default:
+				return translate('caliber_medium', 'Medium')
+		}
+	}
 
 	const increment = (e: any) => {
 		e.stopPropagation?.()
@@ -110,6 +126,24 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 					<Text style={[cardStyles.nameAlt, { color: colors.textTertiary }]} numberOfLines={1}>
 						{item.name.tn_latn}
 					</Text>
+				)}
+
+				{/* Specifications (Caliber & Origin) */}
+				{(item.specs?.caliber || item.specs?.origin?.city) && (
+					<View style={cardStyles.specsCardRow}>
+						{item.specs?.caliber ? (
+							<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
+								<Ionicons name="options-outline" size={10} color={colors.primary} />
+								<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber)}</Text>
+							</View>
+						) : null}
+						{item.specs?.origin?.city ? (
+							<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)' }]}>
+								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+								<Text style={[cardStyles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+							</View>
+						) : null}
+					</View>
 				)}
 
 				{/* Price row */}
@@ -219,6 +253,39 @@ const cardStyles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		...Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any })
+	},
+	specsCardRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 6,
+		marginTop: 4,
+		alignItems: 'center'
+	},
+	caliberChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3
+	},
+	caliberChipText: {
+		fontSize: 10,
+		fontWeight: '700'
+	},
+	originChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3,
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.05)'
+	},
+	originChipText: {
+		fontSize: 10,
+		fontWeight: '600'
 	}
 })
 

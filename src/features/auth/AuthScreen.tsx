@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions, InteractionManager, Keyboard } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -55,6 +55,35 @@ export default function AuthScreen() {
 	// Refs for focus management
 	const passwordInputRef = useRef<TextInput>(null)
 	const scrollViewRef = useRef<ScrollView>(null)
+	const [shouldFocusPassword, setShouldFocusPassword] = useState(false)
+
+	useEffect(() => {
+		if (shouldFocusPassword && !loading) {
+			setShouldFocusPassword(false)
+			console.log('[AuthScreen] shouldFocusPassword is true, attempting focus. Slug:', slug)
+
+			const attemptFocus = () => {
+				if (!passwordInputRef.current) return
+
+				if (Platform.OS === 'android') {
+					Keyboard.dismiss()
+					passwordInputRef.current.blur()
+				}
+
+				setTimeout(
+					() => {
+						passwordInputRef.current?.focus()
+						console.log('[AuthScreen] Focus triggered.')
+					},
+					Platform.OS === 'android' ? 300 : 50
+				)
+			}
+
+			InteractionManager.runAfterInteractions(() => {
+				setTimeout(attemptFocus, 100)
+			})
+		}
+	}, [shouldFocusPassword, loading])
 
 	// Load saved authentications from local storage
 	const loadSavedAccounts = async () => {
@@ -206,7 +235,7 @@ export default function AuthScreen() {
 					message: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'),
 					color: '#EF4444'
 				})
-				passwordInputRef.current?.focus()
+				setShouldFocusPassword(true)
 			} else {
 				// Any other errors
 				const errMsg = err.response?.data?.message || err.message || 'Unable to connect to server.'
@@ -235,7 +264,7 @@ export default function AuthScreen() {
 				message: translate('need_password_notice', 'Please enter your password to switch to this account.'),
 				color: colors.primary
 			})
-			passwordInputRef.current?.focus()
+			setShouldFocusPassword(true)
 		} else {
 			// Instant switch via stored token
 			try {
@@ -253,6 +282,7 @@ export default function AuthScreen() {
 					throw new Error('Quick sign in token failed')
 				}
 			} catch (err) {
+				console.log('[AuthScreen] handleSelectSavedAccount catch block hit! User selected:', account.slug)
 				log({
 					level: 'error',
 					label: 'AuthScreen',
@@ -266,8 +296,9 @@ export default function AuthScreen() {
 				})
 				// Require password instead
 				setSlug(account.slug)
+				setPassword('')
 				setNeedPassword(true)
-				passwordInputRef.current?.focus()
+				setShouldFocusPassword(true)
 			} finally {
 				setLoading(false)
 			}
@@ -362,7 +393,7 @@ export default function AuthScreen() {
 		<View style={styles.outerContainer}>
 			<SmartHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/(home)/feed" loading={loading} />
 
-			<KeyboardAvoidingWrapper scrollable scrollViewRef={scrollViewRef} style={styles.flex} contentContainerStyle={styles.scrollContent}>
+			<KeyboardAvoidingWrapper scrollable scrollViewRef={scrollViewRef} style={styles.flex} contentContainerStyle={styles.scrollContent} scrollViewProps={{ keyboardShouldPersistTaps: 'always' }}>
 				<View style={[styles.scrollContentInner, { paddingBottom: 40 + insets.bottom }]}>
 					{/* Glassmorphic Auth Panel Container */}
 					<View style={styles.authCard}>
@@ -371,7 +402,7 @@ export default function AuthScreen() {
 
 						{/* Languages Flag Selector */}
 						<View style={styles.sectionContainer}>
-							<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.languagesScroll}>
+							<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.languagesScroll} keyboardShouldPersistTaps="handled">
 								{LANGUAGES_LIST.map((lang) => {
 									const isSelected = appLang === lang.code
 									return (
@@ -395,7 +426,7 @@ export default function AuthScreen() {
 							<View style={[styles.sectionContainer, styles.accountsSection]}>
 								<Text style={styles.sectionLabel}>{translate('saved_accounts', 'SAVED ACCOUNTS')}</Text>
 								<View style={styles.accountsScrollContainer}>
-									<ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true} contentContainerStyle={styles.accountsVerticalList}>
+									<ScrollView nestedScrollEnabled showsVerticalScrollIndicator={true} contentContainerStyle={styles.accountsVerticalList} keyboardShouldPersistTaps="always">
 										{savedAccounts.map((account) => (
 											<View key={account.slug} style={styles.accountItem}>
 												<TouchableOpacity style={styles.accountPressable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.7}>
@@ -441,15 +472,7 @@ export default function AuthScreen() {
 									autoCapitalize="none"
 									autoCorrect={false}
 									maxLength={25}
-									editable={!loading}
-									onFocus={() => {
-										setTimeout(
-											() => {
-												scrollViewRef.current?.scrollToEnd({ animated: true })
-											},
-											Platform.OS === 'android' ? 250 : 100
-										)
-									}}
+									readOnly={loading}
 								/>
 							</View>
 							{slugError && <Text style={styles.errorText}>{slugError}</Text>}
@@ -476,15 +499,7 @@ export default function AuthScreen() {
 									autoCapitalize="none"
 									autoCorrect={false}
 									maxLength={20}
-									editable={!loading}
-									onFocus={() => {
-										setTimeout(
-											() => {
-												scrollViewRef.current?.scrollToEnd({ animated: true })
-											},
-											Platform.OS === 'android' ? 250 : 100
-										)
-									}}
+									readOnly={loading}
 								/>
 								<TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
 									<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textSecondary} />

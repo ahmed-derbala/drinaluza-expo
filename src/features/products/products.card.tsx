@@ -18,6 +18,22 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const pathname = usePathname()
+	const getCaliberLabel = (c: number) => {
+		switch (c) {
+			case 1:
+				return translate('caliber_very_small', 'Very Small')
+			case 2:
+				return translate('caliber_small', 'Small')
+			case 3:
+				return translate('caliber_medium', 'Medium')
+			case 4:
+				return translate('caliber_large', 'Large')
+			case 5:
+				return translate('caliber_very_large', 'Very Large')
+			default:
+				return translate('caliber_medium', 'Medium')
+		}
+	}
 	const { width } = useWindowDimensions()
 
 	const minQuantity = item.unit?.min || 1
@@ -168,6 +184,24 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						))}
 						<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
 						<Text style={styles.ratingCount}>({ratingCount})</Text>
+					</View>
+				)}
+
+				{/* Specifications (Caliber & Origin) */}
+				{(item.specs?.caliber || item.specs?.origin?.city) && (
+					<View style={styles.specsCardRow}>
+						{item.specs?.caliber ? (
+							<View style={[styles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
+								<Ionicons name="options-outline" size={10} color={colors.primary} />
+								<Text style={[styles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber)}</Text>
+							</View>
+						) : null}
+						{item.specs?.origin?.city ? (
+							<View style={[styles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)' }]}>
+								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+								<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+							</View>
+						) : null}
 					</View>
 				)}
 
@@ -421,5 +455,38 @@ const styles = StyleSheet.create({
 				transition: 'transform 0.12s ease'
 			} as any
 		})
+	},
+	specsCardRow: {
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 6,
+		marginTop: 4,
+		alignItems: 'center'
+	},
+	caliberChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3
+	},
+	caliberChipText: {
+		fontSize: 10,
+		fontWeight: '700'
+	},
+	originChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3,
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.05)'
+	},
+	originChipText: {
+		fontSize: 10,
+		fontWeight: '600'
 	}
 })
