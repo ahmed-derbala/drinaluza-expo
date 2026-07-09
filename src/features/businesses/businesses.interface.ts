@@ -129,10 +129,6 @@ export type BusinessProductsResponse = {
 }
 
 export interface ProductSpecs {
-	singlePieceMetrics?: {
-		length?: number
-		weight?: number
-	}
 	caliber: 1 | 2 | 3 | 4 | 5
 	origin?: {
 		street?: string

@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
+import { getCaliberLabel } from '@/features/products/products.helpers'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import SmartImage from '@/core/SmartImageViewer'
@@ -15,6 +16,7 @@ import { translate } from '@/core/translation'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { SmartHeader } from '@/core/smart-header'
+import KeyboardAvoidingWrapper from '@/core/keyboard-avoiding-wrapper/KeyboardAvoidingWrapper'
 
 export default function CreateProductScreen() {
 	const router = useRouter()
@@ -38,9 +40,17 @@ export default function CreateProductScreen() {
 	const [unitStep, setUnitStep] = useState('1')
 
 	// Inventory
-	const [stockQuantity, setStockQuantity] = useState('')
-	const [minThreshold, setMinThreshold] = useState('5')
+	const [stockQuantity, setStockQuantity] = useState('100')
+	const [minThreshold, setMinThreshold] = useState('10')
 	const [productPhoto, setProductPhoto] = useState<string | null>(null)
+
+	// Specs state (with default values populated)
+	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
+	const [originStreet, setOriginStreet] = useState('')
+	const [originCity, setOriginCity] = useState('Ellouza')
+	const [originRegion, setOriginRegion] = useState('Sfax')
+	const [originPostalCode, setOriginPostalCode] = useState('3016')
+	const [originCountry, setOriginCountry] = useState('Tunisia')
 
 	// UI state
 	const [creating, setCreating] = useState(false)
@@ -277,7 +287,17 @@ export default function CreateProductScreen() {
 					endDate: null
 				},
 				media: productPhoto ? { thumbnail: { url: productPhoto } } : undefined,
-				photos: productPhoto ? [productPhoto] : undefined
+				photos: productPhoto ? [productPhoto] : undefined,
+				specs: {
+					caliber: caliber,
+					origin: {
+						street: originStreet.trim() || undefined,
+						city: originCity.trim() || undefined,
+						region: originRegion.trim() || undefined,
+						postalCode: originPostalCode.trim() || undefined,
+						country: originCountry.trim() || undefined
+					}
+				}
 			}
 
 			await createProduct(productData)
@@ -310,251 +330,354 @@ export default function CreateProductScreen() {
 		<View style={styles.container}>
 			<Stack.Screen options={{ title: translate('create_product', 'Create Product') }} />
 
-			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-				<SmartHeader.ScrollView style={styles.form} contentContainerStyle={styles.formContent} onScroll={onScroll} scrollEventThrottle={16} keyboardShouldPersistTaps="handled">
-					{/* GENERAL INFO CARD */}
-					<View style={styles.card}>
-						<Text style={styles.cardTitle}>{translate('general_info', 'General Info')}</Text>
+			<KeyboardAvoidingWrapper
+				style={styles.form}
+				contentContainerStyle={styles.formContent}
+				scrollViewProps={{
+					onScroll: onScroll,
+					scrollEventThrottle: 16
+				}}
+			>
+				{/* GENERAL INFO CARD */}
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>{translate('general_info', 'General Info')}</Text>
 
-						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>
-								{translate('business', 'Business')} <Text style={styles.required}>*</Text>
-							</Text>
-							<TouchableOpacity style={[styles.pickerButton, selectedBusiness && styles.pickerButtonActive]} onPress={() => setShowBusinesses(true)}>
-								<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15' }]}>
-									<Text style={{ fontSize: 18 }}>{selectedBusiness ? '🏪' : '🏢'}</Text>
-								</View>
-								<View style={{ flex: 1 }}>
-									<Text style={[styles.pickerText, selectedBusiness && { color: colors.text }]}>
-										{selectedBusiness ? selectedBusiness.name?.en || '' : translate('select_business', 'Select Business')}
-									</Text>
-								</View>
-								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-							</TouchableOpacity>
-						</View>
+					<View style={styles.fieldContainer}>
+						<Text style={styles.fieldLabel}>
+							{translate('business', 'Business')} <Text style={styles.required}>*</Text>
+						</Text>
+						<TouchableOpacity style={[styles.pickerButton, selectedBusiness && styles.pickerButtonActive]} onPress={() => setShowBusinesses(true)}>
+							<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15' }]}>
+								<Text style={{ fontSize: 18 }}>{selectedBusiness ? '🏪' : '🏢'}</Text>
+							</View>
+							<View style={{ flex: 1 }}>
+								<Text style={[styles.pickerText, selectedBusiness && { color: colors.text }]}>
+									{selectedBusiness ? selectedBusiness.name?.en || '' : translate('select_business', 'Select Business')}
+								</Text>
+							</View>
+							<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+						</TouchableOpacity>
+					</View>
 
-						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>
-								{translate('default_product', 'Default Product')} <Text style={styles.required}>*</Text>
-							</Text>
-							<TouchableOpacity style={[styles.pickerButton, selectedDefaultProduct && styles.pickerButtonActive]} onPress={() => setShowDefaultProducts(true)}>
-								<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
-									<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="product" />
-								</View>
-								<View style={{ flex: 1 }}>
-									<Text style={[styles.pickerText, selectedDefaultProduct && { color: colors.text }]}>
-										{selectedDefaultProduct ? selectedDefaultProduct.name?.en || '' : translate('select_default_product', 'Select Default Product')}
-									</Text>
-								</View>
-								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-							</TouchableOpacity>
-						</View>
+					<View style={styles.fieldContainer}>
+						<Text style={styles.fieldLabel}>
+							{translate('default_product', 'Default Product')} <Text style={styles.required}>*</Text>
+						</Text>
+						<TouchableOpacity style={[styles.pickerButton, selectedDefaultProduct && styles.pickerButtonActive]} onPress={() => setShowDefaultProducts(true)}>
+							<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
+								<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="product" />
+							</View>
+							<View style={{ flex: 1 }}>
+								<Text style={[styles.pickerText, selectedDefaultProduct && { color: colors.text }]}>
+									{selectedDefaultProduct ? selectedDefaultProduct.name?.en || '' : translate('select_default_product', 'Select Default Product')}
+								</Text>
+							</View>
+							<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+						</TouchableOpacity>
+					</View>
 
-						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>
-								{translate('product_photo', 'Product Photo')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-							</Text>
-							<View style={styles.photoUploadRow}>
-								<View style={[styles.photoPreview, { borderColor: productPhoto ? colors.primary : colors.border, backgroundColor: colors.surfaceVariant }]}>
-									{productPhoto ? (
-										<SmartImage source={productPhoto} style={styles.photoImage} resizeMode="cover" entityType="product" />
+					<View style={styles.fieldContainer}>
+						<Text style={styles.fieldLabel}>
+							{translate('product_photo', 'Product Photo')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+						</Text>
+						<View style={styles.photoUploadRow}>
+							<View style={[styles.photoPreview, { borderColor: productPhoto ? colors.primary : colors.border, backgroundColor: colors.surfaceVariant }]}>
+								{productPhoto ? (
+									<SmartImage source={productPhoto} style={styles.photoImage} resizeMode="cover" entityType="product" />
+								) : (
+									<Ionicons name="camera" size={32} color={colors.textTertiary} />
+								)}
+							</View>
+							<View style={{ flex: 1 }}>
+								<Text style={styles.photoHint}>{translate('upload_photo_hint', 'Upload a custom photo or leave empty to use the default product image.')}</Text>
+								<TouchableOpacity style={[styles.uploadBtn, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
+									{uploadingPhoto ? (
+										<ActivityIndicator size="small" color="#fff" />
 									) : (
-										<Ionicons name="camera" size={32} color={colors.textTertiary} />
+										<>
+											<Ionicons name="cloud-upload" size={18} color="#fff" />
+											<Text style={styles.uploadBtnText}>{productPhoto ? translate('change_photo', 'Change Photo') : translate('upload_photo', 'Upload Photo')}</Text>
+										</>
 									)}
-								</View>
-								<View style={{ flex: 1 }}>
-									<Text style={styles.photoHint}>{translate('upload_photo_hint', 'Upload a custom photo or leave empty to use the default product image.')}</Text>
-									<TouchableOpacity style={[styles.uploadBtn, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
-										{uploadingPhoto ? (
-											<ActivityIndicator size="small" color="#fff" />
-										) : (
-											<>
-												<Ionicons name="cloud-upload" size={18} color="#fff" />
-												<Text style={styles.uploadBtnText}>{productPhoto ? translate('change_photo', 'Change Photo') : translate('upload_photo', 'Upload Photo')}</Text>
-											</>
-										)}
-									</TouchableOpacity>
-								</View>
-							</View>
-						</View>
-					</View>
-
-					{/* PRODUCT NAMES CARD */}
-					<View style={styles.card}>
-						<Text style={styles.cardTitle}>{translate('product_names', 'Product Names')}</Text>
-
-						<LocalizedFormInput label={translate('english_name', 'English Name')} value={productNameEn} onChangeText={setProductNameEn} lang="en" placeholder="e.g., Fresh Atlantic Salmon" required />
-
-						<LocalizedFormInput
-							label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')}
-							value={productNameTnLatn}
-							onChangeText={setProductNameTnLatn}
-							lang="tn_latn"
-							placeholder="e.g., Salmon Fresh"
-						/>
-
-						<LocalizedFormInput
-							label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')}
-							value={productNameTnArab}
-							onChangeText={setProductNameTnArab}
-							lang="tn_arab"
-							placeholder="مثلا: سالمون طازج"
-						/>
-					</View>
-
-					{/* PRICING & UNITS CARD */}
-					<View style={styles.card}>
-						<Text style={styles.cardTitle}>{translate('pricing_units', 'Pricing & Units')}</Text>
-
-						<View style={styles.row}>
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>
-									{translate('price_tnd', 'Price (TND)')} <Text style={styles.required}>*</Text>
-								</Text>
-								<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
-									<Text style={styles.prefix}>TND</Text>
-									<TextInput
-										ref={priceInputRef}
-										style={[styles.textInput, { color: colors.text }]}
-										value={priceTND}
-										onChangeText={setPriceTND}
-										placeholder="0.00"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="decimal-pad"
-									/>
-								</View>
-							</View>
-							<View style={{ width: 12 }} />
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>
-									{translate('unit', 'Unit')} <Text style={styles.required}>*</Text>
-								</Text>
-								<TouchableOpacity style={[styles.inputBox, { borderColor: unit ? colors.primary : colors.borderLight }]} onPress={() => setShowUnitPicker(true)}>
-									<Text style={{ color: colors.text, flex: 1, fontSize: 16 }}>{unit || translate('select_unit', 'Select unit')}</Text>
-									<Ionicons name="caret-down" size={16} color={colors.textSecondary} />
 								</TouchableOpacity>
 							</View>
 						</View>
+					</View>
+				</View>
 
-						<View style={styles.row}>
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>
-									{translate('min_qty', 'Min Qty')} <Text style={styles.required}>*</Text>
-								</Text>
-								<View style={[styles.inputBox, { borderColor: minUnit ? colors.primary : colors.borderLight }]}>
-									<TextInput
-										style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
-										value={minUnit}
-										onChangeText={setMinUnit}
-										placeholder="1"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="decimal-pad"
-									/>
-								</View>
-							</View>
-							<View style={{ width: 12 }} />
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>
-									{translate('max_qty', 'Max Qty')} <Text style={styles.required}>*</Text>
-								</Text>
-								<View style={[styles.inputBox, { borderColor: maxUnit ? colors.primary : colors.borderLight }]}>
-									<TextInput
-										style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
-										value={maxUnit}
-										onChangeText={setMaxUnit}
-										placeholder="10"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="decimal-pad"
-									/>
-								</View>
-							</View>
-							<View style={{ width: 12 }} />
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>
-									{translate('step', 'Step')} <Text style={styles.required}>*</Text>
-								</Text>
-								<View style={[styles.inputBox, { borderColor: unitStep ? colors.primary : colors.borderLight }]}>
-									<TextInput
-										style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
-										value={unitStep}
-										onChangeText={setUnitStep}
-										placeholder="1"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="decimal-pad"
-									/>
-								</View>
+				{/* PRODUCT NAMES CARD */}
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>{translate('product_names', 'Product Names')}</Text>
+
+					<LocalizedFormInput label={translate('english_name', 'English Name')} value={productNameEn} onChangeText={setProductNameEn} lang="en" placeholder="e.g., Fresh Atlantic Salmon" required />
+
+					<LocalizedFormInput
+						label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')}
+						value={productNameTnLatn}
+						onChangeText={setProductNameTnLatn}
+						lang="tn_latn"
+						placeholder="e.g., Salmon Fresh"
+					/>
+
+					<LocalizedFormInput
+						label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')}
+						value={productNameTnArab}
+						onChangeText={setProductNameTnArab}
+						lang="tn_arab"
+						placeholder="مثلا: سالمون طازج"
+					/>
+				</View>
+
+				{/* PRICING & UNITS CARD */}
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>{translate('pricing_units', 'Pricing & Units')}</Text>
+
+					<View style={styles.row}>
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>
+								{translate('price_tnd', 'Price (TND)')} <Text style={styles.required}>*</Text>
+							</Text>
+							<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
+								<Text style={styles.prefix}>TND</Text>
+								<TextInput
+									ref={priceInputRef}
+									style={[styles.textInput, { color: colors.text }]}
+									value={priceTND}
+									onChangeText={setPriceTND}
+									placeholder="0.00"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="decimal-pad"
+								/>
 							</View>
 						</View>
-						<Text style={styles.infoHint}>
-							{translate('price_per', 'Price per')} {unit || translate('unit', 'unit')}, {translate('range', 'range')}: {minUnit || '0'} - {maxUnit || '0'} {unit || translate('unit', 'unit')}
-						</Text>
+						<View style={{ width: 12 }} />
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>
+								{translate('unit', 'Unit')} <Text style={styles.required}>*</Text>
+							</Text>
+							<TouchableOpacity style={[styles.inputBox, { borderColor: unit ? colors.primary : colors.borderLight }]} onPress={() => setShowUnitPicker(true)}>
+								<Text style={{ color: colors.text, flex: 1, fontSize: 16 }}>{unit || translate('select_unit', 'Select unit')}</Text>
+								<Ionicons name="caret-down" size={16} color={colors.textSecondary} />
+							</TouchableOpacity>
+						</View>
 					</View>
 
-					{/* INVENTORY CARD */}
-					<View style={styles.card}>
-						<Text style={styles.cardTitle}>
-							{translate('inventory', 'Inventory')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-						</Text>
-
-						<View style={styles.row}>
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
-								<View style={[styles.inputBox, { borderColor: stockQuantity ? colors.primary : colors.borderLight }]}>
-									<Ionicons name="cube" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-									<TextInput
-										style={[styles.textInput, { color: colors.text }]}
-										value={stockQuantity}
-										onChangeText={setStockQuantity}
-										placeholder="0"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="number-pad"
-									/>
-								</View>
+					<View style={styles.row}>
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>
+								{translate('min_qty', 'Min Qty')} <Text style={styles.required}>*</Text>
+							</Text>
+							<View style={[styles.inputBox, { borderColor: minUnit ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
+									value={minUnit}
+									onChangeText={setMinUnit}
+									placeholder="1"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="decimal-pad"
+								/>
 							</View>
-							<View style={{ width: 16 }} />
-							<View style={styles.flexItem}>
-								<Text style={styles.fieldLabel}>{translate('alert_threshold', 'Alert Threshold')}</Text>
-								<View style={[styles.inputBox, { borderColor: colors.warning || '#F59E0B' }]}>
-									<Ionicons name="warning" size={20} color={colors.warning || '#F59E0B'} style={{ marginRight: 8 }} />
-									<TextInput
-										style={[styles.textInput, { color: colors.text }]}
-										value={minThreshold}
-										onChangeText={setMinThreshold}
-										placeholder="5"
-										placeholderTextColor={colors.textTertiary}
-										keyboardType="number-pad"
-									/>
-								</View>
+						</View>
+						<View style={{ width: 12 }} />
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>
+								{translate('max_qty', 'Max Qty')} <Text style={styles.required}>*</Text>
+							</Text>
+							<View style={[styles.inputBox, { borderColor: maxUnit ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
+									value={maxUnit}
+									onChangeText={setMaxUnit}
+									placeholder="10"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="decimal-pad"
+								/>
+							</View>
+						</View>
+						<View style={{ width: 12 }} />
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>
+								{translate('step', 'Step')} <Text style={styles.required}>*</Text>
+							</Text>
+							<View style={[styles.inputBox, { borderColor: unitStep ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
+									value={unitStep}
+									onChangeText={setUnitStep}
+									placeholder="1"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="decimal-pad"
+								/>
 							</View>
 						</View>
 					</View>
-					{/* Footer Button */}
-					<View style={styles.footer}>
-						<TouchableOpacity
-							style={[
-								styles.submitBtn,
-								{
-									backgroundColor: isFormValid ? colors.success || '#10B981' : 'transparent',
-									borderColor: isFormValid ? colors.success || '#10B981' : colors.borderLight,
-									borderWidth: 2,
-									opacity: isFormValid && !creating ? 1 : 0.6
-								}
-							]}
-							onPress={handleCreateProduct}
-							disabled={!isFormValid || creating}
-						>
-							{creating ? (
-								<ActivityIndicator color="#fff" size="small" />
-							) : (
-								<>
-									<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
-									<Ionicons name="checkmark-done" size={22} color="#fff" />
-								</>
-							)}
-						</TouchableOpacity>
+					<Text style={styles.infoHint}>
+						{translate('price_per', 'Price per')} {unit || translate('unit', 'unit')}, {translate('range', 'range')}: {minUnit || '0'} - {maxUnit || '0'} {unit || translate('unit', 'unit')}
+					</Text>
+				</View>
+
+				{/* INVENTORY CARD */}
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>
+						{translate('inventory', 'Inventory')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+					</Text>
+
+					<View style={styles.row}>
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
+							<View style={[styles.inputBox, { borderColor: stockQuantity ? colors.primary : colors.borderLight }]}>
+								<Ionicons name="cube" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={stockQuantity}
+									onChangeText={setStockQuantity}
+									placeholder="100"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="number-pad"
+								/>
+							</View>
+						</View>
+						<View style={{ width: 16 }} />
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('alert_threshold', 'Alert Threshold')}</Text>
+							<View style={[styles.inputBox, { borderColor: colors.warning || '#F59E0B' }]}>
+								<Ionicons name="warning" size={20} color={colors.warning || '#F59E0B'} style={{ marginRight: 8 }} />
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={minThreshold}
+									onChangeText={setMinThreshold}
+									placeholder="10"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="number-pad"
+								/>
+							</View>
+						</View>
 					</View>
-				</SmartHeader.ScrollView>
-			</KeyboardAvoidingView>
+				</View>
+
+				{/* PRODUCT SPECIFICATIONS CARD */}
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>
+						{translate('product_specs', 'Product Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+					</Text>
+
+					{/* Caliber Selection */}
+					<View style={styles.fieldContainer}>
+						<Text style={styles.fieldLabel}>
+							{translate('caliber', 'Caliber')} <Text style={styles.required}>*</Text>
+						</Text>
+						<View style={styles.caliberContainer}>
+							{([1, 2, 3, 4, 5] as const).map((val) => (
+								<TouchableOpacity key={val} style={[styles.caliberButton, caliber === val && { backgroundColor: colors.primary, borderColor: colors.primary }]} onPress={() => setCaliber(val)}>
+									<Text numberOfLines={1} adjustsFontSizeToFit style={[styles.caliberButtonText, caliber === val && { color: '#ffffff' }]}>
+										{getCaliberLabel(val)}
+									</Text>
+								</TouchableOpacity>
+							))}
+						</View>
+					</View>
+
+					{/* Origin Address Section */}
+					<Text style={[styles.fieldLabel, { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 8, marginBottom: 12 }]}>{translate('origin_address', 'Origin Address')}</Text>
+
+					<View style={styles.row}>
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('origin_street', 'Street')}</Text>
+							<View style={[styles.inputBox, { borderColor: originStreet ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={originStreet}
+									onChangeText={setOriginStreet}
+									placeholder={translate('street_placeholder', 'e.g., Rue de la Paix')}
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+						</View>
+					</View>
+
+					<View style={styles.row}>
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('origin_city', 'City')}</Text>
+							<View style={[styles.inputBox, { borderColor: originCity ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={originCity}
+									onChangeText={setOriginCity}
+									placeholder={translate('city_placeholder', 'e.g., Ellouza')}
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+						</View>
+						<View style={{ width: 12 }} />
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('origin_region', 'Region')}</Text>
+							<View style={[styles.inputBox, { borderColor: originRegion ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={originRegion}
+									onChangeText={setOriginRegion}
+									placeholder={translate('region_placeholder', 'e.g., Sfax')}
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+						</View>
+					</View>
+
+					<View style={styles.row}>
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('origin_postal_code', 'Postal Code')}</Text>
+							<View style={[styles.inputBox, { borderColor: originPostalCode ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={originPostalCode}
+									onChangeText={setOriginPostalCode}
+									placeholder="e.g., 3016"
+									placeholderTextColor={colors.textTertiary}
+									keyboardType="numeric"
+								/>
+							</View>
+						</View>
+						<View style={{ width: 12 }} />
+						<View style={styles.flexItem}>
+							<Text style={styles.fieldLabel}>{translate('origin_country', 'Country')}</Text>
+							<View style={[styles.inputBox, { borderColor: originCountry ? colors.primary : colors.borderLight }]}>
+								<TextInput
+									style={[styles.textInput, { color: colors.text }]}
+									value={originCountry}
+									onChangeText={setOriginCountry}
+									placeholder={translate('country_placeholder', 'e.g., Tunisia')}
+									placeholderTextColor={colors.textTertiary}
+								/>
+							</View>
+						</View>
+					</View>
+				</View>
+				{/* Footer Button */}
+				<View style={styles.footer}>
+					<TouchableOpacity
+						style={[
+							styles.submitBtn,
+							{
+								backgroundColor: isFormValid ? colors.success || '#10B981' : 'transparent',
+								borderColor: isFormValid ? colors.success || '#10B981' : colors.borderLight,
+								borderWidth: 2,
+								opacity: isFormValid && !creating ? 1 : 0.6
+							}
+						]}
+						onPress={handleCreateProduct}
+						disabled={!isFormValid || creating}
+					>
+						{creating ? (
+							<ActivityIndicator color="#fff" size="small" />
+						) : (
+							<>
+								<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
+								<Ionicons name="checkmark-done" size={22} color="#fff" />
+							</>
+						)}
+					</TouchableOpacity>
+				</View>
+			</KeyboardAvoidingWrapper>
 
 			{/* Businesses Modal */}
 			<SearchableModalPicker
@@ -937,5 +1060,46 @@ const createStyles = (colors: any) =>
 			color: '#fff',
 			fontWeight: '700',
 			fontSize: 14
+		},
+		suffix: {
+			fontSize: 14,
+			fontWeight: '700',
+			color: colors.textSecondary,
+			marginLeft: 8
+		},
+		caliberContainer: {
+			flexDirection: 'row',
+			justifyContent: 'space-between',
+			gap: 8,
+			marginTop: 8,
+			marginBottom: 8
+		},
+		caliberButton: {
+			flex: 1,
+			height: 44,
+			borderRadius: 10,
+			borderWidth: 1.5,
+			borderColor: colors.border,
+			backgroundColor: colors.background,
+			justifyContent: 'center',
+			alignItems: 'center',
+			...Platform.select({
+				web: {
+					transition: 'all 0.2s ease'
+				} as any,
+				default: {}
+			})
+		},
+		caliberButtonText: {
+			fontSize: 12,
+			fontWeight: '700',
+			color: colors.textSecondary
+		},
+		caliberHelpText: {
+			fontSize: 12,
+			fontWeight: '600',
+			color: colors.primary,
+			marginTop: 4,
+			marginBottom: 12
 		}
 	})

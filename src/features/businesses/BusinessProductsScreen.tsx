@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Product } from '@/features/businesses/businesses.interface'
+import { getCaliberLabel } from '@/features/products/products.helpers'
 import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
@@ -47,22 +48,6 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	const maxQuantity = item.unit?.max || Infinity
 	const step = item.unit?.step || 1
 	const [quantity, setQuantity] = useState(minQty)
-	const getCaliberLabel = (c: number) => {
-		switch (c) {
-			case 1:
-				return translate('caliber_very_small', 'Very Small')
-			case 2:
-				return translate('caliber_small', 'Small')
-			case 3:
-				return translate('caliber_medium', 'Medium')
-			case 4:
-				return translate('caliber_large', 'Large')
-			case 5:
-				return translate('caliber_very_large', 'Very Large')
-			default:
-				return translate('caliber_medium', 'Medium')
-		}
-	}
 
 	const increment = (e: any) => {
 		e.stopPropagation?.()

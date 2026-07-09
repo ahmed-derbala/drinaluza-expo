@@ -9,6 +9,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug } from '@/features/products/products.api'
 import { ProductType } from '@/features/products/products.type'
+import { getCaliberLabel } from '@/features/products/products.helpers'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
@@ -42,22 +43,6 @@ export default function ProductDetailScreen() {
 	const [showQRCode, setShowQRCode] = useState(false)
 
 	const displayTitle = product ? localize(product.name) : translate('loading', 'Loading...')
-	const getCaliberLabel = (c: number) => {
-		switch (c) {
-			case 1:
-				return translate('caliber_very_small', 'Very Small')
-			case 2:
-				return translate('caliber_small', 'Small')
-			case 3:
-				return translate('caliber_medium', 'Medium')
-			case 4:
-				return translate('caliber_large', 'Large')
-			case 5:
-				return translate('caliber_very_large', 'Very Large')
-			default:
-				return translate('caliber_medium', 'Medium')
-		}
-	}
 	const isLandscape = width > height
 	const isLargeScreen = width > 800 && height > 600
 	const imageHeight = isLandscape ? (isLargeScreen ? 380 : 200) : 380
@@ -471,24 +456,6 @@ export default function ProductDetailScreen() {
 						</View>
 					</View>
 
-					{/* Metrics */}
-					{product.specs.singlePieceMetrics && (
-						<View style={styles.specsRow}>
-							{product.specs.singlePieceMetrics.weight !== undefined && (
-								<View style={styles.specMetricItem}>
-									<Text style={[styles.specMetricLabel, { color: colors.textSecondary }]}>{translate('weight', 'Weight')}</Text>
-									<Text style={[styles.specMetricValue, { color: colors.text }]}>{product.specs.singlePieceMetrics.weight} kg</Text>
-								</View>
-							)}
-							{product.specs.singlePieceMetrics.length !== undefined && (
-								<View style={styles.specMetricItem}>
-									<Text style={[styles.specMetricLabel, { color: colors.textSecondary }]}>{translate('length', 'Length')}</Text>
-									<Text style={[styles.specMetricValue, { color: colors.text }]}>{product.specs.singlePieceMetrics.length} m</Text>
-								</View>
-							)}
-						</View>
-					)}
-
 					{/* Caliber */}
 					<View style={styles.specDetailRow}>
 						<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber_size', 'Caliber / Size')}</Text>
@@ -502,7 +469,7 @@ export default function ProductDetailScreen() {
 						<View style={[styles.specDetailRow, { borderBottomWidth: 0 }]}>
 							<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('origin', 'Origin')}</Text>
 							<Text style={[styles.originValue, { color: colors.text }]} numberOfLines={2}>
-								{[product.specs.origin.street, product.specs.origin.city, product.specs.origin.state, product.specs.origin.country].filter(Boolean).join(', ')}
+								{[product.specs.origin.street, product.specs.origin.city, product.specs.origin.region, product.specs.origin.country].filter(Boolean).join(', ')}
 							</Text>
 						</View>
 					)}

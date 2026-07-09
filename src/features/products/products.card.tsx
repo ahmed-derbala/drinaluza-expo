@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
+import { getCaliberLabel } from '@/features/products/products.helpers'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
@@ -18,22 +19,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const { colors } = useTheme()
 	const router = useRouter()
 	const pathname = usePathname()
-	const getCaliberLabel = (c: number) => {
-		switch (c) {
-			case 1:
-				return translate('caliber_very_small', 'Very Small')
-			case 2:
-				return translate('caliber_small', 'Small')
-			case 3:
-				return translate('caliber_medium', 'Medium')
-			case 4:
-				return translate('caliber_large', 'Large')
-			case 5:
-				return translate('caliber_very_large', 'Very Large')
-			default:
-				return translate('caliber_medium', 'Medium')
-		}
-	}
 	const { width } = useWindowDimensions()
 
 	const minQuantity = item.unit?.min || 1

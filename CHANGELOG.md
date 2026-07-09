@@ -1,10 +1,16 @@
-## [1.27.55] - 8 july 2026
+## [1.27.55] - 9 july 2026
 ### Added
-- Add support for new product specifications (`SpecsSchema` containing length, weight, caliber, and origin).
-- Define the `ProductSpecs` interface in `businesses.interface.ts` and add `specs?: ProductSpecs` fields across `Product` in `businesses.interface.ts`, `Product` in `orders.interface.ts`, `ProductType` in `products.type.ts`, and `FeedItem` in `feed.interface.ts` (renaming specs `grade` to `caliber`).
-- Redesign the `ProductDetailScreen.tsx` metadata section to display product specifications (piece length, weight, a localized caliber size pill badge, and country/city origin of the seafood product).
+- Add product specifications (caliber size descriptors, and origin address) to the product creation screen with pre-populated backend-aligned defaults ('Ellouza' city, 'Sfax' region, '3016' postal code, 'Tunisia' country), default inventory values (stock quantity 100, alert threshold 10), and validation guards.
+- Wrap the product creation form inside `KeyboardAvoidingWrapper` to improve cross-platform keyboard handling on mobile viewports.
+- Extract `getCaliberLabel` helper to a shared module `products.helpers.ts` to enforce DRY principles, updating caliber labels across the feed screen, products list screen, business details screen, and product detail screen to use the values 'Tiny', 'Small', 'Medium', 'Large', and 'Huge'.
+- Add support for new product specifications (`SpecsSchema` containing caliber and origin).
+- Define the `ProductSpecs` interface in `businesses.interface.ts` and add `specs?: ProductSpecs` fields across `Product` in `businesses.interface.ts`, `Product` in `orders.interface.ts`, `ProductType` in `products.type.ts`, and `FeedItem` in `feed.interface.ts`.
+- Redesign the `ProductDetailScreen.tsx` metadata section to display product specifications (a localized caliber size pill badge, and country/city origin of the seafood product).
 - Show specifications (caliber size badge and origin location chip) directly inside the product cards in `products.card.tsx`, `BusinessProductsScreen.tsx`, and `BusinessDetailsScreen.tsx`.
 - Include `specs` properties during feed items data normalization inside `feed.api.ts` to ensure cards display specs inside the feed screen.
+
+### Removed
+- Remove `singlePieceMetrics` (piece length and weight) from product specs interface, creation form, payload mapping, and details page visualization.
 
 ### Fixed
 - Refine state-driven focus logic in `AuthScreen.tsx` by implementing a recursive retry mechanism (`focusWithRetry`), clearing the password field on quick switch failures, adding `keyboardShouldPersistTaps="handled"` to the nested ScrollViews, and adding console logging to trace the Android focus timeline.

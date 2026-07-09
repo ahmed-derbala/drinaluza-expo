@@ -9,6 +9,7 @@ import QRCodeModal from '@/features/common/QRCodeModal'
 import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
+import { getCaliberLabel } from '@/features/products/products.helpers'
 import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
@@ -27,22 +28,6 @@ const ProductCard = ({ product, colors, localize, onPress }: { product: ProductT
 	const ratingCount = product.rating?.count || 0
 
 	const { translate } = useUser()
-	const getCaliberLabel = (c: number) => {
-		switch (c) {
-			case 1:
-				return translate('caliber_very_small', 'Very Small')
-			case 2:
-				return translate('caliber_small', 'Small')
-			case 3:
-				return translate('caliber_medium', 'Medium')
-			case 4:
-				return translate('caliber_large', 'Large')
-			case 5:
-				return translate('caliber_very_large', 'Very Large')
-			default:
-				return translate('caliber_medium', 'Medium')
-		}
-	}
 	return (
 		<TouchableOpacity style={[styles.productCard, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]} activeOpacity={0.8} onPress={onPress}>
 			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" containerStyle={styles.productImageContainer} />
