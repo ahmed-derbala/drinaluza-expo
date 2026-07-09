@@ -1,6 +1,6 @@
 import { getApiClient } from '../../core/api'
 import { LocalizedName, ProductSpecs } from '../businesses/businesses.interface'
-import { ProductType } from './products.type'
+import { ProductType, FileRef } from './products.type'
 
 export interface CreateProductRequest {
 	business: {
@@ -38,8 +38,8 @@ export interface CreateProductRequest {
 		thumbnail?: {
 			url: string
 		}
+		gallery?: FileRef[]
 	}
-	photos?: string[]
 	specs?: ProductSpecs
 }
 

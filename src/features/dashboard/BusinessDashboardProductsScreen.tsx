@@ -182,7 +182,7 @@ export default function BusinessDashboardProductsScreen() {
 		const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
 		const stockTextLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 
-		const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos[0])
+		const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 		// @ts-ignore
 		const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 		const isUpdating = updatingSlugs[item.slug] || false

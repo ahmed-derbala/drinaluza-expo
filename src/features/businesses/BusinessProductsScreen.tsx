@@ -35,7 +35,7 @@ type ProductCardProps = {
 
 function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard, businessSlug }: ProductCardProps) {
 	const router = useRouter()
-	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || (item.photos && item.photos[0])
+	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 	const stockQty = item.stock?.quantity || 0
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0

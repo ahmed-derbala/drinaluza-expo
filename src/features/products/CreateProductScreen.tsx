@@ -7,6 +7,7 @@ import { useTheme, createShadow } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
 import { getCaliberLabel } from '@/features/products/products.helpers'
+import { FileRef } from '@/features/products/products.type'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import SmartImage from '@/core/SmartImageViewer'
@@ -42,7 +43,7 @@ export default function CreateProductScreen() {
 	// Inventory
 	const [stockQuantity, setStockQuantity] = useState('100')
 	const [minThreshold, setMinThreshold] = useState('10')
-	const [productPhoto, setProductPhoto] = useState<string | null>(null)
+	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
 
 	// Specs state (with default values populated)
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
@@ -205,34 +206,63 @@ export default function CreateProductScreen() {
 				return
 			}
 
+			const remainingSlots = 5 - uploadedGallery.length
+			if (remainingSlots <= 0) {
+				showAlert(translate('limit_reached', 'Limit Reached'), translate('err_max_photos', 'You can upload up to 5 photos.'))
+				return
+			}
+
 			const result = await DocumentPicker.getDocumentAsync({
 				type: ['image/*'],
-				copyToCacheDirectory: true
+				copyToCacheDirectory: true,
+				multiple: true
 			})
 
 			if (result.canceled) return
 
-			const file = result.assets[0]
-			if (!file) return
+			const assets = result.assets || []
+			if (assets.length === 0) return
+
+			let filesToUpload = assets.slice(0, remainingSlots)
+			if (assets.length > remainingSlots) {
+				showAlert(translate('limit_notice', 'Limit Notice'), translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)))
+			}
 
 			setUploadingPhoto(true)
 
-			const uploadResult = await uploadFile({
-				uri: file.uri,
-				name: file.name,
-				type: file.mimeType || 'image/jpeg',
-				fileType: 'image',
-				fileObj: file
-			})
+			const uploadedFiles: FileRef[] = []
 
-			if (uploadResult.success && uploadResult.file?.url) {
-				setProductPhoto(uploadResult.file.url)
-				showAlert(translate('success', 'Success'), translate('photo_uploaded', 'Photo uploaded successfully!'))
-			} else if (uploadResult.success && uploadResult.fileUrl) {
-				setProductPhoto(uploadResult.fileUrl)
-				showAlert(translate('success', 'Success'), translate('photo_uploaded', 'Photo uploaded successfully!'))
-			} else {
-				showAlert(translate('error', 'Error'), uploadResult.error || translate('upload_failed', 'Failed to upload photo'))
+			for (const file of filesToUpload) {
+				const uploadResult = await uploadFile({
+					uri: file.uri,
+					name: file.name,
+					type: file.mimeType || 'image/jpeg',
+					fileType: 'image',
+					fileObj: file
+				})
+
+				if (uploadResult.success && (uploadResult.file || uploadResult.fileUrl)) {
+					const fileData = uploadResult.file
+					const newFile: FileRef = {
+						_id: uploadResult.fileId || fileData?._id || '',
+						name: fileData?.name || file.name,
+						extension: fileData?.extension || file.name.substring(file.name.lastIndexOf('.')),
+						url: uploadResult.fileUrl || fileData?.url || '',
+						encoding: fileData?.encoding,
+						mimetype: fileData?.mimetype || file.mimeType || 'image/jpeg',
+						size: fileData?.size || file.size,
+						updatedAt: fileData?.updatedAt || new Date().toISOString(),
+						createdAt: fileData?.createdAt || new Date().toISOString()
+					}
+					uploadedFiles.push(newFile)
+				} else {
+					showAlert(translate('error', 'Error'), (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`)
+				}
+			}
+
+			if (uploadedFiles.length > 0) {
+				setUploadedGallery((prev) => [...prev, ...uploadedFiles])
+				showAlert(translate('success', 'Success'), translate('photo_uploaded', 'Photos uploaded successfully!'))
 			}
 		} catch (error: any) {
 			console.error('Error uploading photo:', error)
@@ -286,8 +316,10 @@ export default function CreateProductScreen() {
 					startDate: new Date().toISOString(),
 					endDate: null
 				},
-				media: productPhoto ? { thumbnail: { url: productPhoto } } : undefined,
-				photos: productPhoto ? [productPhoto] : undefined,
+				media: {
+					thumbnail: uploadedGallery.length > 0 ? { url: uploadedGallery[0].url } : undefined,
+					gallery: uploadedGallery.length > 0 ? uploadedGallery : undefined
+				},
 				specs: {
 					caliber: caliber,
 					origin: {
@@ -378,29 +410,32 @@ export default function CreateProductScreen() {
 
 					<View style={styles.fieldContainer}>
 						<Text style={styles.fieldLabel}>
-							{translate('product_photo', 'Product Photo')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+							{translate('product_gallery', 'Product Gallery')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+							<Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> ({uploadedGallery.length}/5)</Text>
 						</Text>
-						<View style={styles.photoUploadRow}>
-							<View style={[styles.photoPreview, { borderColor: productPhoto ? colors.primary : colors.border, backgroundColor: colors.surfaceVariant }]}>
-								{productPhoto ? (
-									<SmartImage source={productPhoto} style={styles.photoImage} resizeMode="cover" entityType="product" />
-								) : (
-									<Ionicons name="camera" size={32} color={colors.textTertiary} />
+						<View style={styles.galleryWrapper}>
+							<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
+								{uploadedGallery.map((item, idx) => (
+									<View key={item._id || idx} style={styles.galleryItem}>
+										<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
+										<TouchableOpacity style={styles.removeBadge} onPress={() => setUploadedGallery((prev) => prev.filter((f) => f._id !== item._id))}>
+											<Ionicons name="close" size={14} color="#ffffff" />
+										</TouchableOpacity>
+									</View>
+								))}
+								{uploadedGallery.length < 5 && (
+									<TouchableOpacity style={styles.addPhotoBtn} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
+										{uploadingPhoto ? (
+											<ActivityIndicator size="small" color={colors.primary} />
+										) : (
+											<>
+												<Ionicons name="camera-outline" size={24} color={colors.primary} />
+												<Text style={styles.addPhotoText}>{translate('add_photo', 'Add Photo')}</Text>
+											</>
+										)}
+									</TouchableOpacity>
 								)}
-							</View>
-							<View style={{ flex: 1 }}>
-								<Text style={styles.photoHint}>{translate('upload_photo_hint', 'Upload a custom photo or leave empty to use the default product image.')}</Text>
-								<TouchableOpacity style={[styles.uploadBtn, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
-									{uploadingPhoto ? (
-										<ActivityIndicator size="small" color="#fff" />
-									) : (
-										<>
-											<Ionicons name="cloud-upload" size={18} color="#fff" />
-											<Text style={styles.uploadBtnText}>{productPhoto ? translate('change_photo', 'Change Photo') : translate('upload_photo', 'Upload Photo')}</Text>
-										</>
-									)}
-								</TouchableOpacity>
-							</View>
+							</ScrollView>
 						</View>
 					</View>
 				</View>
@@ -1101,5 +1136,56 @@ const createStyles = (colors: any) =>
 			color: colors.primary,
 			marginTop: 4,
 			marginBottom: 12
+		},
+		galleryWrapper: {
+			marginTop: 4,
+			minHeight: 80
+		},
+		galleryScroll: {
+			flexDirection: 'row',
+			gap: 12,
+			alignItems: 'center'
+		},
+		galleryItem: {
+			width: 72,
+			height: 72,
+			borderRadius: 12,
+			overflow: 'hidden',
+			position: 'relative',
+			borderWidth: 1.5,
+			borderColor: colors.border
+		},
+		galleryImage: {
+			width: '100%',
+			height: '100%'
+		},
+		removeBadge: {
+			position: 'absolute',
+			top: 4,
+			right: 4,
+			backgroundColor: 'rgba(0,0,0,0.6)',
+			borderRadius: 10,
+			width: 20,
+			height: 20,
+			justifyContent: 'center',
+			alignItems: 'center',
+			zIndex: 10
+		},
+		addPhotoBtn: {
+			width: 72,
+			height: 72,
+			borderRadius: 12,
+			borderWidth: 2,
+			borderStyle: 'dashed',
+			borderColor: colors.primary,
+			backgroundColor: colors.surfaceVariant,
+			justifyContent: 'center',
+			alignItems: 'center',
+			gap: 4
+		},
+		addPhotoText: {
+			fontSize: 10,
+			fontWeight: '700',
+			color: colors.primary
 		}
 	})

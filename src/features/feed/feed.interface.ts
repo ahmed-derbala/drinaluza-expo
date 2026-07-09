@@ -122,7 +122,6 @@ export interface FeedItem {
 		startDate: string
 	}
 	stock?: Stock
-	photos?: string[]
 	media?: {
 		thumbnail?: {
 			url: string

@@ -1,5 +1,8 @@
 ## [1.27.55] - 9 july 2026
 ### Added
+- Add support for product media galleries (`media.gallery`) aligned with the backend `FileRefSchema` schema.
+- Implement multi-photo upload to `media.gallery` on `CreateProductScreen.tsx` and `EditProductScreen.tsx` with multi-select support (`multiple: true` up to 5 photos maximum), real-time counter indicators, deletion actions, and automatic fallback setting for the main product thumbnail.
+- Add an interactive product media gallery component on `ProductDetailScreen.tsx` using horizontal scroll list with state-based active image selector.
 - Add product specifications (caliber size descriptors, and origin address) to the product creation screen with pre-populated backend-aligned defaults ('Ellouza' city, 'Sfax' region, '3016' postal code, 'Tunisia' country), default inventory values (stock quantity 100, alert threshold 10), and validation guards.
 - Wrap the product creation form inside `KeyboardAvoidingWrapper` to improve cross-platform keyboard handling on mobile viewports.
 - Extract `getCaliberLabel` helper to a shared module `products.helpers.ts` to enforce DRY principles, updating caliber labels across the feed screen, products list screen, business details screen, and product detail screen to use the values 'Tiny', 'Small', 'Medium', 'Large', and 'Huge'.
@@ -11,6 +14,7 @@
 
 ### Removed
 - Remove `singlePieceMetrics` (piece length and weight) from product specs interface, creation form, payload mapping, and details page visualization.
+- Remove all references to the obsolete `photos` field on products across interfaces, payload mappings, details/cards rendering, and fallback checks.
 
 ### Fixed
 - Refine state-driven focus logic in `AuthScreen.tsx` by implementing a recursive retry mechanism (`focusWithRetry`), clearing the password field on quick switch failures, adding `keyboardShouldPersistTaps="handled"` to the nested ScrollViews, and adding console logging to trace the Android focus timeline.

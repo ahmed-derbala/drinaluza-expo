@@ -15,6 +15,18 @@ interface Rating {
 	total: number
 }
 
+export interface FileRef {
+	_id: string
+	name?: string
+	extension?: string
+	url: string
+	encoding?: string
+	mimetype?: string
+	size?: number
+	updatedAt?: string
+	createdAt?: string
+}
+
 export type ProductType = {
 	_id: string
 	business: {
@@ -54,9 +66,9 @@ export type ProductType = {
 		thumbnail?: {
 			url: string
 		}
+		gallery?: FileRef[]
 	}
 	name: LocalizedName
-	photos?: string[]
 	price: {
 		total: {
 			tnd: number

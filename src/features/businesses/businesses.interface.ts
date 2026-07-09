@@ -176,7 +176,6 @@ export interface Product {
 		quantity: number
 		minThreshold: number
 	}
-	photos?: string[]
 	media?: {
 		thumbnail?: {
 			url: string

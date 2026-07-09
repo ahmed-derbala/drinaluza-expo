@@ -84,7 +84,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
 
-	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url || item.photos?.[0]
+	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 
 	const isSmall = width < 500
 

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, usePathname, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
@@ -35,6 +35,7 @@ export default function ProductDetailScreen() {
 	const isDashboard = pathname.includes('/dashboard')
 
 	const [product, setProduct] = useState<ProductType | null>(null)
+	const [activeImage, setActiveImage] = useState<string | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
@@ -118,6 +119,7 @@ export default function ProductDetailScreen() {
 
 				const response = await getProductBySlug(productSlug)
 				setProduct(response.data)
+				setActiveImage(null)
 			} catch (err) {
 				const parsed = parseError(err)
 				setError({
@@ -265,22 +267,49 @@ export default function ProductDetailScreen() {
 
 	// ─── Render Components ─────────────────────────────────────────────────────────
 
-	const renderHeroImage = () => (
-		<View style={[styles.imageContainer, { height: imageHeight }]}>
-			<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
-			{!isAvailable && (
-				<View style={styles.unavailableOverlay}>
-					<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
+	const renderHeroImage = () => {
+		const gallery = product.media?.gallery || []
+		const currentUrl = activeImage || product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
+
+		return (
+			<View>
+				<View style={[styles.imageContainer, { height: imageHeight }]}>
+					<SmartImage source={currentUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
+					{!isAvailable && (
+						<View style={styles.unavailableOverlay}>
+							<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
+						</View>
+					)}
+					<LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.imageGradient}>
+						<View style={[styles.stockBadge, { backgroundColor: stockStatus.bgColor, borderColor: stockStatus.color + '40' }]}>
+							<View style={[styles.stockDot, { backgroundColor: stockStatus.color }]} />
+							<Text style={[styles.stockText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
+						</View>
+					</LinearGradient>
 				</View>
-			)}
-			<LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.imageGradient}>
-				<View style={[styles.stockBadge, { backgroundColor: stockStatus.bgColor, borderColor: stockStatus.color + '40' }]}>
-					<View style={[styles.stockDot, { backgroundColor: stockStatus.color }]} />
-					<Text style={[styles.stockText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
-				</View>
-			</LinearGradient>
-		</View>
-	)
+
+				{gallery.length > 0 && (
+					<View style={[styles.galleryRow, { backgroundColor: colors.card }]}>
+						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScrollContainer}>
+							{gallery.map((item, index) => {
+								const isSelected = item.url === currentUrl
+								return (
+									<TouchableOpacity
+										key={item._id || index}
+										onPress={() => setActiveImage(item.url)}
+										style={[styles.thumbnailContainer, { borderColor: isSelected ? colors.primary : colors.border }]}
+										activeOpacity={0.8}
+									>
+										<SmartImage source={item.url} style={styles.thumbnailImage} resizeMode="cover" entityType="product" />
+									</TouchableOpacity>
+								)
+							})}
+						</ScrollView>
+					</View>
+				)}
+			</View>
+		)
+	}
 
 	const renderInfoSection = () => (
 		<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -903,5 +932,26 @@ const styles = StyleSheet.create({
 		fontWeight: '600',
 		textAlign: 'right',
 		maxWidth: '65%'
+	},
+	galleryRow: {
+		paddingVertical: 12,
+		paddingHorizontal: 16,
+		borderBottomWidth: 1,
+		borderBottomColor: 'rgba(255, 255, 255, 0.05)'
+	},
+	galleryScrollContainer: {
+		flexDirection: 'row',
+		gap: 10
+	},
+	thumbnailContainer: {
+		width: 60,
+		height: 60,
+		borderRadius: 8,
+		borderWidth: 2,
+		overflow: 'hidden'
+	},
+	thumbnailImage: {
+		width: '100%',
+		height: '100%'
 	}
 })

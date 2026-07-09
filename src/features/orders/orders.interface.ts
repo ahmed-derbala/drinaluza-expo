@@ -31,7 +31,6 @@ interface Product {
 			url: string
 		}
 	}
-	photos?: string[]
 	specs?: ProductSpecs
 }
 
