@@ -1,5 +1,7 @@
 ## [1.27.55] - 9 july 2026
 ### Added
+- Add reusable component `ProductGallerySection.tsx` inside `src/features/products/common/` that handles both editable multi-image gallery uploads and read-only thumbnail sliding selectors.
+- Add reusable component `ProductSpecsSection.tsx` inside `src/features/products/common/` that handles both caliber selector / address inputs (for form editors) and caliber size badge / origin details representation (for detail views).
 - Add support for product media galleries (`media.gallery`) aligned with the backend `FileRefSchema` schema.
 - Implement multi-photo upload to `media.gallery` on `CreateProductScreen.tsx` and `EditProductScreen.tsx` with multi-select support (`multiple: true` up to 5 photos maximum), real-time counter indicators, deletion actions, and automatic fallback setting for the main product thumbnail.
 - Add an interactive product media gallery component on `ProductDetailScreen.tsx` using horizontal scroll list with state-based active image selector.
@@ -11,10 +13,15 @@
 - Redesign the `ProductDetailScreen.tsx` metadata section to display product specifications (a localized caliber size pill badge, and country/city origin of the seafood product).
 - Show specifications (caliber size badge and origin location chip) directly inside the product cards in `products.card.tsx`, `BusinessProductsScreen.tsx`, and `BusinessDetailsScreen.tsx`.
 - Include `specs` properties during feed items data normalization inside `feed.api.ts` to ensure cards display specs inside the feed screen.
+### Changed
+- Refactor `CreateProductScreen.tsx` to accept customizable props (`isEditMode`, `product`, `onSubmitOverride`, `submitLabel`), and completely rewrite `EditProductScreen.tsx` to render `CreateProductScreen` under the hood to ensure full code reuse for future form fields.
+- Refactor `CreateProductScreen.tsx` and `ProductDetailScreen.tsx` to utilize the new reusable `ProductGallerySection` and `ProductSpecsSection` components, completely removing duplicated styles, scripts, and layouts.
+- Outline the bottom navigation tab bar ("dash") with the primary theme color.
 
 ### Removed
 - Remove `singlePieceMetrics` (piece length and weight) from product specs interface, creation form, payload mapping, and details page visualization.
 - Remove all references to the obsolete `photos` field on products across interfaces, payload mappings, details/cards rendering, and fallback checks.
+- Remove the redundant toast notification shown on successful sign-in to improve redirect transition.
 
 ### Fixed
 - Refine state-driven focus logic in `AuthScreen.tsx` by implementing a recursive retry mechanism (`focusWithRetry`), clearing the password field on quick switch failures, adding `keyboardShouldPersistTaps="handled"` to the nested ScrollViews, and adding console logging to trace the Android focus timeline.

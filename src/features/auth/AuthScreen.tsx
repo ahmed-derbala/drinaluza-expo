@@ -187,12 +187,6 @@ export default function AuthScreen() {
 			// Set active user state in context
 			await refreshUser()
 
-			toast.show({
-				title: translate('success', 'Welcome!'),
-				message: translate('signin_success_msg', 'Successfully logged in.'),
-				color: '#10B981'
-			})
-
 			// Redirect to feed page
 			router.replace('/(home)/feed')
 		} catch (err: any) {

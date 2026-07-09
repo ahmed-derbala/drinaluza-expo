@@ -51,7 +51,7 @@ export default function HomeLayout() {
 									backgroundColor: 'rgba(20, 20, 20, 0.85)',
 									borderRadius: 26,
 									borderWidth: 1,
-									borderColor: 'rgba(255, 255, 255, 0.12)',
+									borderColor: colors.primary,
 									...Platform.select({
 										ios: {
 											shadowColor: 'rgba(0, 0, 0, 0.5)',

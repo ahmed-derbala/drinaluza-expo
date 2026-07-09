@@ -6,8 +6,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { createProduct, getDefaultProducts, type CreateProductRequest, type DefaultProduct } from '@/features/products/products.api'
-import { getCaliberLabel } from '@/features/products/products.helpers'
-import { FileRef } from '@/features/products/products.type'
+import { FileRef, ProductType } from '@/features/products/products.type'
+import ProductGallerySection from '@/features/products/common/ProductGallerySection'
+import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import SmartImage from '@/core/SmartImageViewer'
@@ -19,7 +20,14 @@ import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { SmartHeader } from '@/core/smart-header'
 import KeyboardAvoidingWrapper from '@/core/keyboard-avoiding-wrapper/KeyboardAvoidingWrapper'
 
-export default function CreateProductScreen() {
+export interface CreateProductScreenProps {
+	isEditMode?: boolean
+	product?: ProductType | null
+	onSubmitOverride?: (data: CreateProductRequest & { slug?: string }, isActive: boolean) => Promise<void>
+	submitLabel?: string
+}
+
+export default function CreateProductScreen({ isEditMode = false, product = null, onSubmitOverride, submitLabel }: CreateProductScreenProps = {}) {
 	const router = useRouter()
 	const { businessId, businessSlug, source } = useLocalSearchParams<{ businessId?: string; businessSlug?: string; source?: string }>()
 	const { colors } = useTheme()
@@ -44,6 +52,45 @@ export default function CreateProductScreen() {
 	const [stockQuantity, setStockQuantity] = useState('100')
 	const [minThreshold, setMinThreshold] = useState('10')
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
+	const [isActive, setIsActive] = useState(true)
+
+	useEffect(() => {
+		if (isEditMode && product) {
+			setProductNameEn(product.name?.en || '')
+			setProductNameTnLatn(product.name?.tn_latn || '')
+			setProductNameTnArab(product.name?.tn_arab || '')
+			setPriceTND(product.price?.total?.tnd?.toString() || '')
+			setUnit(product.unit?.measure || 'kg')
+			setMinUnit(product.unit?.min?.toString() || '1')
+			setMaxUnit(product.unit?.max?.toString() || '10')
+			setUnitStep(product.unit?.step?.toString() || '1')
+			setStockQuantity(product.stock?.quantity?.toString() || '')
+			setMinThreshold(product.stock?.minThreshold?.toString() || '10')
+			setCaliber((product.specs?.caliber as any) || 3)
+			setOriginStreet(product.specs?.origin?.street || '')
+			setOriginCity(product.specs?.origin?.city || 'Ellouza')
+			setOriginRegion(product.specs?.origin?.region || 'Sfax')
+			setOriginPostalCode(product.specs?.origin?.postalCode || '3016')
+			setOriginCountry(product.specs?.origin?.country || 'Tunisia')
+
+			if (product.media?.gallery && product.media.gallery.length > 0) {
+				setUploadedGallery(product.media.gallery)
+			} else if (product.media?.thumbnail?.url) {
+				setUploadedGallery([{ _id: 'thumb', url: product.media.thumbnail.url }])
+			} else {
+				setUploadedGallery([])
+			}
+
+			if (product.state?.code === 'inactive' || product.state?.code === 'suspended') {
+				setIsActive(false)
+			} else {
+				setIsActive(true)
+			}
+
+			setSelectedBusiness(product.business as any)
+			setSelectedDefaultProduct(product.defaultProduct as any)
+		}
+	}, [isEditMode, product])
 
 	// Specs state (with default values populated)
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
@@ -332,6 +379,11 @@ export default function CreateProductScreen() {
 				}
 			}
 
+			if (onSubmitOverride) {
+				await onSubmitOverride(productData as any, isActive)
+				return
+			}
+
 			await createProduct(productData)
 			showAlert(translate('success', 'Success'), translate('product_created_success', 'Product created successfully!'), () => {
 				router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
@@ -360,7 +412,7 @@ export default function CreateProductScreen() {
 
 	return (
 		<View style={styles.container}>
-			<Stack.Screen options={{ title: translate('create_product', 'Create Product') }} />
+			<Stack.Screen options={{ title: submitLabel || (isEditMode ? translate('edit_product', 'Edit Product') : translate('create_product', 'Create Product')) }} />
 
 			<KeyboardAvoidingWrapper
 				style={styles.form}
@@ -373,6 +425,42 @@ export default function CreateProductScreen() {
 				{/* GENERAL INFO CARD */}
 				<View style={styles.card}>
 					<Text style={styles.cardTitle}>{translate('general_info', 'General Info')}</Text>
+
+					{isEditMode && (
+						<View style={styles.fieldContainer}>
+							<Text style={styles.fieldLabel}>{translate('status', 'Status')}</Text>
+							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+								<TouchableOpacity
+									style={[
+										styles.inputBox,
+										{
+											flex: 1,
+											justifyContent: 'center',
+											borderColor: isActive ? colors.success || '#10B981' : colors.borderLight,
+											backgroundColor: isActive ? (colors.success || '#10B981') + '15' : colors.surface
+										}
+									]}
+									onPress={() => setIsActive(true)}
+								>
+									<Text style={{ color: isActive ? colors.success || '#10B981' : colors.text, fontWeight: isActive ? '700' : '500' }}>{translate('active', 'Active')}</Text>
+								</TouchableOpacity>
+								<TouchableOpacity
+									style={[
+										styles.inputBox,
+										{
+											flex: 1,
+											justifyContent: 'center',
+											borderColor: !isActive ? colors.error || '#EF4444' : colors.borderLight,
+											backgroundColor: !isActive ? (colors.error || '#EF4444') + '15' : colors.surface
+										}
+									]}
+									onPress={() => setIsActive(false)}
+								>
+									<Text style={{ color: !isActive ? colors.error || '#EF4444' : colors.text, fontWeight: !isActive ? '700' : '500' }}>{translate('inactive', 'Inactive')}</Text>
+								</TouchableOpacity>
+							</View>
+						</View>
+					)}
 
 					<View style={styles.fieldContainer}>
 						<Text style={styles.fieldLabel}>
@@ -408,36 +496,15 @@ export default function CreateProductScreen() {
 						</TouchableOpacity>
 					</View>
 
-					<View style={styles.fieldContainer}>
-						<Text style={styles.fieldLabel}>
-							{translate('product_gallery', 'Product Gallery')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-							<Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> ({uploadedGallery.length}/5)</Text>
-						</Text>
-						<View style={styles.galleryWrapper}>
-							<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
-								{uploadedGallery.map((item, idx) => (
-									<View key={item._id || idx} style={styles.galleryItem}>
-										<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
-										<TouchableOpacity style={styles.removeBadge} onPress={() => setUploadedGallery((prev) => prev.filter((f) => f._id !== item._id))}>
-											<Ionicons name="close" size={14} color="#ffffff" />
-										</TouchableOpacity>
-									</View>
-								))}
-								{uploadedGallery.length < 5 && (
-									<TouchableOpacity style={styles.addPhotoBtn} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
-										{uploadingPhoto ? (
-											<ActivityIndicator size="small" color={colors.primary} />
-										) : (
-											<>
-												<Ionicons name="camera-outline" size={24} color={colors.primary} />
-												<Text style={styles.addPhotoText}>{translate('add_photo', 'Add Photo')}</Text>
-											</>
-										)}
-									</TouchableOpacity>
-								)}
-							</ScrollView>
-						</View>
-					</View>
+					<ProductGallerySection
+						editable={true}
+						gallery={uploadedGallery}
+						colors={colors}
+						translate={translate}
+						onUploadPress={handleUploadPhoto}
+						onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((f) => f._id !== item._id))}
+						uploading={uploadingPhoto}
+					/>
 				</View>
 
 				{/* PRODUCT NAMES CARD */}
@@ -591,102 +658,23 @@ export default function CreateProductScreen() {
 				</View>
 
 				{/* PRODUCT SPECIFICATIONS CARD */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>
-						{translate('product_specs', 'Product Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-					</Text>
-
-					{/* Caliber Selection */}
-					<View style={styles.fieldContainer}>
-						<Text style={styles.fieldLabel}>
-							{translate('caliber', 'Caliber')} <Text style={styles.required}>*</Text>
-						</Text>
-						<View style={styles.caliberContainer}>
-							{([1, 2, 3, 4, 5] as const).map((val) => (
-								<TouchableOpacity key={val} style={[styles.caliberButton, caliber === val && { backgroundColor: colors.primary, borderColor: colors.primary }]} onPress={() => setCaliber(val)}>
-									<Text numberOfLines={1} adjustsFontSizeToFit style={[styles.caliberButtonText, caliber === val && { color: '#ffffff' }]}>
-										{getCaliberLabel(val)}
-									</Text>
-								</TouchableOpacity>
-							))}
-						</View>
-					</View>
-
-					{/* Origin Address Section */}
-					<Text style={[styles.fieldLabel, { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 8, marginBottom: 12 }]}>{translate('origin_address', 'Origin Address')}</Text>
-
-					<View style={styles.row}>
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('origin_street', 'Street')}</Text>
-							<View style={[styles.inputBox, { borderColor: originStreet ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={originStreet}
-									onChangeText={setOriginStreet}
-									placeholder={translate('street_placeholder', 'e.g., Rue de la Paix')}
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
-					</View>
-
-					<View style={styles.row}>
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('origin_city', 'City')}</Text>
-							<View style={[styles.inputBox, { borderColor: originCity ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={originCity}
-									onChangeText={setOriginCity}
-									placeholder={translate('city_placeholder', 'e.g., Ellouza')}
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
-						<View style={{ width: 12 }} />
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('origin_region', 'Region')}</Text>
-							<View style={[styles.inputBox, { borderColor: originRegion ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={originRegion}
-									onChangeText={setOriginRegion}
-									placeholder={translate('region_placeholder', 'e.g., Sfax')}
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
-					</View>
-
-					<View style={styles.row}>
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('origin_postal_code', 'Postal Code')}</Text>
-							<View style={[styles.inputBox, { borderColor: originPostalCode ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={originPostalCode}
-									onChangeText={setOriginPostalCode}
-									placeholder="e.g., 3016"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="numeric"
-								/>
-							</View>
-						</View>
-						<View style={{ width: 12 }} />
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('origin_country', 'Country')}</Text>
-							<View style={[styles.inputBox, { borderColor: originCountry ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={originCountry}
-									onChangeText={setOriginCountry}
-									placeholder={translate('country_placeholder', 'e.g., Tunisia')}
-									placeholderTextColor={colors.textTertiary}
-								/>
-							</View>
-						</View>
-					</View>
-				</View>
+				<ProductSpecsSection
+					editable={true}
+					colors={colors}
+					translate={translate}
+					caliber={caliber}
+					setCaliber={setCaliber}
+					originStreet={originStreet}
+					setOriginStreet={setOriginStreet}
+					originCity={originCity}
+					setOriginCity={setOriginCity}
+					originRegion={originRegion}
+					setOriginRegion={setOriginRegion}
+					originPostalCode={originPostalCode}
+					setOriginPostalCode={setOriginPostalCode}
+					originCountry={originCountry}
+					setOriginCountry={setOriginCountry}
+				/>
 				{/* Footer Button */}
 				<View style={styles.footer}>
 					<TouchableOpacity
@@ -706,7 +694,7 @@ export default function CreateProductScreen() {
 							<ActivityIndicator color="#fff" size="small" />
 						) : (
 							<>
-								<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
+								<Text style={styles.submitBtnText}>{submitLabel || (isEditMode ? translate('update_product', 'Update Product') : translate('create_product', 'Create Product'))}</Text>
 								<Ionicons name="checkmark-done" size={22} color="#fff" />
 							</>
 						)}
@@ -1101,91 +1089,5 @@ const createStyles = (colors: any) =>
 			fontWeight: '700',
 			color: colors.textSecondary,
 			marginLeft: 8
-		},
-		caliberContainer: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			gap: 8,
-			marginTop: 8,
-			marginBottom: 8
-		},
-		caliberButton: {
-			flex: 1,
-			height: 44,
-			borderRadius: 10,
-			borderWidth: 1.5,
-			borderColor: colors.border,
-			backgroundColor: colors.background,
-			justifyContent: 'center',
-			alignItems: 'center',
-			...Platform.select({
-				web: {
-					transition: 'all 0.2s ease'
-				} as any,
-				default: {}
-			})
-		},
-		caliberButtonText: {
-			fontSize: 12,
-			fontWeight: '700',
-			color: colors.textSecondary
-		},
-		caliberHelpText: {
-			fontSize: 12,
-			fontWeight: '600',
-			color: colors.primary,
-			marginTop: 4,
-			marginBottom: 12
-		},
-		galleryWrapper: {
-			marginTop: 4,
-			minHeight: 80
-		},
-		galleryScroll: {
-			flexDirection: 'row',
-			gap: 12,
-			alignItems: 'center'
-		},
-		galleryItem: {
-			width: 72,
-			height: 72,
-			borderRadius: 12,
-			overflow: 'hidden',
-			position: 'relative',
-			borderWidth: 1.5,
-			borderColor: colors.border
-		},
-		galleryImage: {
-			width: '100%',
-			height: '100%'
-		},
-		removeBadge: {
-			position: 'absolute',
-			top: 4,
-			right: 4,
-			backgroundColor: 'rgba(0,0,0,0.6)',
-			borderRadius: 10,
-			width: 20,
-			height: 20,
-			justifyContent: 'center',
-			alignItems: 'center',
-			zIndex: 10
-		},
-		addPhotoBtn: {
-			width: 72,
-			height: 72,
-			borderRadius: 12,
-			borderWidth: 2,
-			borderStyle: 'dashed',
-			borderColor: colors.primary,
-			backgroundColor: colors.surfaceVariant,
-			justifyContent: 'center',
-			alignItems: 'center',
-			gap: 4
-		},
-		addPhotoText: {
-			fontSize: 10,
-			fontWeight: '700',
-			color: colors.primary
 		}
 	})

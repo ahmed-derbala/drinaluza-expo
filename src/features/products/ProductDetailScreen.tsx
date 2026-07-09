@@ -9,7 +9,8 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug } from '@/features/products/products.api'
 import { ProductType } from '@/features/products/products.type'
-import { getCaliberLabel } from '@/features/products/products.helpers'
+import ProductGallerySection from '@/features/products/common/ProductGallerySection'
+import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
@@ -288,25 +289,7 @@ export default function ProductDetailScreen() {
 					</LinearGradient>
 				</View>
 
-				{gallery.length > 0 && (
-					<View style={[styles.galleryRow, { backgroundColor: colors.card }]}>
-						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScrollContainer}>
-							{gallery.map((item, index) => {
-								const isSelected = item.url === currentUrl
-								return (
-									<TouchableOpacity
-										key={item._id || index}
-										onPress={() => setActiveImage(item.url)}
-										style={[styles.thumbnailContainer, { borderColor: isSelected ? colors.primary : colors.border }]}
-										activeOpacity={0.8}
-									>
-										<SmartImage source={item.url} style={styles.thumbnailImage} resizeMode="cover" entityType="product" />
-									</TouchableOpacity>
-								)
-							})}
-						</ScrollView>
-					</View>
-				)}
+				<ProductGallerySection editable={false} gallery={gallery} colors={colors} translate={translate} activeImage={currentUrl} onThumbnailPress={(url) => setActiveImage(url)} />
 			</View>
 		)
 	}
@@ -473,37 +456,7 @@ export default function ProductDetailScreen() {
 				</View>
 			)}
 
-			{/* Product Specifications / Specs */}
-			{product.specs && (
-				<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
-					<View style={styles.metaCardHeader}>
-						<View style={styles.metaCardTitleWrap}>
-							<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="options-outline" size={16} color={colors.primary} />
-							</View>
-							<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('specifications', 'Specifications')}</Text>
-						</View>
-					</View>
-
-					{/* Caliber */}
-					<View style={styles.specDetailRow}>
-						<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber_size', 'Caliber / Size')}</Text>
-						<View style={[styles.caliberBadge, { backgroundColor: colors.primary + '15' }]}>
-							<Text style={[styles.caliberText, { color: colors.primary }]}>{getCaliberLabel(product.specs.caliber || 3)}</Text>
-						</View>
-					</View>
-
-					{/* Origin */}
-					{product.specs.origin && (
-						<View style={[styles.specDetailRow, { borderBottomWidth: 0 }]}>
-							<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('origin', 'Origin')}</Text>
-							<Text style={[styles.originValue, { color: colors.text }]} numberOfLines={2}>
-								{[product.specs.origin.street, product.specs.origin.city, product.specs.origin.region, product.specs.origin.country].filter(Boolean).join(', ')}
-							</Text>
-						</View>
-					)}
-				</View>
-			)}
+			<ProductSpecsSection editable={false} colors={colors} translate={translate} specs={product.specs} />
 
 			{/* Product Identifier info */}
 			<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -883,75 +836,5 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		gap: 16,
 		marginBottom: 12
-	},
-	specMetricItem: {
-		flex: 1,
-		padding: 10,
-		borderRadius: 10,
-		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.05)',
-		backgroundColor: 'rgba(255, 255, 255, 0.02)',
-		alignItems: 'center'
-	},
-	specMetricLabel: {
-		fontSize: 10,
-		fontWeight: '600',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5,
-		marginBottom: 4
-	},
-	specMetricValue: {
-		fontSize: 14,
-		fontWeight: '800'
-	},
-	specDetailRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingVertical: 10,
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: 'rgba(255, 255, 255, 0.05)'
-	},
-	specDetailLabel: {
-		fontSize: 13,
-		fontWeight: '600'
-	},
-	caliberBadge: {
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-		borderRadius: 8,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	caliberText: {
-		fontSize: 12,
-		fontWeight: '700'
-	},
-	originValue: {
-		fontSize: 13,
-		fontWeight: '600',
-		textAlign: 'right',
-		maxWidth: '65%'
-	},
-	galleryRow: {
-		paddingVertical: 12,
-		paddingHorizontal: 16,
-		borderBottomWidth: 1,
-		borderBottomColor: 'rgba(255, 255, 255, 0.05)'
-	},
-	galleryScrollContainer: {
-		flexDirection: 'row',
-		gap: 10
-	},
-	thumbnailContainer: {
-		width: 60,
-		height: 60,
-		borderRadius: 8,
-		borderWidth: 2,
-		overflow: 'hidden'
-	},
-	thumbnailImage: {
-		width: '100%',
-		height: '100%'
 	}
 })
