@@ -204,12 +204,6 @@ export default function AuthScreen() {
 						await signUp(slug, password, {}, saveAccount, needPassword)
 						await refreshUser()
 
-						toast.show({
-							title: translate('success', 'Account Created!'),
-							message: translate('signup_success_msg', 'Your account has been registered.'),
-							color: '#10B981'
-						})
-
 						router.replace('/(home)/feed')
 					} catch (signUpErr: any) {
 						const msg = signUpErr.response?.data?.message || signUpErr.message || 'Signup failed'
@@ -266,11 +260,6 @@ export default function AuthScreen() {
 				const success = await signInWithToken(account.token)
 				if (success) {
 					await refreshUser()
-					toast.show({
-						title: translate('success', 'Account Switched'),
-						message: `@${account.slug} logged in.`,
-						color: '#10B981'
-					})
 					router.replace('/(home)/feed')
 				} else {
 					throw new Error('Quick sign in token failed')

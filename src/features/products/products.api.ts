@@ -41,6 +41,9 @@ export interface CreateProductRequest {
 		gallery?: FileRef[]
 	}
 	specs?: ProductSpecs
+	state?: {
+		code: string
+	}
 }
 
 export interface ProductsResponse {

@@ -628,7 +628,7 @@ export default function BusinessProductsScreen() {
 			/>
 
 			{isDashboard && (
-				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/${businessSlug}/products/create` as any)}>
+				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/${businessSlug}/create-product` as any)}>
 					<Ionicons name="add" size={28} color={colors.textOnPrimary || '#0F172A'} />
 				</TouchableOpacity>
 			)}

@@ -18,6 +18,7 @@ import {
 	KeyboardAvoidingView
 } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
 import { getItem } from '@/core/storage'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -770,12 +771,7 @@ export default function ProfileScreen() {
 							<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
 								<Text style={styles.roleBadgeText}>{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
 							</View>
-							{userData.state?.code && (
-								<View style={[styles.stateBadge, { backgroundColor: userData.state.code === 'active' ? '#10B98120' : '#EF444420' }]}>
-									<View style={[styles.stateDot, { backgroundColor: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]} />
-									<Text style={[styles.stateText, { color: userData.state.code === 'active' ? '#10B981' : '#EF4444' }]}>{userData.state.code.toUpperCase()}</Text>
-								</View>
-							)}
+							{userData.state?.code && <StateBadge stateCode={userData.state.code} />}
 						</View>
 					</View>
 
@@ -1956,24 +1952,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			fontSize: 11,
 			fontWeight: '600',
 			color: colors.text
-		},
-		stateBadge: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			paddingHorizontal: 8,
-			paddingVertical: 5,
-			borderRadius: 10
-		},
-		stateDot: {
-			width: 6,
-			height: 6,
-			borderRadius: 3,
-			marginRight: 6
-		},
-		stateText: {
-			fontSize: 11,
-			fontWeight: '700',
-			letterSpacing: 0.5
 		},
 		section: {
 			marginBottom: 32,

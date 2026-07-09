@@ -305,7 +305,7 @@ export default function BusinessDashboardProductsScreen() {
 				key: 'create-product',
 				iconName: 'add',
 				iconType: 'material' as const,
-				onPress: () => router.push(`/dashboard/${businessSlug}/products/create` as any),
+				onPress: () => router.push(`/dashboard/${businessSlug}/create-product` as any),
 				accessibilityLabel: 'Create Product'
 			}
 		],

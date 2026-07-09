@@ -213,6 +213,23 @@ export default function ProductDetailScreen() {
 		return '/(home)/feed'
 	}, [businessSlug, product])
 
+	const combinedGallery = useMemo(() => {
+		if (!product) return []
+		const list: any[] = []
+		const thumbUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
+		if (thumbUrl) {
+			list.push({ _id: 'thumbnail', url: thumbUrl })
+		}
+		if (product.media?.gallery) {
+			product.media.gallery.forEach((item) => {
+				if (item.url !== thumbUrl) {
+					list.push(item)
+				}
+			})
+		}
+		return list
+	}, [product])
+
 	if (loading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -269,8 +286,7 @@ export default function ProductDetailScreen() {
 	// ─── Render Components ─────────────────────────────────────────────────────────
 
 	const renderHeroImage = () => {
-		const gallery = product.media?.gallery || []
-		const currentUrl = activeImage || product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
+		const currentUrl = activeImage || (combinedGallery.length > 0 ? combinedGallery[0].url : null)
 
 		return (
 			<View>
@@ -289,7 +305,7 @@ export default function ProductDetailScreen() {
 					</LinearGradient>
 				</View>
 
-				<ProductGallerySection editable={false} gallery={gallery} colors={colors} translate={translate} activeImage={currentUrl} onThumbnailPress={(url) => setActiveImage(url)} />
+				<ProductGallerySection editable={false} gallery={combinedGallery} colors={colors} translate={translate} activeImage={currentUrl} onThumbnailPress={(url) => setActiveImage(url)} />
 			</View>
 		)
 	}
@@ -332,7 +348,7 @@ export default function ProductDetailScreen() {
 
 			{/* Status */}
 			<View style={[styles.statusRow, { borderBottomColor: colors.borderLight }]}>
-				<Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{translate('status', 'Status')}</Text>
+				<Text style={[styles.statusLabel, { color: colors.textSecondary }]}>{translate('state', 'State')}</Text>
 				<View style={[styles.statusBadgeTouch, { backgroundColor: isAvailable ? colors.success + '15' : colors.error + '15' }]}>
 					<Text style={[styles.statusText, { color: isAvailable ? colors.success : colors.error }]}>
 						{product.state?.code === 'active' ? translate('active', 'Active') : translate('inactive', 'Inactive')}

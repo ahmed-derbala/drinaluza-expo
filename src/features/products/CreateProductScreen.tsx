@@ -23,7 +23,7 @@ import KeyboardAvoidingWrapper from '@/core/keyboard-avoiding-wrapper/KeyboardAv
 export interface CreateProductScreenProps {
 	isEditMode?: boolean
 	product?: ProductType | null
-	onSubmitOverride?: (data: CreateProductRequest & { slug?: string }, isActive: boolean) => Promise<void>
+	onSubmitOverride?: (data: CreateProductRequest & { slug?: string }, stateCode: string) => Promise<void>
 	submitLabel?: string
 }
 
@@ -52,7 +52,7 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 	const [stockQuantity, setStockQuantity] = useState('100')
 	const [minThreshold, setMinThreshold] = useState('10')
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
-	const [isActive, setIsActive] = useState(true)
+	const [productState, setProductState] = useState<'active' | 'pending' | 'suspended'>('active')
 
 	useEffect(() => {
 		if (isEditMode && product) {
@@ -81,10 +81,10 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 				setUploadedGallery([])
 			}
 
-			if (product.state?.code === 'inactive' || product.state?.code === 'suspended') {
-				setIsActive(false)
+			if (product.state?.code) {
+				setProductState(product.state.code as any)
 			} else {
-				setIsActive(true)
+				setProductState('active')
 			}
 
 			setSelectedBusiness(product.business as any)
@@ -364,7 +364,7 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 					endDate: null
 				},
 				media: {
-					thumbnail: uploadedGallery.length > 0 ? { url: uploadedGallery[0].url } : undefined,
+					thumbnail: selectedDefaultProduct?.media?.thumbnail ? { url: selectedDefaultProduct.media.thumbnail.url } : undefined,
 					gallery: uploadedGallery.length > 0 ? uploadedGallery : undefined
 				},
 				specs: {
@@ -380,11 +380,11 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 			}
 
 			if (onSubmitOverride) {
-				await onSubmitOverride(productData as any, isActive)
+				await onSubmitOverride(productData as any, productState)
 				return
 			}
 
-			await createProduct(productData)
+			await createProduct({ ...productData, state: { code: productState } })
 			showAlert(translate('success', 'Success'), translate('product_created_success', 'Product created successfully!'), () => {
 				router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
 			})
@@ -428,7 +428,7 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 
 					{isEditMode && (
 						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>{translate('status', 'Status')}</Text>
+							<Text style={styles.fieldLabel}>{translate('state', 'State')}</Text>
 							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
 								<TouchableOpacity
 									style={[
@@ -436,13 +436,18 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 										{
 											flex: 1,
 											justifyContent: 'center',
-											borderColor: isActive ? colors.success || '#10B981' : colors.borderLight,
-											backgroundColor: isActive ? (colors.success || '#10B981') + '15' : colors.surface
+											borderColor: productState === 'active' ? colors.success || '#10B981' : colors.borderLight,
+											backgroundColor: productState === 'active' ? (colors.success || '#10B981') + '15' : colors.surface,
+											flexDirection: 'row',
+											gap: 6
 										}
 									]}
-									onPress={() => setIsActive(true)}
+									onPress={() => setProductState('active')}
 								>
-									<Text style={{ color: isActive ? colors.success || '#10B981' : colors.text, fontWeight: isActive ? '700' : '500' }}>{translate('active', 'Active')}</Text>
+									<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success || '#10B981' }} />
+									<Text style={{ color: productState === 'active' ? colors.success || '#10B981' : colors.text, fontWeight: productState === 'active' ? '700' : '500' }}>
+										{translate('active', 'Active')}
+									</Text>
 								</TouchableOpacity>
 								<TouchableOpacity
 									style={[
@@ -450,13 +455,18 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 										{
 											flex: 1,
 											justifyContent: 'center',
-											borderColor: !isActive ? colors.error || '#EF4444' : colors.borderLight,
-											backgroundColor: !isActive ? (colors.error || '#EF4444') + '15' : colors.surface
+											borderColor: productState === 'suspended' ? colors.error || '#EF4444' : colors.borderLight,
+											backgroundColor: productState === 'suspended' ? (colors.error || '#EF4444') + '15' : colors.surface,
+											flexDirection: 'row',
+											gap: 6
 										}
 									]}
-									onPress={() => setIsActive(false)}
+									onPress={() => setProductState('suspended')}
 								>
-									<Text style={{ color: !isActive ? colors.error || '#EF4444' : colors.text, fontWeight: !isActive ? '700' : '500' }}>{translate('inactive', 'Inactive')}</Text>
+									<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.error || '#EF4444' }} />
+									<Text style={{ color: productState === 'suspended' ? colors.error || '#EF4444' : colors.text, fontWeight: productState === 'suspended' ? '700' : '500' }}>
+										{translate('suspended', 'Suspended')}
+									</Text>
 								</TouchableOpacity>
 							</View>
 						</View>

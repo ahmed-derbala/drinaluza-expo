@@ -1,5 +1,7 @@
 ## [1.27.55] - 9 july 2026
 ### Added
+- Add automatic setting of `media.thumbnail` to match the selected default product's thumbnail URL on product creation.
+- Add reusable component `StateBadge.tsx` inside `src/features/common/` to parse and represent backend state schema values (`pending`, `active`, `suspended`, `deleted`, `inactive`) with unified dot indicators, themed colors, and localization labels.
 - Add reusable component `ProductGallerySection.tsx` inside `src/features/products/common/` that handles both editable multi-image gallery uploads and read-only thumbnail sliding selectors.
 - Add reusable component `ProductSpecsSection.tsx` inside `src/features/products/common/` that handles both caliber selector / address inputs (for form editors) and caliber size badge / origin details representation (for detail views).
 - Add support for product media galleries (`media.gallery`) aligned with the backend `FileRefSchema` schema.
@@ -17,13 +19,20 @@
 - Refactor `CreateProductScreen.tsx` to accept customizable props (`isEditMode`, `product`, `onSubmitOverride`, `submitLabel`), and completely rewrite `EditProductScreen.tsx` to render `CreateProductScreen` under the hood to ensure full code reuse for future form fields.
 - Refactor `CreateProductScreen.tsx` and `ProductDetailScreen.tsx` to utilize the new reusable `ProductGallerySection` and `ProductSpecsSection` components, completely removing duplicated styles, scripts, and layouts.
 - Outline the bottom navigation tab bar ("dash") with the primary theme color.
+- Refactor `ProfileScreen.tsx` to display user account status via the reusable `<StateBadge>` component.
+- Upgrade the product state selector inside `CreateProductScreen.tsx` to a segmented picker supporting Active and Suspended options only, and conditionally hide it entirely when creating products.
+- Rename product "Status" translation label to "State" in `CreateProductScreen.tsx` and `ProductDetailScreen.tsx` to align exactly with backend nomenclature.
+- Move the product creation screen route from `/dashboard/[businessSlug]/products/create` to `/dashboard/[businessSlug]/create-product` inside `_layout.tsx`, updating all dashboard and business FAB navigation references.
+- Refactor the hero image preview path in `ProductDetailScreen.tsx` to construct a combined gallery array containing both the main product thumbnail and custom uploaded gallery images.
 
 ### Removed
 - Remove `singlePieceMetrics` (piece length and weight) from product specs interface, creation form, payload mapping, and details page visualization.
 - Remove all references to the obsolete `photos` field on products across interfaces, payload mappings, details/cards rendering, and fallback checks.
-- Remove the redundant toast notification shown on successful sign-in to improve redirect transition.
+- Remove redundant success toast notifications shown on successful user sign-in, account registration (sign-up), and quick account switching.
+- Remove automatic generation and updating of `media.thumbnail` when users upload or edit photos in the product gallery.
 
 ### Fixed
+- Relocate `combinedGallery` hook above early return blocks in `ProductDetailScreen.tsx` to fix React Rules of Hooks violation and prevent crashes.
 - Refine state-driven focus logic in `AuthScreen.tsx` by implementing a recursive retry mechanism (`focusWithRetry`), clearing the password field on quick switch failures, adding `keyboardShouldPersistTaps="handled"` to the nested ScrollViews, and adding console logging to trace the Android focus timeline.
 
 ## [1.27.54] - 7 july 2026

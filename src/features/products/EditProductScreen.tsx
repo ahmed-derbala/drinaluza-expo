@@ -34,11 +34,11 @@ export default function EditProductScreen() {
 		}
 	}
 
-	const handleUpdateProduct = async (productData: any, isActive: boolean) => {
+	const handleUpdateProduct = async (productData: any, stateCode: string) => {
 		try {
 			await updateProduct(productSlug, {
 				...productData,
-				state: { code: isActive ? 'active' : 'suspended' }
+				state: { code: stateCode }
 			})
 			showAlert(translate('success', 'Success'), translate('product_updated_success', 'Product updated successfully!'), () => {
 				if (product?.business?.slug) {

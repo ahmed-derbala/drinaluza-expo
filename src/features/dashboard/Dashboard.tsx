@@ -355,7 +355,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				label: translate('create_product', 'Create Product'),
 				icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
 				color: colors.warning,
-				onPress: () => router.push(`/dashboard/${business.slug}/products/create?source=dashboard` as never)
+				onPress: () => router.push(`/dashboard/${business.slug}/create-product?source=dashboard` as never)
 			}
 		],
 		[business._id, business.slug, colors, router, translate]
