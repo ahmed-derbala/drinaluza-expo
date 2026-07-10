@@ -1,17 +1,18 @@
 ## [1.33.1] - 10 july 2026
+### Changed
+- Display last access date with relative elapsed period for saved accounts on the Auth Screen.
+- Add a dedicated remove button (trash icon) to delete saved accounts with a confirmation prompt.
+- Align `AuthScreen.tsx` and related root files with Expo Router best practices:
+  - Simplify `src/app/auth/index.tsx` by directly exporting `AuthScreen` instead of wrapping it in a redundant fragment and duplicate `<Stack.Screen>` component.
+  - Fix consistent path naming for index routes by restoring `auth/index` in `src/app/_layout.tsx`.
+  - Replace index redirect logic in `src/app/index.tsx` from `useEffect` with the native `<Redirect>` component for faster startup navigation.
+  - Decouple routing paths from physical folder layouts by replacing all coupled route group references `/(home)/feed` with clean relative paths `/feed` in `AuthScreen.tsx`, `app/index.tsx`, and `app/updates/index.tsx`.
 ### Fixed
 - Fix keyboard flickering on all screens: `SmartHeader.tsx` had `key={\`header-${headerHeight}\`}` on its root `Animated.View`. When the Android keyboard opened, window resize caused insets to fluctuate → `headerHeight` changed → `setHeaderHeight` fired → the header's `key` changed → React fully unmounted and remounted the header and its entire sibling tree (including `KeyboardAvoidingView`) → destroyed the focused `TextInput` → keyboard dismissed → loop. Removing the dynamic `key` prop stops the remount cycle.
 - Fix instant keyboard dismissal upon focusing inputs on Android: `AuthScreen.tsx` applied `android: { elevation: 2 }` dynamically on the wrapper view of focused inputs. Toggling shadow elevation layer on Android invalidates layout focus hierarchy and forces the focus manager to reset input focus to the root window view, dismissing the keyboard. Removing the dynamic elevation property fixes focus stability.
 - Fix blocked screen scrolling when keyboard is visible on Android: added a dynamic keyboard-height listener and conditionally appended a bottom spacer (`height: keyboardHeight`) inside the ScrollView on Android. This forces the scrollable content container height to expand by the soft keyboard's height when active, enabling full scrolling responsiveness.
 - Fix text inputs being covered by soft keyboard on focus: implemented a stable programmatic `scrollToInput` handler inside `AuthScreen.tsx` that triggers on input focus. Now that unmount and focus resets (dynamic keys, dynamic elevation transitions) are fixed, measuring offsets and triggering scrolling is fully safe, centering input fields smoothly above the keyboard.
 - Fix React Native runtime warning regarding calling `measureLayout` with composite component refs: wrapped `ScrollView` children inside a native `View` element with `ref={contentRef}`. This provides a valid native layout component for measuring, resolving the runtime warning.
-
-### Changed
-- Align `AuthScreen.tsx` and related root files with Expo Router best practices:
-  - Simplify `src/app/auth/index.tsx` by directly exporting `AuthScreen` instead of wrapping it in a redundant fragment and duplicate `<Stack.Screen>` component.
-  - Fix consistent path naming for index routes by restoring `auth/index` in `src/app/_layout.tsx`.
-  - Replace index redirect logic in `src/app/index.tsx` from `useEffect` with the native `<Redirect>` component for faster startup navigation.
-  - Decouple routing paths from physical folder layouts by replacing all coupled route group references `/(home)/feed` with clean relative paths `/feed` in `AuthScreen.tsx`, `app/index.tsx`, and `app/updates/index.tsx`.
 
 ## [1.33.0] - 10 july 2026
 ### Changed

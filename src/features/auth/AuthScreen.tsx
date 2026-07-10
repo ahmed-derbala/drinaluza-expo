@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
+import { format, formatDistanceToNow } from 'date-fns'
 import { clearAllStorage } from '@/core/storage'
 
 import { useTheme } from '@/core/theme'
@@ -124,12 +125,30 @@ const S = StyleSheet.create({
 		textTransform: 'uppercase',
 		marginBottom: 10
 	},
-	accountsRow: { flexDirection: 'row', gap: 12, paddingBottom: 4 },
-	accountChip: { alignItems: 'center', gap: 6, width: 60 },
+	accountsList: { gap: 10, paddingBottom: 4 },
+	accountRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		backgroundColor: '#090F1A',
+		borderWidth: 1,
+		borderColor: '#1E293B',
+		borderRadius: 12,
+		padding: 10
+	},
+	accountRowActive: {
+		borderColor: '#0EA5E9',
+		backgroundColor: '#0A1628'
+	},
+	accountRowClickable: {
+		flex: 1,
+		flexDirection: 'row',
+		alignItems: 'center'
+	},
 	accountAvatar: {
-		width: 50,
-		height: 50,
-		borderRadius: 25,
+		width: 40,
+		height: 40,
+		borderRadius: 20,
 		overflow: 'hidden',
 		backgroundColor: '#0F172A',
 		borderWidth: 1.5,
@@ -144,8 +163,28 @@ const S = StyleSheet.create({
 		})
 	},
 	accountAvatarImg: { width: '100%', height: '100%' },
-	accountChipLabel: { fontSize: 10, color: '#475569', fontWeight: '500', textAlign: 'center' },
-	accountChipLabelActive: { color: '#0EA5E9' },
+	accountInfo: {
+		flex: 1,
+		paddingHorizontal: 12
+	},
+	accountSlug: {
+		fontSize: 14,
+		fontWeight: '600',
+		color: '#F8FAFC'
+	},
+	accountSlugActive: {
+		color: '#0EA5E9'
+	},
+	accountAccessTime: {
+		fontSize: 11,
+		color: '#64748B',
+		marginTop: 2
+	},
+	accountRemoveBtn: {
+		padding: 10,
+		alignItems: 'center',
+		justifyContent: 'center'
+	},
 
 	divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#1A2332', marginBottom: 24 },
 
@@ -246,6 +285,17 @@ interface AuthFormProps {
 	handleRemoveSavedAccount: (slug: string) => void
 }
 
+const formatLastAccess = (dateStr?: string) => {
+	if (!dateStr) return ''
+	try {
+		const date = new Date(dateStr)
+		if (isNaN(date.getTime())) return ''
+		return `${format(date, 'MMM d, yyyy, h:mm a')} (${formatDistanceToNow(date, { addSuffix: true })})`
+	} catch {
+		return ''
+	}
+}
+
 // ─── AuthForm — standalone component, never re-created on parent render ───────
 const AuthForm = React.memo(
 	({
@@ -320,29 +370,33 @@ const AuthForm = React.memo(
 			{savedAccounts.length > 0 && (
 				<View style={S.accountsSection}>
 					<Text style={S.sectionLabel}>{translate('saved_accounts', 'Saved Accounts')}</Text>
-					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.accountsRow} keyboardShouldPersistTaps="always">
+					<View style={S.accountsList}>
 						{savedAccounts.map((account) => {
 							const isActive = activeSlug === account.slug
 							return (
-								<TouchableOpacity
-									key={account.slug}
-									style={S.accountChip}
-									onPress={() => handleSelectSavedAccount(account)}
-									onLongPress={() => handleRemoveSavedAccount(account.slug)}
-									activeOpacity={0.75}
-									accessibilityLabel={`Switch to @${account.slug}`}
-									accessibilityHint="Long press to remove"
-								>
-									<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
-										<SmartImage source={account.photoUrl} style={S.accountAvatarImg} entityType="user" />
-									</View>
-									<Text style={[S.accountChipLabel, isActive && S.accountChipLabelActive]} numberOfLines={1}>
-										@{account.slug}
-									</Text>
-								</TouchableOpacity>
+								<View key={account.slug} style={[S.accountRow, isActive && S.accountRowActive]}>
+									<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to @${account.slug}`}>
+										<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
+											<SmartImage source={account.photoUrl} style={S.accountAvatarImg} entityType="user" />
+										</View>
+										<View style={S.accountInfo}>
+											<Text style={[S.accountSlug, isActive && S.accountSlugActive]} numberOfLines={1}>
+												@{account.slug}
+											</Text>
+											{account.lastSignIn && (
+												<Text style={S.accountAccessTime} numberOfLines={2}>
+													{formatLastAccess(account.lastSignIn)}
+												</Text>
+											)}
+										</View>
+									</TouchableOpacity>
+									<TouchableOpacity style={S.accountRemoveBtn} onPress={() => handleRemoveSavedAccount(account.slug)} activeOpacity={0.7} accessibilityLabel={`Remove @${account.slug}`}>
+										<Ionicons name="trash-outline" size={18} color="#EF4444" />
+									</TouchableOpacity>
+								</View>
 							)
 						})}
-					</ScrollView>
+					</View>
 				</View>
 			)}
 
@@ -669,18 +723,24 @@ export default function AuthScreen() {
 	)
 
 	const handleRemoveSavedAccount = useCallback(
-		async (slugToRemove: string) => {
-			try {
-				await deleteSavedAuthentication(slugToRemove)
-				await loadSavedAccounts()
-				toast.show({ title: translate('success', 'Success'), message: `@${slugToRemove} removed from accounts list.`, color: '#10B981' })
-				if (slug === slugToRemove) {
-					setSlug('')
-					setPassword('')
+		(slugToRemove: string) => {
+			showConfirm(
+				translate('remove_account_title', 'Remove Account?'),
+				translate('remove_account_confirm', `Are you sure you want to remove @${slugToRemove} from the saved accounts list?`),
+				async () => {
+					try {
+						await deleteSavedAuthentication(slugToRemove)
+						await loadSavedAccounts()
+						toast.show({ title: translate('success', 'Success'), message: `@${slugToRemove} removed from accounts list.`, color: '#10B981' })
+						if (slug === slugToRemove) {
+							setSlug('')
+							setPassword('')
+						}
+					} catch {
+						toast.show({ title: translate('error', 'Error'), message: 'Failed to remove saved account.', color: '#EF4444' })
+					}
 				}
-			} catch {
-				toast.show({ title: translate('error', 'Error'), message: 'Failed to remove saved account.', color: '#EF4444' })
-			}
+			)
 		},
 		[slug, translate, loadSavedAccounts]
 	)
