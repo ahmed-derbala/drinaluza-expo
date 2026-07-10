@@ -16,6 +16,7 @@ import { uploadFile } from '@/core/file'
 import { showAlert } from '@/core/helpers/popup'
 import { translate } from '@/core/translation'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
+import MultilingualNameInput from '@/features/common/MultilingualNameInput'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { SmartHeader } from '@/core/smart-header'
 import KeyboardAvoidingWrapper from '@/core/keyboard-avoiding-wrapper/KeyboardAvoidingWrapper'
@@ -118,6 +119,214 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 
 	// Refs
 	const priceInputRef = useRef<TextInput>(null)
+
+	const [editMode, setEditMode] = useState({
+		names: false,
+		pricing: false,
+		specs: false,
+		stock: false,
+		gallery: false,
+		state: false
+	})
+
+	const handleSaveSection = async (sectionKey: keyof typeof editMode) => {
+		if (sectionKey === 'names' && !productNameEn.trim()) {
+			showAlert(translate('validation_error', 'Validation Error'), translate('err_enter_product_name', 'Please enter a product name (English)'))
+			return
+		}
+		if (sectionKey === 'pricing') {
+			const price = parseFloat(priceTND)
+			if (isNaN(price) || price <= 0) {
+				showAlert(translate('validation_error', 'Validation Error'), translate('err_valid_price', 'Please enter a valid price'))
+				return
+			}
+			const minUnitNum = parseFloat(minUnit)
+			if (isNaN(minUnitNum) || minUnitNum <= 0) {
+				showAlert(translate('validation_error', 'Validation Error'), translate('err_min_unit', 'Minimum unit must be greater than 0'))
+				return
+			}
+			const maxUnitNum = parseFloat(maxUnit)
+			if (isNaN(maxUnitNum) || maxUnitNum <= 0) {
+				showAlert(translate('validation_error', 'Validation Error'), translate('err_max_unit', 'Maximum unit must be greater than 0'))
+				return
+			}
+			if (maxUnitNum < minUnitNum) {
+				showAlert(translate('validation_error', 'Validation Error'), translate('err_max_min', 'Maximum unit cannot be less than minimum unit'))
+				return
+			}
+		}
+
+		let updatePayload: any = {}
+		switch (sectionKey) {
+			case 'names':
+				updatePayload = {
+					name: {
+						en: productNameEn.trim(),
+						tn_latn: productNameTnLatn.trim() || undefined,
+						tn_arab: productNameTnArab.trim() || undefined
+					}
+				}
+				break
+			case 'pricing':
+				updatePayload = {
+					price: {
+						total: {
+							tnd: parseFloat(priceTND)
+						}
+					},
+					unit: {
+						measure: unit,
+						min: parseFloat(minUnit),
+						max: parseFloat(maxUnit),
+						step: parseFloat(unitStep)
+					}
+				}
+				break
+			case 'specs':
+				updatePayload = {
+					specs: {
+						caliber,
+						origin: {
+							street: originStreet.trim(),
+							city: originCity.trim(),
+							region: originRegion.trim(),
+							postalCode: originPostalCode.trim(),
+							country: originCountry.trim()
+						}
+					}
+				}
+				break
+			case 'stock':
+				updatePayload = {
+					stock: {
+						quantity: parseInt(stockQuantity) || 0,
+						minThreshold: parseInt(minThreshold) || 10
+					}
+				}
+				break
+			case 'gallery':
+				updatePayload = {
+					media: {
+						gallery: uploadedGallery,
+						thumbnail: product?.media?.thumbnail || { url: product?.defaultProduct?.media?.thumbnail?.url }
+					}
+				}
+				break
+			case 'state':
+				updatePayload = {
+					state: {
+						code: productState
+					}
+				}
+				break
+		}
+
+		try {
+			setCreating(true)
+			if (onSubmitOverride) {
+				await onSubmitOverride(updatePayload, sectionKey === 'state' ? productState : product?.state?.code || 'active')
+				setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
+			}
+		} catch (error) {
+			console.error('Failed to save section:', error)
+		} finally {
+			setCreating(false)
+		}
+	}
+
+	const cancelEditSection = (sectionKey: keyof typeof editMode) => {
+		setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
+		if (product) {
+			switch (sectionKey) {
+				case 'names':
+					setProductNameEn(product.name?.en || '')
+					setProductNameTnLatn(product.name?.tn_latn || '')
+					setProductNameTnArab(product.name?.tn_arab || '')
+					break
+				case 'pricing':
+					setPriceTND(product.price?.total?.tnd?.toString() || '')
+					setUnit(product.unit?.measure || 'kg')
+					setMinUnit(product.unit?.min?.toString() || '1')
+					setMaxUnit(product.unit?.max?.toString() || '10')
+					setUnitStep(product.unit?.step?.toString() || '1')
+					break
+				case 'specs':
+					setCaliber((product.specs?.caliber as any) || 3)
+					setOriginStreet(product.specs?.origin?.street || '')
+					setOriginCity(product.specs?.origin?.city || 'Ellouza')
+					setOriginRegion(product.specs?.origin?.region || 'Sfax')
+					setOriginPostalCode(product.specs?.origin?.postalCode || '3016')
+					setOriginCountry(product.specs?.origin?.country || 'Tunisia')
+					break
+				case 'stock':
+					setStockQuantity(product.stock?.quantity?.toString() || '')
+					setMinThreshold(product.stock?.minThreshold?.toString() || '10')
+					break
+				case 'gallery':
+					if (product.media?.gallery && product.media.gallery.length > 0) {
+						setUploadedGallery(product.media.gallery)
+					} else if (product.media?.thumbnail?.url) {
+						setUploadedGallery([{ _id: 'thumb', url: product.media.thumbnail.url }])
+					} else {
+						setUploadedGallery([])
+					}
+					break
+				case 'state':
+					setProductState((product.state?.code as any) || 'active')
+					break
+			}
+		}
+	}
+
+	const SectionCard = ({ title, children, sectionKey }: { title: string; children: React.ReactNode; sectionKey: keyof typeof editMode }) => {
+		if (!isEditMode) {
+			return (
+				<View style={styles.card}>
+					<Text style={styles.cardTitle}>{title}</Text>
+					{children}
+				</View>
+			)
+		}
+		const isEditing = editMode[sectionKey]
+		return (
+			<View style={styles.card}>
+				<View
+					style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: colors.border + '30', paddingBottom: 8, marginBottom: 16 }}
+				>
+					<Text style={[styles.cardTitle, { borderBottomWidth: 0, marginBottom: 0, paddingBottom: 0 }]}>{title}</Text>
+					<View style={{ flexDirection: 'row', gap: 12 }}>
+						{!isEditing ? (
+							<TouchableOpacity onPress={() => setEditMode((prev) => ({ ...prev, [sectionKey]: true }))} style={{ padding: 4 }} activeOpacity={0.7}>
+								<Ionicons name="create-outline" size={20} color={colors.primary} />
+							</TouchableOpacity>
+						) : (
+							<View style={{ flexDirection: 'row', gap: 12 }}>
+								<TouchableOpacity onPress={() => cancelEditSection(sectionKey)} style={{ padding: 4 }} activeOpacity={0.7}>
+									<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
+								</TouchableOpacity>
+								<TouchableOpacity onPress={() => handleSaveSection(sectionKey)} style={{ padding: 4 }} activeOpacity={0.7}>
+									<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
+								</TouchableOpacity>
+							</View>
+						)}
+					</View>
+				</View>
+				<View>{children}</View>
+			</View>
+		)
+	}
+
+	const InfoRow = ({ label, value, icon, isRtl }: any) => (
+		<View style={styles.infoRow}>
+			<View style={styles.infoRowIconContainer}>
+				<Ionicons name={icon} size={18} color={colors.textSecondary} />
+			</View>
+			<View style={styles.infoRowContent}>
+				<Text style={styles.infoRowLabel}>{label}</Text>
+				<Text style={[styles.infoRowValue, { color: colors.text }, isRtl && { textAlign: 'right' }]}>{value}</Text>
+			</View>
+		</View>
+	)
 
 	const COMMON_UNITS = ['kg', 'l', 'piece', 'tara']
 	const UNIT_LABELS: { [key: string]: string } = {
@@ -419,95 +628,283 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 				contentContainerStyle={styles.formContent}
 				scrollViewProps={{
 					onScroll: onScroll,
-					scrollEventThrottle: 16
+					scrollEventThrottle: 16,
+					keyboardShouldPersistTaps: 'handled'
 				}}
 			>
-				{/* GENERAL INFO CARD */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>{translate('general_info', 'General Info')}</Text>
+				{creating && (
+					<View style={styles.savingOverlay}>
+						<ActivityIndicator size="small" color={colors.primary} />
+						<Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>{translate('saving', 'Saving...')}</Text>
+					</View>
+				)}
 
-					{isEditMode && (
+				{/* BUSINESS & CATEGORY INFO (IMMUTABLE IN EDIT MODE) */}
+				{isEditMode ? (
+					<View style={styles.card}>
+						<Text style={styles.cardTitle}>{translate('business_category', 'Business & Category')}</Text>
+						<InfoRow label={translate('business', 'Business')} value={selectedBusiness?.name?.en || ''} icon="business" />
+						<InfoRow label={translate('default_product', 'Category')} value={selectedDefaultProduct?.name?.en || ''} icon="fish" />
+					</View>
+				) : (
+					<View style={styles.card}>
+						<Text style={styles.cardTitle}>{translate('business_category', 'Business & Category')}</Text>
 						<View style={styles.fieldContainer}>
-							<Text style={styles.fieldLabel}>{translate('state', 'State')}</Text>
-							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-								<TouchableOpacity
-									style={[
-										styles.inputBox,
-										{
-											flex: 1,
-											justifyContent: 'center',
-											borderColor: productState === 'active' ? colors.success || '#10B981' : colors.borderLight,
-											backgroundColor: productState === 'active' ? (colors.success || '#10B981') + '15' : colors.surface,
-											flexDirection: 'row',
-											gap: 6
-										}
-									]}
-									onPress={() => setProductState('active')}
-								>
-									<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success || '#10B981' }} />
-									<Text style={{ color: productState === 'active' ? colors.success || '#10B981' : colors.text, fontWeight: productState === 'active' ? '700' : '500' }}>
-										{translate('active', 'Active')}
+							<Text style={styles.fieldLabel}>
+								{translate('business', 'Business')} <Text style={styles.required}>*</Text>
+							</Text>
+							<TouchableOpacity style={[styles.pickerButton, selectedBusiness && styles.pickerButtonActive]} onPress={() => setShowBusinesses(true)}>
+								<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15' }]}>
+									<Text style={{ fontSize: 18 }}>{selectedBusiness ? '🏪' : '🏢'}</Text>
+								</View>
+								<View style={{ flex: 1 }}>
+									<Text style={[styles.pickerText, selectedBusiness && { color: colors.text }]}>
+										{selectedBusiness ? selectedBusiness.name?.en || '' : translate('select_business', 'Select Business')}
 									</Text>
-								</TouchableOpacity>
-								<TouchableOpacity
-									style={[
-										styles.inputBox,
-										{
-											flex: 1,
-											justifyContent: 'center',
-											borderColor: productState === 'suspended' ? colors.error || '#EF4444' : colors.borderLight,
-											backgroundColor: productState === 'suspended' ? (colors.error || '#EF4444') + '15' : colors.surface,
-											flexDirection: 'row',
-											gap: 6
-										}
-									]}
-									onPress={() => setProductState('suspended')}
-								>
-									<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.error || '#EF4444' }} />
-									<Text style={{ color: productState === 'suspended' ? colors.error || '#EF4444' : colors.text, fontWeight: productState === 'suspended' ? '700' : '500' }}>
-										{translate('suspended', 'Suspended')}
+								</View>
+								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+							</TouchableOpacity>
+						</View>
+
+						<View style={styles.fieldContainer}>
+							<Text style={styles.fieldLabel}>
+								{translate('default_product', 'Default Product')} <Text style={styles.required}>*</Text>
+							</Text>
+							<TouchableOpacity style={[styles.pickerButton, selectedDefaultProduct && styles.pickerButtonActive]} onPress={() => setShowDefaultProducts(true)}>
+								<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
+									<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="product" />
+								</View>
+								<View style={{ flex: 1 }}>
+									<Text style={[styles.pickerText, selectedDefaultProduct && { color: colors.text }]}>
+										{selectedDefaultProduct ? selectedDefaultProduct.name?.en || '' : translate('select_default_product', 'Select Default Product')}
 									</Text>
-								</TouchableOpacity>
+								</View>
+								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
+							</TouchableOpacity>
+						</View>
+					</View>
+				)}
+
+				{/* PRODUCT STATE (ONLY SHOWN & EDITABLE IN EDIT MODE) */}
+				{isEditMode && (
+					<SectionCard title={translate('state', 'State')} sectionKey="state">
+						{editMode.state ? (
+							<View style={styles.fieldContainer}>
+								<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+									<TouchableOpacity
+										style={[
+											styles.inputBox,
+											{
+												flex: 1,
+												justifyContent: 'center',
+												borderColor: productState === 'active' ? colors.success || '#10B981' : colors.borderLight,
+												backgroundColor: productState === 'active' ? (colors.success || '#10B981') + '15' : colors.surface,
+												flexDirection: 'row',
+												gap: 6
+											}
+										]}
+										onPress={() => setProductState('active')}
+									>
+										<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success || '#10B981' }} />
+										<Text style={{ color: productState === 'active' ? colors.success || '#10B981' : colors.text, fontWeight: productState === 'active' ? '700' : '500' }}>
+											{translate('active', 'Active')}
+										</Text>
+									</TouchableOpacity>
+									<TouchableOpacity
+										style={[
+											styles.inputBox,
+											{
+												flex: 1,
+												justifyContent: 'center',
+												borderColor: productState === 'suspended' ? colors.error || '#EF4444' : colors.borderLight,
+												backgroundColor: productState === 'suspended' ? (colors.error || '#EF4444') + '15' : colors.surface,
+												flexDirection: 'row',
+												gap: 6
+											}
+										]}
+										onPress={() => setProductState('suspended')}
+									>
+										<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.error || '#EF4444' }} />
+										<Text style={{ color: productState === 'suspended' ? colors.error || '#EF4444' : colors.text, fontWeight: productState === 'suspended' ? '700' : '500' }}>
+											{translate('suspended', 'Suspended')}
+										</Text>
+									</TouchableOpacity>
+								</View>
 							</View>
+						) : (
+							<InfoRow
+								label={translate('state', 'State')}
+								value={productState === 'active' ? translate('active', 'Active') : translate('suspended', 'Suspended')}
+								icon={productState === 'active' ? 'checkmark-circle' : 'alert-circle'}
+							/>
+						)}
+					</SectionCard>
+				)}
+
+				{/* PRODUCT NAMES CARD */}
+				<SectionCard title={translate('product_names', 'Product Names')} sectionKey="names">
+					{!isEditMode || editMode.names ? (
+						<MultilingualNameInput
+							nameEn={productNameEn}
+							setNameEn={setProductNameEn}
+							nameTnLatn={productNameTnLatn}
+							setNameTnLatn={setProductNameTnLatn}
+							nameTnArab={productNameTnArab}
+							setNameTnArab={setProductNameTnArab}
+						/>
+					) : (
+						<View style={{ gap: 12 }}>
+							<InfoRow label={translate('english_name', 'English Name')} value={productNameEn} icon="text" />
+							<InfoRow label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')} value={productNameTnLatn || '—'} icon="text-outline" />
+							<InfoRow label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')} value={productNameTnArab || '—'} icon="language" isRtl />
 						</View>
 					)}
+				</SectionCard>
 
-					<View style={styles.fieldContainer}>
-						<Text style={styles.fieldLabel}>
-							{translate('business', 'Business')} <Text style={styles.required}>*</Text>
-						</Text>
-						<TouchableOpacity style={[styles.pickerButton, selectedBusiness && styles.pickerButtonActive]} onPress={() => setShowBusinesses(true)}>
-							<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15' }]}>
-								<Text style={{ fontSize: 18 }}>{selectedBusiness ? '🏪' : '🏢'}</Text>
+				{/* PRICING & UNITS CARD */}
+				<SectionCard title={translate('pricing_units', 'Pricing & Units')} sectionKey="pricing">
+					{!isEditMode || editMode.pricing ? (
+						<View style={{ gap: 12 }}>
+							<View style={styles.row}>
+								<View style={styles.flexItem}>
+									<Text style={styles.fieldLabel}>
+										{translate('price_tnd', 'Price (TND)')} <Text style={styles.required}>*</Text>
+									</Text>
+									<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
+										<Text style={styles.prefix}>TND</Text>
+										<TextInput
+											ref={priceInputRef}
+											style={[styles.textInput, { color: colors.text }]}
+											value={priceTND}
+											onChangeText={setPriceTND}
+											placeholder="0.00"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="decimal-pad"
+										/>
+									</View>
+								</View>
+								<View style={{ width: 12 }} />
+								<View style={styles.flexItem}>
+									<Text style={styles.fieldLabel}>
+										{translate('unit', 'Unit')} <Text style={styles.required}>*</Text>
+									</Text>
+									<TouchableOpacity style={[styles.inputBox, { borderColor: unit ? colors.primary : colors.borderLight }]} onPress={() => setShowUnitPicker(true)}>
+										<Text style={{ color: colors.text, flex: 1, fontSize: 16 }}>{unit || translate('select_unit', 'Select unit')}</Text>
+										<Ionicons name="caret-down" size={16} color={colors.textSecondary} />
+									</TouchableOpacity>
+								</View>
 							</View>
-							<View style={{ flex: 1 }}>
-								<Text style={[styles.pickerText, selectedBusiness && { color: colors.text }]}>
-									{selectedBusiness ? selectedBusiness.name?.en || '' : translate('select_business', 'Select Business')}
-								</Text>
-							</View>
-							<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-						</TouchableOpacity>
-					</View>
 
-					<View style={styles.fieldContainer}>
-						<Text style={styles.fieldLabel}>
-							{translate('default_product', 'Default Product')} <Text style={styles.required}>*</Text>
-						</Text>
-						<TouchableOpacity style={[styles.pickerButton, selectedDefaultProduct && styles.pickerButtonActive]} onPress={() => setShowDefaultProducts(true)}>
-							<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
-								<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="product" />
+							<View style={styles.row}>
+								<View style={styles.flexItem}>
+									<Text style={styles.fieldLabel}>
+										{translate('min_qty', 'Min Qty')} <Text style={styles.required}>*</Text>
+									</Text>
+									<View style={[styles.inputBox, { borderColor: minUnit ? colors.primary : colors.borderLight }]}>
+										<TextInput
+											style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
+											value={minUnit}
+											onChangeText={setMinUnit}
+											placeholder="1"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="decimal-pad"
+										/>
+									</View>
+								</View>
+								<View style={{ width: 12 }} />
+								<View style={styles.flexItem}>
+									<Text style={styles.fieldLabel}>
+										{translate('max_qty', 'Max Qty')} <Text style={styles.required}>*</Text>
+									</Text>
+									<View style={[styles.inputBox, { borderColor: maxUnit ? colors.primary : colors.borderLight }]}>
+										<TextInput
+											style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
+											value={maxUnit}
+											onChangeText={setMaxUnit}
+											placeholder="10"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="decimal-pad"
+										/>
+									</View>
+								</View>
+								<View style={{ width: 12 }} />
+								<View style={styles.flexItem}>
+									<Text style={styles.fieldLabel}>
+										{translate('step', 'Step')} <Text style={styles.required}>*</Text>
+									</Text>
+									<View style={[styles.inputBox, { borderColor: unitStep ? colors.primary : colors.borderLight }]}>
+										<TextInput
+											style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
+											value={unitStep}
+											onChangeText={setUnitStep}
+											placeholder="1"
+											placeholderTextColor={colors.textTertiary}
+											keyboardType="decimal-pad"
+										/>
+									</View>
+								</View>
 							</View>
-							<View style={{ flex: 1 }}>
-								<Text style={[styles.pickerText, selectedDefaultProduct && { color: colors.text }]}>
-									{selectedDefaultProduct ? selectedDefaultProduct.name?.en || '' : translate('select_default_product', 'Select Default Product')}
-								</Text>
-							</View>
-							<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-						</TouchableOpacity>
-					</View>
+							<Text style={styles.infoHint}>
+								{translate('price_per', 'Price per')} {unit || translate('unit', 'unit')}, {translate('range', 'range')}: {minUnit || '0'} - {maxUnit || '0'} {unit || translate('unit', 'unit')}
+							</Text>
+						</View>
+					) : (
+						<View style={{ gap: 12 }}>
+							<InfoRow label={translate('price_tnd', 'Price (TND)')} value={`${priceTND} TND`} icon="cash" />
+							<InfoRow label={translate('unit', 'Unit')} value={UNIT_LABELS[unit] || unit} icon="cube" />
+							<InfoRow label={translate('min_qty', 'Min Qty')} value={minUnit} icon="remove-circle-outline" />
+							<InfoRow label={translate('max_qty', 'Max Qty')} value={maxUnit} icon="add-circle-outline" />
+							<InfoRow label={translate('step', 'Step')} value={unitStep} icon="arrow-forward-circle-outline" />
+						</View>
+					)}
+				</SectionCard>
 
+				{/* INVENTORY CARD */}
+				<SectionCard title={translate('inventory', 'Inventory')} sectionKey="stock">
+					{!isEditMode || editMode.stock ? (
+						<View style={styles.row}>
+							<View style={styles.flexItem}>
+								<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
+								<View style={[styles.inputBox, { borderColor: stockQuantity ? colors.primary : colors.borderLight }]}>
+									<Ionicons name="cube" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+									<TextInput
+										style={[styles.textInput, { color: colors.text }]}
+										value={stockQuantity}
+										onChangeText={setStockQuantity}
+										placeholder="100"
+										placeholderTextColor={colors.textTertiary}
+										keyboardType="number-pad"
+									/>
+								</View>
+							</View>
+							<View style={{ width: 16 }} />
+							<View style={styles.flexItem}>
+								<Text style={styles.fieldLabel}>{translate('alert_threshold', 'Alert Threshold')}</Text>
+								<View style={[styles.inputBox, { borderColor: colors.warning || '#F59E0B' }]}>
+									<Ionicons name="warning" size={20} color={colors.warning || '#F59E0B'} style={{ marginRight: 8 }} />
+									<TextInput
+										style={[styles.textInput, { color: colors.text }]}
+										value={minThreshold}
+										onChangeText={setMinThreshold}
+										placeholder="10"
+										placeholderTextColor={colors.textTertiary}
+										keyboardType="number-pad"
+									/>
+								</View>
+							</View>
+						</View>
+					) : (
+						<View style={{ gap: 12 }}>
+							<InfoRow label={translate('stock_quantity', 'Stock Quantity')} value={stockQuantity} icon="cube" />
+							<InfoRow label={translate('alert_threshold', 'Alert Threshold')} value={minThreshold} icon="warning" />
+						</View>
+					)}
+				</SectionCard>
+
+				{/* PRODUCT GALLERY CARD */}
+				<SectionCard title={translate('product_gallery', 'Product Gallery')} sectionKey="gallery">
 					<ProductGallerySection
-						editable={true}
+						editable={!isEditMode || editMode.gallery}
 						gallery={uploadedGallery}
 						colors={colors}
 						translate={translate}
@@ -515,201 +912,66 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 						onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((f) => f._id !== item._id))}
 						uploading={uploadingPhoto}
 					/>
-				</View>
-
-				{/* PRODUCT NAMES CARD */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>{translate('product_names', 'Product Names')}</Text>
-
-					<LocalizedFormInput label={translate('english_name', 'English Name')} value={productNameEn} onChangeText={setProductNameEn} lang="en" placeholder="e.g., Fresh Atlantic Salmon" required />
-
-					<LocalizedFormInput
-						label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')}
-						value={productNameTnLatn}
-						onChangeText={setProductNameTnLatn}
-						lang="tn_latn"
-						placeholder="e.g., Salmon Fresh"
-					/>
-
-					<LocalizedFormInput
-						label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')}
-						value={productNameTnArab}
-						onChangeText={setProductNameTnArab}
-						lang="tn_arab"
-						placeholder="مثلا: سالمون طازج"
-					/>
-				</View>
-
-				{/* PRICING & UNITS CARD */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>{translate('pricing_units', 'Pricing & Units')}</Text>
-
-					<View style={styles.row}>
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>
-								{translate('price_tnd', 'Price (TND)')} <Text style={styles.required}>*</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
-								<Text style={styles.prefix}>TND</Text>
-								<TextInput
-									ref={priceInputRef}
-									style={[styles.textInput, { color: colors.text }]}
-									value={priceTND}
-									onChangeText={setPriceTND}
-									placeholder="0.00"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="decimal-pad"
-								/>
-							</View>
-						</View>
-						<View style={{ width: 12 }} />
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>
-								{translate('unit', 'Unit')} <Text style={styles.required}>*</Text>
-							</Text>
-							<TouchableOpacity style={[styles.inputBox, { borderColor: unit ? colors.primary : colors.borderLight }]} onPress={() => setShowUnitPicker(true)}>
-								<Text style={{ color: colors.text, flex: 1, fontSize: 16 }}>{unit || translate('select_unit', 'Select unit')}</Text>
-								<Ionicons name="caret-down" size={16} color={colors.textSecondary} />
-							</TouchableOpacity>
-						</View>
-					</View>
-
-					<View style={styles.row}>
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>
-								{translate('min_qty', 'Min Qty')} <Text style={styles.required}>*</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: minUnit ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
-									value={minUnit}
-									onChangeText={setMinUnit}
-									placeholder="1"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="decimal-pad"
-								/>
-							</View>
-						</View>
-						<View style={{ width: 12 }} />
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>
-								{translate('max_qty', 'Max Qty')} <Text style={styles.required}>*</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: maxUnit ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
-									value={maxUnit}
-									onChangeText={setMaxUnit}
-									placeholder="10"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="decimal-pad"
-								/>
-							</View>
-						</View>
-						<View style={{ width: 12 }} />
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>
-								{translate('step', 'Step')} <Text style={styles.required}>*</Text>
-							</Text>
-							<View style={[styles.inputBox, { borderColor: unitStep ? colors.primary : colors.borderLight }]}>
-								<TextInput
-									style={[styles.textInput, { color: colors.text, textAlign: 'center' }]}
-									value={unitStep}
-									onChangeText={setUnitStep}
-									placeholder="1"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="decimal-pad"
-								/>
-							</View>
-						</View>
-					</View>
-					<Text style={styles.infoHint}>
-						{translate('price_per', 'Price per')} {unit || translate('unit', 'unit')}, {translate('range', 'range')}: {minUnit || '0'} - {maxUnit || '0'} {unit || translate('unit', 'unit')}
-					</Text>
-				</View>
-
-				{/* INVENTORY CARD */}
-				<View style={styles.card}>
-					<Text style={styles.cardTitle}>
-						{translate('inventory', 'Inventory')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-					</Text>
-
-					<View style={styles.row}>
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
-							<View style={[styles.inputBox, { borderColor: stockQuantity ? colors.primary : colors.borderLight }]}>
-								<Ionicons name="cube" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={stockQuantity}
-									onChangeText={setStockQuantity}
-									placeholder="100"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="number-pad"
-								/>
-							</View>
-						</View>
-						<View style={{ width: 16 }} />
-						<View style={styles.flexItem}>
-							<Text style={styles.fieldLabel}>{translate('alert_threshold', 'Alert Threshold')}</Text>
-							<View style={[styles.inputBox, { borderColor: colors.warning || '#F59E0B' }]}>
-								<Ionicons name="warning" size={20} color={colors.warning || '#F59E0B'} style={{ marginRight: 8 }} />
-								<TextInput
-									style={[styles.textInput, { color: colors.text }]}
-									value={minThreshold}
-									onChangeText={setMinThreshold}
-									placeholder="10"
-									placeholderTextColor={colors.textTertiary}
-									keyboardType="number-pad"
-								/>
-							</View>
-						</View>
-					</View>
-				</View>
+				</SectionCard>
 
 				{/* PRODUCT SPECIFICATIONS CARD */}
-				<ProductSpecsSection
-					editable={true}
-					colors={colors}
-					translate={translate}
-					caliber={caliber}
-					setCaliber={setCaliber}
-					originStreet={originStreet}
-					setOriginStreet={setOriginStreet}
-					originCity={originCity}
-					setOriginCity={setOriginCity}
-					originRegion={originRegion}
-					setOriginRegion={setOriginRegion}
-					originPostalCode={originPostalCode}
-					setOriginPostalCode={setOriginPostalCode}
-					originCountry={originCountry}
-					setOriginCountry={setOriginCountry}
-				/>
-				{/* Footer Button */}
-				<View style={styles.footer}>
-					<TouchableOpacity
-						style={[
-							styles.submitBtn,
-							{
-								backgroundColor: isFormValid ? colors.success || '#10B981' : 'transparent',
-								borderColor: isFormValid ? colors.success || '#10B981' : colors.borderLight,
-								borderWidth: 2,
-								opacity: isFormValid && !creating ? 1 : 0.6
+				<SectionCard title={translate('product_specs', 'Product Specifications')} sectionKey="specs">
+					<ProductSpecsSection
+						editable={!isEditMode || editMode.specs}
+						colors={colors}
+						translate={translate}
+						caliber={caliber}
+						setCaliber={setCaliber}
+						originStreet={originStreet}
+						setOriginStreet={setOriginStreet}
+						originCity={originCity}
+						setOriginCity={setOriginCity}
+						originRegion={originRegion}
+						setOriginRegion={setOriginRegion}
+						originPostalCode={originPostalCode}
+						setOriginPostalCode={setOriginPostalCode}
+						originCountry={originCountry}
+						setOriginCountry={setOriginCountry}
+						specs={{
+							caliber,
+							origin: {
+								street: originStreet,
+								city: originCity,
+								region: originRegion,
+								postalCode: originPostalCode,
+								country: originCountry
 							}
-						]}
-						onPress={handleCreateProduct}
-						disabled={!isFormValid || creating}
-					>
-						{creating ? (
-							<ActivityIndicator color="#fff" size="small" />
-						) : (
-							<>
-								<Text style={styles.submitBtnText}>{submitLabel || (isEditMode ? translate('update_product', 'Update Product') : translate('create_product', 'Create Product'))}</Text>
-								<Ionicons name="checkmark-done" size={22} color="#fff" />
-							</>
-						)}
-					</TouchableOpacity>
-				</View>
+						}}
+					/>
+				</SectionCard>
+
+				{/* Footer Button */}
+				{!isEditMode && (
+					<View style={styles.footer}>
+						<TouchableOpacity
+							style={[
+								styles.submitBtn,
+								{
+									backgroundColor: isFormValid ? colors.success || '#10B981' : 'transparent',
+									borderColor: isFormValid ? colors.success || '#10B981' : colors.borderLight,
+									borderWidth: 2,
+									opacity: isFormValid && !creating ? 1 : 0.6
+								}
+							]}
+							onPress={handleCreateProduct}
+							disabled={!isFormValid || creating}
+						>
+							{creating ? (
+								<ActivityIndicator color="#fff" size="small" />
+							) : (
+								<>
+									<Text style={styles.submitBtnText}>{submitLabel || translate('create_product', 'Create Product')}</Text>
+									<Ionicons name="checkmark-done" size={22} color="#fff" />
+								</>
+							)}
+						</TouchableOpacity>
+					</View>
+				)}
 			</KeyboardAvoidingWrapper>
 
 			{/* Businesses Modal */}
@@ -989,6 +1251,48 @@ const createStyles = (colors: any) =>
 			color: colors.textTertiary,
 			fontStyle: 'italic',
 			marginTop: 4
+		},
+		infoRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingVertical: 10,
+			gap: 14,
+			borderBottomWidth: 1,
+			borderBottomColor: `${colors.border}40`
+		},
+		infoRowIconContainer: {
+			width: 38,
+			height: 38,
+			borderRadius: 12,
+			backgroundColor: `${colors.textSecondary}12`,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		infoRowContent: {
+			flex: 1
+		},
+		infoRowLabel: {
+			fontSize: 11,
+			fontWeight: '700',
+			color: colors.textSecondary,
+			textTransform: 'uppercase',
+			letterSpacing: 0.5,
+			marginBottom: 2
+		},
+		infoRowValue: {
+			fontSize: 15,
+			fontWeight: '600'
+		},
+		savingOverlay: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 8,
+			paddingVertical: 10,
+			paddingHorizontal: 16,
+			borderRadius: 12,
+			backgroundColor: `${colors.primary}12`,
+			marginBottom: 16,
+			alignSelf: 'center'
 		},
 		footer: {
 			padding: 16,

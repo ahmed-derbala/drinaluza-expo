@@ -319,7 +319,11 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 export const signInWithToken = async (token: string): Promise<boolean> => {
 	try {
 		await setToken(token)
-		const profileResponse = await getMyProfile()
+		const profileResponse = await getMyProfile({
+			headers: {
+				skipAuthRedirect: 'true'
+			}
+		})
 
 		if (profileResponse && profileResponse.data) {
 			await setUserData(profileResponse.data)
@@ -438,8 +442,8 @@ export const checkAuth = async (): Promise<boolean> => {
 }
 
 // Get current full profile from API
-export const getMyProfile = async () => {
-	const response = await getApiClient().get('/users/my-profile')
+export const getMyProfile = async (config?: any) => {
+	const response = await getApiClient().get('/users/my-profile', config)
 	return response.data
 }
 

@@ -63,6 +63,7 @@ const normalizeFeedDoc = (doc: any): FeedItem => {
 				address,
 				location,
 				rating,
+				media,
 				createdAt: businessCreatedAt || createdAt,
 				updatedAt: businessUpdatedAt || updatedAt
 			},

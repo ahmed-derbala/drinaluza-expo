@@ -34,8 +34,8 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 			<View style={styles.headerRow}>
 				{/* Left: avatar + name + slug */}
 				<TouchableOpacity onPress={handlePress} style={styles.bizLeft} activeOpacity={0.75}>
-					{item.media?.thumbnail?.url ? (
-						<SmartImage source={item.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
+					{item.media?.thumbnail?.url || item.business?.media?.thumbnail?.url ? (
+						<SmartImage source={item.media?.thumbnail?.url || item.business?.media?.thumbnail?.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
 					) : (
 						<View style={styles.bizAvatarFallback}>
 							<MaterialIcons name="store" size={16} color="#0EA5E9" />
@@ -73,7 +73,7 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 
 			{/* ── Banner image ── */}
 			<View style={styles.banner}>
-				<SmartImage source={item.media?.thumbnail?.url} style={styles.bannerImg} resizeMode="cover" entityType="business" />
+				<SmartImage source={item.media?.thumbnail?.url || item.business?.media?.thumbnail?.url} style={styles.bannerImg} resizeMode="cover" entityType="business" />
 				<View style={styles.bannerOverlay} />
 
 				{/* Rating badge overlaid on banner */}

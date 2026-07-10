@@ -6,6 +6,7 @@ import { updateProduct, getProductBySlug } from '@/features/products/products.ap
 import { ProductType } from '@/features/products/products.type'
 import { showAlert } from '@/core/helpers/popup'
 import { translate } from '@/core/translation'
+import { toast } from '@/features/common/Toast'
 import CreateProductScreen from '@/features/products/CreateProductScreen'
 
 export default function EditProductScreen() {
@@ -36,20 +37,16 @@ export default function EditProductScreen() {
 
 	const handleUpdateProduct = async (productData: any, stateCode: string) => {
 		try {
-			await updateProduct(productSlug, {
+			const res = await updateProduct(productSlug, {
 				...productData,
 				state: { code: stateCode }
 			})
-			showAlert(translate('success', 'Success'), translate('product_updated_success', 'Product updated successfully!'), () => {
-				if (product?.business?.slug) {
-					router.replace(`/dashboard/${product.business.slug}/products` as never)
-				} else {
-					router.replace('/(home)/dashboard' as never)
-				}
-			})
+			setProduct(res.data)
+			toast.show({ title: translate('success', 'Success'), message: translate('product_updated_success', 'Product updated successfully!'), color: colors.success })
 		} catch (error: any) {
 			console.error('Failed to update product:', error)
 			showAlert(translate('error', 'Error'), error?.response?.data?.message || translate('err_update_failed', 'Failed to update product. Please try again.'))
+			throw error
 		}
 	}
 

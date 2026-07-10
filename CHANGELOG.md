@@ -1,5 +1,40 @@
+## [1.27.60] - 10 july 2026
+### Changed
+- Remove `editable={!loading}` from the username and password text inputs in `AuthScreen.tsx`, wrapping the form in a `View` with `pointerEvents={loading ? 'none' : 'auto'}` instead. This resolves the Android native input recreation issue that was clearing the username state and detaching the input focus reference.
+- Simplify `focusPasswordField` in `AuthScreen.tsx` to use the standard React Native `ref.focus()` method with a minor layout timeout, removing the redundant `UIManager` and recursive retry focus loop.
+- Refactor `getAccountDisplayName` in `AuthScreen.tsx` to use the standard `localize` function from user context.
+- Clean up unused imports (`UIManager`, `findNodeHandle`, `showAlert`) and remove unnecessary debug console logs.
+- Add support for a `skipAuthRedirect` custom header in the Axios response interceptor (`src/core/api/index.ts`) to prevent a 401 error from trigger-routing back to `/auth`, avoiding full screen remounts on authentication screens when quick-switch token checks fail.
+- Uncheck the "Require password on switch" option by default (`needPassword = false`) when populating credentials for a saved account.
+
+- Configure the default `behavior` in `KeyboardAvoidingWrapper.tsx` to `undefined` on Android. This avoids double-resizing layout corruptions on orientation changes/keyboard toggles (since Android's native `softwareKeyboardLayoutMode` is set to `"resize"` in `app.config.js`).
+- Conditionally align the authentication card ScrollView to `'flex-start'` instead of `'center'` in `AuthScreen.tsx` when the screen height is under 550px. This prevents layout clipping and corruption on landscape phone viewports.
+
+### Fixed
+- Fix authentication errors where sign-in or sign-up API failures were not logged using the unified logging system.
+
+## [1.27.59] - 9 july 2026
+### Changed
+- Remove general and location tabs from Edit Business Screen, rendering all cards vertically in a unified scrollable list.
+- Integrate the standard `SmartHeader` component in Edit Business Screen, and disable the default React Navigation header.
+- Fallback to `item.business?.media?.thumbnail?.url` in feed business cards (`businesses.card.tsx`) if `item.media` is not populated directly.
+- Replace generic store icon inside business metadata card on Product Details screen (`ProductDetailScreen.tsx`) with the actual business thumbnail image when available.
+
+### Added
+- Add support for direct thumbnail upload from the Edit Business Screen hero banner using `expo-document-picker` and the file upload service.
+- Add support for new business schema fields: `address.postalCode` (editable inside the Address section), `contact.backupPhones` list (with add and delete actions in the Contact section), and `location` metadata including GPS-retrieved or manual `accuracy`, `altitude`, `heading`, and `speed`.
+- Populate `media` field under nested `business` object inside doc normalization on the feed API (`feed.api.ts`).
+- Update TypeScript interface definitions for `OrderItem` in `orders.interface.ts` and `ProductType` in `products.type.ts` to type the nested `business.media` structure.
+
+### Fixed
+- Fix infinite loading/fetch loop on Purchases screen (`PurchasesScreen.tsx`) by storing purchasesState and cartState in stable Refs and clearing the useCallback dependency list.
+- Fix password input focus failure on quick-switch auth failure (`AuthScreen.tsx`) by implementing a recursive retry-based focus loop (`attemptFocus`).
+- Ensure slug field is populated, password field is cleared, and slugError is reset upon selecting a saved account when a switch fails or requires password.
+
 ## [1.27.55] - 9 july 2026
 ### Added
+- Add `MultilingualNameInput.tsx` inside `src/features/common/` as a reusable component wrapping localized English, Tunisian Latin, and Tunisian Arabic name input fields.
+- Add "Edit Business" quick action card button inside the main `Dashboard.tsx` view to navigate directly to the edit business layout.
 - Add automatic setting of `media.thumbnail` to match the selected default product's thumbnail URL on product creation.
 - Add reusable component `StateBadge.tsx` inside `src/features/common/` to parse and represent backend state schema values (`pending`, `active`, `suspended`, `deleted`, `inactive`) with unified dot indicators, themed colors, and localization labels.
 - Add reusable component `ProductGallerySection.tsx` inside `src/features/products/common/` that handles both editable multi-image gallery uploads and read-only thumbnail sliding selectors.
@@ -15,7 +50,11 @@
 - Redesign the `ProductDetailScreen.tsx` metadata section to display product specifications (a localized caliber size pill badge, and country/city origin of the seafood product).
 - Show specifications (caliber size badge and origin location chip) directly inside the product cards in `products.card.tsx`, `BusinessProductsScreen.tsx`, and `BusinessDetailsScreen.tsx`.
 - Include `specs` properties during feed items data normalization inside `feed.api.ts` to ensure cards display specs inside the feed screen.
+
 ### Changed
+- Refactor `ProfileScreen.tsx`, `EditBusinessScreen.tsx`, and `CreateProductScreen.tsx` to use the new reusable `MultilingualNameInput` for multilingual name input editing.
+- Refactor `EditBusinessScreen.tsx` and `CreateProductScreen.tsx` (in edit mode) to implement section-by-section inline edit/save/cancel controls on the top right of each card, rendering read-only values when locked, and saving changes directly to the backend.
+- Update `EditProductScreen.tsx` to support the new section inline editing flow, keeping the user on the screen and displaying success toasts on save without immediate redirect.
 - Refactor `CreateProductScreen.tsx` to accept customizable props (`isEditMode`, `product`, `onSubmitOverride`, `submitLabel`), and completely rewrite `EditProductScreen.tsx` to render `CreateProductScreen` under the hood to ensure full code reuse for future form fields.
 - Refactor `CreateProductScreen.tsx` and `ProductDetailScreen.tsx` to utilize the new reusable `ProductGallerySection` and `ProductSpecsSection` components, completely removing duplicated styles, scripts, and layouts.
 - Outline the bottom navigation tab bar ("dash") with the primary theme color.
@@ -24,6 +63,7 @@
 - Rename product "Status" translation label to "State" in `CreateProductScreen.tsx` and `ProductDetailScreen.tsx` to align exactly with backend nomenclature.
 - Move the product creation screen route from `/dashboard/[businessSlug]/products/create` to `/dashboard/[businessSlug]/create-product` inside `_layout.tsx`, updating all dashboard and business FAB navigation references.
 - Refactor the hero image preview path in `ProductDetailScreen.tsx` to construct a combined gallery array containing both the main product thumbnail and custom uploaded gallery images.
+- Redesign `EditBusinessScreen.tsx` from scratch using a modern segmented tab layout, adding a beautiful top hero banner with real-time business title rendering, integrating `StateBadge` to display current status, exposing the business profile `description` input, and utilizing premium focus-styled text inputs, location coordinates chips, and full KeyboardAvoidingWrapper integration.
 
 ### Removed
 - Remove `singlePieceMetrics` (piece length and weight) from product specs interface, creation form, payload mapping, and details page visualization.
@@ -43,47 +83,6 @@
 - Integrate `ORDER_STATUSES` from `src/features/orders/orders-statuses.ts` for order status rendering and tracking.
 - Revert all in-app navigation routes pointing to `/purchases/cart` back to `/purchases?status=cart` across feed, product, business, profile, search, and SmartHeader modules.
 - Rename `src/features/orders/orderStatus.ts` to `src/features/orders/orders-statuses.ts` and rename `orderStatusEnum` to `ORDER_STATUSES`.
-- Clean up unused/untracked files under `src/features/purchases/` and `src/app/purchases/`.
-## [1.27.53] - 7 july 2026
-### Changed
-- Refactor the Purchases / Orders screen to extract isolated `CartTabContent` and `PurchasesTabContent` sub-components. This decouples tab layout and data fetching logic, guaranteeing that active tabs fetch data independently without triggering unnecessary re-renders or requests in unrelated tabs, in compliance with project tab rendering guidelines.
-
-## [1.27.52] - 7 july 2026
-### Changed
-- Update the download button label on the web version of the Updates screen to explicitly show "Download Android APK" followed by the target release version.
-- Relocate the purchases screen route from `/profile/purchases` to the root route `/purchases` to make it accessible directly. Updated root layout stack configurations and all redirect links across feed, business, search, and profile screens.
-- Move the status filter ScrollView inside the `headerBottom` option of `Stack.Screen` in `PurchasesScreen.tsx`. This aligns the layout with `SmartHeader` specifications, resolving the visual overlap issue where the absolutely positioned header covered the filter tabs bar.
-- Redesign the Purchases screen visual structure. Upgraded cards with rounded corners, subtle translucent borders, a dual-ring transit progress timeline step tracker, customized circular quantity controls, and a vibrant linear gradient checkout button.
-
-## [1.27.51] - 7 july 2026
-### Changed
-- Update the notification status action button icon in the `NotificationsScreen` header from `notifications-off-outline` to `notifications-outline` styled in warning colors to clearly denote status warnings rather than misleading users into thinking tapping the button disables notifications.
-
-## [1.27.50] - 5 july 2026
-### Fixed
-- Sort ready-to-install cached APKs descending by version on the updates screen, ensuring the primary "Install" action button always targets the highest available downloaded installer rather than the first matching item in files scan logs.
-- Sort the "Cached APK Installers" list on the updates screen descending by version, ensuring the latest downloaded APK files are displayed first at the top of the installers card.
-- Remove the redundant "Notifications Disabled" warning list header banner from the notifications list view, relying on the compact warning icon inside the `SmartHeader` right actions area instead.
-
-## [1.27.48] - 5 july 2026
-### Changed
-- Render an interactive alert button inside `SmartHeader` when push notifications are disabled on the notifications screen, allowing users to quickly request notification permissions directly from the screen header.
-- Extend `SmartHeader` action mapping configurations to support customizable action `backgroundColor` and `iconColor` overrides.
-- Fix API response interceptor behavior inside `src/core/api/index.ts` to cleanly redirect the user to the auth screen (`/auth`) upon receiving a `401 Unauthorized` status code. Specifically, corrected the `isOnAuthPage` checker to prevent the index route (`/`) from falsely blocking redirects during startup authorization checks.
-
-## [1.27.47] - 5 july 2026
-### Added
-- Check push notification permissions dynamically when the `NotificationsScreen` mounts or gains focus. Render an interactive warning banner at the top of the notifications list if permissions are currently disabled, allowing the user to request permission immediately upon tap.
-- Add Expo Go appOwnership guards inside notification permission validation hooks to bypass check operations and show friendly limitation alerts inside Expo Go clients on Android, preventing native push API crashes.
-
-## [1.27.46] - 5 july 2026
-### Changed
-- Simplify the updates screen download progress bar fill by replacing the LinearGradient with a solid View styled with the `colors.primary` theme color.
-- Style the "Min Android Version" metadata value dynamically to render green if the active system is supported (Android 6.0/API 23+), or red if unsupported. On web browsers running on Android, display this card with the Min Android Version row only, hiding storage details.
-
-## [1.27.45] - 5 july 2026
-### Fixed
-- Register the root settings route under the custom `SmartHeader` component inside `src/app/_layout.tsx`, and update `SettingsScreen.tsx` to dynamically configure header parameters and action items using `<Stack.Screen>` instead of `<Tabs.Screen>`.
 - Implement document-level outside click listener on web inside `SmartKebabMenu.tsx` to ensure the menu closes when a user clicks anywhere outside of the dropdown container.
 
 ### Changed
@@ -194,117 +193,4 @@
 
 ### Removed
 - Delete unused `HeaderTitle.tsx` component from `src/features/common/`.
-- Delete unused `dotenv` dependency from `package.json`.
-
-## [1.27.11] - 28 june 2026
-### Added
-- Move `HeaderRefreshButton` component from `src/features/common/` to `src/core/smart-header/` to make it a self-contained core header subcomponent.
-- Show standard `SmartHeader.RefreshButton` on the header of the Updates screen.
-
-### Changed
-- Remove platform-specific `marginRight` layout styles from `HeaderRefreshButton` to enforce spacing consistency via parent layout container.
-- Update import statements in all 12 screen/feature files to import `HeaderRefreshButton` from `@/core/smart-header`.
-- Remove redundant inline "Refresh" button from native actions list in the Updates screen body, and clean up the "Check Updates" and "Refresh" buttons in the Web layout.
-- Redesign the Updates screen with modern glassmorphic card containers, gradient action buttons, pulsing status indicators, and monospace code-styled changelogs.
-- Implement a custom lightweight `MarkdownRenderer` helper in the Updates screen to format rich release log notes (headings, list bullets, bold keywords, and inline code formatting).
-- Refactor all 13 feature screens (including Dashboard, Product/Business lists and details, Settings, Sales, Purchases, Notifications, and Profile) to use standard `headerActions` navigation options instead of hardcoded `headerRight` custom views.
-- Relocate custom header hooks (`headerActions`, `resolvedFallbackRoute`) to the top of `ProductDetailScreen` and `BusinessProductsScreen` before conditional returns to conform to React Rules of Hooks.
-- Render `SmartHeader` directly inside `UserDetailScreen` and set native stack header to hidden to bypass nested router layout mismatches.
-- Update the custom `SmartHeader.RefreshButton` on the Updates screen to execute both update checks and browser page reloading under Web platforms.
-
-## [1.27.9] - 28 june 2026
-### Added
-- Create `useResponsiveGrid` custom hook under `src/core/hooks/` to standardize column calculations and card layout boundaries.
-- Create `feed.helpers.ts` under `src/features/feed/` to house the reusable `enrichFeedContacts` utility.
-
-### Changed
-- Refactor `FeedScreen.tsx`, `SearchScreen.tsx`, and `ProductsListScreen.tsx` to use the centralized `useResponsiveGrid` hook.
-- Align `SearchScreen.tsx` to render using the same responsive grid layout on Web as `FeedScreen.tsx`, preventing search cards from stretching too wide on desktop monitors.
-- Integrate contact/location enrichment inside `SearchScreen.tsx` so product card contacts are resolved and displayed correctly for search results.
-- Hide the Settings tab from the bottom tab bar navigation in `src/app/(home)/_layout.tsx` while keeping its route active.
-
-## [1.27.5] - 27 june 2026
-### Removed
-- Completely remove isStartupChecking state, comments, and the black splash screen loader rendering gate from root `_layout.tsx`.
-
-## [1.27.4] - 27 june 2026
-### Changed
-- Optimize Android startup performance by making update check non-blocking and running it asynchronously in the background.
-
-## [1.27.3] - 27 june 2026
-### Fixed
-- Fix application crash on the Web platform inside `ContactButtons` and `UserCard` by correcting `hitSlop` format from number to object.
-- Fix deprecated `textShadow*` stylesheet property warnings on Web inside `ProductCard` styles.
-
-## [1.27.2] - 27 june 2026
-### Added
-- Add a Cancel button during active download progress on the Updates screen.
-- Retain incomplete download `.tmp` files on app startup by skipping their deletion inside `performStartupCleanup()`.
-- Persist download resume data locally in Storage so downloads can survive application restarts.
-
-## [1.27.1] - 27 june 2026
-### Changed
-- Filter out default menu items (Home, Settings, About, Updates) in `SmartKebabMenu` if they match the currently active route path/screen.
-
-## [1.26.15] - 27 june 2026
-### Added
-- Add pause, resume, and cancel download controls to Updates screen layout.
-- Implement `pauseDownload`, `resumeDownload`, and `cancelDownload` callback logic inside `UpdatesContext.tsx` to handle partial download resume files dynamically.
-
-## [1.26.14] - 27 june 2026
-### Added
-- Create SearchScreen with search input, 1-second query debounce, collapsible filters (products and users scopes), and search history persistence.
-- Create dedicated `search.api.ts` module with GET `/search` API call matching scopes parameters.
-- Append translation strings to `en.ts` translations file.
-
-## [1.26.13] - 27 june 2026
-### Added
-- Redesign and implement the Search feature completely from scratch using clean, decoupled modular components and hooks.
-- Create `useSearch.ts` custom hook to extract state, API search queries, debouncing logic, history CRUD, and parameter synchronizations.
-- Extract `SearchBar.tsx`, `SearchFilters.tsx`, `SearchHistory.tsx`, `SearchResults.tsx`, and `SkeletonCard.tsx` as standalone components.
-- Delete the legacy unused `SearchBar.tsx` component.
-
-### Changed
-- Re-wire `SearchScreen.tsx` to serve as a clean UI shell coordinating subcomponents and loading user cart state.
-
-## [1.26.12] - 27 june 2026
-### Added
-- Add shimmer skeleton loading cards to search screen (matching FeedScreen style) instead of a bare activity spinner.
-- Add result count badge displayed below filter chips when search results are present.
-- Add `RefreshControl` (pull-to-refresh) to search results lists on both mobile and web.
-- Add `keyboardDismissMode="on-drag"` to all scroll views in search screen for better keyboard UX.
-- Add `useScrollHandler` to search results FlashList so the header hides on scroll down and restores on scroll up.
-- Add accessibility roles and labels on search history items.
-
-### Changed
-- Reduce search debounce delay from 400ms to 350ms for snappier feel.
-- Move history rendering into a dedicated `ScrollView`-wrapped section, making it scrollable when the list is long.
-- Refactor mount-only `useEffect` to use an empty dependency array with a ref guard to prevent re-runs caused by stale closure deps.
-- Add `estimatedItemSize={260}` to results `FlashList` for improved scroll performance.
-- Wire history item taps to only fire a search if the search bar text has actually changed.
-
-### Fixed
-- Fix stale `last_search_text` restoration: storage is now only applied on clean mounts with no URL `q=` param, and never restores an empty string.
-- Replace all `console.error`/`console.warn` calls in search screen with the project's `log()` utility.
-- Fix `addToCart`, `loadCart`, `renderEmpty`, and `renderHistorySection` not being memoized with `useCallback`, causing unnecessary re-renders.
-- Remove dead `loadHistory` callback that was defined but never called.
-
-## [1.26.11] - 27 june 2026
-### Added
-- Add reusable `KeyboardAvoidingWrapper` component under `src/core/keyboard-avoiding-wrapper/` to prevent the on-screen keyboard from obscuring input fields.
-- Add `sync-screenshots.js` script and placeholder comment tags in `README.md` to automatically scan `docs/screenshots/` and update screenshot image layouts during start, dev, and release builds.
-
-### Changed
-- Replace inline `KeyboardAvoidingView` + `ScrollView` pair in `AuthScreen` with the new shared `KeyboardAvoidingWrapper`.
-- Rename `SmartScreenHeader` to `SmartHeader` (and its directory `src/core/smart-screen-header/` to `src/core/smart-header/`) and update all 10 consumers.
-- Add global `isHeaderVisible` state to `LayoutContext` and update `useScrollHandler` to hide the header on scroll down and restore it on scroll up.
-- Decrease scroll-up sensitivity for header visibility by accumulating scroll direction changes and setting a custom 150px threshold.
-- Fix scroll flickering during continuous long scrolls by ignoring scroll events in the 400ms transition quiet window after a visibility toggle.
-- Update `SmartHeader` layout and opacity animation using `Animated` to collapse its height and slide out of view cleanly when hidden.
-- Replace search screen custom back/input header with standard SmartHeader component, positioning the search bar below it and adding correct top padding offset to prevent overlapping.
-- Fix SmartKebabMenu clipping bug by toggling SmartHeader container overflow style to visible when the header is active.
-- Resolve duplicate API requests on search screen by tracking locally-initiated input and filter changes.
-- Implement flex-wrap grid container layout on Web version of search screen to prevent cards overlapping.
-- Persist the last searched text query using local storage and restore it on mount when no URL parameters exist, and clear the persisted value when clearing history or inputs.
-- Fix search character delete bug by wrapping initial auto-search mount effects in a single-execution ref guard.
-
+- Delete unused `dotenv` dependency from `package.json`

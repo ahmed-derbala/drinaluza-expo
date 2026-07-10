@@ -83,6 +83,11 @@ export interface OrderItem {
 			createdAt?: string
 			updatedAt?: string
 		}
+		media?: {
+			thumbnail?: {
+				url: string
+			}
+		}
 		createdAt: string
 		updatedAt: string
 	}

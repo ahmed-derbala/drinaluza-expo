@@ -73,6 +73,7 @@ export type Business = {
 		city: string
 		region: string
 		country: string
+		postalCode?: string
 	}
 	location?: GeoPoint
 	state?: BusinessState

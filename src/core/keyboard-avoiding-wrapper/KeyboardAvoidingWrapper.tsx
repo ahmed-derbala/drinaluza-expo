@@ -96,7 +96,7 @@ const KeyboardAvoidingWrapper = memo(function KeyboardAvoidingWrapper({
 	// iOS: 'padding' moves the view up by the keyboard height.
 	// Android: 'height' shrinks the view; avoids double-offset with windowSoftInputMode.
 	// Web: behavior is irrelevant – KeyboardAvoidingView is a no-op there.
-	const resolvedBehavior: KeyboardAvoidingViewProps['behavior'] = behavior ?? (Platform.OS === 'ios' ? 'padding' : 'height')
+	const resolvedBehavior: KeyboardAvoidingViewProps['behavior'] = behavior ?? (Platform.OS === 'ios' ? 'padding' : undefined)
 
 	return (
 		<KeyboardAvoidingView style={[styles.flex, style]} behavior={resolvedBehavior} keyboardVerticalOffset={keyboardVerticalOffset} enabled={enabled}>

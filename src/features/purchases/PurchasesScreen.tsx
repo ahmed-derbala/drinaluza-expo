@@ -60,6 +60,16 @@ export default function PurchasesScreen() {
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string } | null>(null)
 
+	const purchasesStateRef = useRef(purchasesState)
+	useEffect(() => {
+		purchasesStateRef.current = purchasesState
+	}, [purchasesState])
+
+	const cartStateRef = useRef(cartState)
+	useEffect(() => {
+		cartStateRef.current = cartState
+	}, [cartState])
+
 	// Responsive Layout
 	const isTablet = width >= 768
 	const isDesktop = width >= 1024
@@ -106,49 +116,46 @@ export default function PurchasesScreen() {
 		}
 	}, [])
 
-	const loadTabContent = useCallback(
-		async (isRefreshing = false, statusVal = selectedStatus) => {
-			try {
-				setError(null)
-				if (statusVal === 'cart') {
-					if (!isRefreshing && !cartState.length) {
-						setTabLoading((prev) => ({ ...prev, cart: true }))
-					}
-					const storedCart = await getItem<CartItem[]>('cart')
-					setCartState(storedCart || [])
-				} else {
-					if (!isRefreshing && !purchasesState[statusVal]?.length) {
-						setTabLoading((prev) => ({ ...prev, [statusVal]: true }))
-					}
-					const response = await getPurchases(statusVal === 'all' ? undefined : statusVal)
-					if (response && response.data && Array.isArray(response.data.docs)) {
-						const docs = response.data.docs
-						docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-						setPurchasesState((prev) => ({
-							...prev,
-							[statusVal]: docs
-						}))
-					} else {
-						setPurchasesState((prev) => ({
-							...prev,
-							[statusVal]: []
-						}))
-					}
+	const loadTabContent = useCallback(async (isRefreshing = false, statusVal = selectedStatusRef.current) => {
+		try {
+			setError(null)
+			if (statusVal === 'cart') {
+				if (!isRefreshing && !cartStateRef.current.length) {
+					setTabLoading((prev) => ({ ...prev, cart: true }))
 				}
-			} catch (err: any) {
-				console.error('Error loading purchases:', err)
-				setError({
-					title: 'Error Loading Purchases',
-					message: err.message || 'Failed to load your purchases. Please try again.'
-				})
-			} finally {
-				setInitialLoading(false)
-				setRefreshing(false)
-				setTabLoading((prev) => ({ ...prev, [statusVal]: false }))
+				const storedCart = await getItem<CartItem[]>('cart')
+				setCartState(storedCart || [])
+			} else {
+				if (!isRefreshing && !purchasesStateRef.current[statusVal]?.length) {
+					setTabLoading((prev) => ({ ...prev, [statusVal]: true }))
+				}
+				const response = await getPurchases(statusVal === 'all' ? undefined : statusVal)
+				if (response && response.data && Array.isArray(response.data.docs)) {
+					const docs = response.data.docs
+					docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+					setPurchasesState((prev) => ({
+						...prev,
+						[statusVal]: docs
+					}))
+				} else {
+					setPurchasesState((prev) => ({
+						...prev,
+						[statusVal]: []
+					}))
+				}
 			}
-		},
-		[purchasesState, cartState.length, selectedStatus]
-	)
+		} catch (err: any) {
+			console.error('Error loading purchases:', err)
+			setError({
+				title: 'Error Loading Purchases',
+				message: err.message || 'Failed to load your purchases. Please try again.'
+			})
+		} finally {
+			setInitialLoading(false)
+			setRefreshing(false)
+			setTabLoading((prev) => ({ ...prev, [statusVal]: false }))
+		}
+	}, [])
 
 	const handleRefresh = useCallback(async () => {
 		setRefreshing(true)
@@ -480,7 +487,7 @@ export default function PurchasesScreen() {
 									}
 								}}
 							>
-								<SmartImage source={(item.business as any).media?.thumbnail?.url} style={styles.businessAvatar} entityType="business" />
+								<SmartImage source={item.business.media?.thumbnail?.url} style={styles.businessAvatar} entityType="business" />
 								<View style={styles.headerInfo}>
 									<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
 										{localize(item.business.name)}

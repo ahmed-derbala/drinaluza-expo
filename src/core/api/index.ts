@@ -50,6 +50,11 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 				const url = error.config?.url || ''
 				const isAuthRequest = url.includes('/auth/') || url.includes('signin') || url.includes('signup')
 
+				// Support skipping auth redirect (e.g. for quick-switch token checks on login screen)
+				// Axios header names might be case-insensitive/normalized depending on config
+				const headers = error.config?.headers
+				const skipAuthRedirect = headers?.skipAuthRedirect === 'true' || headers?.skipauthredirect === 'true'
+
 				let isOnAuthPage = false
 				// @ts-ignore - Check window for Web environment
 				if (typeof window !== 'undefined' && window.location) {
@@ -62,7 +67,7 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 					await secureRemoveItem('authToken')
 
 					// Navigate to auth page if not already there
-					if (!isOnAuthPage && !isAuthRequest) {
+					if (!isOnAuthPage && !isAuthRequest && !skipAuthRedirect) {
 						router.replace('/auth' as any)
 					}
 				} catch (err: any) {

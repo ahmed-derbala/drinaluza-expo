@@ -59,24 +59,39 @@ export default function ProductGallerySection({ editable, gallery, colors, trans
 	}
 
 	// Read-only thumbnail slider for detail page
-	if (!gallery || gallery.length <= 1) return null
+	if (activeImage !== undefined) {
+		if (!gallery || gallery.length <= 1) return null
+		return (
+			<View style={styles.galleryScrollContainer}>
+				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
+					{gallery.map((item, index) => {
+						const isSelected = activeImage === item.url
+						return (
+							<TouchableOpacity
+								key={item._id || index}
+								onPress={() => onThumbnailPress && onThumbnailPress(item.url)}
+								style={[styles.thumbnailContainer, { borderColor: isSelected ? colors.primary : colors.border }]}
+								activeOpacity={0.8}
+							>
+								<SmartImage source={item.url} style={styles.thumbnailImage} resizeMode="cover" entityType="product" />
+							</TouchableOpacity>
+						)
+					})}
+				</ScrollView>
+			</View>
+		)
+	}
 
+	// Read-only static preview list for edit screen
 	return (
-		<View style={styles.galleryScrollContainer}>
-			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
-				{gallery.map((item, index) => {
-					const isSelected = activeImage === item.url
-					return (
-						<TouchableOpacity
-							key={item._id || index}
-							onPress={() => onThumbnailPress && onThumbnailPress(item.url)}
-							style={[styles.thumbnailContainer, { borderColor: isSelected ? colors.primary : colors.border }]}
-							activeOpacity={0.8}
-						>
-							<SmartImage source={item.url} style={styles.thumbnailImage} resizeMode="cover" entityType="product" />
-						</TouchableOpacity>
-					)
-				})}
+		<View style={styles.galleryWrapper}>
+			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
+				{gallery.map((item, idx) => (
+					<View key={item._id || idx} style={styles.galleryItem}>
+						<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
+					</View>
+				))}
+				{gallery.length === 0 && <Text style={{ color: colors.textTertiary, fontStyle: 'italic', paddingVertical: 10 }}>{translate('no_images', 'No images in gallery')}</Text>}
 			</ScrollView>
 		</View>
 	)

@@ -48,6 +48,11 @@ export type ProductType = {
 			type: string
 			coordinates: number[]
 		}
+		media?: {
+			thumbnail?: {
+				url: string
+			}
+		}
 		createdAt: string
 		updatedAt: string
 	}

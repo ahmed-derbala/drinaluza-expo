@@ -390,9 +390,13 @@ export default function ProductDetailScreen() {
 			<TouchableOpacity onPress={handleBusinessNavPress} style={[styles.metaCard, { backgroundColor: colors.card, borderColor: colors.border }]} activeOpacity={0.75}>
 				<View style={styles.metaCardHeader}>
 					<View style={styles.metaCardTitleWrap}>
-						<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
-							<MaterialIcons name="store" size={16} color={colors.primary} />
-						</View>
+						{product.business?.media?.thumbnail?.url ? (
+							<SmartImage source={product.business.media.thumbnail.url} style={styles.metaCardIconBg} entityType="business" />
+						) : (
+							<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
+								<MaterialIcons name="store" size={16} color={colors.primary} />
+							</View>
+						)}
 						<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('business', 'Business')}</Text>
 					</View>
 					<Ionicons name="chevron-forward" size={16} color={colors.textSecondary} />

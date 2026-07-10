@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions, InteractionManager, Keyboard } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -13,7 +13,7 @@ import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { KeyboardAvoidingWrapper } from '@/core/keyboard-avoiding-wrapper'
 
 import { toast } from '@/features/common/Toast'
-import { showConfirm, showAlert } from '@/core/helpers/popup'
+import { showConfirm } from '@/core/helpers/popup'
 import { config } from '@/config'
 import { log } from '@/core/log'
 
@@ -40,7 +40,7 @@ export default function AuthScreen() {
 	const { colors } = useTheme()
 	const { width, height } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
-	const { appLang, setAppLang, translate, refreshUser } = useUser()
+	const { appLang, setAppLang, translate, refreshUser, localize } = useUser()
 
 	// State variables
 	const [savedAccounts, setSavedAccounts] = useState<SavedAuth[]>([])
@@ -51,39 +51,23 @@ export default function AuthScreen() {
 	const [showPassword, setShowPassword] = useState(false)
 	const [loading, setLoading] = useState(false)
 	const [slugError, setSlugError] = useState<string | null>(null)
+	const loadingRef = useRef(false)
 
 	// Refs for focus management
 	const passwordInputRef = useRef<TextInput>(null)
 	const scrollViewRef = useRef<ScrollView>(null)
-	const [shouldFocusPassword, setShouldFocusPassword] = useState(false)
 
-	useEffect(() => {
-		if (shouldFocusPassword && !loading) {
-			setShouldFocusPassword(false)
-			console.log('[AuthScreen] shouldFocusPassword is true, attempting focus. Slug:', slug)
-
-			const attemptFocus = () => {
-				if (!passwordInputRef.current) return
-
-				if (Platform.OS === 'android') {
-					Keyboard.dismiss()
-					passwordInputRef.current.blur()
-				}
-
-				setTimeout(
-					() => {
-						passwordInputRef.current?.focus()
-						console.log('[AuthScreen] Focus triggered.')
-					},
-					Platform.OS === 'android' ? 300 : 50
-				)
-			}
-
-			InteractionManager.runAfterInteractions(() => {
-				setTimeout(attemptFocus, 100)
-			})
-		}
-	}, [shouldFocusPassword, loading])
+	// Focus the password field with a short delay.
+	// Since the fields are no longer disabled/unmounted using editable={!loading},
+	// we can simply use the standard ref.focus() without complex native API calls.
+	const focusPasswordField = () => {
+		setTimeout(
+			() => {
+				passwordInputRef.current?.focus()
+			},
+			Platform.OS === 'android' ? 200 : 100
+		)
+	}
 
 	// Load saved authentications from local storage
 	const loadSavedAccounts = async () => {
@@ -190,6 +174,12 @@ export default function AuthScreen() {
 			// Redirect to feed page
 			router.replace('/(home)/feed')
 		} catch (err: any) {
+			log({
+				level: 'error',
+				label: 'AuthScreen',
+				message: 'Sign in submission failed',
+				error: err
+			})
 			const status = err.response?.status
 			if (status === 404) {
 				// No user found - Ask if they want to sign up
@@ -206,6 +196,12 @@ export default function AuthScreen() {
 
 						router.replace('/(home)/feed')
 					} catch (signUpErr: any) {
+						log({
+							level: 'error',
+							label: 'AuthScreen',
+							message: 'Sign up submission failed',
+							error: signUpErr
+						})
 						const msg = signUpErr.response?.data?.message || signUpErr.message || 'Signup failed'
 						toast.show({
 							title: translate('error', 'Signup Failed'),
@@ -223,7 +219,7 @@ export default function AuthScreen() {
 					message: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'),
 					color: '#EF4444'
 				})
-				setShouldFocusPassword(true)
+				focusPasswordField()
 			} else {
 				// Any other errors
 				const errMsg = err.response?.data?.message || err.message || 'Unable to connect to server.'
@@ -240,32 +236,41 @@ export default function AuthScreen() {
 
 	// Trigger quick-switch account instantly
 	const handleSelectSavedAccount = async (account: SavedAuth) => {
-		if (loading) return
+		if (loadingRef.current) return
+		loadingRef.current = true
+
+		// Helper: populate the form with the selected account's slug and focus password field
+		const populateFormAndFocus = () => {
+			setSlug(account.slug)
+			setSlugError(null)
+			setPassword('')
+			setNeedPassword(false)
+			focusPasswordField()
+		}
 
 		if (account.needPassword || !account.token) {
 			// Populate welcome form and focus password input
-			setSlug(account.slug)
 			setSaveAccount(true)
-			setNeedPassword(true)
 			toast.show({
 				title: translate('switch_requires_password', 'Password Required'),
 				message: translate('need_password_notice', 'Please enter your password to switch to this account.'),
 				color: colors.primary
 			})
-			setShouldFocusPassword(true)
+			loadingRef.current = false
+			populateFormAndFocus()
 		} else {
 			// Instant switch via stored token
 			try {
 				setLoading(true)
 				const success = await signInWithToken(account.token)
+				loadingRef.current = false
 				if (success) {
 					await refreshUser()
 					router.replace('/(home)/feed')
-				} else {
-					throw new Error('Quick sign in token failed')
+					return
 				}
+				throw new Error('Quick sign in token failed')
 			} catch (err) {
-				console.log('[AuthScreen] handleSelectSavedAccount catch block hit! User selected:', account.slug)
 				log({
 					level: 'error',
 					label: 'AuthScreen',
@@ -277,13 +282,9 @@ export default function AuthScreen() {
 					message: translate('quick_signin_failed', 'Quick sign in failed.'),
 					color: '#EF4444'
 				})
-				// Require password instead
-				setSlug(account.slug)
-				setPassword('')
-				setNeedPassword(true)
-				setShouldFocusPassword(true)
-			} finally {
 				setLoading(false)
+				loadingRef.current = false
+				populateFormAndFocus()
 			}
 		}
 	}
@@ -343,13 +344,15 @@ export default function AuthScreen() {
 	const getAccountDisplayName = (account: SavedAuth) => {
 		if (!account.name) return `@${account.slug}`
 		if (typeof account.name === 'string') return account.name
-		return account.name[appLang] || account.name['en'] || `@${account.slug}`
+		return localize(account.name as any) || `@${account.slug}`
 	}
 
 	// Simple date formatter
-	const formatLastAccessedDate = (isoString: string) => {
+	const formatLastAccessedDate = (isoString?: string) => {
+		if (!isoString) return ''
 		try {
 			const date = new Date(isoString)
+			if (isNaN(date.getTime())) return ''
 			return date.toLocaleDateString(undefined, {
 				month: 'short',
 				day: 'numeric',
@@ -357,7 +360,7 @@ export default function AuthScreen() {
 				minute: '2-digit'
 			})
 		} catch (e) {
-			return isoString
+			return ''
 		}
 	}
 
@@ -440,7 +443,7 @@ export default function AuthScreen() {
 						)}
 
 						{/* Welcome Credentials Form */}
-						<View style={styles.formContainer}>
+						<View style={styles.formContainer} pointerEvents={loading ? 'none' : 'auto'}>
 							{/* Username (Slug) Textfield */}
 							<View style={styles.inputWrapper}>
 								<View style={styles.inputIconContainer}>
@@ -455,7 +458,6 @@ export default function AuthScreen() {
 									autoCapitalize="none"
 									autoCorrect={false}
 									maxLength={25}
-									readOnly={loading}
 								/>
 							</View>
 							{slugError && <Text style={styles.errorText}>{slugError}</Text>}
@@ -482,7 +484,6 @@ export default function AuthScreen() {
 									autoCapitalize="none"
 									autoCorrect={false}
 									maxLength={20}
-									readOnly={loading}
 								/>
 								<TouchableOpacity style={styles.eyeBtn} onPress={() => setShowPassword(!showPassword)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
 									<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={colors.textSecondary} />
@@ -528,7 +529,7 @@ const createStyles = (colors: any, isTablet: boolean, width: number, height: num
 			flexGrow: 1,
 			width: '100%',
 			alignItems: 'center',
-			justifyContent: 'center',
+			justifyContent: height < 550 ? 'flex-start' : 'center',
 			padding: 16,
 			paddingBottom: 40
 		},

@@ -33,6 +33,7 @@ import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import { HeaderRefreshButton, HeaderActionButton, SmartHeader } from '@/core/smart-header'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
+import MultilingualNameInput from '@/features/common/MultilingualNameInput'
 import LoadingState from '@/features/common/LoadingState'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
@@ -785,29 +786,14 @@ export default function ProfileScreen() {
 					>
 						{editMode.name ? (
 							<>
-								<LocalizedFormInput
-									label="Name (English)"
-									value={userData.name?.en || ''}
-									onChangeText={(value) => updateField('en', value, 'name')}
-									lang="en"
-									placeholder="Name in English"
-									style={{ marginBottom: 0 }}
-								/>
-								<LocalizedFormInput
-									label="Name (Tunisian Arabic)"
-									value={userData.name?.tn_arab || ''}
-									onChangeText={(value) => updateField('tn_arab', value, 'name')}
-									lang="tn_arab"
-									placeholder="الاسم بالعربية"
-									style={{ marginBottom: 0 }}
-								/>
-								<LocalizedFormInput
-									label="Name (Tunisian Latin)"
-									value={userData.name?.tn_latn || ''}
-									onChangeText={(value) => updateField('tn_latn', value, 'name')}
-									lang="tn_latn"
-									placeholder="Name in Tunisian (Latin)"
-									style={{ marginBottom: 0 }}
+								<MultilingualNameInput
+									nameEn={userData.name?.en || ''}
+									setNameEn={(value) => updateField('en', value, 'name')}
+									nameTnLatn={userData.name?.tn_latn || ''}
+									setNameTnLatn={(value) => updateField('tn_latn', value, 'name')}
+									nameTnArab={userData.name?.tn_arab || ''}
+									setNameTnArab={(value) => updateField('tn_arab', value, 'name')}
+									labelPrefix="Name"
 								/>
 							</>
 						) : (
