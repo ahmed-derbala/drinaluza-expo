@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { format, formatDistanceToNow } from 'date-fns'
-import { clearAllStorage } from '@/core/storage'
+import { clearAllStorage, getToken } from '@/core/storage'
 
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -18,7 +18,7 @@ import { showConfirm } from '@/core/helpers/popup'
 import { config } from '@/config'
 import { log } from '@/core/log'
 
-import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, signInWithToken, SavedAuth } from './auth.api'
+import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, signInWithToken, switchUser, SavedAuth } from './auth.api'
 
 // ─── Language config ──────────────────────────────────────────────────────────
 interface LanguageConfig {
@@ -522,7 +522,7 @@ export default function AuthScreen() {
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
-	const { appLang, setAppLang, translate, refreshUser, localize } = useUser()
+	const { appLang, setAppLang, translate, refreshUser, localize, user } = useUser()
 
 	const [savedAccounts, setSavedAccounts] = useState<SavedAuth[]>([])
 	const [slug, setSlug] = useState('')
@@ -567,6 +567,21 @@ export default function AuthScreen() {
 			hideSubscription.remove()
 		}
 	}, [])
+
+	useEffect(() => {
+		const checkAuthAndRedirect = async () => {
+			if (user) {
+				const token = await getToken()
+				if (token) {
+					router.replace('/feed')
+				} else {
+					await switchUser()
+					await refreshUser()
+				}
+			}
+		}
+		checkAuthAndRedirect()
+	}, [user, router, refreshUser])
 
 	const isTablet = width >= 768
 
@@ -645,7 +660,6 @@ export default function AuthScreen() {
 			setLoading(true)
 			await signIn(slug, password, saveAccount, needPassword)
 			await refreshUser()
-			router.replace('/feed')
 		} catch (err: any) {
 			log({ level: 'error', label: 'AuthScreen', message: 'Sign in submission failed', error: err })
 			const status = err.response?.status
@@ -659,7 +673,6 @@ export default function AuthScreen() {
 							setLoading(true)
 							await signUp(slug, password, {}, saveAccount, needPassword)
 							await refreshUser()
-							router.replace('/feed')
 						} catch (signUpErr: any) {
 							log({ level: 'error', label: 'AuthScreen', message: 'Sign up submission failed', error: signUpErr })
 							toast.show({ title: translate('error', 'Signup Failed'), message: signUpErr.response?.data?.message || signUpErr.message || 'Signup failed', color: '#EF4444' })
@@ -706,7 +719,6 @@ export default function AuthScreen() {
 					loadingRef.current = false
 					if (success) {
 						await refreshUser()
-						router.replace('/feed')
 						return
 					}
 					throw new Error('Quick sign in token failed')

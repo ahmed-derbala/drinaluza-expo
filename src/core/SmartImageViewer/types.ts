@@ -65,4 +65,7 @@ export interface SmartImageProps {
 
 	/** Test ID for automated testing. */
 	testID?: string
+
+	/** Enable fullscreen lightbox preview when tapping the image. */
+	enableFullscreenPreview?: boolean
 }

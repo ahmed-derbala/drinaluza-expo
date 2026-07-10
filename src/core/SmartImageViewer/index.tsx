@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { View, StyleSheet } from 'react-native'
+import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION, DEFAULT_BLURHASH, getTimeoutMs } from './constants'
 import type { SmartImageProps } from './types'
 
@@ -53,10 +55,13 @@ function SmartImageComponent({
 	borderRadius,
 	accessible = true,
 	accessibilityLabel,
-	testID
+	testID,
+	enableFullscreenPreview = false
 }: SmartImageProps) {
 	const [hasError, setHasError] = useState(false)
 	const [isLoaded, setIsLoaded] = useState(false)
+	const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+	const insets = useSafeAreaInsets()
 	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const isMountedRef = useRef(true)
 
@@ -181,17 +186,69 @@ function SmartImageComponent({
 		/>
 	)
 
-	// Wrap in container View if containerStyle is provided
-	if (cleanedContainerStyle) {
-		return <View style={cleanedContainerStyle}>{imageElement}</View>
+	const handlePress = useCallback(() => {
+		if (sourceIsValid && !showFallback) {
+			setIsPreviewOpen(true)
+		}
+	}, [sourceIsValid, showFallback])
+
+	const renderedElement = cleanedContainerStyle ? <View style={cleanedContainerStyle}>{imageElement}</View> : imageElement
+
+	if (enableFullscreenPreview && sourceIsValid && !showFallback) {
+		const touchableStyle = [cleanedStyle, dimensionStyle]
+		return (
+			<>
+				<TouchableOpacity activeOpacity={0.9} onPress={handlePress} style={touchableStyle}>
+					{renderedElement}
+				</TouchableOpacity>
+
+				<Modal visible={isPreviewOpen} transparent={true} animationType="fade" onRequestClose={() => setIsPreviewOpen(false)}>
+					<View style={styles.modalBackdrop}>
+						<TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setIsPreviewOpen(false)} />
+
+						<TouchableOpacity style={[styles.closeModalButton, { top: insets.top + 16 }]} onPress={() => setIsPreviewOpen(false)} activeOpacity={0.7}>
+							<Ionicons name="close" size={28} color="#FFFFFF" />
+						</TouchableOpacity>
+
+						<View style={styles.fullscreenImageWrapper}>
+							<Image source={source} style={styles.fullscreenImage} contentFit="contain" cachePolicy="disk" />
+						</View>
+					</View>
+				</Modal>
+			</>
+		)
 	}
 
-	return imageElement
+	return renderedElement
 }
 
 const styles = StyleSheet.create({
 	image: {
 		// Base styles — consumers override via style prop
+		width: '100%',
+		height: '100%'
+	},
+	modalBackdrop: {
+		flex: 1,
+		backgroundColor: 'rgba(0, 0, 0, 0.95)',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	closeModalButton: {
+		position: 'absolute',
+		right: 20,
+		zIndex: 10,
+		padding: 8,
+		borderRadius: 20,
+		backgroundColor: 'rgba(255, 255, 255, 0.1)'
+	},
+	fullscreenImageWrapper: {
+		width: '90%',
+		height: '70%',
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	fullscreenImage: {
 		width: '100%',
 		height: '100%'
 	}

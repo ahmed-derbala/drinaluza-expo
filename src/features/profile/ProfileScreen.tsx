@@ -25,6 +25,7 @@ import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
+import { LinearGradient } from 'expo-linear-gradient'
 import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
@@ -184,6 +185,7 @@ export default function ProfileScreen() {
 	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [businessLoading, setBusinessLoading] = useState(false)
 	const [uploadingPhoto, setUploadingPhoto] = useState(false)
+	const [showUrlInput, setShowUrlInput] = useState(false)
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
@@ -285,6 +287,9 @@ export default function ProfileScreen() {
 			await updateMyProfile(payload)
 			if (sectionKey) {
 				setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
+				if (sectionKey === 'photo') {
+					setShowUrlInput(false)
+				}
 			}
 			showAlert(translate('success', 'Success'), translate('profile_updated', 'Profile updated successfully!'))
 			await refreshUser() // Update global user state
@@ -300,6 +305,9 @@ export default function ProfileScreen() {
 		if (!value) {
 			// If cancelling, reload to revert
 			loadProfile()
+			if (section === 'photo') {
+				setShowUrlInput(false)
+			}
 		}
 		setEditMode((prev) => ({ ...prev, [section]: value }))
 	}
@@ -725,54 +733,115 @@ export default function ProfileScreen() {
 				>
 					{/* Profile Header Card */}
 					<View style={styles.profileCard}>
-						<View style={styles.photoContainer}>
-							<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" />
-							<TouchableOpacity style={[styles.changePhotoButton, editMode.photo && { backgroundColor: colors.primary }]} onPress={() => setEditMode((prev) => ({ ...prev, photo: !prev.photo }))}>
-								<Ionicons name={editMode.photo ? 'checkmark' : 'camera'} size={20} color="#fff" />
-							</TouchableOpacity>
-							<TouchableOpacity style={[styles.uploadPhotoButton, { backgroundColor: colors.primary }]} onPress={handleUploadPhoto} disabled={uploadingPhoto}>
-								{uploadingPhoto ? <ActivityIndicator size={16} color="#fff" /> : <Ionicons name="cloud-upload-outline" size={20} color="#fff" />}
-							</TouchableOpacity>
-						</View>
+						<LinearGradient colors={[colors.primary, colors.primary + '10']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.profileBanner} />
 
-						{editMode.photo && (
-							<View style={[styles.inputGroup, { width: '100%', marginTop: 16, paddingHorizontal: 20 }]}>
-								<Text style={styles.inputLabel}>Photo URL</Text>
-								<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.card }]}>
-									<TextInput
-										style={[styles.socialInput, { fontSize: 13 }]}
-										value={userData.media?.thumbnail?.url || ''}
-										onChangeText={updatePhotoUrl}
-										placeholder="https://example.com/photo.jpg"
-										placeholderTextColor={colors.textTertiary}
-										selectTextOnFocus
-									/>
-									<TouchableOpacity onPress={handlePastePhoto} style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }]}>
-										<Ionicons name="clipboard-outline" size={18} color={colors.primary} />
-									</TouchableOpacity>
+						<View style={styles.profileCardContent}>
+							<View style={styles.photoContainer}>
+								<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" enableFullscreenPreview={true} />
+								<TouchableOpacity style={styles.changePhotoButton} onPress={() => toggleEdit('photo', !editMode.photo)} accessibilityLabel="Change profile photo">
+									<Ionicons name={editMode.photo ? 'close' : 'camera'} size={18} color="#fff" />
+								</TouchableOpacity>
+							</View>
+
+							{editMode.photo && (
+								<View style={styles.photoActionsPanel}>
 									<TouchableOpacity
-										onPress={() => saveUserData('photo')}
-										style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
+										style={[styles.photoPanelButton, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}
+										onPress={handleUploadPhoto}
+										disabled={uploadingPhoto}
+										accessibilityLabel="Upload photo from library"
 									>
-										<Ionicons name="save-outline" size={18} color={colors.primary} />
+										{uploadingPhoto ? <ActivityIndicator size={16} color={colors.primary} /> : <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />}
+										<Text style={[styles.photoPanelButtonText, { color: colors.primary }]}>{uploadingPhoto ? translate('uploading', 'Uploading...') : translate('upload_image', 'Upload Image')}</Text>
 									</TouchableOpacity>
+
 									<TouchableOpacity
-										onPress={() => toggleEdit('photo', false)}
-										style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.error + '10' }]}
+										style={[styles.photoPanelButton, { backgroundColor: colors.border + '15', borderColor: colors.border + '30' }]}
+										onPress={() => setShowUrlInput(!showUrlInput)}
+										accessibilityLabel="Enter photo URL"
 									>
-										<Ionicons name="close-outline" size={18} color={colors.error} />
+										<Ionicons name="link-outline" size={16} color={colors.text} />
+										<Text style={[styles.photoPanelButtonText, { color: colors.text }]}>{showUrlInput ? translate('hide_url', 'Hide URL') : translate('enter_url', 'Enter URL')}</Text>
 									</TouchableOpacity>
 								</View>
-							</View>
-						)}
+							)}
 
-						<Text style={styles.profileName}>@{userData.slug}</Text>
+							{editMode.photo && showUrlInput && (
+								<View style={styles.urlInputGroup}>
+									<Text style={styles.inputLabel}>{translate('photo_url', 'Photo URL')}</Text>
+									<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.background }]}>
+										<TextInput
+											style={[styles.socialInput, { fontSize: 13 }]}
+											value={userData.media?.thumbnail?.url || ''}
+											onChangeText={updatePhotoUrl}
+											placeholder="https://example.com/photo.jpg"
+											placeholderTextColor={colors.textTertiary}
+											selectTextOnFocus
+										/>
+										<TouchableOpacity
+											onPress={handlePastePhoto}
+											style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }]}
+											accessibilityLabel="Paste clipboard content"
+										>
+											<Ionicons name="clipboard-outline" size={18} color={colors.primary} />
+										</TouchableOpacity>
+										<TouchableOpacity
+											onPress={() => saveUserData('photo')}
+											style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
+											accessibilityLabel="Save photo URL"
+										>
+											<Ionicons name="save-outline" size={18} color={colors.primary} />
+										</TouchableOpacity>
+										<TouchableOpacity
+											onPress={() => toggleEdit('photo', false)}
+											style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.error + '10' }]}
+											accessibilityLabel="Cancel URL edit"
+										>
+											<Ionicons name="close-outline" size={18} color={colors.error} />
+										</TouchableOpacity>
+									</View>
+								</View>
+							)}
 
-						<View style={styles.roleStateContainer}>
-							<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
-								<Text style={styles.roleBadgeText}>{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}</Text>
+							<Text style={styles.profileFullName}>{localize(userData.name) || 'User'}</Text>
+							<Text style={styles.profileSlug}>@{userData.slug}</Text>
+
+							{userData.basicInfos?.biography && (
+								<Text style={styles.profileBio} numberOfLines={2}>
+									{userData.basicInfos.biography}
+								</Text>
+							)}
+
+							{(() => {
+								const JoinYear = userData.createdAt ? new Date(userData.createdAt).getFullYear() : null
+
+								if (!JoinYear) return null
+
+								return (
+									<View style={styles.metaRow}>
+										<View style={styles.metaItem}>
+											<Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
+											<Text style={styles.metaText}>Joined {JoinYear}</Text>
+										</View>
+									</View>
+								)
+							})()}
+
+							<View style={styles.roleStateContainer}>
+								<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+									<Ionicons
+										name={userData.role === 'business_owner' ? 'briefcase-outline' : userData.role === 'super' ? 'shield-checkmark-outline' : 'person-outline'}
+										size={14}
+										color={userData.role === 'business_owner' ? colors.primary : userData.role === 'super' ? colors.warning : colors.success}
+									/>
+									<Text
+										style={[styles.roleBadgeText, userData.role === 'business_owner' ? styles.businessOwnerBadgeText : userData.role === 'super' ? styles.adminBadgeText : styles.customerBadgeText]}
+									>
+										{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}
+									</Text>
+								</View>
+								{userData.state?.code && <StateBadge stateCode={userData.state.code} />}
 							</View>
-							{userData.state?.code && <StateBadge stateCode={userData.state.code} />}
 						</View>
 					</View>
 
@@ -1827,23 +1896,33 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		profileCard: {
 			alignItems: 'center',
 			marginBottom: 24,
-			padding: 20,
-			paddingBottom: 16,
 			backgroundColor: colors.card,
 			borderRadius: 20,
 			borderWidth: 1,
-			borderColor: colors.info || '#3B82F6'
+			borderColor: colors.info || '#3B82F6',
+			overflow: 'hidden'
+		},
+		profileBanner: {
+			height: 120,
+			width: '100%'
+		},
+		profileCardContent: {
+			alignItems: 'center',
+			paddingHorizontal: 20,
+			paddingBottom: 20,
+			width: '100%'
 		},
 		photoContainer: {
 			position: 'relative',
-			marginBottom: 12
+			marginTop: -55,
+			marginBottom: 16
 		},
 		profilePhoto: {
 			width: 100,
 			height: 100,
 			borderRadius: 50,
 			borderWidth: 4,
-			borderColor: colors.background
+			borderColor: colors.card
 		},
 		placeholderPhoto: {
 			width: 100,
@@ -1853,7 +1932,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 4,
-			borderColor: colors.background
+			borderColor: colors.card
 		},
 		placeholderText: {
 			color: '#fff',
@@ -1865,79 +1944,124 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			bottom: 0,
 			right: 0,
 			backgroundColor: colors.primary,
-			width: 32,
-			height: 32,
-			borderRadius: 16,
+			width: 36,
+			height: 36,
+			borderRadius: 18,
 			justifyContent: 'center',
 			alignItems: 'center',
-			borderWidth: 2,
-			borderColor: colors.background
+			borderWidth: 3,
+			borderColor: colors.card,
+			...createShadow({ offsetY: 2, opacity: 0.25, radius: 3, elevation: 3 })
 		},
-		uploadPhotoButton: {
-			position: 'absolute',
-			bottom: 0,
-			left: 0,
-			backgroundColor: colors.primary,
-			width: 32,
-			height: 32,
-			borderRadius: 16,
+		photoActionsPanel: {
+			flexDirection: 'row',
 			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 2,
-			borderColor: colors.background
+			gap: 12,
+			width: '100%',
+			marginBottom: 16,
+			paddingHorizontal: 20
 		},
-		profileName: {
+		photoPanelButton: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'center',
+			gap: 8,
+			flex: 1,
+			paddingVertical: 10,
+			borderRadius: 12,
+			borderWidth: 1,
+			minHeight: 40
+		},
+		photoPanelButtonText: {
+			fontSize: 13,
+			fontWeight: '600'
+		},
+		urlInputGroup: {
+			width: '100%',
+			marginBottom: 16,
+			paddingHorizontal: 20
+		},
+		profileFullName: {
 			fontSize: 22,
 			fontWeight: '700',
 			color: colors.text,
-			marginBottom: 8
+			textAlign: 'center',
+			marginBottom: 4
 		},
-		profileMeta: {
+		profileSlug: {
 			fontSize: 14,
+			fontWeight: '500',
 			color: colors.textSecondary,
+			textAlign: 'center',
 			marginBottom: 12
 		},
-		profileMetaArabic: {
-			fontSize: 16,
+		profileBio: {
+			fontSize: 14,
 			color: colors.textSecondary,
-			marginBottom: 12,
-			fontFamily: Platform.OS === 'ios' ? 'System' : 'sans-serif',
-			writingDirection: 'rtl'
-		},
-		biography: {
-			fontSize: 13,
-			color: colors.text,
 			textAlign: 'center',
-			marginBottom: 12,
-			paddingHorizontal: 10,
+			paddingHorizontal: 16,
+			marginBottom: 16,
 			fontStyle: 'italic',
-			lineHeight: 18
+			lineHeight: 20
+		},
+		metaRow: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			justifyContent: 'center',
+			alignItems: 'center',
+			gap: 16,
+			marginBottom: 16
+		},
+		metaItem: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6
+		},
+		metaText: {
+			fontSize: 12,
+			color: colors.textSecondary,
+			fontWeight: '500'
 		},
 		roleStateContainer: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			justifyContent: 'center',
-			gap: 8,
+			gap: 10,
 			marginTop: 4
 		},
 		roleBadge: {
-			paddingHorizontal: 10,
-			paddingVertical: 5,
-			borderRadius: 10
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			paddingHorizontal: 12,
+			paddingVertical: 6,
+			borderRadius: 12,
+			borderWidth: 1
 		},
 		businessOwnerBadge: {
-			backgroundColor: '#3B82F6' + '20'
+			backgroundColor: colors.primary + '15',
+			borderColor: colors.primary + '30'
+		},
+		businessOwnerBadgeText: {
+			color: colors.primary
 		},
 		adminBadge: {
-			backgroundColor: '#F59E0B' + '20'
+			backgroundColor: colors.warning + '15',
+			borderColor: colors.warning + '30'
+		},
+		adminBadgeText: {
+			color: colors.warning
 		},
 		customerBadge: {
-			backgroundColor: '#10B981' + '20'
+			backgroundColor: colors.success + '15',
+			borderColor: colors.success + '30'
+		},
+		customerBadgeText: {
+			color: colors.success
 		},
 		roleBadgeText: {
-			fontSize: 11,
-			fontWeight: '600',
-			color: colors.text
+			fontSize: 12,
+			fontWeight: '600'
 		},
 		section: {
 			marginBottom: 32,
