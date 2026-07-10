@@ -12,6 +12,13 @@
   - Display the user's localized full name prominently as the primary header, with the `@slug` username as a subtitle.
   - Integrate a metadata row showing the user's registration year with outline icons (keeping the first section clean and preventing address redundancy).
   - Enhance role badges to include specific icons and styled translucent backgrounds.
+- Add share and copy link actions inside the QR Code Modal (`QRCodeModal.tsx`):
+  - Integrate clipboard copying via Expo's `expo-clipboard` library.
+  - Implement native system link sharing using React Native's `Share` API.
+  - Redesign the action button layout to display two balanced rows of options (Download/Print and Copy Link/Share).
+- Enable text selection and copying globally on Web:
+  - Inject a platform-specific stylesheet inside the root app layout (`src/app/_layout.tsx`) that enforces `user-select: text !important` for all elements on the web platform.
+  - Exclude interactive buttons, image elements, and navigation tabs (`user-select: none !important`) to maintain a native app feel and prevent highlighting during click actions.
 - Convert the fullscreen photo lightbox preview into a globally reusable feature:
   - Add the `enableFullscreenPreview?: boolean` optional prop to the `SmartImageProps` contract.
   - Implement self-contained modal toggles, backdrop click triggers, styled close buttons, and layout styles directly inside the `SmartImageViewer` component.

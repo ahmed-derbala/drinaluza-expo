@@ -11,6 +11,27 @@ if (typeof setImmediate === 'undefined') {
 	global.setImmediate = (callback: (...args: any[]) => void) => setTimeout(callback, 0)
 }
 
+// Enable text selection on Web by injecting a global style sheet
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+	const style = document.createElement('style')
+	style.type = 'text/css'
+	style.innerHTML = `
+		* {
+			user-select: text !important;
+			-webkit-user-select: text !important;
+			-moz-user-select: text !important;
+			-ms-user-select: text !important;
+		}
+		button, [role="button"], [role="tab"], [role="img"] {
+			user-select: none !important;
+			-webkit-user-select: none !important;
+			-moz-user-select: none !important;
+			-ms-user-select: none !important;
+		}
+	`
+	document.head.appendChild(style)
+}
+
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
 import { UserProvider } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
