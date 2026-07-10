@@ -6,7 +6,7 @@ trigger: always_on
 
 ## Core Principle
 
-Always implement responsive UI using the default Expo and React Native best practices.
+Always implement responsive UI using the default Expo best practices.
 
 Build adaptive layouts that work naturally across:
 - Mobile phones
@@ -14,7 +14,7 @@ Build adaptive layouts that work naturally across:
 - Web
 - Portrait and landscape orientations
 
-Avoid overengineered responsive systems unless explicitly required.
+Avoid overengineered responsive systems.
 
 ---
 
@@ -45,67 +45,13 @@ Avoid:
 
 # Responsive APIs
 
-Prefer these built-in React Native APIs:
-
-```tsx
-import { useWindowDimensions } from 'react-native'
-```
-
-```tsx
-const { width, height } = useWindowDimensions()
-```
-
+Prefer built-in Expo and React Native APIs
 Use screen dimensions to adapt layouts when necessary.
-
-Example:
-
-```tsx
-const isTablet = width >= 768
-```
-
-```tsx
-<View
-  style={{
-    flexDirection: isTablet ? 'row' : 'column',
-  }}
->
-```
-
----
-
-# Safe Areas
-
-Always respect device safe areas.
-
-Avoid layouts that overlap:
-- Notches
-- Status bars
-- Navigation gestures
-
----
-
-# Scrolling
-
-Use:
-- `ScrollView`
-- `FlatList`
-- `SectionList`
-
-correctly for smaller screens and dynamic content.
-
-Avoid:
-- Non-scrollable long screens
-- Nested scroll containers unless necessary
+Always respect device navigation buttons
 
 ---
 
 # Styling Rules
-
-Prefer:
-
-```tsx
-StyleSheet.create()
-```
 
 Avoid:
 - Large inline style objects
@@ -121,8 +67,6 @@ Design mobile-first.
 Then progressively adapt layouts for:
 - Tablets
 - Web
-
-Do not design desktop-first unless explicitly requested.
 
 ---
 
@@ -144,10 +88,6 @@ Avoid:
 # Web Responsiveness
 
 For Expo Web:
-- Let Flexbox handle most responsiveness
-- Prefer adaptive spacing
-- Prefer fluid layouts
-
 Avoid:
 - Excessive media queries
 - Complex CSS breakpoint systems

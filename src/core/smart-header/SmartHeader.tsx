@@ -494,7 +494,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 
 	return (
 		<Animated.View
-			key={`header-${headerHeight}`}
 			style={[
 				styles.headerContainer,
 				{

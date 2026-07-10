@@ -719,7 +719,7 @@ export default function UpdatesScreen() {
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<SmartHeader
 				title={translate('updates', 'Updates')}
-				fallbackRoute="/(home)/feed"
+				fallbackRoute="/feed"
 				loading={isChecking}
 				disableAnimations={true}
 				headerActions={[

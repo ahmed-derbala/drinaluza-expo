@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions, KeyboardAvoidingView } from 'react-native'
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
 import { useTheme } from '@/core/theme'
@@ -9,7 +9,6 @@ import LoadingState from '@/features/common/LoadingState'
 import { toast } from '@/features/common/Toast'
 import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
-import KeyboardAvoidingWrapper from '@/core/keyboard-avoiding-wrapper/KeyboardAvoidingWrapper'
 import { LinearGradient } from 'expo-linear-gradient'
 import SmartImage from '@/core/SmartImageViewer'
 import StateBadge from '@/features/common/StateBadge'
@@ -417,493 +416,495 @@ export default function EditBusinessScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			<SmartHeader title={translate('edit_business', 'Edit Business')} fallbackRoute="/dashboard" />
 
-			<KeyboardAvoidingWrapper style={styles.form} contentContainerStyle={styles.formContent} scrollViewProps={{ keyboardShouldPersistTaps: 'handled' }}>
-				{/* Top Hero Banner */}
-				<View style={styles.heroBanner}>
-					<LinearGradient colors={['#0EA5E930', '#00000000']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
-					<View style={styles.heroContent}>
-						<TouchableOpacity style={styles.avatarWrapper} onPress={handleUploadPhoto} disabled={uploadingPhoto} activeOpacity={0.8}>
-							<SmartImage source={thumbnailUrl} style={styles.avatarImage} entityType="business" />
-							<View style={styles.cameraIconBadge}>{uploadingPhoto ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="camera" size={12} color="#ffffff" />}</View>
-						</TouchableOpacity>
-						<View style={styles.heroInfoText}>
-							<Text style={styles.heroTitle}>{nameEn || translate('business_name', 'Business Name')}</Text>
-							<View style={styles.heroBadgeRow}>
-								<StateBadge stateCode={businessState} />
+			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+				<SmartHeader.ScrollView style={styles.form} contentContainerStyle={[styles.formContent, styles.grow]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+					{/* Top Hero Banner */}
+					<View style={styles.heroBanner}>
+						<LinearGradient colors={['#0EA5E930', '#00000000']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+						<View style={styles.heroContent}>
+							<TouchableOpacity style={styles.avatarWrapper} onPress={handleUploadPhoto} disabled={uploadingPhoto} activeOpacity={0.8}>
+								<SmartImage source={thumbnailUrl} style={styles.avatarImage} entityType="business" />
+								<View style={styles.cameraIconBadge}>{uploadingPhoto ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="camera" size={12} color="#ffffff" />}</View>
+							</TouchableOpacity>
+							<View style={styles.heroInfoText}>
+								<Text style={styles.heroTitle}>{nameEn || translate('business_name', 'Business Name')}</Text>
+								<View style={styles.heroBadgeRow}>
+									<StateBadge stateCode={businessState} />
+								</View>
 							</View>
 						</View>
 					</View>
-				</View>
 
-				{saving && (
-					<View style={styles.savingOverlay}>
-						<ActivityIndicator size="small" color={colors.primary} />
-						<Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>{translate('saving', 'Saving...')}</Text>
-					</View>
-				)}
+					{saving && (
+						<View style={styles.savingOverlay}>
+							<ActivityIndicator size="small" color={colors.primary} />
+							<Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>{translate('saving', 'Saving...')}</Text>
+						</View>
+					)}
 
-				<View style={styles.tabContent}>
-					{/* Translations Card */}
-					<SectionCard
-						title={translate('business_names', 'Business Names')}
-						colors={colors}
-						styles={styles}
-						isEditing={editMode.names}
-						onEdit={() => setEditMode((prev) => ({ ...prev, names: true }))}
-						onSave={saveNames}
-						onCancel={() => cancelEdit('names')}
-					>
-						{editMode.names ? (
-							<MultilingualNameInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
-						) : (
-							<View style={{ gap: 12 }}>
-								<InfoRow label={translate('english_name', 'English Name')} value={nameEn} icon="text" colors={colors} styles={styles} />
-								<InfoRow label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')} value={nameTnLatn || '—'} icon="text-outline" colors={colors} styles={styles} />
-								<InfoRow label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')} value={nameTnArab || '—'} icon="language" colors={colors} styles={styles} isRtl />
-							</View>
-						)}
-					</SectionCard>
-
-					{/* Description Card */}
-					<SectionCard
-						title={translate('about_business', 'About Business')}
-						colors={colors}
-						styles={styles}
-						isEditing={editMode.about}
-						onEdit={() => setEditMode((prev) => ({ ...prev, about: true }))}
-						onSave={saveAbout}
-						onCancel={() => cancelEdit('about')}
-					>
-						{editMode.about ? (
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>Description</Text>
-								<View style={[styles.inputWrapper, { minHeight: 90, alignItems: 'flex-start', paddingVertical: 12 }, focusedField === 'description' && styles.inputWrapperFocused]}>
-									<Ionicons name="document-text" size={18} color={focusedField === 'description' ? colors.primary : colors.textTertiary} style={[styles.inputIcon, { marginTop: 2 }]} />
-									<TextInput
-										style={[styles.textInput, { minHeight: 70, textAlignVertical: 'top' }]}
-										value={description}
-										onChangeText={setDescription}
-										placeholder="Describe your business, services, products, or working hours..."
-										placeholderTextColor={colors.textTertiary}
-										multiline={true}
-										onFocus={() => setFocusedField('description')}
-										onBlur={() => setFocusedField(null)}
-									/>
+					<View style={styles.tabContent}>
+						{/* Translations Card */}
+						<SectionCard
+							title={translate('business_names', 'Business Names')}
+							colors={colors}
+							styles={styles}
+							isEditing={editMode.names}
+							onEdit={() => setEditMode((prev) => ({ ...prev, names: true }))}
+							onSave={saveNames}
+							onCancel={() => cancelEdit('names')}
+						>
+							{editMode.names ? (
+								<MultilingualNameInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
+							) : (
+								<View style={{ gap: 12 }}>
+									<InfoRow label={translate('english_name', 'English Name')} value={nameEn} icon="text" colors={colors} styles={styles} />
+									<InfoRow label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')} value={nameTnLatn || '—'} icon="text-outline" colors={colors} styles={styles} />
+									<InfoRow label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')} value={nameTnArab || '—'} icon="language" colors={colors} styles={styles} isRtl />
 								</View>
-							</View>
-						) : (
-							<Text style={[styles.descriptionText, { color: description ? colors.text : colors.textTertiary }]}>{description || translate('no_description', 'No description provided yet.')}</Text>
-						)}
-					</SectionCard>
+							)}
+						</SectionCard>
 
-					{/* Contact Info Card */}
-					<SectionCard
-						title={translate('contact', 'Contact Info')}
-						colors={colors}
-						styles={styles}
-						isEditing={editMode.contact}
-						onEdit={() => setEditMode((prev) => ({ ...prev, contact: true }))}
-						onSave={saveContact}
-						onCancel={() => cancelEdit('contact')}
-					>
-						{editMode.contact ? (
-							<View style={{ gap: 12 }}>
+						{/* Description Card */}
+						<SectionCard
+							title={translate('about_business', 'About Business')}
+							colors={colors}
+							styles={styles}
+							isEditing={editMode.about}
+							onEdit={() => setEditMode((prev) => ({ ...prev, about: true }))}
+							onSave={saveAbout}
+							onCancel={() => cancelEdit('about')}
+						>
+							{editMode.about ? (
 								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Phone Number</Text>
-									<View style={{ flexDirection: 'row', gap: 10 }}>
-										<View style={[styles.inputWrapper, { flex: 0.3, paddingHorizontal: 10 }, focusedField === 'phoneCountry' && styles.inputWrapperFocused]}>
-											<Text style={{ color: colors.textSecondary }}>+</Text>
-											<TextInput
-												style={styles.textInput}
-												value={phoneCountry}
-												onChangeText={setPhoneCountry}
-												keyboardType="phone-pad"
-												placeholder="216"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('phoneCountry')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-										<View style={[styles.inputWrapper, { flex: 0.7 }, focusedField === 'phoneLocal' && styles.inputWrapperFocused]}>
-											<Ionicons name="call" size={18} color={focusedField === 'phoneLocal' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-											<TextInput
-												style={styles.textInput}
-												value={phoneLocal}
-												onChangeText={setPhoneLocal}
-												keyboardType="phone-pad"
-												placeholder="99112619"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('phoneLocal')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
+									<Text style={styles.inputLabel}>Description</Text>
+									<View style={[styles.inputWrapper, { minHeight: 90, alignItems: 'flex-start', paddingVertical: 12 }, focusedField === 'description' && styles.inputWrapperFocused]}>
+										<Ionicons name="document-text" size={18} color={focusedField === 'description' ? colors.primary : colors.textTertiary} style={[styles.inputIcon, { marginTop: 2 }]} />
+										<TextInput
+											style={[styles.textInput, { minHeight: 70, textAlignVertical: 'top' }]}
+											value={description}
+											onChangeText={setDescription}
+											placeholder="Describe your business, services, products, or working hours..."
+											placeholderTextColor={colors.textTertiary}
+											multiline={true}
+											onFocus={() => setFocusedField('description')}
+											onBlur={() => setFocusedField(null)}
+										/>
 									</View>
 								</View>
+							) : (
+								<Text style={[styles.descriptionText, { color: description ? colors.text : colors.textTertiary }]}>{description || translate('no_description', 'No description provided yet.')}</Text>
+							)}
+						</SectionCard>
 
-								{/* Backup Phones Section */}
-								<View style={{ marginTop: 8 }}>
-									<Text style={styles.inputLabel}>Backup Phones</Text>
-									{backupPhones.map((bp, index) => (
-										<View key={`backup-${index}`} style={{ flexDirection: 'row', gap: 10, marginBottom: 8, alignItems: 'center' }}>
-											<View style={[styles.inputWrapper, { flex: 0.3, paddingHorizontal: 10 }, focusedField === `bp-country-${index}` && styles.inputWrapperFocused]}>
+						{/* Contact Info Card */}
+						<SectionCard
+							title={translate('contact', 'Contact Info')}
+							colors={colors}
+							styles={styles}
+							isEditing={editMode.contact}
+							onEdit={() => setEditMode((prev) => ({ ...prev, contact: true }))}
+							onSave={saveContact}
+							onCancel={() => cancelEdit('contact')}
+						>
+							{editMode.contact ? (
+								<View style={{ gap: 12 }}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Phone Number</Text>
+										<View style={{ flexDirection: 'row', gap: 10 }}>
+											<View style={[styles.inputWrapper, { flex: 0.3, paddingHorizontal: 10 }, focusedField === 'phoneCountry' && styles.inputWrapperFocused]}>
 												<Text style={{ color: colors.textSecondary }}>+</Text>
 												<TextInput
 													style={styles.textInput}
-													value={bp.countryCode}
-													onChangeText={(text) => {
-														const updated = [...backupPhones]
-														updated[index].countryCode = text
-														setBackupPhones(updated)
-													}}
+													value={phoneCountry}
+													onChangeText={setPhoneCountry}
 													keyboardType="phone-pad"
 													placeholder="216"
 													placeholderTextColor={colors.textTertiary}
-													onFocus={() => setFocusedField(`bp-country-${index}`)}
+													onFocus={() => setFocusedField('phoneCountry')}
 													onBlur={() => setFocusedField(null)}
 												/>
 											</View>
-											<View style={[styles.inputWrapper, { flex: 0.6 }, focusedField === `bp-local-${index}` && styles.inputWrapperFocused]}>
-												<Ionicons name="call" size={18} color={focusedField === `bp-local-${index}` ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
+											<View style={[styles.inputWrapper, { flex: 0.7 }, focusedField === 'phoneLocal' && styles.inputWrapperFocused]}>
+												<Ionicons name="call" size={18} color={focusedField === 'phoneLocal' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
 												<TextInput
 													style={styles.textInput}
-													value={bp.localNumber}
-													onChangeText={(text) => {
-														const updated = [...backupPhones]
-														updated[index].localNumber = text
-														setBackupPhones(updated)
-													}}
+													value={phoneLocal}
+													onChangeText={setPhoneLocal}
 													keyboardType="phone-pad"
-													placeholder="Backup number"
+													placeholder="99112619"
 													placeholderTextColor={colors.textTertiary}
-													onFocus={() => setFocusedField(`bp-local-${index}`)}
+													onFocus={() => setFocusedField('phoneLocal')}
 													onBlur={() => setFocusedField(null)}
 												/>
 											</View>
-											<TouchableOpacity
-												style={{ flex: 0.1, alignItems: 'center', justifyContent: 'center' }}
-												onPress={() => {
-													setBackupPhones(backupPhones.filter((_, idx) => idx !== index))
-												}}
-											>
-												<Ionicons name="trash-outline" size={20} color={colors.error} />
-											</TouchableOpacity>
 										</View>
+									</View>
+
+									{/* Backup Phones Section */}
+									<View style={{ marginTop: 8 }}>
+										<Text style={styles.inputLabel}>Backup Phones</Text>
+										{backupPhones.map((bp, index) => (
+											<View key={`backup-${index}`} style={{ flexDirection: 'row', gap: 10, marginBottom: 8, alignItems: 'center' }}>
+												<View style={[styles.inputWrapper, { flex: 0.3, paddingHorizontal: 10 }, focusedField === `bp-country-${index}` && styles.inputWrapperFocused]}>
+													<Text style={{ color: colors.textSecondary }}>+</Text>
+													<TextInput
+														style={styles.textInput}
+														value={bp.countryCode}
+														onChangeText={(text) => {
+															const updated = [...backupPhones]
+															updated[index].countryCode = text
+															setBackupPhones(updated)
+														}}
+														keyboardType="phone-pad"
+														placeholder="216"
+														placeholderTextColor={colors.textTertiary}
+														onFocus={() => setFocusedField(`bp-country-${index}`)}
+														onBlur={() => setFocusedField(null)}
+													/>
+												</View>
+												<View style={[styles.inputWrapper, { flex: 0.6 }, focusedField === `bp-local-${index}` && styles.inputWrapperFocused]}>
+													<Ionicons name="call" size={18} color={focusedField === `bp-local-${index}` ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
+													<TextInput
+														style={styles.textInput}
+														value={bp.localNumber}
+														onChangeText={(text) => {
+															const updated = [...backupPhones]
+															updated[index].localNumber = text
+															setBackupPhones(updated)
+														}}
+														keyboardType="phone-pad"
+														placeholder="Backup number"
+														placeholderTextColor={colors.textTertiary}
+														onFocus={() => setFocusedField(`bp-local-${index}`)}
+														onBlur={() => setFocusedField(null)}
+													/>
+												</View>
+												<TouchableOpacity
+													style={{ flex: 0.1, alignItems: 'center', justifyContent: 'center' }}
+													onPress={() => {
+														setBackupPhones(backupPhones.filter((_, idx) => idx !== index))
+													}}
+												>
+													<Ionicons name="trash-outline" size={20} color={colors.error} />
+												</TouchableOpacity>
+											</View>
+										))}
+										<TouchableOpacity
+											style={[styles.addBackupBtn, { borderColor: colors.primary }]}
+											onPress={() => {
+												setBackupPhones([...backupPhones, { countryCode: '216', localNumber: '' }])
+											}}
+										>
+											<Ionicons name="add-circle-outline" size={18} color={colors.primary} />
+											<Text style={[styles.addBackupText, { color: colors.primary }]}>Add Backup Phone</Text>
+										</TouchableOpacity>
+									</View>
+
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>WhatsApp</Text>
+										<View style={[styles.inputWrapper, focusedField === 'whatsapp' && styles.inputWrapperFocused]}>
+											<Ionicons name="logo-whatsapp" size={18} color={focusedField === 'whatsapp' ? '#25D366' : colors.textTertiary} style={styles.inputIcon} />
+											<TextInput
+												style={styles.textInput}
+												value={whatsapp}
+												onChangeText={setWhatsapp}
+												keyboardType="phone-pad"
+												placeholder="+21699112619"
+												placeholderTextColor={colors.textTertiary}
+												onFocus={() => setFocusedField('whatsapp')}
+												onBlur={() => setFocusedField(null)}
+											/>
+										</View>
+									</View>
+
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Email</Text>
+										<View style={[styles.inputWrapper, focusedField === 'email' && styles.inputWrapperFocused]}>
+											<Ionicons name="mail" size={18} color={focusedField === 'email' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
+											<TextInput
+												style={styles.textInput}
+												value={email}
+												onChangeText={setEmail}
+												keyboardType="email-address"
+												autoCapitalize="none"
+												placeholder="drinaluza@gmail.com"
+												placeholderTextColor={colors.textTertiary}
+												onFocus={() => setFocusedField('email')}
+												onBlur={() => setFocusedField(null)}
+											/>
+										</View>
+									</View>
+								</View>
+							) : (
+								<View style={{ gap: 12 }}>
+									<InfoRow label={translate('phone_number', 'Phone Number')} value={`+${phoneCountry} ${phoneLocal}`.trim()} icon="call" colors={colors} styles={styles} />
+									{backupPhones.map((bp, index) => (
+										<InfoRow
+											key={`backup-${index}`}
+											label={`${translate('backup_phone', 'Backup Phone')} ${index + 1}`}
+											value={`+${bp.countryCode} ${bp.localNumber}`.trim()}
+											icon="call-outline"
+											colors={colors}
+											styles={styles}
+										/>
 									))}
-									<TouchableOpacity
-										style={[styles.addBackupBtn, { borderColor: colors.primary }]}
-										onPress={() => {
-											setBackupPhones([...backupPhones, { countryCode: '216', localNumber: '' }])
-										}}
-									>
-										<Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-										<Text style={[styles.addBackupText, { color: colors.primary }]}>Add Backup Phone</Text>
+									<InfoRow label="WhatsApp" value={whatsapp || '—'} icon="logo-whatsapp" colors={colors} styles={styles} />
+									<InfoRow label="Email" value={email || '—'} icon="mail" colors={colors} styles={styles} />
+								</View>
+							)}
+						</SectionCard>
+
+						{/* Coordinates Card */}
+						<SectionCard
+							title={translate('coordinates', 'Coordinates')}
+							colors={colors}
+							styles={styles}
+							isEditing={editMode.coordinates}
+							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
+							onSave={saveCoordinates}
+							onCancel={() => cancelEdit('coordinates')}
+							headerRight={
+								editMode.coordinates && (
+									<TouchableOpacity style={styles.getLocationChip} onPress={handleGetCurrentLocation} activeOpacity={0.8}>
+										<Ionicons name="navigate" size={12} color={colors.primary} />
+										<Text style={styles.getLocationText}>{translate('get_current', 'GPS')}</Text>
+									</TouchableOpacity>
+								)
+							}
+						>
+							{editMode.coordinates ? (
+								<View style={{ gap: 12 }}>
+									<View style={{ flexDirection: 'row', gap: 12 }}>
+										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
+											<Text style={styles.inputLabel}>Latitude</Text>
+											<View style={[styles.inputWrapper, focusedField === 'latitude' && styles.inputWrapperFocused]}>
+												<TextInput
+													style={styles.textInput}
+													value={latitude}
+													onChangeText={setLatitude}
+													keyboardType="numeric"
+													placeholder="e.g. 36.80"
+													placeholderTextColor={colors.textTertiary}
+													onFocus={() => setFocusedField('latitude')}
+													onBlur={() => setFocusedField(null)}
+												/>
+											</View>
+										</View>
+										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
+											<Text style={styles.inputLabel}>Longitude</Text>
+											<View style={[styles.inputWrapper, focusedField === 'longitude' && styles.inputWrapperFocused]}>
+												<TextInput
+													style={styles.textInput}
+													value={longitude}
+													onChangeText={setLongitude}
+													keyboardType="numeric"
+													placeholder="e.g. 10.18"
+													placeholderTextColor={colors.textTertiary}
+													onFocus={() => setFocusedField('longitude')}
+													onBlur={() => setFocusedField(null)}
+												/>
+											</View>
+										</View>
+									</View>
+
+									<View style={{ flexDirection: 'row', gap: 12 }}>
+										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
+											<Text style={styles.inputLabel}>Accuracy (m)</Text>
+											<View style={[styles.inputWrapper, focusedField === 'accuracy' && styles.inputWrapperFocused]}>
+												<TextInput
+													style={styles.textInput}
+													value={accuracy}
+													onChangeText={setAccuracy}
+													keyboardType="numeric"
+													placeholder="e.g. 5.0"
+													placeholderTextColor={colors.textTertiary}
+													onFocus={() => setFocusedField('accuracy')}
+													onBlur={() => setFocusedField(null)}
+												/>
+											</View>
+										</View>
+										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
+											<Text style={styles.inputLabel}>Altitude (m)</Text>
+											<View style={[styles.inputWrapper, focusedField === 'altitude' && styles.inputWrapperFocused]}>
+												<TextInput
+													style={styles.textInput}
+													value={altitude}
+													onChangeText={setAltitude}
+													keyboardType="numeric"
+													placeholder="e.g. 35.2"
+													placeholderTextColor={colors.textTertiary}
+													onFocus={() => setFocusedField('altitude')}
+													onBlur={() => setFocusedField(null)}
+												/>
+											</View>
+										</View>
+									</View>
+
+									<View style={{ flexDirection: 'row', gap: 12 }}>
+										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
+											<Text style={styles.inputLabel}>Heading (°)</Text>
+											<View style={[styles.inputWrapper, focusedField === 'heading' && styles.inputWrapperFocused]}>
+												<TextInput
+													style={styles.textInput}
+													value={heading}
+													onChangeText={setHeading}
+													keyboardType="numeric"
+													placeholder="e.g. 0"
+													placeholderTextColor={colors.textTertiary}
+													onFocus={() => setFocusedField('heading')}
+													onBlur={() => setFocusedField(null)}
+												/>
+											</View>
+										</View>
+										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
+											<Text style={styles.inputLabel}>Speed (m/s)</Text>
+											<View style={[styles.inputWrapper, focusedField === 'speed' && styles.inputWrapperFocused]}>
+												<TextInput
+													style={styles.textInput}
+													value={speed}
+													onChangeText={setSpeed}
+													keyboardType="numeric"
+													placeholder="e.g. 0"
+													placeholderTextColor={colors.textTertiary}
+													onFocus={() => setFocusedField('speed')}
+													onBlur={() => setFocusedField(null)}
+												/>
+											</View>
+										</View>
+									</View>
+
+									<TouchableOpacity style={[styles.sharingCard, sharingEnabled && styles.sharingCardActive]} onPress={() => setSharingEnabled(!sharingEnabled)} activeOpacity={0.8}>
+										<View style={[styles.checkbox, sharingEnabled && styles.checkboxActive]}>{sharingEnabled && <Ionicons name="checkmark" size={16} color="#ffffff" />}</View>
+										<View style={{ flex: 1 }}>
+											<Text style={styles.sharingTitle}>{translate('share_location', 'Share location with customers')}</Text>
+											<Text style={styles.sharingDesc}>{translate('share_location_desc', 'Show store coordinates on map details')}</Text>
+										</View>
 									</TouchableOpacity>
 								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>WhatsApp</Text>
-									<View style={[styles.inputWrapper, focusedField === 'whatsapp' && styles.inputWrapperFocused]}>
-										<Ionicons name="logo-whatsapp" size={18} color={focusedField === 'whatsapp' ? '#25D366' : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={whatsapp}
-											onChangeText={setWhatsapp}
-											keyboardType="phone-pad"
-											placeholder="+21699112619"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('whatsapp')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
-								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Email</Text>
-									<View style={[styles.inputWrapper, focusedField === 'email' && styles.inputWrapperFocused]}>
-										<Ionicons name="mail" size={18} color={focusedField === 'email' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={email}
-											onChangeText={setEmail}
-											keyboardType="email-address"
-											autoCapitalize="none"
-											placeholder="drinaluza@gmail.com"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('email')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
-								</View>
-							</View>
-						) : (
-							<View style={{ gap: 12 }}>
-								<InfoRow label={translate('phone_number', 'Phone Number')} value={`+${phoneCountry} ${phoneLocal}`.trim()} icon="call" colors={colors} styles={styles} />
-								{backupPhones.map((bp, index) => (
+							) : (
+								<View style={{ gap: 12 }}>
+									<InfoRow label="Latitude" value={latitude || '—'} icon="compass" colors={colors} styles={styles} />
+									<InfoRow label="Longitude" value={longitude || '—'} icon="compass-outline" colors={colors} styles={styles} />
+									<InfoRow label="Accuracy" value={accuracy ? `${accuracy} m` : '—'} icon="locate-outline" colors={colors} styles={styles} />
+									<InfoRow label="Altitude" value={altitude ? `${altitude} m` : '—'} icon="trending-up-outline" colors={colors} styles={styles} />
+									<InfoRow label="Heading" value={heading ? `${heading}°` : '—'} icon="compass-outline" colors={colors} styles={styles} />
+									<InfoRow label="Speed" value={speed ? `${speed} m/s` : '—'} icon="speedometer-outline" colors={colors} styles={styles} />
 									<InfoRow
-										key={`backup-${index}`}
-										label={`${translate('backup_phone', 'Backup Phone')} ${index + 1}`}
-										value={`+${bp.countryCode} ${bp.localNumber}`.trim()}
-										icon="call-outline"
+										label={translate('location_sharing', 'Location Sharing')}
+										value={sharingEnabled ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}
+										icon={sharingEnabled ? 'eye' : 'eye-off'}
 										colors={colors}
 										styles={styles}
 									/>
-								))}
-								<InfoRow label="WhatsApp" value={whatsapp || '—'} icon="logo-whatsapp" colors={colors} styles={styles} />
-								<InfoRow label="Email" value={email || '—'} icon="mail" colors={colors} styles={styles} />
-							</View>
-						)}
-					</SectionCard>
-
-					{/* Coordinates Card */}
-					<SectionCard
-						title={translate('coordinates', 'Coordinates')}
-						colors={colors}
-						styles={styles}
-						isEditing={editMode.coordinates}
-						onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
-						onSave={saveCoordinates}
-						onCancel={() => cancelEdit('coordinates')}
-						headerRight={
-							editMode.coordinates && (
-								<TouchableOpacity style={styles.getLocationChip} onPress={handleGetCurrentLocation} activeOpacity={0.8}>
-									<Ionicons name="navigate" size={12} color={colors.primary} />
-									<Text style={styles.getLocationText}>{translate('get_current', 'GPS')}</Text>
-								</TouchableOpacity>
-							)
-						}
-					>
-						{editMode.coordinates ? (
-							<View style={{ gap: 12 }}>
-								<View style={{ flexDirection: 'row', gap: 12 }}>
-									<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
-										<Text style={styles.inputLabel}>Latitude</Text>
-										<View style={[styles.inputWrapper, focusedField === 'latitude' && styles.inputWrapperFocused]}>
-											<TextInput
-												style={styles.textInput}
-												value={latitude}
-												onChangeText={setLatitude}
-												keyboardType="numeric"
-												placeholder="e.g. 36.80"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('latitude')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-									<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
-										<Text style={styles.inputLabel}>Longitude</Text>
-										<View style={[styles.inputWrapper, focusedField === 'longitude' && styles.inputWrapperFocused]}>
-											<TextInput
-												style={styles.textInput}
-												value={longitude}
-												onChangeText={setLongitude}
-												keyboardType="numeric"
-												placeholder="e.g. 10.18"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('longitude')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
 								</View>
+							)}
+						</SectionCard>
 
-								<View style={{ flexDirection: 'row', gap: 12 }}>
-									<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
-										<Text style={styles.inputLabel}>Accuracy (m)</Text>
-										<View style={[styles.inputWrapper, focusedField === 'accuracy' && styles.inputWrapperFocused]}>
+						{/* Address Card */}
+						<SectionCard
+							title={translate('address', 'Address')}
+							colors={colors}
+							styles={styles}
+							isEditing={editMode.address}
+							onEdit={() => setEditMode((prev) => ({ ...prev, address: true }))}
+							onSave={saveAddress}
+							onCancel={() => cancelEdit('address')}
+						>
+							{editMode.address ? (
+								<View style={{ gap: 12 }}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Street</Text>
+										<View style={[styles.inputWrapper, focusedField === 'street' && styles.inputWrapperFocused]}>
+											<Ionicons name="location-outline" size={18} color={focusedField === 'street' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
 											<TextInput
 												style={styles.textInput}
-												value={accuracy}
-												onChangeText={setAccuracy}
-												keyboardType="numeric"
-												placeholder="e.g. 5.0"
+												value={street}
+												onChangeText={setStreet}
+												placeholder="Street Address"
 												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('accuracy')}
+												onFocus={() => setFocusedField('street')}
 												onBlur={() => setFocusedField(null)}
 											/>
 										</View>
 									</View>
-									<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
-										<Text style={styles.inputLabel}>Altitude (m)</Text>
-										<View style={[styles.inputWrapper, focusedField === 'altitude' && styles.inputWrapperFocused]}>
-											<TextInput
-												style={styles.textInput}
-												value={altitude}
-												onChangeText={setAltitude}
-												keyboardType="numeric"
-												placeholder="e.g. 35.2"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('altitude')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-								</View>
 
-								<View style={{ flexDirection: 'row', gap: 12 }}>
-									<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
-										<Text style={styles.inputLabel}>Heading (°)</Text>
-										<View style={[styles.inputWrapper, focusedField === 'heading' && styles.inputWrapperFocused]}>
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>City</Text>
+										<View style={[styles.inputWrapper, focusedField === 'city' && styles.inputWrapperFocused]}>
+											<Ionicons name="business-outline" size={18} color={focusedField === 'city' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
 											<TextInput
 												style={styles.textInput}
-												value={heading}
-												onChangeText={setHeading}
-												keyboardType="numeric"
-												placeholder="e.g. 0"
+												value={city}
+												onChangeText={setCity}
+												placeholder="City"
 												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('heading')}
+												onFocus={() => setFocusedField('city')}
 												onBlur={() => setFocusedField(null)}
 											/>
 										</View>
 									</View>
-									<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
-										<Text style={styles.inputLabel}>Speed (m/s)</Text>
-										<View style={[styles.inputWrapper, focusedField === 'speed' && styles.inputWrapperFocused]}>
+
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Region</Text>
+										<View style={[styles.inputWrapper, focusedField === 'region' && styles.inputWrapperFocused]}>
+											<Ionicons name="map-outline" size={18} color={focusedField === 'region' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
 											<TextInput
 												style={styles.textInput}
-												value={speed}
-												onChangeText={setSpeed}
-												keyboardType="numeric"
-												placeholder="e.g. 0"
+												value={region}
+												onChangeText={setRegion}
+												placeholder="Region"
 												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('speed')}
+												onFocus={() => setFocusedField('region')}
+												onBlur={() => setFocusedField(null)}
+											/>
+										</View>
+									</View>
+
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Country</Text>
+										<View style={[styles.inputWrapper, focusedField === 'country' && styles.inputWrapperFocused]}>
+											<Ionicons name="globe-outline" size={18} color={focusedField === 'country' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
+											<TextInput
+												style={styles.textInput}
+												value={country}
+												onChangeText={setCountry}
+												placeholder="Country"
+												placeholderTextColor={colors.textTertiary}
+												onFocus={() => setFocusedField('country')}
+												onBlur={() => setFocusedField(null)}
+											/>
+										</View>
+									</View>
+
+									<View style={styles.inputGroup}>
+										<Text style={styles.inputLabel}>Postal Code</Text>
+										<View style={[styles.inputWrapper, focusedField === 'postalCode' && styles.inputWrapperFocused]}>
+											<Ionicons name="mail-unread-outline" size={18} color={focusedField === 'postalCode' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
+											<TextInput
+												style={styles.textInput}
+												value={postalCode}
+												onChangeText={setPostalCode}
+												placeholder="Postal Code"
+												placeholderTextColor={colors.textTertiary}
+												onFocus={() => setFocusedField('postalCode')}
 												onBlur={() => setFocusedField(null)}
 											/>
 										</View>
 									</View>
 								</View>
-
-								<TouchableOpacity style={[styles.sharingCard, sharingEnabled && styles.sharingCardActive]} onPress={() => setSharingEnabled(!sharingEnabled)} activeOpacity={0.8}>
-									<View style={[styles.checkbox, sharingEnabled && styles.checkboxActive]}>{sharingEnabled && <Ionicons name="checkmark" size={16} color="#ffffff" />}</View>
-									<View style={{ flex: 1 }}>
-										<Text style={styles.sharingTitle}>{translate('share_location', 'Share location with customers')}</Text>
-										<Text style={styles.sharingDesc}>{translate('share_location_desc', 'Show store coordinates on map details')}</Text>
-									</View>
-								</TouchableOpacity>
-							</View>
-						) : (
-							<View style={{ gap: 12 }}>
-								<InfoRow label="Latitude" value={latitude || '—'} icon="compass" colors={colors} styles={styles} />
-								<InfoRow label="Longitude" value={longitude || '—'} icon="compass-outline" colors={colors} styles={styles} />
-								<InfoRow label="Accuracy" value={accuracy ? `${accuracy} m` : '—'} icon="locate-outline" colors={colors} styles={styles} />
-								<InfoRow label="Altitude" value={altitude ? `${altitude} m` : '—'} icon="trending-up-outline" colors={colors} styles={styles} />
-								<InfoRow label="Heading" value={heading ? `${heading}°` : '—'} icon="compass-outline" colors={colors} styles={styles} />
-								<InfoRow label="Speed" value={speed ? `${speed} m/s` : '—'} icon="speedometer-outline" colors={colors} styles={styles} />
-								<InfoRow
-									label={translate('location_sharing', 'Location Sharing')}
-									value={sharingEnabled ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}
-									icon={sharingEnabled ? 'eye' : 'eye-off'}
-									colors={colors}
-									styles={styles}
-								/>
-							</View>
-						)}
-					</SectionCard>
-
-					{/* Address Card */}
-					<SectionCard
-						title={translate('address', 'Address')}
-						colors={colors}
-						styles={styles}
-						isEditing={editMode.address}
-						onEdit={() => setEditMode((prev) => ({ ...prev, address: true }))}
-						onSave={saveAddress}
-						onCancel={() => cancelEdit('address')}
-					>
-						{editMode.address ? (
-							<View style={{ gap: 12 }}>
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Street</Text>
-									<View style={[styles.inputWrapper, focusedField === 'street' && styles.inputWrapperFocused]}>
-										<Ionicons name="location-outline" size={18} color={focusedField === 'street' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={street}
-											onChangeText={setStreet}
-											placeholder="Street Address"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('street')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
+							) : (
+								<View style={{ gap: 12 }}>
+									<InfoRow label={translate('street', 'Street')} value={street || '—'} icon="location" colors={colors} styles={styles} />
+									<InfoRow label={translate('city', 'City')} value={city || '—'} icon="business" colors={colors} styles={styles} />
+									<InfoRow label={translate('region', 'Region')} value={region || '—'} icon="map" colors={colors} styles={styles} />
+									<InfoRow label={translate('country', 'Country')} value={country || '—'} icon="globe" colors={colors} styles={styles} />
+									<InfoRow label={translate('postal_code', 'Postal Code')} value={postalCode || '—'} icon="mail-unread" colors={colors} styles={styles} />
 								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>City</Text>
-									<View style={[styles.inputWrapper, focusedField === 'city' && styles.inputWrapperFocused]}>
-										<Ionicons name="business-outline" size={18} color={focusedField === 'city' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={city}
-											onChangeText={setCity}
-											placeholder="City"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('city')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
-								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Region</Text>
-									<View style={[styles.inputWrapper, focusedField === 'region' && styles.inputWrapperFocused]}>
-										<Ionicons name="map-outline" size={18} color={focusedField === 'region' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={region}
-											onChangeText={setRegion}
-											placeholder="Region"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('region')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
-								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Country</Text>
-									<View style={[styles.inputWrapper, focusedField === 'country' && styles.inputWrapperFocused]}>
-										<Ionicons name="globe-outline" size={18} color={focusedField === 'country' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={country}
-											onChangeText={setCountry}
-											placeholder="Country"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('country')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
-								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Postal Code</Text>
-									<View style={[styles.inputWrapper, focusedField === 'postalCode' && styles.inputWrapperFocused]}>
-										<Ionicons name="mail-unread-outline" size={18} color={focusedField === 'postalCode' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-										<TextInput
-											style={styles.textInput}
-											value={postalCode}
-											onChangeText={setPostalCode}
-											placeholder="Postal Code"
-											placeholderTextColor={colors.textTertiary}
-											onFocus={() => setFocusedField('postalCode')}
-											onBlur={() => setFocusedField(null)}
-										/>
-									</View>
-								</View>
-							</View>
-						) : (
-							<View style={{ gap: 12 }}>
-								<InfoRow label={translate('street', 'Street')} value={street || '—'} icon="location" colors={colors} styles={styles} />
-								<InfoRow label={translate('city', 'City')} value={city || '—'} icon="business" colors={colors} styles={styles} />
-								<InfoRow label={translate('region', 'Region')} value={region || '—'} icon="map" colors={colors} styles={styles} />
-								<InfoRow label={translate('country', 'Country')} value={country || '—'} icon="globe" colors={colors} styles={styles} />
-								<InfoRow label={translate('postal_code', 'Postal Code')} value={postalCode || '—'} icon="mail-unread" colors={colors} styles={styles} />
-							</View>
-						)}
-					</SectionCard>
-				</View>
-			</KeyboardAvoidingWrapper>
+							)}
+						</SectionCard>
+					</View>
+				</SmartHeader.ScrollView>
+			</KeyboardAvoidingView>
 		</View>
 	)
 }
@@ -924,6 +925,9 @@ const createStyles = (colors: any, width: number) =>
 		formContent: {
 			padding: 16,
 			paddingBottom: 80
+		},
+		grow: {
+			flexGrow: 1
 		},
 		heroBanner: {
 			height: 160,
