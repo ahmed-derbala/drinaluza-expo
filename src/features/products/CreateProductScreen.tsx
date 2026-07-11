@@ -206,7 +206,10 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 			case 'gallery':
 				updatePayload = {
 					media: {
-						gallery: uploadedGallery,
+						gallery: (() => {
+							const filtered = uploadedGallery.filter((img) => img._id !== 'thumb')
+							return filtered.length > 0 ? filtered : undefined
+						})(),
 						thumbnail: product?.media?.thumbnail || { url: product?.defaultProduct?.media?.thumbnail?.url }
 					}
 				}
@@ -573,7 +576,10 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 				},
 				media: {
 					thumbnail: selectedDefaultProduct?.media?.thumbnail ? { url: selectedDefaultProduct.media.thumbnail.url } : undefined,
-					gallery: uploadedGallery.length > 0 ? uploadedGallery : undefined
+					gallery: (() => {
+						const filtered = uploadedGallery.filter((img) => img._id !== 'thumb')
+						return filtered.length > 0 ? filtered : undefined
+					})()
 				},
 				specs: {
 					caliber: caliber,
@@ -620,7 +626,14 @@ export default function CreateProductScreen({ isEditMode = false, product = null
 
 	return (
 		<View style={styles.container}>
-			<Stack.Screen options={{ title: submitLabel || (isEditMode ? translate('edit_product', 'Edit Product') : translate('create_product', 'Create Product')) }} />
+			<Stack.Screen
+				options={
+					{
+						title: submitLabel || (isEditMode ? translate('edit_product', 'Edit Product') : translate('create_product', 'Create Product')),
+						headerActions: []
+					} as any
+				}
+			/>
 
 			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<SmartHeader.ScrollView

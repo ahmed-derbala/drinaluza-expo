@@ -188,7 +188,11 @@ export default function BusinessDashboardProductsScreen() {
 		const isUpdating = updatingSlugs[item.slug] || false
 
 		return (
-			<View style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+			<TouchableOpacity
+				style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+				onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
+				activeOpacity={0.85}
+			>
 				{isUpdating && (
 					<View style={cardStyles.updatingOverlay}>
 						<ActivityIndicator size="small" color={colors.primary} />
@@ -242,7 +246,7 @@ export default function BusinessDashboardProductsScreen() {
 				<View style={cardStyles.actionsRow}>
 					<TouchableOpacity
 						style={[cardStyles.actionBtn, { backgroundColor: colors.surface }]}
-						onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}/edit` as any)}
+						onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
 						activeOpacity={0.7}
 					>
 						<Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
@@ -263,7 +267,7 @@ export default function BusinessDashboardProductsScreen() {
 						<Text style={[cardStyles.actionBtnText, { color: colors.textSecondary }]}>{translate('qr_code', 'QR')}</Text>
 					</TouchableOpacity>
 				</View>
-			</View>
+			</TouchableOpacity>
 		)
 	}
 

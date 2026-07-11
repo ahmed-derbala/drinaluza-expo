@@ -7,7 +7,8 @@ import { translate } from '@/core/translation'
 import { SmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
 
-import { useUpdates, isVersionGreater } from '@/features/updates'
+import { useUpdates } from '@/features/updates/useUpdates'
+import { isVersionGreater } from '@/features/updates/UpdatesContext'
 import { config } from '@/config'
 
 export const SmartKebabMenu: React.FC = () => {

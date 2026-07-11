@@ -1,9 +1,18 @@
 ## [1.34.1] - 10 july 2026
 ### Fixed
+- Fix Require cycles circular dependency warnings:
+  - Refactored `UpdatesScreen.tsx` to import useUpdates and isVersionGreater directly from their files instead of the barrel index.
+  - Refactored `SmartKebabMenu.tsx` to import updates utilities directly, breaking the indirect circular reference to `SmartHeader`.
+- Fix product edit/create gallery payload submission in `CreateProductScreen.tsx`: filtered out the temporary thumbnail placeholder object (`_id: 'thumb'`) before dispatching the payload to prevent it from being persisted inside the `media.gallery` database collection on the server.
 - Fix Android production APK black screen issue after login: replaced direct `router.replace('/feed')` calls with a state-driven redirection `useEffect` in `AuthScreen.tsx` observing the authenticated `user` context. This ensures that the user session state is fully updated and propagated to all layout and tab providers prior to initiating navigation, completely avoiding the React Navigation Android crash caused by dynamic tab options reconstruction during transition animation.
 - Fix automatic redirect loop (reversion to `/feed` screen): resolved the issue where unauthenticated API calls returning 401 cleared the token in storage but left the user context populated, triggering an instant redirect back to `/feed` upon reaching the login screen. Added token verification inside the `AuthScreen` redirection layout to clear the user context when the token is missing from storage, allowing the user to stay on the auth screen.
 
 ### Changed
+- Refactor dashboard product details to support inline editing directly inside `dashboard/:businessSlug/products/:productSlug/`:
+  - Removed the separate edit route screen (`edit.tsx`).
+  - Updated the dashboard products list to link directly to the direct index path.
+  - Mapped the dashboard product index route to `EditProductScreen` to enable section-by-section editing out of the box.
+  - Removed the edit actions button in `SmartHeader` for product editing and creation screens.
 - Align the updates manager layout with Expo Router best practices: refactored the heavy updates screen component from the routing entry point `src/app/updates/index.tsx` to a modular component `src/features/updates/UpdatesScreen.tsx`, simplifying the route definitions directory.
 - Improve the first section of the Profile screen with a premium editorial design:
   - Add a beautiful `LinearGradient` banner at the top of the profile card.
@@ -12,6 +21,13 @@
   - Display the user's localized full name prominently as the primary header, with the `@slug` username as a subtitle.
   - Integrate a metadata row showing the user's registration year with outline icons (keeping the first section clean and preventing address redundancy).
   - Enhance role badges to include specific icons and styled translucent backgrounds.
+- Add support for swipeable product image carousels in feed cards (`products.card.tsx`):
+  - Aggregated both the primary thumbnail and gallery images into a single computed array.
+  - Replaced the static main image container with a horizontally swiping `ScrollView` when multiple media resources are resolved.
+  - Integrated active pagination indicator dots centered on the bottom overlay container.
+  - Implemented dynamic `onLayout` width measurements to support clean column sizes in web and mobile responsive grids.
+  - Integrated an automatic sliding loop transitioning every 4 seconds, with touch/click auto-reset controls.
+  - Added absolute hover chevron button overlays on Web to simplify navigation controls.
 - Add share and copy link actions inside the QR Code Modal (`QRCodeModal.tsx`):
   - Integrate clipboard copying via Expo's `expo-clipboard` library.
   - Implement native system link sharing using React Native's `Share` API.

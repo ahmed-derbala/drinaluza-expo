@@ -1,5 +1,5 @@
-import React, { useState, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
+import React, { useState, useMemo, useRef, useEffect } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, ScrollView } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
 import { getCaliberLabel } from '@/features/products/products.helpers'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -20,6 +20,109 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const router = useRouter()
 	const pathname = usePathname()
 	const { width } = useWindowDimensions()
+	const [cardWidth, setCardWidth] = useState(0)
+	const [activeImageIndex, setActiveImageIndex] = useState(0)
+	const [autoplayEnabled, setAutoplayEnabled] = useState(true)
+
+	const images = useMemo(() => {
+		const list: string[] = []
+		if (item.media?.thumbnail?.url) {
+			list.push(item.media.thumbnail.url)
+		} else if (item.defaultProduct?.media?.thumbnail?.url) {
+			list.push(item.defaultProduct.media.thumbnail.url)
+		}
+		const gallery = (item as any).media?.gallery
+		if (gallery && Array.isArray(gallery)) {
+			gallery.forEach((g: any) => {
+				if (g.url && !list.includes(g.url)) {
+					list.push(g.url)
+				}
+			})
+		}
+		return list
+	}, [item.media, item.defaultProduct])
+
+	const scrollViewRef = useRef<ScrollView>(null)
+	const autoplayTimerRef = useRef<any>(null)
+	const isProgrammaticScrollRef = useRef(false)
+
+	const startAutoplay = () => {
+		stopAutoplay()
+		if (!autoplayEnabled || images.length <= 1 || cardWidth <= 0) return
+		autoplayTimerRef.current = setInterval(() => {
+			setActiveImageIndex((prevIndex) => {
+				const nextIndex = (prevIndex + 1) % images.length
+				isProgrammaticScrollRef.current = true
+				scrollViewRef.current?.scrollTo({
+					x: nextIndex * cardWidth,
+					animated: true
+				})
+				return nextIndex
+			})
+		}, 4000)
+	}
+
+	const stopAutoplay = () => {
+		if (autoplayTimerRef.current) {
+			clearInterval(autoplayTimerRef.current)
+			autoplayTimerRef.current = null
+		}
+	}
+
+	useEffect(() => {
+		startAutoplay()
+		return () => stopAutoplay()
+	}, [images.length, cardWidth, autoplayEnabled])
+
+	const handleLayout = (event: any) => {
+		const { width: layoutWidth } = event.nativeEvent.layout
+		setCardWidth(layoutWidth)
+	}
+
+	const handleScroll = (event: any) => {
+		const contentOffset = event.nativeEvent.contentOffset
+		const viewSize = event.nativeEvent.layoutMeasurement
+		if (viewSize.width > 0) {
+			const index = Math.round(contentOffset.x / viewSize.width)
+			setActiveImageIndex(index)
+
+			if (isProgrammaticScrollRef.current) {
+				isProgrammaticScrollRef.current = false
+			} else {
+				// User interacted (manual swipe), stop autoplay permanently
+				stopAutoplay()
+				setAutoplayEnabled(false)
+			}
+		}
+	}
+
+	const handlePrev = (e: any) => {
+		e.stopPropagation()
+		// User interacted (button click), stop autoplay permanently
+		stopAutoplay()
+		setAutoplayEnabled(false)
+		const prevIndex = (activeImageIndex - 1 + images.length) % images.length
+		setActiveImageIndex(prevIndex)
+		isProgrammaticScrollRef.current = true
+		scrollViewRef.current?.scrollTo({
+			x: prevIndex * cardWidth,
+			animated: true
+		})
+	}
+
+	const handleNext = (e: any) => {
+		e.stopPropagation()
+		// User interacted (button click), stop autoplay permanently
+		stopAutoplay()
+		setAutoplayEnabled(false)
+		const nextIndex = (activeImageIndex + 1) % images.length
+		setActiveImageIndex(nextIndex)
+		isProgrammaticScrollRef.current = true
+		scrollViewRef.current?.scrollTo({
+			x: nextIndex * cardWidth,
+			animated: true
+		})
+	}
 
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
@@ -135,8 +238,56 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 			)}
 
 			{/* ── Product image ── */}
-			<View style={styles.imgWrap}>
-				<SmartImage source={imageUrl} style={styles.img} resizeMode="cover" entityType="product" />
+			<View style={styles.imgWrap} onLayout={handleLayout}>
+				{images.length > 1 && cardWidth > 0 ? (
+					<>
+						<ScrollView
+							ref={scrollViewRef}
+							horizontal
+							pagingEnabled
+							showsHorizontalScrollIndicator={false}
+							onMomentumScrollEnd={handleScroll}
+							style={styles.carouselScrollView}
+							scrollEventThrottle={16}
+						>
+							{images.map((url, index) => (
+								<View key={index} style={[styles.carouselSlide, { width: cardWidth }]}>
+									<SmartImage source={url} style={styles.img} resizeMode="cover" entityType="product" />
+								</View>
+							))}
+						</ScrollView>
+
+						{/* Web Arrow Buttons */}
+						{Platform.OS === 'web' && (
+							<>
+								<TouchableOpacity style={[styles.carouselArrow, styles.carouselArrowLeft]} onPress={handlePrev} activeOpacity={0.8}>
+									<Ionicons name="chevron-back" size={18} color="#FFF" />
+								</TouchableOpacity>
+								<TouchableOpacity style={[styles.carouselArrow, styles.carouselArrowRight]} onPress={handleNext} activeOpacity={0.8}>
+									<Ionicons name="chevron-forward" size={18} color="#FFF" />
+								</TouchableOpacity>
+							</>
+						)}
+
+						{/* Carousel Dots Indicator */}
+						<View style={styles.carouselDotsContainer}>
+							{images.map((_, index) => (
+								<View
+									key={index}
+									style={[
+										styles.carouselDot,
+										{
+											backgroundColor: index === activeImageIndex ? colors.primary : 'rgba(255, 255, 255, 0.4)',
+											width: index === activeImageIndex ? 12 : 6
+										}
+									]}
+								/>
+							))}
+						</View>
+					</>
+				) : (
+					<SmartImage source={imageUrl} style={styles.img} resizeMode="cover" entityType="product" />
+				)}
 
 				{/* Stock overlay for out-of-stock / low-stock */}
 				{(isOutOfStock || isLowStock) && (
@@ -473,5 +624,51 @@ const styles = StyleSheet.create({
 	originChipText: {
 		fontSize: 10,
 		fontWeight: '600'
+	},
+	carouselScrollView: {
+		flex: 1
+	},
+	carouselSlide: {
+		height: '100%'
+	},
+	carouselDotsContainer: {
+		position: 'absolute',
+		bottom: 12,
+		flexDirection: 'row',
+		alignSelf: 'center',
+		gap: 6,
+		zIndex: 10,
+		backgroundColor: 'rgba(0, 0, 0, 0.35)',
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 10
+	},
+	carouselDot: {
+		height: 6,
+		borderRadius: 3
+	},
+	carouselArrow: {
+		position: 'absolute',
+		top: '50%',
+		marginTop: -16,
+		width: 32,
+		height: 32,
+		borderRadius: 16,
+		backgroundColor: 'rgba(0, 0, 0, 0.45)',
+		justifyContent: 'center',
+		alignItems: 'center',
+		zIndex: 20,
+		...Platform.select({
+			web: {
+				cursor: 'pointer',
+				userSelect: 'none'
+			} as any
+		})
+	},
+	carouselArrowLeft: {
+		left: 8
+	},
+	carouselArrowRight: {
+		right: 8
 	}
 })
