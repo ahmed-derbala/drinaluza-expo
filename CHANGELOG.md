@@ -1,3 +1,25 @@
+## [1.34.4] - 11 july 2026
+### Added
+- Add `ProductCreateScreen` to focus purely on the product creation flow.
+- Add reusable, modular product section components in `src/features/products/common/` supporting view, edit, and create layouts: `ProductNamesSection`, `ProductPricingSection`, `ProductStockSection`, and `ProductStateSection`.
+- Integrate product view, create, and edit modes inside a single unified `ProductDetailScreen` component.
+- Implement centralized route authorization guard inside the root `_layout.tsx` to secure authenticated and dashboard paths.
+- Create a shared `AddressForm` component in `src/features/common` to unify address fields UI across multiple screens.
+
+### Changed
+- Remove the edit button from the `SmartHeader` when viewing product details from the dashboard (in favor of inline section editing).
+- Update unit measure selector to restrict values to `kg`, `piece`, and `crate` with a horizontal segmented selector.
+- Move the gallery picker section directly underneath the business and category selector card in the product creation screen.
+- Remove "Product" from section titles (Names, Gallery, Specifications) across views.
+- Refactor `ProductDetailScreen` to use the new modular reusable sections, removing all product creation state and flows to simplify inline editing and viewing.
+- Route `/dashboard/[businessSlug]/create-product` to the new dedicated `ProductCreateScreen`.
+- Refactor `ProductSpecsSection`, `EditBusinessScreen`, and `ProfileScreen` to use the shared `AddressForm` component.
+- Optimize the styling layer to remove all light-theme conditional color checks and hex fallbacks to enforce that the app exclusively uses the dark theme.
+
+### Removed
+- Delete redundant `CreateProductScreen` and `EditProductScreen` feature components.
+- Delete separate product edit route mapping.
+
 ## [1.34.1] - 10 july 2026
 ### Fixed
 - Fix Require cycles circular dependency warnings:

@@ -24,7 +24,6 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 	const { translate, localize } = useUser()
 	const router = useRouter()
 	const { height: windowHeight } = useWindowDimensions()
-	const isDark = true
 
 	const handleBusinessPress = (slug: string) => {
 		router.push(`/businesses/${slug}` as any)
@@ -44,7 +43,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 	const rating = business.rating?.average || 0
 	const ratingCount = business.rating?.count || 0
 
-	const styles = createStyles(colors, isDark, {
+	const styles = createStyles(colors, {
 		width,
 		imageHeight,
 		isExtraSmall,
@@ -144,7 +143,6 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 
 const createStyles = (
 	colors: any,
-	isDark: boolean,
 	opts: {
 		width: number
 		imageHeight: number
@@ -168,7 +166,7 @@ const createStyles = (
 			borderColor: colors.info || '#3B82F6',
 			shadowColor: '#000',
 			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: isDark ? 0.15 : 0.05,
+			shadowOpacity: 0.15,
 			shadowRadius: 6,
 			elevation: 2,
 			width: opts.width - (opts.isExtraSmall ? 8 : 12),
@@ -183,7 +181,7 @@ const createStyles = (
 			position: 'relative',
 			width: '100%',
 			height: Math.min(opts.imageHeight, opts.windowHeight * 0.18),
-			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+			backgroundColor: 'rgba(255, 255, 255, 0.05)'
 		},
 		businessImage: {
 			width: '100%',

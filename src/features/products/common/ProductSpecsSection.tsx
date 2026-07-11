@@ -2,6 +2,7 @@ import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { getCaliberLabel } from '@/features/products/products.helpers'
+import AddressForm from '@/features/common/AddressForm'
 
 export interface ProductSpecsSectionProps {
 	editable: boolean
@@ -31,6 +32,7 @@ export interface ProductSpecsSectionProps {
 			country?: string
 		}
 	} | null
+	onEdit?: () => void
 }
 
 export default function ProductSpecsSection({
@@ -49,7 +51,8 @@ export default function ProductSpecsSection({
 	setOriginPostalCode,
 	originCountry = 'Tunisia',
 	setOriginCountry,
-	specs
+	specs,
+	onEdit
 }: ProductSpecsSectionProps) {
 	const styles = createStyles(colors)
 
@@ -57,7 +60,7 @@ export default function ProductSpecsSection({
 		return (
 			<View style={styles.card}>
 				<Text style={styles.cardTitle}>
-					{translate('product_specs', 'Product Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+					{translate('specifications', 'Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
 				</Text>
 
 				{/* Caliber Selection */}
@@ -83,77 +86,18 @@ export default function ProductSpecsSection({
 				{/* Origin Address Section */}
 				<Text style={[styles.fieldLabel, { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 8, marginBottom: 12 }]}>{translate('origin_address', 'Origin Address')}</Text>
 
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('origin_street', 'Street')}</Text>
-						<View style={[styles.inputBox, { borderColor: originStreet ? colors.primary : colors.borderLight }]}>
-							<TextInput
-								style={[styles.textInput, { color: colors.text }]}
-								value={originStreet}
-								onChangeText={setOriginStreet}
-								placeholder={translate('street_placeholder', 'e.g., Rue de la Paix')}
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-					</View>
-				</View>
-
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('origin_city', 'City')}</Text>
-						<View style={[styles.inputBox, { borderColor: originCity ? colors.primary : colors.borderLight }]}>
-							<TextInput
-								style={[styles.textInput, { color: colors.text }]}
-								value={originCity}
-								onChangeText={setOriginCity}
-								placeholder={translate('city_placeholder', 'e.g., Ellouza')}
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('origin_region', 'Region')}</Text>
-						<View style={[styles.inputBox, { borderColor: originRegion ? colors.primary : colors.borderLight }]}>
-							<TextInput
-								style={[styles.textInput, { color: colors.text }]}
-								value={originRegion}
-								onChangeText={setOriginRegion}
-								placeholder={translate('region_placeholder', 'e.g., Sfax')}
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-					</View>
-				</View>
-
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('origin_postal_code', 'Postal Code')}</Text>
-						<View style={[styles.inputBox, { borderColor: originPostalCode ? colors.primary : colors.borderLight }]}>
-							<TextInput
-								style={[styles.textInput, { color: colors.text }]}
-								value={originPostalCode}
-								onChangeText={setOriginPostalCode}
-								placeholder="3016"
-								placeholderTextColor={colors.textTertiary}
-								keyboardType="numeric"
-							/>
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('origin_country', 'Country')}</Text>
-						<View style={[styles.inputBox, { borderColor: originCountry ? colors.primary : colors.borderLight }]}>
-							<TextInput
-								style={[styles.textInput, { color: colors.text }]}
-								value={originCountry}
-								onChangeText={setOriginCountry}
-								placeholder={translate('country_placeholder', 'e.g., Tunisia')}
-								placeholderTextColor={colors.textTertiary}
-							/>
-						</View>
-					</View>
-				</View>
+				<AddressForm
+					street={originStreet}
+					setStreet={setOriginStreet || (() => {})}
+					city={originCity}
+					setCity={setOriginCity || (() => {})}
+					region={originRegion}
+					setRegion={setOriginRegion || (() => {})}
+					postalCode={originPostalCode}
+					setPostalCode={setOriginPostalCode || (() => {})}
+					country={originCountry}
+					setCountry={setOriginCountry || (() => {})}
+				/>
 			</View>
 		)
 	}
@@ -170,6 +114,11 @@ export default function ProductSpecsSection({
 					</View>
 					<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('specifications', 'Specifications')}</Text>
 				</View>
+				{onEdit && (
+					<TouchableOpacity onPress={onEdit} style={{ padding: 4 }} activeOpacity={0.7}>
+						<Ionicons name="create-outline" size={18} color={colors.primary} />
+					</TouchableOpacity>
+				)}
 			</View>
 
 			{/* Caliber */}

@@ -174,12 +174,6 @@ export default function ProductDetailScreen() {
 					accessibilityLabel: 'Sales Stats'
 				})
 			}
-			actions.push({
-				key: 'edit',
-				iconName: 'pencil',
-				onPress: () => router.push(`${pathname}/edit` as any),
-				accessibilityLabel: 'Edit Product'
-			})
 		}
 		actions.push({
 			key: 'qr-code',

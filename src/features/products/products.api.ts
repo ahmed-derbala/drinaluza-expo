@@ -116,7 +116,7 @@ const getBusinessProducts = async (businessId: string, page: number = 1, limit: 
 	return response.data
 }
 
-export const createProduct = async (productData: CreateProductRequest): Promise<{ status: number; data: ProductType }> => {
+export const createProduct = async (productData: CreateProductRequest): Promise<{ status: number; data: ProductType; viewer?: { canEdit?: boolean; canCreate?: boolean } }> => {
 	const response = await getApiClient().post('/products', productData)
 	return response.data
 }
@@ -136,7 +136,7 @@ const getMyProducts = async (page: number = 1, limit: number = 10): Promise<Prod
 	return response.data
 }
 
-export const getProductBySlug = async (productSlug: string): Promise<{ status: number; data: ProductType }> => {
+export const getProductBySlug = async (productSlug: string): Promise<{ status: number; data: ProductType; viewer?: { canEdit?: boolean; canCreate?: boolean } }> => {
 	const response = await getApiClient().get(`/products/${productSlug}`)
 	return response.data
 }
@@ -145,7 +145,10 @@ export const getProducts = async (page: number = 1, limit: number = 10): Promise
 	const response = await getApiClient().get(`/products?page=${page}&limit=${limit}`)
 	return response.data
 }
-export const updateProduct = async (productSlug: string, productData: Partial<CreateProductRequest> & { state?: { code: string } }): Promise<{ status: number; data: ProductType }> => {
+export const updateProduct = async (
+	productSlug: string,
+	productData: Partial<CreateProductRequest> & { state?: { code: string } }
+): Promise<{ status: number; data: ProductType; viewer?: { canEdit?: boolean; canCreate?: boolean } }> => {
 	const response = await getApiClient().patch(`/products/${productSlug}`, productData)
 	return response.data
 }

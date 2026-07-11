@@ -23,7 +23,6 @@ import BusinessCard from './BusinessCard'
 
 const createStyles = (
 	colors: any,
-	isDark: boolean,
 	opts: {
 		cardWidth: number
 		numColumns: number
@@ -78,7 +77,7 @@ const createStyles = (
 			borderColor: colors.info || '#3B82F6',
 			shadowColor: '#000',
 			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: isDark ? 0.15 : 0.05,
+			shadowOpacity: 0.15,
 			shadowRadius: 6,
 			elevation: 2,
 			width: opts.cardWidth - (opts.isExtraSmall ? 8 : 12), // Subtract margin from width
@@ -92,7 +91,7 @@ const createStyles = (
 			position: 'relative',
 			width: '100%',
 			height: opts.imageHeight,
-			backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)'
+			backgroundColor: 'rgba(255, 255, 255, 0.05)'
 		},
 		imageOverlay: {
 			position: 'absolute',
@@ -100,7 +99,7 @@ const createStyles = (
 			right: 0,
 			bottom: 0,
 			height: 64,
-			backgroundColor: isDark ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.18)'
+			backgroundColor: 'rgba(0,0,0,0.45)'
 		},
 		businessImage: {
 			width: '100%',
@@ -169,7 +168,7 @@ const createStyles = (
 			marginTop: 12,
 			paddingTop: 12,
 			borderTopWidth: 1,
-			borderTopColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+			borderTopColor: 'rgba(255, 255, 255, 0.1)'
 		},
 		businessStats: {
 			flexDirection: 'row',
@@ -551,7 +550,6 @@ const getResponsiveConfig = (width: number): ResponsiveConfig => {
 
 export default function BusinessesListScreen() {
 	const { colors } = useTheme()
-	const isDark = true
 	const router = useRouter()
 	const [businesses, setBusinesss] = useState<Business[]>([])
 	const [loading, setLoading] = useState(true)
@@ -580,7 +578,7 @@ export default function BusinessesListScreen() {
 		isExtraLarge
 	} = responsiveConfig
 
-	const styles = createStyles(colors, isDark, {
+	const styles = createStyles(colors, {
 		cardWidth,
 		numColumns,
 		padding,

@@ -21,6 +21,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
 import { getItem } from '@/core/storage'
+import AddressForm from '@/features/common/AddressForm'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
@@ -938,7 +939,7 @@ export default function ProfileScreen() {
 							<>
 								<View style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>Biography</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 											<Ionicons name="document-text" size={20} color={colors.textSecondary} />
 										</View>
@@ -1001,103 +1002,18 @@ export default function ProfileScreen() {
 						onCancel={() => toggleEdit('address', false)}
 					>
 						{editMode.address ? (
-							<View style={styles.addressGrid}>
-								<View style={styles.addressCol12}>
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Street</Text>
-										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="home" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { textAlignVertical: 'top' }]}
-												value={userData.address?.street}
-												underlineColorAndroid="transparent"
-												onChangeText={(value) => updateField('street', value, 'address')}
-												placeholder="Street Address"
-												placeholderTextColor={colors.textTertiary}
-												multiline
-											/>
-										</View>
-									</View>
-								</View>
-
-								<View style={styles.addressCol6}>
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>City</Text>
-										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="business" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.address?.city}
-												underlineColorAndroid="transparent"
-												onChangeText={(value) => updateField('city', value, 'address')}
-												placeholder="City"
-												placeholderTextColor={colors.textTertiary}
-											/>
-										</View>
-									</View>
-								</View>
-
-								<View style={styles.addressCol6}>
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>State</Text>
-										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="map" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.address?.state}
-												underlineColorAndroid="transparent"
-												onChangeText={(value) => updateField('state', value, 'address')}
-												placeholder="State"
-												placeholderTextColor={colors.textTertiary}
-											/>
-										</View>
-									</View>
-								</View>
-
-								<View style={styles.addressCol6}>
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Postal Code</Text>
-										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="navigate" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.address?.postalCode}
-												underlineColorAndroid="transparent"
-												onChangeText={(value) => updateField('postalCode', value, 'address')}
-												placeholder="ZIP Code"
-												placeholderTextColor={colors.textTertiary}
-											/>
-										</View>
-									</View>
-								</View>
-
-								<View style={styles.addressCol6}>
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Country</Text>
-										<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="earth" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.address?.country}
-												underlineColorAndroid="transparent"
-												onChangeText={(value) => updateField('country', value, 'address')}
-												placeholder="Country"
-												placeholderTextColor={colors.textTertiary}
-											/>
-										</View>
-									</View>
-								</View>
-							</View>
+							<AddressForm
+								street={userData.address?.street || ''}
+								setStreet={(val) => updateField('street', val, 'address')}
+								city={userData.address?.city || ''}
+								setCity={(val) => updateField('city', val, 'address')}
+								region={userData.address?.state || ''}
+								setRegion={(val) => updateField('state', val, 'address')}
+								postalCode={userData.address?.postalCode || ''}
+								setPostalCode={(val) => updateField('postalCode', val, 'address')}
+								country={userData.address?.country || ''}
+								setCountry={(val) => updateField('country', val, 'address')}
+							/>
 						) : (
 							<>
 								{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" styles={styles} iconColor={colors.primary} />}
@@ -1132,12 +1048,7 @@ export default function ProfileScreen() {
 								<View style={styles.locationGrid}>
 									<View style={styles.locationCol}>
 										<Text style={styles.locationSubLabel}>Longitude</Text>
-										<View
-											style={[
-												styles.socialInputContainer,
-												{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC', opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }
-											]}
-										>
+										<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card, opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }]}>
 											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 												<Ionicons name="location" size={20} color={colors.textSecondary} />
 											</View>
@@ -1170,8 +1081,8 @@ export default function ProfileScreen() {
 											style={[
 												styles.socialInputContainer,
 												{
-													borderColor: isDark ? colors.border : '#E1E8ED',
-													backgroundColor: isDark ? colors.card : '#FAFBFC',
+													borderColor: colors.border,
+													backgroundColor: colors.card,
 													opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
 												}
 											]}
@@ -1284,7 +1195,7 @@ export default function ProfileScreen() {
 							SOCIAL_PLATFORMS.map((platform) => (
 								<View key={platform.id} style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>{platform.label}</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: platform.color + '15' }]}>
 											<Ionicons name={platform.icon as any} size={20} color={platform.color} />
 										</View>
@@ -1365,7 +1276,7 @@ export default function ProfileScreen() {
 							<>
 								<View style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>Primary Phone</Text>
-									<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
 											<TextInput
 												style={[styles.phoneCodeInput, { color: colors.text }]}
@@ -1414,7 +1325,7 @@ export default function ProfileScreen() {
 												<Ionicons name="trash-outline" size={18} color={colors.error} />
 											</TouchableOpacity>
 										</View>
-										<View style={[styles.phoneInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+										<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
 											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
 												<TextInput
 													style={[styles.phoneCodeInput, { color: colors.text }]}
@@ -1463,7 +1374,7 @@ export default function ProfileScreen() {
 
 								<View style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>Email</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 											<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
 										</View>
@@ -1492,7 +1403,7 @@ export default function ProfileScreen() {
 
 								<View style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>WhatsApp</Text>
-									<View style={[styles.socialInputContainer, { borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' }]}>
+									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: '#25D36615' }]}>
 											<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
 										</View>
@@ -1602,7 +1513,7 @@ export default function ProfileScreen() {
 												key={lang.code}
 												style={[
 													styles.langOption,
-													{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
+													{ borderColor: colors.border, backgroundColor: colors.card },
 													userData.settings?.lang?.app === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
 												]}
 												onPress={() => {
@@ -1631,7 +1542,7 @@ export default function ProfileScreen() {
 												key={lang.code}
 												style={[
 													styles.langOption,
-													{ borderColor: isDark ? colors.border : '#E1E8ED', backgroundColor: isDark ? colors.card : '#FAFBFC' },
+													{ borderColor: colors.border, backgroundColor: colors.card },
 													userData.settings?.lang?.content === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
 												]}
 												onPress={() => {
@@ -2197,7 +2108,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			marginBottom: 2
 		},
 		input: {
-			backgroundColor: isDark ? colors.card : '#FAFBFC',
+			backgroundColor: colors.card,
 			color: colors.text,
 			fontSize: 14,
 			paddingHorizontal: 12,
@@ -2207,7 +2118,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			includeFontPadding: false,
 			borderRadius: 12,
 			borderWidth: 2,
-			borderColor: isDark ? colors.border : '#E1E8ED',
+			borderColor: colors.border,
 			...createColorShadow({ color: colors.primary, offsetY: 0, opacity: 0, radius: 0, elevation: 0 })
 		},
 		textArea: {

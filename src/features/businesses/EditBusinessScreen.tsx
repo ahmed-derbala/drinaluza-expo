@@ -8,6 +8,7 @@ import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
 import { toast } from '@/features/common/Toast'
 import { Ionicons } from '@expo/vector-icons'
+import AddressForm from '@/features/common/AddressForm'
 import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import SmartImage from '@/core/SmartImageViewer'
@@ -811,87 +812,18 @@ export default function EditBusinessScreen() {
 							onCancel={() => cancelEdit('address')}
 						>
 							{editMode.address ? (
-								<View style={{ gap: 12 }}>
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Street</Text>
-										<View style={[styles.inputWrapper, focusedField === 'street' && styles.inputWrapperFocused]}>
-											<Ionicons name="location-outline" size={18} color={focusedField === 'street' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-											<TextInput
-												style={styles.textInput}
-												value={street}
-												onChangeText={setStreet}
-												placeholder="Street Address"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('street')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>City</Text>
-										<View style={[styles.inputWrapper, focusedField === 'city' && styles.inputWrapperFocused]}>
-											<Ionicons name="business-outline" size={18} color={focusedField === 'city' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-											<TextInput
-												style={styles.textInput}
-												value={city}
-												onChangeText={setCity}
-												placeholder="City"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('city')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Region</Text>
-										<View style={[styles.inputWrapper, focusedField === 'region' && styles.inputWrapperFocused]}>
-											<Ionicons name="map-outline" size={18} color={focusedField === 'region' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-											<TextInput
-												style={styles.textInput}
-												value={region}
-												onChangeText={setRegion}
-												placeholder="Region"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('region')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Country</Text>
-										<View style={[styles.inputWrapper, focusedField === 'country' && styles.inputWrapperFocused]}>
-											<Ionicons name="globe-outline" size={18} color={focusedField === 'country' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-											<TextInput
-												style={styles.textInput}
-												value={country}
-												onChangeText={setCountry}
-												placeholder="Country"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('country')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-
-									<View style={styles.inputGroup}>
-										<Text style={styles.inputLabel}>Postal Code</Text>
-										<View style={[styles.inputWrapper, focusedField === 'postalCode' && styles.inputWrapperFocused]}>
-											<Ionicons name="mail-unread-outline" size={18} color={focusedField === 'postalCode' ? colors.primary : colors.textTertiary} style={styles.inputIcon} />
-											<TextInput
-												style={styles.textInput}
-												value={postalCode}
-												onChangeText={setPostalCode}
-												placeholder="Postal Code"
-												placeholderTextColor={colors.textTertiary}
-												onFocus={() => setFocusedField('postalCode')}
-												onBlur={() => setFocusedField(null)}
-											/>
-										</View>
-									</View>
-								</View>
+								<AddressForm
+									street={street}
+									setStreet={setStreet}
+									city={city}
+									setCity={setCity}
+									region={region}
+									setRegion={setRegion}
+									postalCode={postalCode}
+									setPostalCode={setPostalCode}
+									country={country}
+									setCountry={setCountry}
+								/>
 							) : (
 								<View style={{ gap: 12 }}>
 									<InfoRow label={translate('street', 'Street')} value={street || '—'} icon="location" colors={colors} styles={styles} />

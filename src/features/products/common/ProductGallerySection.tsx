@@ -25,7 +25,7 @@ export default function ProductGallerySection({ editable, gallery, colors, trans
 		return (
 			<View style={styles.fieldContainer}>
 				<Text style={styles.fieldLabel}>
-					{translate('product_gallery', 'Product Gallery')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+					{translate('gallery', 'Gallery')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
 					<Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> ({gallery.length}/5)</Text>
 				</Text>
 				<View style={styles.galleryWrapper}>

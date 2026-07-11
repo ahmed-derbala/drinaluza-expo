@@ -1,4 +1,4 @@
-import { Stack, useRouter } from 'expo-router'
+import { Stack, useRouter, usePathname } from 'expo-router'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, ActivityIndicator, Platform } from 'react-native'
@@ -33,7 +33,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 }
 
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
-import { UserProvider } from '@/core/contexts/UserContext'
+import { UserProvider, useUser } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
@@ -47,6 +47,8 @@ import { SmartHeader } from '@/core/smart-header'
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
 	const router = useRouter()
+	const pathname = usePathname()
+	const { user, loading } = useUser()
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
@@ -74,7 +76,34 @@ function RootLayoutContent() {
 		performStartupCheck()
 	}, [checkForUpdates, refreshApkList, installApk, router])
 
+	useEffect(() => {
+		if (loading) return
+
+		const isAuthenticated = !!user
+		const isBusinessOwner = user?.role === 'business_owner'
+
+		if (pathname.startsWith('/dashboard')) {
+			if (!isAuthenticated) {
+				router.replace('/auth')
+			} else if (!isBusinessOwner) {
+				router.replace('/feed')
+			}
+		} else if (pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')) {
+			if (!isAuthenticated) {
+				router.replace('/auth')
+			}
+		}
+	}, [user, loading, pathname, router])
+
 	const { colors } = useTheme()
+
+	if (loading) {
+		return (
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background || '#000000' }}>
+				<ActivityIndicator size="large" color={colors.primary || '#0EA5E9'} />
+			</View>
+		)
+	}
 
 	return (
 		<ErrorBoundary>
