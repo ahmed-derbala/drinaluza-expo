@@ -33,6 +33,8 @@ export interface ProductSpecsSectionProps {
 		}
 	} | null
 	onEdit?: () => void
+	onSavePress?: () => void
+	onCancelPress?: () => void
 }
 
 export default function ProductSpecsSection({
@@ -52,16 +54,32 @@ export default function ProductSpecsSection({
 	originCountry = 'Tunisia',
 	setOriginCountry,
 	specs,
-	onEdit
+	onEdit,
+	onSavePress,
+	onCancelPress
 }: ProductSpecsSectionProps) {
 	const styles = createStyles(colors)
 
 	if (editable) {
 		return (
 			<View style={styles.card}>
-				<Text style={styles.cardTitle}>
-					{translate('specifications', 'Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-				</Text>
+				<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+					<Text style={[styles.cardTitle, { marginBottom: 0 }]}>
+						{translate('specifications', 'Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+					</Text>
+					<View style={{ flexDirection: 'row', gap: 12 }}>
+						{onCancelPress && (
+							<TouchableOpacity onPress={onCancelPress} style={{ padding: 4 }}>
+								<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
+							</TouchableOpacity>
+						)}
+						{onSavePress && (
+							<TouchableOpacity onPress={onSavePress} style={{ padding: 4 }}>
+								<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
+							</TouchableOpacity>
+						)}
+					</View>
+				</View>
 
 				{/* Caliber Selection */}
 				<View style={styles.fieldContainer}>

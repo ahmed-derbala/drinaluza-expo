@@ -1,1 +1,1 @@
-export { default } from '@/features/products/ProductDetailScreen'
+export { default } from '@/features/dashboard/BusinessDashboardProductDetailScreen'

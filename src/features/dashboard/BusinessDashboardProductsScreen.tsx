@@ -16,6 +16,7 @@ import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { updateProduct } from '@/features/products/products.api'
 import { Product } from '@/features/businesses/businesses.interface'
 import { LinearGradient } from 'expo-linear-gradient'
+import { getCaliberLabel } from '@/features/products/products.helpers'
 
 // Breakpoints for responsive grid layout
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
@@ -216,6 +217,24 @@ export default function BusinessDashboardProductsScreen() {
 							<Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
 						</View>
 
+						{/* Specifications (Caliber & Origin) */}
+						{(item.specs?.caliber || item.specs?.origin?.city) && (
+							<View style={cardStyles.specsCardRow}>
+								{item.specs?.caliber ? (
+									<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
+										<Ionicons name="options-outline" size={10} color={colors.primary} />
+										<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber as any)}</Text>
+									</View>
+								) : null}
+								{item.specs?.origin?.city ? (
+									<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)', borderColor: colors.borderLight }]}>
+										<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+										<Text style={[cardStyles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+									</View>
+								) : null}
+							</View>
+						)}
+
 						{/* Stock status pill */}
 						<View style={[cardStyles.stockPill, { backgroundColor: stockColor + '15', borderColor: stockColor + '30' }]}>
 							<View style={[cardStyles.stockDot, { backgroundColor: stockColor }]} />
@@ -225,47 +244,37 @@ export default function BusinessDashboardProductsScreen() {
 						</View>
 					</View>
 
-					{/* Switch toggler on right */}
-					<View style={cardStyles.switchSection}>
-						<Text style={[cardStyles.switchLabel, { color: isCurrentlyActive ? colors.success : colors.textTertiary }]}>
-							{isCurrentlyActive ? translate('active_status', 'Active') : translate('inactive_status', 'Hidden')}
-						</Text>
-						<Switch
-							value={isCurrentlyActive}
-							onValueChange={() => handleToggleActive(item, isCurrentlyActive)}
-							disabled={isUpdating}
-							trackColor={{ false: colors.borderLight, true: colors.primary + '50' }}
-							thumbColor={isCurrentlyActive ? colors.primary : colors.textTertiary}
-						/>
+					{/* Right section: Switch at top, Sales/QR icons at bottom */}
+					<View style={cardStyles.rightColumn}>
+						<View style={cardStyles.switchWrapper}>
+							<Switch
+								value={isCurrentlyActive}
+								onValueChange={() => handleToggleActive(item, isCurrentlyActive)}
+								disabled={isUpdating}
+								trackColor={{ false: colors.borderLight, true: colors.primary + '50' }}
+								thumbColor={isCurrentlyActive ? colors.primary : colors.textTertiary}
+							/>
+						</View>
+						<View style={cardStyles.iconActionsRow}>
+							<TouchableOpacity
+								style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+								onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
+								activeOpacity={0.7}
+								accessibilityLabel={translate('sales_reports', 'Sales')}
+							>
+								<Ionicons name="trending-up-outline" size={16} color={colors.textSecondary} />
+							</TouchableOpacity>
+
+							<TouchableOpacity
+								style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+								onPress={() => setSelectedProductForQR(item)}
+								activeOpacity={0.7}
+								accessibilityLabel={translate('qr_code', 'QR Code')}
+							>
+								<Ionicons name="qr-code-outline" size={16} color={colors.textSecondary} />
+							</TouchableOpacity>
+						</View>
 					</View>
-				</View>
-
-				<View style={[cardStyles.divider, { backgroundColor: colors.borderLight }]} />
-
-				{/* Bottom Actions toolbar */}
-				<View style={cardStyles.actionsRow}>
-					<TouchableOpacity
-						style={[cardStyles.actionBtn, { backgroundColor: colors.surface }]}
-						onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
-						activeOpacity={0.7}
-					>
-						<Ionicons name="pencil-outline" size={16} color={colors.textSecondary} />
-						<Text style={[cardStyles.actionBtnText, { color: colors.textSecondary }]}>{translate('edit', 'Edit')}</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity
-						style={[cardStyles.actionBtn, { backgroundColor: colors.surface }]}
-						onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
-						activeOpacity={0.7}
-					>
-						<Ionicons name="trending-up-outline" size={16} color={colors.textSecondary} />
-						<Text style={[cardStyles.actionBtnText, { color: colors.textSecondary }]}>{translate('sales_reports', 'Sales')}</Text>
-					</TouchableOpacity>
-
-					<TouchableOpacity style={[cardStyles.actionBtn, { backgroundColor: colors.surface }]} onPress={() => setSelectedProductForQR(item)} activeOpacity={0.7}>
-						<Ionicons name="qr-code-outline" size={16} color={colors.textSecondary} />
-						<Text style={[cardStyles.actionBtnText, { color: colors.textSecondary }]}>{translate('qr_code', 'QR')}</Text>
-					</TouchableOpacity>
 				</View>
 			</TouchableOpacity>
 		)
@@ -282,13 +291,13 @@ export default function BusinessDashboardProductsScreen() {
 						<View style={{ width: '40%', height: 12, backgroundColor: '#3A506B40', borderRadius: 4 }} />
 						<View style={{ width: '60%', height: 20, backgroundColor: '#3A506B40', borderRadius: 10 }} />
 					</View>
-					<View style={{ width: 48, height: 24, backgroundColor: '#3A506B40', borderRadius: 12 }} />
-				</View>
-				<View style={[cardStyles.divider, { backgroundColor: colors.borderLight }]} />
-				<View style={cardStyles.actionsRow}>
-					<View style={{ flex: 1, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
-					<View style={{ flex: 1, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
-					<View style={{ flex: 1, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
+					<View style={cardStyles.rightColumn}>
+						<View style={{ width: 48, height: 24, backgroundColor: '#3A506B40', borderRadius: 12 }} />
+						<View style={{ flexDirection: 'row', gap: 8 }}>
+							<View style={{ width: 32, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
+							<View style={{ width: 32, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
+						</View>
+					</View>
 				</View>
 			</View>
 		)
@@ -621,7 +630,8 @@ const cardStyles = StyleSheet.create({
 		padding: 16,
 		marginBottom: 16,
 		position: 'relative',
-		overflow: 'hidden'
+		overflow: 'hidden',
+		...createShadow({ offsetY: 2, opacity: 0.05, radius: 8, elevation: 2 })
 	},
 	updatingOverlay: {
 		...StyleSheet.absoluteFill,
@@ -687,38 +697,58 @@ const cardStyles = StyleSheet.create({
 		fontSize: 10,
 		fontWeight: '700'
 	},
-	switchSection: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 4
-	},
-	switchLabel: {
-		fontSize: 10,
-		fontWeight: '700',
-		textTransform: 'uppercase'
-	},
-	divider: {
-		height: 1.5,
-		marginVertical: 12
-	},
-	actionsRow: {
+	specsCardRow: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
-		gap: 10
-	},
-	actionBtn: {
-		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
+		flexWrap: 'wrap',
 		gap: 6,
-		height: 34,
-		borderRadius: 8,
-		borderWidth: 1.5,
-		borderColor: 'rgba(255, 255, 255, 0.04)'
+		marginTop: 4,
+		alignItems: 'center'
 	},
-	actionBtnText: {
-		fontSize: 12,
+	caliberChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3
+	},
+	caliberChipText: {
+		fontSize: 10,
 		fontWeight: '700'
+	},
+	originChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3,
+		borderWidth: 1,
+		borderColor: 'rgba(255,255,255,0.05)'
+	},
+	originChipText: {
+		fontSize: 10,
+		fontWeight: '600'
+	},
+	rightColumn: {
+		alignItems: 'flex-end',
+		justifyContent: 'center',
+		gap: 12
+	},
+	switchWrapper: {
+		alignSelf: 'flex-end'
+	},
+	iconActionsRow: {
+		flexDirection: 'row',
+		gap: 8,
+		alignItems: 'center'
+	},
+	iconActionBtn: {
+		width: 32,
+		height: 32,
+		borderRadius: 8,
+		borderWidth: 1,
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })

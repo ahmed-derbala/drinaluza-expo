@@ -16,18 +16,49 @@ export interface ProductGallerySectionProps {
 	// For read-only detail mode
 	activeImage?: string | null
 	onThumbnailPress?: (url: string) => void
+	// Edit triggers
+	onEditPress?: () => void
+	onSavePress?: () => void
+	onCancelPress?: () => void
 }
 
-export default function ProductGallerySection({ editable, gallery, colors, translate, onUploadPress, onRemovePress, uploading = false, activeImage, onThumbnailPress }: ProductGallerySectionProps) {
+export default function ProductGallerySection({
+	editable,
+	gallery,
+	colors,
+	translate,
+	onUploadPress,
+	onRemovePress,
+	uploading = false,
+	activeImage,
+	onThumbnailPress,
+	onEditPress,
+	onSavePress,
+	onCancelPress
+}: ProductGallerySectionProps) {
 	const styles = createStyles(colors)
 
 	if (editable) {
 		return (
 			<View style={styles.fieldContainer}>
-				<Text style={styles.fieldLabel}>
-					{translate('gallery', 'Gallery')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
-					<Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> ({gallery.length}/5)</Text>
-				</Text>
+				<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+					<Text style={[styles.fieldLabel, { marginBottom: 0 }]}>
+						{translate('gallery', 'Gallery')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
+						<Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> ({gallery.length}/5)</Text>
+					</Text>
+					<View style={{ flexDirection: 'row', gap: 12 }}>
+						{onCancelPress && (
+							<TouchableOpacity onPress={onCancelPress} style={{ padding: 4 }}>
+								<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
+							</TouchableOpacity>
+						)}
+						{onSavePress && (
+							<TouchableOpacity onPress={onSavePress} style={{ padding: 4 }}>
+								<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
+							</TouchableOpacity>
+						)}
+					</View>
+				</View>
 				<View style={styles.galleryWrapper}>
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
 						{gallery.map((item, idx) => (
@@ -84,15 +115,25 @@ export default function ProductGallerySection({ editable, gallery, colors, trans
 
 	// Read-only static preview list for edit screen
 	return (
-		<View style={styles.galleryWrapper}>
-			<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
-				{gallery.map((item, idx) => (
-					<View key={item._id || idx} style={styles.galleryItem}>
-						<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
-					</View>
-				))}
-				{gallery.length === 0 && <Text style={{ color: colors.textTertiary, fontStyle: 'italic', paddingVertical: 10 }}>{translate('no_images', 'No images in gallery')}</Text>}
-			</ScrollView>
+		<View style={styles.fieldContainer}>
+			<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+				<Text style={[styles.fieldLabel, { marginBottom: 0 }]}>{translate('gallery', 'Gallery')}</Text>
+				{onEditPress && (
+					<TouchableOpacity onPress={onEditPress} style={{ padding: 4 }}>
+						<Ionicons name="create-outline" size={18} color={colors.primary} />
+					</TouchableOpacity>
+				)}
+			</View>
+			<View style={styles.galleryWrapper}>
+				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
+					{gallery.map((item, idx) => (
+						<View key={item._id || idx} style={styles.galleryItem}>
+							<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
+						</View>
+					))}
+					{gallery.length === 0 && <Text style={{ color: colors.textTertiary, fontStyle: 'italic', paddingVertical: 10 }}>{translate('no_images', 'No images in gallery')}</Text>}
+				</ScrollView>
+			</View>
 		</View>
 	)
 }

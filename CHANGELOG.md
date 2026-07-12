@@ -1,3 +1,12 @@
+## [1.34.5] - 12 july 2026
+### Added
+- Create dedicated `BusinessDashboardProductDetailScreen` for business owners, allowing section-by-section product editing on the dashboard details route.
+- Add support for inline save/cancel actions in `ProductSpecsSection` and `ProductGallerySection` components.
+
+### Changed
+- Modify route entrypoint `/dashboard/[businessSlug]/products/[productSlug]` to render `BusinessDashboardProductDetailScreen` instead of redirecting to `ProductDetailScreen`.
+- Improve product card items in `BusinessDashboardProductsScreen` by displaying caliber size and origin location chips, introducing a clean right-aligned actions column, and removing the bottom divider row, edit text labels, and the edit button.
+
 ## [1.34.4] - 11 july 2026
 ### Added
 - Add `ProductCreateScreen` to focus purely on the product creation flow.
