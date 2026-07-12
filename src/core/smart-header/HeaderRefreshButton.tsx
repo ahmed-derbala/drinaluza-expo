@@ -28,9 +28,13 @@ export interface HeaderRefreshButtonProps {
 	 * Optional custom style for the container.
 	 */
 	style?: StyleProp<ViewStyle>
+	/**
+	 * Optional boolean indicating whether the button is disabled.
+	 */
+	disabled?: boolean
 }
 
-const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, color, size = 22, style }) => {
+const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, color, size = 22, style, disabled = false }) => {
 	const { colors } = useTheme()
 	const rotationValue = useRef(new Animated.Value(0)).current
 	const scaleValue = useRef(new Animated.Value(1)).current
@@ -69,7 +73,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 	})
 
 	const handleRefresh = async () => {
-		if (onRefresh && !isRefreshing) {
+		if (onRefresh && !isRefreshing && !disabled) {
 			// Trigger spring scale bounce
 			Animated.sequence([
 				Animated.timing(scaleValue, {
@@ -103,15 +107,17 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 
 	if (!onRefresh) return null
 
+	const isDisabled = isRefreshing || disabled
+
 	return (
 		<TouchableOpacity
-			style={[styles.refreshButton, { backgroundColor: colors.surface }, style]}
+			style={[styles.refreshButton, { backgroundColor: colors.surface, opacity: isDisabled ? 0.5 : 1 }, style]}
 			onPress={handleRefresh}
-			disabled={isRefreshing}
+			disabled={isDisabled}
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 			accessibilityRole="button"
 			accessibilityLabel="Refresh"
-			accessibilityState={{ disabled: isRefreshing }}
+			accessibilityState={{ disabled: isDisabled }}
 		>
 			<Animated.View style={{ transform: [{ rotate: spin }, { scale: scaleValue }] }}>
 				<MaterialIcons name="refresh" size={size} color={color || colors.primary} />

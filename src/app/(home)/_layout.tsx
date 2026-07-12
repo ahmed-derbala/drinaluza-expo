@@ -7,12 +7,14 @@ import { useTheme } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
+import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
 	const { isTabBarVisible, setTabBarVisible } = useLayout()
 	const { translate, user } = useUser()
 	const pathname = usePathname()
+	const insets = useSafeAreaInsets()
 	useBackButton()
 	const isAuthenticated = !!user
 	const { notificationCount } = useNotification()
@@ -34,7 +36,7 @@ export default function HomeLayout() {
 						<View
 							style={{
 								position: 'absolute',
-								bottom: 16,
+								bottom: 16 + insets.bottom,
 								left: 0,
 								right: 0,
 								alignItems: 'center',

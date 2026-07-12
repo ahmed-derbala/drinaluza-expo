@@ -733,6 +733,7 @@ export default function UpdatesScreen() {
 							}
 						}}
 						isRefreshing={isChecking}
+						disabled={isDownloading}
 					/>
 				]}
 			/>

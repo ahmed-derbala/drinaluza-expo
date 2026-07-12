@@ -4,6 +4,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, ActivityIndicator, Platform } from 'react-native'
 import { useUpdates, isVersionGreater } from '@/features/updates'
 import { config } from '@/config'
+import { showConfirm } from '@/core/helpers/popup'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -48,11 +49,25 @@ function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList, installApk } = useUpdates()
 	const router = useRouter()
 	const pathname = usePathname()
-	const { user, loading } = useUser()
+	const { user, loading, translate } = useUser()
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
 			try {
+				const isWebAndroid = Platform.OS === 'web' && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '')
+				if (isWebAndroid) {
+					if (typeof sessionStorage !== 'undefined') {
+						const alreadyPrompted = sessionStorage.getItem('apk_download_prompted')
+						if (!alreadyPrompted) {
+							sessionStorage.setItem('apk_download_prompted', 'true')
+							showConfirm(translate('download_apk_title', 'Download App'), translate('download_apk_prompt', 'Do you want to download the Android app for a better experience?'), () => {
+								router.replace('/updates')
+							})
+						}
+					}
+					return
+				}
+
 				// 1. Instantly check if there is a downloaded APK ready to install (no network delay)
 				if (Platform.OS === 'android') {
 					const freshApks = await refreshApkList()
@@ -74,7 +89,7 @@ function RootLayoutContent() {
 		}
 
 		performStartupCheck()
-	}, [checkForUpdates, refreshApkList, installApk, router])
+	}, [checkForUpdates, refreshApkList, installApk, router, translate])
 
 	useEffect(() => {
 		if (loading) return

@@ -6,6 +6,9 @@
 ### Changed
 - Modify route entrypoint `/dashboard/[businessSlug]/products/[productSlug]` to render `BusinessDashboardProductDetailScreen` instead of redirecting to `ProductDetailScreen`.
 - Improve product card items in `BusinessDashboardProductsScreen` by displaying caliber size and origin location chips, introducing a clean right-aligned actions column, and removing the bottom divider row, edit text labels, and the edit button.
+- Adjust bottom tab bar (dash) wrapper layout spacing inside `src/app/(home)/_layout.tsx` using `useSafeAreaInsets` to ensure it is always positioned safely above the system navigation bar/home indicator.
+- Add `disabled` prop support to `HeaderRefreshButton` and use it to disable the refresh button on the Updates screen while a download is in progress.
+- Add a startup confirmation dialog on Android Web browsers asking the user if they want to download the Android APK, redirecting them to the updates screen upon approval.
 
 ## [1.34.4] - 11 july 2026
 ### Added
