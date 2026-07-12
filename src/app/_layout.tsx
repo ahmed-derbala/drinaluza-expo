@@ -17,6 +17,10 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 	const style = document.createElement('style')
 	style.type = 'text/css'
 	style.innerHTML = `
+		html, body {
+			background-color: #000000 !important;
+			color-scheme: dark;
+		}
 		* {
 			user-select: text !important;
 			-webkit-user-select: text !important;
