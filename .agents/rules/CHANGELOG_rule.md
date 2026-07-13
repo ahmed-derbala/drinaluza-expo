@@ -23,7 +23,7 @@ You are an AI development agent. Whenever a feature, bug fix, or refactor is com
 4. **Preservation:**
    - **CRITICAL:** Do not overwrite, modify, or delete any existing historical versions in `CHANGELOG.md`. 
    - prepend a new `## [X.Y.Z] - day month year` block directly beneath the main title description.
-   - file size is 200 lines maximum
+   - file size is 50 lines maximum
    - do not update version in package.json, i will update it manually
 
 ## Target File Structure Example

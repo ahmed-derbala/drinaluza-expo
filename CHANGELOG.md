@@ -1,9 +1,21 @@
+## [1.36.0] - 13 july 2026
+
+### Changed
+
+- Redesign the Updates screen with a modern, theme-driven UI: side-by-side version comparison cards with a centered action arrow and an environment badge in the section header, consistent icon-only action buttons, and unified responsive button sizing.
+- Show the target version label inside the Updates screen download and install action buttons.
+- Only render the Updates screen install button when an installable APK file is available.
+- Replace native confirmation alerts on the Updates screen with the shared `SmartModal` for download prompts.
+
 ## [1.34.5] - 12 july 2026
+
 ### Added
+
 - Create dedicated `BusinessDashboardProductDetailScreen` for business owners, allowing section-by-section product editing on the dashboard details route.
 - Add support for inline save/cancel actions in `ProductSpecsSection` and `ProductGallerySection` components.
 
 ### Changed
+
 - Modify route entrypoint `/dashboard/[businessSlug]/products/[productSlug]` to render `BusinessDashboardProductDetailScreen` instead of redirecting to `ProductDetailScreen`.
 - Improve product card items in `BusinessDashboardProductsScreen` by displaying caliber size and origin location chips, introducing a clean right-aligned actions column, and removing the bottom divider row, edit text labels, and the edit button.
 - Adjust bottom tab bar (dash) wrapper layout spacing inside `src/app/(home)/_layout.tsx` using `useSafeAreaInsets` to ensure it is always positioned safely above the system navigation bar/home indicator.
@@ -11,7 +23,9 @@
 - Add a startup confirmation dialog on Android Web browsers asking the user if they want to download the Android APK, redirecting them to the updates screen upon approval.
 
 ## [1.34.4] - 11 july 2026
+
 ### Added
+
 - Add `ProductCreateScreen` to focus purely on the product creation flow.
 - Add reusable, modular product section components in `src/features/products/common/` supporting view, edit, and create layouts: `ProductNamesSection`, `ProductPricingSection`, `ProductStockSection`, and `ProductStateSection`.
 - Integrate product view, create, and edit modes inside a single unified `ProductDetailScreen` component.
@@ -19,6 +33,7 @@
 - Create a shared `AddressForm` component in `src/features/common` to unify address fields UI across multiple screens.
 
 ### Changed
+
 - Remove the edit button from the `SmartHeader` when viewing product details from the dashboard (in favor of inline section editing).
 - Update unit measure selector to restrict values to `kg`, `piece`, and `crate` with a horizontal segmented selector.
 - Move the gallery picker section directly underneath the business and category selector card in the product creation screen.
@@ -29,11 +44,14 @@
 - Optimize the styling layer to remove all light-theme conditional color checks and hex fallbacks to enforce that the app exclusively uses the dark theme.
 
 ### Removed
+
 - Delete redundant `CreateProductScreen` and `EditProductScreen` feature components.
 - Delete separate product edit route mapping.
 
 ## [1.34.1] - 10 july 2026
+
 ### Fixed
+
 - Fix Require cycles circular dependency warnings:
   - Refactored `UpdatesScreen.tsx` to import useUpdates and isVersionGreater directly from their files instead of the barrel index.
   - Refactored `SmartKebabMenu.tsx` to import updates utilities directly, breaking the indirect circular reference to `SmartHeader`.
@@ -42,6 +60,7 @@
 - Fix automatic redirect loop (reversion to `/feed` screen): resolved the issue where unauthenticated API calls returning 401 cleared the token in storage but left the user context populated, triggering an instant redirect back to `/feed` upon reaching the login screen. Added token verification inside the `AuthScreen` redirection layout to clear the user context when the token is missing from storage, allowing the user to stay on the auth screen.
 
 ### Changed
+
 - Refactor dashboard product details to support inline editing directly inside `dashboard/:businessSlug/products/:productSlug/`:
   - Removed the separate edit route screen (`edit.tsx`).
   - Updated the dashboard products list to link directly to the direct index path.
@@ -84,9 +103,10 @@
 - Improve the Profile screen (`ProfileScreen.tsx`):
   - Enable fullscreen photo preview on the main profile avatar using the declarative `enableFullscreenPreview={true}` prop on `SmartImage`.
 
-
 ## [1.33.1] - 10 july 2026
+
 ### Changed
+
 - Display last access date with relative elapsed period for saved accounts on the Auth Screen.
 - Add a dedicated remove button (trash icon) to delete saved accounts with a confirmation prompt.
 - Align `AuthScreen.tsx` and related root files with Expo Router best practices:
@@ -94,15 +114,19 @@
   - Fix consistent path naming for index routes by restoring `auth/index` in `src/app/_layout.tsx`.
   - Replace index redirect logic in `src/app/index.tsx` from `useEffect` with the native `<Redirect>` component for faster startup navigation.
   - Decouple routing paths from physical folder layouts by replacing all coupled route group references `/(home)/feed` with clean relative paths `/feed` in `AuthScreen.tsx`, `app/index.tsx`, and `app/updates/index.tsx`.
+
 ### Fixed
-- Fix keyboard flickering on all screens: `SmartHeader.tsx` had `key={\`header-${headerHeight}\`}` on its root `Animated.View`. When the Android keyboard opened, window resize caused insets to fluctuate → `headerHeight` changed → `setHeaderHeight` fired → the header's `key` changed → React fully unmounted and remounted the header and its entire sibling tree (including `KeyboardAvoidingView`) → destroyed the focused `TextInput` → keyboard dismissed → loop. Removing the dynamic `key` prop stops the remount cycle.
+
+- Fix keyboard flickering on all screens: `SmartHeader.tsx` had `key={\`header-${headerHeight}\`}`on its root`Animated.View`. When the Android keyboard opened, window resize caused insets to fluctuate → `headerHeight`changed →`setHeaderHeight`fired → the header's`key`changed → React fully unmounted and remounted the header and its entire sibling tree (including`KeyboardAvoidingView`) → destroyed the focused `TextInput`→ keyboard dismissed → loop. Removing the dynamic`key` prop stops the remount cycle.
 - Fix instant keyboard dismissal upon focusing inputs on Android: `AuthScreen.tsx` applied `android: { elevation: 2 }` dynamically on the wrapper view of focused inputs. Toggling shadow elevation layer on Android invalidates layout focus hierarchy and forces the focus manager to reset input focus to the root window view, dismissing the keyboard. Removing the dynamic elevation property fixes focus stability.
 - Fix blocked screen scrolling when keyboard is visible on Android: added a dynamic keyboard-height listener and conditionally appended a bottom spacer (`height: keyboardHeight`) inside the ScrollView on Android. This forces the scrollable content container height to expand by the soft keyboard's height when active, enabling full scrolling responsiveness.
 - Fix text inputs being covered by soft keyboard on focus: implemented a stable programmatic `scrollToInput` handler inside `AuthScreen.tsx` that triggers on input focus. Now that unmount and focus resets (dynamic keys, dynamic elevation transitions) are fixed, measuring offsets and triggering scrolling is fully safe, centering input fields smoothly above the keyboard.
 - Fix React Native runtime warning regarding calling `measureLayout` with composite component refs: wrapped `ScrollView` children inside a native `View` element with `ref={contentRef}`. This provides a valid native layout component for measuring, resolving the runtime warning.
 
 ## [1.33.0] - 10 july 2026
+
 ### Changed
+
 - Complete redesign of `AuthScreen.tsx` with an editorial minimalist dark aesthetic:
   - Pure black (`#000`) background with no gradients or glow blobs.
   - Mobile-only large bold editorial hero header with logo chip + brand name row.
@@ -114,22 +138,29 @@
   - Language selector redesigned as minimal pill chips with flag + optional letter badge.
 
 ## [1.32.8] - 10 july 2026
+
 ### Added
+
 - Add split desktop/tablet dual-pane grid layout to `AuthScreen.tsx` with a premium left-pane marketing showcase, bullet-point managers capabilities list, and vector logo emblem.
 - Add glowing ambient linear gradient backdrop blob overlays to `AuthScreen.tsx`.
 - Add active focused borders highlighting dynamic styling to credentials form username and password inputs in `AuthScreen.tsx`.
 
 ### Fixed
+
 - Fix header overlay clipping by adding mathematical header height padding offset (`56 + insets.top`) to `AuthScreen.tsx` scroll content container.
 - Fix rapid keyboard flickering/disappearing by removing programmatic scrollToInput focus scroll listeners, allowing native OS scroll-on-focus keyboard adjustments to align the active textinput fields smoothly.
 
 ### Changed
+
 - Redesign `AuthScreen.tsx` container into a glassmorphic translucent slate container panel with fine borders, clean segmented horizontal language selectors, and gradient action buttons.
 
 ## [1.32.0] - 10 july 2026
+
 ### Removed
+
 - Remove custom `KeyboardAvoidingWrapper` component and replace all references with standard native `KeyboardAvoidingView` and `SmartHeader.ScrollView`.
 
 ### Fixed
+
 - Show specifications (caliber size badge and origin location chip) directly inside the product cards in `products.card.tsx`, `BusinessProductsScreen.tsx`, and `BusinessDetailsScreen.tsx`.
 - Include `specs` properties during feed items data normalization inside `feed.api.ts` to ensure cards display specs inside the feed screen.the Feed screen.
