@@ -39,6 +39,7 @@ import MultilingualNameInput from '@/features/common/MultilingualNameInput'
 import LoadingState from '@/features/common/LoadingState'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
+import { CenteredModal } from '@/core/smart-modal'
 import { requestBusiness } from '@/features/businesses/business.api'
 import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
@@ -183,6 +184,7 @@ export default function ProfileScreen() {
 	const [imageError, setImageError] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [showBusinessModal, setShowBusinessModal] = useState(false)
+	const [showSwitchAccountModal, setShowSwitchAccountModal] = useState(false)
 	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [businessLoading, setBusinessLoading] = useState(false)
 	const [uploadingPhoto, setUploadingPhoto] = useState(false)
@@ -257,32 +259,85 @@ export default function ProfileScreen() {
 		if (!userData) return
 
 		try {
-			// Prepare payload - transform location to match backend schema
-			const locationPayload: any = { ...userData.location }
-			// Handle legacy format (coordinates at top level) by transforming to new format
-			if (locationPayload && 'coordinates' in locationPayload && !locationPayload.geo) {
-				locationPayload.geo = {
-					type: (locationPayload as any).type || 'Point',
-					coordinates: (locationPayload as any).coordinates
-				}
-				delete (locationPayload as any).type
-				delete (locationPayload as any).coordinates
-			}
+			let payload: Record<string, any> = {}
 
-			const payload = {
-				name: userData.name,
-				contact: {
-					phone: userData.contact?.phone || userData.phone,
-					backupPhones: userData.contact?.backupPhones || userData.backupPhones,
-					email: userData.contact?.email || userData.email,
-					whatsapp: userData.contact?.whatsapp
-				},
-				basicInfos: userData.basicInfos,
-				address: userData.address,
-				location: locationPayload,
-				settings: userData.settings,
-				socialMedia: userData.socialMedia,
-				media: userData.media
+			switch (sectionKey) {
+				case 'name': {
+					const namePayload: Record<string, string> = {}
+					if (userData.name?.en) namePayload.en = userData.name.en
+					if (userData.name?.tn_latn) namePayload.tn_latn = userData.name.tn_latn
+					if (userData.name?.tn_arab) namePayload.tn_arab = userData.name.tn_arab
+					payload = { name: namePayload }
+					break
+				}
+				case 'basic':
+					payload = { basicInfos: userData.basicInfos }
+					break
+				case 'address':
+					payload = { address: userData.address }
+					break
+				case 'location': {
+					const locationPayload: any = { ...userData.location }
+					if (locationPayload && 'coordinates' in locationPayload && !locationPayload.geo) {
+						locationPayload.geo = {
+							type: (locationPayload as any).type || 'Point',
+							coordinates: (locationPayload as any).coordinates
+						}
+						delete (locationPayload as any).type
+						delete (locationPayload as any).coordinates
+					}
+					payload = { location: locationPayload }
+					break
+				}
+				case 'social':
+					payload = { socialMedia: userData.socialMedia }
+					break
+				case 'settings':
+					payload = { settings: userData.settings }
+					break
+				case 'phone':
+					payload = {
+						contact: {
+							phone: userData.contact?.phone || userData.phone,
+							backupPhones: userData.contact?.backupPhones || userData.backupPhones,
+							email: userData.contact?.email || userData.email,
+							whatsapp: userData.contact?.whatsapp
+						}
+					}
+					break
+				case 'photo':
+					payload = { media: userData.media }
+					break
+				default: {
+					const locationPayloadFull: any = { ...userData.location }
+					if (locationPayloadFull && 'coordinates' in locationPayloadFull && !locationPayloadFull.geo) {
+						locationPayloadFull.geo = {
+							type: (locationPayloadFull as any).type || 'Point',
+							coordinates: (locationPayloadFull as any).coordinates
+						}
+						delete (locationPayloadFull as any).type
+						delete (locationPayloadFull as any).coordinates
+					}
+					const defaultNamePayload: Record<string, string> = {}
+					if (userData.name?.en) defaultNamePayload.en = userData.name.en
+					if (userData.name?.tn_latn) defaultNamePayload.tn_latn = userData.name.tn_latn
+					if (userData.name?.tn_arab) defaultNamePayload.tn_arab = userData.name.tn_arab
+					payload = {
+						name: defaultNamePayload,
+						contact: {
+							phone: userData.contact?.phone || userData.phone,
+							backupPhones: userData.contact?.backupPhones || userData.backupPhones,
+							email: userData.contact?.email || userData.email,
+							whatsapp: userData.contact?.whatsapp
+						},
+						basicInfos: userData.basicInfos,
+						address: userData.address,
+						location: locationPayloadFull,
+						settings: userData.settings,
+						socialMedia: userData.socialMedia,
+						media: userData.media
+					}
+				}
 			}
 
 			await updateMyProfile(payload)
@@ -293,8 +348,8 @@ export default function ProfileScreen() {
 				}
 			}
 			showAlert(translate('success', 'Success'), translate('profile_updated', 'Profile updated successfully!'))
-			await refreshUser() // Update global user state
-			loadProfile() // Reload to ensure consistency
+			await refreshUser()
+			loadProfile()
 		} catch (error: any) {
 			console.error('Error saving user data:', error)
 			const errorMessage = error.response?.data?.message || 'Failed to save profile changes'
@@ -530,18 +585,22 @@ export default function ProfileScreen() {
 			}
 		})
 	}
-	const handleSwitchUser = async () => {
-		showConfirm(translate('switch_account', 'Switch User'), 'This will clear your current session but keep your saved accounts.', async () => {
-			try {
-				await switchUser()
-				await refreshUser()
-				router.replace('/auth')
-			} catch (error) {
-				log({ level: 'error', label: 'profile', message: 'Switch user failed', error })
-				await refreshUser()
-				router.replace('/auth')
-			}
-		})
+	const handleSwitchUser = () => {
+		setShowSwitchAccountModal(true)
+	}
+
+	const confirmSwitchUser = async () => {
+		try {
+			await switchUser()
+			await refreshUser()
+			setShowSwitchAccountModal(false)
+			router.replace('/auth')
+		} catch (error) {
+			log({ level: 'error', label: 'profile', message: 'Switch user failed', error })
+			await refreshUser()
+			setShowSwitchAccountModal(false)
+			router.replace('/auth')
+		}
 	}
 
 	const handleRequestBusiness = () => {
@@ -1754,6 +1813,34 @@ export default function ProfileScreen() {
 					</KeyboardAvoidingView>
 				</View>
 			</Modal>
+
+			{/* Switch Account Modal */}
+			<CenteredModal
+				visible={showSwitchAccountModal}
+				onClose={() => setShowSwitchAccountModal(false)}
+				title={translate('switch_account', 'Switch User')}
+				headerIcon={
+					<View style={[styles.switchAccountModalIcon, { backgroundColor: colors.primary + '15' }]}>
+						<Ionicons name="people" size={24} color={colors.primary} />
+					</View>
+				}
+				footer={
+					<View style={styles.switchAccountModalActions}>
+						<TouchableOpacity style={[styles.switchAccountModalButton, styles.switchAccountModalCancelButton, { borderColor: colors.border }]} onPress={() => setShowSwitchAccountModal(false)}>
+							<Text style={[styles.switchAccountModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
+						</TouchableOpacity>
+						<TouchableOpacity style={[styles.switchAccountModalButton, styles.switchAccountModalSubmitButton, { backgroundColor: colors.primary }]} onPress={confirmSwitchUser}>
+							<Text style={[styles.switchAccountModalButtonText, { color: '#fff' }]}>{translate('switch', 'Switch')}</Text>
+						</TouchableOpacity>
+					</View>
+				}
+			>
+				<View style={styles.switchAccountModalContent}>
+					<Text style={[styles.switchAccountModalDescription, { color: colors.text }]}>
+						{translate('switch_account_description', 'You will be redirected to the login screen where you can select a different account or sign in with a new one.')}
+					</Text>
+				</View>
+			</CenteredModal>
 		</View>
 	)
 }
@@ -2439,6 +2526,51 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			// backgroundColor set dynamically
 		},
 		businessModalButtonText: {
+			fontSize: 16,
+			fontWeight: '600'
+		},
+		// Switch Account Modal Styles
+		switchAccountModalContent: {
+			alignItems: 'center',
+			paddingTop: 20,
+			paddingBottom: 12,
+			width: '100%'
+		},
+		switchAccountModalIcon: {
+			width: 40,
+			height: 40,
+			borderRadius: 20,
+			justifyContent: 'center',
+			alignItems: 'center'
+		},
+		switchAccountModalDescription: {
+			fontSize: 16,
+			fontWeight: '500',
+			lineHeight: 22,
+			textAlign: 'center',
+			width: '100%'
+		},
+		switchAccountModalActions: {
+			flexDirection: isWideScreen ? 'row' : 'column',
+			gap: 12,
+			width: '100%'
+		},
+		switchAccountModalButton: {
+			flex: isWideScreen ? 1 : undefined,
+			padding: 16,
+			borderRadius: 12,
+			alignItems: 'center',
+			justifyContent: 'center',
+			minHeight: 48
+		},
+		switchAccountModalCancelButton: {
+			borderWidth: 1,
+			backgroundColor: 'transparent'
+		},
+		switchAccountModalSubmitButton: {
+			// backgroundColor set dynamically
+		},
+		switchAccountModalButtonText: {
 			fontSize: 16,
 			fontWeight: '600'
 		},

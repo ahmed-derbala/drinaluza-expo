@@ -141,7 +141,7 @@ export default function ProductSpecsSection({
 
 			{/* Caliber */}
 			<View style={styles.specDetailRow}>
-				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber_size', 'Caliber / Size')}</Text>
+				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber', 'Caliber')}</Text>
 				<View style={[styles.caliberBadge, { backgroundColor: colors.primary + '15' }]}>
 					<Text style={[styles.caliberText, { color: colors.primary }]}>{getCaliberLabel(specs.caliber || 3)}</Text>
 				</View>

@@ -1,10 +1,11 @@
 import { Stack, useRouter, usePathname } from 'expo-router'
 import React, { useState, useEffect } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, ActivityIndicator, Platform } from 'react-native'
+import { View, Text, TouchableOpacity, ActivityIndicator, Platform, StyleSheet } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useUpdates, isVersionGreater } from '@/features/updates'
 import { config } from '@/config'
-import { showConfirm } from '@/core/helpers/popup'
+import { CenteredModal } from '@/core/smart-modal'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -54,6 +55,8 @@ function RootLayoutContent() {
 	const router = useRouter()
 	const pathname = usePathname()
 	const { user, loading, translate } = useUser()
+	const { colors } = useTheme()
+	const [showDownloadAppModal, setShowDownloadAppModal] = useState(false)
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
@@ -64,9 +67,7 @@ function RootLayoutContent() {
 						const alreadyPrompted = sessionStorage.getItem('apk_download_prompted')
 						if (!alreadyPrompted) {
 							sessionStorage.setItem('apk_download_prompted', 'true')
-							showConfirm(translate('download_apk_title', 'Download App'), translate('download_apk_prompt', 'Do you want to download the Android app for a better experience?'), () => {
-								router.replace('/updates')
-							})
+							setShowDownloadAppModal(true)
 						}
 					}
 					return
@@ -114,8 +115,6 @@ function RootLayoutContent() {
 		}
 	}, [user, loading, pathname, router])
 
-	const { colors } = useTheme()
-
 	if (loading) {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background || '#000000' }}>
@@ -152,9 +151,83 @@ function RootLayoutContent() {
 					}}
 				/>
 			</Stack>
+
+			<CenteredModal
+				visible={showDownloadAppModal}
+				onClose={() => setShowDownloadAppModal(false)}
+				title={translate('download_apk_title', 'Download App')}
+				headerIcon={
+					<View style={[styles.downloadModalIcon, { backgroundColor: colors.primary + '15' }]}>
+						<Ionicons name="download-outline" size={24} color={colors.primary} />
+					</View>
+				}
+				footer={
+					<View style={styles.downloadModalActions}>
+						<TouchableOpacity style={[styles.downloadModalButton, styles.downloadModalCancelButton, { borderColor: colors.border }]} onPress={() => setShowDownloadAppModal(false)}>
+							<Text style={[styles.downloadModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
+						</TouchableOpacity>
+						<TouchableOpacity
+							style={[styles.downloadModalButton, styles.downloadModalSubmitButton, { backgroundColor: colors.primary }]}
+							onPress={() => {
+								setShowDownloadAppModal(false)
+								router.replace('/updates')
+							}}
+						>
+							<Text style={[styles.downloadModalButtonText, { color: '#fff' }]}>{translate('download', 'Download')}</Text>
+						</TouchableOpacity>
+					</View>
+				}
+			>
+				<View style={styles.downloadModalContent}>
+					<Text style={[styles.downloadModalText, { color: colors.text }]}>{translate('download_apk_prompt', 'Do you want to download the Android app for a better experience?')}</Text>
+				</View>
+			</CenteredModal>
 		</ErrorBoundary>
 	)
 }
+
+const styles = StyleSheet.create({
+	downloadModalContent: {
+		paddingVertical: 8,
+		width: '100%'
+	},
+	downloadModalText: {
+		fontSize: 16,
+		fontWeight: '500',
+		lineHeight: 22,
+		textAlign: 'center'
+	},
+	downloadModalIcon: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	downloadModalActions: {
+		flexDirection: 'row',
+		gap: 12
+	},
+	downloadModalButton: {
+		flex: 1,
+		padding: 16,
+		borderRadius: 12,
+		alignItems: 'center',
+		justifyContent: 'center',
+		minHeight: 48
+	},
+	downloadModalCancelButton: {
+		borderWidth: 1,
+		backgroundColor: 'transparent'
+	},
+	downloadModalSubmitButton: {
+		// backgroundColor set dynamically
+	},
+	downloadModalButtonText: {
+		fontSize: 16,
+		fontWeight: '600'
+	}
+})
 
 export default function RootLayout() {
 	return (

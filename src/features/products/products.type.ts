@@ -53,6 +53,16 @@ export type ProductType = {
 				url: string
 			}
 		}
+		contact?: {
+			phone?: {
+				fullNumber: string
+			}
+			backupPhones?: Array<{
+				fullNumber: string
+			}>
+			whatsapp?: string
+			email?: string
+		}
 		createdAt: string
 		updatedAt: string
 	}

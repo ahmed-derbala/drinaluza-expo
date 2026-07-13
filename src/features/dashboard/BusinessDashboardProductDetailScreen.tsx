@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView, KeyboardAvoidingView, RefreshControl, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView, KeyboardAvoidingView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
@@ -28,9 +28,9 @@ export default function BusinessDashboardProductDetailScreen() {
 	const { colors } = useTheme()
 	const { translate, localize, currency, formatPrice } = useUser()
 	const { setTabBarVisible } = useLayout()
-	const { width } = useWindowDimensions()
 
 	const [product, setProduct] = useState<ProductType | null>(null)
+	const [viewer, setViewer] = useState<{ canEdit?: boolean; canCreate?: boolean } | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [saving, setSaving] = useState(false)
@@ -109,6 +109,7 @@ export default function BusinessDashboardProductDetailScreen() {
 
 				const response = await getProductBySlug(productSlug)
 				setProduct(response.data)
+				setViewer(response.viewer || null)
 				syncProductToState(response.data)
 			} catch (err) {
 				const parsed = parseError(err)
@@ -441,7 +442,6 @@ export default function BusinessDashboardProductDetailScreen() {
 	// ─── Layout Styles ─────────────────────────────────────────────────────────────
 
 	const styles = useMemo(() => createStyles(colors), [colors])
-	const isLargeScreen = width > 800
 
 	if (loading) {
 		return (
@@ -471,6 +471,8 @@ export default function BusinessDashboardProductDetailScreen() {
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
 	const productState = product.state?.code || 'active'
 	const isProductActive = productState === 'active'
+	const canEditProduct = viewer ? viewer.canEdit === true : true
+	console.log('viewer:', viewer, 'canEditProduct:', canEditProduct)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -506,7 +508,7 @@ export default function BusinessDashboardProductDetailScreen() {
 									<TouchableOpacity
 										style={[styles.statusToggleBtn, { borderColor: isProductActive ? colors.error + '40' : colors.success + '40' }]}
 										onPress={handleToggleState}
-										disabled={saving}
+										disabled={saving || !canEditProduct}
 										activeOpacity={0.7}
 									>
 										<Text style={[styles.statusToggleText, { color: isProductActive ? colors.error : colors.success }]}>
@@ -518,231 +520,115 @@ export default function BusinessDashboardProductDetailScreen() {
 						</View>
 					</View>
 
-					{isLargeScreen ? (
-						/* Desktop Layout Split Columns */
-						<View style={styles.splitLayoutContainer}>
-							<View style={styles.leftColumn}>
-								{/* Names Card */}
-								<View style={styles.sectionCard}>
-									<ProductNamesSection
-										variant={editMode.names ? 'edit' : 'view'}
-										colors={colors}
-										translate={translate}
-										nameEn={nameEn}
-										setNameEn={setNameEn}
-										nameTnLatn={nameTnLatn}
-										setNameTnLatn={setNameTnLatn}
-										nameTnArab={nameTnArab}
-										setNameTnArab={setNameTnArab}
-										productNameEn={product?.name?.en}
-										productNameTnLatn={product?.name?.tn_latn}
-										productNameTnArab={product?.name?.tn_arab}
-										canEdit={true}
-										onEditPress={() => setEditMode((prev) => ({ ...prev, names: true }))}
-										onSavePress={saveNames}
-										onCancelPress={cancelNames}
-									/>
-								</View>
-
-								{/* Specifications Card */}
-								<ProductSpecsSection
-									editable={editMode.specs}
-									colors={colors}
-									translate={translate}
-									caliber={caliber}
-									setCaliber={setCaliber}
-									originStreet={originStreet}
-									setOriginStreet={setOriginStreet}
-									originCity={originCity}
-									setOriginCity={setOriginCity}
-									originRegion={originRegion}
-									setOriginRegion={setOriginRegion}
-									originPostalCode={originPostalCode}
-									setOriginPostalCode={setOriginPostalCode}
-									originCountry={originCountry}
-									setOriginCountry={setOriginCountry}
-									specs={product.specs}
-									onEdit={() => setEditMode((prev) => ({ ...prev, specs: true }))}
-									onSavePress={saveSpecs}
-									onCancelPress={cancelSpecs}
-								/>
-							</View>
-
-							<View style={styles.rightColumn}>
-								{/* Pricing Card */}
-								<View style={styles.sectionCard}>
-									<ProductPricingSection
-										variant={editMode.pricing ? 'edit' : 'view'}
-										colors={colors}
-										translate={translate}
-										priceTND={priceTND}
-										setPriceTND={setPriceTND}
-										unit={unit}
-										setUnit={setUnit}
-										minUnit={minUnit}
-										setMinUnit={setMinUnit}
-										maxUnit={maxUnit}
-										setMaxUnit={setMaxUnit}
-										unitStep={unitStep}
-										setUnitStep={setUnitStep}
-										formattedPrice={product ? formatPrice({ total: { [currency]: product.price?.total?.[currency as keyof typeof product.price.total] || product.price?.total?.tnd || 0 } }) : ''}
-										unitMeasure={product?.unit?.measure}
-										minLimit={product?.unit?.min}
-										maxLimit={product?.unit?.max}
-										canEdit={true}
-										onEditPress={() => setEditMode((prev) => ({ ...prev, pricing: true }))}
-										onSavePress={savePricing}
-										onCancelPress={cancelPricing}
-									/>
-								</View>
-
-								{/* Stock Card */}
-								<View style={styles.sectionCard}>
-									<ProductStockSection
-										variant={editMode.stock ? 'edit' : 'view'}
-										colors={colors}
-										translate={translate}
-										stockQuantity={stockQuantity}
-										setStockQuantity={setStockQuantity}
-										minThreshold={minThreshold}
-										setMinThreshold={setMinThreshold}
-										stockQuantityVal={product?.stock?.quantity || 0}
-										minThresholdVal={product?.stock?.minThreshold || 5}
-										canEdit={true}
-										onEditPress={() => setEditMode((prev) => ({ ...prev, stock: true }))}
-										onSavePress={saveStock}
-										onCancelPress={cancelStock}
-									/>
-								</View>
-
-								{/* Gallery Card */}
-								<View style={styles.sectionCard}>
-									<ProductGallerySection
-										editable={editMode.gallery}
-										gallery={uploadedGallery}
-										colors={colors}
-										translate={translate}
-										onUploadPress={handleUploadPhoto}
-										onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))}
-										uploading={uploadingPhoto}
-										onEditPress={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
-										onSavePress={saveGallery}
-										onCancelPress={cancelGallery}
-									/>
-								</View>
-							</View>
-						</View>
-					) : (
-						/* Mobile Layout Stacked */
-						<View style={styles.mobileLayoutContainer}>
-							{/* Names Card */}
-							<View style={styles.sectionCard}>
-								<ProductNamesSection
-									variant={editMode.names ? 'edit' : 'view'}
-									colors={colors}
-									translate={translate}
-									nameEn={nameEn}
-									setNameEn={setNameEn}
-									nameTnLatn={nameTnLatn}
-									setNameTnLatn={setNameTnLatn}
-									nameTnArab={nameTnArab}
-									setNameTnArab={setNameTnArab}
-									productNameEn={product?.name?.en}
-									productNameTnLatn={product?.name?.tn_latn}
-									productNameTnArab={product?.name?.tn_arab}
-									canEdit={true}
-									onEditPress={() => setEditMode((prev) => ({ ...prev, names: true }))}
-									onSavePress={saveNames}
-									onCancelPress={cancelNames}
-								/>
-							</View>
-
-							{/* Pricing Card */}
-							<View style={styles.sectionCard}>
-								<ProductPricingSection
-									variant={editMode.pricing ? 'edit' : 'view'}
-									colors={colors}
-									translate={translate}
-									priceTND={priceTND}
-									setPriceTND={setPriceTND}
-									unit={unit}
-									setUnit={setUnit}
-									minUnit={minUnit}
-									setMinUnit={setMinUnit}
-									maxUnit={maxUnit}
-									setMaxUnit={setMaxUnit}
-									unitStep={unitStep}
-									setUnitStep={setUnitStep}
-									formattedPrice={product ? formatPrice({ total: { [currency]: product.price?.total?.[currency as keyof typeof product.price.total] || product.price?.total?.tnd || 0 } }) : ''}
-									unitMeasure={product?.unit?.measure}
-									minLimit={product?.unit?.min}
-									maxLimit={product?.unit?.max}
-									canEdit={true}
-									onEditPress={() => setEditMode((prev) => ({ ...prev, pricing: true }))}
-									onSavePress={savePricing}
-									onCancelPress={cancelPricing}
-								/>
-							</View>
-
-							{/* Stock Card */}
-							<View style={styles.sectionCard}>
-								<ProductStockSection
-									variant={editMode.stock ? 'edit' : 'view'}
-									colors={colors}
-									translate={translate}
-									stockQuantity={stockQuantity}
-									setStockQuantity={setStockQuantity}
-									minThreshold={minThreshold}
-									setMinThreshold={setMinThreshold}
-									stockQuantityVal={product?.stock?.quantity || 0}
-									minThresholdVal={product?.stock?.minThreshold || 5}
-									canEdit={true}
-									onEditPress={() => setEditMode((prev) => ({ ...prev, stock: true }))}
-									onSavePress={saveStock}
-									onCancelPress={cancelStock}
-								/>
-							</View>
-
-							{/* Specifications Card */}
-							<ProductSpecsSection
-								editable={editMode.specs}
+					{/* Responsive Layout */}
+					<View style={styles.responsiveLayoutContainer}>
+						{/* Names Card */}
+						<View style={styles.sectionCard}>
+							<ProductNamesSection
+								variant={editMode.names ? 'edit' : 'view'}
 								colors={colors}
 								translate={translate}
-								caliber={caliber}
-								setCaliber={setCaliber}
-								originStreet={originStreet}
-								setOriginStreet={setOriginStreet}
-								originCity={originCity}
-								setOriginCity={setOriginCity}
-								originRegion={originRegion}
-								setOriginRegion={setOriginRegion}
-								originPostalCode={originPostalCode}
-								setOriginPostalCode={setOriginPostalCode}
-								originCountry={originCountry}
-								setOriginCountry={setOriginCountry}
-								specs={product.specs}
-								onEdit={() => setEditMode((prev) => ({ ...prev, specs: true }))}
-								onSavePress={saveSpecs}
-								onCancelPress={cancelSpecs}
+								nameEn={nameEn}
+								setNameEn={setNameEn}
+								nameTnLatn={nameTnLatn}
+								setNameTnLatn={setNameTnLatn}
+								nameTnArab={nameTnArab}
+								setNameTnArab={setNameTnArab}
+								productNameEn={product?.name?.en}
+								productNameTnLatn={product?.name?.tn_latn}
+								productNameTnArab={product?.name?.tn_arab}
+								canEdit={canEditProduct}
+								onEditPress={() => setEditMode((prev) => ({ ...prev, names: true }))}
+								onSavePress={saveNames}
+								onCancelPress={cancelNames}
 							/>
-
-							{/* Gallery Card */}
-							<View style={styles.sectionCard}>
-								<ProductGallerySection
-									editable={editMode.gallery}
-									gallery={uploadedGallery}
-									colors={colors}
-									translate={translate}
-									onUploadPress={handleUploadPhoto}
-									onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))}
-									uploading={uploadingPhoto}
-									onEditPress={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
-									onSavePress={saveGallery}
-									onCancelPress={cancelGallery}
-								/>
-							</View>
 						</View>
-					)}
+
+						{/* Gallery Card */}
+						<View style={styles.sectionCard}>
+							<ProductGallerySection
+								editable={editMode.gallery && canEditProduct}
+								gallery={uploadedGallery}
+								colors={colors}
+								translate={translate}
+								onUploadPress={handleUploadPhoto}
+								onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))}
+								uploading={uploadingPhoto}
+								onEditPress={canEditProduct ? () => setEditMode((prev) => ({ ...prev, gallery: true })) : undefined}
+								onSavePress={saveGallery}
+								onCancelPress={cancelGallery}
+							/>
+						</View>
+
+						{/* Pricing Card */}
+						<View style={styles.sectionCard}>
+							<ProductPricingSection
+								variant={editMode.pricing ? 'edit' : 'view'}
+								colors={colors}
+								translate={translate}
+								priceTND={priceTND}
+								setPriceTND={setPriceTND}
+								unit={unit}
+								setUnit={setUnit}
+								minUnit={minUnit}
+								setMinUnit={setMinUnit}
+								maxUnit={maxUnit}
+								setMaxUnit={setMaxUnit}
+								unitStep={unitStep}
+								setUnitStep={setUnitStep}
+								formattedPrice={product ? formatPrice({ total: { [currency]: product.price?.total?.[currency as keyof typeof product.price.total] || product.price?.total?.tnd || 0 } }) : ''}
+								unitMeasure={product?.unit?.measure}
+								minLimit={product?.unit?.min}
+								maxLimit={product?.unit?.max}
+								canEdit={canEditProduct}
+								onEditPress={() => setEditMode((prev) => ({ ...prev, pricing: true }))}
+								onSavePress={savePricing}
+								onCancelPress={cancelPricing}
+							/>
+						</View>
+
+						{/* Stock Card */}
+						<View style={styles.sectionCard}>
+							<ProductStockSection
+								variant={editMode.stock ? 'edit' : 'view'}
+								colors={colors}
+								translate={translate}
+								stockQuantity={stockQuantity}
+								setStockQuantity={setStockQuantity}
+								minThreshold={minThreshold}
+								setMinThreshold={setMinThreshold}
+								stockQuantityVal={product?.stock?.quantity || 0}
+								minThresholdVal={product?.stock?.minThreshold || 5}
+								canEdit={canEditProduct}
+								onEditPress={() => setEditMode((prev) => ({ ...prev, stock: true }))}
+								onSavePress={saveStock}
+								onCancelPress={cancelStock}
+							/>
+						</View>
+
+						{/* Specifications Card */}
+						<ProductSpecsSection
+							editable={editMode.specs && canEditProduct}
+							colors={colors}
+							translate={translate}
+							caliber={caliber}
+							setCaliber={setCaliber}
+							originStreet={originStreet}
+							setOriginStreet={setOriginStreet}
+							originCity={originCity}
+							setOriginCity={setOriginCity}
+							originRegion={originRegion}
+							setOriginRegion={setOriginRegion}
+							originPostalCode={originPostalCode}
+							setOriginPostalCode={setOriginPostalCode}
+							originCountry={originCountry}
+							setOriginCountry={setOriginCountry}
+							specs={product.specs}
+							onEdit={canEditProduct ? () => setEditMode((prev) => ({ ...prev, specs: true })) : undefined}
+							onSavePress={saveSpecs}
+							onCancelPress={cancelSpecs}
+						/>
+					</View>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
 		</View>
@@ -837,22 +723,10 @@ const createStyles = (colors: any) =>
 			marginBottom: 16,
 			alignSelf: 'center'
 		},
-		splitLayoutContainer: {
-			flexDirection: 'row',
+		responsiveLayoutContainer: {
 			width: '100%',
-			gap: 24
-		},
-		leftColumn: {
-			flex: 1,
-			gap: 16
-		},
-		rightColumn: {
-			flex: 1,
-			gap: 16
-		},
-		mobileLayoutContainer: {
-			width: '100%',
-			gap: 16
+			gap: 16,
+			flexDirection: 'column'
 		},
 		sectionCard: {
 			backgroundColor: colors.card,

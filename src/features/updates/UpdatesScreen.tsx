@@ -10,7 +10,6 @@ import { useUpdates } from './useUpdates'
 import { isVersionGreater } from './UpdatesContext'
 import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
-import { LinearGradient } from 'expo-linear-gradient'
 
 // Helper to render inline styles like bold (**bold**) and inline code (`code`)
 const renderInlineStyles = (text: string, colors: any) => {
@@ -20,7 +19,7 @@ const renderInlineStyles = (text: string, colors: any) => {
 		if (part.startsWith('**') && part.endsWith('**')) {
 			const boldText = part.slice(2, -2)
 			return (
-				<Text key={index} style={{ fontWeight: '700', color: '#FFFFFF' }}>
+				<Text key={index} style={{ fontWeight: '700', color: colors.text }}>
 					{boldText}
 				</Text>
 			)
@@ -33,8 +32,8 @@ const renderInlineStyles = (text: string, colors: any) => {
 					style={{
 						fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
 						fontSize: 12,
-						backgroundColor: 'rgba(255, 255, 255, 0.08)',
-						color: '#38BDF8',
+						backgroundColor: colors.surfaceVariant,
+						color: colors.info,
 						paddingHorizontal: 4,
 						borderRadius: 4
 					}}
@@ -73,7 +72,7 @@ const MarkdownRenderer = ({ content, colors }: { content: string; colors: any })
 								style={{
 									fontSize,
 									fontWeight,
-									color: '#FFFFFF',
+									color: colors.text,
 									marginTop,
 									marginBottom: 2
 								}}
@@ -89,8 +88,8 @@ const MarkdownRenderer = ({ content, colors }: { content: string; colors: any })
 					const text = trimmed.replace(/^[-*]\s*/, '')
 					return (
 						<View key={lineIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingLeft: 6, gap: 6, marginVertical: 1 }}>
-							<Text style={{ color: colors.primary || '#38BDF8', fontSize: 14, marginTop: 1 }}>•</Text>
-							<Text style={{ flex: 1, fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 19 }}>{renderInlineStyles(text, colors)}</Text>
+							<Text style={{ color: colors.primary, fontSize: 14, marginTop: 1 }}>•</Text>
+							<Text style={{ flex: 1, fontSize: 13, color: colors.text, lineHeight: 19 }}>{renderInlineStyles(text, colors)}</Text>
 						</View>
 					)
 				}
@@ -102,7 +101,7 @@ const MarkdownRenderer = ({ content, colors }: { content: string; colors: any })
 
 				// Default paragraph lines
 				return (
-					<Text key={lineIdx} style={{ fontSize: 13, color: 'rgba(255,255,255,0.85)', lineHeight: 19, marginVertical: 1 }}>
+					<Text key={lineIdx} style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 19, marginVertical: 1 }}>
 						{renderInlineStyles(trimmed, colors)}
 					</Text>
 				)
@@ -381,7 +380,7 @@ export default function UpdatesScreen() {
 		}
 
 		return (
-			<View style={[styles.card, { borderColor: colors.borderLight }]}>
+			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
 				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('device_status', 'Device Status')}</Text>
 
 				{!isWebAndroid && (
@@ -417,22 +416,22 @@ export default function UpdatesScreen() {
 
 	const renderEnvironmentBadge = () => {
 		const nodeEnv = config.nodeEnv.toLowerCase()
-		let badgeColors: [string, string] = ['#10B981', '#059669']
+		let badgeColor = colors.success
 		let badgeText = config.nodeEnv.toUpperCase()
 
 		if (nodeEnv === 'production' || nodeEnv === 'prod') {
-			badgeColors = ['#EF4444', '#DC2626']
+			badgeColor = colors.error
 		} else if (nodeEnv === 'local' || nodeEnv === 'dev' || nodeEnv === 'development') {
-			badgeColors = ['#3B82F6', '#2563EB']
+			badgeColor = colors.info
 		} else if (nodeEnv === 'staging') {
-			badgeColors = ['#F59E0B', '#D97706']
+			badgeColor = colors.warning
 		}
 
 		return (
-			<LinearGradient colors={badgeColors} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.badgeContainer}>
-				<Ionicons name="git-branch-outline" size={12} color="#FFFFFF" style={{ marginRight: 4 }} />
-				<Text style={styles.badgeText}>{badgeText}</Text>
-			</LinearGradient>
+			<View style={[styles.badgeContainer, { backgroundColor: badgeColor + '15', borderColor: badgeColor + '30' }]}>
+				<Ionicons name="git-branch-outline" size={12} color={badgeColor} style={{ marginRight: 4 }} />
+				<Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
+			</View>
 		)
 	}
 
@@ -442,75 +441,58 @@ export default function UpdatesScreen() {
 			? translate('running_latest', 'You are running the latest version of Drinaluza.')
 			: translate('new_version_found', 'A new release is available with new features and fixes.')
 
-		const accentColor = isUpToDate ? '#10B981' : '#0EA5E9'
-		const cardGradients = (isUpToDate ? ['rgba(16, 185, 129, 0.14)', 'rgba(16, 185, 129, 0.02)'] : ['rgba(14, 165, 233, 0.18)', 'rgba(139, 92, 246, 0.04)']) as [string, string]
-		const borderColor = isUpToDate ? 'rgba(16, 185, 129, 0.25)' : 'rgba(14, 165, 233, 0.25)'
+		const accentColor = isUpToDate ? colors.success : colors.primary
+		const borderColor = accentColor + '28'
+		const backgroundColor = accentColor + '14'
 
 		return (
-			<View style={{ borderRadius: 26, overflow: 'hidden' }}>
-				<LinearGradient colors={cardGradients} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.statusCard, { borderColor }]}>
-					<View style={styles.statusRow}>
-						{/* Outer glow ring */}
-						<View style={[styles.statusGlowRing, { borderColor: accentColor + '20' }]}>
-							<View style={[styles.statusIndicatorContainer, { backgroundColor: accentColor + '15' }]}>
-								{isUpToDate ? (
-									<Ionicons name="checkmark-circle" size={44} color={accentColor} />
-								) : (
-									<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-										<Ionicons name="cloud-download" size={44} color={accentColor} />
-									</Animated.View>
-								)}
-							</View>
-						</View>
-						<View style={styles.statusContent}>
-							<View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
-								<Text style={[styles.statusTitle, { color: colors.text }]}>{statusText}</Text>
-								{renderEnvironmentBadge()}
-							</View>
-							<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
+			<View style={[styles.statusCard, { borderColor, backgroundColor }]}>
+				{renderEnvironmentBadge()}
+				<View style={[styles.statusRow, { borderColor: accentColor + '22' }]}>
+					<View style={[styles.statusGlowRing, { backgroundColor: accentColor + '12' }]}>
+						<View style={[styles.statusIndicatorContainer, { backgroundColor: accentColor + '18' }]}>
+							{isUpToDate ? (
+								<Ionicons name="checkmark-circle" size={44} color={accentColor} />
+							) : (
+								<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+									<Ionicons name="cloud-download" size={44} color={accentColor} />
+								</Animated.View>
+							)}
 						</View>
 					</View>
-				</LinearGradient>
+				</View>
+				<View style={styles.statusContent}>
+					<Text style={[styles.statusTitle, { color: colors.text }]}>{statusText}</Text>
+					<Text style={[styles.statusSubtitle, { color: colors.textSecondary }]}>{statusSubtitle}</Text>
+				</View>
 			</View>
 		)
 	}
 
 	const renderVersionComparison = () => {
 		const latestVer = latestRelease ? `v${latestRelease.latest_version}` : '—'
+		const arrowColor = isUpToDate ? colors.textTertiary : colors.primary
+		const arrowBg = isUpToDate ? colors.surfaceVariant : colors.primary + '15'
+		const latestColor = isUpToDate ? colors.text : colors.primary
+
 		return (
-			<View style={styles.comparisonGrid}>
-				<View style={{ flex: 1, borderRadius: 22, overflow: 'hidden' }}>
-					<LinearGradient colors={['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.01)']} style={[styles.comparisonCard, { borderColor: colors.borderLight }]}>
-						<Ionicons name="phone-portrait-outline" size={18} color={colors.textTertiary} style={{ marginBottom: 4 }} />
-						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current')}</Text>
-						<Text style={[styles.comparisonValue, { color: colors.text }]}>v{config.app.version}</Text>
-					</LinearGradient>
+			<View style={[styles.comparisonGrid, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+				<View style={styles.comparisonCard}>
+					<Ionicons name="phone-portrait-outline" size={18} color={colors.textTertiary} />
+					<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current')}</Text>
+					<Text style={[styles.comparisonValue, { color: colors.text }]}>v{config.app.version}</Text>
 				</View>
 
-				{/* Arrow indicator */}
-				<View style={styles.comparisonArrow}>
-					{!isUpToDate ? (
-						<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
-							<View style={[styles.arrowCircle, { backgroundColor: 'rgba(14, 165, 233, 0.15)', borderColor: 'rgba(14, 165, 233, 0.3)' }]}>
-								<Ionicons name="arrow-forward" size={16} color="#0EA5E9" />
-							</View>
-						</Animated.View>
-					) : (
-						<View style={[styles.arrowCircle, { backgroundColor: 'rgba(255, 255, 255, 0.04)', borderColor: colors.borderLight }]}>
-							<Ionicons name="checkmark" size={16} color={colors.textTertiary} />
-						</View>
-					)}
+				<View style={[styles.comparisonArrow, { backgroundColor: colors.borderLight }]}>
+					<View style={[styles.arrowCircle, { backgroundColor: arrowBg, borderColor: isUpToDate ? colors.borderLight : colors.primary + '30' }]}>
+						<Ionicons name={isUpToDate ? 'checkmark' : 'arrow-forward'} size={16} color={arrowColor} />
+					</View>
 				</View>
 
-				<View style={{ flex: 1, borderRadius: 22, overflow: 'hidden' }}>
-					<LinearGradient
-						colors={!isUpToDate ? ['rgba(14, 165, 233, 0.12)', 'rgba(14, 165, 233, 0.02)'] : ['rgba(255, 255, 255, 0.05)', 'rgba(255, 255, 255, 0.01)']}
-						style={[styles.comparisonCard, { borderColor: !isUpToDate ? 'rgba(14, 165, 233, 0.3)' : colors.borderLight }]}
-					>
-						<Ionicons name="cloud-outline" size={18} color={!isUpToDate ? '#0EA5E9' : colors.textTertiary} style={{ marginBottom: 4 }} />
-						<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest')}</Text>
-						<Text style={[styles.comparisonValue, { color: isUpToDate ? colors.text : '#0EA5E9', fontWeight: '800' }]}>{latestVer}</Text>
-					</LinearGradient>
+				<View style={styles.comparisonCard}>
+					<Ionicons name="cloud-outline" size={18} color={latestColor} />
+					<Text style={[styles.comparisonLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest')}</Text>
+					<Text style={[styles.comparisonValue, { color: latestColor }]}>{latestVer}</Text>
 				</View>
 			</View>
 		)
@@ -519,32 +501,32 @@ export default function UpdatesScreen() {
 	const renderReleaseMetaList = () => {
 		if (!latestRelease) return null
 		return (
-			<View style={[styles.card, { borderColor: colors.borderLight }]}>
+			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
 				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('release_details', 'Release Details')}</Text>
 				<View style={styles.metaRow}>
 					<View style={styles.metaLabelRow}>
-						<View style={[styles.metaIconWrap, { backgroundColor: 'rgba(59, 130, 246, 0.1)' }]}>
-							<Ionicons name="calendar-outline" size={14} color="#3B82F6" />
+						<View style={[styles.metaIconWrap, { backgroundColor: colors.info + '15' }]}>
+							<Ionicons name="calendar-outline" size={16} color={colors.info} />
 						</View>
 						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('published_date', 'Published')}</Text>
 					</View>
 					<Text style={[styles.metaValue, { color: colors.text }]}>{formatDate(latestRelease.published_at)}</Text>
 				</View>
-				<View style={styles.metaDivider} />
+				<View style={[styles.metaDivider, { backgroundColor: colors.borderLight }]} />
 				<View style={styles.metaRow}>
 					<View style={styles.metaLabelRow}>
-						<View style={[styles.metaIconWrap, { backgroundColor: 'rgba(139, 92, 246, 0.1)' }]}>
-							<Ionicons name="cube-outline" size={14} color="#8B5CF6" />
+						<View style={[styles.metaIconWrap, { backgroundColor: colors.primary + '15' }]}>
+							<Ionicons name="cube-outline" size={16} color={colors.primary} />
 						</View>
 						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('file_size', 'Download Size')}</Text>
 					</View>
 					<Text style={[styles.metaValue, { color: colors.text }]}>{formatBytes(latestRelease.size)}</Text>
 				</View>
-				<View style={styles.metaDivider} />
+				<View style={[styles.metaDivider, { backgroundColor: colors.borderLight }]} />
 				<View style={styles.metaRow}>
 					<View style={styles.metaLabelRow}>
-						<View style={[styles.metaIconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.1)' }]}>
-							<Ionicons name="download-outline" size={14} color="#0EA5E9" />
+						<View style={[styles.metaIconWrap, { backgroundColor: colors.success + '15' }]}>
+							<Ionicons name="download-outline" size={16} color={colors.success} />
 						</View>
 						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('total_downloads', 'Downloads')}</Text>
 					</View>
@@ -555,41 +537,33 @@ export default function UpdatesScreen() {
 	}
 
 	const renderWebActions = () => {
+		const isDisabled = !latestRelease || !latestRelease.download_url
 		return (
-			<View style={styles.actionsContainer}>
-				<TouchableOpacity
-					disabled={!latestRelease || !latestRelease.download_url}
-					onPress={handleDownloadWeb}
-					style={[styles.primaryButtonTouch, { opacity: !latestRelease || !latestRelease.download_url ? 0.5 : 1 }]}
-				>
-					<LinearGradient
-						colors={!latestRelease || !latestRelease.download_url ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'] : ['#0EA5E9', '#2563EB']}
-						start={{ x: 0, y: 0 }}
-						end={{ x: 1, y: 1 }}
-						style={styles.primaryButtonGradient}
+			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
+				<View style={styles.actionsContainer}>
+					<TouchableOpacity
+						disabled={isDisabled}
+						onPress={handleDownloadWeb}
+						accessibilityLabel={translate('download_android_apk', 'Download Android APK')}
+						style={[styles.primaryButtonTouch, { opacity: isDisabled ? 0.5 : 1, backgroundColor: isDisabled ? colors.surfaceVariant : colors.primary }]}
 					>
-						<Ionicons name="download-outline" size={20} color={!latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF'} />
-						<Text style={[styles.primaryButtonText, { color: !latestRelease || !latestRelease.download_url ? colors.textTertiary : '#FFFFFF' }]}>
-							{translate('download_android_apk', 'Download Android APK')} {latestRelease?.latest_version ? `v${latestRelease.latest_version}` : ''}
-						</Text>
-					</LinearGradient>
-				</TouchableOpacity>
+						<View style={styles.primaryButtonGradient}>
+							<Ionicons name="download-outline" size={24} color={isDisabled ? colors.textTertiary : colors.textOnPrimary} />
+						</View>
+					</TouchableOpacity>
 
-				<TouchableOpacity
-					disabled={!latestRelease || !latestRelease.download_url}
-					onPress={handleCopyUrl}
-					style={[
-						styles.secondaryButton,
-						{
-							backgroundColor: colors.surface,
-							width: '100%',
-							opacity: !latestRelease || !latestRelease.download_url ? 0.6 : 1
-						}
-					]}
-				>
-					<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={18} color={copied ? colors.success : colors.textSecondary} />
-					<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>{copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link to Clipboard')}</Text>
-				</TouchableOpacity>
+					<View style={styles.iconButtonRow}>
+						<TouchableOpacity
+							disabled={isDisabled}
+							onPress={handleCopyUrl}
+							accessibilityLabel={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link to Clipboard')}
+							style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.borderLight, opacity: isDisabled ? 0.6 : 1 }]}
+						>
+							<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={20} color={copied ? colors.success : colors.textSecondary} />
+						</TouchableOpacity>
+					</View>
+				</View>
 			</View>
 		)
 	}
@@ -598,120 +572,137 @@ export default function UpdatesScreen() {
 		const isDownloadingOrPaused = isDownloading || isPaused
 
 		return (
-			<View style={styles.actionsContainer}>
-				{isDownloadingOrPaused ? (
-					<View style={styles.progressContainer}>
-						<View style={[styles.progressBarBg, { backgroundColor: 'rgba(255, 255, 255, 0.05)' }]}>
-							<View
-								style={[
-									styles.progressBarFill,
-									{
-										width: `${Math.round(downloadProgress * 100)}%`,
-										backgroundColor: colors.primary
-									}
-								]}
-							/>
-						</View>
-						<Text style={[styles.progressText, { color: colors.textSecondary }]}>
-							{isPaused ? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`}
-						</Text>
+			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
+				<View style={styles.actionsContainer}>
+					{isDownloadingOrPaused ? (
+						<View style={styles.progressContainer}>
+							<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
+								<View style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%`, backgroundColor: colors.primary }]} />
+							</View>
+							<Text style={[styles.progressText, { color: colors.textSecondary }]}>
+								{isPaused ? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`}
+							</Text>
 
-						{isDownloading && (downloadSpeed !== null || remainingTime !== null) && (
-							<View style={styles.downloadMetaRow}>
-								{downloadSpeed !== null && (
-									<Text style={[styles.downloadMetaText, { color: colors.textTertiary }]}>
-										<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} /> {formatSpeed(downloadSpeed)}
-									</Text>
+							{isDownloading && (downloadSpeed !== null || remainingTime !== null) && (
+								<View style={styles.progressMeta}>
+									{downloadSpeed !== null && (
+										<Text style={[styles.progressMetaText, { color: colors.textTertiary }]}>
+											<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} /> {formatSpeed(downloadSpeed)}
+										</Text>
+									)}
+									{remainingTime !== null && (
+										<Text style={[styles.progressMetaText, { color: colors.textTertiary }]}>
+											<Ionicons name="time-outline" size={12} color={colors.textTertiary} /> {formatRemainingTime(remainingTime)}
+										</Text>
+									)}
+								</View>
+							)}
+
+							<View style={[styles.iconButtonRow, { marginTop: 8 }]}>
+								{isDownloading && (
+									<>
+										<TouchableOpacity
+											onPress={pauseDownload}
+											accessibilityLabel={translate('pause', 'Pause')}
+											style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+										>
+											<Ionicons name="pause-outline" size={22} color={colors.textSecondary} />
+										</TouchableOpacity>
+
+										<TouchableOpacity
+											onPress={cancelDownload}
+											accessibilityLabel={translate('cancel', 'Cancel')}
+											style={[styles.iconButton, { backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}
+										>
+											<Ionicons name="close-outline" size={22} color={colors.error} />
+										</TouchableOpacity>
+									</>
 								)}
-								{remainingTime !== null && (
-									<Text style={[styles.downloadMetaText, { color: colors.textTertiary }]}>
-										<Ionicons name="time-outline" size={12} color={colors.textTertiary} /> {formatRemainingTime(remainingTime)}
-									</Text>
+
+								{isPaused && (
+									<>
+										<TouchableOpacity
+											onPress={resumeDownload}
+											accessibilityLabel={translate('resume', 'Resume')}
+											style={[styles.iconButton, { backgroundColor: colors.primary, borderColor: colors.primary }]}
+										>
+											<Ionicons name="play-outline" size={22} color={colors.textOnPrimary} />
+										</TouchableOpacity>
+
+										<TouchableOpacity
+											onPress={cancelDownload}
+											accessibilityLabel={translate('cancel', 'Cancel')}
+											style={[styles.iconButton, { backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}
+										>
+											<Ionicons name="close-outline" size={22} color={colors.error} />
+										</TouchableOpacity>
+									</>
 								)}
 							</View>
-						)}
-
-						<View style={[styles.rowButtons, { marginTop: 12 }]}>
-							{isDownloading && (
-								<>
-									<TouchableOpacity onPress={pauseDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
-										<Ionicons name="pause-outline" size={18} color={colors.textSecondary} />
-										<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]}>{translate('pause', 'Pause')}</Text>
-									</TouchableOpacity>
-
-									<TouchableOpacity onPress={cancelDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
-										<Ionicons name="close-outline" size={18} color={colors.error} />
-										<Text style={[styles.secondaryButtonText, { color: colors.error }]}>{translate('cancel', 'Cancel')}</Text>
-									</TouchableOpacity>
-								</>
-							)}
-
-							{isPaused && (
-								<>
-									<TouchableOpacity onPress={resumeDownload} style={[styles.primaryButtonTouch, { flex: 1 }]}>
-										<LinearGradient colors={['#0EA5E9', '#2563EB']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[styles.primaryButtonGradient, { height: 44 }]}>
-											<Ionicons name="play-outline" size={18} color="#FFFFFF" />
-											<Text style={styles.primaryButtonText}>{translate('resume', 'Resume')}</Text>
-										</LinearGradient>
-									</TouchableOpacity>
-
-									<TouchableOpacity onPress={cancelDownload} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1, height: 44 }]}>
-										<Ionicons name="close-outline" size={18} color={colors.error} />
-										<Text style={[styles.secondaryButtonText, { color: colors.error }]}>{translate('cancel', 'Cancel')}</Text>
-									</TouchableOpacity>
-								</>
-							)}
 						</View>
-					</View>
-				) : (
-					<View style={styles.rowButtons}>
-						<TouchableOpacity disabled={isDownloadDisabled} onPress={downloadUpdate} style={[styles.primaryButtonTouch, { flex: 1, opacity: isDownloadDisabled ? 0.5 : 1 }]}>
-							<LinearGradient
-								colors={isDownloadDisabled ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'] : ['#0EA5E9', '#2563EB']}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={styles.primaryButtonGradient}
+					) : (
+						<View style={[styles.rowButtons, { flexDirection: isWide ? 'row' : 'column' }]}>
+							<TouchableOpacity
+								disabled={isDownloadDisabled}
+								onPress={downloadUpdate}
+								accessibilityLabel={translate('download', 'Download')}
+								style={[
+									styles.primaryButtonTouch,
+									{
+										flex: isWide ? 1 : undefined,
+										width: isWide ? undefined : '100%',
+										opacity: isDownloadDisabled ? 0.5 : 1,
+										backgroundColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary
+									}
+								]}
 							>
-								<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : '#FFFFFF'} />
-								<Text style={[styles.primaryButtonText, { color: isDownloadDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
-									{translate('download', 'Download')} {latestRelease?.latest_version ? `v${latestRelease.latest_version}` : ''}
-								</Text>
-							</LinearGradient>
-						</TouchableOpacity>
+								<View style={styles.primaryButtonGradient}>
+									<Ionicons name="cloud-download-outline" size={24} color={isDownloadDisabled ? colors.textTertiary : colors.textOnPrimary} />
+								</View>
+							</TouchableOpacity>
 
-						<TouchableOpacity disabled={isInstallDisabled} onPress={handleInstallPress} style={[styles.primaryButtonTouch, { flex: 1, opacity: isInstallDisabled ? 0.5 : 1 }]}>
-							<LinearGradient
-								colors={isInstallDisabled ? ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.05)'] : ['#10B981', '#059669']}
-								start={{ x: 0, y: 0 }}
-								end={{ x: 1, y: 1 }}
-								style={styles.primaryButtonGradient}
+							<TouchableOpacity
+								disabled={isInstallDisabled}
+								onPress={handleInstallPress}
+								accessibilityLabel={translate('install', 'Install')}
+								style={[
+									styles.primaryButtonTouch,
+									{
+										flex: isWide ? 1 : undefined,
+										width: isWide ? undefined : '100%',
+										opacity: isInstallDisabled ? 0.5 : 1,
+										backgroundColor: isInstallDisabled ? colors.surfaceVariant : colors.success
+									}
+								]}
 							>
-								<Ionicons name="rocket-outline" size={20} color={isInstallDisabled ? colors.textTertiary : '#FFFFFF'} />
-								<Text style={[styles.primaryButtonText, { color: isInstallDisabled ? colors.textTertiary : '#FFFFFF' }]} numberOfLines={1}>
-									{translate('install', 'Install')} {installableApk?.version ? `v${installableApk.version}` : ''}
-								</Text>
-							</LinearGradient>
-						</TouchableOpacity>
-					</View>
-				)}
+								<View style={styles.primaryButtonGradient}>
+									<Ionicons name="archive-outline" size={24} color={isInstallDisabled ? colors.textTertiary : colors.textOnPrimary} />
+								</View>
+							</TouchableOpacity>
+						</View>
+					)}
 
-				{latestRelease && (
-					<View style={styles.rowButtons}>
-						<TouchableOpacity onPress={handleCopyUrl} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1 }]}>
-							<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={16} color={copied ? colors.success : colors.textSecondary} />
-							<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]} numberOfLines={1}>
-								{copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
-							</Text>
-						</TouchableOpacity>
+					{latestRelease && (
+						<View style={styles.iconButtonRow}>
+							<TouchableOpacity
+								onPress={handleCopyUrl}
+								accessibilityLabel={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
+								style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+							>
+								<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={20} color={copied ? colors.success : colors.textSecondary} />
+							</TouchableOpacity>
 
-						<TouchableOpacity onPress={handleShareUrl} style={[styles.secondaryButton, { backgroundColor: colors.surface, flex: 1 }]}>
-							<Ionicons name="share-social-outline" size={16} color={colors.textSecondary} />
-							<Text style={[styles.secondaryButtonText, { color: colors.textSecondary }]} numberOfLines={1}>
-								{translate('share_url', 'Share Link')}
-							</Text>
-						</TouchableOpacity>
-					</View>
-				)}
+							<TouchableOpacity
+								onPress={handleShareUrl}
+								accessibilityLabel={translate('share_url', 'Share Link')}
+								style={[styles.iconButton, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+							>
+								<Ionicons name="share-social-outline" size={20} color={colors.textSecondary} />
+							</TouchableOpacity>
+						</View>
+					)}
+				</View>
 			</View>
 		)
 	}
@@ -752,14 +743,14 @@ export default function UpdatesScreen() {
 
 				{/* Cached APK installers list */}
 				{sortedApks.length > 0 && (
-					<View style={[styles.card, { borderColor: colors.borderLight }]}>
+					<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
 						<View style={styles.apkSection}>
 							{sortedApks.map((apk) => (
-								<View key={apk.filename} style={[styles.apkItem, { borderColor: 'rgba(255, 255, 255, 0.05)' }]}>
+								<View key={apk.filename} style={[styles.apkItem, { borderColor: colors.borderLight }]}>
 									<View style={styles.apkInfoContainer}>
-										<View style={[styles.apkIconWrap, { backgroundColor: 'rgba(14, 165, 233, 0.08)' }]}>
-											<Ionicons name="logo-android" size={18} color="#0EA5E9" />
+										<View style={[styles.apkIconWrap, { backgroundColor: colors.primary + '10' }]}>
+											<Ionicons name="logo-android" size={18} color={colors.primary} />
 										</View>
 										<View style={styles.apkInfo}>
 											<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1}>
@@ -772,13 +763,13 @@ export default function UpdatesScreen() {
 									</View>
 									<View style={styles.apkActions}>
 										{/* Share APK Button */}
-										<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: 'rgba(14, 165, 233, 0.08)' }]}>
-											<Ionicons name="share-social-outline" size={16} color="#0EA5E9" />
+										<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: colors.primary + '10' }]}>
+											<Ionicons name="share-social-outline" size={16} color={colors.primary} />
 										</TouchableOpacity>
 
 										{/* Delete Button */}
-										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: 'rgba(239, 68, 68, 0.08)' }]}>
-											<Ionicons name="trash-outline" size={16} color="#EF4444" />
+										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: colors.error + '10' }]}>
+											<Ionicons name="trash-outline" size={16} color={colors.error} />
 										</TouchableOpacity>
 									</View>
 								</View>
@@ -789,13 +780,13 @@ export default function UpdatesScreen() {
 
 				{/* Changelog section */}
 				{(isWeb || (latestRelease && latestRelease.changelog !== '')) && (
-					<View style={[styles.card, { borderColor: colors.borderLight }]}>
+					<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('whats_new', "What's New")}</Text>
-						<View style={[styles.changelogBox, { backgroundColor: 'rgba(0,0,0,0.22)', borderColor: 'rgba(255,255,255,0.05)', borderWidth: 1 }]}>
+						<View style={[styles.changelogBox, { backgroundColor: colors.surface + '60', borderColor: colors.borderLight, borderWidth: 1 }]}>
 							{latestRelease && latestRelease.changelog !== '' ? (
 								<MarkdownRenderer content={latestRelease.changelog} colors={colors} />
 							) : (
-								<Text style={[styles.changelogText, { color: 'rgba(255,255,255,0.5)', fontStyle: 'italic' }]}>{translate('no_changelog', 'No changelog details available.')}</Text>
+								<Text style={[styles.changelogText, { color: colors.textSecondary, fontStyle: 'italic' }]}>{translate('no_changelog', 'No changelog details available.')}</Text>
 							)}
 						</View>
 					</View>
@@ -811,90 +802,82 @@ const styles = StyleSheet.create({
 	},
 	scrollContent: {
 		padding: 16,
-		paddingBottom: 40,
-		gap: 20
+		paddingBottom: 48,
+		gap: 18
 	},
+	// Hero card
 	statusCard: {
-		borderRadius: 26,
+		borderRadius: 28,
 		borderWidth: 1,
-		padding: 20,
-		...Platform.select({
-			web: {
-				backdropFilter: 'blur(20px)',
-				WebkitBackdropFilter: 'blur(20px)'
-			} as any
-		})
+		padding: 24,
+		alignItems: 'center',
+		gap: 14
 	},
 	statusRow: {
-		flexDirection: 'row',
+		width: 92,
+		height: 92,
+		borderRadius: 46,
+		borderWidth: 1,
+		justifyContent: 'center',
 		alignItems: 'center',
-		gap: 16
+		padding: 4
 	},
 	statusGlowRing: {
-		padding: 4,
-		borderRadius: 38,
-		borderWidth: 1,
+		width: '100%',
+		height: '100%',
+		borderRadius: 42,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	statusIndicatorContainer: {
-		width: 60,
-		height: 60,
-		borderRadius: 30,
+		width: 56,
+		height: 56,
+		borderRadius: 28,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	statusContent: {
-		flex: 1,
-		gap: 4
+		alignItems: 'center',
+		gap: 6
 	},
 	statusTitle: {
-		fontSize: 18,
+		fontSize: 22,
 		fontWeight: '700',
-		letterSpacing: -0.3
+		letterSpacing: -0.4,
+		textAlign: 'center'
 	},
 	statusSubtitle: {
-		fontSize: 13,
-		lineHeight: 18
-	},
-	versionPill: {
-		alignSelf: 'flex-start',
-		paddingHorizontal: 8,
-		paddingVertical: 2,
-		borderRadius: 8,
-		borderWidth: 1,
-		marginTop: 4
-	},
-	versionPillText: {
-		fontSize: 11,
-		fontWeight: '600'
+		fontSize: 14,
+		lineHeight: 20,
+		textAlign: 'center'
 	},
 	badgeContainer: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingVertical: 3,
-		borderRadius: 12
+		paddingHorizontal: 10,
+		paddingVertical: 4,
+		borderRadius: 12,
+		borderWidth: 1
 	},
 	badgeText: {
-		color: '#FFFFFF',
 		fontSize: 10,
 		fontWeight: '700',
 		letterSpacing: 0.5
 	},
+	// Version card
 	comparisonGrid: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 10
+		justifyContent: 'space-between',
+		borderRadius: 24,
+		borderWidth: 1,
+		padding: 20,
+		gap: 16
 	},
 	comparisonCard: {
 		flex: 1,
-		borderRadius: 22,
-		borderWidth: 1,
-		padding: 16,
 		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 6
+		gap: 4
 	},
 	comparisonLabel: {
 		fontSize: 11,
@@ -903,88 +886,36 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.5
 	},
 	comparisonValue: {
-		fontSize: 22,
+		fontSize: 24,
 		fontWeight: '700',
 		letterSpacing: -0.5
 	},
 	comparisonArrow: {
-		justifyContent: 'center',
-		alignItems: 'center',
-		width: 32
+		width: 1,
+		height: 40
 	},
 	arrowCircle: {
 		width: 32,
 		height: 32,
 		borderRadius: 16,
-		borderWidth: 1,
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
+		position: 'absolute',
+		left: -16,
+		top: 4
 	},
+	// Cards
 	card: {
 		borderRadius: 24,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
-		padding: 20,
-		backgroundColor: 'rgba(15, 23, 42, 0.55)', // Translucent sleek glass background
-		...Platform.select({
-			web: {
-				backdropFilter: 'blur(20px)',
-				WebkitBackdropFilter: 'blur(20px)'
-			} as any
-		})
-	},
-	downloadMetaRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginTop: 2,
-		paddingHorizontal: 4
-	},
-	downloadMetaText: {
-		fontSize: 12,
-		fontWeight: '600',
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4
+		padding: 20
 	},
 	sectionTitle: {
-		fontSize: 12,
+		fontSize: 13,
 		fontWeight: '600',
-		letterSpacing: 0.5,
-		textTransform: 'uppercase',
-		marginBottom: 12
+		marginBottom: 14
 	},
-	metaRow: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		paddingVertical: 8
-	},
-	metaLabelRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8
-	},
-	metaIconWrap: {
-		width: 24,
-		height: 24,
-		borderRadius: 6,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	metaLabel: {
-		fontSize: 13,
-		fontWeight: '500'
-	},
-	metaValue: {
-		fontSize: 13,
-		fontWeight: '600'
-	},
-	metaDivider: {
-		height: 1,
-		backgroundColor: 'rgba(255, 255, 255, 0.06)',
-		marginVertical: 4
-	},
+	// Buttons
 	actionsContainer: {
 		gap: 12,
 		width: '100%'
@@ -996,8 +927,7 @@ const styles = StyleSheet.create({
 		width: '100%'
 	},
 	primaryButtonTouch: {
-		width: '100%',
-		borderRadius: 20,
+		borderRadius: 16,
 		overflow: 'hidden',
 		...Platform.select({
 			web: {
@@ -1009,39 +939,32 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: 8,
 		height: 52,
-		paddingHorizontal: 16,
 		width: '100%'
 	},
-	primaryButtonText: {
-		color: '#FFFFFF',
-		fontSize: 15,
-		fontWeight: '600'
-	},
-	secondaryButton: {
+	iconButtonRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: 6,
+		gap: 12,
+		width: '100%'
+	},
+	iconButton: {
+		width: 48,
 		height: 48,
-		borderRadius: 18,
+		borderRadius: 24,
+		justifyContent: 'center',
+		alignItems: 'center',
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)',
-		backgroundColor: 'rgba(255, 255, 255, 0.02)',
 		...Platform.select({
 			web: {
-				cursor: 'pointer',
-				transition: 'background-color 0.15s ease, border-color 0.15s ease'
+				cursor: 'pointer'
 			} as any
 		})
 	},
-	secondaryButtonText: {
-		fontSize: 13,
-		fontWeight: '600'
-	},
+	// Progress
 	progressContainer: {
-		gap: 8
+		gap: 10
 	},
 	progressBarBg: {
 		height: 8,
@@ -1053,48 +976,62 @@ const styles = StyleSheet.create({
 		borderRadius: 4
 	},
 	progressText: {
-		fontSize: 12,
+		fontSize: 13,
 		textAlign: 'center',
 		fontWeight: '600'
 	},
-	warningBox: {
+	progressMeta: {
 		flexDirection: 'row',
-		gap: 8,
-		alignItems: 'center',
-		padding: 12,
-		borderRadius: 12,
-		borderWidth: 1,
-		marginTop: 12
+		justifyContent: 'space-between',
+		alignItems: 'center'
 	},
-	warningText: {
+	progressMetaText: {
 		fontSize: 12,
-		fontWeight: '500',
-		flex: 1
+		fontWeight: '500'
 	},
+	// Meta rows
+	metaRow: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		paddingVertical: 6
+	},
+	metaLabelRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 10
+	},
+	metaIconWrap: {
+		width: 32,
+		height: 32,
+		borderRadius: 8,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	metaLabel: {
+		fontSize: 14,
+		fontWeight: '500'
+	},
+	metaValue: {
+		fontSize: 14,
+		fontWeight: '600'
+	},
+	metaDivider: {
+		height: 1,
+		marginVertical: 4
+	},
+	// Changelog
 	changelogBox: {
 		borderRadius: 16,
 		padding: 16,
 		minHeight: 80
 	},
 	changelogText: {
-		fontSize: 13,
+		fontSize: 14,
 		lineHeight: 20
 	},
-	errorBox: {
-		flexDirection: 'row',
-		gap: 8,
-		alignItems: 'center',
-		padding: 12,
-		borderRadius: 12,
-		borderWidth: 1
-	},
-	errorText: {
-		fontSize: 13,
-		fontWeight: '500',
-		flex: 1
-	},
+	// APK
 	apkSection: {
-		marginTop: 4,
 		gap: 4
 	},
 	apkItem: {
@@ -1112,8 +1049,8 @@ const styles = StyleSheet.create({
 		marginRight: 8
 	},
 	apkIconWrap: {
-		width: 36,
-		height: 36,
+		width: 40,
+		height: 40,
 		borderRadius: 10,
 		justifyContent: 'center',
 		alignItems: 'center'
@@ -1135,9 +1072,9 @@ const styles = StyleSheet.create({
 		gap: 8
 	},
 	apkBtn: {
-		width: 34,
-		height: 34,
-		borderRadius: 9,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		justifyContent: 'center',
 		alignItems: 'center',
 		...Platform.select({
@@ -1145,5 +1082,35 @@ const styles = StyleSheet.create({
 				cursor: 'pointer'
 			} as any
 		})
+	},
+	// Warning / Error
+	warningBox: {
+		flexDirection: 'row',
+		gap: 8,
+		alignItems: 'center',
+		padding: 12,
+		borderRadius: 12,
+		borderWidth: 1,
+		marginTop: 12
+	},
+	warningText: {
+		fontSize: 13,
+		fontWeight: '500',
+		flex: 1,
+		lineHeight: 18
+	},
+	errorBox: {
+		flexDirection: 'row',
+		gap: 8,
+		alignItems: 'center',
+		padding: 12,
+		borderRadius: 12,
+		borderWidth: 1
+	},
+	errorText: {
+		fontSize: 13,
+		fontWeight: '500',
+		flex: 1,
+		lineHeight: 18
 	}
 })
