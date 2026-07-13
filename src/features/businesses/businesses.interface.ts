@@ -131,6 +131,7 @@ export type BusinessProductsResponse = {
 
 export interface ProductSpecs {
 	caliber: 1 | 2 | 3 | 4 | 5
+	harvest?: 'wild' | 'farm'
 	origin?: {
 		street?: string
 		city?: string

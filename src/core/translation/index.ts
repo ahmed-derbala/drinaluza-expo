@@ -1,17 +1,13 @@
 import { en } from './en'
 import { tn_latn } from './tn_latn'
 import { tn_arab } from './tn_arab'
-import { fr } from './fr'
-import { ar } from './ar'
 
-type LanguageCode = 'en' | 'tn_latn' | 'tn_arab' | 'fr' | 'ar'
+type LanguageCode = 'en' | 'tn_latn' | 'tn_arab'
 
 const translations: Record<string, Record<string, string>> = {
 	en,
 	tn_latn,
-	tn_arab,
-	fr,
-	ar
+	tn_arab
 }
 
 let currentAppLang = 'en'

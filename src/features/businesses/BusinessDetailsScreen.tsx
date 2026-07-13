@@ -12,7 +12,7 @@ import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/busines
 import { getUserBySlug } from '@/features/users/users.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
-import { getCaliberLabel } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
@@ -90,13 +90,21 @@ const ProductCard = ({
 				</Text>
 
 				{/* Specifications (Caliber & Origin) */}
-				{(product.specs?.caliber || product.specs?.origin?.city) && (
+				{(product.specs?.caliber || product.specs?.origin?.city || product.specs?.harvest) && (
 					<View style={styles.specsCardRow}>
 						{product.specs?.caliber ? (
 							<View style={[styles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="options-outline" size={10} color={colors.primary} />
+								<Ionicons name="fish" size={getCaliberIconSize(product.specs.caliber, 'chip')} color={colors.primary} />
 								<Text style={[styles.caliberChipText, { color: colors.primary }]} numberOfLines={1}>
 									{getCaliberLabel(product.specs.caliber)}
+								</Text>
+							</View>
+						) : null}
+						{product.specs?.harvest ? (
+							<View style={[styles.harvestChip, { backgroundColor: colors.success + '15' }]}>
+								<Ionicons name={getHarvestIcon(product.specs?.harvest)} size={12} color={colors.success} />
+								<Text style={[styles.harvestChipText, { color: colors.success }]} numberOfLines={1}>
+									{getHarvestLabel(product.specs.harvest)}
 								</Text>
 							</View>
 						) : null}
@@ -905,5 +913,17 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 		originChipText: {
 			fontSize: 10,
 			fontWeight: '600'
+		},
+		harvestChip: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			borderRadius: 6,
+			gap: 3
+		},
+		harvestChipText: {
+			fontSize: 10,
+			fontWeight: '700'
 		}
 	})

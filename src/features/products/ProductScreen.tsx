@@ -78,6 +78,7 @@ export default function ProductScreen() {
 
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
+	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
 	const [originStreet, setOriginStreet] = useState('')
 	const [originCity, setOriginCity] = useState('')
 	const [originRegion, setOriginRegion] = useState('')
@@ -103,6 +104,7 @@ export default function ProductScreen() {
 		setMinThreshold(prod.stock?.minThreshold?.toString() || '10')
 		setUploadedGallery(prod.media?.gallery || [])
 		setCaliber((prod.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
+		setHarvest(prod.specs?.harvest || 'farm')
 		setOriginStreet(prod.specs?.origin?.street || '')
 		setOriginCity(prod.specs?.origin?.city || '')
 		setOriginRegion(prod.specs?.origin?.region || '')
@@ -411,6 +413,7 @@ export default function ProductScreen() {
 			const res = await updateProduct(productSlug!, {
 				specs: {
 					caliber,
+					harvest,
 					origin: {
 						street: originStreet.trim() || undefined,
 						city: originCity.trim() || undefined,
@@ -823,6 +826,8 @@ export default function ProductScreen() {
 					translate={translate}
 					caliber={caliber}
 					setCaliber={setCaliber}
+					harvest={harvest}
+					setHarvest={setHarvest}
 					originStreet={originStreet}
 					setOriginStreet={setOriginStreet}
 					originCity={originCity}

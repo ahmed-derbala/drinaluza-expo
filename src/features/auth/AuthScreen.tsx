@@ -22,7 +22,7 @@ import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, sig
 
 // ─── Language config ──────────────────────────────────────────────────────────
 interface LanguageConfig {
-	code: 'tn_arab' | 'tn_latn' | 'en' | 'fr' | 'ar'
+	code: 'tn_arab' | 'tn_latn' | 'en'
 	flag: string
 	badge?: string
 	label: string
@@ -31,9 +31,7 @@ interface LanguageConfig {
 const LANGUAGES_LIST: LanguageConfig[] = [
 	{ code: 'tn_arab', flag: '🇹🇳', badge: 'ع', label: 'Tunisian Arabic' },
 	{ code: 'tn_latn', flag: '🇹🇳', badge: 'A', label: 'Tunisian Latin' },
-	{ code: 'en', flag: '🇺🇸', label: 'English' },
-	{ code: 'fr', flag: '🇫🇷', label: 'French' },
-	{ code: 'ar', flag: '🇸🇦', label: 'Arabic' }
+	{ code: 'en', flag: '🇺🇸', label: 'English' }
 ]
 
 // ─── Static stylesheet — defined ONCE at module level, never recreated ────────

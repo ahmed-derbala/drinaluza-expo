@@ -16,3 +16,23 @@ export const getCaliberLabel = (val?: number): string => {
 			return ''
 	}
 }
+
+export const getHarvestLabel = (val?: 'wild' | 'farm'): string => {
+	switch (val) {
+		case 'wild':
+			return translate('harvest_wild', 'Wild')
+		case 'farm':
+			return translate('harvest_farm', 'Farm')
+		default:
+			return ''
+	}
+}
+
+export const getHarvestIcon = (val?: 'wild' | 'farm'): 'water-outline' | 'leaf' => {
+	return val === 'wild' ? 'water-outline' : 'leaf'
+}
+
+export const getCaliberIconSize = (caliber: number | undefined, variant: 'chip' | 'selector' | 'badge'): number => {
+	const bases = { chip: 6, selector: 8, badge: 12 }
+	return bases[variant] + 2.2 ** (caliber || 3)
+}

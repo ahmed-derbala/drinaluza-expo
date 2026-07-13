@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Product } from '@/features/businesses/businesses.interface'
-import { getCaliberLabel } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import { useTheme, createShadow } from '@/core/theme'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
@@ -114,12 +114,18 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 				)}
 
 				{/* Specifications (Caliber & Origin) */}
-				{(item.specs?.caliber || item.specs?.origin?.city) && (
+				{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest) && (
 					<View style={cardStyles.specsCardRow}>
 						{item.specs?.caliber ? (
 							<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="options-outline" size={10} color={colors.primary} />
+								<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
 								<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber)}</Text>
+							</View>
+						) : null}
+						{item.specs?.harvest ? (
+							<View style={[cardStyles.harvestChip, { backgroundColor: colors.success + '15' }]}>
+								<Ionicons name={getHarvestIcon(item.specs?.harvest)} size={12} color={colors.success} />
+								<Text style={[cardStyles.harvestChipText, { color: colors.success }]}>{getHarvestLabel(item.specs.harvest)}</Text>
 							</View>
 						) : null}
 						{item.specs?.origin?.city ? (
@@ -271,6 +277,18 @@ const cardStyles = StyleSheet.create({
 	originChipText: {
 		fontSize: 10,
 		fontWeight: '600'
+	},
+	harvestChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 6,
+		gap: 3
+	},
+	harvestChipText: {
+		fontSize: 10,
+		fontWeight: '700'
 	}
 })
 

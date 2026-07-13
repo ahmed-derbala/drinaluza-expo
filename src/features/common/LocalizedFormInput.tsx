@@ -18,7 +18,7 @@ export interface LocalizedFormInputProps {
 	/**
 	 * Localized language configuration.
 	 */
-	lang: 'en' | 'tn_latn' | 'tn_arab' | 'fr' | 'ar'
+	lang: 'en' | 'tn_latn' | 'tn_arab'
 	/**
 	 * Optional custom input placeholder.
 	 */
@@ -48,10 +48,6 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 				return { flag: '🇹🇳', badge: 'ع' }
 			case 'tn_latn':
 				return { flag: '🇹🇳', badge: 'A' }
-			case 'fr':
-				return { flag: '🇫🇷', badge: 'F' }
-			case 'ar':
-				return { flag: '🇸🇦', badge: 'ع' }
 			case 'en':
 			default:
 				return { flag: '🇺🇸', badge: '' }
@@ -59,7 +55,7 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 	}
 
 	const { flag, badge } = getFlagDetails()
-	const isRtl = lang === 'tn_arab' || lang === 'ar'
+	const isRtl = lang === 'tn_arab'
 
 	return (
 		<View style={[styles.fieldContainer, style]}>

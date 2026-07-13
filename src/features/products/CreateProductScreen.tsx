@@ -56,6 +56,7 @@ export default function CreateProductScreen() {
 
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
+	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
 	const [originStreet, setOriginStreet] = useState('')
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
@@ -275,6 +276,7 @@ export default function CreateProductScreen() {
 				},
 				specs: {
 					caliber,
+					harvest,
 					origin: {
 						street: originStreet.trim() || undefined,
 						city: originCity.trim() || undefined,
@@ -427,6 +429,8 @@ export default function CreateProductScreen() {
 						translate={translate}
 						caliber={caliber}
 						setCaliber={setCaliber}
+						harvest={harvest}
+						setHarvest={setHarvest}
 						originStreet={originStreet}
 						setOriginStreet={setOriginStreet}
 						originCity={originCity}

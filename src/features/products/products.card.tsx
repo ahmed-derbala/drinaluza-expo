@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, ScrollView } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
-import { getCaliberLabel } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
@@ -302,77 +302,77 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 			{/* ── Body ── */}
 			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
-				<Text style={styles.productName} numberOfLines={2}>
-					{mainName}
-				</Text>
-
-				{secondaryNames.length > 0 && (
-					<Text style={styles.altName} numberOfLines={2}>
-						{secondaryNames.join(' · ')}
+				<View style={styles.bodyTop}>
+					<Text style={styles.productName} numberOfLines={2}>
+						{mainName}
 					</Text>
-				)}
 
-				{/* Rating */}
-				{rating > 0 && (
-					<View style={styles.ratingRow}>
-						{[1, 2, 3, 4, 5].map((star) => (
-							<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
-						))}
-						<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-						<Text style={styles.ratingCount}>({ratingCount})</Text>
-					</View>
-				)}
+					{secondaryNames.length > 0 && (
+						<Text style={styles.altName} numberOfLines={1}>
+							{secondaryNames.join(' · ')}
+						</Text>
+					)}
 
-				{/* Specifications (Caliber & Origin) */}
-				{(item.specs?.caliber || item.specs?.origin?.city) && (
-					<View style={styles.specsCardRow}>
-						{item.specs?.caliber ? (
-							<View style={[styles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="options-outline" size={10} color={colors.primary} />
-								<Text style={[styles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber)}</Text>
-							</View>
-						) : null}
-						{item.specs?.origin?.city ? (
-							<View style={[styles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)' }]}>
-								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-								<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
-							</View>
-						) : null}
-					</View>
-				)}
+					{/* Specs row: caliber + harvest + origin */}
+					{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
+						<View style={styles.specsIconRow}>
+							{item.specs?.caliber ? <Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} /> : null}
+							{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
+							{item.specs?.origin?.city ? (
+								<>
+									<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+									<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+								</>
+							) : null}
+						</View>
+					)}
 
-				{/* Price */}
-				<View style={styles.priceRow}>
-					<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
-						{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
-					</Text>
-					{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+					{/* Rating */}
+					{rating > 0 && (
+						<View style={styles.ratingRow}>
+							{[1, 2, 3, 4, 5].map((star) => (
+								<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
+							))}
+							<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+							<Text style={styles.ratingCount}>({ratingCount})</Text>
+						</View>
+					)}
 				</View>
 
-				{/* Quantity + Cart action */}
-				{purchaseAllowed && isActive && !isOutOfStock && (
-					<View style={styles.actionRow}>
-						<View style={styles.qtyControl}>
-							<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-								<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
-							</TouchableOpacity>
-							<Text style={styles.qtyValue}>{quantity}</Text>
-							<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-								<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
+				<View style={styles.bodyBottom}>
+					{/* Price */}
+					<View style={styles.priceRow}>
+						<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
+							{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
+						</Text>
+						{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+					</View>
+
+					{/* Quantity + Cart action */}
+					{purchaseAllowed && isActive && !isOutOfStock && (
+						<View style={styles.actionRow}>
+							<View style={styles.qtyControl}>
+								<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
+									<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
+								</TouchableOpacity>
+								<Text style={styles.qtyValue}>{quantity}</Text>
+								<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
+									<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
+								</TouchableOpacity>
+							</View>
+							<TouchableOpacity
+								style={styles.cartBtn}
+								onPress={(e) => {
+									e.stopPropagation?.()
+									addToCart(item, quantity)
+								}}
+								activeOpacity={0.8}
+							>
+								<MaterialIcons name="add-shopping-cart" size={16} color="#ffffff" />
 							</TouchableOpacity>
 						</View>
-						<TouchableOpacity
-							style={styles.cartBtn}
-							onPress={(e) => {
-								e.stopPropagation?.()
-								addToCart(item, quantity)
-							}}
-							activeOpacity={0.8}
-						>
-							<MaterialIcons name="add-shopping-cart" size={16} color="#ffffff" />
-						</TouchableOpacity>
-					</View>
-				)}
+					)}
+				</View>
 			</View>
 		</Pressable>
 	)
@@ -497,7 +497,15 @@ const styles = StyleSheet.create({
 	},
 	// ── Body ──
 	body: {
+		flex: 1,
+		justifyContent: 'space-between'
+	},
+	bodyTop: {
 		gap: 6
+	},
+	bodyBottom: {
+		gap: 4,
+		marginTop: 8
 	},
 	bodyNormal: {
 		padding: 14
@@ -592,6 +600,11 @@ const styles = StyleSheet.create({
 			} as any
 		})
 	},
+	specsIconRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 5
+	},
 	specsCardRow: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',
@@ -624,6 +637,18 @@ const styles = StyleSheet.create({
 	originChipText: {
 		fontSize: 10,
 		fontWeight: '600'
+	},
+	harvestChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 4,
+		borderRadius: 6,
+		gap: 3
+	},
+	harvestChipText: {
+		fontSize: 10,
+		fontWeight: '700'
 	},
 	carouselScrollView: {
 		flex: 1

@@ -16,7 +16,7 @@ import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { updateProduct } from '@/features/products/products.api'
 import { Product } from '@/features/businesses/businesses.interface'
 import { LinearGradient } from 'expo-linear-gradient'
-import { getCaliberLabel } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 
 // Breakpoints for responsive grid layout
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
@@ -218,12 +218,18 @@ export default function BusinessDashboardProductsScreen() {
 						</View>
 
 						{/* Specifications (Caliber & Origin) */}
-						{(item.specs?.caliber || item.specs?.origin?.city) && (
+						{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest) && (
 							<View style={cardStyles.specsCardRow}>
 								{item.specs?.caliber ? (
 									<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-										<Ionicons name="options-outline" size={10} color={colors.primary} />
+										<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
 										<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber as any)}</Text>
+									</View>
+								) : null}
+								{item.specs?.harvest ? (
+									<View style={[cardStyles.harvestChip, { backgroundColor: colors.success + '15' }]}>
+										<Ionicons name={getHarvestIcon(item.specs?.harvest)} size={12} color={colors.success} />
+										<Text style={[cardStyles.harvestChipText, { color: colors.success }]}>{getHarvestLabel(item.specs.harvest)}</Text>
 									</View>
 								) : null}
 								{item.specs?.origin?.city ? (
@@ -729,6 +735,18 @@ const cardStyles = StyleSheet.create({
 	originChipText: {
 		fontSize: 10,
 		fontWeight: '600'
+	},
+	harvestChip: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		paddingHorizontal: 8,
+		paddingVertical: 3,
+		borderRadius: 6,
+		gap: 3
+	},
+	harvestChipText: {
+		fontSize: 10,
+		fontWeight: '700'
 	},
 	rightColumn: {
 		alignItems: 'flex-end',

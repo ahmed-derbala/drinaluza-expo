@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { getCaliberLabel } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import AddressForm from '@/features/common/AddressForm'
 
 export interface ProductSpecsSectionProps {
@@ -11,6 +11,8 @@ export interface ProductSpecsSectionProps {
 	// If editable is true
 	caliber?: 1 | 2 | 3 | 4 | 5
 	setCaliber?: (val: 1 | 2 | 3 | 4 | 5) => void
+	harvest?: 'wild' | 'farm'
+	setHarvest?: (val: 'wild' | 'farm') => void
 	originStreet?: string
 	setOriginStreet?: (val: string) => void
 	originCity?: string
@@ -24,6 +26,7 @@ export interface ProductSpecsSectionProps {
 	// If editable is false (view mode)
 	specs?: {
 		caliber?: number
+		harvest?: 'wild' | 'farm'
 		origin?: {
 			street?: string
 			city?: string
@@ -43,6 +46,8 @@ export default function ProductSpecsSection({
 	translate,
 	caliber = 3,
 	setCaliber,
+	harvest = 'farm',
+	setHarvest,
 	originStreet = '',
 	setOriginStreet,
 	originCity = 'Ellouza',
@@ -93,9 +98,24 @@ export default function ProductSpecsSection({
 								style={[styles.caliberButton, caliber === val && { backgroundColor: colors.primary, borderColor: colors.primary }]}
 								onPress={() => setCaliber && setCaliber(val)}
 							>
-								<Text numberOfLines={1} adjustsFontSizeToFit style={[styles.caliberButtonText, caliber === val && { color: '#ffffff' }]}>
-									{getCaliberLabel(val)}
-								</Text>
+								<Ionicons name={caliber === val ? 'fish' : 'fish-outline'} size={getCaliberIconSize(val, 'selector')} color={caliber === val ? '#ffffff' : colors.primary} />
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+
+				{/* Harvest Selection */}
+				<View style={styles.fieldContainer}>
+					<Text style={styles.fieldLabel}>{translate('harvest', 'Harvest')}</Text>
+					<View style={styles.harvestContainer}>
+						{(['farm', 'wild'] as const).map((val) => (
+							<TouchableOpacity
+								key={val}
+								style={[styles.harvestButton, harvest === val && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+								onPress={() => setHarvest && setHarvest(val)}
+							>
+								<Ionicons name={getHarvestIcon(val)} size={16} color={harvest === val ? '#ffffff' : colors.primary} />
+								<Text style={[styles.harvestButtonText, harvest === val && { color: '#ffffff' }]}>{getHarvestLabel(val)}</Text>
 							</TouchableOpacity>
 						))}
 					</View>
@@ -128,7 +148,7 @@ export default function ProductSpecsSection({
 			<View style={styles.metaCardHeader}>
 				<View style={styles.metaCardTitleWrap}>
 					<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
-						<Ionicons name="options-outline" size={16} color={colors.primary} />
+						<Ionicons name="fish-outline" size={22} color={colors.primary} />
 					</View>
 					<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('specifications', 'Specifications')}</Text>
 				</View>
@@ -143,7 +163,17 @@ export default function ProductSpecsSection({
 			<View style={styles.specDetailRow}>
 				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber', 'Caliber')}</Text>
 				<View style={[styles.caliberBadge, { backgroundColor: colors.primary + '15' }]}>
+					<Ionicons name="fish" size={getCaliberIconSize(specs.caliber, 'badge')} color={colors.primary} />
 					<Text style={[styles.caliberText, { color: colors.primary }]}>{getCaliberLabel(specs.caliber || 3)}</Text>
+				</View>
+			</View>
+
+			{/* Harvest */}
+			<View style={styles.specDetailRow}>
+				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('harvest', 'Harvest')}</Text>
+				<View style={[styles.harvestBadge, { backgroundColor: colors.success + '15' }]}>
+					<Ionicons name={getHarvestIcon(specs.harvest)} size={14} color={colors.success} />
+					<Text style={[styles.harvestText, { color: colors.success }]}>{getHarvestLabel(specs.harvest || 'farm')}</Text>
 				</View>
 			</View>
 
@@ -202,16 +232,41 @@ const createStyles = (colors: any) =>
 		},
 		caliberButton: {
 			flex: 1,
-			height: 38,
+			height: 48,
 			borderRadius: 10,
 			borderWidth: 1.5,
 			borderColor: colors.border,
 			justifyContent: 'center',
 			alignItems: 'center',
-			paddingHorizontal: 2
+			paddingHorizontal: 2,
+			gap: 2
 		},
 		caliberButtonText: {
 			fontSize: 12,
+			fontWeight: '700',
+			color: colors.textSecondary
+		},
+		harvestContainer: {
+			flexDirection: 'row',
+			gap: 8,
+			justifyContent: 'space-between',
+			alignItems: 'center',
+			width: '100%'
+		},
+		harvestButton: {
+			flex: 1,
+			height: 48,
+			borderRadius: 10,
+			borderWidth: 1.5,
+			borderColor: colors.border,
+			flexDirection: 'row',
+			justifyContent: 'center',
+			alignItems: 'center',
+			gap: 6,
+			paddingHorizontal: 8
+		},
+		harvestButtonText: {
+			fontSize: 13,
 			fontWeight: '700',
 			color: colors.textSecondary
 		},
@@ -281,11 +336,26 @@ const createStyles = (colors: any) =>
 			fontWeight: '500'
 		},
 		caliberBadge: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
 			paddingHorizontal: 8,
 			paddingVertical: 4,
 			borderRadius: 8
 		},
 		caliberText: {
+			fontSize: 12,
+			fontWeight: '700'
+		},
+		harvestBadge: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			borderRadius: 8
+		},
+		harvestText: {
 			fontSize: 12,
 			fontWeight: '700'
 		},

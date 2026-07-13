@@ -62,6 +62,7 @@ export default function BusinessDashboardProductDetailScreen() {
 	const [uploadingPhoto, setUploadingPhoto] = useState(false)
 
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
+	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
 	const [originStreet, setOriginStreet] = useState('')
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
@@ -92,6 +93,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		setUploadedGallery(prod.media?.gallery || [])
 
 		setCaliber((prod.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
+		setHarvest(prod.specs?.harvest || 'farm')
 		setOriginStreet(prod.specs?.origin?.street || '')
 		setOriginCity(prod.specs?.origin?.city || 'Ellouza')
 		setOriginRegion(prod.specs?.origin?.region || 'Sfax')
@@ -275,6 +277,7 @@ export default function BusinessDashboardProductDetailScreen() {
 			const res = await updateProduct(productSlug!, {
 				specs: {
 					caliber,
+					harvest,
 					origin: {
 						street: originStreet.trim() || undefined,
 						city: originCity.trim() || undefined,
@@ -298,6 +301,7 @@ export default function BusinessDashboardProductDetailScreen() {
 	const cancelSpecs = () => {
 		if (product) {
 			setCaliber((product.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
+			setHarvest(product.specs?.harvest || 'farm')
 			setOriginStreet(product.specs?.origin?.street || '')
 			setOriginCity(product.specs?.origin?.city || 'Ellouza')
 			setOriginRegion(product.specs?.origin?.region || 'Sfax')
@@ -613,6 +617,8 @@ export default function BusinessDashboardProductDetailScreen() {
 							translate={translate}
 							caliber={caliber}
 							setCaliber={setCaliber}
+							harvest={harvest}
+							setHarvest={setHarvest}
 							originStreet={originStreet}
 							setOriginStreet={setOriginStreet}
 							originCity={originCity}
