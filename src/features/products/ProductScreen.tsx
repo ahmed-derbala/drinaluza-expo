@@ -592,7 +592,7 @@ export default function ProductScreen() {
 		return (
 			<View style={styles.heroContainer}>
 				<View style={[styles.imageContainer, { height: imageHeight }]}>
-					<SmartImage source={currentUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
+					<SmartImage source={currentUrl} style={styles.productImage} resizeMode="cover" entityType="product" enableFullscreenPreview={true} />
 					{!isAvailable && (
 						<View style={styles.unavailableOverlay}>
 							<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>

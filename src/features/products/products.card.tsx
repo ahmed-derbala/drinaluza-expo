@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
 import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -42,23 +42,13 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		return list
 	}, [item.media, item.defaultProduct])
 
-	const scrollViewRef = useRef<ScrollView>(null)
 	const autoplayTimerRef = useRef<any>(null)
-	const isProgrammaticScrollRef = useRef(false)
 
 	const startAutoplay = () => {
 		stopAutoplay()
-		if (!autoplayEnabled || images.length <= 1 || cardWidth <= 0) return
+		if (!autoplayEnabled || images.length <= 1) return
 		autoplayTimerRef.current = setInterval(() => {
-			setActiveImageIndex((prevIndex) => {
-				const nextIndex = (prevIndex + 1) % images.length
-				isProgrammaticScrollRef.current = true
-				scrollViewRef.current?.scrollTo({
-					x: nextIndex * cardWidth,
-					animated: true
-				})
-				return nextIndex
-			})
+			setActiveImageIndex((prevIndex) => (prevIndex + 1) % images.length)
 		}, 4000)
 	}
 
@@ -72,56 +62,19 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	useEffect(() => {
 		startAutoplay()
 		return () => stopAutoplay()
-	}, [images.length, cardWidth, autoplayEnabled])
+	}, [images.length, autoplayEnabled])
 
 	const handleLayout = (event: any) => {
 		const { width: layoutWidth } = event.nativeEvent.layout
 		setCardWidth(layoutWidth)
 	}
 
-	const handleScroll = (event: any) => {
-		const contentOffset = event.nativeEvent.contentOffset
-		const viewSize = event.nativeEvent.layoutMeasurement
-		if (viewSize.width > 0) {
-			const index = Math.round(contentOffset.x / viewSize.width)
-			setActiveImageIndex(index)
-
-			if (isProgrammaticScrollRef.current) {
-				isProgrammaticScrollRef.current = false
-			} else {
-				// User interacted (manual swipe), stop autoplay permanently
-				stopAutoplay()
-				setAutoplayEnabled(false)
-			}
-		}
-	}
-
-	const handlePrev = (e: any) => {
-		e.stopPropagation()
-		// User interacted (button click), stop autoplay permanently
+	const handlePreviewPress = (e: any, index: number) => {
+		e.stopPropagation?.()
+		// User interacted (preview tap), stop autoplay permanently
 		stopAutoplay()
 		setAutoplayEnabled(false)
-		const prevIndex = (activeImageIndex - 1 + images.length) % images.length
-		setActiveImageIndex(prevIndex)
-		isProgrammaticScrollRef.current = true
-		scrollViewRef.current?.scrollTo({
-			x: prevIndex * cardWidth,
-			animated: true
-		})
-	}
-
-	const handleNext = (e: any) => {
-		e.stopPropagation()
-		// User interacted (button click), stop autoplay permanently
-		stopAutoplay()
-		setAutoplayEnabled(false)
-		const nextIndex = (activeImageIndex + 1) % images.length
-		setActiveImageIndex(nextIndex)
-		isProgrammaticScrollRef.current = true
-		scrollViewRef.current?.scrollTo({
-			x: nextIndex * cardWidth,
-			animated: true
-		})
+		setActiveImageIndex(index)
 	}
 
 	const minQuantity = item.unit?.min || 1
@@ -196,7 +149,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable style={[styles.card, { backgroundColor: colors.card }]} onPress={handleProductPress} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
+		<Pressable style={[styles.card, { backgroundColor: colors.card }]} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
 			{/* ── Business header ── */}
 			<View style={styles.bizRow}>
 				<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
@@ -238,50 +191,22 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 			)}
 
 			{/* ── Product image ── */}
-			<View style={styles.imgWrap} onLayout={handleLayout}>
-				{images.length > 1 && cardWidth > 0 ? (
+			<TouchableOpacity style={styles.imgWrap} onLayout={handleLayout} onPress={handleProductPress} activeOpacity={0.92}>
+				{images.length > 1 ? (
 					<>
-						<ScrollView
-							ref={scrollViewRef}
-							horizontal
-							pagingEnabled
-							showsHorizontalScrollIndicator={false}
-							onMomentumScrollEnd={handleScroll}
-							style={styles.carouselScrollView}
-							scrollEventThrottle={16}
-						>
+						<SmartImage source={images[activeImageIndex]} style={styles.img} resizeMode="cover" entityType="product" />
+
+						{/* Thumbnail previews */}
+						<View style={styles.previewsContainer}>
 							{images.map((url, index) => (
-								<View key={index} style={[styles.carouselSlide, { width: cardWidth }]}>
-									<SmartImage source={url} style={styles.img} resizeMode="cover" entityType="product" />
-								</View>
-							))}
-						</ScrollView>
-
-						{/* Web Arrow Buttons */}
-						{Platform.OS === 'web' && (
-							<>
-								<TouchableOpacity style={[styles.carouselArrow, styles.carouselArrowLeft]} onPress={handlePrev} activeOpacity={0.8}>
-									<Ionicons name="chevron-back" size={18} color="#FFF" />
-								</TouchableOpacity>
-								<TouchableOpacity style={[styles.carouselArrow, styles.carouselArrowRight]} onPress={handleNext} activeOpacity={0.8}>
-									<Ionicons name="chevron-forward" size={18} color="#FFF" />
-								</TouchableOpacity>
-							</>
-						)}
-
-						{/* Carousel Dots Indicator */}
-						<View style={styles.carouselDotsContainer}>
-							{images.map((_, index) => (
-								<View
+								<TouchableOpacity
 									key={index}
-									style={[
-										styles.carouselDot,
-										{
-											backgroundColor: index === activeImageIndex ? colors.primary : 'rgba(255, 255, 255, 0.4)',
-											width: index === activeImageIndex ? 12 : 6
-										}
-									]}
-								/>
+									onPress={(e) => handlePreviewPress(e, index)}
+									activeOpacity={0.8}
+									style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : 'rgba(255, 255, 255, 0.3)', opacity: index === activeImageIndex ? 1 : 0.6 }]}
+								>
+									<SmartImage source={url} style={styles.previewImg} resizeMode="cover" entityType="product" />
+								</TouchableOpacity>
 							))}
 						</View>
 					</>
@@ -298,7 +223,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						</View>
 					</View>
 				)}
-			</View>
+			</TouchableOpacity>
 
 			{/* ── Body ── */}
 			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
@@ -307,50 +232,21 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						{mainName}
 					</Text>
 
-					{secondaryNames.length > 0 && (
-						<Text style={styles.altName} numberOfLines={1}>
-							{secondaryNames.join(' · ')}
-						</Text>
-					)}
-
-					{/* Specs row: caliber + harvest + origin */}
-					{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
-						<View style={styles.specsIconRow}>
-							{item.specs?.caliber ? <Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} /> : null}
-							{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
-							{item.specs?.origin?.city ? (
-								<>
-									<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-									<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
-								</>
-							) : null}
-						</View>
-					)}
-
-					{/* Rating */}
-					{rating > 0 && (
-						<View style={styles.ratingRow}>
-							{[1, 2, 3, 4, 5].map((star) => (
-								<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
-							))}
-							<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-							<Text style={styles.ratingCount}>({ratingCount})</Text>
-						</View>
-					)}
-				</View>
-
-				<View style={styles.bodyBottom}>
-					{/* Price */}
-					<View style={styles.priceRow}>
-						<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
-							{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
-						</Text>
-						{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
-					</View>
-
-					{/* Quantity + Cart action */}
-					{purchaseAllowed && isActive && !isOutOfStock && (
-						<View style={styles.actionRow}>
+					{/* Specs row: caliber + harvest + origin + stepper */}
+					<View style={styles.specsStepperRow}>
+						{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
+							<View style={styles.specsIconRow}>
+								{item.specs?.caliber ? <Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} /> : null}
+								{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
+								{item.specs?.origin?.city ? (
+									<>
+										<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+										<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+									</>
+								) : null}
+							</View>
+						)}
+						{purchaseAllowed && isActive && !isOutOfStock && (
 							<View style={styles.qtyControl}>
 								<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
 									<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
@@ -360,17 +256,44 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 									<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
 								</TouchableOpacity>
 							</View>
-							<TouchableOpacity
-								style={styles.cartBtn}
-								onPress={(e) => {
-									e.stopPropagation?.()
-									addToCart(item, quantity)
-								}}
-								activeOpacity={0.8}
-							>
-								<MaterialIcons name="add-shopping-cart" size={16} color="#ffffff" />
-							</TouchableOpacity>
-						</View>
+						)}
+					</View>
+
+					{/* Rating — always rendered for stable layout */}
+					<View style={styles.ratingRow}>
+						{rating > 0 ? (
+							<>
+								{[1, 2, 3, 4, 5].map((star) => (
+									<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
+								))}
+								<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+								<Text style={styles.ratingCount}>({ratingCount})</Text>
+							</>
+						) : null}
+					</View>
+				</View>
+
+				<View style={styles.bodyBottom}>
+					{/* Price bottom-left */}
+					<View style={styles.priceRow}>
+						<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
+							{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
+						</Text>
+						{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+					</View>
+
+					{purchaseAllowed && isActive && !isOutOfStock && (
+						<TouchableOpacity
+							style={styles.cartBtn}
+							onPress={(e) => {
+								e.stopPropagation?.()
+								addToCart(item, quantity)
+							}}
+							activeOpacity={0.8}
+							accessibilityLabel={translate('add_to_cart', 'Add to cart')}
+						>
+							<MaterialIcons name="add-shopping-cart" size={18} color="#ffffff" />
+						</TouchableOpacity>
 					)}
 				</View>
 			</View>
@@ -402,16 +325,16 @@ const styles = StyleSheet.create({
 	bizRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		paddingHorizontal: 12,
-		paddingTop: 12,
-		paddingBottom: 4
+		paddingHorizontal: 10,
+		paddingTop: 8,
+		paddingBottom: 2
 	},
 	bizContactRow: {
 		flexDirection: 'row',
 		justifyContent: 'flex-end',
-		paddingHorizontal: 12,
-		paddingBottom: 8,
-		marginTop: -4
+		paddingHorizontal: 10,
+		paddingBottom: 4,
+		marginTop: -6
 	},
 	bizLeft: {
 		flexDirection: 'row',
@@ -451,8 +374,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 4,
-		paddingHorizontal: 12,
-		paddingBottom: 8
+		paddingHorizontal: 10,
+		paddingBottom: 4
 	},
 	bizAddress: {
 		flex: 1,
@@ -462,7 +385,7 @@ const styles = StyleSheet.create({
 	// ── Image ──
 	imgWrap: {
 		width: '100%',
-		aspectRatio: 1.35,
+		aspectRatio: 1.6,
 		position: 'relative'
 	},
 	img: {
@@ -497,21 +420,23 @@ const styles = StyleSheet.create({
 	},
 	// ── Body ──
 	body: {
-		flex: 1,
-		justifyContent: 'space-between'
+		justifyContent: 'flex-start'
 	},
 	bodyTop: {
-		gap: 6
+		gap: 4
 	},
 	bodyBottom: {
-		gap: 4,
-		marginTop: 8
+		flexDirection: 'row',
+		alignItems: 'flex-end',
+		justifyContent: 'space-between',
+		gap: 8,
+		marginTop: 4
 	},
 	bodyNormal: {
-		padding: 14
+		padding: 10
 	},
 	bodySmall: {
-		padding: 12
+		padding: 8
 	},
 	altName: {
 		fontSize: 11,
@@ -522,7 +447,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 3,
-		marginTop: 2
+		marginTop: 2,
+		height: 16
 	},
 	ratingValue: {
 		fontSize: 11,
@@ -535,10 +461,11 @@ const styles = StyleSheet.create({
 		color: 'rgba(255, 255, 255, 0.35)'
 	},
 	priceRow: {
+		flex: 1,
+		minWidth: 0,
 		flexDirection: 'row',
 		alignItems: 'baseline',
-		gap: 3,
-		marginTop: 4
+		gap: 3
 	},
 	price: {
 		fontWeight: '800',
@@ -586,6 +513,10 @@ const styles = StyleSheet.create({
 		minWidth: 26,
 		textAlign: 'center'
 	},
+	actionsColumn: {
+		alignItems: 'flex-end',
+		gap: 4
+	},
 	cartBtn: {
 		width: 36,
 		height: 36,
@@ -600,10 +531,25 @@ const styles = StyleSheet.create({
 			} as any
 		})
 	},
+	cartBtnText: {
+		fontSize: 13,
+		fontWeight: '700',
+		color: '#ffffff'
+	},
+	specsStepperRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: 8,
+		minHeight: 32,
+		marginBottom: 6
+	},
 	specsIconRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 5
+		gap: 5,
+		flex: 1,
+		overflow: 'hidden'
 	},
 	specsCardRow: {
 		flexDirection: 'row',
@@ -650,50 +596,31 @@ const styles = StyleSheet.create({
 		fontSize: 10,
 		fontWeight: '700'
 	},
-	carouselScrollView: {
-		flex: 1
-	},
-	carouselSlide: {
-		height: '100%'
-	},
-	carouselDotsContainer: {
+	previewsContainer: {
 		position: 'absolute',
-		bottom: 12,
+		bottom: 8,
+		left: 8,
+		right: 8,
 		flexDirection: 'row',
-		alignSelf: 'center',
-		gap: 6,
-		zIndex: 10,
-		backgroundColor: 'rgba(0, 0, 0, 0.35)',
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 10
-	},
-	carouselDot: {
-		height: 6,
-		borderRadius: 3
-	},
-	carouselArrow: {
-		position: 'absolute',
-		top: '50%',
-		marginTop: -16,
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		backgroundColor: 'rgba(0, 0, 0, 0.45)',
 		justifyContent: 'center',
-		alignItems: 'center',
-		zIndex: 20,
+		gap: 6,
+		zIndex: 10
+	},
+	previewThumb: {
+		width: 40,
+		height: 40,
+		borderRadius: 8,
+		borderWidth: 2,
+		overflow: 'hidden',
+		backgroundColor: 'rgba(0, 0, 0, 0.35)',
 		...Platform.select({
 			web: {
-				cursor: 'pointer',
-				userSelect: 'none'
+				cursor: 'pointer'
 			} as any
 		})
 	},
-	carouselArrowLeft: {
-		left: 8
-	},
-	carouselArrowRight: {
-		right: 8
+	previewImg: {
+		width: '100%',
+		height: '100%'
 	}
 })
