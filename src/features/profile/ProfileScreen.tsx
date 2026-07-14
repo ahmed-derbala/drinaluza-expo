@@ -797,7 +797,7 @@ export default function ProfileScreen() {
 
 						<View style={styles.profileCardContent}>
 							<View style={styles.photoContainer}>
-								<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} entityType="user" enableFullscreenPreview={true} />
+								<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} resizeMode="cover" entityType="user" enableFullscreenPreview={true} />
 								<TouchableOpacity style={styles.changePhotoButton} onPress={() => toggleEdit('photo', !editMode.photo)} accessibilityLabel="Change profile photo">
 									<Ionicons name={editMode.photo ? 'close' : 'camera'} size={18} color="#fff" />
 								</TouchableOpacity>
@@ -1918,9 +1918,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		profilePhoto: {
 			width: 100,
 			height: 100,
-			borderRadius: 50,
-			borderWidth: 4,
-			borderColor: colors.card
+			borderRadius: 50
 		},
 		placeholderPhoto: {
 			width: 100,
@@ -1928,9 +1926,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderRadius: 50,
 			backgroundColor: colors.primary,
 			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 4,
-			borderColor: colors.card
+			alignItems: 'center'
 		},
 		placeholderText: {
 			color: '#fff',

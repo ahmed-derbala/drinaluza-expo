@@ -8,9 +8,21 @@ import type { SmartImageProps } from './types'
 
 /**
  * Maps legacy `resizeMode` values to expo-image's `contentFit`.
- * Always returns 'contain' to ensure images are fully displayed without cropping.
+ * Defaults to 'contain' when nothing is specified.
  */
-function resolveContentFit(_contentFit?: ImageContentFit, _resizeMode?: SmartImageProps['resizeMode']): ImageContentFit {
+function resolveContentFit(contentFit?: ImageContentFit, resizeMode?: SmartImageProps['resizeMode']): ImageContentFit {
+	if (contentFit) return contentFit
+
+	if (resizeMode) {
+		const map: Record<string, ImageContentFit> = {
+			cover: 'cover',
+			contain: 'contain',
+			stretch: 'fill',
+			center: 'none'
+		}
+		return map[resizeMode] || 'contain'
+	}
+
 	return 'contain'
 }
 

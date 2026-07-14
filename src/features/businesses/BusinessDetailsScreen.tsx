@@ -552,9 +552,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 		businessLogo: {
 			width: 120,
 			height: 120,
-			borderRadius: 60,
-			borderWidth: 4,
-			borderColor: colors.card
+			borderRadius: 60
 		},
 		brandingHeader: {
 			flexDirection: 'row',
