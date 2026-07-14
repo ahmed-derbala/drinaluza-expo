@@ -8,6 +8,7 @@ import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
 import ContactButtons from '@/features/common/ContactButtons'
 import { useTheme } from '@/core/theme'
+import { LinearGradient } from 'expo-linear-gradient'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -20,7 +21,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const router = useRouter()
 	const pathname = usePathname()
 	const { width } = useWindowDimensions()
-	const [cardWidth, setCardWidth] = useState(0)
 	const [activeImageIndex, setActiveImageIndex] = useState(0)
 	const [autoplayEnabled, setAutoplayEnabled] = useState(true)
 
@@ -63,11 +63,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		startAutoplay()
 		return () => stopAutoplay()
 	}, [images.length, autoplayEnabled])
-
-	const handleLayout = (event: any) => {
-		const { width: layoutWidth } = event.nativeEvent.layout
-		setCardWidth(layoutWidth)
-	}
 
 	const handlePreviewPress = (e: any, index: number) => {
 		e.stopPropagation?.()
@@ -150,154 +145,159 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable style={[styles.card, { backgroundColor: colors.card }]} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
-			{/* ── Business header ── */}
-			<View style={styles.bizRow}>
-				<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
-					{item.business?.media?.thumbnail?.url ? (
-						<SmartImage source={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
-					) : (
-						<View style={styles.bizAvatarFallback}>
-							<MaterialIcons name="store" size={14} color="#0EA5E9" />
-						</View>
-					)}
-					<View style={styles.bizInfo}>
-						<Text style={styles.bizName} numberOfLines={2}>
-							{localize(item.business?.name)}
-						</Text>
-						{item.business?.slug ? (
-							<Text style={styles.bizSlug} numberOfLines={2}>
-								@{item.business.slug}
-							</Text>
-						) : null}
-					</View>
-				</TouchableOpacity>
+		<Pressable style={[styles.card, { backgroundColor: colors.card }]} onPress={handleProductPress} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
+			{/* Background image */}
+			<View style={styles.bgImageContainer}>
+				<SmartImage source={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" entityType="product" />
 			</View>
 
-			{/* Address */}
-			{addressLine ? (
-				<View style={styles.addressRow}>
-					<Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.35)" />
-					<Text style={styles.bizAddress} numberOfLines={1}>
-						{addressLine}
-					</Text>
-				</View>
-			) : null}
+			{/* Gradient overlay for text readability */}
+			<LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.75)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.bgOverlay} pointerEvents="none" />
 
-			{/* Contact buttons row below name/slug */}
-			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.email || item.business?.location || item.business?.address) && (
-				<View style={styles.bizContactRow}>
-					<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
+			{/* Top content */}
+			<View style={styles.topContent}>
+				{/* ── Business header ── */}
+				<View style={styles.bizRow}>
+					<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
+						{item.business?.media?.thumbnail?.url ? (
+							<SmartImage source={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
+						) : (
+							<View style={styles.bizAvatarFallback}>
+								<MaterialIcons name="store" size={14} color="#0EA5E9" />
+							</View>
+						)}
+						<View style={styles.bizInfo}>
+							<Text style={styles.bizName} numberOfLines={2}>
+								{localize(item.business?.name)}
+							</Text>
+							{item.business?.slug ? (
+								<Text style={styles.bizSlug} numberOfLines={2}>
+									@{item.business.slug}
+								</Text>
+							) : null}
+						</View>
+					</TouchableOpacity>
+				</View>
+
+				{/* Address */}
+				{addressLine ? (
+					<View style={styles.addressRow}>
+						<Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.35)" />
+						<Text style={styles.bizAddress} numberOfLines={1}>
+							{addressLine}
+						</Text>
+					</View>
+				) : null}
+
+				{/* Contact buttons row below name/slug */}
+				{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.email || item.business?.location || item.business?.address) && (
+					<View style={styles.bizContactRow}>
+						<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
+					</View>
+				)}
+			</View>
+
+			{/* Stock overlay */}
+			{(isOutOfStock || isLowStock) && (
+				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent' }]} pointerEvents="none">
+					<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
+						<MaterialIcons name={stockIcon} size={11} color={stockColor} />
+						<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
+					</View>
 				</View>
 			)}
 
-			{/* ── Product image ── */}
-			<TouchableOpacity style={styles.imgWrap} onLayout={handleLayout} onPress={handleProductPress} activeOpacity={0.92}>
-				{images.length > 1 ? (
-					<>
-						<SmartImage source={images[activeImageIndex]} style={styles.img} resizeMode="cover" entityType="product" />
-
-						{/* Thumbnail previews */}
-						<View style={styles.previewsContainer}>
-							{images.map((url, index) => (
-								<TouchableOpacity
-									key={index}
-									onPress={(e) => handlePreviewPress(e, index)}
-									activeOpacity={0.8}
-									style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : 'rgba(255, 255, 255, 0.3)', opacity: index === activeImageIndex ? 1 : 0.6 }]}
-								>
-									<SmartImage source={url} style={styles.previewImg} resizeMode="cover" entityType="product" />
-								</TouchableOpacity>
-							))}
-						</View>
-					</>
-				) : (
-					<SmartImage source={imageUrl} style={styles.img} resizeMode="cover" entityType="product" />
-				)}
-
-				{/* Stock overlay for out-of-stock / low-stock */}
-				{(isOutOfStock || isLowStock) && (
-					<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent' }]}>
-						<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
-							<MaterialIcons name={stockIcon} size={11} color={stockColor} />
-							<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
-						</View>
-					</View>
-				)}
-			</TouchableOpacity>
-
-			{/* ── Body ── */}
-			<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
-				<View style={styles.bodyTop}>
-					<Text style={styles.productName} numberOfLines={2}>
-						{mainName}
-					</Text>
-
-					{/* Rating — always rendered for stable layout */}
-					<View style={styles.ratingRow}>
-						{rating > 0 ? (
-							<>
-								{[1, 2, 3, 4, 5].map((star) => (
-									<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
-								))}
-								<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-								<Text style={styles.ratingCount}>({ratingCount})</Text>
-							</>
-						) : null}
-					</View>
-
-					{/* Specs row: caliber + harvest + origin + stepper */}
-					<View style={styles.specsStepperRow}>
-						{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
-							<View style={styles.specsIconRow}>
-								{item.specs?.caliber ? <Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} /> : null}
-								{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
-								{item.specs?.origin?.city ? (
-									<>
-										<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-										<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
-									</>
-								) : null}
-							</View>
-						)}
-						{purchaseAllowed && isActive && !isOutOfStock && (
-							<View style={styles.qtyControl}>
-								<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-									<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
-								</TouchableOpacity>
-								<Text style={styles.qtyValue}>{quantity}</Text>
-								<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-									<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
-								</TouchableOpacity>
-							</View>
-						)}
-					</View>
-				</View>
-
-				<View style={styles.bodyBottom}>
-					{/* Price bottom-left */}
-					<View style={styles.priceRow}>
-						<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
-							{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
+			{/* Bottom content */}
+			<View style={styles.bottomContent}>
+				{/* ── Body ── */}
+				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
+					<View style={styles.bodyTop}>
+						<Text style={styles.productName} numberOfLines={2}>
+							{mainName}
 						</Text>
-						{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+
+						{/* Rating — always rendered for stable layout */}
+						<View style={styles.ratingRow}>
+							{rating > 0 ? (
+								<>
+									{[1, 2, 3, 4, 5].map((star) => (
+										<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
+									))}
+									<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+									<Text style={styles.ratingCount}>({ratingCount})</Text>
+								</>
+							) : null}
+						</View>
+
+						{/* Specs row: caliber + harvest + origin + stepper */}
+						<View style={styles.specsStepperRow}>
+							{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
+								<View style={styles.specsIconRow}>
+									{item.specs?.caliber ? <Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} /> : null}
+									{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
+									{item.specs?.origin?.city ? (
+										<>
+											<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+											<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+										</>
+									) : null}
+								</View>
+							)}
+							{purchaseAllowed && isActive && !isOutOfStock && (
+								<View style={styles.qtyControl}>
+									<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
+										<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
+									</TouchableOpacity>
+									<Text style={styles.qtyValue}>{quantity}</Text>
+									<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
+										<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
+									</TouchableOpacity>
+								</View>
+							)}
+						</View>
 					</View>
 
-					<TouchableOpacity
-						style={[styles.cartBtn, cartDisabled && styles.cartBtnDisabled]}
-						onPress={(e) => {
-							e.stopPropagation?.()
-							if (!cartDisabled) {
-								addToCart(item, quantity)
-							}
-						}}
-						activeOpacity={cartDisabled ? 1 : 0.8}
-						disabled={cartDisabled}
-						accessibilityLabel={translate('add_to_cart', 'Add to cart')}
-					>
-						<MaterialIcons name="add-shopping-cart" size={18} color="#ffffff" />
-					</TouchableOpacity>
+					<View style={styles.bodyBottom}>
+						{/* Price bottom-left */}
+						<View style={styles.priceRow}>
+							<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
+								{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
+							</Text>
+							{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+						</View>
+
+						<TouchableOpacity
+							style={[styles.cartBtn, cartDisabled && styles.cartBtnDisabled]}
+							onPress={(e) => {
+								e.stopPropagation?.()
+								if (!cartDisabled) {
+									addToCart(item, quantity)
+								}
+							}}
+							activeOpacity={cartDisabled ? 1 : 0.8}
+							disabled={cartDisabled}
+							accessibilityLabel={translate('add_to_cart', 'Add to cart')}
+						>
+							<MaterialIcons name="add-shopping-cart" size={18} color="#ffffff" />
+						</TouchableOpacity>
+					</View>
 				</View>
+
+				{/* Thumbnail previews */}
+				{images.length > 1 && (
+					<View style={styles.previewsContainer}>
+						{images.map((url, index) => (
+							<TouchableOpacity
+								key={index}
+								onPress={(e) => handlePreviewPress(e, index)}
+								activeOpacity={0.8}
+								style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : 'rgba(255, 255, 255, 0.3)', opacity: index === activeImageIndex ? 1 : 0.6 }]}
+							>
+								<SmartImage source={url} style={styles.previewImg} resizeMode="cover" entityType="product" />
+							</TouchableOpacity>
+						))}
+					</View>
+				)}
 			</View>
 		</Pressable>
 	)
@@ -311,6 +311,8 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		borderColor: '#0EA5E9',
 		overflow: 'hidden',
+		justifyContent: 'space-between',
+		minHeight: 340,
 		...Platform.select({
 			web: {
 				transition: 'transform 0.15s ease, box-shadow 0.15s ease',
@@ -384,15 +386,31 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		color: 'rgba(255, 255, 255, 0.35)'
 	},
-	// ── Image ──
-	imgWrap: {
-		width: '100%',
-		aspectRatio: 1.6,
-		position: 'relative'
+	// ── Background image ──
+	bgImageContainer: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0
 	},
-	img: {
+	bgImage: {
 		width: '100%',
 		height: '100%'
+	},
+	bgOverlay: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0
+	},
+	topContent: {
+		width: '100%'
+	},
+	bottomContent: {
+		width: '100%',
+		justifyContent: 'flex-end'
 	},
 	productName: {
 		fontSize: 15,
@@ -425,7 +443,6 @@ const styles = StyleSheet.create({
 	},
 	// ── Body ──
 	body: {
-		flex: 1,
 		justifyContent: 'space-between'
 	},
 	bodyTop: {
@@ -611,14 +628,12 @@ const styles = StyleSheet.create({
 		fontWeight: '700'
 	},
 	previewsContainer: {
-		position: 'absolute',
-		bottom: 8,
-		left: 8,
-		right: 8,
 		flexDirection: 'row',
 		justifyContent: 'center',
 		gap: 6,
-		zIndex: 10
+		marginHorizontal: 10,
+		marginTop: 8,
+		marginBottom: 8
 	},
 	previewThumb: {
 		width: 40,
