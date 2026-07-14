@@ -34,5 +34,5 @@ export const getHarvestIcon = (val?: 'wild' | 'farm'): 'water-outline' | 'leaf' 
 
 export const getCaliberIconSize = (caliber: number | undefined, variant: 'chip' | 'selector' | 'badge'): number => {
 	const bases = { chip: 6, selector: 8, badge: 12 }
-	return bases[variant] + 2.2 ** (caliber || 3)
+	return bases[variant] + 2.2 * (caliber || 3)
 }

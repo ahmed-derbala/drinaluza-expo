@@ -135,6 +135,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 	const isLowStock = stockQty > 0 && stockQty <= minThreshold
 	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
+	const cartDisabled = !purchaseAllowed || !isActive || isOutOfStock
 
 	const stockColor = isOutOfStock ? '#EF4444' : isLowStock ? '#F59E0B' : '#10B981'
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
@@ -282,19 +283,20 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
 					</View>
 
-					{purchaseAllowed && isActive && !isOutOfStock && (
-						<TouchableOpacity
-							style={styles.cartBtn}
-							onPress={(e) => {
-								e.stopPropagation?.()
+					<TouchableOpacity
+						style={[styles.cartBtn, cartDisabled && styles.cartBtnDisabled]}
+						onPress={(e) => {
+							e.stopPropagation?.()
+							if (!cartDisabled) {
 								addToCart(item, quantity)
-							}}
-							activeOpacity={0.8}
-							accessibilityLabel={translate('add_to_cart', 'Add to cart')}
-						>
-							<MaterialIcons name="add-shopping-cart" size={18} color="#ffffff" />
-						</TouchableOpacity>
-					)}
+							}
+						}}
+						activeOpacity={cartDisabled ? 1 : 0.8}
+						disabled={cartDisabled}
+						accessibilityLabel={translate('add_to_cart', 'Add to cart')}
+					>
+						<MaterialIcons name="add-shopping-cart" size={18} color="#ffffff" />
+					</TouchableOpacity>
 				</View>
 			</View>
 		</Pressable>
@@ -396,7 +398,8 @@ const styles = StyleSheet.create({
 		fontSize: 15,
 		fontWeight: '700',
 		color: '#FFF',
-		textAlign: 'left'
+		textAlign: 'left',
+		minHeight: 42
 	},
 	stockOverlay: {
 		...StyleSheet.absoluteFill,
@@ -420,7 +423,8 @@ const styles = StyleSheet.create({
 	},
 	// ── Body ──
 	body: {
-		justifyContent: 'flex-start'
+		flex: 1,
+		justifyContent: 'space-between'
 	},
 	bodyTop: {
 		gap: 4
@@ -531,6 +535,9 @@ const styles = StyleSheet.create({
 			} as any
 		})
 	},
+	cartBtnDisabled: {
+		backgroundColor: 'rgba(255, 255, 255, 0.12)'
+	},
 	cartBtnText: {
 		fontSize: 13,
 		fontWeight: '700',
@@ -541,7 +548,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		gap: 8,
-		minHeight: 32,
+		height: 32,
 		marginBottom: 6
 	},
 	specsIconRow: {
