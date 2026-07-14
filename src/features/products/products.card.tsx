@@ -188,13 +188,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						</Text>
 					</View>
 				) : null}
-
-				{/* Contact buttons row below name/slug */}
-				{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.email || item.business?.location || item.business?.address) && (
-					<View style={styles.bizContactRow}>
-						<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} />
-					</View>
-				)}
 			</View>
 
 			{/* Stock overlay */}
@@ -204,6 +197,13 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						<MaterialIcons name={stockIcon} size={11} color={stockColor} />
 						<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
 					</View>
+				</View>
+			)}
+
+			{/* Contact buttons - right side */}
+			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.location || item.business?.address) && (
+				<View style={styles.contactButtonsSide}>
+					<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} layout="column" showEmail={false} phoneIconColor={colors.primary} />
 				</View>
 			)}
 
@@ -333,12 +333,11 @@ const styles = StyleSheet.create({
 		paddingTop: 8,
 		paddingBottom: 2
 	},
-	bizContactRow: {
-		flexDirection: 'row',
-		justifyContent: 'flex-end',
-		paddingHorizontal: 10,
-		paddingBottom: 4,
-		marginTop: -6
+	contactButtonsSide: {
+		position: 'absolute',
+		right: 8,
+		top: 12,
+		zIndex: 10
 	},
 	bizLeft: {
 		flexDirection: 'row',

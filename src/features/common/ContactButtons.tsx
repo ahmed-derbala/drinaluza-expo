@@ -33,12 +33,18 @@ interface ContactButtonsProps {
 	location?: ContactButtonsLocation | null
 	/** Structured address — used as a directions fallback when GPS coordinates are unavailable */
 	address?: ContactButtonsAddress | null
+	/** Render buttons in a row (default) or stacked vertically */
+	layout?: 'row' | 'column'
+	/** Whether to show the email button. Defaults to true */
+	showEmail?: boolean
+	/** Tint color for the phone icon and its button background */
+	phoneIconColor?: string
 }
 
-export default function ContactButtons({ contact, location, address }: ContactButtonsProps) {
+export default function ContactButtons({ contact, location, address, layout = 'row', showEmail = true, phoneIconColor = '#4ADE80' }: ContactButtonsProps) {
 	const hasPhone = !!contact?.phone?.fullNumber
 	const hasWhatsApp = !!contact?.whatsapp
-	const hasEmail = !!contact?.email
+	const hasEmail = showEmail && !!contact?.email
 
 	const hasLocation = hasDirectionsTarget(location, address)
 
@@ -68,17 +74,17 @@ export default function ContactButtons({ contact, location, address }: ContactBu
 	}
 
 	return (
-		<View style={styles.row}>
+		<View style={[styles.row, layout === 'column' && styles.column]}>
 			{hasPhone && (
 				<TouchableOpacity
 					onPress={handleCall}
-					style={[styles.btn, styles.btnCall]}
+					style={[styles.btn, { backgroundColor: phoneIconColor + '1A', borderColor: phoneIconColor + '38' }]}
 					hitSlop={{ top: 6, bottom: 6, left: 6, right: 6 }}
 					activeOpacity={0.7}
 					accessibilityLabel="Call"
 					accessibilityRole="button"
 				>
-					<Ionicons name="call-outline" size={16} color="#4ADE80" />
+					<Ionicons name="call-outline" size={16} color={phoneIconColor} />
 				</TouchableOpacity>
 			)}
 			{hasWhatsApp && (
@@ -128,6 +134,12 @@ const styles = StyleSheet.create({
 		gap: 6,
 		flexShrink: 0
 	},
+	column: {
+		flexDirection: 'column',
+		alignItems: 'center',
+		gap: 6,
+		flexShrink: 0
+	},
 	btn: {
 		width: 36,
 		height: 36,
@@ -135,10 +147,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		borderWidth: StyleSheet.hairlineWidth
-	},
-	btnCall: {
-		backgroundColor: 'rgba(74, 222, 128, 0.10)',
-		borderColor: 'rgba(74, 222, 128, 0.22)'
 	},
 	btnWhatsApp: {
 		backgroundColor: 'rgba(45, 212, 191, 0.10)',
