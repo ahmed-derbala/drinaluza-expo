@@ -233,6 +233,19 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						{mainName}
 					</Text>
 
+					{/* Rating — always rendered for stable layout */}
+					<View style={styles.ratingRow}>
+						{rating > 0 ? (
+							<>
+								{[1, 2, 3, 4, 5].map((star) => (
+									<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
+								))}
+								<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+								<Text style={styles.ratingCount}>({ratingCount})</Text>
+							</>
+						) : null}
+					</View>
+
 					{/* Specs row: caliber + harvest + origin + stepper */}
 					<View style={styles.specsStepperRow}>
 						{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
@@ -258,19 +271,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 								</TouchableOpacity>
 							</View>
 						)}
-					</View>
-
-					{/* Rating — always rendered for stable layout */}
-					<View style={styles.ratingRow}>
-						{rating > 0 ? (
-							<>
-								{[1, 2, 3, 4, 5].map((star) => (
-									<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
-								))}
-								<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-								<Text style={styles.ratingCount}>({ratingCount})</Text>
-							</>
-						) : null}
 					</View>
 				</View>
 
@@ -399,7 +399,9 @@ const styles = StyleSheet.create({
 		fontWeight: '700',
 		color: '#FFF',
 		textAlign: 'left',
-		minHeight: 42
+		height: 30,
+		lineHeight: 15,
+		includeFontPadding: false
 	},
 	stockOverlay: {
 		...StyleSheet.absoluteFill,
@@ -427,7 +429,7 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between'
 	},
 	bodyTop: {
-		gap: 4
+		gap: 0
 	},
 	bodyBottom: {
 		flexDirection: 'row',
@@ -451,18 +453,22 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 3,
-		marginTop: 2,
-		height: 16
+		marginTop: 0,
+		height: 12
 	},
 	ratingValue: {
 		fontSize: 11,
 		fontWeight: '700',
 		color: '#FBBF24',
-		marginLeft: 2
+		marginLeft: 2,
+		lineHeight: 12,
+		includeFontPadding: false
 	},
 	ratingCount: {
 		fontSize: 10,
-		color: 'rgba(255, 255, 255, 0.35)'
+		color: 'rgba(255, 255, 255, 0.35)',
+		lineHeight: 12,
+		includeFontPadding: false
 	},
 	priceRow: {
 		flex: 1,
@@ -548,7 +554,8 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'space-between',
 		gap: 8,
-		height: 32,
+		height: 58,
+		marginTop: 4,
 		marginBottom: 6
 	},
 	specsIconRow: {
