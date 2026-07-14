@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
+import { FlashList } from '@shopify/flash-list'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
 import { Product } from '@/features/businesses/businesses.interface'
@@ -546,7 +547,7 @@ export default function BusinessProductsScreen() {
 			{/* Filter chips */}
 			{!error && products.length > 0 && (
 				<View style={s.filtersOuter}>
-					<FlatList
+					<FlashList
 						horizontal
 						data={filters}
 						keyExtractor={(f) => f.key}
@@ -602,8 +603,6 @@ export default function BusinessProductsScreen() {
 					alignSelf: 'center',
 					width: '100%'
 				}}
-				estimatedItemSize={240}
-				columnWrapperStyle={numColumns > 1 ? { gap: cardGap * 0.6, justifyContent: 'flex-start' } : undefined}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}

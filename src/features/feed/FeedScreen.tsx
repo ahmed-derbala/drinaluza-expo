@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, Animated, useWindowDimensions, Platform, ScrollView, Easing } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, Animated, Platform, Easing } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getItem, setItem } from '@/core/storage'
-import { FlashList } from '@shopify/flash-list'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
@@ -13,7 +12,6 @@ import { Ionicons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
 import { toast } from '@/features/common/Toast'
 import { parseError, logError } from '@/core/helpers/errorHandler'
-import { getGeoCoordinates } from '@/core/helpers/maps'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
@@ -21,9 +19,6 @@ import { getToken } from '@/core/storage'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { SmartHeader } from '@/core/smart-header'
-
-// Bypass type issues with FlashList generic components
-const TypedFlashList = FlashList as any
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -46,28 +41,10 @@ export default function FeedScreen() {
 
 	// ── Routing / Pagination ──
 	const isWeb = Platform.OS === 'web'
-	const { page: queryPage, filter: queryFilter } = useLocalSearchParams<{ page?: string; filter?: string }>()
+	const { filter: queryFilter } = useLocalSearchParams<{ filter?: string }>()
 	const selectedFilter = queryFilter || 'all'
 
-	const urlPage = useMemo(() => {
-		if (!isWeb) return 1
-		return queryPage ? Math.max(1, parseInt(queryPage, 10)) : 1
-	}, [queryPage, isWeb])
-
-	const [mobilePage, setMobilePage] = useState(1)
-	const activePage = isWeb ? urlPage : mobilePage
-
-	const [pagination, setPagination] = useState<{
-		totalDocs: number
-		totalPages: number
-		page: number
-		limit: number
-		hasNextPage: boolean
-		nextPage: number | null
-		hasPrevPage: boolean
-		prevPage: number | null
-		returnedDocsCount: number
-	} | null>(null)
+	const [page, setPage] = useState(1)
 
 	const [hasMore, setHasMore] = useState(true)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
@@ -112,7 +89,6 @@ export default function FeedScreen() {
 				const newItems = response.data.docs
 
 				if (response.data.pagination) {
-					setPagination(response.data.pagination)
 					setHasMore(response.data.pagination.hasNextPage)
 				} else {
 					setHasMore(newItems.length >= 10)
@@ -155,12 +131,10 @@ export default function FeedScreen() {
 	// ── Effects ──
 	useEffect(() => {
 		loadCart()
-		if (isWeb) {
-			fetchFeed(urlPage, false, selectedFilter)
-		} else {
-			fetchFeed(1, false, selectedFilter)
-		}
-	}, [urlPage, selectedFilter, isWeb])
+		setPage(1)
+		setHasMore(true)
+		fetchFeed(1, false, selectedFilter)
+	}, [selectedFilter])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -171,29 +145,20 @@ export default function FeedScreen() {
 	// ── Refresh ──
 	const refreshData = useCallback(async () => {
 		setRefreshing(true)
-		if (isWeb) {
-			if (urlPage === 1) {
-				await Promise.all([loadCart(), fetchFeed(1, false, selectedFilter)])
-			} else {
-				router.setParams({ page: '1' })
-			}
-		} else {
-			setMobilePage(1)
-			setHasMore(true)
-			await Promise.all([loadCart(), fetchFeed(1, false, selectedFilter)])
-		}
+		setPage(1)
+		setHasMore(true)
+		await Promise.all([loadCart(), fetchFeed(1, false, selectedFilter)])
 		setRefreshing(false)
-	}, [isWeb, urlPage, selectedFilter])
+	}, [selectedFilter])
 
 	// ── Infinite scroll ──
 	const handleLoadMore = useCallback(() => {
-		if (isWeb) return
 		if (hasMore && !loading && !isLoadingMore) {
-			const nextPage = mobilePage + 1
-			setMobilePage(nextPage)
+			const nextPage = page + 1
+			setPage(nextPage)
 			fetchFeed(nextPage, true, selectedFilter)
 		}
-	}, [hasMore, loading, isLoadingMore, mobilePage, isWeb, selectedFilter])
+	}, [hasMore, loading, isLoadingMore, page, selectedFilter])
 
 	// ── Add to cart ──
 	const addToCart = useCallback(
@@ -226,23 +191,6 @@ export default function FeedScreen() {
 		},
 		[cart, localize, router]
 	)
-
-	// ── Pagination helpers ──
-	const getPageNumbers = useCallback((current: number, total: number) => {
-		const pages: (number | string)[] = []
-		if (total <= 7) {
-			for (let i = 1; i <= total; i++) pages.push(i)
-		} else {
-			pages.push(1)
-			if (current > 3) pages.push('...')
-			const start = Math.max(2, current - 1)
-			const end = Math.min(total - 1, current + 1)
-			for (let i = start; i <= end; i++) pages.push(i)
-			if (current < total - 2) pages.push('...')
-			pages.push(total)
-		}
-		return pages
-	}, [])
 
 	// ═══════════════════════════════════════════════════════════════════════════════
 	// ── Render helpers ──
@@ -294,44 +242,6 @@ export default function FeedScreen() {
 		)
 	}, [error, refreshData, translate])
 
-	const renderWebPagination = useCallback(() => {
-		if (!isWeb || !pagination || pagination.totalPages <= 1) return null
-		const { totalPages } = pagination
-		const pages = getPageNumbers(activePage, totalPages)
-
-		return (
-			<View style={styles.paginationBar}>
-				<TouchableOpacity style={[styles.pageBtn, activePage === 1 && styles.pageBtnDisabled]} disabled={activePage === 1} onPress={() => router.setParams({ page: (activePage - 1).toString() })}>
-					<Ionicons name="chevron-back" size={16} color={activePage === 1 ? 'rgba(255, 255, 255, 0.2)' : '#0EA5E9'} />
-				</TouchableOpacity>
-
-				{pages.map((num, idx) => {
-					if (num === '...') {
-						return (
-							<View key={`dots-${idx}`} style={styles.pageEllipsis}>
-								<Text style={styles.pageEllipsisText}>…</Text>
-							</View>
-						)
-					}
-					const active = num === activePage
-					return (
-						<TouchableOpacity key={`p-${num}`} style={[styles.pageBtn, active && styles.pageBtnActive]} onPress={() => router.setParams({ page: num.toString() })}>
-							<Text style={[styles.pageBtnText, active && styles.pageBtnTextActive]}>{num}</Text>
-						</TouchableOpacity>
-					)
-				})}
-
-				<TouchableOpacity
-					style={[styles.pageBtn, activePage === totalPages && styles.pageBtnDisabled]}
-					disabled={activePage === totalPages}
-					onPress={() => router.setParams({ page: (activePage + 1).toString() })}
-				>
-					<Ionicons name="chevron-forward" size={16} color={activePage === totalPages ? 'rgba(255, 255, 255, 0.2)' : '#0EA5E9'} />
-				</TouchableOpacity>
-			</View>
-		)
-	}, [isWeb, pagination, activePage, getPageNumbers, router])
-
 	// ── Header Actions (reusable & zero layout shift) ──
 	const headerOptions = useMemo(
 		() => ({
@@ -352,47 +262,6 @@ export default function FeedScreen() {
 	// ═══════════════════════════════════════════════════════════════════════════════
 	// ── Main render ──
 	// ═══════════════════════════════════════════════════════════════════════════════
-	if (isWeb) {
-		return (
-			<View style={[styles.root, { backgroundColor: colors.background }]}>
-				<Tabs.Screen options={headerOptions as any} />
-
-				{loading && displayedItems.length === 0 ? (
-					renderSkeletons()
-				) : displayedItems.length === 0 ? (
-					renderEmpty()
-				) : (
-					<SmartHeader.ScrollView
-						style={[styles.root, { backgroundColor: colors.background }]}
-						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
-						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
-					>
-						<View style={styles.webGridContainer}>
-							{displayedItems.map((item) => (
-								<View
-									key={item.slug || item._id}
-									style={[
-										styles.webGridItem,
-										{
-											width: `${100 / numColumns}%`,
-											paddingHorizontal: gap / 2,
-											marginBottom: 16
-										}
-									]}
-								>
-									<FeedCard item={item} addToCart={addToCart} />
-								</View>
-							))}
-						</View>
-						{renderWebPagination()}
-					</SmartHeader.ScrollView>
-				)}
-				<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
-			</View>
-		)
-	}
-
 	return (
 		<View style={[styles.root, { backgroundColor: colors.background }]}>
 			<Tabs.Screen options={headerOptions as any} />
@@ -436,14 +305,6 @@ const styles = StyleSheet.create({
 		width: '100%',
 		marginBottom: 16
 	},
-	webGridContainer: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		width: '100%'
-	},
-	webGridItem: {
-		boxSizing: 'border-box'
-	} as any,
 	// ── Empty state ──
 	emptyWrap: {
 		alignItems: 'center',
@@ -509,53 +370,5 @@ const styles = StyleSheet.create({
 		borderRadius: 6,
 		backgroundColor: 'rgba(255, 255, 255, 0.05)',
 		marginTop: 4
-	},
-	// ── Pagination ──
-	paginationBar: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
-		paddingVertical: 20,
-		paddingHorizontal: 16,
-		gap: 8,
-		marginTop: 10,
-		marginBottom: 30
-	},
-	pageBtn: {
-		minWidth: 40,
-		height: 40,
-		borderRadius: 12,
-		justifyContent: 'center',
-		alignItems: 'center',
-		backgroundColor: 'rgba(255, 255, 255, 0.03)',
-		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.06)',
-		...Platform.select({
-			web: { cursor: 'pointer', transition: 'all 0.15s ease' } as any
-		})
-	},
-	pageBtnActive: {
-		backgroundColor: '#0EA5E9',
-		borderColor: '#0EA5E9'
-	},
-	pageBtnDisabled: {
-		opacity: 0.3
-	},
-	pageBtnText: {
-		fontSize: 14,
-		fontWeight: '700',
-		color: 'rgba(255, 255, 255, 0.5)'
-	},
-	pageBtnTextActive: {
-		color: '#ffffff'
-	},
-	pageEllipsis: {
-		paddingHorizontal: 4,
-		justifyContent: 'center'
-	},
-	pageEllipsisText: {
-		fontSize: 14,
-		fontWeight: '700',
-		color: 'rgba(255, 255, 255, 0.25)'
 	}
 })

@@ -1,19 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import {
-	StyleSheet,
-	View,
-	Text,
-	Platform,
-	Animated,
-	Easing,
-	useWindowDimensions,
-	ActivityIndicator,
-	Pressable,
-	ScrollView as RNScrollView,
-	FlatList as RNFlatList,
-	ScrollViewProps,
-	FlatListProps
-} from 'react-native'
+import { StyleSheet, View, Text, Platform, Animated, Easing, useWindowDimensions, ActivityIndicator, Pressable, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
 import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -605,47 +591,6 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 )
 SmartScrollView.displayName = 'SmartHeader.ScrollView'
 
-export const SmartFlatList = React.forwardRef<RNFlatList, FlatListProps<any>>(({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
-	const { onScroll } = useScrollHandler()
-	const { headerHeight } = useLayout()
-
-	const handleScroll = useCallback(
-		(event: any) => {
-			onScroll(event)
-			if (customOnScroll) {
-				customOnScroll(event)
-			}
-		},
-		[onScroll, customOnScroll]
-	)
-
-	const mergedContentContainerStyle = useMemo(() => {
-		const flattened = StyleSheet.flatten(contentContainerStyle) || {}
-		const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
-		return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
-	}, [headerHeight, contentContainerStyle])
-
-	const mergedScrollIndicatorInsets = useMemo(() => {
-		if (Platform.OS === 'web') return scrollIndicatorInsets
-		return {
-			top: headerHeight,
-			...scrollIndicatorInsets
-		}
-	}, [headerHeight, scrollIndicatorInsets])
-
-	return (
-		<RNFlatList
-			ref={ref}
-			onScroll={handleScroll}
-			scrollEventThrottle={scrollEventThrottle}
-			contentContainerStyle={mergedContentContainerStyle}
-			scrollIndicatorInsets={mergedScrollIndicatorInsets}
-			{...props}
-		/>
-	)
-})
-SmartFlatList.displayName = 'SmartHeader.FlatList'
-
 export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
 	const { onScroll } = useScrollHandler()
 	const { headerHeight } = useLayout()
@@ -697,7 +642,6 @@ MemoizedHeader.SearchButton = HeaderSearchButton
 MemoizedHeader.CartButton = HeaderCartButton
 MemoizedHeader.SettingsButton = HeaderSettingsButton
 MemoizedHeader.ScrollView = SmartScrollView
-MemoizedHeader.FlatList = SmartFlatList
 MemoizedHeader.FlashList = SmartFlashList
 
 export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHeaderProps> & {
@@ -709,7 +653,6 @@ export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHea
 	CartButton: typeof HeaderCartButton
 	SettingsButton: typeof HeaderSettingsButton
 	ScrollView: any
-	FlatList: any
 	FlashList: any
 }
 

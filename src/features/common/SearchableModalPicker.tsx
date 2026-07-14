@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { Modal, View, Text, TextInput, TouchableOpacity, FlatList, StyleSheet, ActivityIndicator } from 'react-native'
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { FlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -120,7 +121,8 @@ function SearchableModalPicker<T>({
 					{loading ? (
 						<ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
 					) : (
-						<FlatList
+						<FlashList
+							style={{ flex: 1 }}
 							data={filteredData}
 							keyExtractor={keyExtractor}
 							keyboardShouldPersistTaps="handled"

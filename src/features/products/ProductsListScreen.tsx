@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, FlatList, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
-import { FlashList } from '@shopify/flash-list'
 
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons } from '@expo/vector-icons'
