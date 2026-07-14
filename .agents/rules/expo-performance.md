@@ -29,7 +29,7 @@ Performance:
 * Minimize unnecessary re-renders.
 * Use React.memo, useMemo, useCallback only when beneficial.
 * Avoid inline functions/styles inside render when performance matters.
-* Prefer FlatList over ScrollView for large datasets.
+* Prefer FlashList over ScrollView for large datasets.
 * Optimize image rendering and caching.
 * Implement lazy loading and code splitting where applicable.
 * Avoid unnecessary global state.

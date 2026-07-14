@@ -29,7 +29,7 @@ function isValidSource(source: string | null | undefined): source is string {
  * - Smooth blurhash placeholder while loading (no layout shift)
  * - Automatic fallback to no_image.png on error or missing URL
  * - Configurable timeout from EXPO_PUBLIC_TIMEOUT_MS
- * - React.memo for safe usage in FlatList/FlashList
+ * - React.memo for safe usage in FlashList
  * - Backward-compatible resizeMode → contentFit mapping
  *
  * @example
@@ -166,7 +166,7 @@ function SmartImageComponent({
 	// Determine the image source to render
 	const imageSource = showFallback ? FALLBACK_IMAGE : source
 
-	// Use recyclingKey for safe FlashList/FlatList recycling
+	// Use recyclingKey for safe FlashList recycling
 	const recyclingKey = showFallback ? 'fallback' : source
 
 	const imageElement = (
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
 /**
  * Memoized SmartImageViewer component.
  *
- * Safe for use in FlatList, FlashList, product grids, chat messages,
+ * Safe for use in FlashList, product grids, chat messages,
  * thumbnails, and fullscreen previews. Prevents unnecessary rerenders
  * when parent components update unrelated state.
  */

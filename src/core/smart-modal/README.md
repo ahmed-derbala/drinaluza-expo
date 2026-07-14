@@ -161,51 +161,6 @@ function AlertExample() {
 }
 ```
 
-### Picker Modal (Bottom Sheet)
-
-```tsx
-import { useState } from 'react'
-import { View, Text, TouchableOpacity, FlatList } from 'react-native'
-import { BottomSheetModal } from '@/core/smart-modal'
-
-const items = ['Option 1', 'Option 2', 'Option 3']
-
-function PickerExample() {
-  const [visible, setVisible] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null)
-
-  return (
-    <View>
-      <TouchableOpacity onPress={() => setVisible(true)}>
-        <Text>Select: {selected || 'Choose...'}</Text>
-      </TouchableOpacity>
-
-      <BottomSheetModal
-        visible={visible}
-        onClose={() => setVisible(false)}
-        title="Select Option"
-      >
-        <FlatList
-          data={items}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={{ padding: 16, borderBottomWidth: 1 }}
-              onPress={() => {
-                setSelected(item)
-                setVisible(false)
-              }}
-            >
-              <Text>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
-      </BottomSheetModal>
-    </View>
-  )
-}
-```
-
 ### Form Modal (Fullscreen)
 
 ```tsx

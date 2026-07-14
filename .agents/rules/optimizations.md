@@ -28,7 +28,7 @@ Review all components and:
 - Remove useless memoization.
 - Avoid inline functions in frequently rendered lists.
 - Avoid creating objects and arrays inside render methods when possible.
-- Optimize FlatList and SectionList usage.
+- Optimize FlashList and SectionList usage.
 - Ensure stable keys are used.
 
 Do not over-optimize.
@@ -75,7 +75,6 @@ Ensure:
 
 Review all:
 
-- FlatList
 - SectionList
 - FlashList
 

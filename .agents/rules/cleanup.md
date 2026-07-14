@@ -162,7 +162,6 @@ Examples:
 - avoid unnecessary renders
 - memoize expensive computations only when beneficial
 - remove unnecessary useEffect
-- optimize FlatList usage
 - reduce unnecessary object recreation
 
 Do not over-optimize.
