@@ -376,7 +376,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 				case 'settings':
 					return <HeaderSettingsButton key="predefined-settings" />
 				case 'refresh':
-					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} />
+					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} isOffline={options?.isOffline} />
 				case 'scanner':
 					if (Platform.OS === 'web') return null
 					return (
@@ -402,7 +402,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		if (action && typeof action === 'object' && 'key' in action) {
 			const config = action as any
 			if (config.key === 'refresh') {
-				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} />
+				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} isOffline={config.isOffline} />
 			}
 			return (
 				<HeaderActionButton

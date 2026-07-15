@@ -86,8 +86,8 @@ export const parseError = (error: any): ErrorInfo => {
 	// 3. Network Errors (No response received - server unreachable)
 	if (error.request || error.code === 'NETWORK_ERROR' || error.message === 'Network Error') {
 		return {
-			title: translate('network_error_title', 'Network Error'),
-			message: translate('network_error_message', 'Unable to connect to the server. Please check your internet connection or server settings.'),
+			title: '',
+			message: '',
 			type: 'network',
 			canRetry: true
 		}

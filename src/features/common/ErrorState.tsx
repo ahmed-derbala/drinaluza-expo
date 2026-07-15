@@ -8,15 +8,28 @@ interface ErrorStateProps {
 	message?: string
 	onRetry?: () => void
 	icon?: keyof typeof Ionicons.glyphMap
+	/** Render only the icon, hiding title, message and retry button */
+	iconOnly?: boolean
 }
 
 const ErrorState: React.FC<ErrorStateProps> = ({
 	title = 'Something went wrong',
 	message = 'We encountered an error while loading the data. Please check your connection and try again.',
 	onRetry,
-	icon = 'cloud-offline-outline'
+	icon = 'cloud-offline-outline',
+	iconOnly = false
 }) => {
 	const { colors } = useTheme()
+
+	if (iconOnly) {
+		return (
+			<View style={styles.container}>
+				<View style={[styles.iconContainer, { backgroundColor: colors.error + '15' }]}>
+					<Ionicons name={icon} size={56} color={colors.error} />
+				</View>
+			</View>
+		)
+	}
 
 	return (
 		<View style={styles.container}>

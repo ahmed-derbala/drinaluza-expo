@@ -250,20 +250,6 @@ export default function NotificationsScreen() {
 		)
 	}
 
-	if (error && notifications.length === 0) {
-		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
-				<ErrorState
-					title={error.title}
-					message={error.message}
-					onRetry={() => loadNotifications(1, true)}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-				/>
-			</View>
-		)
-	}
-
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (permissionGranted === false) {
@@ -284,6 +270,21 @@ export default function NotificationsScreen() {
 		})
 		return actions
 	}, [permissionGranted, refreshing, colors.warning, translate, onRefresh])
+
+	if (error && notifications.length === 0) {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
+				<ErrorState
+					title={error.type === 'network' ? undefined : error.title}
+					message={error.type === 'network' ? undefined : error.message}
+					onRetry={error.type === 'network' ? undefined : () => loadNotifications(1, true)}
+					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+					iconOnly={error.type === 'network'}
+				/>
+			</View>
+		)
+	}
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>

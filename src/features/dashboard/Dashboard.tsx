@@ -196,13 +196,18 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 					}}
 				/>
 				<ErrorState
-					title={error.title}
-					message={error.message}
-					onRetry={() => {
-						setLoading(true)
-						loadDashboard()
-					}}
+					title={error.type === 'network' ? undefined : error.title}
+					message={error.type === 'network' ? undefined : error.message}
+					onRetry={
+						error.type === 'network'
+							? undefined
+							: () => {
+									setLoading(true)
+									loadDashboard()
+								}
+					}
 					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+					iconOnly={error.type === 'network'}
 				/>
 			</View>
 		)

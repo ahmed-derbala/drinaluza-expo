@@ -5,13 +5,14 @@ import { getItem, setItem } from '@/core/storage'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
+import useFeed from '@/features/feed/useFeed'
 
 import FeedCard from '@/features/feed/feed.card'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import { Ionicons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
 import { toast } from '@/features/common/Toast'
-import { parseError, logError } from '@/core/helpers/errorHandler'
+import { logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
@@ -28,14 +29,6 @@ export default function FeedScreen() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 
-	// ── Data state ──
-	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
-	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
-	const [cart, setCart] = useState<CartItem[]>([])
-	const [refreshing, setRefreshing] = useState(false)
-	const [loading, setLoading] = useState(true)
-	const [isScannerVisible, setIsScannerVisible] = useState(false)
-
 	// ── Layout ──
 	const { numColumns, gap, padding, itemWidth } = useResponsiveGrid()
 
@@ -44,11 +37,18 @@ export default function FeedScreen() {
 	const { filter: queryFilter } = useLocalSearchParams<{ filter?: string }>()
 	const selectedFilter = queryFilter || 'all'
 
-	const [page, setPage] = useState(1)
+	// ── Data state ──
+	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
+	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
+	const [cart, setCart] = useState<CartItem[]>([])
+	const [isScannerVisible, setIsScannerVisible] = useState(false)
 
+	// ── Cache-first feed ──
+	const { items: feedItemsFromCache, isInitialLoading, isRefreshing, isOffline, refresh: refreshFeed } = useFeed({ filter: selectedFilter })
+
+	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
 	const [isLoadingMore, setIsLoadingMore] = useState(false)
-	const [error, setError] = useState<{ message: string; retry?: () => void } | null>(null)
 
 	// ── Context ──
 	const { user, localize, translate } = useUser()
@@ -77,13 +77,23 @@ export default function FeedScreen() {
 		}
 	}, [])
 
-	// ── Feed fetch ──
-	const fetchFeed = useCallback(
-		async (pageNum: number = 1, shouldAppend: boolean = false, filterType: string = selectedFilter) => {
-			try {
-				if (pageNum === 1) setLoading(true)
-				else setIsLoadingMore(true)
+	// ── Sync cache-first page 1 items into local state and enrich contacts ──
+	useEffect(() => {
+		setFeedItems(feedItemsFromCache)
+		setDisplayedItems(feedItemsFromCache)
+		if (feedItemsFromCache.length > 0) {
+			enrichFeedContacts(feedItemsFromCache, (enriched) => {
+				setFeedItems(enriched)
+				setDisplayedItems(enriched)
+			})
+		}
+	}, [feedItemsFromCache])
 
+	// ── Load more: append next page from network ──
+	const fetchMoreFeed = useCallback(
+		async (pageNum: number, filterType: string = selectedFilter) => {
+			try {
+				setIsLoadingMore(true)
 				const apiFilter = filterType === 'all' ? undefined : filterType
 				const response = await getFeed(pageNum, 10, apiFilter)
 				const newItems = response.data.docs
@@ -94,34 +104,19 @@ export default function FeedScreen() {
 					setHasMore(newItems.length >= 10)
 				}
 
-				if (shouldAppend) {
-					setFeedItems((prev) => {
-						const updated = [...prev, ...newItems]
-						enrichFeedContacts(updated, (enriched) => {
-							setFeedItems(enriched)
-							setDisplayedItems(enriched)
-						})
-						return updated
-					})
-					setDisplayedItems((prev) => [...prev, ...newItems])
-				} else {
-					setFeedItems(newItems)
-					setDisplayedItems(newItems)
-					enrichFeedContacts(newItems, (enriched) => {
+				setFeedItems((prev) => {
+					const updated = [...prev, ...newItems]
+					enrichFeedContacts(updated, (enriched) => {
 						setFeedItems(enriched)
 						setDisplayedItems(enriched)
 					})
-				}
-				setError(null)
-			} catch (err) {
-				logError(err, 'fetchFeed')
-				const errorInfo = parseError(err)
-				setError({
-					message: errorInfo.message,
-					retry: errorInfo.canRetry ? () => fetchFeed(pageNum, shouldAppend, filterType) : undefined
+					return updated
 				})
+				setDisplayedItems((prev) => [...prev, ...newItems])
+			} catch (err) {
+				logError(err, 'fetchMoreFeed')
+				// Never clear cached feed because of a network failure.
 			} finally {
-				setLoading(false)
 				setIsLoadingMore(false)
 			}
 		},
@@ -133,7 +128,6 @@ export default function FeedScreen() {
 		loadCart()
 		setPage(1)
 		setHasMore(true)
-		fetchFeed(1, false, selectedFilter)
 	}, [selectedFilter])
 
 	useFocusEffect(
@@ -144,21 +138,19 @@ export default function FeedScreen() {
 
 	// ── Refresh ──
 	const refreshData = useCallback(async () => {
-		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
-		await Promise.all([loadCart(), fetchFeed(1, false, selectedFilter)])
-		setRefreshing(false)
-	}, [selectedFilter])
+		await Promise.all([loadCart(), refreshFeed()])
+	}, [refreshFeed])
 
 	// ── Infinite scroll ──
 	const handleLoadMore = useCallback(() => {
-		if (hasMore && !loading && !isLoadingMore) {
+		if (hasMore && !isInitialLoading && !isRefreshing && !isLoadingMore) {
 			const nextPage = page + 1
 			setPage(nextPage)
-			fetchFeed(nextPage, true, selectedFilter)
+			fetchMoreFeed(nextPage, selectedFilter)
 		}
-	}, [hasMore, loading, isLoadingMore, page, selectedFilter])
+	}, [hasMore, isInitialLoading, isRefreshing, isLoadingMore, page, selectedFilter, fetchMoreFeed])
 
 	// ── Add to cart ──
 	const addToCart = useCallback(
@@ -224,10 +216,10 @@ export default function FeedScreen() {
 	)
 
 	const renderEmpty = useCallback(() => {
-		if (error) {
+		if (isOffline && displayedItems.length === 0) {
 			return (
-				<View style={{ paddingTop: 80 }}>
-					<ErrorState title={error.message} onRetry={refreshData} icon="cloud-offline-outline" />
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+					<ErrorState icon="cloud-offline-outline" iconOnly={true} />
 				</View>
 			)
 		}
@@ -240,7 +232,7 @@ export default function FeedScreen() {
 				<Text style={styles.emptySubtitle}>{translate('try_adjusting', 'Try adjusting your search or check back later!')}</Text>
 			</View>
 		)
-	}, [error, refreshData, translate])
+	}, [isOffline, displayedItems.length, translate])
 
 	// ── Header Actions (reusable & zero layout shift) ──
 	const headerOptions = useMemo(
@@ -248,15 +240,15 @@ export default function FeedScreen() {
 			title: translate('feed', 'Feed'),
 			subtitle: `${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`,
 			showBackButton: false,
-			isLoading: loading && displayedItems.length === 0,
+			isLoading: isInitialLoading,
 			headerActions: [
 				...(!isWeb ? [<SmartHeader.ActionButton key="scanner" iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} accessibilityLabel="Scan Barcode" />] : []),
 				<SmartHeader.SearchButton key="search" />,
 				<SmartHeader.CartButton key="cart" badgeCount={cart.length} />,
-				<SmartHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={refreshing} />
+				<SmartHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={isRefreshing} isOffline={isOffline} />
 			]
 		}),
-		[translate, user, loading, displayedItems.length, isWeb, cart.length, refreshData, refreshing]
+		[translate, user, isInitialLoading, isWeb, cart.length, refreshData, isRefreshing, isOffline]
 	)
 
 	// ═══════════════════════════════════════════════════════════════════════════════
@@ -266,7 +258,7 @@ export default function FeedScreen() {
 		<View style={[styles.root, { backgroundColor: colors.background }]}>
 			<Tabs.Screen options={headerOptions as any} />
 
-			{loading && displayedItems.length === 0 ? (
+			{isInitialLoading ? (
 				renderSkeletons()
 			) : (
 				<SmartHeader.FlashList
@@ -276,9 +268,9 @@ export default function FeedScreen() {
 					numColumns={numColumns}
 					estimatedItemSize={260}
 					keyExtractor={(item: FeedItem) => item.slug || item._id}
-					contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
+					contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
 					ListEmptyComponent={renderEmpty}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
 					showsVerticalScrollIndicator={false}
 					keyboardShouldPersistTaps="handled"
 					onEndReached={handleLoadMore}

@@ -662,12 +662,15 @@ export default function BusinessesListScreen() {
 	const renderEmpty = () => {
 		if (error) {
 			return (
-				<ErrorState
-					title={error.title}
-					message={error.message}
-					onRetry={loadBusinesses}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-				/>
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+					<ErrorState
+						title={error.type === 'network' ? undefined : error.title}
+						message={error.type === 'network' ? undefined : error.message}
+						onRetry={error.type === 'network' ? undefined : loadBusinesses}
+						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+						iconOnly={error.type === 'network'}
+					/>
+				</View>
 			)
 		}
 		return (
@@ -716,7 +719,11 @@ export default function BusinessesListScreen() {
 				data={businesses}
 				renderItem={renderBusinessCard}
 				keyExtractor={(item: Business) => item._id}
-				contentContainerStyle={[styles.listContent as ViewStyle, { paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding }]}
+				contentContainerStyle={[
+					styles.listContent as ViewStyle,
+					{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding },
+					businesses.length === 0 && { flexGrow: 1, justifyContent: 'center' }
+				]}
 				numColumns={numColumns}
 				ListEmptyComponent={renderEmpty}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}

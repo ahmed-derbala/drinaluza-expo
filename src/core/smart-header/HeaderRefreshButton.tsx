@@ -1,6 +1,6 @@
 import React, { useRef, useEffect } from 'react'
 import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
+import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 
 export interface HeaderRefreshButtonProps {
@@ -15,10 +15,20 @@ export interface HeaderRefreshButtonProps {
 	 */
 	isRefreshing: boolean
 	/**
+	 * Boolean indicating whether the device is offline/last sync failed.
+	 * When true (and not refreshing), the button shows a static red cloud-offline icon.
+	 */
+	isOffline?: boolean
+	/**
 	 * Optional custom color for the refresh icon.
 	 * Defaults to `colors.primary`.
 	 */
 	color?: string
+	/**
+	 * Optional custom color for the offline icon.
+	 * Defaults to `colors.error`.
+	 */
+	offlineColor?: string
 	/**
 	 * Optional custom size for the refresh icon.
 	 * Defaults to 22.
@@ -34,7 +44,7 @@ export interface HeaderRefreshButtonProps {
 	disabled?: boolean
 }
 
-const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, color, size = 22, style, disabled = false }) => {
+const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, isOffline = false, color, offlineColor, size = 22, style, disabled = false }) => {
 	const { colors } = useTheme()
 	const rotationValue = useRef(new Animated.Value(0)).current
 	const scaleValue = useRef(new Animated.Value(1)).current
@@ -109,6 +119,26 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 
 	const isDisabled = isRefreshing || disabled
 
+	const renderIcon = () => {
+		if (isRefreshing) {
+			return (
+				<Animated.View style={{ transform: [{ rotate: spin }, { scale: scaleValue }] }}>
+					<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
+				</Animated.View>
+			)
+		}
+
+		if (isOffline) {
+			return <Ionicons name="cloud-offline" size={size} color={offlineColor || colors.error} />
+		}
+
+		return (
+			<Animated.View style={{ transform: [{ scale: scaleValue }] }}>
+				<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
+			</Animated.View>
+		)
+	}
+
 	return (
 		<TouchableOpacity
 			style={[styles.refreshButton, { backgroundColor: colors.surface, opacity: isDisabled ? 0.5 : 1 }, style]}
@@ -116,12 +146,10 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 			disabled={isDisabled}
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 			accessibilityRole="button"
-			accessibilityLabel="Refresh"
+			accessibilityLabel={isOffline ? 'Offline' : 'Refresh'}
 			accessibilityState={{ disabled: isDisabled }}
 		>
-			<Animated.View style={{ transform: [{ rotate: spin }, { scale: scaleValue }] }}>
-				<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
-			</Animated.View>
+			{renderIcon()}
 		</TouchableOpacity>
 	)
 }

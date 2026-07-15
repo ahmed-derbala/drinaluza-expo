@@ -545,10 +545,11 @@ export default function ProductScreen() {
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle }} />
 				<ErrorState
-					title={error.title}
-					message={error.message}
-					onRetry={() => loadProduct()}
+					title={error.type === 'network' ? undefined : error.title}
+					message={error.type === 'network' ? undefined : error.message}
+					onRetry={error.type === 'network' ? undefined : () => loadProduct()}
 					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+					iconOnly={error.type === 'network'}
 				/>
 			</View>
 		)

@@ -1,0 +1,165 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheReadResult } from '@/core/storage'
+import { log } from '@/core/log'
+
+export interface UseCacheFirstOptions<T> {
+	/** Unique, deterministic cache key. */
+	cacheKey: string
+	/** Factory that returns the fresh network data. */
+	fetchFn: () => Promise<T>
+	/** TTL in milliseconds. Data older than this is considered stale. Defaults to 5 minutes. */
+	ttlMs?: number
+	/** Called after fresh data is successfully fetched. */
+	onSuccess?: (data: T) => void
+	/** Called when the network request fails. The cached value (if any) is still returned. */
+	onError?: (error: unknown) => void
+	/** If true, the fetch is not triggered automatically on mount. */
+	skipInitialFetch?: boolean
+}
+
+export interface UseCacheFirstResult<T> {
+	/** Current data: cached first, then fresh after a successful fetch. */
+	data: T | null
+	/**
+	 * True while there is no usable data at all (neither cache nor network).
+	 * Use this to show the central loading spinner.
+	 */
+	isInitialLoading: boolean
+	/** True whenever a background fetch is in flight. */
+	isRefreshing: boolean
+	/** True when the last fetch failed but we are still showing cached/stale data. */
+	isOffline: boolean
+	/** True when the currently displayed data came from cache and is past its TTL. */
+	isStale: boolean
+	/** Manually trigger a fresh fetch. */
+	refresh: () => Promise<void>
+	/** Replace the cached entry immediately, e.g. after a local mutation. */
+	updateCache: (data: T) => Promise<boolean>
+	/** Remove the cached entry. */
+	invalidateCache: () => Promise<boolean>
+}
+
+/**
+ * Generic cache-first data hook.
+ *
+ * On mount it reads from cache immediately, then fires the network request
+ * in parallel. If the cache has a value, the UI can render instantly. Once the
+ * network succeeds the cache and the returned data are updated. If it fails,
+ * the cached value is preserved and `isOffline` becomes true.
+ */
+export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirstResult<T> {
+	const { cacheKey, fetchFn, ttlMs, onSuccess, onError, skipInitialFetch } = options
+	const isMountedRef = useRef(true)
+
+	const [cacheResult, setCacheResult] = useState<CacheReadResult<T> | null>(null)
+	const [freshData, setFreshData] = useState<T | null>(null)
+	const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false)
+	const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
+	const [isOffline, setIsOffline] = useState<boolean>(false)
+	const [fetchError, setFetchError] = useState<unknown>(null)
+
+	const displayedData = freshData ?? cacheResult?.data ?? null
+	const isStale = cacheResult?.isStale ?? false
+
+	const loadFromCache = useCallback(async () => {
+		try {
+			const cached = await getCacheItem<T>(cacheKey, ttlMs)
+			if (isMountedRef.current) {
+				setCacheResult(cached)
+			}
+			return cached
+		} catch (error) {
+			log({ level: 'error', label: 'useCacheFirst', message: `Failed to read cache for ${cacheKey}`, error })
+			return null
+		}
+	}, [cacheKey, ttlMs])
+
+	const fetchFresh = useCallback(async () => {
+		setIsRefreshing(true)
+		setFetchError(null)
+		try {
+			const data = await fetchFn()
+			if (isMountedRef.current) {
+				setFreshData(data)
+				setIsOffline(false)
+			}
+			await setCacheItem(cacheKey, data)
+			onSuccess?.(data)
+		} catch (error) {
+			if (isMountedRef.current) {
+				setFetchError(error)
+				setIsOffline(true)
+			}
+			onError?.(error)
+		} finally {
+			if (isMountedRef.current) {
+				setIsRefreshing(false)
+			}
+		}
+	}, [cacheKey, fetchFn, onError, onSuccess])
+
+	const refresh = useCallback(async () => {
+		await fetchFresh()
+	}, [fetchFresh])
+
+	const updateCache = useCallback(
+		async (data: T) => {
+			if (isMountedRef.current) {
+				setFreshData(data)
+				setIsOffline(false)
+			}
+			return await setCacheItem(cacheKey, data)
+		},
+		[cacheKey]
+	)
+
+	const invalidateCache = useCallback(async () => {
+		if (isMountedRef.current) {
+			setCacheResult(null)
+			setFreshData(null)
+		}
+		return await removeCacheItem(cacheKey)
+	}, [cacheKey])
+
+	useEffect(() => {
+		isMountedRef.current = true
+		let cancelled = false
+
+		const bootstrap = async () => {
+			const cached = await loadFromCache()
+			const hasCache = cached !== null
+
+			if (!hasCache) {
+				setIsInitialLoading(true)
+			}
+
+			if (!skipInitialFetch) {
+				await fetchFresh()
+			}
+
+			if (!cancelled) {
+				setIsInitialLoading(false)
+			}
+		}
+
+		bootstrap()
+
+		return () => {
+			cancelled = true
+			isMountedRef.current = false
+		}
+	}, [cacheKey, fetchFn, loadFromCache, fetchFresh, skipInitialFetch])
+
+	return {
+		data: displayedData,
+		isInitialLoading,
+		isRefreshing,
+		isOffline: isOffline && !isRefreshing,
+		isStale,
+		refresh,
+		updateCache,
+		invalidateCache
+	}
+}
+
+export default useCacheFirst

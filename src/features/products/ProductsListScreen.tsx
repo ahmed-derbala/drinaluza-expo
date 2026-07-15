@@ -161,7 +161,13 @@ export default function ProductsListScreen() {
 			/>
 
 			{error ? (
-				<ErrorState title={error.title} message={error.message} onRetry={handleRefresh} />
+				<ErrorState
+					title={error.type === 'network' ? undefined : error.title}
+					message={error.type === 'network' ? undefined : error.message}
+					onRetry={error.type === 'network' ? undefined : handleRefresh}
+					icon="cloud-offline-outline"
+					iconOnly={error.type === 'network'}
+				/>
 			) : (
 				<SmartHeader.FlashList
 					data={products}

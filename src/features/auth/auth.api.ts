@@ -1,6 +1,6 @@
 import { getApiClient } from '@/core/api'
 import { Platform } from 'react-native'
-import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@/core/storage'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths, setCacheItem } from '@/core/storage'
 import { log } from '@/core/log'
 import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
 
@@ -453,6 +453,10 @@ export const updateMyProfile = async (data: any) => {
 	if (response.data?.data) {
 		const user = response.data.data
 		await setUserData(user)
+		await setCacheItem('profile:me', user)
+		if (user.slug) {
+			await setCacheItem(`profile:${user.slug}`, user)
+		}
 		const photoUrl = user.media?.thumbnail?.url || user.photoUrl || ''
 		const displayName = user.name || user.slug
 		await updateSavedAuthUser(user.slug, {

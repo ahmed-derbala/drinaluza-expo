@@ -1,4 +1,5 @@
 import { getApiClient } from '../../core/api'
+import { setCacheItem } from '../../core/storage'
 import { LocalizedName, ProductSpecs } from '../businesses/businesses.interface'
 import { ProductType, FileRef } from './products.type'
 
@@ -150,5 +151,8 @@ export const updateProduct = async (
 	productData: Partial<CreateProductRequest> & { state?: { code: string } }
 ): Promise<{ status: number; data: ProductType; viewer?: { canEdit?: boolean; canCreate?: boolean } }> => {
 	const response = await getApiClient().patch(`/products/${productSlug}`, productData)
+	if (response.data?.data) {
+		await setCacheItem(`product:${productSlug}`, response.data.data)
+	}
 	return response.data
 }

@@ -97,10 +97,11 @@ export default function UserDetailScreen() {
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader title={displayTitle} />
 				<ErrorState
-					title={error?.title || translate('not_found', 'Not Found')}
-					message={error?.message || translate('user_not_found', 'User not found')}
-					onRetry={() => loadUser()}
-					icon="alert-circle-outline"
+					title={error?.type === 'network' ? undefined : error?.title || translate('not_found', 'Not Found')}
+					message={error?.type === 'network' ? undefined : error?.message || translate('user_not_found', 'User not found')}
+					onRetry={error?.type === 'network' ? undefined : () => loadUser()}
+					icon={error?.type === 'network' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+					iconOnly={error?.type === 'network'}
 				/>
 			</View>
 		)

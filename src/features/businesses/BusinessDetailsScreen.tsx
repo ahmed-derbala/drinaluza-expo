@@ -248,10 +248,11 @@ export default function BusinessDetailsScreen() {
 				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
 					<ErrorState
-						title={error.title}
-						message={error.message}
-						onRetry={() => loadBusinessDetails()}
+						title={error.type === 'network' ? undefined : error.title}
+						message={error.type === 'network' ? undefined : error.message}
+						onRetry={error.type === 'network' ? undefined : () => loadBusinessDetails()}
 						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+						iconOnly={error.type === 'network'}
 					/>
 				</View>
 			</View>

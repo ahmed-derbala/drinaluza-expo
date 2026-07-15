@@ -601,7 +601,8 @@ export default function BusinessProductsScreen() {
 					paddingBottom: 40,
 					maxWidth: contentMaxWidth,
 					alignSelf: 'center',
-					width: '100%'
+					width: '100%',
+					...(products.length === 0 ? { flexGrow: 1, justifyContent: 'center' } : {})
 				}}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onScroll={onScroll}
@@ -609,12 +610,15 @@ export default function BusinessProductsScreen() {
 				keyboardShouldPersistTaps="handled"
 				ListEmptyComponent={
 					error ? (
-						<ErrorState
-							title={error.title}
-							message={error.message}
-							onRetry={loadProducts}
-							icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-						/>
+						<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+							<ErrorState
+								title={error.type === 'network' ? undefined : error.title}
+								message={error.type === 'network' ? undefined : error.message}
+								onRetry={error.type === 'network' ? undefined : loadProducts}
+								icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
+								iconOnly={error.type === 'network'}
+							/>
+						</View>
 					) : !loading ? (
 						<View style={s.emptyWrap}>
 							<LinearGradient colors={[colors.primary + '18', colors.primary + '06']} style={s.emptyIconWrap}>

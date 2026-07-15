@@ -27,7 +27,7 @@ import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
-import { checkAuth, getMyProfile, updateMyProfile, signOut, switchUser } from '@/features/auth/auth.api'
+import { updateMyProfile, signOut, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
@@ -41,7 +41,6 @@ import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { CenteredModal } from '@/core/smart-modal'
 import { requestBusiness } from '@/features/businesses/business.api'
-import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
@@ -51,6 +50,7 @@ import { log } from '@/core/log'
 import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
+import { useMyProfile } from '@/features/profile/useMyProfile'
 import { LANGUAGES, SOCIAL_PLATFORMS } from '@/core/constants/settings'
 
 // Components moved outside to prevent re-creation on render
@@ -153,10 +153,21 @@ export default function ProfileScreen() {
 	const styles = createStyles(colors, isDark, isWideScreen, width)
 	const { onScroll } = useScrollHandler()
 
-	const [loading, setLoading] = useState(false)
 	const [userData, setUserData] = useState<UserData | null>(null)
 	const [cart, setCart] = useState<any[]>([])
 	const [personalDashboard, setPersonalDashboard] = useState<PersonalDashboard | null>(null)
+
+	// ── Cache-first profile ──
+	const { profile: cachedProfile, isInitialLoading, isRefreshing, isOffline, refresh: refreshProfile } = useMyProfile()
+
+	const applyProfileToState = useCallback((profile: UserData) => {
+		const data = { ...profile }
+		if (data.basicInfos?.birthDate) {
+			data.basicInfos.birthDate = new Date(data.basicInfos.birthDate)
+		}
+		setUserData(data)
+		setImageError(false)
+	}, [])
 
 	const loadCart = async () => {
 		try {
@@ -182,7 +193,6 @@ export default function ProfileScreen() {
 	})
 	const [showDatePicker, setShowDatePicker] = useState(false)
 	const [imageError, setImageError] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [showBusinessModal, setShowBusinessModal] = useState(false)
 	const [showSwitchAccountModal, setShowSwitchAccountModal] = useState(false)
 	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
@@ -192,67 +202,29 @@ export default function ProfileScreen() {
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
-	const loadProfile = async () => {
+	const loadDashboard = useCallback(async () => {
 		try {
-			setLoading(true)
-			setError(null)
-			const isAuthenticated = await checkAuth()
-			if (!isAuthenticated) {
-				router.replace('/auth')
-				return
+			const dashboardRes = await getPersonalDashboard()
+			if (dashboardRes?.data?.kind === 'personal') {
+				setPersonalDashboard(dashboardRes.data)
 			}
-
-			const response = await getMyProfile()
-			if (response && response.data) {
-				// Parse dates
-				const data = response.data
-				if (data.basicInfos?.birthDate) {
-					data.basicInfos.birthDate = new Date(data.basicInfos.birthDate)
-				}
-				setUserData(data)
-				setImageError(false)
-			} else {
-				throw new Error('No profile data received')
-			}
-
-			try {
-				const dashboardRes = await getPersonalDashboard()
-				if (dashboardRes?.data?.kind === 'personal') {
-					setPersonalDashboard(dashboardRes.data)
-				}
-			} catch (dashboardErr) {
-				console.log('Failed to fetch personal dashboard', dashboardErr)
-			}
-		} catch (err: any) {
-			logError(err, 'loadProfile')
-
-			// Handle 401 Unauthorized - redirect to auth screen
-			if (err.response?.status === 401) {
-				showAlert('Session Expired', 'Please log in again to continue.')
-				router.replace('/auth')
-				return
-			}
-
-			const errorInfo = parseError(err)
-			setError({
-				title: errorInfo.title,
-				message: errorInfo.message,
-				type: errorInfo.type
-			})
-			if (userData) {
-				// Only show alert if we already have data (e.g. refresh failed)
-				showAlert(errorInfo.title, errorInfo.message)
-			}
-		} finally {
-			setLoading(false)
+		} catch (dashboardErr) {
+			console.log('Failed to fetch personal dashboard', dashboardErr)
 		}
-	}
+	}, [])
+
+	// Sync cached profile into editable state as soon as it is available.
+	useEffect(() => {
+		if (cachedProfile) {
+			applyProfileToState(cachedProfile)
+		}
+	}, [cachedProfile, applyProfileToState])
 
 	useFocusEffect(
 		useCallback(() => {
-			loadProfile()
+			loadDashboard()
 			loadCart()
-		}, [])
+		}, [loadDashboard])
 	)
 
 	const saveUserData = async (sectionKey?: keyof typeof editMode) => {
@@ -340,7 +312,10 @@ export default function ProfileScreen() {
 				}
 			}
 
-			await updateMyProfile(payload)
+			const res = await updateMyProfile(payload)
+			if (res?.data) {
+				applyProfileToState(res.data as UserData)
+			}
 			if (sectionKey) {
 				setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
 				if (sectionKey === 'photo') {
@@ -349,7 +324,6 @@ export default function ProfileScreen() {
 			}
 			showAlert(translate('success', 'Success'), translate('profile_updated', 'Profile updated successfully!'))
 			await refreshUser()
-			loadProfile()
 		} catch (error: any) {
 			console.error('Error saving user data:', error)
 			const errorMessage = error.response?.data?.message || 'Failed to save profile changes'
@@ -359,8 +333,10 @@ export default function ProfileScreen() {
 
 	const toggleEdit = (section: keyof typeof editMode, value: boolean) => {
 		if (!value) {
-			// If cancelling, reload to revert
-			loadProfile()
+			// If cancelling, revert to cached profile
+			if (cachedProfile) {
+				applyProfileToState(cachedProfile)
+			}
 			if (section === 'photo') {
 				setShowUrlInput(false)
 			}
@@ -442,7 +418,10 @@ export default function ProfileScreen() {
 						...(userData?.media || {}),
 						thumbnail: uploadResult.file
 					}
-					await updateMyProfile({ media: updatedMedia })
+					const res = await updateMyProfile({ media: updatedMedia })
+					if (res?.data) {
+						applyProfileToState(res.data as UserData)
+					}
 					setEditMode((prev) => ({ ...prev, photo: false }))
 					await refreshUser()
 				} catch (e) {
@@ -753,14 +732,15 @@ export default function ProfileScreen() {
 		})
 		actions.push({
 			key: 'refresh',
-			onPress: loadProfile,
-			isRefreshing: loading,
+			onPress: refreshProfile,
+			isRefreshing: isRefreshing,
+			isOffline: isOffline,
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [userData?.role, handleRequestBusiness, handleSwitchUser, handleSignOut, cart.length, loadProfile, loading, colors, router])
+	}, [userData?.role, handleRequestBusiness, handleSwitchUser, handleSignOut, cart.length, refreshProfile, isRefreshing, isOffline, colors, router])
 
-	if (loading && !userData) {
+	if (isInitialLoading) {
 		return (
 			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
@@ -768,11 +748,11 @@ export default function ProfileScreen() {
 		)
 	}
 
-	if (error && !userData) {
+	if (isOffline && !userData) {
 		return (
 			<View style={styles.container}>
 				<Tabs.Screen options={{ title: 'Profile', headerLeft: () => null }} />
-				<ErrorState title={error.title} message={error.message} onRetry={loadProfile} icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'} />
+				<ErrorState icon="cloud-offline-outline" iconOnly={true} />
 			</View>
 		)
 	}

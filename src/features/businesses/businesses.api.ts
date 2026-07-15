@@ -1,4 +1,5 @@
 import { getApiClient } from '../../core/api'
+import { setCacheItem } from '../../core/storage'
 import { BusinessesResponse, CreateBusinessRequest, CreateBusinessResponse, BusinessResponse, BusinessProductsResponse, BusinessCustomersResponse } from './businesses.interface'
 import { log } from '../../core/log'
 
@@ -95,6 +96,9 @@ const updateMyBusiness = async (businessSlug: string, businessData: Partial<Busi
 			data: { businessSlug, businessData }
 		})
 		const response = await getApiClient().patch(`/businesses/my-businesses/${businessSlug}`, businessData)
+		if (response.data?.data) {
+			await setCacheItem(`business:${businessSlug}`, response.data.data)
+		}
 		return response.data
 	} catch (error: any) {
 		log({
@@ -117,6 +121,9 @@ export const updateBusiness = async (businessSlug: string, businessData: any): P
 			data: { businessSlug, businessData }
 		})
 		const response = await getApiClient().patch(`/businesses/${businessSlug}`, businessData)
+		if (response.data?.data) {
+			await setCacheItem(`business:${businessSlug}`, response.data.data)
+		}
 		return response.data
 	} catch (error: any) {
 		log({

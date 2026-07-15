@@ -84,8 +84,6 @@ export const en = {
 	not_found_message: 'The requested resource was not found.',
 	server_error_title: 'Server Error',
 	server_error_message: 'The server encountered an error. Please try again later.',
-	network_error_title: 'Network Error',
-	network_error_message: 'Unable to connect to the server. Please check your internet connection.',
 	timeout_title: 'Connection Timeout',
 	timeout_message: 'The request took too long. Please check your internet connection.',
 	unknown_error_title: 'Error',
