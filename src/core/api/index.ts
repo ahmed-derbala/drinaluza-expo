@@ -4,6 +4,7 @@ import { secureGetItem, secureRemoveItem } from '../storage'
 import { config } from '../../config'
 import { logError } from '../../core/helpers/errorHandler'
 import { log } from '../log'
+import { ConnectionService } from '@/core/connection'
 
 // Create an API client with the given base URL
 const createApiClient = (baseURL: string): AxiosInstance => {
@@ -35,10 +36,19 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 		return config
 	})
 
-	// Add response interceptor for better error handling
+	// Add response interceptor for better error handling and backend health tracking
 	client.interceptors.response.use(
-		(response: AxiosResponse) => response,
+		(response: AxiosResponse) => {
+			ConnectionService.reportApiSuccess()
+			return response
+		},
 		async (error: AxiosError) => {
+			if (error.response) {
+				ConnectionService.reportApiSuccess()
+			} else {
+				ConnectionService.reportApiFailure(error)
+			}
+
 			// Log error details in development mode
 			const status = error.response?.status
 			if (status !== 401 && status !== 404 && status !== 409) {

@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
-import { io, Socket } from 'socket.io-client'
-import { View, Platform } from 'react-native'
+import React, { createContext, useContext, useEffect, useState } from 'react'
+import { Socket } from 'socket.io-client'
 import { useRouter } from 'expo-router'
-import { config } from '@/config'
+import { ConnectionService } from '@/core/connection'
 import { useUser } from '../contexts/UserContext'
 import { useNotification } from '../../features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
@@ -19,47 +18,24 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const { user } = useUser()
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
-	const socketRef = useRef<Socket | null>(null)
+	const [socket, setSocket] = useState<Socket | null>(ConnectionService.getSocket())
 
 	useEffect(() => {
 		// Only connect if user is logged in
 		if (!user?.slug) {
-			if (socketRef.current) {
-				socketRef.current.disconnect()
-				socketRef.current = null
-			}
+			ConnectionService.disconnect()
+			setSocket(null)
 			return
 		}
 
 		log({ level: 'info', label: 'socket', message: `Initializing for user: ${user.slug}` })
+		ConnectionService.connect(user.slug)
+		setSocket(ConnectionService.getSocket())
 
-		// Initialize socket with query for room auto-join
-		const socket = io(config.backend.url, {
-			transports: ['websocket'],
-			autoConnect: true,
-			reconnection: true,
-			reconnectionAttempts: config.app.retryAttempts || 3,
-			query: {
-				userSlug: user.slug
-			}
-		})
+		const currentSocket = ConnectionService.getSocket()
+		if (!currentSocket) return
 
-		socketRef.current = socket
-
-		socket.on('connect', () => {
-			log({ level: 'info', label: 'socket', message: 'Connected to socket server', data: { id: socket.id, userSlug: user.slug } })
-		})
-
-		socket.on('connect_error', (error) => {
-			log({ level: 'error', label: 'socket', message: 'Socket connection error', error })
-		})
-
-		socket.on('reconnect_failed', () => {
-			log({ level: 'warn', label: 'socket', message: 'Socket reconnection failed after maximum attempts. Stopping reconnect tries.' })
-			socket.disconnect()
-		})
-
-		socket.on('new_notification', async (data: any) => {
+		const handleNewNotification = async (data: any) => {
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
 
 			const toastTitle = data.title || 'New notification'
@@ -95,20 +71,17 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 			// Refresh count
 			refreshNotificationCount()
-		})
+		}
 
-		socket.on('disconnect', (reason) => {
-			log({ level: 'info', label: 'socket', message: 'Disconnected from socket server', data: { reason } })
-		})
+		currentSocket.on('new_notification', handleNewNotification)
 
 		return () => {
-			log({ level: 'info', label: 'socket', message: 'Cleaning up connection' })
-			socket.disconnect()
-			socketRef.current = null
+			log({ level: 'info', label: 'socket', message: 'Cleaning up notification listener' })
+			currentSocket.off('new_notification', handleNewNotification)
 		}
-	}, [user?.slug, refreshNotificationCount])
+	}, [user?.slug, refreshNotificationCount, router])
 
-	return <SocketContext.Provider value={{ socket: socketRef.current }}>{children}</SocketContext.Provider>
+	return <SocketContext.Provider value={{ socket }}>{children}</SocketContext.Provider>
 }
 
 const useSocket = () => {

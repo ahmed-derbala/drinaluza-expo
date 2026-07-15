@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheReadResult } from '@/core/storage'
+import { BackendState, useBackendConnection } from '@/core/connection'
 import { log } from '@/core/log'
 
 export interface UseCacheFirstOptions<T> {
@@ -46,20 +47,26 @@ export interface UseCacheFirstResult<T> {
  * in parallel. If the cache has a value, the UI can render instantly. Once the
  * network succeeds the cache and the returned data are updated. If it fails,
  * the cached value is preserved and `isOffline` becomes true.
+ *
+ * The hook is backend-state aware:
+ * - When the backend is offline, network requests are skipped and cached data is used.
+ * - When the backend comes back online, currently mounted hooks refresh automatically.
  */
 export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirstResult<T> {
 	const { cacheKey, fetchFn, ttlMs, onSuccess, onError, skipInitialFetch } = options
+	const { backendState } = useBackendConnection()
 	const isMountedRef = useRef(true)
+	const prevBackendStateRef = useRef<BackendState>(backendState)
 
 	const [cacheResult, setCacheResult] = useState<CacheReadResult<T> | null>(null)
 	const [freshData, setFreshData] = useState<T | null>(null)
 	const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false)
 	const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
-	const [isOffline, setIsOffline] = useState<boolean>(false)
 	const [fetchError, setFetchError] = useState<unknown>(null)
 
 	const displayedData = freshData ?? cacheResult?.data ?? null
 	const isStale = cacheResult?.isStale ?? false
+	const isOffline = backendState === 'offline'
 
 	const loadFromCache = useCallback(async () => {
 		try {
@@ -81,14 +88,12 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			const data = await fetchFn()
 			if (isMountedRef.current) {
 				setFreshData(data)
-				setIsOffline(false)
 			}
 			await setCacheItem(cacheKey, data)
 			onSuccess?.(data)
 		} catch (error) {
 			if (isMountedRef.current) {
 				setFetchError(error)
-				setIsOffline(true)
 			}
 			onError?.(error)
 		} finally {
@@ -99,14 +104,14 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 	}, [cacheKey, fetchFn, onError, onSuccess])
 
 	const refresh = useCallback(async () => {
+		if (backendState === 'offline') return
 		await fetchFresh()
-	}, [fetchFresh])
+	}, [backendState, fetchFresh])
 
 	const updateCache = useCallback(
 		async (data: T) => {
 			if (isMountedRef.current) {
 				setFreshData(data)
-				setIsOffline(false)
 			}
 			return await setCacheItem(cacheKey, data)
 		},
@@ -133,7 +138,9 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 				setIsInitialLoading(true)
 			}
 
-			if (!skipInitialFetch) {
+			// Skip network requests while the backend is known to be offline.
+			// The hook will auto-refresh as soon as the backend is reachable again.
+			if (!skipInitialFetch && backendState !== 'offline') {
 				await fetchFresh()
 			}
 
@@ -148,7 +155,17 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			cancelled = true
 			isMountedRef.current = false
 		}
-	}, [cacheKey, fetchFn, loadFromCache, fetchFresh, skipInitialFetch])
+	}, [cacheKey, fetchFn, loadFromCache, fetchFresh, skipInitialFetch, backendState])
+
+	// Auto-refresh when the backend transitions from offline/connecting to online.
+	useEffect(() => {
+		const previous = prevBackendStateRef.current
+		prevBackendStateRef.current = backendState
+
+		if (backendState === 'online' && previous !== 'online') {
+			fetchFresh()
+		}
+	}, [backendState, fetchFresh])
 
 	return {
 		data: displayedData,

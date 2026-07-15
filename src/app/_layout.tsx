@@ -42,6 +42,7 @@ import { NotificationProvider } from '@/features/notifications/NotificationConte
 import { UserProvider, useUser } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
+import { BackendConnectionProvider } from '@/core/connection'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 import { UpdatesProvider } from '@/features/updates'
@@ -238,11 +239,13 @@ export default function RootLayout() {
 						<ToastProvider>
 							<UserProvider>
 								<NotificationProvider>
-									<SocketProvider>
-										<LayoutProvider>
-											<RootLayoutContent />
-										</LayoutProvider>
-									</SocketProvider>
+									<BackendConnectionProvider>
+										<SocketProvider>
+											<LayoutProvider>
+												<RootLayoutContent />
+											</LayoutProvider>
+										</SocketProvider>
+									</BackendConnectionProvider>
 								</NotificationProvider>
 							</UserProvider>
 						</ToastProvider>

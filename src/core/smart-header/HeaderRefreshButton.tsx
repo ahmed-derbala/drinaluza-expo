@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
+import { BackendState } from '@/core/connection'
 
 export interface HeaderRefreshButtonProps {
 	/**
@@ -19,6 +20,11 @@ export interface HeaderRefreshButtonProps {
 	 * When true (and not refreshing), the button shows a static red cloud-offline icon.
 	 */
 	isOffline?: boolean
+	/**
+	 * Global backend availability state.
+	 * 'offline' shows a red cloud-offline icon, 'connecting' keeps the refresh icon spinning.
+	 */
+	backendState?: BackendState
 	/**
 	 * Optional custom color for the refresh icon.
 	 * Defaults to `colors.primary`.
@@ -44,14 +50,18 @@ export interface HeaderRefreshButtonProps {
 	disabled?: boolean
 }
 
-const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, isOffline = false, color, offlineColor, size = 22, style, disabled = false }) => {
+const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, isOffline = false, backendState, color, offlineColor, size = 22, style, disabled = false }) => {
+	const isBackendOffline = backendState === 'offline'
+	const isBackendConnecting = backendState === 'connecting'
+	const showSpinner = isRefreshing || isBackendConnecting
+	const showOffline = isOffline || isBackendOffline
 	const { colors } = useTheme()
 	const rotationValue = useRef(new Animated.Value(0)).current
 	const scaleValue = useRef(new Animated.Value(1)).current
 
 	useEffect(() => {
 		let animation: Animated.CompositeAnimation | null = null
-		if (isRefreshing) {
+		if (showSpinner) {
 			animation = Animated.loop(
 				Animated.timing(rotationValue, {
 					toValue: 1,
@@ -75,7 +85,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 				animation.stop()
 			}
 		}
-	}, [isRefreshing, rotationValue])
+	}, [showSpinner, rotationValue])
 
 	const spin = rotationValue.interpolate({
 		inputRange: [0, 1],
@@ -117,10 +127,10 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 
 	if (!onRefresh) return null
 
-	const isDisabled = isRefreshing || disabled
+	const isDisabled = showSpinner || disabled
 
 	const renderIcon = () => {
-		if (isRefreshing) {
+		if (showSpinner) {
 			return (
 				<Animated.View style={{ transform: [{ rotate: spin }, { scale: scaleValue }] }}>
 					<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
@@ -128,7 +138,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 			)
 		}
 
-		if (isOffline) {
+		if (showOffline) {
 			return <Ionicons name="cloud-offline" size={size} color={offlineColor || colors.error} />
 		}
 
@@ -146,7 +156,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, is
 			disabled={isDisabled}
 			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
 			accessibilityRole="button"
-			accessibilityLabel={isOffline ? 'Offline' : 'Refresh'}
+			accessibilityLabel={showOffline ? 'Offline' : 'Refresh'}
 			accessibilityState={{ disabled: isDisabled }}
 		>
 			{renderIcon()}
