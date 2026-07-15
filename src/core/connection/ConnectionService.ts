@@ -47,7 +47,7 @@ const attachSocketListeners = (socket: Socket) => {
 	})
 
 	socket.on('connect_error', (error) => {
-		log({ level: 'error', label: 'ConnectionService', message: 'Socket connect error', error })
+		log({ level: 'warn', label: 'ConnectionService', message: 'Socket connect error', error })
 		setBackendState('offline')
 	})
 
@@ -72,7 +72,8 @@ const createSocket = (userSlug: string): Socket => {
 		transports: ['websocket'],
 		autoConnect: true,
 		reconnection: true,
-		reconnectionAttempts: config.app.retryAttempts || 3,
+		reconnectionAttempts: Infinity,
+		reconnectionDelayMax: 5000,
 		query: {
 			userSlug
 		}
@@ -142,7 +143,7 @@ export const ConnectionService = {
 
 		consecutiveFailureCount += 1
 		log({
-			level: 'warn',
+			level: 'debug',
 			label: 'ConnectionService',
 			message: `API failure reported (${consecutiveFailureCount}/${MAX_CONSECUTIVE_FAILURES})`,
 			error

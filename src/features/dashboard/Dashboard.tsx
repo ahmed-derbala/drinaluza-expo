@@ -6,15 +6,15 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter, Tabs, Stack, useLocalSearchParams } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../core/theme'
-import { parseError, logError } from '../../core/helpers/errorHandler'
 import ErrorState from '../common/ErrorState'
 import { useUser } from '../../core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SmartImage from '@/core/SmartImageViewer'
-import { getDashboardProfiles, getBusinessDashboard } from './dashboard.api'
+import { useDashboardProfiles } from './useDashboardProfiles'
+import { useBusinessDashboard } from './useBusinessDashboard'
+import { getBusinessCustomers } from '../businesses/businesses.api'
 import { isBusinessDashboard, DashboardData, DashboardProfile, DashboardRankItem, ProductStats, BusinessDashboard } from './dashboard.interface'
 import { LocalizedName } from '../businesses/businesses.interface'
-import { getBusinessCustomers } from '../businesses/businesses.api'
 
 import QRCodeModal from '@/features/common/QRCodeModal'
 
@@ -42,18 +42,32 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 	const { businessSlug: routeBusinessSlug } = useLocalSearchParams<{ businessSlug?: string }>()
 	const businessSlug = propBusinessSlug || routeBusinessSlug
 
-	const [profiles, setProfiles] = useState<DashboardProfile[]>([])
-	const [dashboardData, setDashboardData] = useState<DashboardData | null>(null)
-	const [selectedProfile, setSelectedProfile] = useState<SelectedProfile | null>(null)
-	const [refreshing, setRefreshing] = useState(false)
-	const [loading, setLoading] = useState(true)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [showQRCode, setShowQRCode] = useState(false)
 
-	const showProfileSwitcher = profiles.length > 1
+	const { data: profilesResponse, isInitialLoading: profilesLoading, isRefreshing: profilesRefreshing, isOffline: profilesOffline, refresh: refreshProfiles } = useDashboardProfiles()
+	const profiles = (profilesResponse?.data?.filter((p) => p.kind === 'business') as DashboardProfile[]) || []
+
+	const targetSlug = useMemo(() => {
+		if (businessSlug) return businessSlug
+		if (profiles.length > 0 && profiles[0].slug) return profiles[0].slug
+		return undefined
+	}, [businessSlug, profiles])
+
+	const {
+		data: dashboardResponse,
+		isInitialLoading: dashboardLoading,
+		isRefreshing: dashboardRefreshing,
+		isOffline: dashboardOffline,
+		refresh: refreshDashboard
+	} = useBusinessDashboard({ businessSlug: targetSlug })
+	const dashboardData = dashboardResponse?.data ?? null
+
+	const isInitialLoading = profilesLoading || dashboardLoading
+	const isRefreshing = profilesRefreshing || dashboardRefreshing
+	const isOffline = profilesOffline && dashboardOffline
 
 	const resolveSelectedFromData = useCallback((data: BusinessDashboard, list: DashboardProfile[]): SelectedProfile => {
-		const match = list.find((p) => p.kind === 'business' && p.slug === data.business.slug) || list.find((p) => p.kind === 'business')
+		const match = list.find((p: DashboardProfile) => p.kind === 'business' && p.slug === data.business.slug) || list.find((p: DashboardProfile) => p.kind === 'business')
 		return {
 			kind: 'business',
 			slug: data.business.slug,
@@ -61,54 +75,17 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 		}
 	}, [])
 
-	const loadDashboard = useCallback(
-		async (profileOverride?: SelectedProfile) => {
-			try {
-				setError(null)
-				const profilesRes = await getDashboardProfiles()
-				const profileList = profilesRes.data?.filter((p) => p.kind === 'business') || []
-				setProfiles(profileList)
+	const selectedProfile = useMemo<SelectedProfile | null>(() => {
+		if (!dashboardData || !isBusinessDashboard(dashboardData)) return null
+		return resolveSelectedFromData(dashboardData, profiles)
+	}, [dashboardData, profiles, resolveSelectedFromData])
 
-				let targetSlug = profileOverride?.slug || businessSlug
-
-				// If no businessSlug is provided (e.g. on main tab), use the first available business profile
-				if (!targetSlug) {
-					if (profileList.length > 0 && profileList[0].slug) {
-						targetSlug = profileList[0].slug
-					} else {
-						// No business profile available
-						setLoading(false)
-						return
-					}
-				}
-
-				const dataRes = await getBusinessDashboard(targetSlug)
-				const data = dataRes.data
-
-				setDashboardData(data)
-				if (isBusinessDashboard(data)) {
-					setSelectedProfile(profileOverride || resolveSelectedFromData(data, profileList))
-				}
-			} catch (err: unknown) {
-				logError(err, 'loadDashboard')
-				const errorInfo = parseError(err)
-				setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
-			} finally {
-				setLoading(false)
-				setRefreshing(false)
-			}
-		},
-		[resolveSelectedFromData, businessSlug]
-	)
-
-	useEffect(() => {
-		loadDashboard()
-	}, [loadDashboard])
+	const showProfileSwitcher = profiles.length > 1
 
 	const onRefresh = useCallback(() => {
-		setRefreshing(true)
-		loadDashboard(selectedProfile ?? undefined)
-	}, [loadDashboard, selectedProfile])
+		refreshProfiles()
+		refreshDashboard()
+	}, [refreshProfiles, refreshDashboard])
 
 	const headerActions = useMemo(() => {
 		if (!dashboardData || !isBusinessDashboard(dashboardData)) {
@@ -116,7 +93,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 				{
 					key: 'refresh',
 					onPress: onRefresh,
-					isRefreshing: refreshing,
+					isRefreshing: isRefreshing,
 					accessibilityLabel: 'Refresh'
 				}
 			]
@@ -141,11 +118,11 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 		actions.push({
 			key: 'refresh',
 			onPress: onRefresh,
-			isRefreshing: refreshing,
+			isRefreshing: isRefreshing,
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [dashboardData, refreshing, onRefresh, router])
+	}, [dashboardData, isRefreshing, onRefresh, router])
 
 	const handleSelectProfile = useCallback(
 		(profile: DashboardProfile) => {
@@ -156,24 +133,17 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 				router.replace(`/dashboard?businessSlug=${profile.slug}` as never)
 			} else {
 				// Navigating to personal dashboard
-				if (businessSlug) {
-					// Coming from a business dashboard, route back to the personal dashboard
-					router.replace(`/dashboard` as never)
-				} else {
-					// Already on /dashboard, just update state
-					setLoading(true)
-					loadDashboard({ kind: profile.kind, slug: profile.slug, profileId: profile._id })
-				}
+				router.replace(`/dashboard` as never)
 			}
 		},
-		[selectedProfile, router, businessSlug, loadDashboard]
+		[selectedProfile, router]
 	)
 
 	const getProfileLabel = (profile: DashboardProfile) => localize(profile.name)
 
 	const getProfileThumbnail = (profile: DashboardProfile) => profile.media?.thumbnail?.url
 
-	if (loading && !refreshing) {
+	if (isInitialLoading) {
 		return (
 			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
@@ -181,7 +151,21 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 		)
 	}
 
-	if (error && !dashboardData) {
+	if (!profilesLoading && !dashboardLoading && !targetSlug && profiles.length === 0) {
+		return (
+			<View style={[styles.container, { backgroundColor: colors.background }]}>
+				<Tabs.Screen
+					options={{
+						title: translate('dashboard', 'Dashboard'),
+						headerLeft: () => null
+					}}
+				/>
+				<ErrorState icon="storefront-outline" iconOnly />
+			</View>
+		)
+	}
+
+	if (isOffline && !dashboardData) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Tabs.Screen
@@ -190,25 +174,12 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 						headerLeft: () => null,
 						headerRight: () => (
 							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={refreshing} />
+								<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={isRefreshing} />
 							</View>
 						)
 					}}
 				/>
-				<ErrorState
-					title={error.type === 'network' ? undefined : error.title}
-					message={error.type === 'network' ? undefined : error.message}
-					onRetry={
-						error.type === 'network'
-							? undefined
-							: () => {
-									setLoading(true)
-									loadDashboard()
-								}
-					}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-					iconOnly={error.type === 'network'}
-				/>
+				<ErrorState icon="cloud-offline-outline" iconOnly />
 			</View>
 		)
 	}
@@ -235,7 +206,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 
 			<SmartHeader.ScrollView
 				contentContainerStyle={[styles.scrollContent, { paddingBottom: 90 + insets.bottom }]}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				showsVerticalScrollIndicator={false}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
@@ -283,14 +254,14 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 					</View>
 				)}
 
-				{profiles.length === 0 && !loading && !refreshing && (
+				{profiles.length === 0 && !isInitialLoading && !isRefreshing && (
 					<View style={[styles.centered, { marginTop: 40 }]}>
 						<Text style={{ color: colors.textSecondary }}>{translate('dashboard.no_business_profiles', 'No business profiles found.')}</Text>
 					</View>
 				)}
 
 				{dashboardData && isBusinessDashboard(dashboardData) && (
-					<BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} onRefresh={onRefresh} refreshing={refreshing} />
+					<BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} onRefresh={onRefresh} refreshing={isRefreshing} />
 				)}
 			</SmartHeader.ScrollView>
 			{dashboardData && isBusinessDashboard(dashboardData) && (

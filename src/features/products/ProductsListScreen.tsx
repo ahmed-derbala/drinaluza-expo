@@ -4,13 +4,13 @@ import { useRouter, useFocusEffect } from 'expo-router'
 
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons } from '@expo/vector-icons'
+import { useProducts } from '@/features/products/useProducts'
 import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
 import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
-import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { useTheme } from '@/core/theme'
 import { toast } from '@/features/common/Toast'
@@ -22,10 +22,10 @@ export default function ProductsListScreen() {
 	const router = useRouter()
 	const { translate } = useUser()
 
-	const [products, setProducts] = useState<ProductFeedItem[]>([])
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ message: string; title: string; type: string } | null>(null)
+	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh } = useProducts()
+	const page1Products = (page1Response?.data?.docs ?? []) as unknown as ProductFeedItem[]
+	const [extraProducts, setExtraProducts] = useState<ProductFeedItem[]>([])
+	const products = useMemo(() => [...page1Products, ...extraProducts], [page1Products, extraProducts])
 
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
@@ -34,6 +34,13 @@ export default function ProductsListScreen() {
 	const [cart, setCart] = useState<any[]>([])
 
 	const { numColumns, gap, padding, itemWidth } = useResponsiveGrid()
+
+	// Reset appended pages whenever the cached page 1 refreshes (manual or auto on backend online)
+	useEffect(() => {
+		setExtraProducts([])
+		setPage(1)
+		setHasMore(true)
+	}, [page1Response])
 
 	const loadCart = async () => {
 		try {
@@ -48,14 +55,11 @@ export default function ProductsListScreen() {
 		}, [])
 	)
 
-	const loadProducts = async (pageNum: number = 1, shouldAppend: boolean = false) => {
+	const loadMoreProducts = async (nextPage: number) => {
 		try {
-			if (pageNum === 1) setLoading(true)
-			else setIsLoadingMore(true)
-			setError(null)
-
-			const response = await getProducts(pageNum, 10)
-			const newItems = response.data.docs as any as ProductFeedItem[]
+			setIsLoadingMore(true)
+			const response = await getProducts(nextPage, 10)
+			const newItems = response.data.docs as unknown as ProductFeedItem[]
 
 			if (newItems.length < 10) {
 				setHasMore(false)
@@ -63,39 +67,26 @@ export default function ProductsListScreen() {
 				setHasMore(true)
 			}
 
-			if (shouldAppend) {
-				setProducts((prev) => [...prev, ...newItems])
-			} else {
-				setProducts(newItems)
-			}
+			setExtraProducts((prev) => [...prev, ...newItems])
 		} catch (err) {
-			logError(err, 'loadProducts')
-			const parsed = parseError(err)
-			setError({ title: parsed.title, message: parsed.message, type: parsed.type })
+			toast.show({ title: 'Error', message: 'Failed to load more products', color: '#EF4444' })
 		} finally {
-			setLoading(false)
-			setRefreshing(false)
 			setIsLoadingMore(false)
 		}
 	}
 
-	useEffect(() => {
-		loadProducts(1, false)
-	}, [])
-
 	const handleRefresh = async () => {
-		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
 		await loadCart()
-		await loadProducts(1, false)
+		await refresh()
 	}
 
 	const handleLoadMore = () => {
-		if (hasMore && !loading && !isLoadingMore && !refreshing) {
+		if (hasMore && !isInitialLoading && !isLoadingMore && !isRefreshing) {
 			const next = page + 1
 			setPage(next)
-			loadProducts(next, true)
+			loadMoreProducts(next)
 		}
 	}
 
@@ -143,11 +134,11 @@ export default function ProductsListScreen() {
 			{
 				key: 'refresh',
 				onPress: handleRefresh,
-				isRefreshing: refreshing,
+				isRefreshing: isRefreshing,
 				accessibilityLabel: 'Refresh'
 			}
 		]
-	}, [cart.length, handleRefresh, refreshing, router])
+	}, [cart.length, handleRefresh, isRefreshing, router])
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -160,49 +151,46 @@ export default function ProductsListScreen() {
 				}
 			/>
 
-			{error ? (
-				<ErrorState
-					title={error.type === 'network' ? undefined : error.title}
-					message={error.type === 'network' ? undefined : error.message}
-					onRetry={error.type === 'network' ? undefined : handleRefresh}
-					icon="cloud-offline-outline"
-					iconOnly={error.type === 'network'}
-				/>
-			) : (
-				<SmartHeader.FlashList
-					data={products}
-					key={numColumns}
-					numColumns={numColumns}
-					keyExtractor={(item: ProductFeedItem, idx: number) => item._id + '-' + idx}
-					renderItem={renderItem}
-					contentContainerStyle={{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding, paddingTop: padding, paddingBottom: 100 }}
-					showsVerticalScrollIndicator={false}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-					onEndReached={handleLoadMore}
-					onEndReachedThreshold={0.5}
-					ListEmptyComponent={() => {
-						if (loading) return null
+			<SmartHeader.FlashList
+				data={products}
+				key={numColumns}
+				numColumns={numColumns}
+				keyExtractor={(item: ProductFeedItem, idx: number) => item._id + '-' + idx}
+				renderItem={renderItem}
+				contentContainerStyle={{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding, paddingTop: padding, paddingBottom: 100 }}
+				showsVerticalScrollIndicator={false}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				onEndReached={handleLoadMore}
+				onEndReachedThreshold={0.5}
+				ListEmptyComponent={() => {
+					if (isInitialLoading) return null
+					if (isOffline) {
 						return (
 							<View style={styles.emptyContainer}>
-								<Ionicons name="fish-outline" size={64} color={colors.textTertiary} style={{ marginBottom: 16 }} />
-								<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_products', 'No products found')}</Text>
+								<ErrorState icon="cloud-offline-outline" iconOnly />
 							</View>
 						)
-					}}
-					ListFooterComponent={() => {
-						if (isLoadingMore) {
-							return (
-								<View style={{ paddingVertical: 20, alignItems: 'center' }}>
-									<ActivityIndicator size="small" color={colors.primary} />
-								</View>
-							)
-						}
-						return <View style={{ height: 20 }} />
-					}}
-				/>
-			)}
+					}
+					return (
+						<View style={styles.emptyContainer}>
+							<Ionicons name="fish-outline" size={64} color={colors.textTertiary} style={{ marginBottom: 16 }} />
+							<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_products', 'No products found')}</Text>
+						</View>
+					)
+				}}
+				ListFooterComponent={() => {
+					if (isLoadingMore) {
+						return (
+							<View style={{ paddingVertical: 20, alignItems: 'center' }}>
+								<ActivityIndicator size="small" color={colors.primary} />
+							</View>
+						)
+					}
+					return <View style={{ height: 20 }} />
+				}}
+			/>
 
-			{loading && !refreshing && products.length === 0 && (
+			{isInitialLoading && !isRefreshing && products.length === 0 && (
 				<View style={styles.loadingOverlay}>
 					<ActivityIndicator size="large" color={colors.primary} />
 				</View>

@@ -7,7 +7,8 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
-import { getProductBySlug, updateProduct } from '@/features/products/products.api'
+import { updateProduct } from '@/features/products/products.api'
+import { useProductBySlug } from './useProductBySlug'
 import { ProductType, FileRef } from '@/features/products/products.type'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
@@ -37,12 +38,10 @@ export default function ProductScreen() {
 	const { width, height } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 
-	const [product, setProduct] = useState<ProductType | null>(null)
-	const [viewer, setViewer] = useState<{ canEdit?: boolean; canCreate?: boolean } | null>(null)
+	const { data: productResponse, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useProductBySlug({ productSlug })
+	const product = productResponse?.data ?? null
+	const viewer = productResponse?.viewer ?? null
 	const [activeImage, setActiveImage] = useState<string | null>(null)
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [cart, setCart] = useState<any[]>([])
 	const [quantity, setQuantity] = useState(1)
 	const [showQRCode, setShowQRCode] = useState(false)
@@ -171,41 +170,15 @@ export default function ProductScreen() {
 		}
 	}, [setTabBarVisible])
 
-	const loadProduct = useCallback(
-		async (isRefresh = false) => {
-			if (!productSlug) return
-
-			try {
-				if (!isRefresh) setLoading(true)
-				setError(null)
-
-				const response = await getProductBySlug(productSlug)
-				setProduct(response.data)
-				setViewer(response.viewer || null)
-				syncProductToState(response.data)
-				setActiveImage(null)
-			} catch (err) {
-				const parsed = parseError(err)
-				setError({
-					title: parsed.title,
-					message: parsed.message,
-					type: parsed.type
-				})
-			} finally {
-				setLoading(false)
-				setRefreshing(false)
-			}
-		},
-		[productSlug, syncProductToState]
-	)
-
 	useEffect(() => {
-		loadProduct()
-	}, [loadProduct])
+		if (product) {
+			syncProductToState(product)
+			setActiveImage(null)
+		}
+	}, [product, syncProductToState])
 
 	const handleRefresh = () => {
-		setRefreshing(true)
-		loadProduct(true)
+		refresh()
 		loadCart()
 	}
 
@@ -226,7 +199,11 @@ export default function ProductScreen() {
 					tn_arab: nameTnArab.trim() || undefined
 				}
 			})
-			setProduct(res.data)
+			if (productResponse) {
+				updateCache({ ...productResponse, data: res.data })
+			} else {
+				refresh()
+			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, names: false }))
 			toast.show({ title: translate('success', 'Success'), message: translate('product_names_updated', 'Names updated successfully'), color: colors.success })
@@ -259,7 +236,11 @@ export default function ProductScreen() {
 					step: unitStep ? parseFloat(unitStep) : 1
 				}
 			})
-			setProduct(res.data)
+			if (productResponse) {
+				updateCache({ ...productResponse, data: res.data })
+			} else {
+				refresh()
+			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, pricing: false }))
 			toast.show({ title: translate('success', 'Success'), message: translate('product_pricing_updated', 'Pricing updated successfully'), color: colors.success })
@@ -285,7 +266,11 @@ export default function ProductScreen() {
 					minThreshold: minThreshold ? parseFloat(minThreshold) : 10
 				}
 			})
-			setProduct(res.data)
+			if (productResponse) {
+				updateCache({ ...productResponse, data: res.data })
+			} else {
+				refresh()
+			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, stock: false }))
 			toast.show({ title: translate('success', 'Success'), message: translate('product_stock_updated', 'Stock updated successfully'), color: colors.success })
@@ -390,7 +375,11 @@ export default function ProductScreen() {
 					gallery: uploadedGallery.filter((img) => img._id !== 'thumb' && img._id !== 'thumbnail')
 				}
 			})
-			setProduct(res.data)
+			if (productResponse) {
+				updateCache({ ...productResponse, data: res.data })
+			} else {
+				refresh()
+			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, gallery: false }))
 			toast.show({ title: translate('success', 'Success'), message: translate('product_gallery_updated', 'Gallery updated successfully'), color: colors.success })
@@ -423,7 +412,11 @@ export default function ProductScreen() {
 					}
 				}
 			})
-			setProduct(res.data)
+			if (productResponse) {
+				updateCache({ ...productResponse, data: res.data })
+			} else {
+				refresh()
+			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, specs: false }))
 			toast.show({ title: translate('success', 'Success'), message: translate('product_specs_updated', 'Specifications updated successfully'), color: colors.success })
@@ -507,11 +500,11 @@ export default function ProductScreen() {
 			{
 				key: 'refresh',
 				onPress: handleRefresh,
-				isRefreshing: refreshing,
+				isRefreshing: isRefreshing,
 				accessibilityLabel: 'Refresh'
 			}
 		],
-		[cart.length, handleRefresh, refreshing, router]
+		[cart.length, handleRefresh, isRefreshing, router]
 	)
 
 	const combinedGallery = useMemo(() => {
@@ -531,26 +524,11 @@ export default function ProductScreen() {
 		return list
 	}, [product])
 
-	if (loading && !product) {
+	if (isInitialLoading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle }} />
 				<LoadingState />
-			</View>
-		)
-	}
-
-	if (error && !product) {
-		return (
-			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: displayTitle }} />
-				<ErrorState
-					title={error.type === 'network' ? undefined : error.title}
-					message={error.type === 'network' ? undefined : error.message}
-					onRetry={error.type === 'network' ? undefined : () => loadProduct()}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-					iconOnly={error.type === 'network'}
-				/>
 			</View>
 		)
 	}
@@ -560,10 +538,11 @@ export default function ProductScreen() {
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle }} />
 				<ErrorState
-					title={translate('product_not_found', 'Product Not Found')}
-					message={translate('product_not_found_desc', 'The product you are looking for could not be found.')}
-					onRetry={() => loadProduct()}
-					icon="fish-outline"
+					title={isOffline ? undefined : translate('product_not_found', 'Product Not Found')}
+					message={isOffline ? undefined : translate('product_not_found_desc', 'The product you are looking for could not be found.')}
+					onRetry={isOffline ? undefined : () => refresh()}
+					icon={isOffline ? 'cloud-offline-outline' : 'fish-outline'}
+					iconOnly={isOffline}
 				/>
 			</View>
 		)
@@ -862,7 +841,7 @@ export default function ProductScreen() {
 			<SmartHeader.ScrollView
 				style={styles.container}
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom }]}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 				keyboardShouldPersistTaps="handled"

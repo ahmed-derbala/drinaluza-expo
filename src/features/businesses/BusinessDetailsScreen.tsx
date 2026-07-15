@@ -8,13 +8,13 @@ import StateBadge from '@/features/common/StateBadge'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import QRCodeModal from '@/features/common/QRCodeModal'
-import { getBusinessBySlug, getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
+import { useBusinessBySlug } from '@/features/businesses/useBusinessBySlug'
+import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { getUserBySlug } from '@/features/users/users.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
 import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import { useTheme, createShadow } from '@/core/theme'
-import { parseError } from '@/core/helpers/errorHandler'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
@@ -159,62 +159,42 @@ export default function BusinessDetailsScreen() {
 		}
 	}
 
-	const [business, setBusiness] = useState<Business | null>(null)
-	const [products, setProducts] = useState<any[]>([])
+	const { data: businessResponse, isInitialLoading: businessLoading, isRefreshing: businessRefreshing, isOffline: businessOffline, refresh: refreshBusiness } = useBusinessBySlug({ businessSlug })
+	const business = businessResponse?.data ?? null
+
+	const { data: productsResponse, isInitialLoading: productsLoading, isRefreshing: productsRefreshing, isOffline: productsOffline, refresh: refreshProducts } = useBusinessProducts({ businessSlug })
+	const products = (productsResponse?.data?.docs ?? []) as unknown as ProductType[]
+
 	const [ownerPhoto, setOwnerPhoto] = useState<string | null>(null)
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const { onScroll } = useScrollHandler()
+
+	const isInitialLoading = businessLoading || productsLoading
+	const isRefreshing = businessRefreshing || productsRefreshing
+	const isOffline = businessOffline && productsOffline
 
 	const displayTitle = business ? localize(business.name) : translate('loading', 'Loading...')
 
-	const loadBusinessDetails = useCallback(
-		async (isRefresh = false) => {
-			if (!businessSlug) return
-
-			try {
-				if (!isRefresh) setLoading(true)
-				setError(null)
-
-				const [businessResponse, productsResponse] = await Promise.all([getBusinessBySlug(businessSlug), getBusinessProductsBySlug(businessSlug).catch(() => null)])
-
-				const businessData = businessResponse.data
-				setBusiness(businessData)
-				setProducts(productsResponse?.data?.docs || [])
-
-				if (businessData?.owner?.slug) {
-					try {
-						const ownerResponse = await getUserBySlug(businessData.owner.slug)
-						setOwnerPhoto(ownerResponse.data?.media?.thumbnail?.url || null)
-					} catch (ownerErr) {
-						console.log('Failed to fetch owner details for photo:', ownerErr)
-					}
-				}
-			} catch (err: any) {
-				console.error('Failed to load business details:', err)
-				const errorInfo = parseError(err)
-				setError({
-					title: errorInfo.title,
-					message: errorInfo.message,
-					type: errorInfo.type
-				})
-			} finally {
-				setLoading(false)
-				setRefreshing(false)
-			}
-		},
-		[businessSlug]
-	)
-
 	useEffect(() => {
-		loadBusinessDetails()
-	}, [loadBusinessDetails])
+		if (!business?.owner?.slug) return
+		let cancelled = false
+		const fetchOwner = async () => {
+			try {
+				const ownerResponse = await getUserBySlug(business.owner.slug)
+				if (!cancelled) setOwnerPhoto(ownerResponse.data?.media?.thumbnail?.url || null)
+			} catch (ownerErr) {
+				console.log('Failed to fetch owner details for photo:', ownerErr)
+			}
+		}
+		fetchOwner()
+		return () => {
+			cancelled = true
+		}
+	}, [business?.owner?.slug])
 
 	const handleRefresh = useCallback(() => {
-		setRefreshing(true)
-		loadBusinessDetails(true)
-	}, [loadBusinessDetails])
+		refreshBusiness()
+		refreshProducts()
+	}, [refreshBusiness, refreshProducts])
 
 	// QR Code state
 	const [showQRCode, setShowQRCode] = useState(false)
@@ -223,7 +203,7 @@ export default function BusinessDetailsScreen() {
 		openDirections(business?.location, business?.address)
 	}
 
-	if (loading) {
+	if (isInitialLoading) {
 		return (
 			<View style={styles.container}>
 				<Stack.Screen
@@ -242,18 +222,12 @@ export default function BusinessDetailsScreen() {
 		)
 	}
 
-	if (error) {
+	if (isOffline && !business) {
 		return (
 			<View style={styles.container}>
 				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-					<ErrorState
-						title={error.type === 'network' ? undefined : error.title}
-						message={error.type === 'network' ? undefined : error.message}
-						onRetry={error.type === 'network' ? undefined : () => loadBusinessDetails()}
-						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-						iconOnly={error.type === 'network'}
-					/>
+					<ErrorState icon="cloud-offline-outline" iconOnly />
 				</View>
 			</View>
 		)
@@ -298,7 +272,7 @@ export default function BusinessDetailsScreen() {
 							{
 								key: 'refresh',
 								onPress: handleRefresh,
-								isRefreshing: refreshing,
+								isRefreshing: isRefreshing,
 								accessibilityLabel: 'Refresh'
 							}
 						]
@@ -308,7 +282,7 @@ export default function BusinessDetailsScreen() {
 			<SmartHeader.ScrollView
 				style={styles.container}
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 				keyboardShouldPersistTaps="handled"

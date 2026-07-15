@@ -3,6 +3,8 @@ import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheRe
 import { BackendState, useBackendConnection } from '@/core/connection'
 import { log } from '@/core/log'
 
+const pendingFetches = new Map<string, Promise<unknown>>()
+
 export interface UseCacheFirstOptions<T> {
 	/** Unique, deterministic cache key. */
 	cacheKey: string
@@ -82,8 +84,28 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 	}, [cacheKey, ttlMs])
 
 	const fetchFresh = useCallback(async () => {
+		const existing = pendingFetches.get(cacheKey) as Promise<T | undefined> | undefined
+		if (existing) {
+			try {
+				const data = await existing
+				if (data && isMountedRef.current) {
+					setFreshData(data)
+				}
+			} catch {
+				// The original fetch failed; error state is handled by the initiator
+			}
+			return
+		}
+
+		let resolve: (value: T | undefined) => void = () => {}
+		const promise = new Promise<T | undefined>((res) => {
+			resolve = res
+		})
+		pendingFetches.set(cacheKey, promise)
+
 		setIsRefreshing(true)
 		setFetchError(null)
+		let result: T | undefined
 		try {
 			const data = await fetchFn()
 			if (isMountedRef.current) {
@@ -91,12 +113,15 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			}
 			await setCacheItem(cacheKey, data)
 			onSuccess?.(data)
+			result = data
 		} catch (error) {
 			if (isMountedRef.current) {
 				setFetchError(error)
 			}
 			onError?.(error)
 		} finally {
+			resolve(result)
+			pendingFetches.delete(cacheKey)
 			if (isMountedRef.current) {
 				setIsRefreshing(false)
 			}

@@ -11,7 +11,6 @@ import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useLayout } from '@/core/contexts'
-import { useBackendConnection } from '@/core/connection'
 import HeaderActionButton from './HeaderActionButton'
 import HeaderRefreshButton from './HeaderRefreshButton'
 
@@ -236,7 +235,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 }) => {
 	const { colors } = useTheme()
 	const { isHeaderVisible, setHeaderVisible, setTabBarVisible, setHeaderHeight } = useLayout()
-	const { backendState } = useBackendConnection()
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
 	const pathname = usePathname()
@@ -378,7 +376,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 				case 'settings':
 					return <HeaderSettingsButton key="predefined-settings" />
 				case 'refresh':
-					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} isOffline={options?.isOffline} backendState={backendState} />
+					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} isOffline={options?.isOffline} />
 				case 'scanner':
 					if (Platform.OS === 'web') return null
 					return (
@@ -404,7 +402,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		if (action && typeof action === 'object' && 'key' in action) {
 			const config = action as any
 			if (config.key === 'refresh') {
-				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} isOffline={config.isOffline} backendState={backendState} />
+				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} isOffline={config.isOffline} />
 			}
 			return (
 				<HeaderActionButton

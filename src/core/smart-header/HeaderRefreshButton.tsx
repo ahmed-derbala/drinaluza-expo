@@ -2,7 +2,7 @@ import React, { useRef, useEffect } from 'react'
 import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
-import { BackendState } from '@/core/connection'
+import { useBackendConnection, BackendState } from '@/core/connection'
 
 export interface HeaderRefreshButtonProps {
 	/**
@@ -50,11 +50,23 @@ export interface HeaderRefreshButtonProps {
 	disabled?: boolean
 }
 
-const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({ onRefresh, isRefreshing = false, isOffline = false, backendState, color, offlineColor, size = 22, style, disabled = false }) => {
+const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
+	onRefresh,
+	isRefreshing = false,
+	isOffline = false,
+	backendState: backendStateProp,
+	color,
+	offlineColor,
+	size = 22,
+	style,
+	disabled = false
+}) => {
+	const { backendState: contextBackendState } = useBackendConnection()
+	const backendState = backendStateProp ?? contextBackendState
 	const isBackendOffline = backendState === 'offline'
 	const isBackendConnecting = backendState === 'connecting'
 	const showSpinner = isRefreshing || isBackendConnecting
-	const showOffline = isOffline || isBackendOffline
+	const showOffline = isBackendOffline || (isOffline && backendState !== 'online')
 	const { colors } = useTheme()
 	const rotationValue = useRef(new Animated.Value(0)).current
 	const scaleValue = useRef(new Animated.Value(1)).current
@@ -174,4 +186,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default React.memo(HeaderRefreshButton)
+export default HeaderRefreshButton

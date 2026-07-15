@@ -9,12 +9,12 @@ import { useTheme, createShadow } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import ErrorState from '../common/ErrorState'
 import EmptyState from '../common/EmptyState'
+import { usePurchasesByStatus } from '../orders/usePurchasesByStatus'
 import { getPurchases, updatePurchaseStatus, createPurchase } from '../orders/orders.api'
 import { OrderItem } from '../orders/orders.interface'
 import { ORDER_STATUSES, orderStatusColors, orderStatusLabels } from '../orders/orders-statuses'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { parseError, logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts/UserContext'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
@@ -49,26 +49,29 @@ export default function PurchasesScreen() {
 		selectedStatusRef.current = selectedStatus
 	}, [selectedStatus])
 
-	const isFirstLoad = useRef(true)
-
-	// State per tab status
-	const [purchasesState, setPurchasesState] = useState<Record<string, OrderItem[]>>({})
 	const [cartState, setCartState] = useState<CartItem[]>([])
 	const [statusCounts, setStatusCounts] = useState<Record<string, number>>({})
-	const [initialLoading, setInitialLoading] = useState(true)
-	const [tabLoading, setTabLoading] = useState<Record<string, boolean>>({})
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string } | null>(null)
-
-	const purchasesStateRef = useRef(purchasesState)
-	useEffect(() => {
-		purchasesStateRef.current = purchasesState
-	}, [purchasesState])
 
 	const cartStateRef = useRef(cartState)
 	useEffect(() => {
 		cartStateRef.current = cartState
 	}, [cartState])
+
+	const isPurchaseStatus = selectedStatus !== 'cart'
+	const {
+		data: purchasesResponse,
+		isInitialLoading,
+		isRefreshing,
+		isOffline,
+		refresh
+	} = usePurchasesByStatus({
+		status: selectedStatus,
+		skipInitialFetch: !isPurchaseStatus
+	})
+	const purchaseItems = useMemo(() => {
+		if (!purchasesResponse?.data?.docs) return []
+		return [...purchasesResponse.data.docs].sort((a: OrderItem, b: OrderItem) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+	}, [purchasesResponse])
 
 	// Responsive Layout
 	const isTablet = width >= 768
@@ -116,71 +119,35 @@ export default function PurchasesScreen() {
 		}
 	}, [])
 
-	const loadTabContent = useCallback(async (isRefreshing = false, statusVal = selectedStatusRef.current) => {
-		try {
-			setError(null)
-			if (statusVal === 'cart') {
-				if (!isRefreshing && !cartStateRef.current.length) {
-					setTabLoading((prev) => ({ ...prev, cart: true }))
-				}
-				const storedCart = await getItem<CartItem[]>('cart')
-				setCartState(storedCart || [])
-			} else {
-				if (!isRefreshing && !purchasesStateRef.current[statusVal]?.length) {
-					setTabLoading((prev) => ({ ...prev, [statusVal]: true }))
-				}
-				const response = await getPurchases(statusVal === 'all' ? undefined : statusVal)
-				if (response && response.data && Array.isArray(response.data.docs)) {
-					const docs = response.data.docs
-					docs.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-					setPurchasesState((prev) => ({
-						...prev,
-						[statusVal]: docs
-					}))
-				} else {
-					setPurchasesState((prev) => ({
-						...prev,
-						[statusVal]: []
-					}))
-				}
-			}
-		} catch (err: any) {
-			console.error('Error loading purchases:', err)
-			setError({
-				title: 'Error Loading Purchases',
-				message: err.message || 'Failed to load your purchases. Please try again.'
-			})
-		} finally {
-			setInitialLoading(false)
-			setRefreshing(false)
-			setTabLoading((prev) => ({ ...prev, [statusVal]: false }))
-		}
+	const loadCart = useCallback(async () => {
+		const storedCart = await getItem<CartItem[]>('cart')
+		setCartState(storedCart || [])
 	}, [])
 
 	const handleRefresh = useCallback(async () => {
-		setRefreshing(true)
 		await loadAllPurchasesForCounts()
-		await loadTabContent(true, selectedStatus)
-	}, [loadAllPurchasesForCounts, loadTabContent, selectedStatus])
+		await loadCart()
+		if (isPurchaseStatus) {
+			await refresh()
+		}
+	}, [loadAllPurchasesForCounts, loadCart, refresh, isPurchaseStatus])
 
 	const handleStatusChange = useCallback(
 		(newStatus: string) => {
 			setSelectedStatus(newStatus)
 			router.setParams({ status: newStatus })
-			loadTabContent(false, newStatus)
 		},
-		[router, loadTabContent]
+		[router]
 	)
 
 	useFocusEffect(
 		useCallback(() => {
 			loadAllPurchasesForCounts()
-			const isFirst = isFirstLoad.current
-			if (isFirst) {
-				isFirstLoad.current = false
+			loadCart()
+			if (isPurchaseStatus) {
+				refresh()
 			}
-			loadTabContent(!isFirst, selectedStatusRef.current)
-		}, [loadAllPurchasesForCounts, loadTabContent])
+		}, [loadAllPurchasesForCounts, loadCart, refresh, isPurchaseStatus])
 	)
 
 	const updateCartQuantity = useCallback(
@@ -256,7 +223,7 @@ export default function PurchasesScreen() {
 				try {
 					await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
 					await loadAllPurchasesForCounts()
-					await loadTabContent(true, selectedStatus)
+					await refresh()
 					toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
 				} catch (err) {
 					console.error('Failed to cancel order:', err)
@@ -264,7 +231,7 @@ export default function PurchasesScreen() {
 				}
 			})
 		},
-		[selectedStatus, loadAllPurchasesForCounts, loadTabContent, translate]
+		[loadAllPurchasesForCounts, refresh, translate]
 	)
 
 	const handleStatusUpdate = useCallback(
@@ -272,14 +239,14 @@ export default function PurchasesScreen() {
 			try {
 				await updatePurchaseStatus({ purchaseId, status: newStatus })
 				await loadAllPurchasesForCounts()
-				await loadTabContent(true, selectedStatus)
+				await refresh()
 				toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Order status updated successfully'), color: '#10B981' })
 			} catch (err) {
 				console.error('Failed to update order status:', err)
 				toast.show({ title: translate('error', 'Error'), message: translate('status_update_failed', 'Failed to update order status. Please try again.'), color: '#EF4444' })
 			}
 		},
-		[selectedStatus, loadAllPurchasesForCounts, loadTabContent, translate]
+		[loadAllPurchasesForCounts, refresh, translate]
 	)
 
 	const getStepIndex = (orderStatus: string) => {
@@ -360,8 +327,8 @@ export default function PurchasesScreen() {
 		if (selectedStatus === 'cart') {
 			return cartGroups
 		}
-		return purchasesState[selectedStatus] || []
-	}, [selectedStatus, cartGroups, purchasesState])
+		return purchaseItems
+	}, [selectedStatus, cartGroups, purchaseItems])
 
 	const renderCartGroup = useCallback(
 		(group: BusinessCartGroup) => {
@@ -580,7 +547,7 @@ export default function PurchasesScreen() {
 		[selectedStatus, numColumns, renderCartGroup, renderPurchaseItem, styles.columnItem, styles.fullWidthItem]
 	)
 
-	if (initialLoading) {
+	if (isInitialLoading) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
 				<ActivityIndicator size="large" color={colors.primary} />
@@ -606,7 +573,7 @@ export default function PurchasesScreen() {
 				headerBottomHeight={52}
 				options={{
 					onRefresh: handleRefresh,
-					isRefreshing: refreshing
+					isRefreshing: isRefreshing
 				}}
 				headerActions={['refresh']}
 				headerBottom={
@@ -635,7 +602,7 @@ export default function PurchasesScreen() {
 											}
 										]}
 									>
-										{tabLoading[opt.value] && isSelected && <ActivityIndicator size="small" color={colors.primary} style={styles.filterLoader} />}
+										{isRefreshing && isSelected && <ActivityIndicator size="small" color={colors.primary} style={styles.filterLoader} />}
 										<Text
 											style={[
 												styles.filterChipText,
@@ -677,8 +644,8 @@ export default function PurchasesScreen() {
 				}
 			/>
 
-			{error ? (
-				<ErrorState title={error.title} message={error.message} onRetry={handleRefresh} />
+			{isOffline && displayData.length === 0 ? (
+				<ErrorState icon="cloud-offline-outline" iconOnly />
 			) : (
 				<SmartHeader.FlashList
 					data={displayData}
@@ -687,9 +654,9 @@ export default function PurchasesScreen() {
 					key={numColumns}
 					numColumns={numColumns}
 					contentContainerStyle={[styles.listContent, numColumns > 1 && { paddingHorizontal: 8 }]}
-					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 					ListEmptyComponent={
-						tabLoading[selectedStatus] ? (
+						isInitialLoading ? (
 							<View style={styles.emptyContainer}>
 								<ActivityIndicator size="large" color={colors.primary} />
 							</View>

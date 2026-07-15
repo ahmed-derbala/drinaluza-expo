@@ -1,5 +1,5 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import React, { useEffect, useState, useCallback, useMemo } from 'react'
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
@@ -8,11 +8,11 @@ import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 import { FlashList } from '@shopify/flash-list'
 import ErrorState from '../common/ErrorState'
+import { useNotifications } from './useNotifications'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { Ionicons } from '@expo/vector-icons'
 
-import { parseError, logError } from '../../core/helpers/errorHandler'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { log } from '@/core/log'
 
@@ -28,15 +28,23 @@ export default function NotificationsScreen() {
 	const router = useRouter()
 	const { height: windowHeight } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
-	const [notifications, setNotifications] = useState<NotificationItem[]>([])
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
+	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useNotifications()
+	const page1Notifications = page1Response?.data?.docs ?? []
+	const [extraNotifications, setExtraNotifications] = useState<NotificationItem[]>([])
+	const notifications = useMemo(() => [...page1Notifications, ...extraNotifications], [page1Notifications, extraNotifications])
+
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null)
 	const { translate, localize } = useUser()
 	const { onScroll } = useScrollHandler()
+
+	// Reset appended pages whenever page 1 cache refreshes
+	useEffect(() => {
+		setExtraNotifications([])
+		setPage(1)
+		setHasMore(true)
+	}, [page1Response])
 
 	const checkPermissions = useCallback(async () => {
 		if (Platform.OS === 'web') return
@@ -75,53 +83,41 @@ export default function NotificationsScreen() {
 		}
 	}
 
-	const loadNotifications = useCallback(async (pageNum: number = 1, isRefresh: boolean = false) => {
+	const loadMoreNotifications = useCallback(async (nextPage: number) => {
 		try {
-			if (pageNum === 1 && !isRefresh) setLoading(true)
-			setError(null)
-
-			const response = await getNotifications(pageNum, 10)
+			const response = await getNotifications(nextPage, 10)
 			const newItems = response.data.docs || []
 
-			if (isRefresh || pageNum === 1) {
-				setNotifications(newItems)
-			} else {
-				setNotifications((prev) => [...prev, ...newItems])
-			}
-
+			setExtraNotifications((prev) => [...prev, ...newItems])
 			setHasMore(response.data.pagination.hasNextPage)
-			setPage(pageNum)
+			setPage(nextPage)
 		} catch (err: any) {
-			logError(err, 'loadNotifications')
-			const errorInfo = parseError(err)
-			setError({
-				title: errorInfo.title,
-				message: errorInfo.message,
-				type: errorInfo.type
-			})
-		} finally {
-			setLoading(false)
-			setRefreshing(false)
+			log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to load more notifications', error: err })
 		}
 	}, [])
+
+	const onRefresh = useCallback(() => {
+		refresh()
+	}, [refresh])
+
+	const loadMore = () => {
+		if (hasMore && !isInitialLoading && !isRefreshing) {
+			loadMoreNotifications(page + 1)
+		}
+	}
+
+	const lastFocusRefreshRef = useRef<number>(0)
 
 	useFocusEffect(
 		useCallback(() => {
-			loadNotifications(1, true)
+			const now = Date.now()
+			if (now - lastFocusRefreshRef.current > 2000) {
+				lastFocusRefreshRef.current = now
+				refresh()
+			}
 			checkPermissions()
-		}, [loadNotifications, checkPermissions])
+		}, [refresh, checkPermissions])
 	)
-
-	const onRefresh = useCallback(() => {
-		setRefreshing(true)
-		loadNotifications(1, true)
-	}, [])
-
-	const loadMore = () => {
-		if (hasMore && !loading && !refreshing) {
-			loadNotifications(page + 1)
-		}
-	}
 
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString)
@@ -142,9 +138,14 @@ export default function NotificationsScreen() {
 	const handleNotificationPress = async (item: NotificationItem) => {
 		if (!item.seenAt) {
 			try {
-				// Optimistically update UI
+				// Optimistically update cache
 				const now = new Date().toISOString()
-				setNotifications((prev) => prev.map((n) => (n._id === item._id ? { ...n, seenAt: now } : n)))
+				const update = (n: NotificationItem) => (n._id === item._id ? { ...n, seenAt: now } : n)
+				if (page1Response) {
+					updateCache({ ...page1Response, data: { ...page1Response.data, docs: page1Notifications.map(update) } })
+				} else {
+					setExtraNotifications((prev) => prev.map(update))
+				}
 				decrementNotificationCount()
 
 				await markNotificationSeen(item._id)
@@ -265,23 +266,17 @@ export default function NotificationsScreen() {
 		actions.push({
 			key: 'refresh',
 			onPress: onRefresh,
-			isRefreshing: refreshing,
+			isRefreshing: isRefreshing,
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [permissionGranted, refreshing, colors.warning, translate, onRefresh])
+	}, [permissionGranted, isRefreshing, colors.warning, translate, onRefresh])
 
-	if (error && notifications.length === 0) {
+	if (isOffline && notifications.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
-				<ErrorState
-					title={error.type === 'network' ? undefined : error.title}
-					message={error.type === 'network' ? undefined : error.message}
-					onRetry={error.type === 'network' ? undefined : () => loadNotifications(1, true)}
-					icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-					iconOnly={error.type === 'network'}
-				/>
+				<ErrorState icon="cloud-offline-outline" iconOnly />
 			</View>
 		)
 	}
@@ -304,13 +299,13 @@ export default function NotificationsScreen() {
 				renderItem={renderItem}
 				keyExtractor={(item: NotificationItem) => item._id}
 				contentContainerStyle={[styles.list, { paddingBottom: 90 + insets.bottom }]}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.2}
 				ListEmptyComponent={
-					!loading ? (
+					!isInitialLoading ? (
 						<View style={styles.emptyContainer}>
 							<View style={[styles.emptyIconContainer, { backgroundColor: colors.card }]}>
 								<Ionicons name="notifications-off-outline" size={48} color={colors.textTertiary} />
@@ -321,7 +316,7 @@ export default function NotificationsScreen() {
 					) : null
 				}
 				ListFooterComponent={
-					loading && notifications.length > 0 ? (
+					isInitialLoading && notifications.length > 0 ? (
 						<View style={styles.loadingFooter}>
 							<ActivityIndicator size="small" color={colors.primary} />
 						</View>

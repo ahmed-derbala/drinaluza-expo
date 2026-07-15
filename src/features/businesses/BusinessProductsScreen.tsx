@@ -3,11 +3,10 @@ import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, useWindowDim
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
 import { LinearGradient } from 'expo-linear-gradient'
-import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
+import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { Product } from '@/features/businesses/businesses.interface'
 import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
 import { useTheme, createShadow } from '@/core/theme'
-import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import { Stack } from 'expo-router'
 import { SmartHeader } from '@/core/smart-header'
@@ -336,13 +335,11 @@ export default function BusinessProductsScreen() {
 	const cardGap = useMemo(() => (isDesktop ? 18 : isTablet ? 14 : 10), [isTablet, isDesktop])
 
 	// State
-	const [businessName, setBusinessName] = useState('')
-	const [products, setProducts] = useState<Product[]>([])
+	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh } = useBusinessProducts({ businessSlug })
+	const products = response?.data?.docs || []
+	const businessName = products.length > 0 && products[0].business?.name ? localize(products[0].business.name) : ''
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
 	const [cart, setCart] = useState<any[]>([])
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all')
 
@@ -354,33 +351,10 @@ export default function BusinessProductsScreen() {
 		} catch {}
 	}
 
-	// Load products
-	const loadProducts = useCallback(async () => {
-		if (!businessSlug) return
-		try {
-			setError(null)
-			const response = await getBusinessProductsBySlug(businessSlug)
-			const docs = response.data.docs || []
-			setProducts(docs)
-			setFilteredProducts(docs)
-			if (docs.length > 0 && docs[0].business?.name) {
-				setBusinessName(localize(docs[0].business.name))
-			}
-		} catch (err: any) {
-			const errorInfo = parseError(err)
-			setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
-		} finally {
-			setLoading(false)
-			setRefreshing(false)
-		}
-	}, [businessSlug, localize])
-
 	useEffect(() => {
 		loadCart()
-		loadProducts()
-	}, [loadProducts])
+	}, [])
 
-	// Search + filter
 	useEffect(() => {
 		let list = products
 		if (searchText.trim()) {
@@ -397,7 +371,7 @@ export default function BusinessProductsScreen() {
 		}
 		if (activeFilter === 'outOfStock') list = list.filter((p) => (p.stock?.quantity || 0) === 0)
 		setFilteredProducts(list)
-	}, [searchText, products, activeFilter, localize])
+	}, [products, searchText, activeFilter, localize])
 
 	// Add to cart
 	const handleAddToCart = useCallback(
@@ -416,8 +390,7 @@ export default function BusinessProductsScreen() {
 	)
 
 	const handleRefresh = () => {
-		setRefreshing(true)
-		loadProducts()
+		refresh()
 	}
 
 	// Filter counts
@@ -455,11 +428,11 @@ export default function BusinessProductsScreen() {
 		actions.push({
 			key: 'refresh',
 			onPress: handleRefresh,
-			isRefreshing: refreshing,
+			isRefreshing: isRefreshing,
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [isDashboard, businessSlug, cart.length, handleRefresh, refreshing, router])
+	}, [isDashboard, businessSlug, cart.length, handleRefresh, isRefreshing, router])
 
 	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
 		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },
@@ -497,7 +470,7 @@ export default function BusinessProductsScreen() {
 	)
 
 	// ─── Loading ──────────────────────────────────────────────────────────────
-	if (loading && !refreshing) {
+	if (isInitialLoading && !isRefreshing) {
 		return (
 			<View style={[s.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: businessName || translate('business_products', 'Products') }} />
@@ -522,7 +495,7 @@ export default function BusinessProductsScreen() {
 			/>
 
 			{/* Search bar */}
-			{!error && (
+			{
 				<View style={[s.searchWrap, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
 					<View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
 						<Ionicons name="search-outline" size={18} color={colors.textSecondary} />
@@ -542,10 +515,10 @@ export default function BusinessProductsScreen() {
 						)}
 					</View>
 				</View>
-			)}
+			}
 
 			{/* Filter chips */}
-			{!error && products.length > 0 && (
+			{products.length > 0 && (
 				<View style={s.filtersOuter}>
 					<FlashList
 						horizontal
@@ -579,7 +552,7 @@ export default function BusinessProductsScreen() {
 			)}
 
 			{/* Results count */}
-			{!error && !loading && filteredProducts.length > 0 && (
+			{!isInitialLoading && filteredProducts.length > 0 && (
 				<View style={{ paddingHorizontal: horizontalPadding, paddingBottom: 8, maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }}>
 					<Text style={[s.resultsText, { color: colors.textTertiary }]}>
 						{filteredProducts.length} {filteredProducts.length === 1 ? translate('product', 'product') : translate('products', 'products')}
@@ -604,22 +577,16 @@ export default function BusinessProductsScreen() {
 					width: '100%',
 					...(products.length === 0 ? { flexGrow: 1, justifyContent: 'center' } : {})
 				}}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 				keyboardShouldPersistTaps="handled"
 				ListEmptyComponent={
-					error ? (
+					isOffline ? (
 						<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-							<ErrorState
-								title={error.type === 'network' ? undefined : error.title}
-								message={error.type === 'network' ? undefined : error.message}
-								onRetry={error.type === 'network' ? undefined : loadProducts}
-								icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-								iconOnly={error.type === 'network'}
-							/>
+							<ErrorState icon="cloud-offline-outline" iconOnly />
 						</View>
-					) : !loading ? (
+					) : !isInitialLoading ? (
 						<View style={s.emptyWrap}>
 							<LinearGradient colors={[colors.primary + '18', colors.primary + '06']} style={s.emptyIconWrap}>
 								<Ionicons name={searchText || activeFilter !== 'all' ? 'search-outline' : 'cube-outline'} size={48} color={colors.primary} />

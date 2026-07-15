@@ -1,12 +1,11 @@
 import { SmartHeader } from '@/core/smart-header'
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { useTheme, createShadow } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
-import { getUserBySlug } from './users.api'
-import { UserProfile } from './users.interface'
+import { useUserProfile } from './useUserProfile'
 import ErrorState from '../common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
 import SmartImage from '@/core/SmartImageViewer'
@@ -20,10 +19,7 @@ export default function UserDetailScreen() {
 	const { localize, translate } = useUser()
 	const insets = useSafeAreaInsets()
 
-	const [user, setUser] = useState<UserProfile | null>(null)
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { data: user, isInitialLoading, isRefreshing, isOffline, refresh } = useUserProfile({ userSlug })
 	const [showQRCode, setShowQRCode] = useState(false)
 
 	const initialName = useMemo(() => {
@@ -40,38 +36,9 @@ export default function UserDetailScreen() {
 
 	const displayTitle = user ? localize(user.name) : initialName || translate('user_profile', 'User Profile')
 
-	const loadUser = useCallback(
-		async (isRefresh = false) => {
-			if (!userSlug) return
-
-			try {
-				if (!isRefresh) setLoading(true)
-				setError(null)
-				const response = await getUserBySlug(userSlug)
-				setUser(response.data)
-			} catch (err: any) {
-				console.error('Failed to load user:', err)
-				setError({
-					title: translate('error', 'Error'),
-					message: err.message || translate('failed_to_load_user', 'Failed to load user profile.'),
-					type: 'unknown'
-				})
-			} finally {
-				setLoading(false)
-				setRefreshing(false)
-			}
-		},
-		[userSlug, translate]
-	)
-
-	useEffect(() => {
-		loadUser()
-	}, [loadUser])
-
-	const handleRefresh = () => {
-		setRefreshing(true)
-		loadUser(true)
-	}
+	const handleRefresh = useCallback(() => {
+		refresh()
+	}, [refresh])
 
 	const handleCall = (phone: string) => {
 		Linking.openURL(`tel:${phone}`)
@@ -81,7 +48,7 @@ export default function UserDetailScreen() {
 		Linking.openURL(`mailto:${email}`)
 	}
 
-	if (loading && !user) {
+	if (isInitialLoading && !user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
@@ -91,17 +58,17 @@ export default function UserDetailScreen() {
 		)
 	}
 
-	if (error || !user) {
+	if (!user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader title={displayTitle} />
 				<ErrorState
-					title={error?.type === 'network' ? undefined : error?.title || translate('not_found', 'Not Found')}
-					message={error?.type === 'network' ? undefined : error?.message || translate('user_not_found', 'User not found')}
-					onRetry={error?.type === 'network' ? undefined : () => loadUser()}
-					icon={error?.type === 'network' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-					iconOnly={error?.type === 'network'}
+					title={isOffline ? undefined : translate('not_found', 'Not Found')}
+					message={isOffline ? undefined : translate('user_not_found', 'User not found')}
+					onRetry={isOffline ? undefined : () => refresh()}
+					icon={isOffline ? 'cloud-offline-outline' : 'alert-circle-outline'}
+					iconOnly={isOffline}
 				/>
 			</View>
 		)
@@ -123,7 +90,7 @@ export default function UserDetailScreen() {
 						{
 							key: 'refresh',
 							onPress: handleRefresh,
-							isRefreshing: refreshing,
+							isRefreshing: isRefreshing,
 							accessibilityLabel: 'Refresh'
 						}
 					] as any[]
@@ -133,7 +100,7 @@ export default function UserDetailScreen() {
 
 			<SmartHeader.ScrollView
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }]}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Profile Header Card */}

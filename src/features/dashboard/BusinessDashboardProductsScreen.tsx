@@ -6,13 +6,12 @@ import { FlashList } from '@shopify/flash-list'
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { parseError } from '@/core/helpers/errorHandler'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
-import { getBusinessProductsBySlug } from '@/features/businesses/businesses.api'
+import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { updateProduct } from '@/features/products/products.api'
 import { Product } from '@/features/businesses/businesses.interface'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -30,12 +29,10 @@ export default function BusinessDashboardProductsScreen() {
 	const { onScroll } = useScrollHandler()
 
 	// State
-	const [businessName, setBusinessName] = useState('')
-	const [products, setProducts] = useState<Product[]>([])
+	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useBusinessProducts({ businessSlug })
+	const products = response?.data?.docs || []
+	const businessName = products.length > 0 && products[0].business?.name ? localize(products[0].business.name) : ''
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive' | 'lowStock' | 'outOfStock'>('all')
 
@@ -70,33 +67,9 @@ export default function BusinessDashboardProductsScreen() {
 
 	const cardGap = 16
 
-	// Load products
-	const loadProducts = useCallback(
-		async (isSilent = false) => {
-			if (!businessSlug) return
-			try {
-				if (!isSilent) setLoading(true)
-				setError(null)
-				const response = await getBusinessProductsBySlug(businessSlug)
-				const docs = response.data.docs || []
-				setProducts(docs)
-				if (docs.length > 0 && docs[0].business?.name) {
-					setBusinessName(localize(docs[0].business.name))
-				}
-			} catch (err: any) {
-				const errorInfo = parseError(err)
-				setError({ title: errorInfo.title, message: errorInfo.message, type: errorInfo.type })
-			} finally {
-				setLoading(false)
-				setRefreshing(false)
-			}
-		},
-		[businessSlug, localize]
-	)
-
-	useEffect(() => {
-		loadProducts()
-	}, [loadProducts])
+	const handleRefresh = () => {
+		refresh()
+	}
 
 	// Filter metrics count
 	const counts = useMemo(() => {
@@ -148,8 +121,11 @@ export default function BusinessDashboardProductsScreen() {
 				state: { code: newActive ? 'active' : 'suspended' }
 			})
 
-			// Locally update state
-			setProducts((prev) => prev.map((p) => (p.slug === productSlugVal ? { ...p, state: { ...p.state, code: newActive ? 'active' : 'suspended' }, isActive: newActive } : p)))
+			// Locally update cache
+			if (response) {
+				const updatedDocs = response.data.docs.map((p) => (p.slug === productSlugVal ? { ...p, state: { ...p.state, code: newActive ? 'active' : 'suspended' }, isActive: newActive } : p))
+				updateCache({ ...response, data: { ...response.data, docs: updatedDocs } })
+			}
 
 			toast.show({
 				title: translate('success', 'Success'),
@@ -165,11 +141,6 @@ export default function BusinessDashboardProductsScreen() {
 		} finally {
 			setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: false }))
 		}
-	}
-
-	const handleRefresh = () => {
-		setRefreshing(true)
-		loadProducts(true)
 	}
 
 	// ─── Render Card Component ──────────────────────────────────────────────────
@@ -339,7 +310,7 @@ export default function BusinessDashboardProductsScreen() {
 				fallbackRoute={`/dashboard?businessSlug=${businessSlug}` as any}
 				headerActions={headerActionsConfig}
 				onBackPress={() => router.replace(`/dashboard?businessSlug=${businessSlug}` as any)}
-				isLoading={loading && !refreshing}
+				isLoading={isInitialLoading && !isRefreshing}
 			/>
 
 			<SmartHeader.ScrollView
@@ -347,10 +318,10 @@ export default function BusinessDashboardProductsScreen() {
 				contentContainerStyle={s.scrollContent}
 				keyboardShouldPersistTaps="handled"
 				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 			>
 				{/* Top stats summary banner */}
-				{!error && !loading && (
+				{!isInitialLoading && (
 					<View style={[s.statsContainer, { maxWidth: contentMaxWidth }]}>
 						<LinearGradient colors={[colors.primary + '15', colors.primary + '05']} style={[s.statsBanner, { borderColor: colors.borderLight }]}>
 							<View style={s.statsGrid}>
@@ -379,7 +350,7 @@ export default function BusinessDashboardProductsScreen() {
 				)}
 
 				{/* Search Wrap */}
-				{!error && !loading && (
+				{!isInitialLoading && (
 					<View style={[s.searchWrap, { maxWidth: contentMaxWidth }]}>
 						<View style={[s.searchBox, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
 							<Ionicons name="search-outline" size={18} color={colors.textSecondary} />
@@ -402,7 +373,7 @@ export default function BusinessDashboardProductsScreen() {
 				)}
 
 				{/* Filter Row */}
-				{!error && !loading && products.length > 0 && (
+				{!isInitialLoading && products.length > 0 && (
 					<View style={[s.filtersWrap, { maxWidth: contentMaxWidth }]}>
 						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filtersScroll}>
 							<TouchableOpacity
@@ -467,7 +438,7 @@ export default function BusinessDashboardProductsScreen() {
 
 				{/* FlashList view container */}
 				<View style={[s.listContainer, { maxWidth: contentMaxWidth }]}>
-					{loading && !refreshing ? (
+					{isInitialLoading && !isRefreshing ? (
 						<View style={s.grid}>
 							{Array.from({ length: 4 }).map((_, i) => (
 								<View key={i} style={{ width: numColumns === 1 ? '100%' : `${100 / numColumns - 1}%`, marginBottom: cardGap }}>

@@ -7,9 +7,8 @@ import { useRouter, Stack } from 'expo-router'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
-import { getBusinesses } from '@/features/businesses/businesses.api'
+import { useBusinesses } from '@/features/businesses/useBusinesses'
 import { showPopup, showAlert } from '@/core/helpers/popup'
-import { parseError, logError } from '@/core/helpers/errorHandler'
 import { Business } from '@/features/businesses/businesses.interface'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -550,10 +549,8 @@ const getResponsiveConfig = (width: number): ResponsiveConfig => {
 export default function BusinessesListScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
-	const [businesses, setBusinesss] = useState<Business[]>([])
-	const [loading, setLoading] = useState(true)
-	const [refreshing, setRefreshing] = useState(false)
-	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
+	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh } = useBusinesses()
+	const businesses = response?.data?.docs || []
 	const { translate, localize } = useUser()
 	const { onScroll } = useScrollHandler()
 
@@ -594,48 +591,11 @@ export default function BusinessesListScreen() {
 		isExtraLarge
 	})
 
-	const loadBusinesses = async () => {
-		try {
-			if (!refreshing) setLoading(true)
-			setError(null)
-			const response = await getBusinesses()
-			setBusinesss(response.data.docs || [])
-		} catch (err: any) {
-			console.error('Error loading businesses:', err)
-
-			// Handle 401 Unauthorized - redirect to auth screen
-			if (err.response?.status === 401) {
-				showAlert(translate('session_expired_title', 'Session Expired'), translate('session_expired_message', 'Please log in again to continue.'))
-				router.replace('/auth')
-				return
-			}
-
-			const errorInfo = parseError(err)
-			setError({
-				title: errorInfo.title,
-				message: errorInfo.message,
-				type: errorInfo.type
-			})
-		} finally {
-			setLoading(false)
-			setRefreshing(false)
-		}
-	}
-
-	const handleRefresh = async () => {
-		setRefreshing(true)
-		try {
-			await loadBusinesses()
-		} finally {
-			setRefreshing(false)
-		}
+	const handleRefresh = () => {
+		refresh()
 	}
 
 	const onRefresh = handleRefresh
-
-	useEffect(() => {
-		loadBusinesses()
-	}, [])
 
 	const handleBusinessPress = (slug: string) => {
 		router.push(`/businesses/${slug}` as any)
@@ -660,16 +620,10 @@ export default function BusinessesListScreen() {
 	)
 
 	const renderEmpty = () => {
-		if (error) {
+		if (isOffline) {
 			return (
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<ErrorState
-						title={error.type === 'network' ? undefined : error.title}
-						message={error.type === 'network' ? undefined : error.message}
-						onRetry={error.type === 'network' ? undefined : loadBusinesses}
-						icon={error.type === 'network' || error.type === 'timeout' ? 'cloud-offline-outline' : 'alert-circle-outline'}
-						iconOnly={error.type === 'network'}
-					/>
+					<ErrorState icon="cloud-offline-outline" iconOnly />
 				</View>
 			)
 		}
@@ -685,7 +639,7 @@ export default function BusinessesListScreen() {
 	}
 
 	// Handle loading state
-	if (loading) {
+	if (isInitialLoading) {
 		return (
 			<View style={styles.container as ViewStyle}>
 				<View style={styles.loadingContainer as ViewStyle}>
@@ -707,7 +661,7 @@ export default function BusinessesListScreen() {
 							{
 								key: 'refresh',
 								onPress: handleRefresh,
-								isRefreshing: refreshing,
+								isRefreshing: isRefreshing,
 								accessibilityLabel: 'Refresh'
 							}
 						]
@@ -726,7 +680,7 @@ export default function BusinessesListScreen() {
 				]}
 				numColumns={numColumns}
 				ListEmptyComponent={renderEmpty}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
 			/>

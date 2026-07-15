@@ -49,9 +49,12 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 				ConnectionService.reportApiFailure(error)
 			}
 
-			// Log error details in development mode
+			// Log error details in development mode, but avoid noise for expected
+			// transient conditions (offline backend, timeouts, rate limiting).
 			const status = error.response?.status
-			if (status !== 401 && status !== 404 && status !== 409) {
+			const isNetworkError = !error.response
+			const isRateLimited = status === 429
+			if (!isNetworkError && !isRateLimited && status !== 401 && status !== 404 && status !== 409) {
 				logError(error, 'API Request')
 			}
 
