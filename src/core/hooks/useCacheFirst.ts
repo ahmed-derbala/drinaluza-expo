@@ -62,7 +62,7 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 
 	const [cacheResult, setCacheResult] = useState<CacheReadResult<T> | null>(null)
 	const [freshData, setFreshData] = useState<T | null>(null)
-	const [isInitialLoading, setIsInitialLoading] = useState<boolean>(false)
+	const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!skipInitialFetch)
 	const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 	const [fetchError, setFetchError] = useState<unknown>(null)
 
@@ -165,7 +165,7 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 
 			// Skip network requests while the backend is known to be offline.
 			// The hook will auto-refresh as soon as the backend is reachable again.
-			if (!skipInitialFetch && backendState !== 'offline') {
+			if (!cancelled && !skipInitialFetch && backendState !== 'offline') {
 				await fetchFresh()
 			}
 
@@ -174,13 +174,17 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			}
 		}
 
+		// Start loading right away when no cache is present, avoiding a flash of
+		// empty/not-found state before bootstrap completes.
+		setIsInitialLoading(!skipInitialFetch && cacheResult === null)
+
 		bootstrap()
 
 		return () => {
 			cancelled = true
 			isMountedRef.current = false
 		}
-	}, [cacheKey, fetchFn, loadFromCache, fetchFresh, skipInitialFetch, backendState])
+	}, [cacheKey, loadFromCache, fetchFresh, skipInitialFetch])
 
 	// Auto-refresh when the backend transitions from offline/connecting to online.
 	useEffect(() => {
