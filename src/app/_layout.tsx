@@ -1,5 +1,5 @@
 import { Stack, useRouter, usePathname } from 'expo-router'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, Text, TouchableOpacity, ActivityIndicator, Platform, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -58,6 +58,7 @@ function RootLayoutContent() {
 	const { user, loading, translate } = useUser()
 	const { colors } = useTheme()
 	const [showDownloadAppModal, setShowDownloadAppModal] = useState(false)
+	const hasRedirectedToAuthRef = useRef(false)
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
@@ -98,21 +99,33 @@ function RootLayoutContent() {
 	}, [checkForUpdates, refreshApkList, installApk, router, translate])
 
 	useEffect(() => {
-		if (loading) return
+		if (loading) {
+			hasRedirectedToAuthRef.current = false
+			return
+		}
 
 		const isAuthenticated = !!user
 		const isBusinessOwner = user?.role === 'business_owner'
+		const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
+
+		if (!isRestrictedRoute) {
+			hasRedirectedToAuthRef.current = false
+			return
+		}
+
+		if (hasRedirectedToAuthRef.current) return
 
 		if (pathname.startsWith('/dashboard')) {
 			if (!isAuthenticated) {
+				hasRedirectedToAuthRef.current = true
 				router.replace('/auth')
 			} else if (!isBusinessOwner) {
+				hasRedirectedToAuthRef.current = true
 				router.replace('/feed')
 			}
-		} else if (pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')) {
-			if (!isAuthenticated) {
-				router.replace('/auth')
-			}
+		} else if (!isAuthenticated) {
+			hasRedirectedToAuthRef.current = true
+			router.replace('/auth')
 		}
 	}, [user, loading, pathname, router])
 

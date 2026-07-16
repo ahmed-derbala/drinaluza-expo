@@ -24,6 +24,9 @@ import { SmartHeader } from '@/core/smart-header'
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
 
+// Keep scroll offsets alive when the web route unmounts on navigation.
+const savedScrollOffsets = new Map<string, number>()
+
 export default function FeedScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
@@ -55,6 +58,31 @@ export default function FeedScreen() {
 
 	// ── Skeleton pulse ──
 	const shimmerAnim = useRef(new Animated.Value(0.35)).current
+
+	// ── Scroll position restoration (especially for web where the screen remounts) ──
+	const listRef = useRef<any>(null)
+	const savedScrollOffsetRef = useRef(0)
+	const restoreScrollPendingRef = useRef(false)
+
+	const handleListScroll = useCallback(
+		(event: any) => {
+			const offset = event.nativeEvent?.contentOffset?.y || 0
+			savedScrollOffsetRef.current = offset
+			savedScrollOffsets.set(selectedFilter, offset)
+		},
+		[selectedFilter]
+	)
+
+	useEffect(() => {
+		if (Platform.OS !== 'web' || typeof window === 'undefined') return
+
+		const handleWindowScroll = () => {
+			savedScrollOffsets.set(selectedFilter, window.scrollY)
+		}
+
+		window.addEventListener('scroll', handleWindowScroll, { passive: true })
+		return () => window.removeEventListener('scroll', handleWindowScroll)
+	}, [selectedFilter])
 
 	useEffect(() => {
 		const loop = Animated.loop(
@@ -125,6 +153,7 @@ export default function FeedScreen() {
 
 	// ── Effects ──
 	useEffect(() => {
+		savedScrollOffsetRef.current = savedScrollOffsets.get(selectedFilter) || 0
 		loadCart()
 		setPage(1)
 		setHasMore(true)
@@ -133,8 +162,25 @@ export default function FeedScreen() {
 	useFocusEffect(
 		useCallback(() => {
 			loadCart()
+			restoreScrollPendingRef.current = true
 		}, [])
 	)
+
+	useEffect(() => {
+		if (!isInitialLoading && displayedItems.length > 0 && restoreScrollPendingRef.current) {
+			restoreScrollPendingRef.current = false
+			const offset = savedScrollOffsets.get(selectedFilter) || 0
+			if (offset > 0) {
+				requestAnimationFrame(() => {
+					if (Platform.OS === 'web' && typeof window !== 'undefined') {
+						window.scrollTo({ top: offset, behavior: 'auto' })
+					} else if (listRef.current?.scrollToOffset) {
+						listRef.current.scrollToOffset({ offset, animated: false })
+					}
+				})
+			}
+		}
+	}, [isInitialLoading, displayedItems.length, selectedFilter])
 
 	// ── Refresh ──
 	const refreshData = useCallback(async () => {
@@ -262,6 +308,7 @@ export default function FeedScreen() {
 				renderSkeletons()
 			) : (
 				<SmartHeader.FlashList
+					ref={listRef}
 					style={{ backgroundColor: 'transparent' }}
 					data={displayedItems}
 					renderItem={renderItem}
@@ -273,6 +320,7 @@ export default function FeedScreen() {
 					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
 					showsVerticalScrollIndicator={false}
 					keyboardShouldPersistTaps="handled"
+					onScroll={handleListScroll}
 					onEndReached={handleLoadMore}
 					onEndReachedThreshold={0.2}
 					ListFooterComponent={isLoadingMore ? <ActivityIndicator size="small" color="#0EA5E9" style={{ paddingVertical: 24 }} /> : null}

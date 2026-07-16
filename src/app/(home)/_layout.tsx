@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react'
-import { Tabs, usePathname } from 'expo-router'
+import { Tabs, usePathname, useRouter } from 'expo-router'
 import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
@@ -14,6 +14,7 @@ export default function HomeLayout() {
 	const { isTabBarVisible, setTabBarVisible } = useLayout()
 	const { translate, user } = useUser()
 	const pathname = usePathname()
+	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	useBackButton()
 	const isAuthenticated = !!user
@@ -78,6 +79,11 @@ export default function HomeLayout() {
 									if (options.isVisible === false) return null
 
 									const onPress = () => {
+										if (route.name === 'profile' && !isAuthenticated) {
+											router.push('/auth')
+											return
+										}
+
 										const event = navigation.emit({
 											type: 'tabPress',
 											target: route.key,
