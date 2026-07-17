@@ -118,7 +118,7 @@ export default function SettingsScreen() {
 			<View style={styles.footer}>
 				<View style={styles.versionBadge}>
 					<Text style={styles.versionText}>
-						v{config.app.version} • {config.nodeEnv}
+						v{config.app.version} • {config.app.env}
 					</Text>
 				</View>
 				<Text style={styles.copyright}>© 2026 Drinaluza</Text>

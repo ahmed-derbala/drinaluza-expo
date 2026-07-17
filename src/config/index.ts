@@ -5,6 +5,7 @@ const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.
 
 export const config = {
 	app: {
+		env: process.env.EXPO_PUBLIC_APP_ENV || Constants.expoConfig?.extra?.APP_ENV || 'local',
 		name: packagejson.name,
 		version: packagejson.version,
 		timeout: Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000,

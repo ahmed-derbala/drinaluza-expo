@@ -1,9 +1,12 @@
 import fs from 'fs';
 const packagejson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
 
+// 1. Check if we are building for development or production
+const IS_DEV = process.env.EXPO_PUBLIC_APP_ENV === 'development';
 export default {
     expo: {
-        name: packagejson.name,
+        // 2. Give the dev app a distinct name so you can tell them apart on your phone
+        name: IS_DEV ? `${packagejson.name}-dev` : packagejson.name,
         slug: packagejson.name,
         version: packagejson.version,
         platforms: [
@@ -12,16 +15,17 @@ export default {
             "web"
         ],
         orientation: "default",
-        icon: "./assets/images/icon.png",
-        scheme: "drinaluza",
+        icon: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
+        // 3. Keep schemes unique so deep links routes correctly
+        scheme: IS_DEV ? "drinaluza-dev" : "drinaluza",
         userInterfaceStyle: "dark",
         backgroundColor: "#000000",
         newArchEnabled: true,
-        splash: {
+       /* splash: {
             image: "./assets/images/splash-icon.png",
             resizeMode: "contain",
             backgroundColor: "#000000"
-        },
+        },*/
         ios: {
             supportsTablet: true,
             infoPlist: {
@@ -29,7 +33,8 @@ export default {
                     NSAllowsArbitraryLoads: true
                 }
             },
-            bundleIdentifier: "com.ahmedderbala.drinaluza"
+            // 4. Unique iOS bundle ID for development
+            bundleIdentifier: IS_DEV ? "com.ahmedderbala.drinaluza.dev" : "com.ahmedderbala.drinaluza"
         },
         android: {
             backgroundColor: "#000000",
@@ -43,7 +48,8 @@ export default {
                 foregroundImage: "./assets/images/adaptive-icon.png",
                 backgroundColor: "#000000"
             },
-            package: "com.ahmedderbala.drinaluza",
+            // 5. Unique Android package name so both apps install side-by-side!
+            package: IS_DEV ? "com.ahmedderbala.drinaluza.dev" : "com.ahmedderbala.drinaluza",
             versionCode: 1,
             permissions: [
                 "android.permission.REQUEST_INSTALL_PACKAGES"
@@ -90,7 +96,7 @@ export default {
         extra: {
             routerRoot: "src",
             router: {},
-            NODE_ENV: process.env.EXPO_PUBLIC_NODE_ENV || 'development',
+            NODE_ENV: process.env.EXPO_PUBLIC_NODE_ENV || 'local',
             eas: {
                 projectId: "663c7ecc-f495-4630-9913-c923ef3f8bb2"
             }
