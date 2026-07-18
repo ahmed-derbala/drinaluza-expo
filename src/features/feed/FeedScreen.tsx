@@ -45,6 +45,7 @@ export default function FeedScreen() {
 	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
 	const [cart, setCart] = useState<CartItem[]>([])
 	const [isScannerVisible, setIsScannerVisible] = useState(false)
+	const [restorePending, setRestorePending] = useState(false)
 
 	// ── Cache-first feed ──
 	const { items: feedItemsFromCache, isInitialLoading, isRefreshing, isOffline, refresh: refreshFeed } = useFeed({ filter: selectedFilter })
@@ -62,7 +63,6 @@ export default function FeedScreen() {
 	// ── Scroll position restoration (especially for web where the screen remounts) ──
 	const listRef = useRef<any>(null)
 	const savedScrollOffsetRef = useRef(0)
-	const restoreScrollPendingRef = useRef(false)
 
 	const handleListScroll = useCallback(
 		(event: any) => {
@@ -72,17 +72,6 @@ export default function FeedScreen() {
 		},
 		[selectedFilter]
 	)
-
-	useEffect(() => {
-		if (Platform.OS !== 'web' || typeof window === 'undefined') return
-
-		const handleWindowScroll = () => {
-			savedScrollOffsets.set(selectedFilter, window.scrollY)
-		}
-
-		window.addEventListener('scroll', handleWindowScroll, { passive: true })
-		return () => window.removeEventListener('scroll', handleWindowScroll)
-	}, [selectedFilter])
 
 	useEffect(() => {
 		const loop = Animated.loop(
@@ -162,25 +151,26 @@ export default function FeedScreen() {
 	useFocusEffect(
 		useCallback(() => {
 			loadCart()
-			restoreScrollPendingRef.current = true
+			setRestorePending(true)
 		}, [])
 	)
 
 	useEffect(() => {
-		if (!isInitialLoading && displayedItems.length > 0 && restoreScrollPendingRef.current) {
-			restoreScrollPendingRef.current = false
+		if (!isInitialLoading && displayedItems.length > 0 && restorePending) {
+			setRestorePending(false)
 			const offset = savedScrollOffsets.get(selectedFilter) || 0
 			if (offset > 0) {
 				requestAnimationFrame(() => {
+					if (listRef.current?.scrollToOffset) {
+						listRef.current.scrollToOffset({ offset, animated: false })
+					}
 					if (Platform.OS === 'web' && typeof window !== 'undefined') {
 						window.scrollTo({ top: offset, behavior: 'auto' })
-					} else if (listRef.current?.scrollToOffset) {
-						listRef.current.scrollToOffset({ offset, animated: false })
 					}
 				})
 			}
 		}
-	}, [isInitialLoading, displayedItems.length, selectedFilter])
+	}, [isInitialLoading, displayedItems.length, selectedFilter, restorePending])
 
 	// ── Refresh ──
 	const refreshData = useCallback(async () => {

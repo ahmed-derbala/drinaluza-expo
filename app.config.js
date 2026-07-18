@@ -21,11 +21,12 @@ export default {
         userInterfaceStyle: "dark",
         backgroundColor: "#000000",
         newArchEnabled: true,
-       /* splash: {
-            image: "./assets/images/splash-icon.png",
-            resizeMode: "contain",
-            backgroundColor: "#000000"
-        },*/
+        splash: {
+             //image: "./assets/images/splash-icon.png",
+             image: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
+             resizeMode: "contain",
+             backgroundColor: "#000000"
+         },
         ios: {
             supportsTablet: true,
             infoPlist: {
@@ -45,7 +46,8 @@ export default {
                 backgroundColor: "#000000"
             },
             adaptiveIcon: {
-                foregroundImage: "./assets/images/adaptive-icon.png",
+                //foregroundImage: "./assets/images/adaptive-icon.png",
+                foregroundImage: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
                 backgroundColor: "#000000"
             },
             // 5. Unique Android package name so both apps install side-by-side!
@@ -58,7 +60,8 @@ export default {
         web: {
             bundler: "metro",
             output: "static",
-            favicon: "./assets/images/favicon.png"
+            //favicon: "./assets/images/favicon.png"
+            favicon: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
         },
         plugins: [
             "expo-font",

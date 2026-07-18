@@ -246,11 +246,11 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 							{purchaseAllowed && isActive && !isOutOfStock && (
 								<View style={styles.qtyControl}>
 									<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-										<MaterialIcons name="remove" size={14} color="rgba(255,255,255,0.7)" />
+										<MaterialIcons name="remove" size={16} color="#FFFFFF" />
 									</TouchableOpacity>
 									<Text style={styles.qtyValue}>{quantity}</Text>
 									<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-										<MaterialIcons name="add" size={14} color="rgba(255,255,255,0.7)" />
+										<MaterialIcons name="add" size={16} color="#FFFFFF" />
 									</TouchableOpacity>
 								</View>
 							)}
@@ -520,24 +520,44 @@ const styles = StyleSheet.create({
 	qtyControl: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: 'rgba(255, 255, 255, 0.03)',
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.06)',
-		padding: 2
+		backgroundColor: 'rgba(15, 23, 42, 0.9)',
+		borderRadius: 14,
+		borderWidth: 1.5,
+		borderColor: '#0EA5E9',
+		padding: 3,
+		...Platform.select({
+			web: {
+				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
+			} as any,
+			default: {
+				shadowColor: '#000',
+				shadowOffset: { width: 0, height: 3 },
+				shadowOpacity: 0.4,
+				shadowRadius: 3,
+				elevation: 5
+			}
+		})
 	},
 	qtyBtn: {
-		width: 28,
-		height: 28,
+		width: 32,
+		height: 32,
+		borderRadius: 10,
+		backgroundColor: 'rgba(255, 255, 255, 0.12)',
 		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'center',
+		...Platform.select({
+			web: {
+				transition: 'background-color 0.12s ease'
+			} as any
+		})
 	},
 	qtyValue: {
-		fontSize: 13,
-		fontWeight: '700',
-		color: '#F8FAFC',
-		minWidth: 26,
-		textAlign: 'center'
+		fontSize: 15,
+		fontWeight: '800',
+		color: '#FFFFFF',
+		minWidth: 32,
+		textAlign: 'center',
+		marginHorizontal: 4
 	},
 	actionsColumn: {
 		alignItems: 'flex-end',

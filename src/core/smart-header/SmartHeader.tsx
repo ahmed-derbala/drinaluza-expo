@@ -245,8 +245,8 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 
 	// Keep layout context headerHeight state updated
 	useEffect(() => {
-		setHeaderHeight(headerHeight)
-	}, [headerHeight, setHeaderHeight])
+		setHeaderHeight(headerHeight, pathname)
+	}, [headerHeight, setHeaderHeight, pathname])
 
 	const loadingAnim = useRef(new Animated.Value(0)).current
 	const fadeAnim = useRef(new Animated.Value(0)).current
