@@ -11,6 +11,7 @@ import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useLayout, useUser } from '@/core/contexts'
+import { useBackendConnection } from '@/core/connection'
 import HeaderActionButton from './HeaderActionButton'
 import HeaderRefreshButton from './HeaderRefreshButton'
 
@@ -239,6 +240,12 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	const insets = useSafeAreaInsets()
 	const { width } = useWindowDimensions()
 	const pathname = usePathname()
+
+	// Subscribe to backend connection state so SmartHeader re-renders when
+	// it changes. Context changes bypass React.memo, which guarantees that
+	// child components (like HeaderRefreshButton) get reconciled on all
+	// platforms — including Chromium-based browsers and Android.
+	useBackendConnection()
 
 	const resolvedBottom = headerBottom ?? options?.headerBottom
 	const resolvedBottomHeight = headerBottomHeight ?? options?.headerBottomHeight ?? 0

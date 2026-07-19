@@ -86,7 +86,7 @@ export default {
                     }
                 }
             ],
-            [
+           /* [
                 "expo-splash-screen",
                 {
                     image: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
@@ -94,7 +94,7 @@ export default {
                     backgroundColor: "#000000",
                     //imageWidth: 200 // Adjust this number to make your icon larger or smaller on the screen
                 }
-            ]
+            ]*/
         ],
         experiments: {
             typedRoutes: true

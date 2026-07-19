@@ -1,5 +1,4 @@
 import { io, Socket } from 'socket.io-client'
-import axios, { AxiosError } from 'axios'
 import { config } from '@/config'
 import { log } from '@/core/log'
 
@@ -7,12 +6,16 @@ export type BackendState = 'connecting' | 'online' | 'offline'
 
 type BackendStateListener = (state: BackendState) => void
 
-const MAX_CONSECUTIVE_FAILURES = 3
+/**
+ * Maximum time (ms) to stay in "connecting" before falling back to "offline".
+ * This prevents the state machine from getting stuck when WebSocket events
+ * are blocked (e.g. Brave Shields) or silently dropped (Android/Hermes).
+ */
+const CONNECTING_TIMEOUT_MS = 8_000
 
 let socketInstance: Socket | null = null
 let currentUserSlug: string | undefined = undefined
 let backendState: BackendState = 'connecting'
-let consecutiveFailureCount = 0
 let listeners: BackendStateListener[] = []
 
 const notifyListeners = () => {
@@ -25,41 +28,48 @@ const notifyListeners = () => {
 	})
 }
 
-let offlinePingInterval: ReturnType<typeof setInterval> | null = null
+// ── Connecting timeout ───────────────────────────────────────────────
+let connectingTimer: ReturnType<typeof setTimeout> | null = null
 
-const startOfflinePing = () => {
-	if (offlinePingInterval) return
-	offlinePingInterval = setInterval(async () => {
-		try {
-			await axios.get(`${config.backend.url}/health`, { timeout: 5000 })
-			ConnectionService.reportApiSuccess()
-		} catch (error: any) {
-			if (error.response) {
-				ConnectionService.reportApiSuccess()
-			}
+const startConnectingTimeout = () => {
+	clearConnectingTimeout()
+	connectingTimer = setTimeout(() => {
+		if (backendState === 'connecting') {
+			log({
+				level: 'info',
+				label: 'ConnectionService',
+				message: `Connecting timeout (${CONNECTING_TIMEOUT_MS}ms) — transitioning to offline`
+			})
+			setBackendState('offline')
 		}
-	}, 10000)
+	}, CONNECTING_TIMEOUT_MS)
 }
 
-const stopOfflinePing = () => {
-	if (offlinePingInterval) {
-		clearInterval(offlinePingInterval)
-		offlinePingInterval = null
+const clearConnectingTimeout = () => {
+	if (connectingTimer) {
+		clearTimeout(connectingTimer)
+		connectingTimer = null
 	}
 }
 
+// ── State machine ────────────────────────────────────────────────────
 const setBackendState = (nextState: BackendState) => {
 	if (backendState === nextState) return
 	log({ level: 'info', label: 'ConnectionService', message: `Backend state changed: ${backendState} -> ${nextState}` })
 	backendState = nextState
-	if (nextState === 'online') {
-		consecutiveFailureCount = 0
-		stopOfflinePing()
-	} else if (nextState === 'offline') {
-		startOfflinePing()
-	} else {
-		stopOfflinePing()
+
+	switch (nextState) {
+		case 'online':
+			clearConnectingTimeout()
+			break
+		case 'connecting':
+			startConnectingTimeout()
+			break
+		case 'offline':
+			clearConnectingTimeout()
+			break
 	}
+
 	notifyListeners()
 }
 
@@ -95,16 +105,19 @@ const attachSocketListeners = (socket: Socket) => {
 	})
 }
 
-const createSocket = (userSlug: string): Socket => {
+const createSocket = (userSlug?: string): Socket => {
+	const query: Record<string, string> = {}
+	if (userSlug) {
+		query.userSlug = userSlug
+	}
 	return io(config.backend.url, {
 		transports: ['websocket'],
 		autoConnect: true,
 		reconnection: true,
 		reconnectionAttempts: Infinity,
 		reconnectionDelayMax: 5000,
-		query: {
-			userSlug
-		}
+		timeout: 5000, // Explicitly set 5s connection timeout so it times out quickly if offline/dropped
+		query
 	})
 }
 
@@ -137,8 +150,12 @@ export const ConnectionService = {
 			socketInstance.disconnect()
 			socketInstance = null
 		}
+		// When disconnected (i.e. logged out or guest), we still want to keep a socket connection
+		// to determine the backend state using Socket.io only.
 		currentUserSlug = undefined
 		setBackendState('connecting')
+		socketInstance = createSocket()
+		attachSocketListeners(socketInstance)
 	},
 
 	subscribe: (listener: BackendStateListener): (() => void) => {
@@ -153,34 +170,16 @@ export const ConnectionService = {
 		listeners = listeners.filter((l) => l !== listener)
 	},
 
-	reportApiSuccess: () => {
-		if (consecutiveFailureCount > 0 || backendState !== 'online') {
-			consecutiveFailureCount = 0
-			setBackendState('online')
-		}
-	},
-
-	reportApiFailure: (error: AxiosError) => {
-		const code = error.code || ''
-		const isNetworkError = !error.response
-		const isTimeout = code === 'ECONNABORTED' || code === 'ETIMEDOUT'
-
-		if (!isNetworkError && !isTimeout) {
-			return
-		}
-
-		consecutiveFailureCount += 1
-		log({
-			level: 'debug',
-			label: 'ConnectionService',
-			message: `API failure reported (${consecutiveFailureCount}/${MAX_CONSECUTIVE_FAILURES})`,
-			error
-		})
-
-		if (consecutiveFailureCount >= MAX_CONSECUTIVE_FAILURES) {
-			setBackendState('offline')
-		}
-	}
+	// Stub API reporting methods to preserve compatibility with other modules (e.g. apiClient interceptors)
+	// while ensuring backend state is determined by Socket.io only.
+	reportApiSuccess: (..._args: any[]) => {},
+	reportApiFailure: (..._args: any[]) => {}
 }
+
+// Boot: immediately start tracking backend state by establishing an anonymous socket connection
+currentUserSlug = undefined
+setBackendState('connecting')
+socketInstance = createSocket()
+attachSocketListeners(socketInstance)
 
 export default ConnectionService

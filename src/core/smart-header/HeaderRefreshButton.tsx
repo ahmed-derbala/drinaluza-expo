@@ -1,9 +1,8 @@
-import React, { useRef, useEffect } from 'react'
+import React, { useRef, useEffect, useSyncExternalStore, useCallback } from 'react'
 import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
-import { ConnectionService, useBackendConnection, BackendState } from '@/core/connection'
-import { log } from '@/core/log'
+import { ConnectionService, BackendState } from '@/core/connection'
 
 export interface HeaderRefreshButtonProps {
 	/**
@@ -51,6 +50,15 @@ export interface HeaderRefreshButtonProps {
 	disabled?: boolean
 }
 
+/**
+ * Adapter for useSyncExternalStore — ConnectionService.subscribe passes
+ * the state to its callback, but useSyncExternalStore expects a
+ * parameterless onStoreChange callback.
+ */
+const subscribeToBackendState = (onStoreChange: () => void): (() => void) => {
+	return ConnectionService.subscribe(() => onStoreChange())
+}
+
 const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	onRefresh,
 	isRefreshing = false,
@@ -62,24 +70,13 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	style,
 	disabled = false
 }) => {
-	const [localBackendState, setLocalBackendState] = React.useState<BackendState>(ConnectionService.getBackendState())
+	// useSyncExternalStore guarantees synchronous, tear-free reads from
+	// ConnectionService on every platform, including Android's Fabric renderer.
+	const liveBackendState = useSyncExternalStore(subscribeToBackendState, ConnectionService.getBackendState, ConnectionService.getBackendState)
 
-	React.useEffect(() => {
-		const unsubscribe = ConnectionService.subscribe((nextState) => {
-			setLocalBackendState(nextState)
-		})
-		return unsubscribe
-	}, [])
-
-	const backendState = backendStateProp ?? localBackendState
+	const backendState = backendStateProp ?? liveBackendState
 	const isBackendOffline = backendState === 'offline'
 	const isBackendConnecting = backendState === 'connecting'
-
-	log({
-		level: 'debug',
-		label: 'HeaderRefreshButton',
-		message: `Render state: backendState=${backendState}, isRefreshing=${isRefreshing}, isOffline=${isOffline}, isBackendOffline=${isBackendOffline}, isBackendConnecting=${isBackendConnecting}`
-	})
 	const showSpinner = isRefreshing || isBackendConnecting
 	const showOffline = isBackendOffline || (isOffline && backendState !== 'online')
 	const { colors } = useTheme()
@@ -119,7 +116,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 		outputRange: ['0deg', '360deg']
 	})
 
-	const handleRefresh = async () => {
+	const handleRefresh = useCallback(async () => {
 		if (onRefresh && !isRefreshing && !disabled) {
 			// Trigger spring scale bounce
 			Animated.sequence([
@@ -150,23 +147,15 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 
 			await onRefresh()
 		}
-	}
+	}, [onRefresh, isRefreshing, disabled, scaleValue, rotationValue])
 
 	if (!onRefresh) return null
 
 	const isDisabled = showSpinner || disabled
 
-	const renderIcon = () => {
-		const iconColor = showOffline ? offlineColor || colors.error : color || colors.primary
-		const iconName = showOffline ? 'cloud-offline' : 'refresh'
-		const IconComponent = showOffline ? Ionicons : MaterialIcons
-
-		return (
-			<Animated.View style={{ transform: showSpinner ? [{ rotate: spin }, { scale: scaleValue }] : [{ scale: scaleValue }] }}>
-				<IconComponent name={iconName as any} size={size} color={iconColor} />
-			</Animated.View>
-		)
-	}
+	// Derive a visual mode key so React is forced to reconcile the icon
+	// subtree when the button switches between offline / spinning / idle.
+	const visualMode = showOffline ? 'offline' : showSpinner ? 'spinning' : 'idle'
 
 	return (
 		<TouchableOpacity
@@ -178,7 +167,9 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 			accessibilityLabel={showOffline ? 'Offline' : 'Refresh'}
 			accessibilityState={{ disabled: isDisabled }}
 		>
-			{renderIcon()}
+			<Animated.View key={visualMode} style={{ transform: showSpinner ? [{ rotate: spin }, { scale: scaleValue }] : [{ scale: scaleValue }] }}>
+				{showOffline ? <Ionicons name="cloud-offline" size={size} color={offlineColor || colors.error} /> : <MaterialIcons name="refresh" size={size} color={color || colors.primary} />}
+			</Animated.View>
 		</TouchableOpacity>
 	)
 }
