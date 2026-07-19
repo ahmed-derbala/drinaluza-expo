@@ -68,6 +68,7 @@ export default function BusinessDashboardProductDetailScreen() {
 	const [originRegion, setOriginRegion] = useState('Sfax')
 	const [originPostalCode, setOriginPostalCode] = useState('3016')
 	const [originCountry, setOriginCountry] = useState('Tunisia')
+	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
 
 	// Hide bottom tab bar
 	useEffect(() => {
@@ -99,6 +100,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		setOriginRegion(prod.specs?.origin?.region || 'Sfax')
 		setOriginPostalCode(prod.specs?.origin?.postalCode || '3016')
 		setOriginCountry(prod.specs?.origin?.country || 'Tunisia')
+		setGear(prod.specs?.gear)
 	}
 
 	const loadProduct = useCallback(
@@ -278,6 +280,7 @@ export default function BusinessDashboardProductDetailScreen() {
 				specs: {
 					caliber,
 					harvest,
+					gear,
 					origin: {
 						street: originStreet.trim() || undefined,
 						city: originCity.trim() || undefined,
@@ -307,6 +310,7 @@ export default function BusinessDashboardProductDetailScreen() {
 			setOriginRegion(product.specs?.origin?.region || 'Sfax')
 			setOriginPostalCode(product.specs?.origin?.postalCode || '3016')
 			setOriginCountry(product.specs?.origin?.country || 'Tunisia')
+			setGear(product.specs?.gear)
 		}
 		setEditMode((prev) => ({ ...prev, specs: false }))
 	}
@@ -630,6 +634,8 @@ export default function BusinessDashboardProductDetailScreen() {
 							setOriginPostalCode={setOriginPostalCode}
 							originCountry={originCountry}
 							setOriginCountry={setOriginCountry}
+							gear={gear}
+							setGear={setGear}
 							specs={product.specs}
 							onEdit={canEditProduct ? () => setEditMode((prev) => ({ ...prev, specs: true })) : undefined}
 							onSavePress={saveSpecs}

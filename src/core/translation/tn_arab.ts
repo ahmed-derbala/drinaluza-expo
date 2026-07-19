@@ -197,5 +197,8 @@ export const tn_arab = {
 	theme_light: 'فاتح',
 	theme_dark: 'داكن',
 	username_invalid_chars: 'اسم المستخدم ينجم يكون فيه كان حروف لاتينية صغيرة، أرقام و علامة (-).',
-	username_invalid_hyphen: 'العلامة (-) ما تجيش هي الحرف اللولاني وإلا اللخراني في اسم المستخدم.'
+	username_invalid_hyphen: 'العلامة (-) ما تجيش هي الحرف اللولاني وإلا اللخراني في اسم المستخدم.',
+	gear: 'معدات صيد',
+	gear_trap: 'درينة',
+	gear_gillnet: 'غزل'
 }

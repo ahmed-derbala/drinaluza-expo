@@ -197,5 +197,8 @@ export const tn_latn = {
 	theme_light: 'Light',
 	theme_dark: 'Dark',
 	username_invalid_chars: 'Username yestaqbel ken hrouf sghar, aadaad, w (-).',
-	username_invalid_hyphen: 'El alama (-) ma tjinich fel lwel wela fel lekher mtaal username.'
+	username_invalid_hyphen: 'El alama (-) ma tjinich fel lwel wela fel lekher mtaal username.',
+	gear: 'Gear',
+	gear_trap: 'Drina',
+	gear_gillnet: 'Ghzal'
 }

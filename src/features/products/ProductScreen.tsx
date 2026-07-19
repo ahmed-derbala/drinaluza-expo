@@ -83,6 +83,7 @@ export default function ProductScreen() {
 	const [originRegion, setOriginRegion] = useState('')
 	const [originPostalCode, setOriginPostalCode] = useState('')
 	const [originCountry, setOriginCountry] = useState('')
+	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
 
 	const displayTitle = product ? localize(product.name) : translate('loading', 'Loading...')
 	const isLandscape = width > height
@@ -109,6 +110,7 @@ export default function ProductScreen() {
 		setOriginRegion(prod.specs?.origin?.region || '')
 		setOriginPostalCode(prod.specs?.origin?.postalCode || '')
 		setOriginCountry(prod.specs?.origin?.country || '')
+		setGear(prod.specs?.gear)
 	}, [])
 
 	useEffect(() => {
@@ -403,6 +405,7 @@ export default function ProductScreen() {
 				specs: {
 					caliber,
 					harvest,
+					gear,
 					origin: {
 						street: originStreet.trim() || undefined,
 						city: originCity.trim() || undefined,
@@ -818,6 +821,8 @@ export default function ProductScreen() {
 					setOriginPostalCode={setOriginPostalCode}
 					originCountry={originCountry}
 					setOriginCountry={setOriginCountry}
+					gear={gear}
+					setGear={setGear}
 					specs={product.specs}
 					onEdit={canEditProduct ? () => setEditMode((prev) => ({ ...prev, specs: true })) : undefined}
 					onSavePress={saveSpecs}

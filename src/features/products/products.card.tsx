@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
-import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
+import { GearIcon } from './common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
@@ -220,9 +221,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 						<View style={styles.ratingRow}>
 							{rating > 0 ? (
 								<>
-									{[1, 2, 3, 4, 5].map((star) => (
-										<MaterialIcons key={star} name={star <= Math.round(rating) ? 'star' : 'star-border'} size={12} color="#FBBF24" />
-									))}
+									<MaterialIcons name="star" size={12} color="#FBBF24" />
 									<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
 									<Text style={styles.ratingCount}>({ratingCount})</Text>
 								</>
@@ -231,10 +230,28 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 						{/* Specs row: caliber + harvest + origin + stepper */}
 						<View style={styles.specsStepperRow}>
-							{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city) && (
+							{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
 								<View style={styles.specsIconRow}>
-									{item.specs?.caliber ? <Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} /> : null}
+									{item.specs?.caliber ? (
+										<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+											<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
+											<Text
+												style={{
+													position: 'absolute',
+													fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
+													fontWeight: 'bold',
+													color: '#ffffff',
+													textAlign: 'center',
+													includeFontPadding: false,
+													textAlignVertical: 'center'
+												}}
+											>
+												{item.specs.caliber}
+											</Text>
+										</View>
+									) : null}
 									{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
+									{item.specs?.gear ? <GearIcon type={item.specs.gear} size={14} color={colors.primary} /> : null}
 									{item.specs?.origin?.city ? (
 										<>
 											<Ionicons name="location-outline" size={10} color={colors.textSecondary} />

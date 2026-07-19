@@ -1,8 +1,9 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import AddressForm from '@/features/common/AddressForm'
+import { GearIcon } from './GearIcons'
 
 export interface ProductSpecsSectionProps {
 	editable: boolean
@@ -23,10 +24,13 @@ export interface ProductSpecsSectionProps {
 	setOriginPostalCode?: (val: string) => void
 	originCountry?: string
 	setOriginCountry?: (val: string) => void
+	gear?: 'trap' | 'gillnet'
+	setGear?: (val?: 'trap' | 'gillnet') => void
 	// If editable is false (view mode)
 	specs?: {
 		caliber?: number
 		harvest?: 'wild' | 'farm'
+		gear?: 'trap' | 'gillnet'
 		origin?: {
 			street?: string
 			city?: string
@@ -58,6 +62,8 @@ export default function ProductSpecsSection({
 	setOriginPostalCode,
 	originCountry = 'Tunisia',
 	setOriginCountry,
+	gear,
+	setGear,
 	specs,
 	onEdit,
 	onSavePress,
@@ -98,7 +104,22 @@ export default function ProductSpecsSection({
 								style={[styles.caliberButton, caliber === val && { backgroundColor: colors.primary, borderColor: colors.primary }]}
 								onPress={() => setCaliber && setCaliber(val)}
 							>
-								<Ionicons name={caliber === val ? 'fish' : 'fish-outline'} size={getCaliberIconSize(val, 'selector')} color={caliber === val ? '#ffffff' : colors.primary} />
+								<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+									<Ionicons name={caliber === val ? 'fish' : 'fish-outline'} size={getCaliberIconSize(val, 'selector')} color={caliber === val ? '#ffffff' : colors.primary} />
+									<Text
+										style={{
+											position: 'absolute',
+											fontSize: getCaliberFontSize(val, 'selector'),
+											fontWeight: 'bold',
+											color: colors.primary,
+											textAlign: 'center',
+											includeFontPadding: false,
+											textAlignVertical: 'center'
+										}}
+									>
+										{val}
+									</Text>
+								</View>
 							</TouchableOpacity>
 						))}
 					</View>
@@ -116,6 +137,23 @@ export default function ProductSpecsSection({
 							>
 								<Ionicons name={getHarvestIcon(val)} size={16} color={harvest === val ? '#ffffff' : colors.primary} />
 								<Text style={[styles.harvestButtonText, harvest === val && { color: '#ffffff' }]}>{getHarvestLabel(val)}</Text>
+							</TouchableOpacity>
+						))}
+					</View>
+				</View>
+
+				{/* Gear Selection */}
+				<View style={styles.fieldContainer}>
+					<Text style={styles.fieldLabel}>{translate('gear', 'Gear')}</Text>
+					<View style={styles.harvestContainer}>
+						{(['trap', 'gillnet'] as const).map((val) => (
+							<TouchableOpacity
+								key={val}
+								style={[styles.harvestButton, gear === val && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+								onPress={() => setGear && setGear(gear === val ? undefined : val)}
+							>
+								<GearIcon type={val} size={24} color={gear === val ? '#ffffff' : colors.primary} />
+								<Text style={[styles.harvestButtonText, gear === val && { color: '#ffffff' }]}>{getGearLabel(val)}</Text>
 							</TouchableOpacity>
 						))}
 					</View>
@@ -162,9 +200,40 @@ export default function ProductSpecsSection({
 			{/* Caliber */}
 			<View style={styles.specDetailRow}>
 				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber', 'Caliber')}</Text>
-				<View style={[styles.caliberBadge, { backgroundColor: colors.primary + '15' }]}>
-					<Ionicons name="fish" size={getCaliberIconSize(specs.caliber, 'badge')} color={colors.primary} />
-					<Text style={[styles.caliberText, { color: colors.primary }]}>{getCaliberLabel(specs.caliber || 3)}</Text>
+				<View style={styles.caliberSizesContainer}>
+					{([1, 2, 3, 4, 5] as const).map((val) => {
+						const isCurrent = (specs.caliber || 3) === val
+						const iconSize = 10 + val * 3.5
+						return (
+							<View
+								key={val}
+								style={[
+									styles.caliberSizeIndicator,
+									{
+										backgroundColor: isCurrent ? colors.primary + '15' : 'transparent',
+										borderColor: isCurrent ? colors.primary : colors.border
+									}
+								]}
+							>
+								<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+									<Ionicons name={isCurrent ? 'fish' : 'fish-outline'} size={iconSize} color={isCurrent ? colors.primary : colors.textTertiary || '#8E8E93'} />
+									<Text
+										style={{
+											position: 'absolute',
+											fontSize: getCaliberFontSize(val, 'static'),
+											fontWeight: 'bold',
+											color: isCurrent ? '#ffffff' : colors.textTertiary || '#8E8E93',
+											textAlign: 'center',
+											includeFontPadding: false,
+											textAlignVertical: 'center'
+										}}
+									>
+										{val}
+									</Text>
+								</View>
+							</View>
+						)
+					})}
 				</View>
 			</View>
 
@@ -176,6 +245,17 @@ export default function ProductSpecsSection({
 					<Text style={[styles.harvestText, { color: colors.success }]}>{getHarvestLabel(specs.harvest || 'farm')}</Text>
 				</View>
 			</View>
+
+			{/* Gear */}
+			{specs.gear && (
+				<View style={styles.specDetailRow}>
+					<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('gear', 'Gear')}</Text>
+					<View style={[styles.harvestBadge, { backgroundColor: colors.primary + '15' }]}>
+						<GearIcon type={specs.gear} size={20} color={colors.primary} />
+						<Text style={[styles.harvestText, { color: colors.primary }]}>{getGearLabel(specs.gear)}</Text>
+					</View>
+				</View>
+			)}
 
 			{/* Origin */}
 			{specs.origin && (
@@ -335,17 +415,18 @@ const createStyles = (colors: any) =>
 			fontSize: 14,
 			fontWeight: '500'
 		},
-		caliberBadge: {
+		caliberSizesContainer: {
 			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 4,
-			paddingHorizontal: 8,
-			paddingVertical: 4,
-			borderRadius: 8
+			gap: 8,
+			alignItems: 'center'
 		},
-		caliberText: {
-			fontSize: 12,
-			fontWeight: '700'
+		caliberSizeIndicator: {
+			width: 32,
+			height: 32,
+			borderRadius: 16,
+			borderWidth: 1.5,
+			justifyContent: 'center',
+			alignItems: 'center'
 		},
 		harvestBadge: {
 			flexDirection: 'row',

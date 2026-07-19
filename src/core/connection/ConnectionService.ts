@@ -9,7 +9,7 @@ type BackendStateListener = (state: BackendState) => void
 /**
  * Maximum time (ms) to stay in "connecting" before falling back to "offline".
  * This prevents the state machine from getting stuck when WebSocket events
- * are blocked (e.g. Brave Shields) or silently dropped (Android/Hermes).
+ * are blocked or silently dropped.
  */
 const CONNECTING_TIMEOUT_MS = 8_000
 

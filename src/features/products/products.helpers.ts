@@ -28,11 +28,29 @@ export const getHarvestLabel = (val?: 'wild' | 'farm'): string => {
 	}
 }
 
-export const getHarvestIcon = (val?: 'wild' | 'farm'): 'water-outline' | 'leaf' => {
-	return val === 'wild' ? 'water-outline' : 'leaf'
+export const getHarvestIcon = (val?: 'wild' | 'farm'): 'boat-outline' | 'home-outline' => {
+	return val === 'wild' ? 'boat-outline' : 'home-outline'
 }
 
 export const getCaliberIconSize = (caliber: number | undefined, variant: 'chip' | 'selector' | 'badge'): number => {
-	const bases = { chip: 6, selector: 8, badge: 12 }
-	return bases[variant] + 2.2 ** (caliber || 3)
+	return 10 + 10 * (caliber || 3)
+}
+
+export const getCaliberFontSize = (caliber: number | undefined, variant: 'chip' | 'selector' | 'static'): number => {
+	const c = caliber || 3
+	if (variant === 'static') {
+		return 6 + c * 1
+	}
+	return 5 + c * 3
+}
+
+export const getGearLabel = (val?: 'trap' | 'gillnet'): string => {
+	switch (val) {
+		case 'trap':
+			return translate('gear_trap', 'Trap (Drina)')
+		case 'gillnet':
+			return translate('gear_gillnet', 'Gillnet (Ghzal)')
+		default:
+			return ''
+	}
 }

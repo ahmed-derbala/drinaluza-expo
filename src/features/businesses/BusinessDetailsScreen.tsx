@@ -13,7 +13,8 @@ import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { getUserBySlug } from '@/features/users/users.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
-import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
+import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, createShadow } from '@/core/theme'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import ErrorState from '@/features/common/ErrorState'
@@ -90,11 +91,26 @@ const ProductCard = ({
 				</Text>
 
 				{/* Specifications (Caliber & Origin) */}
-				{(product.specs?.caliber || product.specs?.origin?.city || product.specs?.harvest) && (
+				{(product.specs?.caliber || product.specs?.origin?.city || product.specs?.harvest || product.specs?.gear) && (
 					<View style={styles.specsCardRow}>
 						{product.specs?.caliber ? (
 							<View style={[styles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-								<Ionicons name="fish" size={getCaliberIconSize(product.specs.caliber, 'chip')} color={colors.primary} />
+								<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+									<Ionicons name="fish" size={getCaliberIconSize(product.specs.caliber, 'chip')} color={colors.primary} />
+									<Text
+										style={{
+											position: 'absolute',
+											fontSize: getCaliberFontSize(product.specs.caliber, 'chip'),
+											fontWeight: 'bold',
+											color: '#ffffff',
+											textAlign: 'center',
+											includeFontPadding: false,
+											textAlignVertical: 'center'
+										}}
+									>
+										{product.specs.caliber}
+									</Text>
+								</View>
 								<Text style={[styles.caliberChipText, { color: colors.primary }]} numberOfLines={1}>
 									{getCaliberLabel(product.specs.caliber)}
 								</Text>
@@ -105,6 +121,14 @@ const ProductCard = ({
 								<Ionicons name={getHarvestIcon(product.specs?.harvest)} size={12} color={colors.success} />
 								<Text style={[styles.harvestChipText, { color: colors.success }]} numberOfLines={1}>
 									{getHarvestLabel(product.specs.harvest)}
+								</Text>
+							</View>
+						) : null}
+						{product.specs?.gear ? (
+							<View style={[styles.harvestChip, { backgroundColor: colors.primary + '15' }]}>
+								<GearIcon type={product.specs.gear} size={12} color={colors.primary} />
+								<Text style={[styles.harvestChipText, { color: colors.primary }]} numberOfLines={1}>
+									{getGearLabel(product.specs.gear)}
 								</Text>
 							</View>
 						) : null}

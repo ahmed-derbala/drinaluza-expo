@@ -15,7 +15,8 @@ import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { updateProduct } from '@/features/products/products.api'
 import { Product } from '@/features/businesses/businesses.interface'
 import { LinearGradient } from 'expo-linear-gradient'
-import { getCaliberLabel, getCaliberIconSize, getHarvestLabel, getHarvestIcon } from '@/features/products/products.helpers'
+import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
+import { GearIcon } from '@/features/products/common/GearIcons'
 
 // Breakpoints for responsive grid layout
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
@@ -189,11 +190,26 @@ export default function BusinessDashboardProductsScreen() {
 						</View>
 
 						{/* Specifications (Caliber & Origin) */}
-						{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest) && (
+						{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest || item.specs?.gear) && (
 							<View style={cardStyles.specsCardRow}>
 								{item.specs?.caliber ? (
 									<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-										<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
+										<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+											<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
+											<Text
+												style={{
+													position: 'absolute',
+													fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
+													fontWeight: 'bold',
+													color: '#ffffff',
+													textAlign: 'center',
+													includeFontPadding: false,
+													textAlignVertical: 'center'
+												}}
+											>
+												{item.specs.caliber}
+											</Text>
+										</View>
 										<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber as any)}</Text>
 									</View>
 								) : null}
@@ -201,6 +217,12 @@ export default function BusinessDashboardProductsScreen() {
 									<View style={[cardStyles.harvestChip, { backgroundColor: colors.success + '15' }]}>
 										<Ionicons name={getHarvestIcon(item.specs?.harvest)} size={12} color={colors.success} />
 										<Text style={[cardStyles.harvestChipText, { color: colors.success }]}>{getHarvestLabel(item.specs.harvest)}</Text>
+									</View>
+								) : null}
+								{item.specs?.gear ? (
+									<View style={[cardStyles.harvestChip, { backgroundColor: colors.primary + '15' }]}>
+										<GearIcon type={item.specs.gear} size={12} color={colors.primary} />
+										<Text style={[cardStyles.harvestChipText, { color: colors.primary }]}>{getGearLabel(item.specs.gear)}</Text>
 									</View>
 								) : null}
 								{item.specs?.origin?.city ? (
