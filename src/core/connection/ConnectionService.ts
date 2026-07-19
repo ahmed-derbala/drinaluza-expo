@@ -1,5 +1,5 @@
 import { io, Socket } from 'socket.io-client'
-import { AxiosError } from 'axios'
+import axios, { AxiosError } from 'axios'
 import { config } from '@/config'
 import { log } from '@/core/log'
 
@@ -25,12 +25,40 @@ const notifyListeners = () => {
 	})
 }
 
+let offlinePingInterval: ReturnType<typeof setInterval> | null = null
+
+const startOfflinePing = () => {
+	if (offlinePingInterval) return
+	offlinePingInterval = setInterval(async () => {
+		try {
+			await axios.get(`${config.backend.url}/health`, { timeout: 5000 })
+			ConnectionService.reportApiSuccess()
+		} catch (error: any) {
+			if (error.response) {
+				ConnectionService.reportApiSuccess()
+			}
+		}
+	}, 10000)
+}
+
+const stopOfflinePing = () => {
+	if (offlinePingInterval) {
+		clearInterval(offlinePingInterval)
+		offlinePingInterval = null
+	}
+}
+
 const setBackendState = (nextState: BackendState) => {
 	if (backendState === nextState) return
 	log({ level: 'info', label: 'ConnectionService', message: `Backend state changed: ${backendState} -> ${nextState}` })
 	backendState = nextState
 	if (nextState === 'online') {
 		consecutiveFailureCount = 0
+		stopOfflinePing()
+	} else if (nextState === 'offline') {
+		startOfflinePing()
+	} else {
+		stopOfflinePing()
 	}
 	notifyListeners()
 }

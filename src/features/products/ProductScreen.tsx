@@ -32,7 +32,7 @@ export default function ProductScreen() {
 	const { productSlug } = useLocalSearchParams<{ productSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
-	const { localize, translate, currency, formatPrice } = useUser()
+	const { localize, translate, currency, formatPrice, user } = useUser()
 	const { onScroll } = useScrollHandler()
 	const { setTabBarVisible } = useLayout()
 	const { width, height } = useWindowDimensions()
@@ -149,7 +149,7 @@ export default function ProductScreen() {
 				title: 'Success',
 				message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
 				color: '#10B981',
-				screen: '/purchases?status=cart'
+				screen: user ? '/purchases?status=cart' : '/auth'
 			})
 		} catch {
 			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
@@ -494,7 +494,7 @@ export default function ProductScreen() {
 				key: 'cart',
 				iconName: 'cart-outline',
 				badgeCount: cart.length,
-				onPress: () => router.push('/purchases?status=cart' as any),
+				onPress: () => router.push((user ? '/purchases?status=cart' : '/auth') as any),
 				accessibilityLabel: 'View Cart'
 			},
 			{
@@ -504,7 +504,7 @@ export default function ProductScreen() {
 				accessibilityLabel: 'Refresh'
 			}
 		],
-		[cart.length, handleRefresh, isRefreshing, router]
+		[cart.length, handleRefresh, isRefreshing, router, user]
 	)
 
 	const combinedGallery = useMemo(() => {

@@ -1,3 +1,18 @@
+## [1.40.7] - 19 july 2026
+
+### Removed
+- Remove the sign-out button from the Profile Screen header actions, along with all its unused handlers and API imports.
+
+### Changed
+- Trigger server-side sign-out via `POST /api/auth/signout` when a saved account is deleted from the Auth Screen, passing the user's saved authentication token.
+
+### Fixed
+- Prevent Axios 401 error logs on the Purchases Screen for guest users by skipping remote backend order fetches when no active session/user exists.
+- Eliminate visual flashes of restricted screens during unauthorized navigation transitions by introducing a render-phase routing guard in `_layout.tsx`.
+- Intercept cart navigation at trigger points (HeaderCartButton and Toast clicks) for unauthenticated guest users, redirecting them directly to the Login page.
+- Fix app lock in offline state for guest users by implementing automatic background connectivity pings in `ConnectionService` and allowing manual refreshes to bypass the offline state block in `useCacheFirst`.
+- Subscribe `HeaderRefreshButton` directly to `ConnectionService` to bypass React Navigation stack header context propagation limitations on Android.
+
 ## [1.40.2] - 18 july 2026
 
 ### Changed

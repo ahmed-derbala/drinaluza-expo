@@ -211,7 +211,7 @@ export default function FeedScreen() {
 
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: '/purchases?status=cart' })
+				toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: user ? '/purchases?status=cart' : '/auth' })
 			} catch (err) {
 				log({ level: 'error', label: 'FeedScreen', message: 'Failed to add to cart', error: err })
 				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })

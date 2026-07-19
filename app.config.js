@@ -21,12 +21,6 @@ export default {
         userInterfaceStyle: "dark",
         backgroundColor: "#000000",
         newArchEnabled: true,
-        splash: {
-             //image: "./assets/images/splash-icon.png",
-             image: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
-             resizeMode: "contain",
-             backgroundColor: "#000000"
-         },
         ios: {
             supportsTablet: true,
             infoPlist: {
@@ -68,6 +62,10 @@ export default {
             "expo-router",
             "expo-asset",
             "expo-secure-store",
+            "@react-native-community/datetimepicker",
+            "expo-audio",
+            "expo-sharing",
+            "expo-image",
             [
                 "expo-build-properties",
                 {
@@ -88,10 +86,15 @@ export default {
                     }
                 }
             ],
-            "@react-native-community/datetimepicker",
-            "expo-audio",
-            "expo-sharing",
-            "expo-image"
+            [
+                "expo-splash-screen",
+                {
+                    image: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
+                    resizeMode: "contain",
+                    backgroundColor: "#000000",
+                    //imageWidth: 200 // Adjust this number to make your icon larger or smaller on the screen
+                }
+            ]
         ],
         experiments: {
             typedRoutes: true

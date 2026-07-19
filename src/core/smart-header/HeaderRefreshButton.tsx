@@ -2,7 +2,8 @@ import React, { useRef, useEffect } from 'react'
 import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
-import { useBackendConnection, BackendState } from '@/core/connection'
+import { ConnectionService, useBackendConnection, BackendState } from '@/core/connection'
+import { log } from '@/core/log'
 
 export interface HeaderRefreshButtonProps {
 	/**
@@ -61,10 +62,24 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	style,
 	disabled = false
 }) => {
-	const { backendState: contextBackendState } = useBackendConnection()
-	const backendState = backendStateProp ?? contextBackendState
+	const [localBackendState, setLocalBackendState] = React.useState<BackendState>(ConnectionService.getBackendState())
+
+	React.useEffect(() => {
+		const unsubscribe = ConnectionService.subscribe((nextState) => {
+			setLocalBackendState(nextState)
+		})
+		return unsubscribe
+	}, [])
+
+	const backendState = backendStateProp ?? localBackendState
 	const isBackendOffline = backendState === 'offline'
 	const isBackendConnecting = backendState === 'connecting'
+
+	log({
+		level: 'debug',
+		label: 'HeaderRefreshButton',
+		message: `Render state: backendState=${backendState}, isRefreshing=${isRefreshing}, isOffline=${isOffline}, isBackendOffline=${isBackendOffline}, isBackendConnecting=${isBackendConnecting}`
+	})
 	const showSpinner = isRefreshing || isBackendConnecting
 	const showOffline = isBackendOffline || (isOffline && backendState !== 'online')
 	const { colors } = useTheme()
@@ -142,21 +157,13 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	const isDisabled = showSpinner || disabled
 
 	const renderIcon = () => {
-		if (showSpinner) {
-			return (
-				<Animated.View style={{ transform: [{ rotate: spin }, { scale: scaleValue }] }}>
-					<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
-				</Animated.View>
-			)
-		}
-
-		if (showOffline) {
-			return <Ionicons name="cloud-offline" size={size} color={offlineColor || colors.error} />
-		}
+		const iconColor = showOffline ? offlineColor || colors.error : color || colors.primary
+		const iconName = showOffline ? 'cloud-offline' : 'refresh'
+		const IconComponent = showOffline ? Ionicons : MaterialIcons
 
 		return (
-			<Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-				<MaterialIcons name="refresh" size={size} color={color || colors.primary} />
+			<Animated.View style={{ transform: showSpinner ? [{ rotate: spin }, { scale: scaleValue }] : [{ scale: scaleValue }] }}>
+				<IconComponent name={iconName as any} size={size} color={iconColor} />
 			</Animated.View>
 		)
 	}

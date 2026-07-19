@@ -27,7 +27,7 @@ import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
-import { updateMyProfile, signOut, switchUser } from '@/features/auth/auth.api'
+import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
@@ -551,19 +551,6 @@ export default function ProfileScreen() {
 		return new Date(date).toLocaleDateString()
 	}
 
-	const handleSignOut = async () => {
-		showConfirm(translate('sign_out', 'Sign Out'), 'Are you sure you want to sign out?', async () => {
-			try {
-				await signOut()
-				await refreshUser()
-				router.replace('/auth')
-			} catch (error) {
-				log({ level: 'error', label: 'profile', message: 'Sign out failed', error })
-				await refreshUser()
-				router.replace('/auth')
-			}
-		})
-	}
 	const handleSwitchUser = () => {
 		setShowSwitchAccountModal(true)
 	}
@@ -715,14 +702,7 @@ export default function ProfileScreen() {
 			onPress: handleSwitchUser,
 			accessibilityLabel: 'Switch User Account'
 		})
-		actions.push({
-			key: 'sign-out',
-			iconName: 'log-out',
-			iconColor: colors.error,
-			backgroundColor: colors.error + '10',
-			onPress: handleSignOut,
-			accessibilityLabel: 'Sign Out'
-		})
+
 		actions.push({
 			key: 'cart',
 			iconName: 'cart-outline',
@@ -738,7 +718,7 @@ export default function ProfileScreen() {
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [userData?.role, handleRequestBusiness, handleSwitchUser, handleSignOut, cart.length, refreshProfile, isRefreshing, isOffline, colors, router])
+	}, [userData?.role, handleRequestBusiness, handleSwitchUser, cart.length, refreshProfile, isRefreshing, isOffline, colors, router])
 
 	if (isInitialLoading) {
 		return (

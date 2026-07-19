@@ -10,7 +10,7 @@ import { translate } from '@/core/translation'
 import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { useLayout } from '@/core/contexts'
+import { useLayout, useUser } from '@/core/contexts'
 import HeaderActionButton from './HeaderActionButton'
 import HeaderRefreshButton from './HeaderRefreshButton'
 
@@ -95,11 +95,12 @@ interface HeaderCartButtonProps {
 export const HeaderCartButton: React.FC<HeaderCartButtonProps> = React.memo(({ badgeCount = 0 }) => {
 	const router = useRouter()
 	const { colors } = useTheme()
+	const { user } = useUser()
 
 	return (
 		<HeaderActionButton
 			iconName="cart-outline"
-			onPress={() => router.push('/purchases?status=cart')}
+			onPress={() => router.push(user ? '/purchases?status=cart' : '/auth')}
 			badgeCount={badgeCount}
 			accessibilityLabel={translate('view_cart', 'View Cart')}
 			backgroundColor={colors.surface}

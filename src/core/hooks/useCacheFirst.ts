@@ -129,9 +129,8 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 	}, [cacheKey, fetchFn, onError, onSuccess])
 
 	const refresh = useCallback(async () => {
-		if (backendState === 'offline') return
 		await fetchFresh()
-	}, [backendState, fetchFresh])
+	}, [fetchFresh])
 
 	const updateCache = useCallback(
 		async (data: T) => {

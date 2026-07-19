@@ -102,6 +102,29 @@ export const updateSavedAuthUser = async (slug: string, updates: { name?: any; p
 
 export const deleteSavedAuthentication = async (slug: string) => {
 	const saved = await getSavedAuthentications()
+	const account = saved.find((a) => a.slug === slug)
+	const token = account?.token
+
+	if (token) {
+		try {
+			const apiClient = getApiClient()
+			await apiClient.post(
+				'/auth/signout',
+				{},
+				{
+					headers: { Authorization: `Bearer ${token}` }
+				}
+			)
+		} catch (error) {
+			log({
+				level: 'warn',
+				label: 'auth.api',
+				message: `Server signout failed for saved account @${slug}`,
+				error
+			})
+		}
+	}
+
 	const updated = saved.filter((a) => a.slug !== slug)
 	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
 }

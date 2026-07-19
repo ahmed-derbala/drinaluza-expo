@@ -20,7 +20,7 @@ import { getToken } from '@/core/storage'
 export default function ProductsListScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
-	const { translate } = useUser()
+	const { translate, user } = useUser()
 
 	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh } = useProducts()
 	const page1Products = (page1Response?.data?.docs ?? []) as unknown as ProductFeedItem[]
@@ -105,7 +105,7 @@ export default function ProductsListScreen() {
 
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `Added to cart`, color: '#10B981', screen: '/purchases?status=cart' })
+				toast.show({ title: 'Success', message: `Added to cart`, color: '#10B981', screen: user ? '/purchases?status=cart' : '/auth' })
 			} catch {
 				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
 			}
@@ -128,7 +128,7 @@ export default function ProductsListScreen() {
 				key: 'cart',
 				iconName: 'cart-outline',
 				badgeCount: cart.length,
-				onPress: () => router.push('/purchases?status=cart' as any),
+				onPress: () => router.push((user ? '/purchases?status=cart' : '/auth') as any),
 				accessibilityLabel: 'View Cart'
 			},
 			{

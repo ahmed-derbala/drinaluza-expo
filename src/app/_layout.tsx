@@ -1,4 +1,4 @@
-import { Stack, useRouter, usePathname } from 'expo-router'
+import { Stack, useRouter, usePathname, Redirect } from 'expo-router'
 import React, { useState, useEffect, useRef } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, Text, TouchableOpacity, ActivityIndicator, Platform, StyleSheet } from 'react-native'
@@ -58,7 +58,6 @@ function RootLayoutContent() {
 	const { user, loading, translate } = useUser()
 	const { colors } = useTheme()
 	const [showDownloadAppModal, setShowDownloadAppModal] = useState(false)
-	const hasRedirectedToAuthRef = useRef(false)
 
 	useEffect(() => {
 		const performStartupCheck = async () => {
@@ -98,43 +97,28 @@ function RootLayoutContent() {
 		performStartupCheck()
 	}, [checkForUpdates, refreshApkList, installApk, router, translate])
 
-	useEffect(() => {
-		if (loading) {
-			hasRedirectedToAuthRef.current = false
-			return
-		}
-
-		const isAuthenticated = !!user
-		const isBusinessOwner = user?.role === 'business_owner'
-		const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
-
-		if (!isRestrictedRoute) {
-			hasRedirectedToAuthRef.current = false
-			return
-		}
-
-		if (hasRedirectedToAuthRef.current) return
-
-		if (pathname.startsWith('/dashboard')) {
-			if (!isAuthenticated) {
-				hasRedirectedToAuthRef.current = true
-				router.replace('/auth')
-			} else if (!isBusinessOwner) {
-				hasRedirectedToAuthRef.current = true
-				router.replace('/feed')
-			}
-		} else if (!isAuthenticated) {
-			hasRedirectedToAuthRef.current = true
-			router.replace('/auth')
-		}
-	}, [user, loading, pathname, router])
-
 	if (loading) {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background || '#000000' }}>
 				<ActivityIndicator size="large" color={colors.primary || '#0EA5E9'} />
 			</View>
 		)
+	}
+
+	const isAuthenticated = !!user
+	const isBusinessOwner = user?.role === 'business_owner'
+	const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
+
+	if (isRestrictedRoute) {
+		if (pathname.startsWith('/dashboard')) {
+			if (!isAuthenticated) {
+				return <Redirect href="/auth" />
+			} else if (!isBusinessOwner) {
+				return <Redirect href="/feed" />
+			}
+		} else if (!isAuthenticated) {
+			return <Redirect href="/auth" />
+		}
 	}
 
 	return (

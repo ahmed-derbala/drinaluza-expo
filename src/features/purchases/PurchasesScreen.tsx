@@ -33,7 +33,7 @@ export default function PurchasesScreen() {
 	const { status } = useLocalSearchParams<{ status?: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
-	const { translate, localize } = useUser()
+	const { translate, localize, user } = useUser()
 	const { onScroll } = useScrollHandler()
 	const { width } = useWindowDimensions()
 	const navigation = useNavigation()
@@ -66,7 +66,7 @@ export default function PurchasesScreen() {
 		refresh
 	} = usePurchasesByStatus({
 		status: selectedStatus,
-		skipInitialFetch: !isPurchaseStatus
+		skipInitialFetch: !isPurchaseStatus || !user
 	})
 	const purchaseItems = useMemo(() => {
 		if (!purchasesResponse?.data?.docs) return []
@@ -97,27 +97,32 @@ export default function PurchasesScreen() {
 	)
 
 	const loadAllPurchasesForCounts = useCallback(async () => {
+		const counts: Record<string, number> = {
+			all: 0,
+			cart: 0
+		}
+		if (user) {
+			try {
+				const response = await getPurchases()
+				if (response && response.data && Array.isArray(response.data.docs)) {
+					const docs = response.data.docs
+					counts.all = docs.length
+					docs.forEach((item) => {
+						counts[item.status] = (counts[item.status] || 0) + 1
+					})
+				}
+			} catch (err) {
+				console.error('Error loading purchases for counts:', err)
+			}
+		}
 		try {
-			const response = await getPurchases()
-			const counts: Record<string, number> = {
-				all: 0,
-				cart: 0
-			}
-			if (response && response.data && Array.isArray(response.data.docs)) {
-				const docs = response.data.docs
-				counts.all = docs.length
-				docs.forEach((item) => {
-					counts[item.status] = (counts[item.status] || 0) + 1
-				})
-			}
 			const storedCart = await getItem<CartItem[]>('cart')
 			counts.cart = storedCart?.length || 0
-
-			setStatusCounts(counts)
 		} catch (err) {
-			console.error('Error loading purchases for counts:', err)
+			console.error('Error loading cart for counts:', err)
 		}
-	}, [])
+		setStatusCounts(counts)
+	}, [user])
 
 	const loadCart = useCallback(async () => {
 		const storedCart = await getItem<CartItem[]>('cart')
@@ -127,10 +132,10 @@ export default function PurchasesScreen() {
 	const handleRefresh = useCallback(async () => {
 		await loadAllPurchasesForCounts()
 		await loadCart()
-		if (isPurchaseStatus) {
+		if (user && isPurchaseStatus) {
 			await refresh()
 		}
-	}, [loadAllPurchasesForCounts, loadCart, refresh, isPurchaseStatus])
+	}, [loadAllPurchasesForCounts, loadCart, refresh, isPurchaseStatus, user])
 
 	const handleStatusChange = useCallback(
 		(newStatus: string) => {
@@ -144,10 +149,10 @@ export default function PurchasesScreen() {
 		useCallback(() => {
 			loadAllPurchasesForCounts()
 			loadCart()
-			if (isPurchaseStatus) {
+			if (user && isPurchaseStatus) {
 				refresh()
 			}
-		}, [loadAllPurchasesForCounts, loadCart, refresh, isPurchaseStatus])
+		}, [loadAllPurchasesForCounts, loadCart, refresh, isPurchaseStatus, user])
 	)
 
 	const updateCartQuantity = useCallback(

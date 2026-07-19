@@ -300,7 +300,7 @@ export default function BusinessProductsScreen() {
 	const router = useRouter()
 	const pathname = usePathname()
 	const isDashboard = pathname.includes('/dashboard')
-	const { localize, translate, currency, formatPrice } = useUser()
+	const { localize, translate, currency, formatPrice, user } = useUser()
 	const { width, height } = useWindowDimensions()
 	const { onScroll } = useScrollHandler()
 
@@ -381,7 +381,7 @@ export default function BusinessProductsScreen() {
 				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: '/purchases?status=cart' })
+				toast.show({ title: 'Success', message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: user ? '/purchases?status=cart' : '/auth' })
 			} catch {
 				toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
 			}
@@ -421,7 +421,7 @@ export default function BusinessProductsScreen() {
 				key: 'cart',
 				iconName: 'cart-outline',
 				badgeCount: cart.length,
-				onPress: () => router.push('/purchases?status=cart' as any),
+				onPress: () => router.push((user ? '/purchases?status=cart' : '/auth') as any),
 				accessibilityLabel: 'View Cart'
 			})
 		}
@@ -432,7 +432,7 @@ export default function BusinessProductsScreen() {
 			accessibilityLabel: 'Refresh'
 		})
 		return actions
-	}, [isDashboard, businessSlug, cart.length, handleRefresh, isRefreshing, router])
+	}, [isDashboard, businessSlug, cart.length, handleRefresh, isRefreshing, router, user])
 
 	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
 		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },
