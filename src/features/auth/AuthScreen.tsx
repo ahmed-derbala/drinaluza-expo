@@ -794,7 +794,7 @@ export default function AuthScreen() {
 							<View style={S.desktopGrid}>
 								<BrandPane translate={translate} />
 								<View style={S.formPane}>
-									<View style={S.formContainerTablet} pointerEvents={loading ? 'none' : 'auto'}>
+									<View style={[S.formContainerTablet, { pointerEvents: loading ? 'none' : 'auto' }]}>
 										<AuthForm
 											isTablet={isTablet}
 											slug={slug}
@@ -831,7 +831,7 @@ export default function AuthScreen() {
 								</View>
 							</View>
 						) : (
-							<View style={S.formContainer} pointerEvents={loading ? 'none' : 'auto'}>
+							<View style={[S.formContainer, { pointerEvents: loading ? 'none' : 'auto' }]}>
 								<AuthForm
 									isTablet={isTablet}
 									slug={slug}

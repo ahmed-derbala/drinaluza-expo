@@ -3,18 +3,19 @@ import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, Vi
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { ConnectionService, BackendState } from '@/core/connection'
+import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/hooks/useCacheFirst'
 
 export interface HeaderRefreshButtonProps {
 	/**
-	 * Callback function triggered when the button is pressed.
-	 * Can be asynchronous.
+	 * Optional callback function triggered when the button is pressed.
+	 * If not provided, it triggers a global refresh for all active/mounted cache queries.
 	 */
-	onRefresh: () => void | Promise<void>
+	onRefresh?: () => void | Promise<void>
 	/**
-	 * Boolean indicating whether the refreshing state is active.
-	 * When true, the button shows a spinning animation and is disabled.
+	 * Optional boolean indicating whether the refreshing state is active.
+	 * If not provided, it tracks the global refreshing state of active cache queries.
 	 */
-	isRefreshing: boolean
+	isRefreshing?: boolean
 	/**
 	 * Boolean indicating whether the device is offline/last sync failed.
 	 * When true (and not refreshing), the button shows a static red cloud-offline icon.
@@ -61,7 +62,7 @@ const subscribeToBackendState = (onStoreChange: () => void): (() => void) => {
 
 const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	onRefresh,
-	isRefreshing = false,
+	isRefreshing: isRefreshingProp,
 	isOffline = false,
 	backendState: backendStateProp,
 	color,
@@ -73,6 +74,10 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	// useSyncExternalStore guarantees synchronous, tear-free reads from
 	// ConnectionService on every platform, including Android's Fabric renderer.
 	const liveBackendState = useSyncExternalStore(subscribeToBackendState, ConnectionService.getBackendState, ConnectionService.getBackendState)
+
+	// Fetch global refreshing state if no local prop is provided
+	const globalRefreshing = useGlobalRefreshingState()
+	const isRefreshing = isRefreshingProp ?? globalRefreshing
 
 	const backendState = backendStateProp ?? liveBackendState
 	const isBackendOffline = backendState === 'offline'
@@ -117,7 +122,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	})
 
 	const handleRefresh = useCallback(async () => {
-		if (onRefresh && !isRefreshing && !disabled) {
+		if (!isRefreshing && !disabled) {
 			// Trigger spring scale bounce
 			Animated.sequence([
 				Animated.timing(scaleValue, {
@@ -145,11 +150,13 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 				}
 			})
 
-			await onRefresh()
+			if (onRefresh) {
+				await onRefresh()
+			} else {
+				await triggerGlobalRefresh()
+			}
 		}
 	}, [onRefresh, isRefreshing, disabled, scaleValue, rotationValue])
-
-	if (!onRefresh) return null
 
 	const isDisabled = showSpinner || disabled
 

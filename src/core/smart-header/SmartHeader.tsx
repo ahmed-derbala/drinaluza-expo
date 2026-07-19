@@ -366,7 +366,19 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	}
 
 	// Resolve headerActions
-	const resolvedActions: (HeaderActionType | React.ReactNode)[] = headerActions ?? options?.headerActions ?? []
+	const rawActions: (HeaderActionType | React.ReactNode)[] = headerActions ?? options?.headerActions ?? []
+
+	// Ensure the 'refresh' action is automatically shown on every screen
+	const hasRefresh = rawActions.some((action) => {
+		if (action === 'refresh') return true
+		if (action && typeof action === 'object' && 'key' in action && (action as any).key === 'refresh') return true
+		return false
+	})
+
+	const resolvedActions = [...rawActions]
+	if (!hasRefresh) {
+		resolvedActions.push('refresh')
+	}
 
 	const resolveHeaderAction = (action: HeaderActionType | React.ReactNode, index: number) => {
 		if (React.isValidElement(action)) {

@@ -152,7 +152,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 			</View>
 
 			{/* Gradient overlay for text readability */}
-			<LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.75)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.bgOverlay} pointerEvents="none" />
+			<LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.75)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.bgOverlay, { pointerEvents: 'none' }]} />
 
 			{/* Top content */}
 			<View style={styles.topContent}>
@@ -192,7 +192,7 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 
 			{/* Stock overlay */}
 			{(isOutOfStock || isLowStock) && (
-				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent' }]} pointerEvents="none">
+				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent', pointerEvents: 'none' }]}>
 					<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
 						<MaterialIcons name={stockIcon} size={11} color={stockColor} />
 						<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>

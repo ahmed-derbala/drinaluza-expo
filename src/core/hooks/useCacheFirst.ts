@@ -1,9 +1,53 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheReadResult } from '@/core/storage'
 import { BackendState, useBackendConnection } from '@/core/connection'
 import { log } from '@/core/log'
 
 const pendingFetches = new Map<string, Promise<unknown>>()
+
+// ── Global refresh & status registry for useCacheFirst hooks ─────────
+type RefreshCallback = () => Promise<void>
+const activeRefreshers = new Set<RefreshCallback>()
+
+let activeRefreshingCount = 0
+const activeRefreshingListeners = new Set<() => void>()
+
+export const triggerGlobalRefresh = async () => {
+	log({ level: 'info', label: 'useCacheFirst', message: `Triggering global refresh for ${activeRefreshers.size} active hooks` })
+	const promises = Array.from(activeRefreshers).map((rf) => {
+		try {
+			return rf()
+		} catch (e) {
+			log({ level: 'error', label: 'useCacheFirst', message: 'Error in global refresh item', error: e })
+			return Promise.resolve()
+		}
+	})
+	await Promise.all(promises)
+}
+
+export const useGlobalRefreshingState = (): boolean => {
+	return useSyncExternalStore(
+		(onStoreChange) => {
+			activeRefreshingListeners.add(onStoreChange)
+			return () => {
+				activeRefreshingListeners.delete(onStoreChange)
+			}
+		},
+		() => activeRefreshingCount > 0,
+		() => false
+	)
+}
+
+const updateRefreshingCount = (delta: number) => {
+	activeRefreshingCount += delta
+	activeRefreshingListeners.forEach((listener) => {
+		try {
+			listener()
+		} catch (e) {
+			// ignore
+		}
+	})
+}
 
 export interface UseCacheFirstOptions<T> {
 	/** Unique, deterministic cache key. */
@@ -194,6 +238,24 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			fetchFresh()
 		}
 	}, [backendState, fetchFresh])
+
+	// Register refresh callback globally
+	useEffect(() => {
+		activeRefreshers.add(refresh)
+		return () => {
+			activeRefreshers.delete(refresh)
+		}
+	}, [refresh])
+
+	// Synchronize refreshing state globally
+	useEffect(() => {
+		if (isRefreshing) {
+			updateRefreshingCount(1)
+			return () => {
+				updateRefreshingCount(-1)
+			}
+		}
+	}, [isRefreshing])
 
 	return {
 		data: displayedData,

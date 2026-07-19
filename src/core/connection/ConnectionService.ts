@@ -85,7 +85,8 @@ const attachSocketListeners = (socket: Socket) => {
 	})
 
 	socket.on('connect_error', (error) => {
-		log({ level: 'warn', label: 'ConnectionService', message: 'Socket connect error', error })
+		const message = error instanceof Error ? error.message : String(error)
+		log({ level: 'warn', label: 'ConnectionService', message: `Socket connect error: ${message}` })
 		setBackendState('offline')
 	})
 
