@@ -199,26 +199,24 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		let cancelled = false
 
 		const bootstrap = async () => {
+			// 1. Read cache first — this is fast (local storage)
 			const cached = await loadFromCache()
-			const hasCache = cached !== null
 
-			if (!hasCache) {
-				setIsInitialLoading(true)
-			}
-
-			// Skip network requests while the backend is known to be offline.
-			// The hook will auto-refresh as soon as the backend is reachable again.
-			if (!cancelled && !skipInitialFetch && backendState !== 'offline') {
-				await fetchFresh()
-			}
-
+			// 2. Cache is resolved: unblock the UI regardless of whether we have data.
+			//    Consumers will render cached data (or an empty state) immediately.
 			if (!cancelled) {
 				setIsInitialLoading(false)
 			}
+
+			// 3. Fire network fetch in the background — does NOT block UI rendering.
+			//    When it resolves it will update freshData and the cache silently.
+			if (!cancelled && !skipInitialFetch && backendState !== 'offline') {
+				fetchFresh()
+			}
 		}
 
-		// Start loading right away when no cache is present, avoiding a flash of
-		// empty/not-found state before bootstrap completes.
+		// Show loading spinner only if there is no cached data yet (first ever load).
+		// On subsequent mounts the cache exists, so we skip the spinner entirely.
 		setIsInitialLoading(!skipInitialFetch && cacheResult === null)
 
 		bootstrap()

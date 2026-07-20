@@ -540,13 +540,7 @@ export default function ProductScreen() {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle }} />
-				<ErrorState
-					title={isOffline ? undefined : translate('product_not_found', 'Product Not Found')}
-					message={isOffline ? undefined : translate('product_not_found_desc', 'The product you are looking for could not be found.')}
-					onRetry={isOffline ? undefined : () => refresh()}
-					icon={isOffline ? 'cloud-offline-outline' : 'fish-outline'}
-					iconOnly={isOffline}
-				/>
+				<ErrorState icon={isOffline ? 'cloud-offline-outline' : 'fish-outline'} iconOnly={true} />
 			</View>
 		)
 	}
