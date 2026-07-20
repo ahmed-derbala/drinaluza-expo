@@ -232,13 +232,12 @@ export default function UpdatesScreen() {
 		return () => animation.stop()
 	}, [pulseAnim])
 
-	// Refresh cache list on mount, and trigger fetch automatically
+	// Refresh cache list on mount
 	useEffect(() => {
 		if (Platform.OS !== 'web') {
 			refreshApkList()
 		}
-		checkForUpdates()
-	}, [refreshApkList, checkForUpdates])
+	}, [refreshApkList])
 
 	const isAndroid = Platform.OS === 'android'
 	const isWeb = Platform.OS === 'web'
