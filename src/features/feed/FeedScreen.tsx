@@ -274,7 +274,6 @@ export default function FeedScreen() {
 	const headerOptions = useMemo(
 		() => ({
 			title: translate('feed', 'Feed'),
-			subtitle: `${translate('hello', 'Hello')}, ${user?.slug || 'Guest'}`,
 			showBackButton: false,
 			isLoading: isInitialLoading,
 			headerActions: [

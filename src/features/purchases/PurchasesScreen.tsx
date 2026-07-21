@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator, useWindowDimensions, ScrollView, Platform, Alert } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+
 import SmartImage from '@/core/SmartImageViewer'
 import { useRouter, useFocusEffect, useLocalSearchParams, Stack, useNavigation } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
@@ -428,11 +428,8 @@ export default function PurchasesScreen() {
 								<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 								<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 							</View>
-							<TouchableOpacity onPress={() => handleCheckout(group)} activeOpacity={0.85} style={{ overflow: 'hidden', borderRadius: 16 }}>
-								<LinearGradient colors={['#0EA5E9', '#2563EB']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.checkoutBtn}>
-									<Ionicons name="cart-outline" size={18} color="#fff" />
-									<Text style={styles.checkoutBtnText}>{translate('checkout', 'Checkout')}</Text>
-								</LinearGradient>
+							<TouchableOpacity onPress={() => handleCheckout(group)} activeOpacity={0.75} style={styles.checkoutBtn} accessibilityLabel="Place order" accessibilityRole="button">
+								<Ionicons name="checkmark-circle" size={36} color={colors.success} />
 							</TouchableOpacity>
 						</View>
 					</View>
@@ -1000,17 +997,7 @@ const styles = StyleSheet.create({
 		textAlign: 'center'
 	},
 	checkoutBtn: {
-		flexDirection: 'row',
-		height: 48,
-		paddingHorizontal: 22,
-		borderRadius: 16,
-		alignItems: 'center',
-		gap: 8,
-		...Platform.select({ web: { boxShadow: '0 4px 14px rgba(14,165,233,0.3)' } as any })
-	},
-	checkoutBtnText: {
-		color: '#fff',
-		fontSize: 13,
-		fontWeight: '700'
+		justifyContent: 'center',
+		alignItems: 'center'
 	}
 })

@@ -21,5 +21,5 @@ export const colors: AppThemeColors = {
 	borderLight: '#1E293B',
 	textOnPrimary: '#FFFFFF',
 	inputBorder: '#334155',
-	header: '#080D19'
+	header: '#000000'
 }
