@@ -1,0 +1,4 @@
+- create purchases screen (/purchases/) and sales screen (/sales/)
+- use SmartFilter to filter by status, example /purchases?status=pending_business_confirmation
+- use ORDER_STATUSES from features/orders/orders-statuses.ts
+- 

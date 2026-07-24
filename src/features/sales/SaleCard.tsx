@@ -80,20 +80,20 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		const actions = []
 
 		switch (currentStatus) {
-			case statuses.PENDING_SHOP_CONFIRMATION:
+			case statuses.PENDING_BUSINESS_CONFIRMATION:
 				actions.push(
-					{ status: statuses.CONFIRMED_BY_SHOP, label: translate('confirm', 'Confirm'), icon: 'checkmark-circle-outline', color: colors.success },
-					{ status: statuses.CANCELLED_BY_SHOP, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
+					{ status: statuses.CONFIRMED_BY_BUSINESS, label: translate('confirm', 'Confirm'), icon: 'checkmark-circle-outline', color: colors.success },
+					{ status: statuses.CANCELLED_BY_BUSINESS, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
 				)
 				break
-			case statuses.CONFIRMED_BY_SHOP:
+			case statuses.CONFIRMED_BY_BUSINESS:
 				actions.push(
-					{ status: statuses.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER, label: translate('ready_for_pickup', 'Ready'), icon: 'storefront-outline', color: colors.info },
+					{ status: statuses.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER, label: translate('ready_for_pickup', 'Ready'), icon: 'storefront-outline', color: colors.info },
 					{ status: statuses.DELIVERING_TO_CUSTOMER, label: translate('start_delivery', 'Deliver'), icon: 'bicycle-outline', color: colors.info },
-					{ status: statuses.CANCELLED_BY_SHOP, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
+					{ status: statuses.CANCELLED_BY_BUSINESS, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
 				)
 				break
-			case statuses.RESERVED_BY_SHOP_FOR_PICKUP_BY_CUSTOMER:
+			case statuses.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER:
 			case statuses.DELIVERING_TO_CUSTOMER:
 				actions.push({ status: statuses.DELIVERED_TO_CUSTOMER, label: translate('mark_delivered', 'Delivered'), icon: 'checkmark-circle-outline', color: colors.success })
 				break

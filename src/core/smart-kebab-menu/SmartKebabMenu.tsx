@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'
-import { StyleSheet, Text, View, Animated, Platform, Pressable, useWindowDimensions } from 'react-native'
+import { StyleSheet, Text, View, Animated, Platform, Pressable, useWindowDimensions, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { usePathname, useRouter, useNavigation } from 'expo-router'
 import { useTheme } from '@/core/theme'
@@ -16,7 +16,7 @@ export const SmartKebabMenu: React.FC = () => {
 	const router = useRouter()
 	const pathname = usePathname()
 	const navigation = useNavigation()
-	const { width } = useWindowDimensions()
+	const { width, height } = useWindowDimensions()
 
 	const context = useContext(SmartKebabMenuContext)
 	const screenItems = context ? context.screenItems : []
@@ -24,15 +24,19 @@ export const SmartKebabMenu: React.FC = () => {
 	const { isDownloading, downloadProgress, downloadedApks, latestRelease } = useUpdates()
 
 	const [isOpen, setIsOpen] = useState(false)
+	const [buttonLayout, setButtonLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
 	const scaleAnim = useRef(new Animated.Value(0)).current
 	const opacityAnim = useRef(new Animated.Value(0)).current
-	const containerRef = useRef<any>(null)
+	const buttonRef = useRef<View>(null)
 
 	// Toggle menu open/close
 	const toggleMenu = () => {
 		if (isOpen) {
 			closeMenu()
 		} else {
+			buttonRef.current?.measureInWindow((x, y, w, h) => {
+				setButtonLayout({ x, y, width: w, height: h })
+			})
 			setIsOpen(true)
 			Animated.parallel([
 				Animated.timing(scaleAnim, {
@@ -95,21 +99,27 @@ export const SmartKebabMenu: React.FC = () => {
 		}
 	}, [isOpen])
 
-	// 4. Web outside click listener to close menu
+	// Re-measure the button on web resizes so the dropdown stays anchored
 	useEffect(() => {
 		if (!isOpen || Platform.OS !== 'web') return
-
-		const handleOutsideClick = (e: MouseEvent) => {
-			if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-				closeMenu()
-			}
+		const handleResize = () => {
+			buttonRef.current?.measureInWindow((x, y, w, h) => {
+				setButtonLayout({ x, y, width: w, height: h })
+			})
 		}
-
-		document.addEventListener('mousedown', handleOutsideClick)
+		window.addEventListener('resize', handleResize)
 		return () => {
-			document.removeEventListener('mousedown', handleOutsideClick)
+			window.removeEventListener('resize', handleResize)
 		}
 	}, [isOpen])
+
+	// Re-anchor the dropdown when the screen rotates/resizes while it is open
+	useEffect(() => {
+		if (!isOpen) return
+		buttonRef.current?.measureInWindow((x, y, w, h) => {
+			setButtonLayout({ x, y, width: w, height: h })
+		})
+	}, [width, height, isOpen])
 
 	const updatesBadge = useMemo(() => {
 		if (isDownloading) {
@@ -217,13 +227,23 @@ export const SmartKebabMenu: React.FC = () => {
 			backgroundColor: colors.card || '#1C2541',
 			borderColor: colors.borderLight || '#1E293B',
 			opacity: opacityAnim,
-			transform: [{ scale: scaleAnim }, { translateY: scaleAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }],
-			right: isDesktop ? 20 : 16
+			transform: [{ scale: scaleAnim }, { translateY: scaleAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }]
 		}
 	]
 
+	const positionStyle = useMemo(() => {
+		const offset = isDesktop ? 20 : 16
+		if (!buttonLayout) {
+			return { top: 46, right: offset }
+		}
+		return {
+			top: buttonLayout.y + buttonLayout.height + 8,
+			right: width - (buttonLayout.x + buttonLayout.width) + offset
+		}
+	}, [buttonLayout, isDesktop, width])
+
 	return (
-		<View ref={containerRef} style={styles.container}>
+		<View ref={buttonRef} style={styles.container}>
 			{/* Kebab Icon Button */}
 			<Pressable
 				onPress={toggleMenu}
@@ -242,96 +262,77 @@ export const SmartKebabMenu: React.FC = () => {
 				<Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
 			</Pressable>
 
-			{/* Backdrop overlay for outside tap/click to close */}
-			{isOpen && (
-				<Pressable
-					style={[
-						styles.backdrop,
-						Platform.select({
-							web: { position: 'fixed' } as any,
-							default: {
-								position: 'absolute',
-								top: -500,
-								left: -1000,
-								right: -1000,
-								bottom: -2000
+			{/* Render the dropdown in a Modal so it is never clipped by header siblings or parent stacking contexts */}
+			<Modal transparent visible={isOpen} animationType="none" onRequestClose={closeMenu}>
+				<View style={styles.modalOverlay}>
+					<Pressable style={styles.modalBackdrop} onPress={closeMenu} accessibilityLabel="Close menu backdrop" accessibilityRole="button" />
+					<Animated.View style={[menuStyle, positionStyle]} accessibilityRole="menu">
+						{allItems.map((item, idx) => {
+							const isDestructive = item.destructive
+							const finalColor = item.disabled ? colors.textTertiary || '#64748B' : isDestructive ? colors.error || '#EF4444' : colors.text || '#F8FAFC'
+
+							const hasSeparator = item.type === 'separator'
+
+							if (hasSeparator) {
+								return <View key={`sep-${idx}`} style={[styles.separator, { backgroundColor: colors.borderLight || '#1E293B' }]} />
 							}
-						})
-					]}
-					onPress={closeMenu}
-					accessibilityLabel="Close menu backdrop"
-					accessibilityRole="button"
-				/>
-			)}
 
-			{/* Dropdown Menu Container */}
-			{isOpen && (
-				<Animated.View style={menuStyle} accessibilityRole="menu">
-					{allItems.map((item, idx) => {
-						const isDestructive = item.destructive
-						const finalColor = item.disabled ? colors.textTertiary || '#64748B' : isDestructive ? colors.error || '#EF4444' : colors.text || '#F8FAFC'
+							const badgeContent = formatBadge(item.badge)
 
-						const hasSeparator = item.type === 'separator'
-
-						if (hasSeparator) {
-							return <View key={`sep-${idx}`} style={[styles.separator, { backgroundColor: colors.borderLight || '#1E293B' }]} />
-						}
-
-						const badgeContent = formatBadge(item.badge)
-
-						return (
-							<Pressable
-								key={item.key}
-								onPress={() => handleItemPress(item)}
-								disabled={item.disabled}
-								focusable={!item.disabled}
-								accessibilityRole="menuitem"
-								accessibilityLabel={`${item.label}${item.badge ? `, badge: ${item.badge}` : ''}`}
-								accessibilityState={{ disabled: !!item.disabled }}
-								style={({ hovered, pressed }) => [
-									styles.menuItem,
-									{
-										backgroundColor: item.disabled ? 'transparent' : hovered ? colors.surfaceVariant || '#3A506B30' : pressed ? colors.primary + '15' : 'transparent'
-									}
-								]}
-							>
-								<View style={styles.itemLeft}>
-									{item.icon && <Ionicons name={item.icon as any} size={18} color={finalColor} style={styles.itemIcon} />}
-									<Text
-										numberOfLines={1}
-										style={[
-											styles.itemText,
-											{
-												color: finalColor,
-												opacity: item.disabled ? 0.5 : 1
-											}
-										]}
-									>
-										{item.label}
-									</Text>
-								</View>
-
-								{/* Dynamic resizing Text/Numeric Badge */}
-								{badgeContent !== '' && (
-									<View
-										style={[
-											styles.badge,
-											{
-												backgroundColor: isDestructive ? colors.border || '#3A506B' : colors.notification || '#F43F5E'
-											}
-										]}
-										accessibilityLabel={`Badge: ${item.badge}`}
-									>
-										<Text style={styles.badgeText} numberOfLines={1}>
-											{badgeContent}
+							return (
+								<Pressable
+									key={item.key}
+									onPress={() => handleItemPress(item)}
+									disabled={item.disabled}
+									focusable={!item.disabled}
+									accessibilityRole="menuitem"
+									accessibilityLabel={`${item.label}${item.badge ? `, badge: ${item.badge}` : ''}`}
+									accessibilityState={{ disabled: !!item.disabled }}
+									style={({ hovered, pressed }) => [
+										styles.menuItem,
+										{
+											backgroundColor: item.disabled ? 'transparent' : hovered ? colors.surfaceVariant || '#3A506B30' : pressed ? colors.primary + '15' : 'transparent'
+										}
+									]}
+								>
+									<View style={styles.itemLeft}>
+										{item.icon && <Ionicons name={item.icon as any} size={18} color={finalColor} style={styles.itemIcon} />}
+										<Text
+											numberOfLines={1}
+											style={[
+												styles.itemText,
+												{
+													color: finalColor,
+													opacity: item.disabled ? 0.5 : 1
+												}
+											]}
+										>
+											{item.label}
 										</Text>
 									</View>
-								)}
-							</Pressable>
-						)
-					})}
-				</Animated.View>
-			)}
+
+									{/* Dynamic resizing Text/Numeric Badge */}
+									{badgeContent !== '' && (
+										<View
+											style={[
+												styles.badge,
+												{
+													backgroundColor: isDestructive ? colors.border || '#3A506B' : colors.notification || '#F43F5E'
+												}
+											]}
+											accessibilityLabel={`Badge: ${item.badge}`}
+										>
+											<Text style={styles.badgeText} numberOfLines={1}>
+												{badgeContent}
+											</Text>
+										</View>
+									)}
+								</Pressable>
+							)
+						})}
+					</Animated.View>
+				</View>
+			</Modal>
 		</View>
 	)
 }
@@ -355,21 +356,19 @@ const styles = StyleSheet.create({
 			} as any
 		})
 	},
-	backdrop: {
-		zIndex: 999,
-		backgroundColor: 'transparent',
-		...Platform.select({
-			web: {
-				top: 0,
-				left: 0,
-				right: 0,
-				bottom: 0
-			}
-		})
+	modalOverlay: {
+		flex: 1
+	},
+	modalBackdrop: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		backgroundColor: 'transparent'
 	},
 	menuContainer: {
 		position: 'absolute',
-		top: 46,
 		width: 190,
 		borderRadius: 12,
 		borderWidth: 1,

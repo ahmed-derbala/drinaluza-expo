@@ -1,4 +1,0 @@
-- create the purchases screen (/purchases/) based on sales screen
-- use filter tab bar for status, example /purchases?status=pending
-- use ORDER_STATUSES from features/orders/orders-statuses.ts
-- 

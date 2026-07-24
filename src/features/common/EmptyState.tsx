@@ -7,7 +7,7 @@ export interface EmptyStateProps {
 	/**
 	 * Main empty state descriptive title.
 	 */
-	title: string
+	title?: string
 	/**
 	 * Secondary context/subtitle.
 	 */
@@ -47,7 +47,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ title, subtitle, iconName = 'al
 	return (
 		<View style={[styles.container, style]}>
 			<View style={[styles.iconWrapper, { backgroundColor: colors.surfaceVariant || colors.text + '05' }]}>{renderIcon()}</View>
-			<Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+			{title ? <Text style={[styles.title, { color: colors.text }]}>{title}</Text> : null}
 			{subtitle ? <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
 
 			{actionLabel && onActionPress && (
