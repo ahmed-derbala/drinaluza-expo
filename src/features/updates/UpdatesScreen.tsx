@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useRef } from 'react'
-import { StyleSheet, Text, View, ScrollView, TouchableOpacity, ActivityIndicator, Platform, Alert, useWindowDimensions, Animated, Easing, Share, RefreshControl } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Animated, Easing, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
@@ -240,6 +240,17 @@ export default function UpdatesScreen() {
 	}, [refreshApkList])
 
 	const isAndroid = Platform.OS === 'android'
+	const isSupported = useMemo(() => {
+		if (Platform.OS === 'android') {
+			const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10)
+			return apiLevel >= 23
+		}
+		if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
+			const match = navigator.userAgent.match(/Android\s([0-9\.]+)/)
+			if (match) return parseFloat(match[1]) >= 6.0
+		}
+		return false
+	}, [])
 	const isWeb = Platform.OS === 'web'
 	const isWebAndroid = Platform.OS === 'web' && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '')
 	const maxLayoutWidth = 620
@@ -365,361 +376,6 @@ export default function UpdatesScreen() {
 		document.body.removeChild(link)
 	}
 
-	const renderAndroidSection = () => {
-		let isSupported = false
-		if (Platform.OS === 'android') {
-			const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10)
-			isSupported = apiLevel >= 23
-		} else if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-			const match = navigator.userAgent.match(/Android\s([0-9\.]+)/)
-			if (match) {
-				const majorVersion = parseFloat(match[1])
-				isSupported = majorVersion >= 6.0
-			}
-		}
-
-		return (
-			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
-				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('device_status', 'Device Status')}</Text>
-
-				{!isWebAndroid && (
-					<View style={styles.metaRow}>
-						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
-						<Text
-							style={[
-								styles.metaValue,
-								{
-									color: deviceFreeStorage > config.updates.minFreeStorage * 1024 * 1024 ? colors.success : colors.error
-								}
-							]}
-						>
-							{formatBytes(deviceFreeStorage)}
-						</Text>
-					</View>
-				)}
-
-				<View style={styles.metaRow}>
-					<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('min_android_version', 'Min Android Version')}</Text>
-					<Text style={[styles.metaValue, { color: isSupported ? colors.success : colors.error }]}>6.0 (API 23)</Text>
-				</View>
-
-				{!isWebAndroid && latestRelease && deviceFreeStorage < latestRelease.size * 1.5 && (
-					<View style={[styles.warningBox, { backgroundColor: colors.error + '1A', borderColor: colors.error }]}>
-						<Ionicons name="warning" size={16} color={colors.error} />
-						<Text style={[styles.warningText, { color: colors.error }]}>{translate('low_space_warning', 'Your device is low on storage space. The download might fail.')}</Text>
-					</View>
-				)}
-			</View>
-		)
-	}
-
-	const renderEnvironmentBadge = () => {
-		const nodeEnv = config.nodeEnv.toLowerCase()
-		let badgeColor = colors.success
-		let badgeText = config.nodeEnv.toUpperCase()
-
-		if (nodeEnv === 'production' || nodeEnv === 'prod') {
-			badgeColor = colors.error
-		} else if (nodeEnv === 'local' || nodeEnv === 'dev' || nodeEnv === 'development') {
-			badgeColor = colors.info
-		} else if (nodeEnv === 'staging') {
-			badgeColor = colors.warning
-		}
-
-		return (
-			<View style={[styles.badgeContainer, { backgroundColor: badgeColor + '15', borderColor: badgeColor + '30' }]}>
-				<Ionicons name="git-branch-outline" size={12} color={badgeColor} style={{ marginRight: 4 }} />
-				<Text style={[styles.badgeText, { color: badgeColor }]}>{badgeText}</Text>
-			</View>
-		)
-	}
-
-	const renderVersionComparison = () => {
-		const latestVer = latestRelease ? `v${latestRelease.latest_version}` : '—'
-		const arrowColor = isUpToDate ? colors.textTertiary : colors.primary
-		const arrowBg = isUpToDate ? colors.surfaceVariant : colors.primary + '15'
-		const latestColor = isUpToDate ? colors.text : colors.primary
-
-		return (
-			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
-				<View style={styles.versionSectionHeader}>
-					<Text style={[styles.sectionTitle, { color: colors.textSecondary, marginBottom: 0 }]}>{translate('version_comparison', 'Version')}</Text>
-					{renderEnvironmentBadge()}
-				</View>
-				<View style={styles.versionRow}>
-					<View style={[styles.versionCard, { backgroundColor: colors.surface }]}>
-						<View style={[styles.versionIconWrap, { backgroundColor: colors.textTertiary + '12' }]}>
-							<Ionicons name="phone-portrait-outline" size={18} color={colors.textTertiary} />
-						</View>
-						<View style={styles.versionTextBlock}>
-							<Text style={[styles.versionCardLabel, { color: colors.textTertiary }]}>{translate('current_version', 'Current')}</Text>
-							<Text style={[styles.versionCardValue, { color: colors.text }]}>v{config.app.version}</Text>
-						</View>
-					</View>
-
-					<View style={[styles.versionArrow, { backgroundColor: arrowBg, borderColor: isUpToDate ? colors.borderLight : colors.primary + '30' }]}>
-						<Ionicons name={isUpToDate ? 'checkmark' : 'arrow-forward'} size={18} color={arrowColor} />
-					</View>
-
-					<View style={[styles.versionCard, { backgroundColor: isUpToDate ? colors.surface : colors.primary + '10' }]}>
-						<View style={[styles.versionIconWrap, { backgroundColor: (isUpToDate ? colors.textTertiary : colors.primary) + '12' }]}>
-							<Ionicons name="cloud-outline" size={18} color={latestColor} />
-						</View>
-						<View style={styles.versionTextBlock}>
-							<Text style={[styles.versionCardLabel, { color: colors.textTertiary }]}>{translate('latest_version', 'Latest')}</Text>
-							<Text style={[styles.versionCardValue, { color: latestColor }]}>{latestVer}</Text>
-						</View>
-					</View>
-				</View>
-			</View>
-		)
-	}
-	const renderReleaseMetaList = () => {
-		if (!latestRelease) return null
-		return (
-			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
-				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('release_details', 'Release Details')}</Text>
-				<View style={styles.metaRow}>
-					<View style={styles.metaLabelRow}>
-						<View style={[styles.metaIconWrap, { backgroundColor: colors.info + '15' }]}>
-							<Ionicons name="calendar-outline" size={16} color={colors.info} />
-						</View>
-						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('published_date', 'Published')}</Text>
-					</View>
-					<Text style={[styles.metaValue, { color: colors.text }]}>{formatDate(latestRelease.published_at)}</Text>
-				</View>
-				<View style={[styles.metaDivider, { backgroundColor: colors.borderLight }]} />
-				<View style={styles.metaRow}>
-					<View style={styles.metaLabelRow}>
-						<View style={[styles.metaIconWrap, { backgroundColor: colors.primary + '15' }]}>
-							<Ionicons name="cube-outline" size={16} color={colors.primary} />
-						</View>
-						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('file_size', 'Download Size')}</Text>
-					</View>
-					<Text style={[styles.metaValue, { color: colors.text }]}>{formatBytes(latestRelease.size)}</Text>
-				</View>
-				<View style={[styles.metaDivider, { backgroundColor: colors.borderLight }]} />
-				<View style={styles.metaRow}>
-					<View style={styles.metaLabelRow}>
-						<View style={[styles.metaIconWrap, { backgroundColor: colors.success + '15' }]}>
-							<Ionicons name="download-outline" size={16} color={colors.success} />
-						</View>
-						<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('total_downloads', 'Downloads')}</Text>
-					</View>
-					<Text style={[styles.metaValue, { color: colors.text }]}>{latestRelease.download_count}</Text>
-				</View>
-			</View>
-		)
-	}
-
-	const renderWebActions = () => {
-		const isDisabled = !latestRelease || !latestRelease.download_url
-		return (
-			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
-				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
-				<View style={styles.actionsContainer}>
-					<View style={[styles.rowButtons, { flexDirection: isWide ? 'row' : 'column' }]}>
-						<TouchableOpacity
-							disabled={isDisabled}
-							onPress={handleDownloadWeb}
-							accessibilityLabel={translate('download_android_apk', 'Download Android APK')}
-							style={[
-								styles.actionButton,
-								{
-									flex: isWide ? 1 : undefined,
-									width: isWide ? undefined : '100%',
-									opacity: isDisabled ? 0.5 : 1,
-									backgroundColor: isDisabled ? colors.surfaceVariant : colors.primary,
-									borderColor: isDisabled ? colors.surfaceVariant : colors.primary
-								}
-							]}
-						>
-							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-								<Ionicons name="download-outline" size={20} color={isDisabled ? colors.textTertiary : colors.textOnPrimary} />
-								{latestRelease?.latest_version ? (
-									<Text style={{ fontSize: 13, fontWeight: '600', color: isDisabled ? colors.textTertiary : colors.textOnPrimary }} numberOfLines={1}>
-										v{latestRelease.latest_version}
-									</Text>
-								) : null}
-							</View>
-						</TouchableOpacity>
-
-						<TouchableOpacity
-							disabled={isDisabled}
-							onPress={handleCopyUrl}
-							accessibilityLabel={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link to Clipboard')}
-							style={[
-								styles.actionButton,
-								{
-									flex: isWide ? 1 : undefined,
-									width: isWide ? undefined : '100%',
-									opacity: isDisabled ? 0.6 : 1,
-									backgroundColor: colors.surface,
-									borderColor: colors.borderLight
-								}
-							]}
-						>
-							<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={22} color={copied ? colors.success : colors.textSecondary} />
-						</TouchableOpacity>
-					</View>
-				</View>
-			</View>
-		)
-	}
-
-	const renderNativeActions = () => {
-		const isDownloadingOrPaused = isDownloading || isPaused
-
-		return (
-			<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
-				<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
-				<View style={styles.actionsContainer}>
-					{isDownloadingOrPaused ? (
-						<View style={styles.progressContainer}>
-							<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
-								<View style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%`, backgroundColor: colors.primary }]} />
-							</View>
-							<Text style={[styles.progressText, { color: colors.textSecondary }]}>
-								{isPaused ? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`}
-							</Text>
-
-							{isDownloading && (downloadSpeed !== null || remainingTime !== null) && (
-								<View style={styles.progressMeta}>
-									{downloadSpeed !== null && (
-										<Text style={[styles.progressMetaText, { color: colors.textTertiary }]}>
-											<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} /> {formatSpeed(downloadSpeed)}
-										</Text>
-									)}
-									{remainingTime !== null && (
-										<Text style={[styles.progressMetaText, { color: colors.textTertiary }]}>
-											<Ionicons name="time-outline" size={12} color={colors.textTertiary} /> {formatRemainingTime(remainingTime)}
-										</Text>
-									)}
-								</View>
-							)}
-
-							<View style={[styles.rowButtons, { flexDirection: isWide ? 'row' : 'column' }]}>
-								{isDownloading && (
-									<>
-										<TouchableOpacity
-											onPress={pauseDownload}
-											accessibilityLabel={translate('pause', 'Pause')}
-											style={[styles.actionButton, { flex: isWide ? 1 : undefined, width: isWide ? undefined : '100%', backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-										>
-											<Ionicons name="pause-outline" size={22} color={colors.textSecondary} />
-										</TouchableOpacity>
-
-										<TouchableOpacity
-											onPress={cancelDownload}
-											accessibilityLabel={translate('cancel', 'Cancel')}
-											style={[styles.actionButton, { flex: isWide ? 1 : undefined, width: isWide ? undefined : '100%', backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}
-										>
-											<Ionicons name="close-outline" size={22} color={colors.error} />
-										</TouchableOpacity>
-									</>
-								)}
-
-								{isPaused && (
-									<>
-										<TouchableOpacity
-											onPress={resumeDownload}
-											accessibilityLabel={translate('resume', 'Resume')}
-											style={[styles.actionButton, { flex: isWide ? 1 : undefined, width: isWide ? undefined : '100%', backgroundColor: colors.primary, borderColor: colors.primary }]}
-										>
-											<Ionicons name="play-outline" size={22} color={colors.textOnPrimary} />
-										</TouchableOpacity>
-
-										<TouchableOpacity
-											onPress={cancelDownload}
-											accessibilityLabel={translate('cancel', 'Cancel')}
-											style={[styles.actionButton, { flex: isWide ? 1 : undefined, width: isWide ? undefined : '100%', backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}
-										>
-											<Ionicons name="close-outline" size={22} color={colors.error} />
-										</TouchableOpacity>
-									</>
-								)}
-							</View>
-						</View>
-					) : (
-						<View style={[styles.rowButtons, { flexDirection: isWide ? 'row' : 'column' }]}>
-							<TouchableOpacity
-								disabled={isDownloadDisabled}
-								onPress={downloadUpdate}
-								accessibilityLabel={translate('download', 'Download')}
-								style={[
-									styles.actionButton,
-									{
-										flex: installableApk && isWide ? 1 : undefined,
-										width: installableApk ? (isWide ? undefined : '100%') : '100%',
-										opacity: isDownloadDisabled ? 0.5 : 1,
-										backgroundColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary,
-										borderColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary
-									}
-								]}
-							>
-								<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-									<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : colors.textOnPrimary} />
-									{latestRelease?.latest_version ? (
-										<Text style={{ fontSize: 13, fontWeight: '600', color: isDownloadDisabled ? colors.textTertiary : colors.textOnPrimary }} numberOfLines={1}>
-											v{latestRelease.latest_version}
-										</Text>
-									) : null}
-								</View>
-							</TouchableOpacity>
-
-							{installableApk && (
-								<TouchableOpacity
-									disabled={isInstallDisabled}
-									onPress={handleInstallPress}
-									accessibilityLabel={translate('install', 'Install')}
-									style={[
-										styles.actionButton,
-										{
-											flex: isWide ? 1 : undefined,
-											width: isWide ? undefined : '100%',
-											opacity: isInstallDisabled ? 0.5 : 1,
-											backgroundColor: isInstallDisabled ? colors.surfaceVariant : colors.success,
-											borderColor: isInstallDisabled ? colors.surfaceVariant : colors.success
-										}
-									]}
-								>
-									<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-										<Ionicons name="archive-outline" size={20} color={isInstallDisabled ? colors.textTertiary : colors.textOnPrimary} />
-										{installableApk?.version ? (
-											<Text style={{ fontSize: 13, fontWeight: '600', color: isInstallDisabled ? colors.textTertiary : colors.textOnPrimary }} numberOfLines={1}>
-												v{installableApk.version}
-											</Text>
-										) : null}
-									</View>
-								</TouchableOpacity>
-							)}
-						</View>
-					)}
-
-					{latestRelease && (
-						<View style={[styles.rowButtons, { flexDirection: isWide ? 'row' : 'column' }]}>
-							<TouchableOpacity
-								onPress={handleCopyUrl}
-								accessibilityLabel={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
-								style={[styles.actionButton, { flex: isWide ? 1 : undefined, width: isWide ? undefined : '100%', backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-							>
-								<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={22} color={copied ? colors.success : colors.textSecondary} />
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								onPress={handleShareUrl}
-								accessibilityLabel={translate('share_url', 'Share Link')}
-								style={[styles.actionButton, { flex: isWide ? 1 : undefined, width: isWide ? undefined : '100%', backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-							>
-								<Ionicons name="share-social-outline" size={22} color={colors.textSecondary} />
-							</TouchableOpacity>
-						</View>
-					)}
-				</View>
-			</View>
-		)
-	}
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<SmartHeader
@@ -743,16 +399,281 @@ export default function UpdatesScreen() {
 			/>
 
 			<SmartHeader.ScrollView contentContainerStyle={[styles.scrollContent, isWide && { maxWidth: maxLayoutWidth, alignSelf: 'center', width: '100%' }]}>
-				{renderVersionComparison()}
+				{!!error && (
+					<View style={[styles.errorBox, { borderColor: colors.error + '30', backgroundColor: colors.error + '12' }]}>
+						<Ionicons name="alert-circle-outline" size={22} color={colors.error} />
+						<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+					</View>
+				)}
 
-				{isWeb ? renderWebActions() : renderNativeActions()}
+				<View style={[styles.card, { borderColor: isUpToDate ? colors.success + '30' : colors.primary + '30', backgroundColor: isUpToDate ? colors.success + '10' : colors.primary + '10' }]}>
+					<View style={{ alignItems: 'center', paddingVertical: 8, gap: 14 }}>
+						<View style={{ width: 72, height: 72, borderRadius: 36, justifyContent: 'center', alignItems: 'center', backgroundColor: isUpToDate ? colors.success + '18' : colors.primary + '18' }}>
+							<Animated.View style={{ transform: [{ scale: pulseAnim }] }}>
+								<Ionicons name={isUpToDate ? 'checkmark-circle' : 'cloud-download'} size={36} color={isUpToDate ? colors.success : colors.primary} />
+							</Animated.View>
+						</View>
+						<View style={{ alignItems: 'center', gap: 4 }}>
+							<Text style={{ fontSize: 20, fontWeight: '700', color: colors.text, textAlign: 'center' }}>
+								{isChecking ? translate('checking', 'Checking...') : isUpToDate ? translate('up_to_date', 'You are up to date') : translate('update_available', 'Update available')}
+							</Text>
+							<Text style={{ fontSize: 13, color: colors.textSecondary, textAlign: 'center' }}>
+								{isChecking
+									? translate('please_wait', 'Please wait while we check for updates')
+									: latestRelease
+										? isUpToDate
+											? `v${config.app.version}`
+											: `v${config.app.version} → v${latestRelease.latest_version}`
+										: translate('pull_to_refresh', 'Pull down to refresh')}
+							</Text>
+						</View>
+					</View>
+				</View>
 
-				{renderReleaseMetaList()}
+				<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+					<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('version_comparison', 'Version')}</Text>
+					<View style={{ flexDirection: isWide ? 'row' : 'column', gap: 12 }}>
+						<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 16, padding: 14 }}>
+							<View style={[styles.versionIconWrap, { backgroundColor: colors.textTertiary + '12' }]}>
+								<Ionicons name="phone-portrait-outline" size={20} color={colors.textTertiary} />
+							</View>
+							<View style={{ gap: 2 }}>
+								<Text style={{ fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textTertiary }}>{translate('current_version', 'Current')}</Text>
+								<Text style={{ fontSize: 16, fontWeight: '700', color: colors.text }}>v{config.app.version}</Text>
+							</View>
+						</View>
+						<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: isUpToDate ? colors.surface : colors.primary + '15', borderRadius: 16, padding: 14 }}>
+							<View style={[styles.versionIconWrap, { backgroundColor: (isUpToDate ? colors.textTertiary : colors.primary) + '12' }]}>
+								<Ionicons name="cloud-outline" size={20} color={isUpToDate ? colors.textTertiary : colors.primary} />
+							</View>
+							<View style={{ gap: 2 }}>
+								<Text style={{ fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textTertiary }}>{translate('latest_version', 'Latest')}</Text>
+								<Text style={{ fontSize: 16, fontWeight: '700', color: isUpToDate ? colors.text : colors.primary }}>{latestRelease ? `v${latestRelease.latest_version}` : '—'}</Text>
+							</View>
+						</View>
+					</View>
+				</View>
 
-				{/* Free storage / space warnings on Android / Android browsers */}
-				{(isAndroid || isWebAndroid) && renderAndroidSection()}
+				<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+					<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
+					{isWeb ? (
+						<View style={{ gap: 12 }}>
+							<View style={{ flexDirection: isWide ? 'row' : 'column', gap: 12 }}>
+								<TouchableOpacity
+									disabled={!latestRelease?.download_url}
+									onPress={handleDownloadWeb}
+									accessibilityLabel={translate('download_android_apk', 'Download Android APK')}
+									style={[
+										styles.actionButton,
+										{
+											flex: 1,
+											flexDirection: 'row',
+											backgroundColor: latestRelease?.download_url ? colors.primary : colors.surfaceVariant,
+											borderColor: latestRelease?.download_url ? colors.primary : colors.surfaceVariant,
+											opacity: latestRelease?.download_url ? 1 : 0.5
+										}
+									]}
+								>
+									<Ionicons name="download-outline" size={20} color={latestRelease?.download_url ? colors.textOnPrimary : colors.textTertiary} />
+									{latestRelease?.download_url && <Text style={{ marginLeft: 8, fontSize: 13, fontWeight: '600', color: colors.textOnPrimary }}>v{latestRelease.latest_version}</Text>}
+								</TouchableOpacity>
+								<TouchableOpacity
+									disabled={!latestRelease?.download_url}
+									onPress={handleCopyUrl}
+									accessibilityLabel={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
+									style={[styles.actionButton, { flex: 1, flexDirection: 'row', backgroundColor: colors.surface, borderColor: colors.borderLight, opacity: !latestRelease?.download_url ? 0.5 : 1 }]}
+								>
+									<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={20} color={copied ? colors.success : colors.textSecondary} />
+								</TouchableOpacity>
+							</View>
+						</View>
+					) : (
+						<View style={{ gap: 12 }}>
+							{isDownloading || isPaused ? (
+								<View style={{ gap: 10 }}>
+									<View style={[styles.progressBarBg, { backgroundColor: colors.surfaceVariant }]}>
+										<View style={[styles.progressBarFill, { width: `${Math.round(downloadProgress * 100)}%`, backgroundColor: colors.primary }]} />
+									</View>
+									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+										<Text style={[styles.progressText, { color: colors.textSecondary }]}>
+											{isPaused ? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%` : `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`}
+										</Text>
+										<View style={{ flexDirection: 'row', gap: 12 }}>
+											{downloadSpeed !== null && (
+												<Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>
+													<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} /> {formatSpeed(downloadSpeed)}
+												</Text>
+											)}
+											{remainingTime !== null && (
+												<Text style={{ fontSize: 12, fontWeight: '500', color: colors.textTertiary }}>
+													<Ionicons name="time-outline" size={12} color={colors.textTertiary} /> {formatRemainingTime(remainingTime)}
+												</Text>
+											)}
+										</View>
+									</View>
+									<View style={{ flexDirection: isWide ? 'row' : 'column', gap: 12 }}>
+										{isDownloading && (
+											<TouchableOpacity
+												onPress={pauseDownload}
+												accessibilityLabel={translate('pause', 'Pause')}
+												style={[styles.actionButton, { flex: 1, backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+											>
+												<Ionicons name="pause-outline" size={22} color={colors.textSecondary} />
+											</TouchableOpacity>
+										)}
+										{isPaused && (
+											<TouchableOpacity
+												onPress={resumeDownload}
+												accessibilityLabel={translate('resume', 'Resume')}
+												style={[styles.actionButton, { flex: 1, backgroundColor: colors.primary, borderColor: colors.primary }]}
+											>
+												<Ionicons name="play-outline" size={22} color={colors.textOnPrimary} />
+											</TouchableOpacity>
+										)}
+										<TouchableOpacity
+											onPress={cancelDownload}
+											accessibilityLabel={translate('cancel', 'Cancel')}
+											style={[styles.actionButton, { flex: 1, backgroundColor: colors.error + '10', borderColor: colors.error + '30' }]}
+										>
+											<Ionicons name="close-outline" size={22} color={colors.error} />
+										</TouchableOpacity>
+									</View>
+								</View>
+							) : (
+								<View style={{ flexDirection: isWide ? 'row' : 'column', gap: 12 }}>
+									<TouchableOpacity
+										disabled={isDownloadDisabled}
+										onPress={downloadUpdate}
+										accessibilityLabel={translate('download', 'Download')}
+										style={[
+											styles.actionButton,
+											{
+												flex: 1,
+												flexDirection: 'row',
+												backgroundColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary,
+												borderColor: isDownloadDisabled ? colors.surfaceVariant : colors.primary,
+												opacity: isDownloadDisabled ? 0.5 : 1
+											}
+										]}
+									>
+										<Ionicons name="cloud-download-outline" size={20} color={isDownloadDisabled ? colors.textTertiary : colors.textOnPrimary} />
+										{latestRelease?.latest_version && (
+											<Text style={{ marginLeft: 8, fontSize: 13, fontWeight: '600', color: isDownloadDisabled ? colors.textTertiary : colors.textOnPrimary }}>v{latestRelease.latest_version}</Text>
+										)}
+									</TouchableOpacity>
+									{installableApk && (
+										<TouchableOpacity
+											disabled={isInstallDisabled}
+											onPress={handleInstallPress}
+											accessibilityLabel={translate('install', 'Install')}
+											style={[
+												styles.actionButton,
+												{
+													flex: 1,
+													flexDirection: 'row',
+													backgroundColor: isInstallDisabled ? colors.surfaceVariant : colors.success,
+													borderColor: isInstallDisabled ? colors.surfaceVariant : colors.success,
+													opacity: isInstallDisabled ? 0.5 : 1
+												}
+											]}
+										>
+											<Ionicons name="archive-outline" size={20} color={isInstallDisabled ? colors.textTertiary : colors.textOnPrimary} />
+											<Text style={{ marginLeft: 8, fontSize: 13, fontWeight: '600', color: isInstallDisabled ? colors.textTertiary : colors.textOnPrimary }}>v{installableApk.version}</Text>
+										</TouchableOpacity>
+									)}
+								</View>
+							)}
+							{latestRelease && (
+								<View style={{ flexDirection: isWide ? 'row' : 'column', gap: 12 }}>
+									<TouchableOpacity
+										onPress={handleCopyUrl}
+										accessibilityLabel={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
+										style={[styles.actionButton, { flex: 1, flexDirection: 'row', backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+									>
+										<Ionicons name={copied ? 'checkmark-circle-outline' : 'copy-outline'} size={20} color={copied ? colors.success : colors.textSecondary} />
+									</TouchableOpacity>
+									<TouchableOpacity
+										onPress={handleShareUrl}
+										accessibilityLabel={translate('share_url', 'Share Link')}
+										style={[styles.actionButton, { flex: 1, flexDirection: 'row', backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+									>
+										<Ionicons name="share-social-outline" size={20} color={colors.textSecondary} />
+									</TouchableOpacity>
+								</View>
+							)}
+						</View>
+					)}
+				</View>
 
-				{/* Cached APK installers list */}
+				{latestRelease && (
+					<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('release_details', 'Release Details')}</Text>
+						<View style={{ flexDirection: isWide ? 'row' : 'column', gap: 12 }}>
+							<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 16, padding: 14 }}>
+								<View style={{ width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.info + '15' }}>
+									<Ionicons name="calendar-outline" size={20} color={colors.info} />
+								</View>
+								<View style={{ gap: 2, flex: 1 }}>
+									<Text style={{ fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textTertiary }}>{translate('published_date', 'Published')}</Text>
+									<Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }} numberOfLines={1}>
+										{formatDate(latestRelease.published_at)}
+									</Text>
+								</View>
+							</View>
+							<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 16, padding: 14 }}>
+								<View style={{ width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.primary + '15' }}>
+									<Ionicons name="cube-outline" size={20} color={colors.primary} />
+								</View>
+								<View style={{ gap: 2, flex: 1 }}>
+									<Text style={{ fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textTertiary }}>{translate('file_size', 'Download Size')}</Text>
+									<Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{formatBytes(latestRelease.size)}</Text>
+								</View>
+							</View>
+							<View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: colors.surface, borderRadius: 16, padding: 14 }}>
+								<View style={{ width: 40, height: 40, borderRadius: 10, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.success + '15' }}>
+									<Ionicons name="download-outline" size={20} color={colors.success} />
+								</View>
+								<View style={{ gap: 2, flex: 1 }}>
+									<Text style={{ fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.5, color: colors.textTertiary }}>{translate('total_downloads', 'Downloads')}</Text>
+									<Text style={{ fontSize: 14, fontWeight: '600', color: colors.text }}>{latestRelease.download_count}</Text>
+								</View>
+							</View>
+						</View>
+					</View>
+				)}
+
+				{(isAndroid || isWebAndroid) && (
+					<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
+						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('device_status', 'Device Status')}</Text>
+						{!isWebAndroid && (
+							<View style={styles.metaRow}>
+								<View style={styles.metaLabelRow}>
+									<View style={[styles.metaIconWrap, { backgroundColor: colors.info + '15' }]}>
+										<Ionicons name="save-outline" size={16} color={colors.info} />
+									</View>
+									<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('free_storage', 'Free Storage')}</Text>
+								</View>
+								<Text style={[styles.metaValue, { color: deviceFreeStorage > config.updates.minFreeStorage * 1024 * 1024 ? colors.success : colors.error }]}>{formatBytes(deviceFreeStorage)}</Text>
+							</View>
+						)}
+						<View style={styles.metaRow}>
+							<View style={styles.metaLabelRow}>
+								<View style={[styles.metaIconWrap, { backgroundColor: colors.warning + '15' }]}>
+									<Ionicons name="logo-android" size={16} color={colors.warning} />
+								</View>
+								<Text style={[styles.metaLabel, { color: colors.textTertiary }]}>{translate('min_android_version', 'Min Android Version')}</Text>
+							</View>
+							<Text style={[styles.metaValue, { color: isSupported ? colors.success : colors.error }]}>6.0 (API 23)</Text>
+						</View>
+						{!isWebAndroid && latestRelease && deviceFreeStorage < latestRelease.size * 1.5 && (
+							<View style={[styles.warningBox, { backgroundColor: colors.error + '1A', borderColor: colors.error }]}>
+								<Ionicons name="warning" size={16} color={colors.error} />
+								<Text style={[styles.warningText, { color: colors.error }]}>{translate('low_space_warning', 'Your device is low on storage space. The download might fail.')}</Text>
+							</View>
+						)}
+					</View>
+				)}
+
 				{sortedApks.length > 0 && (
 					<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
@@ -773,12 +694,9 @@ export default function UpdatesScreen() {
 										</View>
 									</View>
 									<View style={styles.apkActions}>
-										{/* Share APK Button */}
 										<TouchableOpacity onPress={() => handleShareApk(apk.fileUri)} accessibilityLabel="Share APK Installer" style={[styles.apkBtn, { backgroundColor: colors.primary + '10' }]}>
 											<Ionicons name="share-social-outline" size={16} color={colors.primary} />
 										</TouchableOpacity>
-
-										{/* Delete Button */}
 										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.apkBtn, { backgroundColor: colors.error + '10' }]}>
 											<Ionicons name="trash-outline" size={16} color={colors.error} />
 										</TouchableOpacity>
@@ -789,7 +707,6 @@ export default function UpdatesScreen() {
 					</View>
 				)}
 
-				{/* Changelog section */}
 				{(isWeb || (latestRelease && latestRelease.changelog !== '')) && (
 					<View style={[styles.card, { borderColor: colors.borderLight, backgroundColor: colors.card + '90' }]}>
 						<Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{translate('whats_new', "What's New")}</Text>

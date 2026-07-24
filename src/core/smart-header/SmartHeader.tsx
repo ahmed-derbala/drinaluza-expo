@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import { StyleSheet, View, Text, Platform, Animated, Easing, useWindowDimensions, ActivityIndicator, Pressable, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
+import { StyleSheet, View, Text, Platform, Animated, Pressable, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
 import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -120,50 +120,6 @@ export const HeaderSettingsButton: React.FC = React.memo(() => {
 HeaderSettingsButton.displayName = 'HeaderSettingsButton'
 
 // ----------------------------------------
-// 3. Skeleton Block component for Loading state
-// ----------------------------------------
-const SkeletonBlock: React.FC<{ width: number; height: number; borderRadius?: number; disableAnimations?: boolean }> = ({ width, height, borderRadius = 4, disableAnimations = false }) => {
-	const opacity = useRef(new Animated.Value(0.3)).current
-
-	useEffect(() => {
-		if (disableAnimations) {
-			opacity.setValue(0.5)
-			return
-		}
-		const animation = Animated.loop(
-			Animated.sequence([
-				Animated.timing(opacity, {
-					toValue: 0.7,
-					duration: 650,
-					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: Platform.OS !== 'web'
-				}),
-				Animated.timing(opacity, {
-					toValue: 0.3,
-					duration: 650,
-					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: Platform.OS !== 'web'
-				})
-			])
-		)
-		animation.start()
-		return () => animation.stop()
-	}, [opacity, disableAnimations])
-
-	return (
-		<Animated.View
-			style={{
-				width,
-				height,
-				borderRadius,
-				backgroundColor: '#3A506B50',
-				opacity
-			}}
-		/>
-	)
-}
-
-// ----------------------------------------
 // 4. Header Actions configuration types
 // ----------------------------------------
 export type HeaderActionType =
@@ -220,25 +176,19 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	onBackPress,
 	headerActions,
 	SmartKebabMenuItems,
-	isLoading = false,
 	fallbackRoute,
-	loading = false,
 	headerLeft,
 	headerRight,
-	centerLeftOffset,
-	centerRightOffset,
 	options,
 	route,
 	navigation,
 	back,
-	disableAnimations = false,
 	headerBottom,
 	headerBottomHeight
 }) => {
 	const { colors } = useTheme()
 	const { isHeaderVisible, setHeaderVisible, setTabBarVisible, setHeaderHeight } = useLayout()
 	const insets = useSafeAreaInsets()
-	const { width } = useWindowDimensions()
 	const pathname = usePathname()
 
 	// Subscribe to backend connection state so SmartHeader re-renders when
@@ -256,9 +206,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		setHeaderHeight(headerHeight, pathname)
 	}, [headerHeight, setHeaderHeight, pathname])
 
-	const loadingAnim = useRef(new Animated.Value(0)).current
-	const fadeAnim = useRef(new Animated.Value(0)).current
-
 	// Ensure header and tab bar are visible on route changes to prevent hidden headers carrying over from previous screen scrolls
 	useEffect(() => {
 		setHeaderVisible(true)
@@ -271,60 +218,11 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		visibleAnim.setValue(isHeaderVisible ? 1 : 0)
 	}, [isHeaderVisible, visibleAnim])
 
-	// Resolve actual loading state from both props and navigation options
-	const isCurrentlyLoading = isLoading || loading || options?.isLoading || options?.loading || options?.isRefreshing
 	const resolvedSubtitle = subtitle ?? options?.subtitle
-
-	// Setup top linear progress bar animation if loading
-	useEffect(() => {
-		if (disableAnimations) {
-			loadingAnim.setValue(0)
-			return
-		}
-		let animation: Animated.CompositeAnimation | null = null
-		if (isCurrentlyLoading) {
-			loadingAnim.setValue(0)
-			animation = Animated.loop(
-				Animated.timing(loadingAnim, {
-					toValue: 1,
-					duration: 1500,
-					easing: Easing.linear,
-					useNativeDriver: Platform.OS !== 'web'
-				})
-			)
-			animation.start()
-		} else {
-			loadingAnim.setValue(0)
-		}
-		return () => {
-			if (animation) {
-				animation.stop()
-			}
-		}
-	}, [isCurrentlyLoading, loadingAnim, disableAnimations])
-
-	// Setup title fade-in transition when loading resolves
-	useEffect(() => {
-		if (disableAnimations) {
-			fadeAnim.setValue(1)
-			return
-		}
-		if (!isCurrentlyLoading) {
-			Animated.timing(fadeAnim, {
-				toValue: 1,
-				duration: 250,
-				useNativeDriver: Platform.OS !== 'web'
-			}).start()
-		} else {
-			fadeAnim.setValue(0)
-		}
-	}, [isCurrentlyLoading, fadeAnim, disableAnimations])
 
 	// Resolve title
 	let resolvedTitle = title
-	if (isCurrentlyLoading) {
-		resolvedTitle = translate('loading', 'Loading...')
-	} else if (resolvedTitle === undefined) {
+	if (resolvedTitle === undefined) {
 		if (typeof options?.headerTitle === 'function') {
 			resolvedTitle = options.headerTitle()
 		} else if (options?.headerTitle !== undefined) {
@@ -442,11 +340,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		return null
 	}
 
-	const translateX = loadingAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [-width * 0.4, width]
-	})
-
 	const renderTitleSection = () => {
 		if (React.isValidElement(resolvedTitle)) {
 			return resolvedTitle
@@ -458,30 +351,17 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 			<View style={styles.titleContainer}>
 				{/* Title Wrapper */}
 				<View style={{ height: titleLineHeight, justifyContent: 'center' }}>
-					{isCurrentlyLoading ? (
-						<SkeletonBlock width={120} height={16} borderRadius={4} disableAnimations={disableAnimations} />
-					) : (
-						<Animated.View style={[styles.titleRow, { opacity: disableAnimations ? 1 : fadeAnim }]}>
-							<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-								{resolvedTitle}
-							</Text>
-							{loading && <ActivityIndicator size="small" color={colors.primary} style={styles.titleSpinner} />}
-						</Animated.View>
-					)}
+					<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
+						{resolvedTitle}
+					</Text>
 				</View>
 
 				{/* Subtitle Wrapper */}
 				{resolvedSubtitle ? (
 					<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
-						{isCurrentlyLoading ? (
-							<SkeletonBlock width={80} height={10} borderRadius={3} disableAnimations={disableAnimations} />
-						) : (
-							<Animated.View style={{ opacity: disableAnimations ? 1 : fadeAnim }}>
-								<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-									{resolvedSubtitle}
-								</Text>
-							</Animated.View>
-						)}
+						<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
+							{resolvedSubtitle}
+						</Text>
 					</View>
 				) : null}
 			</View>
@@ -542,22 +422,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 
 				{/* Custom Bottom Content (e.g. status filter bar in sales screen) */}
 				{resolvedBottom && <View style={{ height: resolvedBottomHeight, width: '100%' }}>{resolvedBottom}</View>}
-
-				{/* Linear Progress/Loading Bar */}
-				{isCurrentlyLoading && !disableAnimations && (
-					<View style={[styles.loadingBarContainer, { backgroundColor: colors.borderLight || '#1E293B' }]}>
-						<Animated.View
-							style={[
-								styles.loadingBar,
-								{
-									backgroundColor: colors.primary,
-									width: '40%',
-									transform: [{ translateX }]
-								}
-							]}
-						/>
-					</View>
-				)}
 			</View>
 		</Animated.View>
 	)
@@ -750,33 +614,14 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'flex-start'
 	},
-	titleRow: {
-		flexDirection: 'row',
-		alignItems: 'center'
-	},
 	titleText: {
 		fontSize: Platform.OS === 'ios' ? 17 : 18,
 		fontWeight: Platform.OS === 'ios' ? '600' : '700',
 		lineHeight: Platform.OS === 'ios' ? 22 : 24
 	},
-	titleSpinner: {
-		marginLeft: 6
-	},
 	subtitleText: {
 		fontSize: 12,
 		marginTop: 2,
 		lineHeight: 16
-	},
-	loadingBarContainer: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		height: 2.5,
-		overflow: 'hidden',
-		zIndex: 10
-	},
-	loadingBar: {
-		height: '100%'
 	}
 })
