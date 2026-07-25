@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.48.0",
+  "version": "1.49.0",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -93,7 +93,7 @@
     "react-native-gesture-handler": "~2.32.0",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-safe-area-context": "~5.7.0",
-    "react-native-screens": "4.25.2",
+    "react-native-screens": "~4.26.0",
     "react-native-svg": "15.15.4",
     "react-native-web": "~0.21.2",
     "socket.io-client": "^4.8.3"

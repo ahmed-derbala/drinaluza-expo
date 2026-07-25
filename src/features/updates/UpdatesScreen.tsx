@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Animated, Easing, Share } from 'react-native'
+import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import * as Clipboard from 'expo-clipboard'
@@ -150,44 +150,6 @@ const styles = StyleSheet.create({
 	},
 	rowWide: {
 		flexDirection: 'row'
-	},
-	heroCard: {
-		borderRadius: 32,
-		borderWidth: 1,
-		overflow: 'hidden'
-	},
-	heroInner: {
-		padding: 28,
-		alignItems: 'center',
-		gap: 14
-	},
-	heroIconCircle: {
-		width: 96,
-		height: 96,
-		borderRadius: 48,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	envBadge: {
-		paddingHorizontal: 12,
-		paddingVertical: 5,
-		borderRadius: 20,
-		borderWidth: 1
-	},
-	envText: {
-		fontSize: 11,
-		fontWeight: '800',
-		letterSpacing: 0.6
-	},
-	heroTitle: {
-		fontSize: 28,
-		fontWeight: '800',
-		textAlign: 'center'
-	},
-	heroSubtitle: {
-		fontSize: 15,
-		fontWeight: '500',
-		textAlign: 'center'
 	},
 	infoCard: {
 		flex: 1,
@@ -433,13 +395,14 @@ type IconVariant = 'primary' | 'success' | 'secondary' | 'danger'
 interface IconButtonProps {
 	icon: React.ComponentProps<typeof Ionicons>['name']
 	label: string
+	subtitle?: string
 	onPress: () => void
 	disabled?: boolean
 	variant?: IconVariant
 	colors: AppThemeColors
 }
 
-const IconButton = ({ icon, label, onPress, disabled, variant = 'secondary', colors }: IconButtonProps) => {
+const IconButton = ({ icon, label, subtitle, onPress, disabled, variant = 'secondary', colors }: IconButtonProps) => {
 	const isPrimary = variant === 'primary'
 	const isSuccess = variant === 'success'
 	const isDanger = variant === 'danger'
@@ -450,9 +413,22 @@ const IconButton = ({ icon, label, onPress, disabled, variant = 'secondary', col
 
 	const iconColor = disabled ? colors.textTertiary : isPrimary || isSuccess ? colors.textOnPrimary : isDanger ? colors.error : colors.textSecondary
 
+	const accessibilityLabel = subtitle ? `${label} ${subtitle}` : label
+
 	return (
-		<TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} accessibilityLabel={label} style={[styles.iconButton, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }]}>
+		<TouchableOpacity
+			onPress={onPress}
+			disabled={disabled}
+			activeOpacity={0.8}
+			accessibilityLabel={accessibilityLabel}
+			style={[styles.iconButton, subtitle ? { width: 72, height: 62 } : null, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }]}
+		>
 			<Ionicons name={icon} size={24} color={iconColor} />
+			{subtitle ? (
+				<Text style={{ fontSize: 11, fontWeight: '600', color: iconColor, textAlign: 'center', marginTop: 2 }} numberOfLines={1} adjustsFontSizeToFit>
+					{subtitle}
+				</Text>
+			) : null}
 		</TouchableOpacity>
 	)
 }
@@ -542,29 +518,6 @@ export default function UpdatesScreen() {
 		if (speedBytesPerSec === null || speedBytesPerSec <= 0) return ''
 		return `${formatBytes(speedBytesPerSec)}/s`
 	}
-
-	const pulseAnim = useRef(new Animated.Value(1)).current
-
-	useEffect(() => {
-		const animation = Animated.loop(
-			Animated.sequence([
-				Animated.timing(pulseAnim, {
-					toValue: 1.1,
-					duration: 1000,
-					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: Platform.OS !== 'web'
-				}),
-				Animated.timing(pulseAnim, {
-					toValue: 1,
-					duration: 1000,
-					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: Platform.OS !== 'web'
-				})
-			])
-		)
-		animation.start()
-		return () => animation.stop()
-	}, [pulseAnim])
 
 	useEffect(() => {
 		if (Platform.OS !== 'web') {
@@ -712,19 +665,6 @@ export default function UpdatesScreen() {
 		}
 	}
 
-	const heroColor = isChecking ? colors.info : isUpToDate ? colors.success : colors.primary
-	const heroIcon = isChecking ? 'refresh' : isUpToDate ? 'checkmark-circle' : 'cloud-download'
-	const heroTitle = isChecking ? translate('checking', 'Checking...') : isUpToDate ? translate('up_to_date', 'App is up to date') : translate('update_available', 'Update available')
-	const heroSubtitle = isChecking || isUpToDate || latestRelease ? '' : translate('pull_to_refresh', 'Pull down to refresh')
-
-	const env = config.app.env.toLowerCase()
-	const envLabel = env === 'production' ? 'PRODUCTION' : env === 'development' ? 'DEVELOPMENT' : env.toUpperCase()
-	const envColor = env === 'production' ? colors.success : env === 'development' ? colors.warning : colors.info
-
-	const heroTint = hexToRgba(heroColor, 0.18)
-	const heroTop = hexToRgba(heroColor, 0.22)
-	const heroBorder = hexToRgba(heroColor, 0.3)
-
 	const enoughSpace = !isWebAndroid && deviceFreeStorage >= 1024 * 1024 * 1024
 	const lowSpace = !isWebAndroid && latestRelease && deviceFreeStorage < latestRelease.size * 1.5
 
@@ -783,20 +723,6 @@ export default function UpdatesScreen() {
 					</View>
 				)}
 
-				<View style={[styles.heroCard, { borderColor: heroBorder, backgroundColor: colors.surface }]}>
-					<LinearGradient colors={[heroTop, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-					<View style={styles.heroInner}>
-						<Animated.View style={[styles.heroIconCircle, { backgroundColor: heroTint, transform: [{ scale: pulseAnim }] }]}>
-							<Ionicons name={heroIcon} size={44} color={heroColor} />
-						</Animated.View>
-						<View style={[styles.envBadge, { backgroundColor: hexToRgba(envColor, 0.12), borderColor: hexToRgba(envColor, 0.25) }]}>
-							<Text style={[styles.envText, { color: envColor }]}>{envLabel}</Text>
-						</View>
-						<Text style={[styles.heroTitle, { color: colors.text }]}>{heroTitle}</Text>
-						{heroSubtitle !== '' && <Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>{heroSubtitle}</Text>}
-					</View>
-				</View>
-
 				<View style={styles.section}>
 					<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('version', 'Version')}</Text>
 					<View style={[styles.row, isWide && styles.rowWide]}>
@@ -810,6 +736,7 @@ export default function UpdatesScreen() {
 							colors={colors}
 							footer={releaseBadges}
 						/>
+						<InfoCard icon="server-outline" label={translate('app_env', 'Environment')} value={config.app.env} color={colors.info} colors={colors} />
 					</View>
 				</View>
 
@@ -846,7 +773,15 @@ export default function UpdatesScreen() {
 					<View style={styles.actionBar}>
 						{isWeb ? (
 							<>
-								<IconButton icon="download-outline" label={translate('download', 'Download')} onPress={handleDownloadWeb} disabled={!latestRelease?.download_url} variant="primary" colors={colors} />
+								<IconButton
+									icon="download-outline"
+									label={translate('download', 'Download')}
+									subtitle={latestRelease ? `v${latestRelease.latest_version}` : undefined}
+									onPress={handleDownloadWeb}
+									disabled={!latestRelease?.download_url}
+									variant="primary"
+									colors={colors}
+								/>
 								<IconButton
 									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
 									label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
@@ -863,6 +798,7 @@ export default function UpdatesScreen() {
 								<IconButton
 									icon={isPaused ? 'play-outline' : isDownloading ? 'pause-outline' : 'cloud-download-outline'}
 									label={isPaused ? translate('resume', 'Resume') : isDownloading ? translate('pause', 'Pause') : translate('download', 'Download')}
+									subtitle={latestRelease ? `v${latestRelease.latest_version}` : undefined}
 									onPress={isPaused ? resumeDownload : isDownloading ? pauseDownload : downloadUpdate}
 									disabled={!isDownloading && !isPaused && isDownloadDisabled}
 									variant={isPaused ? 'primary' : isDownloading ? 'secondary' : 'primary'}
@@ -872,6 +808,7 @@ export default function UpdatesScreen() {
 								<IconButton
 									icon="archive-outline"
 									label={translate('install', 'Install')}
+									subtitle={installableApk ? `v${installableApk.version}` : undefined}
 									onPress={handleInstallPress}
 									disabled={isInstallDisabled || isDownloading || isPaused}
 									variant="success"
@@ -897,6 +834,56 @@ export default function UpdatesScreen() {
 						)}
 					</View>
 				</View>
+
+				{sortedApks.length > 0 && (
+					<View style={styles.section}>
+						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
+						<View style={styles.apkList}>
+							{sortedApks.map((apk) => (
+								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.borderLight }]}>
+									<View style={styles.apkLeft}>
+										<View style={[styles.apkIcon, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
+											<Ionicons name="logo-android" size={22} color={colors.primary} />
+										</View>
+										<View style={styles.apkText}>
+											<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
+												{apk.filename}
+											</Text>
+											<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
+												v{apk.version} • {formatBytes(apk.size)}
+											</Text>
+										</View>
+									</View>
+									<View style={styles.apkActions}>
+										{(() => {
+											const apkInstallDisabled = !isAndroid || isDownloading || isPaused || apk.version === config.app.version
+											return (
+												<TouchableOpacity
+													onPress={() => installApk(apk.fileUri)}
+													disabled={apkInstallDisabled}
+													accessibilityLabel={translate('install', 'Install')}
+													style={[styles.iconBtn, { backgroundColor: apkInstallDisabled ? colors.surfaceVariant : hexToRgba(colors.success, 0.12), opacity: apkInstallDisabled ? 0.5 : 1 }]}
+												>
+													<Ionicons name="archive-outline" size={20} color={apkInstallDisabled ? colors.textTertiary : colors.success} />
+												</TouchableOpacity>
+											)
+										})()}
+										<TouchableOpacity
+											onPress={() => handleShareApk(apk.fileUri)}
+											accessibilityLabel="Share APK Installer"
+											style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}
+										>
+											<Ionicons name="share-social-outline" size={20} color={colors.primary} />
+										</TouchableOpacity>
+										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.error, 0.12) }]}>
+											<Ionicons name="trash-outline" size={20} color={colors.error} />
+										</TouchableOpacity>
+									</View>
+								</View>
+							))}
+						</View>
+					</View>
+				)}
 
 				{(isAndroid || isWebAndroid) && (
 					<View style={styles.section}>
@@ -927,43 +914,6 @@ export default function UpdatesScreen() {
 								<Text style={[styles.warningText, { color: colors.error }]}>{translate('low_space_warning', 'Your device is low on storage space. The download might fail.')}</Text>
 							</View>
 						)}
-					</View>
-				)}
-
-				{sortedApks.length > 0 && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
-						<View style={styles.apkList}>
-							{sortedApks.map((apk) => (
-								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.borderLight }]}>
-									<View style={styles.apkLeft}>
-										<View style={[styles.apkIcon, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
-											<Ionicons name="logo-android" size={22} color={colors.primary} />
-										</View>
-										<View style={styles.apkText}>
-											<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1}>
-												{apk.filename}
-											</Text>
-											<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
-												v{apk.version} • {formatBytes(apk.size)}
-											</Text>
-										</View>
-									</View>
-									<View style={styles.apkActions}>
-										<TouchableOpacity
-											onPress={() => handleShareApk(apk.fileUri)}
-											accessibilityLabel="Share APK Installer"
-											style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}
-										>
-											<Ionicons name="share-social-outline" size={20} color={colors.primary} />
-										</TouchableOpacity>
-										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.error, 0.12) }]}>
-											<Ionicons name="trash-outline" size={20} color={colors.error} />
-										</TouchableOpacity>
-									</View>
-								</View>
-							))}
-						</View>
 					</View>
 				)}
 

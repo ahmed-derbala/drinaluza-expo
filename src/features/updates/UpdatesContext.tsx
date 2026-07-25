@@ -512,15 +512,15 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				validApks.push({ filename: file, version: match[1] })
 			}
 
-			// 5. Among valid APKs, keep only the highest version
-			if (validApks.length > 1) {
-				// Sort descending by version (highest first)
+			// 5. Among valid APKs, keep only up to maxApkInstallersCount newest versions
+			const maxApkInstallersCount = config.updates.maxApkInstallersCount
+			if (validApks.length > 0) {
 				validApks.sort((a, b) => (isVersionGreater(a.version, b.version) ? -1 : isVersionGreater(b.version, a.version) ? 1 : 0))
-
-				const highest = validApks[0]
-				for (let i = 1; i < validApks.length; i++) {
+			}
+			if (validApks.length > maxApkInstallersCount) {
+				for (let i = maxApkInstallersCount; i < validApks.length; i++) {
 					const apk = validApks[i]
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting older APK ${apk.filename} (keeping ${highest.filename})` })
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting older APK ${apk.filename} (keeping ${maxApkInstallersCount} newest)` })
 					await FileSystem.deleteAsync(UPDATES_FOLDER + apk.filename, { idempotent: true })
 				}
 			}
