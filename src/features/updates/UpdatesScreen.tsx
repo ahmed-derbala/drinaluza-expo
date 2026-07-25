@@ -35,98 +35,6 @@ const hexToRgba = (hex: string, alpha: number): string => {
 	return `rgba(128, 128, 128, ${alpha})`
 }
 
-const renderInlineStyles = (text: string, colors: AppThemeColors) => {
-	const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g)
-
-	return parts.map((part, index) => {
-		if (part.startsWith('**') && part.endsWith('**')) {
-			const boldText = part.slice(2, -2)
-			return (
-				<Text key={index} style={{ fontWeight: '700', color: colors.text }}>
-					{boldText}
-				</Text>
-			)
-		}
-		if (part.startsWith('`') && part.endsWith('`')) {
-			const codeText = part.slice(1, -1)
-			return (
-				<Text
-					key={index}
-					style={{
-						fontFamily: Platform.OS === 'ios' ? 'Courier New' : 'monospace',
-						fontSize: 12,
-						backgroundColor: colors.surfaceVariant,
-						color: colors.info,
-						paddingHorizontal: 4,
-						borderRadius: 4
-					}}
-				>
-					{codeText}
-				</Text>
-			)
-		}
-		return part
-	})
-}
-
-const MarkdownRenderer = ({ content, colors }: { content: string; colors: AppThemeColors }) => {
-	if (!content) return null
-
-	const lines = content.split('\n')
-
-	return (
-		<View style={{ gap: 8 }}>
-			{lines.map((line, lineIdx) => {
-				const trimmed = line.trim()
-
-				if (trimmed.startsWith('#')) {
-					const match = trimmed.match(/^(#+)\s*(.*)$/)
-					if (match) {
-						const level = match[1].length
-						const text = match[2]
-						const fontSize = level === 1 ? 18 : level === 2 ? 15 : 13
-						const marginTop = lineIdx > 0 ? 14 : 2
-						return (
-							<Text
-								key={lineIdx}
-								style={{
-									fontSize,
-									fontWeight: '700',
-									color: colors.text,
-									marginTop,
-									marginBottom: 2
-								}}
-							>
-								{text}
-							</Text>
-						)
-					}
-				}
-
-				if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
-					const text = trimmed.replace(/^[-*]\s*/, '')
-					return (
-						<View key={lineIdx} style={{ flexDirection: 'row', alignItems: 'flex-start', paddingLeft: 6, gap: 6, marginVertical: 1 }}>
-							<Text style={{ color: colors.primary, fontSize: 14, marginTop: 1 }}>•</Text>
-							<Text style={{ flex: 1, fontSize: 13, color: colors.text, lineHeight: 19 }}>{renderInlineStyles(text, colors)}</Text>
-						</View>
-					)
-				}
-
-				if (trimmed === '') {
-					return <View key={lineIdx} style={{ height: 4 }} />
-				}
-
-				return (
-					<Text key={lineIdx} style={{ fontSize: 13, color: colors.textSecondary, lineHeight: 19, marginVertical: 1 }}>
-						{renderInlineStyles(trimmed, colors)}
-					</Text>
-				)
-			})}
-		</View>
-	)
-}
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1
@@ -268,21 +176,6 @@ const styles = StyleSheet.create({
 		fontSize: 12,
 		fontWeight: '600'
 	},
-	warningBox: {
-		flexDirection: 'row',
-		gap: 10,
-		alignItems: 'center',
-		padding: 14,
-		borderRadius: 16,
-		borderWidth: 1,
-		marginTop: 12
-	},
-	warningText: {
-		flex: 1,
-		fontSize: 13,
-		fontWeight: '500',
-		lineHeight: 20
-	},
 	apkList: {
 		gap: 10
 	},
@@ -335,31 +228,6 @@ const styles = StyleSheet.create({
 				cursor: 'pointer'
 			} as any
 		})
-	},
-	changelogCard: {
-		borderRadius: 20,
-		padding: 20,
-		borderWidth: 1,
-		minHeight: 120
-	},
-	emptyChangelog: {
-		fontSize: 14,
-		lineHeight: 22,
-		fontStyle: 'italic'
-	},
-	errorBanner: {
-		flexDirection: 'row',
-		gap: 12,
-		alignItems: 'center',
-		padding: 16,
-		borderRadius: 16,
-		borderWidth: 1
-	},
-	errorText: {
-		flex: 1,
-		fontSize: 14,
-		fontWeight: '500',
-		lineHeight: 20
 	}
 })
 
@@ -449,7 +317,6 @@ export default function UpdatesScreen() {
 		downloadProgress,
 		isDownloading,
 		downloadedApks,
-		deviceFreeStorage,
 		checkForUpdates,
 		downloadUpdate,
 		installApk,
@@ -532,19 +399,7 @@ export default function UpdatesScreen() {
 	}, [refreshApkList])
 
 	const isAndroid = Platform.OS === 'android'
-	const isSupported = useMemo(() => {
-		if (Platform.OS === 'android') {
-			const apiLevel = typeof Platform.Version === 'number' ? Platform.Version : parseInt(String(Platform.Version), 10)
-			return apiLevel >= 23
-		}
-		if (Platform.OS === 'web' && typeof navigator !== 'undefined') {
-			const match = navigator.userAgent.match(/Android\s([0-9\.]+)/)
-			if (match) return parseFloat(match[1]) >= 6.0
-		}
-		return false
-	}, [])
 	const isWeb = Platform.OS === 'web'
-	const isWebAndroid = Platform.OS === 'web' && typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent || '')
 	const isWide = width > 680
 	const maxContentWidth = 920
 
@@ -671,9 +526,6 @@ export default function UpdatesScreen() {
 			document.body.removeChild(link)
 		}
 	}
-
-	const enoughSpace = !isWebAndroid && deviceFreeStorage >= 1024 * 1024 * 1024
-	const lowSpace = !isWebAndroid && latestRelease && deviceFreeStorage < latestRelease.size * 1.5
 
 	const releaseBadges = useMemo(
 		() =>
@@ -892,51 +744,6 @@ export default function UpdatesScreen() {
 									</View>
 								</View>
 							))}
-						</View>
-					</View>
-				)}
-
-				{(isAndroid || isWebAndroid) && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('device_status', 'Device Status')}</Text>
-						<View style={[styles.row, isWide && styles.rowWide]}>
-							{!isWebAndroid && (
-								<InfoCard
-									icon="save-outline"
-									label={translate('free_storage', 'Free Storage')}
-									value={formatBytes(deviceFreeStorage)}
-									color={enoughSpace ? colors.success : colors.error}
-									active={!enoughSpace}
-									colors={colors}
-								/>
-							)}
-							<InfoCard
-								icon="logo-android"
-								label={translate('min_android_version', 'Min Android Version')}
-								value="6.0 (API 23)"
-								color={isSupported ? colors.success : colors.error}
-								active={!isSupported}
-								colors={colors}
-							/>
-						</View>
-						{lowSpace && (
-							<View style={[styles.warningBox, { backgroundColor: hexToRgba(colors.error, 0.1), borderColor: hexToRgba(colors.error, 0.3) }]}>
-								<Ionicons name="warning" size={18} color={colors.error} />
-								<Text style={[styles.warningText, { color: colors.error }]}>{translate('low_space_warning', 'Your device is low on storage space. The download might fail.')}</Text>
-							</View>
-						)}
-					</View>
-				)}
-
-				{(isWeb || (latestRelease && latestRelease.changelog !== '')) && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('whats_new', "What's New")}</Text>
-						<View style={[styles.changelogCard, { backgroundColor: colors.background, borderColor: colors.borderLight }]}>
-							{latestRelease && latestRelease.changelog !== '' ? (
-								<MarkdownRenderer content={latestRelease.changelog} colors={colors} />
-							) : (
-								<Text style={[styles.emptyChangelog, { color: colors.textSecondary }]}>{translate('no_changelog', 'No changelog details available.')}</Text>
-							)}
 						</View>
 					</View>
 				)}
