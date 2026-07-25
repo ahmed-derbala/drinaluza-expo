@@ -171,6 +171,11 @@ const styles = StyleSheet.create({
 		flex: 1,
 		gap: 4
 	},
+	infoTextRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		flexWrap: 'wrap'
+	},
 	infoLabel: {
 		fontSize: 11,
 		fontWeight: '700',
@@ -182,21 +187,21 @@ const styles = StyleSheet.create({
 		fontWeight: '700'
 	},
 	badgeColumn: {
-		flexDirection: 'column',
-		gap: 8,
-		marginTop: 10,
-		alignItems: 'flex-start'
+		flexDirection: 'row',
+		flexWrap: 'wrap',
+		gap: 4,
+		alignItems: 'center'
 	},
 	infoBadge: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		gap: 6,
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 10
+		gap: 2,
+		paddingHorizontal: 6,
+		paddingVertical: 3,
+		borderRadius: 8
 	},
 	infoBadgeText: {
-		fontSize: 12,
+		fontSize: 10,
 		fontWeight: '600'
 	},
 	iconButton: {
@@ -363,25 +368,26 @@ interface InfoCardProps {
 	value: string
 	color: string
 	active?: boolean
+	activeBorderColor?: string
 	footer?: React.ReactNode
 	colors: AppThemeColors
 }
 
-const InfoCard = ({ icon, label, value, color, active, footer, colors }: InfoCardProps) => (
+const InfoCard = ({ icon, label, value, color, active, activeBorderColor, footer, colors }: InfoCardProps) => (
 	<View
 		style={[
 			styles.infoCard,
 			{
 				backgroundColor: active ? hexToRgba(color, 0.06) : colors.background,
-				borderColor: active ? hexToRgba(color, 0.3) : colors.borderLight
+				borderColor: active ? activeBorderColor || hexToRgba(color, 0.3) : colors.borderLight
 			}
 		]}
 	>
 		<View style={[styles.infoIcon, { backgroundColor: hexToRgba(color, 0.12) }]}>
 			<Ionicons name={icon} size={22} color={color} />
 		</View>
-		<View style={styles.infoText}>
-			<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{label}</Text>
+		<View style={[styles.infoText, styles.infoTextRow]}>
+			{label ? <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{label}</Text> : null}
 			<Text style={[styles.infoValue, { color: active ? color : colors.text }]} numberOfLines={1}>
 				{value}
 			</Text>
@@ -556,10 +562,11 @@ export default function UpdatesScreen() {
 			const d = new Date(dateStr)
 			return d.toLocaleDateString(undefined, {
 				year: 'numeric',
-				month: 'long',
+				month: 'short',
 				day: 'numeric',
 				hour: '2-digit',
-				minute: '2-digit'
+				minute: '2-digit',
+				hour12: false
 			})
 		} catch (e) {
 			return dateStr
@@ -673,16 +680,22 @@ export default function UpdatesScreen() {
 			latestRelease ? (
 				<View style={styles.badgeColumn}>
 					<View style={[styles.infoBadge, { backgroundColor: hexToRgba(colors.info, 0.12) }]}>
-						<Ionicons name="calendar-outline" size={12} color={colors.info} />
-						<Text style={[styles.infoBadgeText, { color: colors.info }]}>{formatDate(latestRelease.published_at)}</Text>
+						<Ionicons name="calendar-outline" size={10} color={colors.info} />
+						<Text style={[styles.infoBadgeText, { color: colors.info }]} numberOfLines={1} adjustsFontSizeToFit>
+							{formatDate(latestRelease.published_at)}
+						</Text>
 					</View>
 					<View style={[styles.infoBadge, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
-						<Ionicons name="cube-outline" size={12} color={colors.primary} />
-						<Text style={[styles.infoBadgeText, { color: colors.primary }]}>{formatBytes(latestRelease.size)}</Text>
+						<Ionicons name="cube-outline" size={10} color={colors.primary} />
+						<Text style={[styles.infoBadgeText, { color: colors.primary }]} numberOfLines={1} adjustsFontSizeToFit>
+							{formatBytes(latestRelease.size)}
+						</Text>
 					</View>
 					<View style={[styles.infoBadge, { backgroundColor: hexToRgba(colors.success, 0.12) }]}>
-						<Ionicons name="download-outline" size={12} color={colors.success} />
-						<Text style={[styles.infoBadgeText, { color: colors.success }]}>{latestRelease.download_count}</Text>
+						<Ionicons name="download-outline" size={10} color={colors.success} />
+						<Text style={[styles.infoBadgeText, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit>
+							{latestRelease.download_count}
+						</Text>
 					</View>
 				</View>
 			) : undefined,
@@ -693,6 +706,7 @@ export default function UpdatesScreen() {
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<SmartHeader
 				title={translate('updates', 'Updates')}
+				subtitle={config.app.env}
 				fallbackRoute="/feed"
 				loading={isChecking}
 				disableAnimations={true}
@@ -725,18 +739,18 @@ export default function UpdatesScreen() {
 
 				<View style={styles.section}>
 					<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('version', 'Version')}</Text>
-					<View style={[styles.row, isWide && styles.rowWide]}>
-						<InfoCard icon="phone-portrait-outline" label={translate('current_version', 'Current')} value={`v${config.app.version}`} color={colors.textTertiary} colors={colors} />
+					<View style={styles.row}>
+						<InfoCard icon="phone-portrait-outline" label="" value={`v${config.app.version}`} color={colors.textTertiary} colors={colors} />
 						<InfoCard
-							icon="cloud-outline"
-							label={translate('latest_version', 'Latest')}
+							icon={isUpToDate || !latestRelease ? 'cloud-outline' : 'cloud'}
+							label=""
 							value={latestRelease ? `v${latestRelease.latest_version}` : '—'}
-							color={isUpToDate ? colors.textTertiary : colors.primary}
+							color={isUpToDate || !latestRelease ? colors.textTertiary : colors.info}
 							active={!isUpToDate && !!latestRelease}
+							activeBorderColor={colors.info}
 							colors={colors}
 							footer={releaseBadges}
 						/>
-						<InfoCard icon="server-outline" label={translate('app_env', 'Environment')} value={config.app.env} color={colors.info} colors={colors} />
 					</View>
 				</View>
 
