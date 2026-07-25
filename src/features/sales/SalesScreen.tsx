@@ -18,10 +18,10 @@ import { usePaginatedSales } from './hooks/usePaginatedSales'
 import { useSalesCounts } from './hooks/useSalesCounts'
 
 const statusOptions: OrderStatusTabOption[] = [
-	{ value: 'all', label: 'All Sales', iconName: orderStatusIcons.all },
+	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
 	{
 		value: ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION,
-		label: orderStatusLabels[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION],
+		label: 'Pending',
 		iconName: orderStatusIcons[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]
 	},
 	{ value: ORDER_STATUSES.CONFIRMED_BY_BUSINESS, label: orderStatusLabels[ORDER_STATUSES.CONFIRMED_BY_BUSINESS], iconName: orderStatusIcons[ORDER_STATUSES.CONFIRMED_BY_BUSINESS] },

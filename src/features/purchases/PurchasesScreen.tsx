@@ -24,10 +24,10 @@ import { showConfirm } from '@/core/helpers/popup'
 
 const statusOptions: OrderStatusTabOption[] = [
 	{ value: 'cart', label: 'Cart', iconName: orderStatusIcons.cart },
-	{ value: 'all', label: 'All Orders', iconName: orderStatusIcons.all },
+	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
 	{
 		value: ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION,
-		label: orderStatusLabels[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION],
+		label: 'Pending',
 		iconName: orderStatusIcons[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]
 	},
 	{ value: ORDER_STATUSES.CONFIRMED_BY_BUSINESS, label: orderStatusLabels[ORDER_STATUSES.CONFIRMED_BY_BUSINESS], iconName: orderStatusIcons[ORDER_STATUSES.CONFIRMED_BY_BUSINESS] },
