@@ -95,6 +95,11 @@ export default function PurchasesScreen() {
 
 	const itemCount = statusCounts[selectedStatus] ?? 0
 
+	const activeCount = useMemo(() => {
+		if (selectedStatus === 'cart') return statusCounts.cart
+		return purchasesResponse?.data?.pagination?.totalDocs
+	}, [selectedStatus, statusCounts.cart, purchasesResponse])
+
 	const handleRefresh = useCallback(async () => {
 		await refreshCounts(user)
 		await loadCart()
@@ -203,7 +208,17 @@ export default function PurchasesScreen() {
 				headerBottomHeight={52}
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading || isCheckingOut }}
 				headerActions={['refresh']}
-				headerBottom={<OrderStatusTabs value={selectedStatus} onChange={setSelectedStatus} options={statusOptions} counts={statusCounts} loading={isRefreshing || countsLoading || isCheckingOut} />}
+				headerBottom={
+					<OrderStatusTabs
+						value={selectedStatus}
+						onChange={setSelectedStatus}
+						options={statusOptions}
+						counts={statusCounts}
+						activeCount={activeCount}
+						resetKey={user?._id ?? ''}
+						loading={isRefreshing || countsLoading || isCheckingOut}
+					/>
+				}
 			/>
 
 			{isOffline && displayData.length === 0 ? (

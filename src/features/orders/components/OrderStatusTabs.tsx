@@ -16,15 +16,24 @@ interface OrderStatusTabsProps {
 	options: OrderStatusTabOption[]
 	onChange: (value: string) => void
 	counts?: Record<string, number>
+	activeCount?: number
+	resetKey?: string
 	loading?: boolean
 	testID?: string
 }
 
-export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, options, onChange, counts, loading, testID }: OrderStatusTabsProps) {
+export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, options, onChange, counts, activeCount, resetKey, loading, testID }: OrderStatusTabsProps) {
 	const { colors } = useTheme()
 	const scrollViewRef = useRef<ScrollView>(null)
 	const [containerWidth, setContainerWidth] = useState(0)
 	const layoutsRef = useRef<Map<string, LayoutRectangle>>(new Map())
+	const loadedCountsRef = useRef<Record<string, number>>({})
+	const prevResetKeyRef = useRef(resetKey)
+
+	if (resetKey !== prevResetKeyRef.current) {
+		loadedCountsRef.current = {}
+		prevResetKeyRef.current = resetKey
+	}
 
 	const pressHandlers = useMemo(() => {
 		const handlers: Record<string, () => void> = {}
@@ -56,7 +65,14 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 			>
 				{options.map((option) => {
 					const selected = value === option.value
-					const count = counts?.[option.value] ?? 0
+					const current = selected ? activeCount : counts?.[option.value]
+
+					if (selected && typeof current === 'number') {
+						loadedCountsRef.current[option.value] = current
+					}
+
+					const count = loadedCountsRef.current[option.value] ?? current
+					const showCount = typeof count === 'number' && (count > 0 || selected || loadedCountsRef.current[option.value] !== undefined)
 
 					return (
 						<Pressable
@@ -64,7 +80,7 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 							onPress={pressHandlers[option.value]}
 							accessibilityRole="tab"
 							accessibilityState={{ selected }}
-							accessibilityLabel={`${option.label}, ${count}`}
+							accessibilityLabel={`${option.label}${showCount ? `, ${count}` : ''}`}
 							style={styles.tabPressable}
 							hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
 							onLayout={(event) => {
@@ -77,11 +93,13 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 								<Text style={[styles.label, { color: selected ? colors.primary : colors.textSecondary }]} numberOfLines={1}>
 									{option.label}
 								</Text>
-								<View style={[styles.badge, { backgroundColor: selected ? colors.primary : colors.surfaceVariant || colors.border }]}>
-									<Text style={[styles.badgeText, { color: selected ? colors.textOnPrimary || '#fff' : colors.textSecondary }]} numberOfLines={1}>
-										{count}
-									</Text>
-								</View>
+								{showCount && (
+									<View style={[styles.badge, { backgroundColor: selected ? colors.primary : colors.surfaceVariant || colors.border }]}>
+										<Text style={[styles.badgeText, { color: selected ? colors.textOnPrimary || '#fff' : colors.textSecondary }]} numberOfLines={1}>
+											{count}
+										</Text>
+									</View>
+								)}
 							</View>
 						</Pressable>
 					)

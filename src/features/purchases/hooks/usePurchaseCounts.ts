@@ -4,11 +4,11 @@ import { getItem } from '@/core/storage'
 import { getPurchases } from '@/features/orders/orders.api'
 
 export function usePurchaseCounts() {
-	const [counts, setCounts] = useState<Record<string, number>>({ all: 0, cart: 0 })
+	const [counts, setCounts] = useState<Record<string, number>>({})
 	const [isLoading, setIsLoading] = useState(false)
 
 	const refresh = useCallback(async (user: any) => {
-		const next: Record<string, number> = { all: 0, cart: 0 }
+		const next: Record<string, number> = {}
 
 		if (user) {
 			setIsLoading(true)

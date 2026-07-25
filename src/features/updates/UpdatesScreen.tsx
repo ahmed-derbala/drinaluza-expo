@@ -255,7 +255,7 @@ const styles = StyleSheet.create({
 	progressBadge: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'center',
+		justifyContent: 'flex-start',
 		gap: 6,
 		paddingHorizontal: 8,
 		paddingVertical: 6,
@@ -264,6 +264,7 @@ const styles = StyleSheet.create({
 		height: 30
 	},
 	progressBadgeText: {
+		flex: 1,
 		fontSize: 12,
 		fontWeight: '600'
 	},
@@ -445,7 +446,6 @@ export default function UpdatesScreen() {
 	const {
 		isChecking,
 		latestRelease,
-		error,
 		downloadProgress,
 		isDownloading,
 		downloadedApks,
@@ -730,13 +730,6 @@ export default function UpdatesScreen() {
 				contentContainerStyle={[styles.scrollContent, { paddingBottom: 80 }, isWide && { maxWidth: maxContentWidth, alignSelf: 'center', width: '100%', padding: 32, paddingBottom: 100 }]}
 				showsVerticalScrollIndicator={false}
 			>
-				{!!error && (
-					<View style={[styles.errorBanner, { backgroundColor: hexToRgba(colors.error, 0.1), borderColor: hexToRgba(colors.error, 0.3) }]}>
-						<Ionicons name="alert-circle-outline" size={22} color={colors.error} />
-						<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-					</View>
-				)}
-
 				<View style={styles.section}>
 					<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('version', 'Version')}</Text>
 					<View style={styles.row}>
@@ -773,11 +766,15 @@ export default function UpdatesScreen() {
 								<View style={styles.progressBadges}>
 									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: downloadSpeed === null ? 0 : 1 }]}>
 										<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} />
-										<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]}>{formatSpeed(downloadSpeed)}</Text>
+										<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]} numberOfLines={1} adjustsFontSizeToFit>
+											{formatSpeed(downloadSpeed)}
+										</Text>
 									</View>
 									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: remainingTime === null ? 0 : 1 }]}>
 										<Ionicons name="time-outline" size={12} color={colors.textTertiary} />
-										<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]}>{formatRemainingTime(remainingTime)}</Text>
+										<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]} numberOfLines={1} adjustsFontSizeToFit>
+											{formatRemainingTime(remainingTime)}
+										</Text>
 									</View>
 								</View>
 							</View>

@@ -66,7 +66,7 @@ export default function SalesScreen() {
 
 	const { counts: statusCounts, refresh: refreshCounts, isLoading: countsLoading } = useSalesCounts()
 
-	const { sales, isInitialLoading, isRefreshing, isOffline, refresh, loadMore, loadingMore } = usePaginatedSales({
+	const { sales, totalCount, isInitialLoading, isRefreshing, isOffline, refresh, loadMore, loadingMore } = usePaginatedSales({
 		businessSlug,
 		customerSlug,
 		productSlug,
@@ -131,7 +131,17 @@ export default function SalesScreen() {
 				headerBottomHeight={52}
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading }}
 				headerActions={['refresh']}
-				headerBottom={<OrderStatusTabs value={selectedStatus} onChange={setSelectedStatus} options={statusOptions} counts={statusCounts} loading={isRefreshing || countsLoading} />}
+				headerBottom={
+					<OrderStatusTabs
+						value={selectedStatus}
+						onChange={setSelectedStatus}
+						options={statusOptions}
+						counts={statusCounts}
+						activeCount={totalCount}
+						resetKey={[businessSlug, customerSlug, productSlug].filter(Boolean).join('-')}
+						loading={isRefreshing || countsLoading}
+					/>
+				}
 			/>
 
 			{isOffline && sales.length === 0 ? (

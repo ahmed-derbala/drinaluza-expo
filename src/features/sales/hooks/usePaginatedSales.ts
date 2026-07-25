@@ -33,6 +33,7 @@ export function usePaginatedSales({ businessSlug, customerSlug, productSlug, sta
 	const [loadingMore, setLoadingMore] = useState(false)
 
 	const page1Sales = response?.data?.docs ?? []
+	const totalCount = response?.data?.pagination?.totalDocs
 
 	useEffect(() => {
 		setExtraSales([])
@@ -65,6 +66,7 @@ export function usePaginatedSales({ businessSlug, customerSlug, productSlug, sta
 
 	return {
 		sales,
+		totalCount,
 		isInitialLoading,
 		isRefreshing,
 		isOffline,
