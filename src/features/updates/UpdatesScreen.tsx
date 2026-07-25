@@ -401,12 +401,11 @@ interface InfoCardProps {
 	value: string
 	color: string
 	active?: boolean
-	multiline?: boolean
 	footer?: React.ReactNode
 	colors: AppThemeColors
 }
 
-const InfoCard = ({ icon, label, value, color, active, multiline, footer, colors }: InfoCardProps) => (
+const InfoCard = ({ icon, label, value, color, active, footer, colors }: InfoCardProps) => (
 	<View
 		style={[
 			styles.infoCard,
@@ -421,7 +420,7 @@ const InfoCard = ({ icon, label, value, color, active, multiline, footer, colors
 		</View>
 		<View style={styles.infoText}>
 			<Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{label}</Text>
-			<Text style={[styles.infoValue, { color: active ? color : colors.text }]} numberOfLines={multiline ? undefined : 1}>
+			<Text style={[styles.infoValue, { color: active ? color : colors.text }]} numberOfLines={1}>
 				{value}
 			</Text>
 			{footer}
@@ -438,10 +437,9 @@ interface IconButtonProps {
 	disabled?: boolean
 	variant?: IconVariant
 	colors: AppThemeColors
-	style?: any
 }
 
-const IconButton = ({ icon, label, onPress, disabled, variant = 'secondary', colors, style }: IconButtonProps) => {
+const IconButton = ({ icon, label, onPress, disabled, variant = 'secondary', colors }: IconButtonProps) => {
 	const isPrimary = variant === 'primary'
 	const isSuccess = variant === 'success'
 	const isDanger = variant === 'danger'
@@ -453,13 +451,7 @@ const IconButton = ({ icon, label, onPress, disabled, variant = 'secondary', col
 	const iconColor = disabled ? colors.textTertiary : isPrimary || isSuccess ? colors.textOnPrimary : isDanger ? colors.error : colors.textSecondary
 
 	return (
-		<TouchableOpacity
-			onPress={onPress}
-			disabled={disabled}
-			activeOpacity={0.8}
-			accessibilityLabel={label}
-			style={[styles.iconButton, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }, style]}
-		>
+		<TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={0.8} accessibilityLabel={label} style={[styles.iconButton, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }]}>
 			<Ionicons name={icon} size={24} color={iconColor} />
 		</TouchableOpacity>
 	)
@@ -723,7 +715,7 @@ export default function UpdatesScreen() {
 	const heroColor = isChecking ? colors.info : isUpToDate ? colors.success : colors.primary
 	const heroIcon = isChecking ? 'refresh' : isUpToDate ? 'checkmark-circle' : 'cloud-download'
 	const heroTitle = isChecking ? translate('checking', 'Checking...') : isUpToDate ? translate('up_to_date', 'App is up to date') : translate('update_available', 'Update available')
-	const heroSubtitle = isChecking ? translate('please_wait', 'Please wait while we check for updates') : isUpToDate || latestRelease ? '' : translate('pull_to_refresh', 'Pull down to refresh')
+	const heroSubtitle = isChecking || isUpToDate || latestRelease ? '' : translate('pull_to_refresh', 'Pull down to refresh')
 
 	const env = config.app.env.toLowerCase()
 	const envLabel = env === 'production' ? 'PRODUCTION' : env === 'development' ? 'DEVELOPMENT' : env.toUpperCase()
@@ -768,9 +760,10 @@ export default function UpdatesScreen() {
 					<SmartHeader.RefreshButton
 						key="refresh"
 						onRefresh={async () => {
-							await checkForUpdates(true)
 							if (Platform.OS === 'web' && typeof window !== 'undefined') {
 								;(window as any).location.reload()
+							} else {
+								await checkForUpdates()
 							}
 						}}
 						isRefreshing={isChecking}
