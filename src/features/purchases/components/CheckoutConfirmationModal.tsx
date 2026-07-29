@@ -79,8 +79,11 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 			try {
 				const payload: any = {
 					address: form.address,
-					contact: form.contact,
-					location: form.location
+					contact: form.contact
+				}
+
+				if (form.location?.sharingEnabled !== false) {
+					payload.location = form.location
 				}
 
 				if (disableConfirmation) {
@@ -120,6 +123,11 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 			scrollable
 			footer={
 				<View style={styles.footer}>
+					{error && (
+						<View style={[styles.errorBanner, { backgroundColor: colors.error + '15', borderColor: colors.error + '40' }]}>
+							<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+						</View>
+					)}
 					<View style={styles.actionRow}>
 						<ModalButton
 							icon="close-outline"
@@ -152,12 +160,6 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 			{isSaving && (
 				<View style={styles.loader}>
 					<ActivityIndicator size="small" color={colors.primary} />
-				</View>
-			)}
-
-			{error && (
-				<View style={[styles.errorBanner, { backgroundColor: colors.error + '15', borderColor: colors.error + '40' }]}>
-					<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
 				</View>
 			)}
 

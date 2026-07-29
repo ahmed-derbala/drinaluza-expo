@@ -163,16 +163,20 @@ export default function ProfileScreen() {
 					payload = { address: userData.address }
 					break
 				case 'location': {
-					const locationPayload: any = { ...userData.location }
-					if (locationPayload && 'coordinates' in locationPayload && !locationPayload.geo) {
-						locationPayload.geo = {
-							type: (locationPayload as any).type || 'Point',
-							coordinates: (locationPayload as any).coordinates
+					if (userData.location?.sharingEnabled === false) {
+						payload = {}
+					} else {
+						const locationPayload: any = { ...userData.location }
+						if (locationPayload && 'coordinates' in locationPayload && !locationPayload.geo) {
+							locationPayload.geo = {
+								type: (locationPayload as any).type || 'Point',
+								coordinates: (locationPayload as any).coordinates
+							}
+							delete (locationPayload as any).type
+							delete (locationPayload as any).coordinates
 						}
-						delete (locationPayload as any).type
-						delete (locationPayload as any).coordinates
+						payload = { location: locationPayload }
 					}
-					payload = { location: locationPayload }
 					break
 				}
 				case 'social':
@@ -195,7 +199,7 @@ export default function ProfileScreen() {
 					payload = { media: userData.media }
 					break
 				default: {
-					const locationPayloadFull: any = { ...userData.location }
+					const locationPayloadFull: any = userData.location?.sharingEnabled !== false ? { ...userData.location } : null
 					if (locationPayloadFull && 'coordinates' in locationPayloadFull && !locationPayloadFull.geo) {
 						locationPayloadFull.geo = {
 							type: (locationPayloadFull as any).type || 'Point',
@@ -218,7 +222,7 @@ export default function ProfileScreen() {
 						},
 						basicInfos: userData.basicInfos,
 						address: userData.address,
-						location: locationPayloadFull,
+						...(locationPayloadFull ? { location: locationPayloadFull } : {}),
 						settings: userData.settings,
 						socialMedia: userData.socialMedia,
 						media: userData.media
