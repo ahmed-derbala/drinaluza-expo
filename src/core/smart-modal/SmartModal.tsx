@@ -1,18 +1,31 @@
-import React, { useCallback } from 'react'
-import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, BackHandler, Pressable, useWindowDimensions } from 'react-native'
+import React, { useCallback, useEffect, useMemo } from 'react'
+import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+
 import { useTheme, createShadow } from '@/core/theme'
-import type { SmartModalProps, ModalVariant } from './types'
+import { STATUS_ICONS, getStatusColor } from './utils'
+import ModalButton from './ModalButton'
+import type { SmartModalProps } from './types'
+
+const ModalBackdrop = Platform.OS === 'web' ? (View as any) : View
+
+const ICON_SIZE = 28
+const DEFAULT_MAX_WIDTH = 420
+const BOTTOM_SHEET_MAX_HEIGHT_RATIO = 0.88
 
 export default function SmartModal({
 	visible,
 	onClose,
 	variant = 'centered',
-	animationType = 'fade',
+	status = 'default',
+	icon,
+	iconColor,
+	iconBackgroundColor,
 	title,
 	subtitle,
+	message,
 	children,
-	headerIcon,
+	buttons,
 	headerActions,
 	footer,
 	showCloseButton = true,
@@ -20,16 +33,21 @@ export default function SmartModal({
 	closeOnBackPress = true,
 	containerStyle,
 	contentStyle,
-	maxWidth = 400,
+	modalStyle,
+	maxWidth = DEFAULT_MAX_WIDTH,
+	scrollable = true,
+	scrollDirection = 'vertical',
+	hideDragHandle = false,
+	accessible = true,
+	accessibilityLabel,
+	accessibilityRole,
 	testID
 }: SmartModalProps) {
 	const { colors } = useTheme()
-	const { width } = useWindowDimensions()
-	const isWideScreen = width >= 768
-	const responsiveMaxWidth = maxWidth || Math.min(width * 0.9, 480)
+	const { width, height } = useWindowDimensions()
+	const isWideScreen = width >= 600
 
-	// Handle Android back button
-	React.useEffect(() => {
+	useEffect(() => {
 		if (Platform.OS === 'android' && closeOnBackPress && visible) {
 			const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
 				onClose()
@@ -45,21 +63,45 @@ export default function SmartModal({
 		}
 	}, [closeOnOverlayPress, onClose])
 
+	const statusColor = useMemo(() => getStatusColor(status, colors), [status, colors])
+
+	const renderIcon = () => {
+		if (React.isValidElement(icon)) {
+			return <View style={styles.iconWrap}>{icon}</View>
+		}
+
+		const hasStatus = status !== 'default'
+		const hasIcon = typeof icon === 'string'
+
+		if (!hasIcon && !hasStatus) return null
+
+		const iconName = hasIcon ? (icon as any) : STATUS_ICONS[status]
+		const color = iconColor || statusColor
+		const backgroundColor = iconBackgroundColor || `${color}15`
+
+		return (
+			<View style={[styles.iconContainer, { backgroundColor }]}>
+				<Ionicons name={iconName} size={ICON_SIZE} color={color} />
+			</View>
+		)
+	}
+
 	const renderHeader = () => {
-		if (!title && !headerActions && !showCloseButton && !headerIcon) return null
+		const hasHeader = title || subtitle || headerActions || showCloseButton || icon || status !== 'default'
+		if (!hasHeader) return null
 
 		return (
 			<View style={[styles.header, { borderBottomColor: colors.border + '20' }]}>
 				<View style={styles.headerLeft}>
-					{headerIcon && <View style={styles.headerIconWrap}>{headerIcon}</View>}
+					{renderIcon()}
 					<View style={styles.headerTextColumn}>
 						{title && (
-							<Text style={[styles.title, { color: colors.text }]} numberOfLines={1}>
+							<Text style={[styles.title, { color: colors.text }]} numberOfLines={2}>
 								{title}
 							</Text>
 						)}
 						{subtitle && (
-							<Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+							<Text style={[styles.subtitle, { color: colors.textSecondary }]} numberOfLines={3}>
 								{subtitle}
 							</Text>
 						)}
@@ -67,8 +109,15 @@ export default function SmartModal({
 				</View>
 				<View style={styles.headerRight}>
 					{headerActions}
-					{showCloseButton && (
-						<TouchableOpacity onPress={onClose} style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} testID={`${testID}-close`}>
+					{showCloseButton && variant !== 'fullscreen' && (
+						<TouchableOpacity
+							onPress={onClose}
+							style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]}
+							hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+							accessibilityLabel="Close"
+							accessibilityRole="button"
+							testID={`${testID}-close`}
+						>
 							<Ionicons name="close" size={20} color={colors.text} />
 						</TouchableOpacity>
 					)}
@@ -77,60 +126,118 @@ export default function SmartModal({
 		)
 	}
 
-	const renderContent = () => {
+	const renderMessage = () => {
+		if (!message) return null
 		return (
-			<View style={[styles.content, contentStyle]} testID={`${testID}-content`}>
+			<Text style={[styles.message, { color: colors.textSecondary }]} accessibilityRole="text">
+				{message}
+			</Text>
+		)
+	}
+
+	const renderScrollContent = () => {
+		const body = (
+			<>
+				{renderMessage()}
 				{children}
-			</View>
+			</>
+		)
+
+		if (!scrollable) {
+			return <View style={[styles.content, contentStyle]}>{body}</View>
+		}
+
+		if (scrollDirection === 'horizontal') {
+			return (
+				<ScrollView horizontal showsHorizontalScrollIndicator style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} testID={`${testID}-content`}>
+					{body}
+				</ScrollView>
+			)
+		}
+
+		if (scrollDirection === 'both') {
+			return (
+				<ScrollView style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator nestedScrollEnabled testID={`${testID}-content`}>
+					<ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.horizontalScrollContainer} nestedScrollEnabled>
+						{body}
+					</ScrollView>
+				</ScrollView>
+			)
+		}
+
+		return (
+			<ScrollView style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator testID={`${testID}-content`}>
+				{body}
+			</ScrollView>
 		)
 	}
 
 	const renderFooter = () => {
-		if (!footer) return null
-		return <View style={[styles.footer, { borderTopColor: colors.border + '20' }]}>{footer}</View>
+		if (footer) {
+			return <View style={[styles.footer, { borderTopColor: colors.border + '20' }]}>{footer}</View>
+		}
+
+		if (!buttons || buttons.length === 0) return null
+
+		return (
+			<View style={[styles.footer, { borderTopColor: colors.border + '20' }]}>
+				<View style={[styles.buttonRow, isWideScreen && styles.buttonRowWide]}>
+					{buttons.map((button, index) => (
+						<ModalButton key={`smart-modal-button-${index}`} {...button} defaultColor={button.color || statusColor} contrastColor={colors.buttonText} />
+					))}
+				</View>
+			</View>
+		)
 	}
 
-	const getModalStyle = () => {
+	const renderDragHandle = () => {
+		if (variant !== 'bottomSheet' || hideDragHandle) return null
+		return (
+			<View style={styles.dragHandleContainer}>
+				<View style={[styles.dragHandle, { backgroundColor: colors.textTertiary }]} />
+			</View>
+		)
+	}
+
+	const getModalStyle = (): any => {
 		const baseStyle = { backgroundColor: colors.card }
 
 		switch (variant) {
 			case 'centered':
 				return {
 					...baseStyle,
-					width: isWideScreen ? '60%' : '90%',
-					maxWidth: responsiveMaxWidth,
+					width: isWideScreen ? '50%' : '92%',
+					maxWidth: Math.min(maxWidth, width - 32),
 					alignSelf: 'center',
-					borderRadius: 20,
-					padding: isWideScreen ? 24 : 20,
-					...createShadow({ offsetY: 10, opacity: 0.25, radius: 20, elevation: 10 })
+					borderRadius: 24,
+					padding: isWideScreen ? 28 : 22,
+					maxHeight: height * 0.88,
+					...createShadow({ offsetY: 16, opacity: 0.18, radius: 32, elevation: 12 })
 				}
 			case 'bottomSheet':
 				return {
 					...baseStyle,
 					width: '100%',
 					alignSelf: 'flex-end',
-					borderTopLeftRadius: 20,
-					borderTopRightRadius: 20,
-					paddingBottom: 20,
-					paddingTop: 20,
-					paddingHorizontal: 20,
-					maxHeight: '85%',
-					...createShadow({ offsetY: -4, opacity: 0.15, radius: 16, elevation: 8 })
+					borderTopLeftRadius: 24,
+					borderTopRightRadius: 24,
+					paddingTop: 12,
+					paddingBottom: isWideScreen ? 28 : 22,
+					paddingHorizontal: isWideScreen ? 28 : 22,
+					maxHeight: height * BOTTOM_SHEET_MAX_HEIGHT_RATIO,
+					...createShadow({ offsetY: -6, opacity: 0.18, radius: 20, elevation: 10 })
 				}
 			case 'fullscreen':
 				return {
 					...baseStyle,
 					width: '100%',
-					height: '100%'
+					height: '100%',
+					paddingTop: isWideScreen ? 24 : 16,
+					paddingBottom: isWideScreen ? 28 : 20,
+					paddingHorizontal: isWideScreen ? 28 : 20
 				}
 			default:
 				return baseStyle
-		}
-	}
-
-	const getOverlayStyle = () => {
-		return {
-			backgroundColor: colors.modalOverlay || 'rgba(0, 0, 0, 0.5)'
 		}
 	}
 
@@ -156,34 +263,55 @@ export default function SmartModal({
 		}
 	}
 
-	const getAnimationType = () => {
-		switch (variant) {
-			case 'bottomSheet':
-				return 'slide'
-			case 'fullscreen':
-				return 'slide'
-			default:
-				return animationType
+	const renderModalBody = () => {
+		const body = (
+			<View
+				style={[styles.modalCard, getModalStyle(), modalStyle]}
+				accessible={accessible}
+				accessibilityLabel={accessibilityLabel || title}
+				accessibilityRole={accessibilityRole || (status === 'error' ? 'alert' : undefined)}
+				accessibilityViewIsModal
+				importantForAccessibility="yes"
+				testID={`${testID}-card`}
+			>
+				{renderDragHandle()}
+				{renderHeader()}
+				{renderScrollContent()}
+				{renderFooter()}
+			</View>
+		)
+
+		if (variant === 'centered' && Platform.OS === 'ios') {
+			return (
+				<KeyboardAvoidingView behavior="padding" style={styles.keyboardAvoiding} keyboardVerticalOffset={24}>
+					{body}
+				</KeyboardAvoidingView>
+			)
 		}
+
+		return body
+	}
+
+	if (!visible) {
+		return null
+	}
+
+	if (variant === 'fullscreen') {
+		return (
+			<Modal visible={visible} animationType="none" transparent={false} onRequestClose={onClose} testID={testID}>
+				<ModalBackdrop style={[styles.fullscreenContainer, { backgroundColor: colors.background }]} dataSet={{ smartModal: 'true' }}>
+					{renderModalBody()}
+				</ModalBackdrop>
+			</Modal>
+		)
 	}
 
 	return (
-		<Modal visible={visible} animationType={getAnimationType()} transparent={variant !== 'fullscreen'} onRequestClose={onClose} testID={testID}>
-			{variant === 'fullscreen' ? (
-				<View style={[styles.fullscreenContainer, { backgroundColor: colors.background }]}>
-					{renderHeader()}
-					{renderContent()}
-					{renderFooter()}
-				</View>
-			) : (
-				<Pressable style={[styles.overlay, getOverlayStyle(), getContainerStyle(), containerStyle]} onPress={handleOverlayPress}>
-					<View style={[styles.modalCard, getModalStyle()]} onStartShouldSetResponder={() => true}>
-						{renderHeader()}
-						{renderContent()}
-						{renderFooter()}
-					</View>
-				</Pressable>
-			)}
+		<Modal visible={visible} animationType="none" transparent onRequestClose={onClose} testID={testID}>
+			<ModalBackdrop style={[styles.overlay, { backgroundColor: colors.modalOverlay }, getContainerStyle(), containerStyle]} dataSet={{ smartModal: 'true' }}>
+				<Pressable style={styles.pressArea} onPress={handleOverlayPress} accessible={false} />
+				{renderModalBody()}
+			</ModalBackdrop>
 		</Modal>
 	)
 }
@@ -192,62 +320,122 @@ const styles = StyleSheet.create({
 	overlay: {
 		flex: 1
 	},
+	pressArea: {
+		position: 'absolute',
+		left: 0,
+		right: 0,
+		top: 0,
+		bottom: 0,
+		zIndex: 0
+	},
 	fullscreenContainer: {
 		flex: 1
 	},
+	keyboardAvoiding: {
+		width: '100%',
+		justifyContent: 'center',
+		alignItems: 'center',
+		padding: 16,
+		zIndex: 1
+	},
 	modalCard: {
-		width: '100%'
+		width: '100%',
+		zIndex: 1
+	},
+	dragHandleContainer: {
+		alignItems: 'center',
+		paddingVertical: 8
+	},
+	dragHandle: {
+		width: 40,
+		height: 5,
+		borderRadius: 3
 	},
 	header: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
-		alignItems: 'center',
+		alignItems: 'flex-start',
 		paddingBottom: 16,
-		borderBottomWidth: 1,
-		marginBottom: 16
+		borderBottomWidth: StyleSheet.hairlineWidth,
+		marginBottom: 16,
+		gap: 12
 	},
 	headerLeft: {
 		flex: 1,
 		flexDirection: 'row',
-		alignItems: 'center',
-		marginRight: 8,
-		gap: 12
-	},
-	headerIconWrap: {
-		justifyContent: 'center',
-		alignItems: 'center'
+		alignItems: 'flex-start',
+		gap: 14
 	},
 	headerTextColumn: {
 		flex: 1,
-		justifyContent: 'center'
+		justifyContent: 'center',
+		paddingTop: 2
 	},
 	headerRight: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 8
 	},
+	iconWrap: {
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	iconContainer: {
+		width: 48,
+		height: 48,
+		borderRadius: 14,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
 	title: {
 		fontSize: 20,
-		fontWeight: '700'
+		fontWeight: '700',
+		lineHeight: 26
 	},
 	subtitle: {
 		fontSize: 14,
 		fontWeight: '500',
-		marginTop: 2
+		marginTop: 4,
+		lineHeight: 20
 	},
 	closeButton: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
+		width: 36,
+		height: 36,
+		borderRadius: 18,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	content: {
-		flex: 1
+		paddingVertical: 4,
+		minWidth: '100%'
+	},
+	scrollContent: {
+		flexGrow: 1,
+		paddingBottom: 4
+	},
+	horizontalScrollContainer: {
+		paddingBottom: 4
+	},
+	message: {
+		fontSize: 16,
+		fontWeight: '400',
+		lineHeight: 22,
+		textAlign: 'left',
+		marginBottom: 12
 	},
 	footer: {
-		paddingTop: 16,
-		borderTopWidth: 1,
-		marginTop: 16
+		paddingTop: 18,
+		borderTopWidth: StyleSheet.hairlineWidth,
+		marginTop: 'auto'
+	},
+	buttonRow: {
+		flexDirection: 'column',
+		gap: 12,
+		width: '100%'
+	},
+	buttonRowWide: {
+		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		gap: 12
 	}
 })

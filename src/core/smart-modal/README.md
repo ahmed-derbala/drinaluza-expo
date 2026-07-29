@@ -1,308 +1,306 @@
-# Smart Modal
+# SmartModal
 
-A modular, cross-platform modal component system for React Native (web and mobile). Built with Expo Router theming support and platform-specific optimizations.
+A modern, accessible, cross-platform modal system for React Native and Expo web. SmartModal provides a single base component plus purpose-built variants for alerts, confirmations, dialogs, bottom sheets, and fullscreen flows. It is theme-aware, responsive, and fully typed.
 
 ## Features
 
-- **Three modal variants**: Centered, Bottom Sheet, and Fullscreen
-- **Cross-platform**: Works seamlessly on web, iOS, and Android
-- **Theme integration**: Automatically uses your Expo Router theme
-- **Platform-aware**: Handles Android back button, web interactions, and native animations
-- **Responsive design**: Uses flexbox and percentage-based sizing for natural adaptation
-- **Customizable**: Flexible props for headers, footers, and content
+- **Multiple variants**: `centered`, `bottomSheet`, and `fullscreen`
+- **Alert & confirm helpers**: `AlertModal` and `ConfirmModal` for one-liner dialogs
+- **Rich header support**: icon, title, subtitle, and message with status-driven colors
+- **Built-in action buttons**: declare buttons as data with optional icons, variants, colors, loading, and disabled states
+- **Accessible**: modal roles, labels, keyboard/back-button handling, and screen-reader-friendly structure
+- **Responsive**: mobile-first layout that adapts to tablets and web automatically
+- **Theme integration**: Uses your Expo Router theme tokens out of the box
 - **Type-safe**: Full TypeScript support
 
 ## Installation
 
-The modal components are located in `@/core/smart-modal`. Import them directly:
+Import components from `@/core/smart-modal`:
 
 ```tsx
-import { SmartModal, CenteredModal, BottomSheetModal, FullscreenModal } from '@/core/smart-modal'
+import { SmartModal, CenteredModal, BottomSheetModal, FullscreenModal, AlertModal, ConfirmModal } from '@/core/smart-modal'
 ```
 
 ## Components
 
 ### SmartModal (Base Component)
 
-The base modal with all features. Use this when you need maximum control.
+Use the base component when you need full control over the variant and layout.
 
 ```tsx
-import { SmartModal } from '@/core/smart-modal'
-
 <SmartModal
-  visible={isVisible}
-  onClose={() => setIsVisible(false)}
-  variant="centered"
-  title="Modal Title"
-  subtitle="Optional subtitle"
+	visible={visible}
+	onClose={() => setVisible(false)}
+	variant="centered"
+	title="Edit Item"
+	subtitle="Make changes below"
+	buttons={[
+		{ text: 'Cancel', onPress: () => setVisible(false), variant: 'outlined' },
+		{ text: 'Save', onPress: handleSave, variant: 'filled', icon: 'checkmark' }
+	]}
 >
-  <YourContent />
+	<YourForm />
 </SmartModal>
 ```
 
 ### CenteredModal
 
-A centered modal that appears in the middle of the screen. Best for alerts, confirmations, and focused interactions.
+A centered dialog ideal for alerts, confirmations, forms, and focused interactions.
 
 ```tsx
-import { CenteredModal } from '@/core/smart-modal'
-
 <CenteredModal
-  visible={isVisible}
-  onClose={() => setIsVisible(false)}
-  title="Confirm Action"
-  maxWidth={400}
->
-  <Text>Are you sure you want to proceed?</Text>
-</CenteredModal>
+	visible={visible}
+	onClose={() => setVisible(false)}
+	title="Switch User"
+	icon="people"
+	message="You will be redirected to the login screen."
+	buttons={[
+		{ text: 'Cancel', variant: 'outlined', onPress: () => setVisible(false) },
+		{ text: 'Switch', variant: 'filled', onPress: switchUser }
+	]}
+/>
 ```
 
 ### BottomSheetModal
 
-A bottom sheet that slides up from the bottom. Best for pickers, filters, and mobile-optimized lists.
+A sheet anchored to the bottom of the screen. Best for pickers, filters, and mobile-first lists.
 
 ```tsx
-import { BottomSheetModal } from '@/core/smart-modal'
-
-<BottomSheetModal
-  visible={isVisible}
-  onClose={() => setIsVisible(false)}
-  title="Select Option"
->
-  <YourPickerContent />
+<BottomSheetModal visible={visible} onClose={() => setVisible(false)} title="Select Option">
+	<YourPicker />
 </BottomSheetModal>
 ```
 
 ### FullscreenModal
 
-A fullscreen modal that takes up the entire screen. Best for complex forms, multi-step wizards, and immersive content.
+A fullscreen view for complex forms, wizards, and immersive content.
 
 ```tsx
-import { FullscreenModal } from '@/core/smart-modal'
-
-<FullscreenModal
-  visible={isVisible}
-  onClose={() => setIsVisible(false)}
-  title="Settings"
->
-  <YourComplexForm />
+<FullscreenModal visible={visible} onClose={() => setVisible(false)} title="Settings" headerActions={<Text onPress={handleSave}>Save</Text>}>
+	<YourSettings />
 </FullscreenModal>
+```
+
+### AlertModal
+
+A single-action alert with a status icon and a confirm button.
+
+```tsx
+<AlertModal visible={visible} onClose={() => setVisible(false)} title="Changes Saved" message="Your profile has been updated successfully." status="success" confirmText="Great" />
+```
+
+### ConfirmModal
+
+A two-action confirmation dialog with cancel and confirm buttons.
+
+```tsx
+<ConfirmModal visible={visible} onClose={() => setVisible(false)} title="Delete Account?" message="This action cannot be undone." danger onConfirm={handleDelete} />
 ```
 
 ## Props
 
-### Common Props (All Variants)
+### Common Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `visible` | `boolean` | required | Controls modal visibility |
-| `onClose` | `() => void` | required | Callback when modal is closed |
-| `title` | `string` | optional | Modal title |
-| `subtitle` | `string` | optional | Optional subtitle |
-| `children` | `ReactNode` | required | Modal content |
-| `headerActions` | `ReactNode` | optional | Header actions (right side) |
-| `footer` | `ReactNode` | optional | Footer content |
-| `showCloseButton` | `boolean` | `true` | Show close button in header |
-| `closeOnOverlayPress` | `boolean` | `true` | Close when overlay is pressed |
-| `closeOnBackPress` | `boolean` | `true` | Close on Android back button |
-| `containerStyle` | `ViewStyle` | optional | Custom container style |
-| `contentStyle` | `ViewStyle` | optional | Custom content style |
-| `testID` | `string` | optional | Test ID for testing |
+| Prop                  | Type                                                       | Default     | Description                                        |
+| --------------------- | ---------------------------------------------------------- | ----------- | -------------------------------------------------- |
+| `visible`             | `boolean`                                                  | required    | Controls modal visibility                          |
+| `onClose`             | `() => void`                                               | required    | Callback when modal is closed                      |
+| `status`              | `'default' \| 'info' \| 'success' \| 'warning' \| 'error'` | `'default'` | Semantic status that drives icon and accent color  |
+| `icon`                | `string \| ReactNode`                                      | optional    | Ionicons name or custom element                    |
+| `iconColor`           | `string`                                                   | optional    | Override the icon color                            |
+| `iconBackgroundColor` | `string`                                                   | optional    | Override the icon background color                 |
+| `title`               | `string`                                                   | optional    | Modal title                                        |
+| `subtitle`            | `string`                                                   | optional    | Subtitle shown under the title                     |
+| `message`             | `string`                                                   | optional    | Simple message text rendered in the body           |
+| `children`            | `ReactNode`                                                | optional    | Custom content                                     |
+| `buttons`             | `SmartModalButton[]`                                       | optional    | Footer action buttons                              |
+| `headerActions`       | `ReactNode`                                                | optional    | Extra actions on the right side of the header      |
+| `footer`              | `ReactNode`                                                | optional    | Custom footer. When provided, `buttons` is ignored |
+| `showCloseButton`     | `boolean`                                                  | `true`      | Show the header close button                       |
+| `closeOnOverlayPress` | `boolean`                                                  | `true`      | Close when the overlay is pressed                  |
+| `closeOnBackPress`    | `boolean`                                                  | `true`      | Close on Android hardware back button              |
+| `containerStyle`      | `ViewStyle`                                                | optional    | Overlay/container style overrides                  |
+| `contentStyle`        | `ViewStyle`                                                | optional    | Content area style overrides                       |
+| `modalStyle`          | `ViewStyle`                                                | optional    | Modal card style overrides                         |
+| `accessible`          | `boolean`                                                  | `true`      | Whether the modal card is an accessibility element |
+| `accessibilityLabel`  | `string`                                                   | optional    | Accessibility label for the modal                  |
+| `accessibilityRole`   | `AccessibilityRole`                                        | optional    | Accessibility role for the modal                   |
+| `testID`              | `string`                                                   | optional    | Test ID prefix                                     |
 
 ### SmartModal Only
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `variant` | `'centered' \| 'bottomSheet' \| 'fullscreen'` | `'centered'` | Modal variant |
-| `animationType` | `'fade' \| 'slide' \| 'none'` | `'fade'` | Animation type |
-| `maxWidth` | `number` | `400` | Max width for centered modals |
+| Prop       | Type                                          | Default      | Description                   |
+| ---------- | --------------------------------------------- | ------------ | ----------------------------- |
+| `variant`  | `'centered' \| 'bottomSheet' \| 'fullscreen'` | `'centered'` | Modal variant                 |
+| `maxWidth` | `number`                                      | `400`        | Max width for centered modals |
 
 ### CenteredModal Only
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `maxWidth` | `number` | `400` | Maximum width of the modal |
+| Prop       | Type     | Default | Description                |
+| ---------- | -------- | ------- | -------------------------- |
+| `maxWidth` | `number` | `400`   | Maximum width of the modal |
+
+### BottomSheetModal Only
+
+| Prop        | Type     | Default | Description              |
+| ----------- | -------- | ------- | ------------------------ |
+| `maxHeight` | `number` | `88%`   | Maximum height in pixels |
+
+### SmartModalButton
+
+| Prop                 | Type                                | Default    | Description                  |
+| -------------------- | ----------------------------------- | ---------- | ---------------------------- |
+| `text`               | `string`                            | required   | Button label                 |
+| `onPress`            | `() => void \| Promise<void>`       | required   | Press handler                |
+| `variant`            | `'filled' \| 'outlined' \| 'ghost'` | `'filled'` | Button style                 |
+| `color`              | `string`                            | optional   | Override button/accent color |
+| `icon`               | `IconName`                          | optional   | Ionicons icon name           |
+| `iconPosition`       | `'left' \| 'right'`                 | `'left'`   | Icon position                |
+| `disabled`           | `boolean`                           | `false`    | Disable the button           |
+| `loading`            | `boolean`                           | `false`    | Show a loading spinner       |
+| `style`              | `ViewStyle`                         | optional   | Container style override     |
+| `textStyle`          | `TextStyle`                         | optional   | Text style override          |
+| `accessibilityLabel` | `string`                            | optional   | Accessibility label          |
+| `testID`             | `string`                            | optional   | Test ID                      |
+
+### AlertModal Props
+
+Inherits common props except `variant`, `buttons`, and `footer`.
+
+| Prop            | Type                                | Default   | Description                      |
+| --------------- | ----------------------------------- | --------- | -------------------------------- |
+| `confirmText`   | `string`                            | `'OK'`    | Confirm button label             |
+| `onConfirm`     | `() => void \| Promise<void>`       | `onClose` | Confirm callback                 |
+| `confirmButton` | `Omit<SmartModalButton, 'onPress'>` | optional  | Full control over confirm button |
+
+### ConfirmModal Props
+
+Inherits common props except `variant`, `buttons`, and `footer`.
+
+| Prop            | Type                                | Default     | Description                          |
+| --------------- | ----------------------------------- | ----------- | ------------------------------------ |
+| `cancelText`    | `string`                            | `'Cancel'`  | Cancel button label                  |
+| `confirmText`   | `string`                            | `'Confirm'` | Confirm button label                 |
+| `onCancel`      | `() => void \| Promise<void>`       | `onClose`   | Cancel callback                      |
+| `onConfirm`     | `() => void \| Promise<void>`       | `onClose`   | Confirm callback                     |
+| `danger`        | `boolean`                           | `false`     | Render confirm button in error color |
+| `cancelButton`  | `Omit<SmartModalButton, 'onPress'>` | optional    | Full control over cancel button      |
+| `confirmButton` | `Omit<SmartModalButton, 'onPress'>` | optional    | Full control over confirm button     |
 
 ## Usage Examples
 
-### Alert Modal
+### Success Alert
 
 ```tsx
-import { useState } from 'react'
-import { View, Text, TouchableOpacity } from 'react-native'
-import { CenteredModal } from '@/core/smart-modal'
-
-function AlertExample() {
-  const [visible, setVisible] = useState(false)
-
-  return (
-    <View>
-      <TouchableOpacity onPress={() => setVisible(true)}>
-        <Text>Show Alert</Text>
-      </TouchableOpacity>
-
-      <CenteredModal
-        visible={visible}
-        onClose={() => setVisible(false)}
-        title="Alert"
-        footer={
-          <TouchableOpacity
-            style={{ backgroundColor: 'blue', padding: 12, borderRadius: 8 }}
-            onPress={() => setVisible(false)}
-          >
-            <Text style={{ color: 'white', textAlign: 'center' }}>OK</Text>
-          </TouchableOpacity>
-        }
-      >
-        <Text>This is an important message!</Text>
-      </CenteredModal>
-    </View>
-  )
-}
+<AlertModal visible={visible} onClose={() => setVisible(false)} title="Payment Successful" message="Your transaction has been completed." status="success" confirmText="Done" />
 ```
 
-### Form Modal (Fullscreen)
+### Error Alert
 
 ```tsx
-import { useState } from 'react'
-import { View, Text, TextInput, TouchableOpacity } from 'react-native'
-import { FullscreenModal } from '@/core/smart-modal'
-
-function FormExample() {
-  const [visible, setVisible] = useState(false)
-  const [name, setName] = useState('')
-
-  return (
-    <View>
-      <TouchableOpacity onPress={() => setVisible(true)}>
-        <Text>Edit Profile</Text>
-      </TouchableOpacity>
-
-      <FullscreenModal
-        visible={visible}
-        onClose={() => setVisible(false)}
-        title="Edit Profile"
-        headerActions={
-          <TouchableOpacity onPress={() => setVisible(false)}>
-            <Text>Cancel</Text>
-          </TouchableOpacity>
-        }
-        footer={
-          <TouchableOpacity
-            style={{ backgroundColor: 'blue', padding: 16, borderRadius: 8 }}
-            onPress={() => setVisible(false)}
-          >
-            <Text style={{ color: 'white', textAlign: 'center' }}>Save</Text>
-          </TouchableOpacity>
-        }
-      >
-        <TextInput
-          value={name}
-          onChangeText={setName}
-          placeholder="Enter name"
-          style={{ padding: 12, borderWidth: 1, borderRadius: 8, marginBottom: 16 }}
-        />
-      </FullscreenModal>
-    </View>
-  )
-}
+<AlertModal
+	visible={visible}
+	onClose={() => setVisible(false)}
+	title="Something Went Wrong"
+	message="Please check your connection and try again."
+	status="error"
+	confirmText="Retry"
+	onConfirm={retry}
+/>
 ```
 
-### Custom Actions in Header
+### Confirmation Dialog
 
 ```tsx
-import { CenteredModal } from '@/core/smart-modal'
+<ConfirmModal visible={visible} onClose={() => setVisible(false)} title="Discard Changes?" message="You have unsaved changes that will be lost." status="warning" onConfirm={discard} />
+```
 
+### Custom Buttons with Icons
+
+```tsx
 <CenteredModal
-  visible={visible}
-  onClose={() => setVisible(false)}
-  title="Settings"
-  headerActions={
-    <TouchableOpacity onPress={handleSave}>
-      <Text>Save</Text>
-    </TouchableOpacity>
-  }
+	visible={visible}
+	onClose={() => setVisible(false)}
+	title="Share Document"
+	status="info"
+	buttons={[
+		{ text: 'Copy Link', variant: 'outlined', icon: 'link', onPress: copyLink },
+		{ text: 'Share', variant: 'filled', icon: 'share', iconPosition: 'right', onPress: share }
+	]}
+/>
+```
+
+### Bottom Sheet with List
+
+```tsx
+<BottomSheetModal visible={visible} onClose={() => setVisible(false)} title="Choose Language" closeOnOverlayPress>
+	{languages.map((lang) => (
+		<LanguageRow key={lang.id} language={lang} onPress={selectLanguage} />
+	))}
+</BottomSheetModal>
+```
+
+### Fullscreen Form
+
+```tsx
+<FullscreenModal
+	visible={visible}
+	onClose={() => setVisible(false)}
+	title="New Invoice"
+	buttons={[
+		{ text: 'Cancel', variant: 'ghost', onPress: () => setVisible(false) },
+		{ text: 'Create', variant: 'filled', onPress: createInvoice }
+	]}
 >
-  <YourContent />
-</CenteredModal>
+	<InvoiceForm />
+</FullscreenModal>
 ```
 
 ## Platform-Specific Behavior
 
-- **Android**: Automatically handles back button press when `closeOnBackPress` is true
-- **iOS**: Uses native slide animations for bottom sheet and fullscreen variants
-- **Web**: Uses CSS animations and proper overlay handling
-- **All platforms**: Theme colors are automatically applied from your Expo Router theme
+- **Android**: Hardware back button closes the modal when `closeOnBackPress` is true
+- **iOS**: Keyboard avoids centered modals
+- **Web**: Transparent overlay and proper pointer handling
+- **All platforms**: Theme colors are applied automatically
 
 ## Responsive Design
 
-SmartModal follows Expo's responsive design best practices:
+SmartModal is built mobile-first:
 
-- **Flexbox-based layouts**: Uses flex properties for natural content flow
-- **Percentage sizing**: Centered modal uses 90% width with max-width constraint
-- **Adaptive containers**: Modal content naturally adapts to available space
-- **No hardcoded breakpoints**: Relies on flexbox and percentages instead of fixed screen sizes
+- Centered modals use `92%` width on phones and `55%` width on larger viewports, capped by `maxWidth`
+- Footer buttons stack vertically on narrow screens and align horizontally on wider screens
+- Padding and typography adapt to screen size
+- Percentage-based widths and flex layouts avoid brittle breakpoints
 
-The modal automatically adapts to different screen sizes through:
-- Percentage-based widths (90% for centered, 100% for bottom sheet/fullscreen)
-- Flex layouts for content distribution
-- Max-width constraints for large screens
-- Natural content flow with flex properties
-
-### Custom Responsive Behavior
-
-You can override responsive behavior by providing custom styles via `containerStyle`, `contentStyle`, or the variant-specific props like `maxWidth` for CenteredModal.
+Override layouts with `containerStyle`, `modalStyle`, or `contentStyle` when needed.
 
 ## Theme Integration
 
-The modal automatically uses your theme colors:
+SmartModal reads from your theme automatically:
 
 - `colors.card` - Modal background
-- `colors.text` - Title and text
-- `colors.textSecondary` - Subtitle
+- `colors.background` - Fullscreen background
+- `colors.text` - Title and primary text
+- `colors.textSecondary` - Subtitle and message
+- `colors.textTertiary` - Bottom sheet drag handle
 - `colors.surfaceVariant` - Close button background
-- `colors.modalOverlay` - Overlay background (fallback to rgba(0,0,0,0.5))
-- `colors.border` - Border colors
+- `colors.modalOverlay` - Overlay background
+- `colors.border` - Header/footer separator
+- `colors.primary` / `colors.info` / `colors.success` / `colors.warning` / `colors.error` - Status colors
+- `colors.buttonText` - Text color for filled buttons
 
-## Migration from Existing Modals
+## Accessibility
 
-To migrate existing modals to use SmartModal:
-
-1. Replace `Modal` from `react-native` with the appropriate SmartModal variant
-2. Move overlay styling into the component (handled automatically)
-3. Use the `title`, `subtitle`, `headerActions`, and `footer` props for structured content
-4. Remove manual close button handling (use `showCloseButton` prop)
-
-Example migration:
-
-```tsx
-// Before
-<Modal visible={visible} transparent animationType="fade">
-  <View style={styles.overlay}>
-    <View style={styles.modal}>
-      <TouchableOpacity onPress={onClose}>
-        <Ionicons name="close" />
-      </TouchableOpacity>
-      <Text>Title</Text>
-      {children}
-    </View>
-  </View>
-</Modal>
-
-// After
-<CenteredModal
-  visible={visible}
-  onClose={onClose}
-  title="Title"
->
-  {children}
-</CenteredModal>
-```
+- Modal card is marked with `accessibilityViewIsModal` and `importantForAccessibility`
+- Close button has an explicit `accessibilityLabel`
+- Action buttons expose `accessibilityRole="button"` and disabled/loading states
+- Default `accessibilityRole` is `alert` when `status="error"`
+- Provide `accessibilityLabel` when the title alone does not describe the modal
 
 ## TypeScript Support
 
-All components are fully typed. Import types as needed:
+All components are fully typed:
 
 ```tsx
-import type { SmartModalProps, CenteredModalProps } from '@/core/smart-modal'
+import type { SmartModalProps, SmartModalButton, AlertModalProps, ConfirmModalProps } from '@/core/smart-modal'
 ```

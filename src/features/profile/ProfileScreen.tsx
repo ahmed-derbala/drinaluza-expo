@@ -22,16 +22,18 @@ import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
 import { getItem } from '@/core/storage'
 import AddressForm from '@/features/common/AddressForm'
+import ContactForm from '@/features/common/ContactForm'
+import LocationForm from '@/features/common/LocationForm'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, useFocusEffect, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, createColorShadow } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
+import { ProfileSection, InfoItem } from '@/features/common/ProfileSection'
 import SmartImage from '@/core/SmartImageViewer'
 import { HeaderRefreshButton, HeaderActionButton, SmartHeader } from '@/core/smart-header'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
@@ -52,94 +54,6 @@ import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { LANGUAGES, SOCIAL_PLATFORMS } from '@/core/constants/settings'
-
-// Components moved outside to prevent re-creation on render
-const Section = ({
-	title,
-	children,
-	styles,
-	isEditing,
-	onEdit,
-	onSave,
-	onCancel
-}: {
-	title: string
-	children: React.ReactNode
-	styles: any
-	isEditing?: boolean
-	onEdit?: () => void
-	onSave?: () => void
-	onCancel?: () => void
-}) => (
-	<View style={styles.section}>
-		<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-			<Text style={[styles.sectionTitle, { marginBottom: 0 }]}>{title}</Text>
-			{onEdit && !isEditing && (
-				<TouchableOpacity onPress={onEdit} style={{ padding: 4 }}>
-					<Ionicons name="create-outline" size={20} color={styles.sectionTitle.color} />
-				</TouchableOpacity>
-			)}
-			{isEditing && (
-				<View style={{ flexDirection: 'row', gap: 12 }}>
-					<TouchableOpacity onPress={onCancel} style={{ padding: 4 }}>
-						<Ionicons name="close-circle-outline" size={22} color="#EF4444" />
-					</TouchableOpacity>
-					<TouchableOpacity onPress={onSave} style={{ padding: 4 }}>
-						<Ionicons name="checkmark-circle" size={22} color="#10B981" />
-					</TouchableOpacity>
-				</View>
-			)}
-		</View>
-		<View style={styles.sectionContent}>{children}</View>
-	</View>
-)
-
-const InfoItem = ({
-	label,
-	value,
-	icon,
-	styles,
-	iconColor,
-	onPress,
-	onLongPress,
-	onCopy
-}: {
-	label: string
-	value: string | React.ReactNode
-	icon: any
-	styles: any
-	iconColor: string
-	onPress?: () => void
-	onLongPress?: () => void
-	onCopy?: () => void
-}) => {
-	const Content = (
-		<View style={styles.infoItem}>
-			<View style={styles.infoIconContainer}>
-				<Ionicons name={icon} size={20} color={iconColor} />
-			</View>
-			<View style={styles.infoContent}>
-				<Text style={styles.infoLabel}>{label}</Text>
-				{typeof value === 'string' ? <Text style={styles.infoValue}>{value}</Text> : value}
-			</View>
-			{onCopy && (
-				<TouchableOpacity onPress={onCopy} style={{ padding: 8 }}>
-					<Ionicons name="copy-outline" size={18} color="#9CA3AF" />
-				</TouchableOpacity>
-			)}
-		</View>
-	)
-
-	if (onPress || onLongPress) {
-		return (
-			<TouchableOpacity onPress={onPress} onLongPress={onLongPress} delayLongPress={500}>
-				{Content}
-			</TouchableOpacity>
-		)
-	}
-
-	return Content
-}
 
 export default function ProfileScreen() {
 	const router = useRouter()
@@ -486,59 +400,6 @@ export default function ProfileScreen() {
 	const getBackupPhones = (userData: any) => userData?.contact?.backupPhones || userData?.backupPhones || []
 	const getEmail = (userData: any) => userData?.contact?.email || userData?.email
 
-	const updatePhone = (type: 'primary' | 'backup', field: 'countryCode' | 'shortNumber', value: string, index?: number) => {
-		if (!userData) return
-
-		let cleanValue = value
-		if (field === 'shortNumber') {
-			cleanValue = value.replace(/\D/g, '')
-		} else {
-			// Enforce one + at start and only digits after
-			const digitsAndPlus = value.replace(/[^\d+]/g, '')
-			const plusIndex = digitsAndPlus.indexOf('+')
-			if (plusIndex !== -1) {
-				cleanValue = '+' + digitsAndPlus.substring(plusIndex + 1).replace(/\+/g, '')
-			} else if (digitsAndPlus.length > 0) {
-				cleanValue = '+' + digitsAndPlus
-			}
-		}
-
-		if (type === 'primary') {
-			const currentPhone = getPhone(userData) || { countryCode: '+216', shortNumber: '' }
-			const newPhone = { ...currentPhone, [field]: cleanValue }
-			newPhone.fullNumber = `${newPhone.countryCode || ''}${newPhone.shortNumber || ''}`
-
-			setUserData((prev) => {
-				if (!prev) return null
-				return {
-					...prev,
-					contact: {
-						...prev.contact,
-						phone: newPhone
-					}
-				}
-			})
-		} else {
-			const currentBackups = [...getBackupPhones(userData)]
-			if (index === undefined) return
-			const currentPhone = currentBackups[index] || { countryCode: '+216', shortNumber: '' }
-			const newPhone = { ...currentPhone, [field]: cleanValue }
-			newPhone.fullNumber = `${newPhone.countryCode || ''}${newPhone.shortNumber || ''}`
-			currentBackups[index] = newPhone
-
-			setUserData((prev) => {
-				if (!prev) return null
-				return {
-					...prev,
-					contact: {
-						...prev.contact,
-						backupPhones: currentBackups
-					}
-				}
-			})
-		}
-	}
-
 	const onDateChange = (event: any, selectedDate?: Date) => {
 		setShowDatePicker(Platform.OS === 'ios')
 		if (selectedDate) {
@@ -599,88 +460,6 @@ export default function ProfileScreen() {
 			showAlert(translate('error', 'Error'), errorMessage)
 		} finally {
 			setBusinessLoading(false)
-		}
-	}
-
-	const handleGetCurrentLocation = async () => {
-		try {
-			// Request location permission
-			const { status } = await Location.requestForegroundPermissionsAsync()
-			if (status !== 'granted') {
-				showAlert('Permission Denied', 'Location permission is required to get your current location.')
-				return
-			}
-
-			// Get current location
-			const location = await Location.getCurrentPositionAsync({
-				accuracy: Location.Accuracy.Highest
-			})
-
-			const { longitude, latitude, accuracy, heading, speed, altitude } = location.coords
-
-			// Update user data with new location and enable sharing
-			// Coordinates order: [longitude, latitude] as per GeoJSON spec
-			updateField('location', {
-				geo: {
-					type: 'Point',
-					coordinates: [longitude, latitude]
-				},
-				accuracy,
-				heading,
-				speed,
-				altitude,
-				sharingEnabled: true // Always enable sharing when getting current location
-			})
-
-			showAlert('Success', `Location updated: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
-		} catch (error: any) {
-			console.error('Error getting location:', error)
-			showAlert('Error', 'Failed to get current location. Please make sure location services are enabled.')
-		}
-	}
-
-	const handleToggleSharing = async () => {
-		if (!userData) return
-		const currentlyEnabled = userData.location?.sharingEnabled === true
-		if (currentlyEnabled) {
-			// Disable sharing: remove coordinates
-			updateField('location', {
-				geo: {
-					type: 'Point',
-					coordinates: []
-				},
-				sharingEnabled: false
-			})
-			return
-		}
-
-		// Enabling: request permission and fetch current location
-		try {
-			const { status } = await Location.requestForegroundPermissionsAsync()
-			if (status !== 'granted') {
-				showAlert('Permission Denied', 'Location permission is required to share your current location.')
-				return
-			}
-
-			const location = await Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.Balanced })
-			const { longitude, latitude, accuracy, heading, speed, altitude } = location.coords
-
-			// Coordinates order: [longitude, latitude] as per GeoJSON spec
-			updateField('location', {
-				geo: {
-					type: 'Point',
-					coordinates: [longitude, latitude]
-				},
-				accuracy,
-				heading,
-				speed,
-				altitude,
-				sharingEnabled: true
-			})
-			showAlert('Success', `Location sharing enabled: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`)
-		} catch (error: any) {
-			console.error('Error enabling location sharing:', error)
-			showAlert('Error', 'Failed to enable location sharing.')
 		}
 	}
 
@@ -865,9 +644,8 @@ export default function ProfileScreen() {
 						</View>
 					</View>
 
-					<Section
+					<ProfileSection
 						title={'✏️ ' + translate('name', 'Name')}
-						styles={styles}
 						isEditing={editMode.name}
 						onEdit={() => toggleEdit('name', true)}
 						onSave={() => saveUserData('name')}
@@ -897,7 +675,6 @@ export default function ProfileScreen() {
 											</View>
 										}
 										icon="person"
-										styles={styles}
 										iconColor={colors.primary}
 									/>
 								)}
@@ -916,7 +693,6 @@ export default function ProfileScreen() {
 											</View>
 										}
 										icon="person"
-										styles={styles}
 										iconColor={colors.primary}
 									/>
 								)}
@@ -935,7 +711,6 @@ export default function ProfileScreen() {
 											</View>
 										}
 										icon="person"
-										styles={styles}
 										iconColor={colors.primary}
 									/>
 								)}
@@ -944,11 +719,10 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
-					<Section
+					<ProfileSection
 						title="👤 Basic Information"
-						styles={styles}
 						isEditing={editMode.basic}
 						onEdit={() => toggleEdit('basic', true)}
 						onSave={() => saveUserData('basic')}
@@ -996,7 +770,7 @@ export default function ProfileScreen() {
 							</>
 						) : (
 							<>
-								<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" styles={styles} iconColor={colors.primary} />
+								<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" iconColor={colors.primary} />
 								{userData?.basicInfos?.biography && (
 									<View style={styles.infoItem}>
 										<View style={styles.infoIconContainer}>
@@ -1010,11 +784,10 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
-					<Section
+					<ProfileSection
 						title="📍 Address"
-						styles={styles}
 						isEditing={editMode.address}
 						onEdit={() => toggleEdit('address', true)}
 						onSave={() => saveUserData('address')}
@@ -1026,8 +799,8 @@ export default function ProfileScreen() {
 								setStreet={(val) => updateField('street', val, 'address')}
 								city={userData.address?.city || ''}
 								setCity={(val) => updateField('city', val, 'address')}
-								region={userData.address?.state || ''}
-								setRegion={(val) => updateField('state', val, 'address')}
+								region={userData.address?.region || ''}
+								setRegion={(val) => updateField('region', val, 'address')}
 								postalCode={userData.address?.postalCode || ''}
 								setPostalCode={(val) => updateField('postalCode', val, 'address')}
 								country={userData.address?.country || ''}
@@ -1035,131 +808,32 @@ export default function ProfileScreen() {
 							/>
 						) : (
 							<>
-								{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" styles={styles} iconColor={colors.primary} />}
-								{(userData?.address?.city || userData?.address?.state || userData?.address?.postalCode) && (
+								{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" iconColor={colors.primary} />}
+								{(userData?.address?.city || userData?.address?.region || userData?.address?.postalCode) && (
 									<InfoItem
-										label="City/State/Postal Code"
-										value={[userData?.address?.city, userData?.address?.state, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
+										label="City/Region/Postal Code"
+										value={[userData?.address?.city, userData?.address?.region, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
 										icon="business"
-										styles={styles}
 										iconColor={colors.primary}
 									/>
 								)}
-								{userData?.address?.country && <InfoItem label="Country" value={userData.address.country} icon="earth" styles={styles} iconColor={colors.primary} />}
-								{!userData?.address?.street && !userData?.address?.city && !userData?.address?.state && !userData?.address?.country && (
+								{userData?.address?.country && <InfoItem label="Country" value={userData.address.country} icon="earth" iconColor={colors.primary} />}
+								{!userData?.address?.street && !userData?.address?.city && !userData?.address?.region && !userData?.address?.country && (
 									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No address information set.</Text>
 								)}
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
-					<Section
+					<ProfileSection
 						title="📍 Location"
-						styles={styles}
 						isEditing={editMode.location}
 						onEdit={() => toggleEdit('location', true)}
 						onSave={() => saveUserData('location')}
 						onCancel={() => toggleEdit('location', false)}
 					>
 						{editMode.location ? (
-							<View style={styles.inputGroup}>
-								<Text style={styles.inputLabel}>GPS Coordinates</Text>
-								<View style={styles.locationGrid}>
-									<View style={styles.locationCol}>
-										<Text style={styles.locationSubLabel}>Longitude</Text>
-										<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card, opacity: userData.location?.sharingEnabled === false ? 0.5 : 1 }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="location" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.location?.geo?.coordinates?.[0]?.toString() || ''}
-												onChangeText={(value) => {
-													if (userData.location?.sharingEnabled === false) return
-													const coords = userData.location?.geo?.coordinates || [0, 0]
-													const newCoords: [number, number] = [parseFloat(value) || 0, coords[1]]
-													// Preserve all location fields, only update coordinates
-													updateField('location', {
-														...userData.location,
-														geo: {
-															type: 'Point',
-															coordinates: newCoords
-														}
-													})
-												}}
-												placeholder="10.8045"
-												placeholderTextColor={colors.textTertiary}
-												keyboardType="numeric"
-												editable={userData.location?.sharingEnabled !== false}
-											/>
-										</View>
-									</View>
-									<View style={styles.locationCol}>
-										<Text style={styles.locationSubLabel}>Latitude</Text>
-										<View
-											style={[
-												styles.socialInputContainer,
-												{
-													borderColor: colors.border,
-													backgroundColor: colors.card,
-													opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
-												}
-											]}
-										>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-												<Ionicons name="location" size={20} color={colors.textSecondary} />
-											</View>
-											<TextInput
-												style={[styles.socialInput, { color: colors.text }]}
-												value={userData.location?.geo?.coordinates?.[1]?.toString() || ''}
-												onChangeText={(value) => {
-													if (userData.location?.sharingEnabled === false) return
-													const coords = userData.location?.geo?.coordinates || [0, 0]
-													const newCoords: [number, number] = [coords[0], parseFloat(value) || 0]
-													// Preserve all location fields, only update coordinates
-													updateField('location', {
-														...userData.location,
-														geo: {
-															type: 'Point',
-															coordinates: newCoords
-														}
-													})
-												}}
-												placeholder="35.7905"
-												placeholderTextColor={colors.textTertiary}
-												keyboardType="numeric"
-												editable={userData.location?.sharingEnabled !== false}
-											/>
-										</View>
-									</View>
-								</View>
-								<View style={styles.inputGroup}>
-									<View style={styles.switchContainer}>
-										<Text style={styles.switchLabel}>Share Location</Text>
-										<TouchableOpacity
-											style={[styles.switch, userData.location?.sharingEnabled ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]}
-											onPress={handleToggleSharing}
-										>
-											<View style={[styles.switchThumb, userData.location?.sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }]} />
-										</TouchableOpacity>
-									</View>
-									<TouchableOpacity
-										style={[
-											styles.addButton,
-											{
-												borderColor: colors.primary,
-												marginTop: 12,
-												opacity: userData.location?.sharingEnabled === false ? 0.5 : 1
-											}
-										]}
-										onPress={handleGetCurrentLocation}
-										disabled={userData.location?.sharingEnabled === false}
-									>
-										<Ionicons name="location" size={20} color={colors.primary} />
-										<Text style={[styles.addButtonText, { color: colors.primary }]}>Get Current Location</Text>
-									</TouchableOpacity>
-								</View>
-							</View>
+							<LocationForm location={userData.location} onChange={(location) => updateField('location', { ...userData.location, ...location })} />
 						) : (
 							<>
 								{getGeoCoordinates(userData.location) && (
@@ -1171,7 +845,6 @@ export default function ProfileScreen() {
 												return coords ? `${coords[1].toFixed(4)}, ${coords[0].toFixed(4)}` : translate('not_set', 'Not set')
 											})()}
 											icon="location"
-											styles={styles}
 											iconColor={colors.primary}
 											onPress={() => openDirections(userData.location, userData.address)}
 											onCopy={async () => {
@@ -1193,18 +866,16 @@ export default function ProfileScreen() {
 										label="Location Sharing"
 										value={userData.location.sharingEnabled ? 'Enabled' : 'Disabled'}
 										icon={userData.location.sharingEnabled ? 'share-social' : 'share-social-outline'}
-										styles={styles}
 										iconColor={userData.location.sharingEnabled ? colors.primary : colors.textSecondary}
 									/>
 								)}
 								{!getGeoCoordinates(userData.location) && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
-					<Section
+					<ProfileSection
 						title="🌐 Social Media"
-						styles={styles}
 						isEditing={editMode.social}
 						onEdit={() => toggleEdit('social', true)}
 						onSave={() => saveUserData('social')}
@@ -1260,7 +931,6 @@ export default function ProfileScreen() {
 											label={platform.label}
 											value={username}
 											icon={platform.icon}
-											styles={styles}
 											iconColor={platform.color}
 											onPress={() => {
 												Linking.openURL(url).catch((err) => showAlert('Error', 'Could not open URL: ' + err.message))
@@ -1281,173 +951,24 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
-					<Section
+					<ProfileSection
 						title="📞 Contact Information"
-						styles={styles}
 						isEditing={editMode.phone}
 						onEdit={() => toggleEdit('phone', true)}
 						onSave={() => saveUserData('phone')}
 						onCancel={() => toggleEdit('phone', false)}
 					>
 						{editMode.phone ? (
-							<>
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Primary Phone</Text>
-									<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
-											<TextInput
-												style={[styles.phoneCodeInput, { color: colors.text }]}
-												value={getPhone(userData)?.countryCode || '+216'}
-												onChangeText={(value) => updatePhone('primary', 'countryCode', value)}
-												placeholder="+216"
-												placeholderTextColor={colors.textTertiary}
-												keyboardType="phone-pad"
-												maxLength={5}
-											/>
-										</View>
-										<TextInput
-											style={[styles.phoneNumberInput, { color: colors.text }]}
-											value={getPhone(userData)?.shortNumber || ''}
-											onChangeText={(value) => updatePhone('primary', 'shortNumber', value)}
-											placeholder="99112619"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="phone-pad"
-											maxLength={15}
-										/>
-									</View>
-									{getPhone(userData)?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {getPhone(userData)?.fullNumber}</Text>}
-								</View>
-
-								{getBackupPhones(userData).map((backupPhone: any, index: number) => (
-									<View key={index} style={styles.inputGroup}>
-										<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-											<Text style={styles.inputLabel}>Backup Phone {index + 1}</Text>
-											<TouchableOpacity
-												onPress={() => {
-													const backups = [...getBackupPhones(userData)]
-													backups.splice(index, 1)
-													setUserData((prev) => {
-														if (!prev) return null
-														return {
-															...prev,
-															contact: {
-																...prev.contact,
-																backupPhones: backups
-															}
-														}
-													})
-												}}
-												style={{ padding: 4 }}
-											>
-												<Ionicons name="trash-outline" size={18} color={colors.error} />
-											</TouchableOpacity>
-										</View>
-										<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
-											<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
-												<TextInput
-													style={[styles.phoneCodeInput, { color: colors.text }]}
-													value={backupPhone?.countryCode || '+216'}
-													onChangeText={(value) => updatePhone('backup', 'countryCode', value, index)}
-													placeholder="+216"
-													placeholderTextColor={colors.textTertiary}
-													keyboardType="phone-pad"
-													maxLength={5}
-												/>
-											</View>
-											<TextInput
-												style={[styles.phoneNumberInput, { color: colors.text }]}
-												value={backupPhone?.shortNumber || ''}
-												onChangeText={(value) => updatePhone('backup', 'shortNumber', value, index)}
-												placeholder="99112645"
-												placeholderTextColor={colors.textTertiary}
-												keyboardType="phone-pad"
-												maxLength={15}
-											/>
-										</View>
-										{backupPhone?.fullNumber && <Text style={[styles.inputHint, { color: colors.textTertiary }]}>Full: {backupPhone.fullNumber}</Text>}
-									</View>
-								))}
-
-								<TouchableOpacity
-									onPress={() => {
-										const backups = [...getBackupPhones(userData)]
-										backups.push({ countryCode: '+216', shortNumber: '', fullNumber: '+216' })
-										setUserData((prev) => {
-											if (!prev) return null
-											return {
-												...prev,
-												contact: {
-													...prev.contact,
-													backupPhones: backups
-												}
-											}
-										})
-									}}
-									style={[styles.addButton, { borderColor: colors.primary }]}
-								>
-									<Ionicons name="add-circle-outline" size={20} color={colors.primary} />
-									<Text style={[styles.addButtonText, { color: colors.primary }]}>Add Backup Phone</Text>
-								</TouchableOpacity>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>Email</Text>
-									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
-											<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
-										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={getEmail(userData) || ''}
-											onChangeText={(value) => {
-												setUserData((prev) => {
-													if (!prev) return null
-													return {
-														...prev,
-														contact: {
-															...prev.contact,
-															email: value
-														}
-													}
-												})
-											}}
-											placeholder="email@example.com"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="email-address"
-											autoCapitalize="none"
-										/>
-									</View>
-								</View>
-
-								<View style={styles.inputGroup}>
-									<Text style={styles.inputLabel}>WhatsApp</Text>
-									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
-										<View style={[styles.socialIconBadge, { backgroundColor: '#25D36615' }]}>
-											<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-										</View>
-										<TextInput
-											style={[styles.socialInput, { color: colors.text }]}
-											value={userData.contact?.whatsapp || ''}
-											onChangeText={(value) => {
-												setUserData((prev) => {
-													if (!prev) return null
-													return {
-														...prev,
-														contact: {
-															...prev.contact,
-															whatsapp: value
-														}
-													}
-												})
-											}}
-											placeholder="+21699112618"
-											placeholderTextColor={colors.textTertiary}
-											keyboardType="phone-pad"
-										/>
-									</View>
-								</View>
-							</>
+							<ContactForm
+								contact={userData.contact}
+								phone={userData.phone}
+								backupPhones={userData.backupPhones}
+								email={userData.email}
+								whatsapp={userData.contact?.whatsapp}
+								onChange={(contact) => updateField('contact', { ...userData.contact, ...contact })}
+							/>
 						) : (
 							<>
 								{getPhone(userData)?.fullNumber && (
@@ -1455,7 +976,6 @@ export default function ProfileScreen() {
 										label="Primary Phone"
 										value={getPhone(userData)?.fullNumber || 'Not set'}
 										icon="call"
-										styles={styles}
 										iconColor={colors.primary}
 										onPress={() => Linking.openURL(`tel:${getPhone(userData)?.fullNumber}`).catch(() => {})}
 										onCopy={async () => {
@@ -1470,7 +990,6 @@ export default function ProfileScreen() {
 										label={`Backup Phone ${index + 1}`}
 										value={backupPhone?.fullNumber || 'Not set'}
 										icon="call-outline"
-										styles={styles}
 										iconColor={colors.info}
 										onPress={() => Linking.openURL(`tel:${backupPhone?.fullNumber}`).catch(() => {})}
 										onCopy={async () => {
@@ -1484,7 +1003,6 @@ export default function ProfileScreen() {
 										label="Email"
 										value={getEmail(userData) || 'Not set'}
 										icon="mail"
-										styles={styles}
 										iconColor={colors.primary}
 										onPress={() => Linking.openURL(`mailto:${getEmail(userData)}`).catch(() => {})}
 										onCopy={async () => {
@@ -1498,7 +1016,6 @@ export default function ProfileScreen() {
 										label="WhatsApp"
 										value={userData.contact.whatsapp}
 										icon="logo-whatsapp"
-										styles={styles}
 										iconColor="#25D366"
 										onPress={() => Linking.openURL(`https://wa.me/${userData.contact?.whatsapp?.replace(/[^0-9]/g, '')}`).catch(() => {})}
 										onCopy={async () => {
@@ -1512,11 +1029,10 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
-					<Section
+					<ProfileSection
 						title={'⚙️ ' + translate('settings', 'Account Settings')}
-						styles={styles}
 						isEditing={editMode.settings}
 						onEdit={() => toggleEdit('settings', true)}
 						onSave={() => saveUserData('settings')}
@@ -1582,6 +1098,32 @@ export default function ProfileScreen() {
 										))}
 									</View>
 								</View>
+								<View style={styles.inputGroup}>
+									<View style={styles.switchContainer}>
+										<Text style={[styles.switchLabel, { color: colors.text }]}>{translate('purchase_confirmation', 'Purchase Confirmation')}</Text>
+										<TouchableOpacity
+											style={[styles.switch, userData.settings?.purchases?.confirmation?.isEnabled !== false ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]}
+											onPress={() => {
+												const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd', purchases: { confirmation: { isEnabled: true } } }
+												const currentlyEnabled = prevSettings.purchases?.confirmation?.isEnabled !== false
+												updateField('settings', {
+													...prevSettings,
+													purchases: {
+														...prevSettings.purchases,
+														confirmation: { isEnabled: !currentlyEnabled }
+													}
+												})
+											}}
+										>
+											<View
+												style={[
+													styles.switchThumb,
+													userData.settings?.purchases?.confirmation?.isEnabled !== false ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }
+												]}
+											/>
+										</TouchableOpacity>
+									</View>
+								</View>
 							</>
 						) : (
 							<>
@@ -1589,23 +1131,27 @@ export default function ProfileScreen() {
 									label={translate('app_lang', 'App Language')}
 									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || translate('not_set', 'Not set')}
 									icon="globe"
-									styles={styles}
 									iconColor={colors.primary}
 								/>
 								<InfoItem
 									label={translate('content_lang', 'Content Language')}
 									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || translate('not_set', 'Not set')}
 									icon="language"
-									styles={styles}
+									iconColor={colors.primary}
+								/>
+								<InfoItem
+									label={translate('purchase_confirmation', 'Purchase Confirmation')}
+									value={userData.settings?.purchases?.confirmation?.isEnabled !== false ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}
+									icon="cart-outline"
 									iconColor={colors.primary}
 								/>
 							</>
 						)}
-					</Section>
+					</ProfileSection>
 
 					{/* Customer Dashboard Data */}
 					{personalDashboard && (
-						<Section title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')} styles={styles}>
+						<ProfileSection title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')}>
 							<View style={{ gap: 16 }}>
 								<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
 									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
@@ -1649,7 +1195,7 @@ export default function ProfileScreen() {
 									)}
 								</View>
 							</View>
-						</Section>
+						</ProfileSection>
 					)}
 
 					{/* Reviews Section */}
@@ -1779,28 +1325,13 @@ export default function ProfileScreen() {
 				visible={showSwitchAccountModal}
 				onClose={() => setShowSwitchAccountModal(false)}
 				title={translate('switch_account', 'Switch User')}
-				headerIcon={
-					<View style={[styles.switchAccountModalIcon, { backgroundColor: colors.primary + '15' }]}>
-						<Ionicons name="people" size={24} color={colors.primary} />
-					</View>
-				}
-				footer={
-					<View style={styles.switchAccountModalActions}>
-						<TouchableOpacity style={[styles.switchAccountModalButton, styles.switchAccountModalCancelButton, { borderColor: colors.border }]} onPress={() => setShowSwitchAccountModal(false)}>
-							<Text style={[styles.switchAccountModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
-						</TouchableOpacity>
-						<TouchableOpacity style={[styles.switchAccountModalButton, styles.switchAccountModalSubmitButton, { backgroundColor: colors.primary }]} onPress={confirmSwitchUser}>
-							<Text style={[styles.switchAccountModalButtonText, { color: '#fff' }]}>{translate('switch', 'Switch')}</Text>
-						</TouchableOpacity>
-					</View>
-				}
-			>
-				<View style={styles.switchAccountModalContent}>
-					<Text style={[styles.switchAccountModalDescription, { color: colors.text }]}>
-						{translate('switch_account_description', 'You will be redirected to the login screen where you can select a different account or sign in with a new one.')}
-					</Text>
-				</View>
-			</CenteredModal>
+				icon="people"
+				message={translate('switch_account_description', 'You will be redirected to the login screen where you can select a different account or sign in with a new one.')}
+				buttons={[
+					{ text: translate('cancel', 'Cancel'), variant: 'outlined', onPress: () => setShowSwitchAccountModal(false) },
+					{ text: translate('switch', 'Switch'), variant: 'filled', onPress: confirmSwitchUser }
+				]}
+			/>
 		</View>
 	)
 }
@@ -2482,51 +2013,6 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			// backgroundColor set dynamically
 		},
 		businessModalButtonText: {
-			fontSize: 16,
-			fontWeight: '600'
-		},
-		// Switch Account Modal Styles
-		switchAccountModalContent: {
-			alignItems: 'center',
-			paddingTop: 20,
-			paddingBottom: 12,
-			width: '100%'
-		},
-		switchAccountModalIcon: {
-			width: 40,
-			height: 40,
-			borderRadius: 20,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		switchAccountModalDescription: {
-			fontSize: 16,
-			fontWeight: '500',
-			lineHeight: 22,
-			textAlign: 'center',
-			width: '100%'
-		},
-		switchAccountModalActions: {
-			flexDirection: isWideScreen ? 'row' : 'column',
-			gap: 12,
-			width: '100%'
-		},
-		switchAccountModalButton: {
-			flex: isWideScreen ? 1 : undefined,
-			padding: 16,
-			borderRadius: 12,
-			alignItems: 'center',
-			justifyContent: 'center',
-			minHeight: 48
-		},
-		switchAccountModalCancelButton: {
-			borderWidth: 1,
-			backgroundColor: 'transparent'
-		},
-		switchAccountModalSubmitButton: {
-			// backgroundColor set dynamically
-		},
-		switchAccountModalButtonText: {
 			fontSize: 16,
 			fontWeight: '600'
 		},

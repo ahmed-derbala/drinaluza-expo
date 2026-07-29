@@ -31,7 +31,7 @@ export function getGeoCoordinates(location: LocationLike): [number, number] | nu
 
 export function formatAddress(address: AddressLike): string | null {
 	if (!address) return null
-	const parts = [address.street, address.city, address.state ?? address.region, address.country].filter(Boolean)
+	const parts = [address.street, address.city, address.region, address.country].filter(Boolean)
 	return parts.length > 0 ? parts.join(', ') : null
 }
 

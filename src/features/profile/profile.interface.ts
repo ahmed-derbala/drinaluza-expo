@@ -1,9 +1,10 @@
 import { LocalizedName } from '../businesses/businesses.interface'
 
-interface Phone {
+export interface Phone {
 	fullNumber?: string
 	countryCode?: string
 	shortNumber?: string
+	localNumber?: string
 }
 
 interface BasicInfos {
@@ -29,15 +30,15 @@ interface Media {
 	}
 }
 
-interface Address {
+export interface Address {
 	street?: string
 	city?: string
-	state?: string
+	region?: string
 	postalCode?: string
 	country?: string
 }
 
-interface Location {
+export interface Location {
 	geo?: {
 		type: 'Point'
 		coordinates: [number, number] // [longitude, latitude]
@@ -58,6 +59,11 @@ interface UserSettings {
 		content?: string
 	}
 	currency: string
+	purchases?: {
+		confirmation?: {
+			isEnabled?: boolean
+		}
+	}
 }
 
 interface UserState {
@@ -65,7 +71,7 @@ interface UserState {
 	updatedAt: string
 }
 
-interface Contact {
+export interface Contact {
 	phone?: Phone
 	backupPhones?: Phone[]
 	whatsapp?: string

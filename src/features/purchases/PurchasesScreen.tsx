@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useState } from 'react'
 import { View, StyleSheet, ActivityIndicator } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, Stack, useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
@@ -19,6 +19,7 @@ import { updatePurchaseStatus } from '@/features/orders/orders.api'
 import { OrderItem } from '@/features/orders/orders.interface'
 import { useCart } from './hooks/useCart'
 import { usePurchaseCounts } from './hooks/usePurchaseCounts'
+import CheckoutConfirmationModal from './components/CheckoutConfirmationModal'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 
@@ -48,7 +49,7 @@ export default function PurchasesScreen() {
 	const navigation = useNavigation()
 	const router = useRouter()
 	const { colors } = useTheme()
-	const { translate, user } = useUser()
+	const { translate, user, refreshUser } = useUser()
 	const { width } = useWindowDimensions()
 	const { status } = useLocalSearchParams<{ status?: string }>()
 
@@ -66,6 +67,7 @@ export default function PurchasesScreen() {
 	useBackButton()
 
 	const isPurchaseStatus = selectedStatus !== 'cart'
+	const [confirmGroup, setConfirmGroup] = useState<BusinessCartGroup | null>(null)
 	const isTablet = width >= 768
 	const isDesktop = width >= 1024
 	const numColumns = isDesktop ? 3 : isTablet ? 2 : 1
@@ -118,7 +120,7 @@ export default function PurchasesScreen() {
 		}, [user, isPurchaseStatus, refreshCounts, loadCart, refresh])
 	)
 
-	const handleCheckout = useCallback(
+	const executeCheckout = useCallback(
 		async (group: BusinessCartGroup) => {
 			try {
 				const result = await checkout(group)
@@ -135,6 +137,26 @@ export default function PurchasesScreen() {
 		},
 		[checkout, refreshCounts, refresh, setSelectedStatus, translate, user]
 	)
+
+	const handleCheckout = useCallback(
+		(group: BusinessCartGroup) => {
+			const confirmationEnabled = user?.settings?.purchases?.confirmation?.isEnabled !== false
+			if (confirmationEnabled) {
+				setConfirmGroup(group)
+			} else {
+				executeCheckout(group)
+			}
+		},
+		[user, executeCheckout]
+	)
+
+	const handleConfirmComplete = useCallback(async () => {
+		const group = confirmGroup
+		setConfirmGroup(null)
+		if (group) {
+			await executeCheckout(group)
+		}
+	}, [confirmGroup, executeCheckout])
 
 	const handleCancelOrder = useCallback(
 		(purchaseId: string) => {
@@ -239,6 +261,8 @@ export default function PurchasesScreen() {
 					contentContainerStyle={[styles.listContent, numColumns > 1 && { paddingHorizontal: 8 }]}
 				/>
 			)}
+
+			<CheckoutConfirmationModal visible={!!confirmGroup} group={confirmGroup} user={user} onClose={() => setConfirmGroup(null)} onComplete={handleConfirmComplete} refreshUser={refreshUser} />
 		</View>
 	)
 }

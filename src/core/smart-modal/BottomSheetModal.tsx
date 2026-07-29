@@ -4,15 +4,16 @@ import type { SmartModalProps } from './types'
 
 export interface BottomSheetModalProps extends Omit<SmartModalProps, 'variant'> {
 	/**
-	 * Maximum height percentage (default: 85%)
+	 * Maximum height in pixels or percentage points (default: 88% of screen)
 	 */
-	maxHeight?: string | number
+	maxHeight?: number
 }
 
 /**
- * A bottom sheet modal that slides up from the bottom
- * Best for: pickers, filters, mobile-optimized lists, and contextual actions
+ * A bottom sheet modal anchored to the bottom of the screen.
+ * Best for: pickers, filters, mobile-optimized lists, and contextual actions.
  */
-export default function BottomSheetModal({ ...props }: BottomSheetModalProps) {
-	return <SmartModal {...props} variant="bottomSheet" animationType="slide" />
+export default function BottomSheetModal({ maxHeight, ...props }: BottomSheetModalProps) {
+	const modalStyle = maxHeight ? { ...props.modalStyle, maxHeight } : props.modalStyle
+	return <SmartModal {...props} variant="bottomSheet" modalStyle={modalStyle} />
 }

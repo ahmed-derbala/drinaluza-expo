@@ -125,6 +125,11 @@ export const useScrollHandler = (
 			const target = e.target
 			if (!target) return
 
+			// Ignore scroll events inside SmartModal overlays so headers/tab bars don't react to modal scrolling
+			if (target instanceof HTMLElement && target.closest?.('[data-smart-modal]')) {
+				return
+			}
+
 			let currentOffset = 0
 			if (target === document || target === window) {
 				currentOffset = window.scrollY || document.documentElement.scrollTop || 0

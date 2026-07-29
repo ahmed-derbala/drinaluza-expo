@@ -10,8 +10,8 @@ export interface CenteredModalProps extends Omit<SmartModalProps, 'variant'> {
 }
 
 /**
- * A centered modal variant that appears in the middle of the screen
- * Best for: alerts, confirmations, forms, and focused interactions
+ * A centered modal that appears in the middle of the screen.
+ * Best for: alerts, confirmations, dialogs, and focused interactions.
  */
 export default function CenteredModal({ maxWidth = 400, ...props }: CenteredModalProps) {
 	return <SmartModal {...props} variant="centered" maxWidth={maxWidth} />

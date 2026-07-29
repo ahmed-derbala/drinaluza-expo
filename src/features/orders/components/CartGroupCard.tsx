@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts'
+import ModalButton from '@/core/smart-modal/ModalButton'
 import SmartImage from '@/core/SmartImageViewer'
 import { FeedItem } from '@/features/feed/feed.interface'
 
@@ -134,9 +135,15 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 						<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 						<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 					</View>
-					<TouchableOpacity onPress={() => onCheckout(group)} activeOpacity={0.75} style={styles.checkoutBtn} accessibilityLabel="Place order" accessibilityRole="button">
-						<Ionicons name="checkmark-circle" size={36} color={colors.success} />
-					</TouchableOpacity>
+					<ModalButton
+						icon="checkmark"
+						variant="filled"
+						defaultColor={colors.primary}
+						contrastColor={colors.buttonText || '#FFFFFF'}
+						onPress={() => onCheckout(group)}
+						style={{ width: 48, flex: 0 }}
+						accessibilityLabel="Place order"
+					/>
 				</View>
 			</View>
 		</View>
@@ -282,9 +289,5 @@ const styles = StyleSheet.create({
 		fontWeight: '900',
 		marginTop: 2,
 		letterSpacing: -0.5
-	},
-	checkoutBtn: {
-		justifyContent: 'center',
-		alignItems: 'center'
 	}
 })

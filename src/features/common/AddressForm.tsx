@@ -69,7 +69,7 @@ export default function AddressForm({ street, setStreet, city, setCity, region, 
 			<View style={styles.row}>
 				<View style={styles.col}>{renderField(translate('city', 'City'), city, setCity, translate('city_placeholder', 'e.g., Ellouza'), 'business-outline', 'city')}</View>
 				<View style={styles.gap} />
-				<View style={styles.col}>{renderField(translate('region_or_state', 'Region / State'), region, setRegion, translate('region_placeholder', 'e.g., Sfax'), 'map-outline', 'region')}</View>
+				<View style={styles.col}>{renderField(translate('region', 'Region'), region, setRegion, translate('region_placeholder', 'e.g., Sfax'), 'map-outline', 'region')}</View>
 			</View>
 			<View style={styles.row}>
 				<View style={styles.col}>{renderField(translate('postal_code', 'Postal Code'), postalCode, setPostalCode, '3016', 'navigate-outline', 'postalCode', 'numeric')}</View>

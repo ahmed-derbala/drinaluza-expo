@@ -1,0 +1,7 @@
+- do a full rewrite and modern redesign of SmartModal
+- use SmartModal to display alerts, modals, dialogs, etc.
+- make it responsive, modern, clean, easy to use and customize
+- it has icon, title, subtitle, buttons with icons and colors
+- it supports forms
+- scrollable content horizontally and vertically
+- do not use any animations
