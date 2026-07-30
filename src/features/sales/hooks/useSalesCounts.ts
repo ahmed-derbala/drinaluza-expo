@@ -1,32 +1,59 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
-import { getSales } from '@/features/sales/sales.api'
+import { getCacheItem, setCacheItem } from '@/core/cache'
+import { SalesResponse } from '@/features/sales/sales.api'
 
-export function useSalesCounts() {
+export interface UseSalesCountsOptions {
+	businessSlug?: string
+	customerSlug?: string
+	productSlug?: string
+}
+
+export function useSalesCounts({ businessSlug, customerSlug, productSlug }: UseSalesCountsOptions = {}) {
+	const cacheKey = `sales-counts:${businessSlug || 'anonymous'}:${customerSlug || ''}:${productSlug || ''}`
+
 	const [counts, setCounts] = useState<Record<string, number>>({})
 	const [isLoading, setIsLoading] = useState(false)
 
-	const refresh = useCallback(async (businessSlug?: string, customerSlug?: string, productSlug?: string) => {
-		if (!businessSlug) return
-		setIsLoading(true)
-		try {
-			const response = await getSales(businessSlug, 1, 1000, undefined, customerSlug, productSlug)
-			if (response?.data?.docs) {
-				const all = response.data.docs
-				const next: Record<string, number> = {
-					all: response.data.pagination?.totalDocs || all.length
-				}
-				all.forEach((sale) => {
-					next[sale.status] = (next[sale.status] || 0) + 1
-				})
-				setCounts(next)
-			}
-		} catch (err) {
-			console.error('Error loading sales counts:', err)
-		} finally {
-			setIsLoading(false)
-		}
-	}, [])
+	useEffect(() => {
+		getCacheItem<Record<string, number>>(cacheKey)
+			.then((cached) => {
+				if (cached?.data) setCounts((prev) => ({ ...cached.data, ...prev }))
+			})
+			.catch((err) => console.error('Error loading sales counts cache:', err))
+	}, [cacheKey])
 
-	return { counts, refresh, isLoading }
+	const refresh = useCallback(
+		async (allSales?: SalesResponse) => {
+			if (!businessSlug) return
+
+			let allCount: number | undefined
+			if (allSales?.data) {
+				allCount = allSales.data.pagination?.totalDocs ?? allSales.data.docs.length
+			}
+
+			if (allCount !== undefined) {
+				setCounts((prev) => {
+					const next = { ...prev, all: allCount as number }
+					setCacheItem(cacheKey, next).catch((err) => console.error('Error saving sales counts cache:', err))
+					return next
+				})
+			}
+		},
+		[businessSlug, customerSlug, productSlug, cacheKey]
+	)
+
+	const setStatusCount = useCallback(
+		(status: string, response: SalesResponse) => {
+			const count = response.data.pagination?.totalDocs ?? response.data.docs.length
+			setCounts((prev) => {
+				const next = { ...prev, [status]: count }
+				setCacheItem(cacheKey, next).catch((err) => console.error('Error saving sales counts cache:', err))
+				return next
+			})
+		},
+		[cacheKey]
+	)
+
+	return { counts, refresh, setStatusCount, isLoading }
 }

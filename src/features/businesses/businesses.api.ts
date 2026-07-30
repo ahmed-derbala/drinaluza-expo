@@ -1,5 +1,5 @@
 import { getApiClient } from '../../core/api'
-import { setCacheItem } from '../../core/storage'
+import { setCacheItem } from '../../core/cache'
 import { BusinessesResponse, CreateBusinessRequest, CreateBusinessResponse, BusinessResponse, BusinessProductsResponse, BusinessCustomersResponse } from './businesses.interface'
 import { log } from '../../core/log'
 

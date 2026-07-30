@@ -1,6 +1,7 @@
 import { getApiClient } from '@/core/api'
 import { Platform } from 'react-native'
-import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths, setCacheItem } from '@/core/storage'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@/core/storage'
+import { setCacheItem } from '@/core/cache'
 import { log } from '@/core/log'
 import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
 

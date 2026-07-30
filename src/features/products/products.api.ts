@@ -1,5 +1,5 @@
 import { getApiClient } from '../../core/api'
-import { setCacheItem } from '../../core/storage'
+import { setCacheItem } from '../../core/cache'
 import { LocalizedName, ProductSpecs } from '../businesses/businesses.interface'
 import { ProductType, FileRef } from './products.type'
 

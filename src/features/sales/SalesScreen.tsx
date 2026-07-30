@@ -1,4 +1,4 @@
-import { useMemo, useCallback } from 'react'
+import { useMemo, useCallback, useEffect } from 'react'
 import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
@@ -64,27 +64,57 @@ export default function SalesScreen() {
 
 	const numColumns = width >= 1024 ? 2 : 1
 
-	const { counts: statusCounts, refresh: refreshCounts, isLoading: countsLoading } = useSalesCounts()
+	const {
+		counts: statusCounts,
+		refresh: refreshCounts,
+		setStatusCount,
+		isLoading: countsLoading
+	} = useSalesCounts({
+		businessSlug,
+		customerSlug,
+		productSlug
+	})
 
-	const { sales, totalCount, isInitialLoading, isRefreshing, isOffline, refresh, loadMore, loadingMore } = usePaginatedSales({
+	const { sales, response, totalCount, isInitialLoading, isRefreshing, isOffline, refresh, loadMore, loadingMore } = usePaginatedSales({
 		businessSlug,
 		customerSlug,
 		productSlug,
 		status: selectedStatus
 	})
 
-	const itemCount = statusCounts[selectedStatus] ?? 0
+	const itemCount = totalCount ?? statusCounts[selectedStatus] ?? 0
+
+	useEffect(() => {
+		if (!businessSlug || !response) return
+		if (selectedStatus === 'all') {
+			refreshCounts(response)
+		} else {
+			setStatusCount(selectedStatus, response)
+		}
+	}, [businessSlug, selectedStatus, response, refreshCounts, setStatusCount])
 
 	const handleRefresh = useCallback(async () => {
-		await refreshCounts(businessSlug, customerSlug, productSlug)
-		await refresh()
-	}, [businessSlug, customerSlug, productSlug, refresh, refreshCounts])
+		if (selectedStatus === 'all') {
+			const allData = await refresh()
+			if (allData) await refreshCounts(allData)
+		} else {
+			const statusData = await refresh()
+			if (statusData) setStatusCount(selectedStatus, statusData)
+		}
+	}, [selectedStatus, refresh, refreshCounts, setStatusCount])
 
 	useFocusEffect(
 		useCallback(() => {
-			refreshCounts(businessSlug, customerSlug, productSlug)
-			refresh()
-		}, [businessSlug, customerSlug, productSlug, refresh, refreshCounts])
+			if (selectedStatus === 'all') {
+				refresh().then((allData) => {
+					if (allData) refreshCounts(allData)
+				})
+			} else {
+				refresh().then((statusData) => {
+					if (statusData) setStatusCount(selectedStatus, statusData)
+				})
+			}
+		}, [selectedStatus, refresh, refreshCounts, setStatusCount])
 	)
 
 	const renderItem = useCallback(

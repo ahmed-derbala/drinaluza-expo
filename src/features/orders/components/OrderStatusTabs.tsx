@@ -65,14 +65,14 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 			>
 				{options.map((option) => {
 					const selected = value === option.value
-					const current = selected ? activeCount : counts?.[option.value]
+					const current = selected ? (activeCount ?? counts?.[option.value]) : counts?.[option.value]
 
-					if (selected && typeof current === 'number') {
+					if (typeof current === 'number') {
 						loadedCountsRef.current[option.value] = current
 					}
 
-					const count = loadedCountsRef.current[option.value] ?? current
-					const showCount = typeof count === 'number' && (count > 0 || selected || loadedCountsRef.current[option.value] !== undefined)
+					const count = typeof current === 'number' ? current : loadedCountsRef.current[option.value]
+					const showCount = typeof count === 'number'
 
 					return (
 						<Pressable
@@ -88,8 +88,11 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 							}}
 						>
 							<View style={[styles.tab, { borderBottomColor: selected ? colors.primary : 'transparent' }]}>
-								{option.iconName && <Ionicons name={option.iconName as any} size={16} color={selected ? colors.primary : colors.textSecondary} style={styles.icon} />}
-								{selected && loading && <ActivityIndicator size="small" color={colors.primary} style={styles.loader} />}
+								{selected && loading ? (
+									<ActivityIndicator size="small" color={selected ? colors.primary : colors.textSecondary} style={styles.icon} />
+								) : option.iconName ? (
+									<Ionicons name={option.iconName as any} size={16} color={selected ? colors.primary : colors.textSecondary} style={styles.icon} />
+								) : null}
 								<Text style={[styles.label, { color: selected ? colors.primary : colors.textSecondary }]} numberOfLines={1}>
 									{option.label}
 								</Text>
@@ -129,11 +132,6 @@ const styles = StyleSheet.create({
 		minHeight: 48
 	},
 	icon: {
-		marginRight: 6
-	},
-	loader: {
-		width: 16,
-		height: 16,
 		marginRight: 6
 	},
 	label: {

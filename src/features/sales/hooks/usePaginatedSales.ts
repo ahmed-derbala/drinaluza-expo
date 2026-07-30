@@ -66,6 +66,7 @@ export function usePaginatedSales({ businessSlug, customerSlug, productSlug, sta
 
 	return {
 		sales,
+		response,
 		totalCount,
 		isInitialLoading,
 		isRefreshing,
