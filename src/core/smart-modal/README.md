@@ -116,7 +116,6 @@ A two-action confirmation dialog with cancel and confirm buttons.
 | `buttons`             | `SmartModalButton[]`                                       | optional    | Footer action buttons                              |
 | `headerActions`       | `ReactNode`                                                | optional    | Extra actions on the right side of the header      |
 | `footer`              | `ReactNode`                                                | optional    | Custom footer. When provided, `buttons` is ignored |
-| `showCloseButton`     | `boolean`                                                  | `true`      | Show the header close button                       |
 | `closeOnOverlayPress` | `boolean`                                                  | `true`      | Close when the overlay is pressed                  |
 | `closeOnBackPress`    | `boolean`                                                  | `true`      | Close on Android hardware back button              |
 | `containerStyle`      | `ViewStyle`                                                | optional    | Overlay/container style overrides                  |

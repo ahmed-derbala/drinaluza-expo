@@ -1,9 +1,14 @@
 import { Stack, usePathname, Redirect, useRouter } from 'expo-router'
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, ActivityIndicator, Platform } from 'react-native'
-import { useUpdates, isVersionGreater } from '@/features/updates'
+import { View, ActivityIndicator, Platform, StyleSheet, TouchableOpacity } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
+import { useUpdates, isVersionGreater, UpdateCheckResult } from '@/features/updates'
 import { config } from '@/config'
+import { getItem, setItem } from '@/core/storage'
+import { translate } from '@/core/translation'
+import { SmartModal } from '@/core/smart-modal'
+import ModalButton from '@/core/smart-modal/ModalButton'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -53,12 +58,40 @@ import { SmartHeader } from '@/core/smart-header'
 // Module-level flag — survives component remounts (e.g. user switch)
 let startupCheckPerformed = false
 
+// Storage key for the "don't show again" preference of the web update modal
+const WEB_UPDATE_MODAL_DISMISSED_KEY = 'web_update_modal_dismissed'
+
+const updateModalStyles = StyleSheet.create({
+	footer: {
+		gap: 12
+	},
+	actionRow: {
+		flexDirection: 'row',
+		justifyContent: 'center',
+		gap: 16
+	},
+	iconButton: {
+		width: 56,
+		minWidth: 56,
+		flex: 0
+	},
+	checkboxRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		paddingVertical: 4,
+		gap: 8
+	}
+})
+
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList } = useUpdates()
 	const router = useRouter()
 	const pathname = usePathname()
 	const { user, loading } = useUser()
 	const { colors } = useTheme()
+	const [webUpdateModal, setWebUpdateModal] = useState<UpdateCheckResult | null>(null)
+	const [dontShowWebUpdateModalAgain, setDontShowWebUpdateModalAgain] = useState(false)
 
 	useEffect(() => {
 		if (startupCheckPerformed) return
@@ -67,6 +100,13 @@ function RootLayoutContent() {
 		const performStartupCheck = async () => {
 			try {
 				if (Platform.OS === 'web') {
+					const isDismissed = await getItem<boolean>(WEB_UPDATE_MODAL_DISMISSED_KEY)
+					if (isDismissed) return
+
+					const result = await checkForUpdates(false)
+					if (result) {
+						setWebUpdateModal(result)
+					}
 					return
 				}
 
@@ -92,6 +132,26 @@ function RootLayoutContent() {
 
 		performStartupCheck()
 	}, [checkForUpdates, refreshApkList, router])
+
+	const closeWebUpdateModal = async () => {
+		if (dontShowWebUpdateModalAgain) {
+			await setItem(WEB_UPDATE_MODAL_DISMISSED_KEY, true)
+		}
+		setWebUpdateModal(null)
+	}
+
+	const handleWebDownload = async () => {
+		if (webUpdateModal?.download_url && typeof document !== 'undefined') {
+			const link = document.createElement('a')
+			link.href = webUpdateModal.download_url
+			link.setAttribute('download', '')
+			link.style.display = 'none'
+			document.body.appendChild(link)
+			link.click()
+			document.body.removeChild(link)
+		}
+		await closeWebUpdateModal()
+	}
 
 	if (loading) {
 		return (
@@ -119,6 +179,30 @@ function RootLayoutContent() {
 
 	return (
 		<ErrorBoundary>
+			<SmartModal
+				visible={!!webUpdateModal}
+				onClose={closeWebUpdateModal}
+				icon="logo-android"
+				title={translate('download_app', 'Download App')}
+				message={webUpdateModal ? `drinaluza-${webUpdateModal.latest_version}.apk` : undefined}
+				footer={
+					<View style={updateModalStyles.footer}>
+						<View style={updateModalStyles.actionRow}>
+							<ModalButton icon="close-outline" variant="outlined" defaultColor={colors.error} onPress={closeWebUpdateModal} accessibilityLabel="Cancel" style={updateModalStyles.iconButton} />
+							<ModalButton icon="download-outline" variant="filled" defaultColor={colors.primary} onPress={handleWebDownload} accessibilityLabel="Download" style={updateModalStyles.iconButton} />
+						</View>
+						<TouchableOpacity
+							onPress={() => setDontShowWebUpdateModalAgain((prev) => !prev)}
+							style={updateModalStyles.checkboxRow}
+							accessibilityLabel={translate('dont_show_again', "Don't show again")}
+							accessibilityRole="checkbox"
+							accessibilityState={{ checked: dontShowWebUpdateModalAgain }}
+						>
+							<Ionicons name={dontShowWebUpdateModalAgain ? 'eye-off-outline' : 'eye-outline'} size={20} color={dontShowWebUpdateModalAgain ? colors.primary : colors.textSecondary} />
+						</TouchableOpacity>
+					</View>
+				}
+			/>
 			<Stack
 				screenOptions={{
 					contentStyle: {

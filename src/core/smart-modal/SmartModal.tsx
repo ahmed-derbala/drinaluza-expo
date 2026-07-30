@@ -28,7 +28,6 @@ export default function SmartModal({
 	buttons,
 	headerActions,
 	footer,
-	showCloseButton = true,
 	closeOnOverlayPress = true,
 	closeOnBackPress = true,
 	containerStyle,
@@ -87,7 +86,7 @@ export default function SmartModal({
 	}
 
 	const renderHeader = () => {
-		const hasHeader = title || subtitle || headerActions || showCloseButton || icon || status !== 'default'
+		const hasHeader = title || subtitle || headerActions || icon || status !== 'default'
 		if (!hasHeader) return null
 
 		return (
@@ -107,21 +106,7 @@ export default function SmartModal({
 						)}
 					</View>
 				</View>
-				<View style={styles.headerRight}>
-					{headerActions}
-					{showCloseButton && variant !== 'fullscreen' && (
-						<TouchableOpacity
-							onPress={onClose}
-							style={[styles.closeButton, { backgroundColor: colors.surfaceVariant }]}
-							hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-							accessibilityLabel="Close"
-							accessibilityRole="button"
-							testID={`${testID}-close`}
-						>
-							<Ionicons name="close" size={20} color={colors.text} />
-						</TouchableOpacity>
-					)}
-				</View>
+				<View style={styles.headerRight}>{headerActions}</View>
 			</View>
 		)
 	}
@@ -200,7 +185,7 @@ export default function SmartModal({
 	}
 
 	const getModalStyle = (): any => {
-		const baseStyle = { backgroundColor: colors.card }
+		const baseStyle = { backgroundColor: colors.card, borderWidth: 1, borderColor: '#FFFFFF' }
 
 		switch (variant) {
 			case 'centered':
@@ -397,13 +382,6 @@ const styles = StyleSheet.create({
 		fontWeight: '500',
 		marginTop: 4,
 		lineHeight: 20
-	},
-	closeButton: {
-		width: 36,
-		height: 36,
-		borderRadius: 18,
-		justifyContent: 'center',
-		alignItems: 'center'
 	},
 	content: {
 		paddingVertical: 4,

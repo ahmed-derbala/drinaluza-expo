@@ -119,10 +119,6 @@ export interface SmartModalProps {
 	 */
 	footer?: ReactNode
 	/**
-	 * Whether to show close button in header
-	 */
-	showCloseButton?: boolean
-	/**
 	 * Whether clicking overlay closes modal
 	 */
 	closeOnOverlayPress?: boolean
