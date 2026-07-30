@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useState } from 'react'
+import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { View, StyleSheet, ActivityIndicator } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, Stack, useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
@@ -72,19 +72,30 @@ export default function PurchasesScreen() {
 	const isDesktop = width >= 1024
 	const numColumns = isDesktop ? 3 : isTablet ? 2 : 1
 
-	const { counts: statusCounts, refresh: refreshCounts, isLoading: countsLoading } = usePurchaseCounts()
-	const { cart, cartGroups, loadCart, updateQuantity, removeItem, checkout, isCheckingOut } = useCart()
+	const { counts: statusCounts, refresh: refreshCounts, setStatusCount, isLoading: countsLoading } = usePurchaseCounts()
+	const { cart, cartGroups, loadCart, updateQuantity, removeItem, checkout, isCheckingOut, refreshCart, isRefreshing: isCartRefreshing } = useCart()
 
 	const {
 		data: purchasesResponse,
 		isInitialLoading,
-		isRefreshing,
+		isRefreshing: isPurchasesRefreshing,
 		isOffline,
 		refresh
 	} = usePurchasesByStatus({
 		status: selectedStatus,
 		skipInitialFetch: !isPurchaseStatus || !user
 	})
+
+	const isRefreshing = isPurchasesRefreshing || isCartRefreshing
+
+	useEffect(() => {
+		if (!user || !purchasesResponse) return
+		if (selectedStatus === 'all') {
+			refreshCounts(user, purchasesResponse)
+		} else if (selectedStatus !== 'cart') {
+			setStatusCount(selectedStatus, purchasesResponse)
+		}
+	}, [user, selectedStatus, purchasesResponse, refreshCounts, setStatusCount])
 
 	const purchaseItems = useMemo(() => {
 		if (!purchasesResponse?.data?.docs) return []
@@ -95,29 +106,77 @@ export default function PurchasesScreen() {
 		return selectedStatus === 'cart' ? cartGroups : purchaseItems
 	}, [selectedStatus, cartGroups, purchaseItems])
 
-	const itemCount = statusCounts[selectedStatus] ?? 0
+	// usePurchaseCounts' `cart` figure is read from AsyncStorage independently
+	// of useCart's in-memory `cart` state, so it goes stale after any local
+	// cart mutation (add/update/remove/checkout) until the next refresh.
+	// The in-memory `cart` array is always immediately accurate, so it's used
+	// to override the displayed cart count everywhere.
+	const displayCounts = useMemo<Record<string, number>>(() => ({ ...statusCounts, cart: cart.length }), [statusCounts, cart.length])
+
+	const itemCount = displayCounts[selectedStatus] ?? 0
 
 	const activeCount = useMemo(() => {
-		if (selectedStatus === 'cart') return statusCounts.cart
+		if (selectedStatus === 'cart') return cart.length
 		return purchasesResponse?.data?.pagination?.totalDocs
-	}, [selectedStatus, statusCounts.cart, purchasesResponse])
+	}, [selectedStatus, cart.length, purchasesResponse])
 
 	const handleRefresh = useCallback(async () => {
-		await refreshCounts(user)
-		await loadCart()
-		if (user && isPurchaseStatus) {
-			await refresh()
+		if (selectedStatus === 'cart') {
+			await refreshCart()
+			await loadCart()
+		} else if (selectedStatus === 'all') {
+			await loadCart()
+			if (user) {
+				const allData = await refresh()
+				await refreshCounts(user, allData)
+			} else {
+				await refreshCounts(user)
+			}
+		} else {
+			await loadCart()
+			if (user) {
+				const statusData = await refresh()
+				if (statusData) {
+					setStatusCount(selectedStatus, statusData)
+				}
+			}
 		}
-	}, [user, isPurchaseStatus, refreshCounts, loadCart, refresh])
+	}, [selectedStatus, refreshCart, loadCart, user, refreshCounts, setStatusCount, refresh])
+
+	// Keep the latest values in a ref so the focus-effect callback below can
+	// stay referentially stable. useFocusEffect re-invokes its callback
+	// whenever its identity changes, even while the screen stays focused —
+	// so if it depended on isPurchaseStatus/refresh directly, switching tabs
+	// (e.g. after checkout) would spuriously re-trigger it and cause
+	// duplicate API calls.
+	const focusStateRef = useRef({ user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh })
+	useEffect(() => {
+		focusStateRef.current = { user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh }
+	}, [user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh])
 
 	useFocusEffect(
 		useCallback(() => {
-			refreshCounts(user)
-			loadCart()
-			if (user && isPurchaseStatus) {
-				refresh()
+			const { user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh } = focusStateRef.current
+			if (selectedStatus === 'cart') {
+				loadCart()
+			} else if (selectedStatus === 'all') {
+				loadCart()
+				if (user) {
+					refresh().then((allData) => refreshCounts(user, allData))
+				} else {
+					refreshCounts(user)
+				}
+			} else {
+				loadCart()
+				if (user) {
+					refresh().then((statusData) => {
+						if (statusData) {
+							setStatusCount(selectedStatus, statusData)
+						}
+					})
+				}
 			}
-		}, [user, isPurchaseStatus, refreshCounts, loadCart, refresh])
+		}, [])
 	)
 
 	const executeCheckout = useCallback(
@@ -127,15 +186,13 @@ export default function PurchasesScreen() {
 				if (result.success) {
 					toast.show({ title: translate('success', 'Success'), message: translate('checkout_success', 'Order placed successfully!'), color: '#10B981' })
 					setSelectedStatus(ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION)
-					await refreshCounts(user)
-					if (user) await refresh()
 				}
 			} catch (err) {
 				console.error('Checkout failed:', err)
 				toast.show({ title: translate('error', 'Error'), message: translate('checkout_failed', 'Failed to place order'), color: '#EF4444' })
 			}
 		},
-		[checkout, refreshCounts, refresh, setSelectedStatus, translate, user]
+		[checkout, setSelectedStatus, translate]
 	)
 
 	const handleCheckout = useCallback(
@@ -163,8 +220,15 @@ export default function PurchasesScreen() {
 			showConfirm(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), async () => {
 				try {
 					await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
-					await refreshCounts(user)
-					await refresh()
+					if (selectedStatus === 'all') {
+						const allData = await refresh()
+						await refreshCounts(user, allData)
+					} else if (user) {
+						const statusData = await refresh()
+						if (statusData) {
+							setStatusCount(selectedStatus, statusData)
+						}
+					}
 					toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: '#10B981' })
 				} catch (err) {
 					console.error('Failed to cancel order:', err)
@@ -172,22 +236,29 @@ export default function PurchasesScreen() {
 				}
 			})
 		},
-		[refreshCounts, refresh, translate, user]
+		[refreshCounts, refresh, setStatusCount, translate, user, selectedStatus]
 	)
 
 	const handleMarkReceived = useCallback(
 		async (purchaseId: string) => {
 			try {
 				await updatePurchaseStatus({ purchaseId, status: 'received_by_customer' })
-				await refreshCounts(user)
-				await refresh()
+				if (selectedStatus === 'all') {
+					const allData = await refresh()
+					await refreshCounts(user, allData)
+				} else if (user) {
+					const statusData = await refresh()
+					if (statusData) {
+						setStatusCount(selectedStatus, statusData)
+					}
+				}
 				toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Order status updated successfully'), color: '#10B981' })
 			} catch (err) {
 				console.error('Failed to update order status:', err)
 				toast.show({ title: translate('error', 'Error'), message: translate('status_update_failed', 'Failed to update order status. Please try again.'), color: '#EF4444' })
 			}
 		},
-		[refreshCounts, refresh, translate, user]
+		[refreshCounts, refresh, setStatusCount, translate, user, selectedStatus]
 	)
 
 	const renderCartGroup = useCallback(
@@ -235,7 +306,7 @@ export default function PurchasesScreen() {
 						value={selectedStatus}
 						onChange={setSelectedStatus}
 						options={statusOptions}
-						counts={statusCounts}
+						counts={displayCounts}
 						activeCount={activeCount}
 						resetKey={user?._id ?? ''}
 						loading={isRefreshing || countsLoading || isCheckingOut}

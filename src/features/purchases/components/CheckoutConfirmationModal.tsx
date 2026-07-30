@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
@@ -7,6 +7,7 @@ import ModalButton from '@/core/smart-modal/ModalButton'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import { updateMyProfile } from '@/features/auth/auth.api'
+import { useMyProfile } from '@/features/profile/useMyProfile'
 import { ProfileSection } from '@/features/common/ProfileSection'
 import AddressForm from '@/features/common/AddressForm'
 import ContactForm from '@/features/common/ContactForm'
@@ -44,18 +45,32 @@ const buildInitialForm = (user: UserData | null): FormState => ({
 export default function CheckoutConfirmationModal({ visible, group, user, onClose, onComplete, refreshUser }: CheckoutConfirmationModalProps) {
 	const { colors } = useTheme()
 	const { translate } = useUser()
-	const [form, setForm] = useState<FormState>(() => buildInitialForm(user))
+	const { profile: cachedProfile, updateCache: updateProfileCache } = useMyProfile({ skipInitialFetch: true })
+	const profileSource = cachedProfile || user
+	const [form, setForm] = useState<FormState>(() => buildInitialForm(profileSource))
 	const [isSaving, setIsSaving] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [disableConfirmation, setDisableConfirmation] = useState(false)
+	const initialFormRef = useRef<FormState>(form)
 
 	useEffect(() => {
 		if (visible) {
-			setForm(buildInitialForm(user))
+			const initial = buildInitialForm(profileSource)
+			initialFormRef.current = initial
+			setForm(initial)
 			setError(null)
 			setDisableConfirmation(false)
 		}
-	}, [visible, user])
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [visible])
+
+	useEffect(() => {
+		if (visible && cachedProfile) {
+			const initial = buildInitialForm(cachedProfile)
+			initialFormRef.current = initial
+			setForm(initial)
+		}
+	}, [visible, cachedProfile])
 
 	const updateAddress = useCallback((address: Address) => {
 		setForm((prev) => ({ ...prev, address }))
@@ -71,7 +86,13 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 
 	const handleSave = useCallback(
 		async (disableConfirmation = false) => {
-			if (!user) return
+			if (!profileSource) return
+
+			const isDirty = JSON.stringify(form) !== JSON.stringify(initialFormRef.current)
+			if (!isDirty && !disableConfirmation) {
+				onComplete()
+				return
+			}
 
 			setIsSaving(true)
 			setError(null)
@@ -88,16 +109,19 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 
 				if (disableConfirmation) {
 					payload.settings = {
-						...user.settings,
+						...profileSource.settings,
 						purchases: {
-							...user.settings?.purchases,
+							...profileSource.settings?.purchases,
 							confirmation: { isEnabled: false }
 						}
 					}
 				}
 
-				await updateMyProfile(payload)
+				const result = await updateMyProfile(payload)
 				await refreshUser()
+				if (result?.data) {
+					await updateProfileCache(result.data)
+				}
 				onComplete()
 			} catch (err: any) {
 				console.error('Failed to save checkout confirmation profile:', err)
@@ -106,7 +130,7 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 				setIsSaving(false)
 			}
 		},
-		[user, form, onComplete, translate, refreshUser]
+		[profileSource, form, onComplete, translate, refreshUser, updateProfileCache]
 	)
 
 	const total = useMemo(() => {
@@ -117,7 +141,7 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 		<CenteredModal
 			visible={visible}
 			onClose={onClose}
-			title={translate('confirm_order', 'Confirm Order')}
+			title={translate('confirm_purchase', 'Confirm Purchase')}
 			subtitle={group ? `${group.items.length} ${group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')} · ${total.toFixed(2)} TND` : undefined}
 			icon="receipt-outline"
 			scrollable
@@ -146,7 +170,7 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 							disabled={isSaving}
 							loading={isSaving}
 							defaultColor={colors.primary}
-							accessibilityLabel={translate('confirm_order', 'Confirm Order')}
+							accessibilityLabel={translate('confirm_purchase', 'Confirm Purchase')}
 							style={styles.iconButton}
 						/>
 					</View>

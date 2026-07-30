@@ -6,7 +6,7 @@ import { log } from '@/core/log'
 const pendingFetches = new Map<string, Promise<unknown>>()
 
 // ── Global refresh & status registry for useCacheFirst hooks ─────────
-type RefreshCallback = () => Promise<void>
+type RefreshCallback = () => Promise<unknown>
 const activeRefreshers = new Set<RefreshCallback>()
 
 let activeRefreshingCount = 0
@@ -79,7 +79,7 @@ export interface UseCacheFirstResult<T> {
 	/** True when the currently displayed data came from cache and is past its TTL. */
 	isStale: boolean
 	/** Manually trigger a fresh fetch. */
-	refresh: () => Promise<void>
+	refresh: () => Promise<T | undefined>
 	/** Replace the cached entry immediately, e.g. after a local mutation. */
 	updateCache: (data: T) => Promise<boolean>
 	/** Remove the cached entry. */
@@ -135,10 +135,11 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 				if (data && isMountedRef.current) {
 					setFreshData(data)
 				}
+				return data
 			} catch {
 				// The original fetch failed; error state is handled by the initiator
+				return undefined
 			}
-			return
 		}
 
 		let resolve: (value: T | undefined) => void = () => {}
@@ -170,10 +171,12 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 				setIsRefreshing(false)
 			}
 		}
+
+		return result
 	}, [cacheKey, fetchFn, onError, onSuccess])
 
 	const refresh = useCallback(async () => {
-		await fetchFresh()
+		return await fetchFresh()
 	}, [fetchFresh])
 
 	const updateCache = useCallback(
@@ -232,18 +235,21 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		const previous = prevBackendStateRef.current
 		prevBackendStateRef.current = backendState
 
-		if (backendState === 'online' && previous !== 'online') {
+		if (!skipInitialFetch && backendState === 'online' && previous !== 'online') {
 			fetchFresh()
 		}
-	}, [backendState, fetchFresh])
+	}, [backendState, fetchFresh, skipInitialFetch])
 
-	// Register refresh callback globally
+	// Register refresh callback globally.
+	// Hooks that opt out of automatic fetching (skipInitialFetch) must not be
+	// swept up by unrelated global/manual refresh triggers either.
 	useEffect(() => {
+		if (skipInitialFetch) return
 		activeRefreshers.add(refresh)
 		return () => {
 			activeRefreshers.delete(refresh)
 		}
-	}, [refresh])
+	}, [refresh, skipInitialFetch])
 
 	// Synchronize refreshing state globally
 	useEffect(() => {

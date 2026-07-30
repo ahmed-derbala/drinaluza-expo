@@ -7,6 +7,7 @@ export const MY_PROFILE_CACHE_KEY = 'profile:me'
 
 export interface UseMyProfileOptions {
 	ttlMs?: number
+	skipInitialFetch?: boolean
 }
 
 export interface UseMyProfileResult {
@@ -15,7 +16,7 @@ export interface UseMyProfileResult {
 	isRefreshing: boolean
 	isOffline: boolean
 	isStale: boolean
-	refresh: () => Promise<void>
+	refresh: () => Promise<UserData | undefined>
 	updateCache: (profile: UserData) => Promise<boolean>
 	invalidateCache: () => Promise<boolean>
 }
@@ -29,7 +30,8 @@ export const useMyProfile = (options: UseMyProfileOptions = {}): UseMyProfileRes
 	const { data, isInitialLoading, isRefreshing, isOffline, isStale, refresh, updateCache, invalidateCache } = useCacheFirst<UserData>({
 		cacheKey: MY_PROFILE_CACHE_KEY,
 		fetchFn,
-		ttlMs: options.ttlMs
+		ttlMs: options.ttlMs,
+		skipInitialFetch: options.skipInitialFetch
 	})
 
 	return {

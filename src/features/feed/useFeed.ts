@@ -21,7 +21,7 @@ export interface UseFeedResult {
 	isRefreshing: boolean
 	isOffline: boolean
 	isStale: boolean
-	refresh: () => Promise<void>
+	refresh: () => Promise<NormalizedFeedResponse | undefined>
 }
 
 export const useFeed = (options: UseFeedOptions = {}): UseFeedResult => {
