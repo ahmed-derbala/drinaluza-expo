@@ -65,6 +65,22 @@ export default function ProfileScreen() {
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 	const styles = createStyles(colors, isDark, isWideScreen, width)
+
+	const renderLangFlag = (code: string | undefined, fallback: string = translate('not_set', 'Not set')) => {
+		const lang = LANGUAGES.find((l) => l.code === code)
+		if (!lang) return <Text style={{ color: colors.text }}>{fallback}</Text>
+		return (
+			<View style={styles.flagContainer}>
+				<Text style={styles.flagText}>{lang.flag}</Text>
+				{lang.icon && (
+					<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
+					</View>
+				)}
+			</View>
+		)
+	}
+
 	const { onScroll } = useScrollHandler()
 
 	const [userData, setUserData] = useState<UserData | null>(null)
@@ -91,9 +107,7 @@ export default function ProfileScreen() {
 			} else {
 				setCart([])
 			}
-		} catch (error) {
-			console.error('Failed to load cart:', error)
-		}
+		} catch (error) {}
 	}
 	const [editMode, setEditMode] = useState({
 		name: false,
@@ -122,9 +136,7 @@ export default function ProfileScreen() {
 			if (dashboardRes?.data?.kind === 'personal') {
 				setPersonalDashboard(dashboardRes.data)
 			}
-		} catch (dashboardErr) {
-			console.log('Failed to fetch personal dashboard', dashboardErr)
-		}
+		} catch (dashboardErr) {}
 	}, [])
 
 	// Sync cached profile into editable state as soon as it is available.
@@ -243,7 +255,6 @@ export default function ProfileScreen() {
 			showAlert(translate('success', 'Success'), translate('profile_updated', 'Profile updated successfully!'))
 			await refreshUser()
 		} catch (error: any) {
-			console.error('Error saving user data:', error)
 			const errorMessage = error.response?.data?.message || 'Failed to save profile changes'
 			showAlert('Error', errorMessage)
 		}
@@ -276,7 +287,6 @@ export default function ProfileScreen() {
 			try {
 				DocumentPicker = require('expo-document-picker')
 			} catch (e) {
-				console.error('expo-document-picker not installed:', e)
 				showAlert('Error', 'expo-document-picker is not installed. Install it to enable photo upload.')
 				return
 			}
@@ -286,19 +296,15 @@ export default function ProfileScreen() {
 				copyToCacheDirectory: true
 			})
 
-			console.log('Document picker result:', result)
-
 			if (result.canceled) {
 				return
 			}
 
 			const file = result.assets[0]
 			if (!file) {
-				console.error('No file selected')
 				return
 			}
 
-			console.log('Selected file:', file)
 			setUploadingPhoto(true)
 
 			const uploadResult = await uploadFile({
@@ -307,12 +313,8 @@ export default function ProfileScreen() {
 				type: file.mimeType || 'image/jpeg',
 				fileType: 'image',
 				fileObj: file, // Pass the actual file object for web
-				onProgress: (progress) => {
-					console.log(`Upload progress: ${progress}%`)
-				}
+				onProgress: (progress) => {}
 			})
-
-			console.log('Upload result:', uploadResult)
 
 			if (uploadResult.success && uploadResult.file) {
 				// Update the local state with the full file object returned by the upload API
@@ -342,20 +344,16 @@ export default function ProfileScreen() {
 					}
 					setEditMode((prev) => ({ ...prev, photo: false }))
 					await refreshUser()
-				} catch (e) {
-					console.error('Error saving profile photo:', e)
-				}
+				} catch (e) {}
 			} else if (uploadResult.success && uploadResult.fileUrl) {
 				// Fallback if file object is not available but url is
 				updatePhotoUrl(uploadResult.fileUrl)
 				showAlert('Success', 'Photo uploaded successfully!')
 				await saveUserData('photo')
 			} else {
-				console.error('Upload failed:', uploadResult.error)
 				showAlert('Error', uploadResult.error || 'Failed to upload photo')
 			}
 		} catch (error: any) {
-			console.error('Error uploading photo:', error)
 			showAlert('Error', error.message || 'Failed to upload photo')
 		} finally {
 			setUploadingPhoto(false)
@@ -459,7 +457,6 @@ export default function ProfileScreen() {
 			setShowBusinessModal(false)
 			showAlert(translate('success', 'Success'), 'Your business request has been sent successfully!')
 		} catch (error: any) {
-			console.error('Request business failed:', error)
 			const errorMessage = error.response?.data?.message || 'Failed to send business request'
 			showAlert(translate('error', 'Error'), errorMessage)
 		} finally {
@@ -1060,15 +1057,7 @@ export default function ProfileScreen() {
 													updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, app: lang.code } })
 												}}
 											>
-												<View style={styles.flagContainer}>
-													<Text style={styles.flagText}>{lang.flag}</Text>
-													{lang.icon && (
-														<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-															<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
-														</View>
-													)}
-												</View>
-												<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.app === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
+												{renderLangFlag(lang.code)}
 											</TouchableOpacity>
 										))}
 									</View>
@@ -1089,15 +1078,7 @@ export default function ProfileScreen() {
 													updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, content: lang.code } })
 												}}
 											>
-												<View style={styles.flagContainer}>
-													<Text style={styles.flagText}>{lang.flag}</Text>
-													{lang.icon && (
-														<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
-															<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
-														</View>
-													)}
-												</View>
-												<Text style={[styles.langLabel, { color: colors.text }, userData.settings?.lang?.content === lang.code && { color: colors.primary, fontWeight: '700' }]}>{lang.label}</Text>
+												{renderLangFlag(lang.code)}
 											</TouchableOpacity>
 										))}
 									</View>
@@ -1131,18 +1112,8 @@ export default function ProfileScreen() {
 							</>
 						) : (
 							<>
-								<InfoItem
-									label={translate('app_lang', 'App Language')}
-									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.app)?.label || translate('not_set', 'Not set')}
-									icon="globe"
-									iconColor={colors.primary}
-								/>
-								<InfoItem
-									label={translate('content_lang', 'Content Language')}
-									value={LANGUAGES.find((l) => l.code === userData.settings?.lang?.content)?.label || translate('not_set', 'Not set')}
-									icon="language"
-									iconColor={colors.primary}
-								/>
+								<InfoItem label={translate('app_lang', 'App Language')} value={renderLangFlag(userData.settings?.lang?.app)} icon="globe" iconColor={colors.primary} />
+								<InfoItem label={translate('content_lang', 'Content Language')} value={renderLangFlag(userData.settings?.lang?.content)} icon="language" iconColor={colors.primary} />
 								<InfoItem
 									label={translate('purchase_confirmation', 'Purchase Confirmation')}
 									value={userData.settings?.purchases?.confirmation?.isEnabled !== false ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}
@@ -1750,14 +1721,13 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderColor: 'rgba(0,0,0,0.05)'
 		},
 		langOption: {
-			flexDirection: 'row',
+			justifyContent: 'center',
 			alignItems: 'center',
 			padding: 12,
-			paddingRight: 16,
-			borderRadius: 12,
+			borderRadius: 16,
 			borderWidth: 2,
-			gap: 12,
-			minWidth: 140
+			width: 64,
+			height: 64
 		},
 		flagContainer: {
 			position: 'relative',

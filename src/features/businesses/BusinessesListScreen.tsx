@@ -619,7 +619,7 @@ export default function BusinessesListScreen() {
 		[numColumns, cardWidth, imageHeight, showExtended, isExtraSmall, fontSize, subtitleFontSize, smallFontSize, gap]
 	)
 
-	const renderEmpty = () => {
+	const renderEmpty = useCallback(() => {
 		if (isOffline) {
 			return (
 				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
@@ -636,7 +636,7 @@ export default function BusinessesListScreen() {
 				<Text style={styles.emptyText as TextStyle}>{translate('check_back_later_businesses', 'Check back later for new businesses')}</Text>
 			</View>
 		)
-	}
+	}, [isOffline, isExtraSmall, colors, translate])
 
 	// Handle loading state
 	if (isInitialLoading) {
@@ -673,6 +673,7 @@ export default function BusinessesListScreen() {
 				data={businesses}
 				renderItem={renderBusinessCard}
 				keyExtractor={(item: Business) => item._id}
+				estimatedItemSize={250}
 				contentContainerStyle={[
 					styles.listContent as ViewStyle,
 					{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding },

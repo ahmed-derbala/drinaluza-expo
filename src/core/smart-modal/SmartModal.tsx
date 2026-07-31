@@ -9,7 +9,7 @@ import type { SmartModalProps } from './types'
 
 const ModalBackdrop = Platform.OS === 'web' ? (View as any) : View
 
-const ICON_SIZE = 28
+const ICON_SIZE = 24
 const DEFAULT_MAX_WIDTH = 420
 const BOTTOM_SHEET_MAX_HEIGHT_RATIO = 0.88
 
@@ -134,7 +134,7 @@ export default function SmartModal({
 
 		if (scrollDirection === 'horizontal') {
 			return (
-				<ScrollView horizontal showsHorizontalScrollIndicator style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} testID={`${testID}-content`}>
+				<ScrollView horizontal showsHorizontalScrollIndicator style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} removeClippedSubviews testID={`${testID}-content`}>
 					{body}
 				</ScrollView>
 			)
@@ -142,8 +142,15 @@ export default function SmartModal({
 
 		if (scrollDirection === 'both') {
 			return (
-				<ScrollView style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator nestedScrollEnabled testID={`${testID}-content`}>
-					<ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.horizontalScrollContainer} nestedScrollEnabled>
+				<ScrollView
+					style={[styles.content, contentStyle]}
+					contentContainerStyle={styles.scrollContent}
+					showsVerticalScrollIndicator
+					nestedScrollEnabled
+					removeClippedSubviews
+					testID={`${testID}-content`}
+				>
+					<ScrollView horizontal showsHorizontalScrollIndicator contentContainerStyle={styles.horizontalScrollContainer} nestedScrollEnabled removeClippedSubviews>
 						{body}
 					</ScrollView>
 				</ScrollView>
@@ -151,7 +158,7 @@ export default function SmartModal({
 		}
 
 		return (
-			<ScrollView style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator testID={`${testID}-content`}>
+			<ScrollView style={[styles.content, contentStyle]} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator removeClippedSubviews testID={`${testID}-content`}>
 				{body}
 			</ScrollView>
 		)
@@ -195,7 +202,7 @@ export default function SmartModal({
 					maxWidth: Math.min(maxWidth, width - 32),
 					alignSelf: 'center',
 					borderRadius: 24,
-					padding: isWideScreen ? 28 : 22,
+					padding: isWideScreen ? 16 : 12,
 					maxHeight: height * 0.88,
 					...createShadow({ offsetY: 16, opacity: 0.18, radius: 32, elevation: 12 })
 				}
@@ -206,9 +213,9 @@ export default function SmartModal({
 					alignSelf: 'flex-end',
 					borderTopLeftRadius: 24,
 					borderTopRightRadius: 24,
-					paddingTop: 12,
-					paddingBottom: isWideScreen ? 28 : 22,
-					paddingHorizontal: isWideScreen ? 28 : 22,
+					paddingTop: 4,
+					paddingBottom: isWideScreen ? 16 : 12,
+					paddingHorizontal: isWideScreen ? 16 : 12,
 					maxHeight: height * BOTTOM_SHEET_MAX_HEIGHT_RATIO,
 					...createShadow({ offsetY: -6, opacity: 0.18, radius: 20, elevation: 10 })
 				}
@@ -217,9 +224,9 @@ export default function SmartModal({
 					...baseStyle,
 					width: '100%',
 					height: '100%',
-					paddingTop: isWideScreen ? 24 : 16,
-					paddingBottom: isWideScreen ? 28 : 20,
-					paddingHorizontal: isWideScreen ? 28 : 20
+					paddingTop: isWideScreen ? 14 : 10,
+					paddingBottom: isWideScreen ? 16 : 12,
+					paddingHorizontal: isWideScreen ? 16 : 12
 				}
 			default:
 				return baseStyle
@@ -249,7 +256,7 @@ export default function SmartModal({
 	}
 
 	const renderModalBody = () => {
-		const body = (
+		return (
 			<View
 				style={[styles.modalCard, getModalStyle(), modalStyle]}
 				accessible={accessible}
@@ -265,16 +272,6 @@ export default function SmartModal({
 				{renderFooter()}
 			</View>
 		)
-
-		if (variant === 'centered' && Platform.OS === 'ios') {
-			return (
-				<KeyboardAvoidingView behavior="padding" style={styles.keyboardAvoiding} keyboardVerticalOffset={24}>
-					{body}
-				</KeyboardAvoidingView>
-			)
-		}
-
-		return body
 	}
 
 	if (!visible) {
@@ -285,7 +282,9 @@ export default function SmartModal({
 		return (
 			<Modal visible={visible} animationType="none" transparent={false} onRequestClose={onClose} testID={testID}>
 				<ModalBackdrop style={[styles.fullscreenContainer, { backgroundColor: colors.background }]} dataSet={{ smartModal: 'true' }}>
-					{renderModalBody()}
+					<KeyboardAvoidingView style={styles.fullscreenContainer} behavior="padding" keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}>
+						{renderModalBody()}
+					</KeyboardAvoidingView>
 				</ModalBackdrop>
 			</Modal>
 		)
@@ -295,7 +294,13 @@ export default function SmartModal({
 		<Modal visible={visible} animationType="none" transparent onRequestClose={onClose} testID={testID}>
 			<ModalBackdrop style={[styles.overlay, { backgroundColor: colors.modalOverlay }, getContainerStyle(), containerStyle]} dataSet={{ smartModal: 'true' }}>
 				<Pressable style={styles.pressArea} onPress={handleOverlayPress} accessible={false} />
-				{renderModalBody()}
+				<KeyboardAvoidingView
+					style={[styles.keyboardAvoiding, variant === 'centered' && styles.keyboardAvoidingPadded, getContainerStyle()]}
+					behavior="padding"
+					keyboardVerticalOffset={Platform.OS === 'ios' ? 24 : 0}
+				>
+					{renderModalBody()}
+				</KeyboardAvoidingView>
 			</ModalBackdrop>
 		</Modal>
 	)
@@ -317,19 +322,21 @@ const styles = StyleSheet.create({
 		flex: 1
 	},
 	keyboardAvoiding: {
+		flex: 1,
 		width: '100%',
-		justifyContent: 'center',
-		alignItems: 'center',
-		padding: 16,
 		zIndex: 1
+	},
+	keyboardAvoidingPadded: {
+		padding: 8
 	},
 	modalCard: {
 		width: '100%',
+		flexShrink: 1,
 		zIndex: 1
 	},
 	dragHandleContainer: {
 		alignItems: 'center',
-		paddingVertical: 8
+		paddingVertical: 4
 	},
 	dragHandle: {
 		width: 40,
@@ -340,16 +347,16 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'flex-start',
-		paddingBottom: 16,
+		paddingBottom: 4,
 		borderBottomWidth: StyleSheet.hairlineWidth,
-		marginBottom: 16,
-		gap: 12
+		marginBottom: 4,
+		gap: 8
 	},
 	headerLeft: {
 		flex: 1,
 		flexDirection: 'row',
 		alignItems: 'flex-start',
-		gap: 14
+		gap: 10
 	},
 	headerTextColumn: {
 		flex: 1,
@@ -366,25 +373,25 @@ const styles = StyleSheet.create({
 		alignItems: 'center'
 	},
 	iconContainer: {
-		width: 48,
-		height: 48,
-		borderRadius: 14,
+		width: 40,
+		height: 40,
+		borderRadius: 12,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	title: {
 		fontSize: 20,
 		fontWeight: '700',
-		lineHeight: 26
+		lineHeight: 24
 	},
 	subtitle: {
 		fontSize: 14,
 		fontWeight: '500',
-		marginTop: 4,
+		marginTop: 2,
 		lineHeight: 20
 	},
 	content: {
-		paddingVertical: 4,
+		flexShrink: 1,
 		minWidth: '100%'
 	},
 	scrollContent: {
@@ -399,21 +406,21 @@ const styles = StyleSheet.create({
 		fontWeight: '400',
 		lineHeight: 22,
 		textAlign: 'left',
-		marginBottom: 12
+		marginBottom: 4
 	},
 	footer: {
-		paddingTop: 18,
+		paddingTop: 4,
 		borderTopWidth: StyleSheet.hairlineWidth,
 		marginTop: 'auto'
 	},
 	buttonRow: {
 		flexDirection: 'column',
-		gap: 12,
+		gap: 8,
 		width: '100%'
 	},
 	buttonRowWide: {
 		flexDirection: 'row',
 		justifyContent: 'flex-end',
-		gap: 12
+		gap: 10
 	}
 })

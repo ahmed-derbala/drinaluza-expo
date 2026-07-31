@@ -2,7 +2,8 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, TextInput, Pressable, ActivityIndicator, Switch, ScrollView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { FlashList } from '@shopify/flash-list'
+import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
+const FlashList = ShopifyFlashList as any
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -110,174 +111,180 @@ export default function BusinessDashboardProductsScreen() {
 	}, [searchText, products, activeFilter, localize])
 
 	// Toggle active/inactive state handler
-	const handleToggleActive = async (product: Product, currentActive: boolean) => {
-		const newActive = !currentActive
-		const productSlugVal = product.slug
+	const handleToggleActive = useCallback(
+		async (product: Product, currentActive: boolean) => {
+			const newActive = !currentActive
+			const productSlugVal = product.slug
 
-		// Set updating state
-		setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: true }))
+			// Set updating state
+			setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: true }))
 
-		try {
-			await updateProduct(productSlugVal, {
-				state: { code: newActive ? 'active' : 'suspended' }
-			})
+			try {
+				await updateProduct(productSlugVal, {
+					state: { code: newActive ? 'active' : 'suspended' }
+				})
 
-			// Locally update cache
-			if (response) {
-				const updatedDocs = response.data.docs.map((p) => (p.slug === productSlugVal ? { ...p, state: { ...p.state, code: newActive ? 'active' : 'suspended' }, isActive: newActive } : p))
-				updateCache({ ...response, data: { ...response.data, docs: updatedDocs } })
+				// Locally update cache
+				if (response) {
+					const updatedDocs = response.data.docs.map((p) => (p.slug === productSlugVal ? { ...p, state: { ...p.state, code: newActive ? 'active' : 'suspended' }, isActive: newActive } : p))
+					updateCache({ ...response, data: { ...response.data, docs: updatedDocs } })
+				}
+
+				toast.show({
+					title: translate('success', 'Success'),
+					message: `${localize(product.name)} ${newActive ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
+					color: '#10B981'
+				})
+			} catch (err: any) {
+				toast.show({
+					title: translate('error', 'Error'),
+					message: err.message || translate('failed_to_update_status', 'Failed to update status'),
+					color: '#EF4444'
+				})
+			} finally {
+				setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: false }))
 			}
-
-			toast.show({
-				title: translate('success', 'Success'),
-				message: `${localize(product.name)} ${newActive ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
-				color: '#10B981'
-			})
-		} catch (err: any) {
-			toast.show({
-				title: translate('error', 'Error'),
-				message: err.message || translate('failed_to_update_status', 'Failed to update status'),
-				color: '#EF4444'
-			})
-		} finally {
-			setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: false }))
-		}
-	}
+		},
+		[response, updateCache, localize, translate]
+	)
 
 	// ─── Render Card Component ──────────────────────────────────────────────────
-	const renderProductCard = ({ item }: { item: Product }) => {
-		const isCurrentlyActive = item.state ? item.state.code === 'active' : item.isActive !== false
-		const stockQty = item.stock?.quantity || 0
-		const minThreshold = item.stock?.minThreshold || 5
-		const isOutOfStock = stockQty === 0
-		const isLowStock = stockQty > 0 && stockQty <= minThreshold
+	const renderProductCard = useCallback(
+		({ item }: { item: Product }) => {
+			const isCurrentlyActive = item.state ? item.state.code === 'active' : item.isActive !== false
+			const stockQty = item.stock?.quantity || 0
+			const minThreshold = item.stock?.minThreshold || 5
+			const isOutOfStock = stockQty === 0
+			const isLowStock = stockQty > 0 && stockQty <= minThreshold
 
-		const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
-		const stockTextLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
+			const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
+			const stockTextLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 
-		const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
-		// @ts-ignore
-		const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
-		const isUpdating = updatingSlugs[item.slug] || false
+			const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
+			// @ts-ignore
+			const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
+			const isUpdating = updatingSlugs[item.slug] || false
 
-		return (
-			<TouchableOpacity
-				style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
-				onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
-				activeOpacity={0.85}
-			>
-				{isUpdating && (
-					<View style={cardStyles.updatingOverlay}>
-						<ActivityIndicator size="small" color={colors.primary} />
-					</View>
-				)}
+			return (
+				<TouchableOpacity
+					style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+					onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
+					activeOpacity={0.85}
+				>
+					{isUpdating && (
+						<View style={cardStyles.updatingOverlay}>
+							<ActivityIndicator size="small" color={colors.primary} />
+						</View>
+					)}
 
-				<View style={cardStyles.mainRow}>
-					{/* Thumbnail */}
-					<View style={cardStyles.imageContainer}>
-						<SmartImage source={imageUrl} style={cardStyles.image} resizeMode="cover" entityType="product" />
-					</View>
-
-					{/* Center info */}
-					<View style={cardStyles.details}>
-						<Text style={[cardStyles.name, { color: colors.text }]} numberOfLines={2}>
-							{localize(item.name)}
-						</Text>
-
-						<View style={cardStyles.priceRow}>
-							<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
-							<Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
+					<View style={cardStyles.mainRow}>
+						{/* Thumbnail */}
+						<View style={cardStyles.imageContainer}>
+							<SmartImage source={imageUrl} style={cardStyles.image} resizeMode="cover" entityType="product" />
 						</View>
 
-						{/* Specifications (Caliber & Origin) */}
-						{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest || item.specs?.gear) && (
-							<View style={cardStyles.specsCardRow}>
-								{item.specs?.caliber ? (
-									<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-										<View style={{ justifyContent: 'center', alignItems: 'center' }}>
-											<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
-											<Text
-												style={{
-													position: 'absolute',
-													fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
-													fontWeight: 'bold',
-													color: '#ffffff',
-													textAlign: 'center',
-													includeFontPadding: false,
-													textAlignVertical: 'center'
-												}}
-											>
-												{item.specs.caliber}
-											</Text>
-										</View>
-										<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber as any)}</Text>
-									</View>
-								) : null}
-								{item.specs?.harvest ? (
-									<View style={[cardStyles.harvestChip, { backgroundColor: colors.success + '15' }]}>
-										<Ionicons name={getHarvestIcon(item.specs?.harvest)} size={12} color={colors.success} />
-										<Text style={[cardStyles.harvestChipText, { color: colors.success }]}>{getHarvestLabel(item.specs.harvest)}</Text>
-									</View>
-								) : null}
-								{item.specs?.gear ? (
-									<View style={[cardStyles.harvestChip, { backgroundColor: colors.primary + '15' }]}>
-										<GearIcon type={item.specs.gear} size={12} color={colors.primary} />
-										<Text style={[cardStyles.harvestChipText, { color: colors.primary }]}>{getGearLabel(item.specs.gear)}</Text>
-									</View>
-								) : null}
-								{item.specs?.origin?.city ? (
-									<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)', borderColor: colors.borderLight }]}>
-										<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-										<Text style={[cardStyles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
-									</View>
-								) : null}
-							</View>
-						)}
-
-						{/* Stock status pill */}
-						<View style={[cardStyles.stockPill, { backgroundColor: stockColor + '15', borderColor: stockColor + '30' }]}>
-							<View style={[cardStyles.stockDot, { backgroundColor: stockColor }]} />
-							<Text style={[cardStyles.stockLabel, { color: stockColor }]}>
-								{stockTextLabel} ({stockQty})
+						{/* Center info */}
+						<View style={cardStyles.details}>
+							<Text style={[cardStyles.name, { color: colors.text }]} numberOfLines={2}>
+								{localize(item.name)}
 							</Text>
+
+							<View style={cardStyles.priceRow}>
+								<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
+								<Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
+							</View>
+
+							{/* Specifications (Caliber & Origin) */}
+							{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest || item.specs?.gear) && (
+								<View style={cardStyles.specsCardRow}>
+									{item.specs?.caliber ? (
+										<View style={[cardStyles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
+											<View style={{ justifyContent: 'center', alignItems: 'center' }}>
+												<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
+												<Text
+													style={{
+														position: 'absolute',
+														fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
+														fontWeight: 'bold',
+														color: '#ffffff',
+														textAlign: 'center',
+														includeFontPadding: false,
+														textAlignVertical: 'center'
+													}}
+												>
+													{item.specs.caliber}
+												</Text>
+											</View>
+											<Text style={[cardStyles.caliberChipText, { color: colors.primary }]}>{getCaliberLabel(item.specs.caliber as any)}</Text>
+										</View>
+									) : null}
+									{item.specs?.harvest ? (
+										<View style={[cardStyles.harvestChip, { backgroundColor: colors.success + '15' }]}>
+											<Ionicons name={getHarvestIcon(item.specs?.harvest)} size={12} color={colors.success} />
+											<Text style={[cardStyles.harvestChipText, { color: colors.success }]}>{getHarvestLabel(item.specs.harvest)}</Text>
+										</View>
+									) : null}
+									{item.specs?.gear ? (
+										<View style={[cardStyles.harvestChip, { backgroundColor: colors.primary + '15' }]}>
+											<GearIcon type={item.specs.gear} size={12} color={colors.primary} />
+											<Text style={[cardStyles.harvestChipText, { color: colors.primary }]}>{getGearLabel(item.specs.gear)}</Text>
+										</View>
+									) : null}
+									{item.specs?.origin?.city ? (
+										<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)', borderColor: colors.borderLight }]}>
+											<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
+											<Text style={[cardStyles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
+										</View>
+									) : null}
+								</View>
+							)}
+
+							{/* Stock status pill */}
+							<View style={[cardStyles.stockPill, { backgroundColor: stockColor + '15', borderColor: stockColor + '30' }]}>
+								<View style={[cardStyles.stockDot, { backgroundColor: stockColor }]} />
+								<Text style={[cardStyles.stockLabel, { color: stockColor }]}>
+									{stockTextLabel} ({stockQty})
+								</Text>
+							</View>
+						</View>
+
+						{/* Right section: Switch at top, Sales/QR icons at bottom */}
+						<View style={cardStyles.rightColumn}>
+							<View style={cardStyles.switchWrapper}>
+								<Switch
+									value={isCurrentlyActive}
+									onValueChange={() => handleToggleActive(item, isCurrentlyActive)}
+									disabled={isUpdating}
+									trackColor={{ false: colors.borderLight, true: colors.primary + '50' }}
+									thumbColor={isCurrentlyActive ? colors.primary : colors.textTertiary}
+								/>
+							</View>
+							<View style={cardStyles.iconActionsRow}>
+								<TouchableOpacity
+									style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+									onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
+									activeOpacity={0.7}
+									accessibilityLabel={translate('sales_reports', 'Sales')}
+								>
+									<Ionicons name="trending-up-outline" size={16} color={colors.textSecondary} />
+								</TouchableOpacity>
+
+								<TouchableOpacity
+									style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+									onPress={() => setSelectedProductForQR(item)}
+									activeOpacity={0.7}
+									accessibilityLabel={translate('qr_code', 'QR Code')}
+								>
+									<Ionicons name="qr-code-outline" size={16} color={colors.textSecondary} />
+								</TouchableOpacity>
+							</View>
 						</View>
 					</View>
-
-					{/* Right section: Switch at top, Sales/QR icons at bottom */}
-					<View style={cardStyles.rightColumn}>
-						<View style={cardStyles.switchWrapper}>
-							<Switch
-								value={isCurrentlyActive}
-								onValueChange={() => handleToggleActive(item, isCurrentlyActive)}
-								disabled={isUpdating}
-								trackColor={{ false: colors.borderLight, true: colors.primary + '50' }}
-								thumbColor={isCurrentlyActive ? colors.primary : colors.textTertiary}
-							/>
-						</View>
-						<View style={cardStyles.iconActionsRow}>
-							<TouchableOpacity
-								style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-								onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
-								activeOpacity={0.7}
-								accessibilityLabel={translate('sales_reports', 'Sales')}
-							>
-								<Ionicons name="trending-up-outline" size={16} color={colors.textSecondary} />
-							</TouchableOpacity>
-
-							<TouchableOpacity
-								style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
-								onPress={() => setSelectedProductForQR(item)}
-								activeOpacity={0.7}
-								accessibilityLabel={translate('qr_code', 'QR Code')}
-							>
-								<Ionicons name="qr-code-outline" size={16} color={colors.textSecondary} />
-							</TouchableOpacity>
-						</View>
-					</View>
-				</View>
-			</TouchableOpacity>
-		)
-	}
+				</TouchableOpacity>
+			)
+		},
+		[businessSlug, colors, currency, formatPrice, handleToggleActive, localize, router, setSelectedProductForQR, translate, updatingSlugs]
+	)
 
 	// ─── Render Skeleton Loader Component ─────────────────────────────────────────
 	const renderSkeleton = () => {
@@ -479,7 +486,14 @@ export default function BusinessDashboardProductsScreen() {
 							</Text>
 						</View>
 					) : (
-						<FlashList data={filteredProducts} renderItem={renderProductCard} numColumns={numColumns} keyExtractor={(item) => item._id} contentContainerStyle={s.listScrollContent} />
+						<FlashList
+							data={filteredProducts}
+							renderItem={renderProductCard}
+							numColumns={numColumns}
+							keyExtractor={(item: Product) => item._id}
+							estimatedItemSize={220}
+							contentContainerStyle={s.listScrollContent}
+						/>
 					)}
 				</View>
 			</SmartHeader.ScrollView>

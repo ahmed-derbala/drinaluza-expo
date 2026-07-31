@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react'
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { ConnectionService, BackendState } from './ConnectionService'
 
 interface BackendConnectionContextType {
@@ -25,12 +25,15 @@ export const BackendConnectionProvider: React.FC<{ children: React.ReactNode }> 
 		return unsubscribe
 	}, [])
 
-	const value = {
-		backendState,
-		isOnline: backendState === 'online',
-		isConnecting: backendState === 'connecting',
-		isOffline: backendState === 'offline'
-	}
+	const value = useMemo(
+		() => ({
+			backendState,
+			isOnline: backendState === 'online',
+			isConnecting: backendState === 'connecting',
+			isOffline: backendState === 'offline'
+		}),
+		[backendState]
+	)
 
 	return <BackendConnectionContext.Provider value={value}>{children}</BackendConnectionContext.Provider>
 }

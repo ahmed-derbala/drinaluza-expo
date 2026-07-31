@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
 import { getItem, setItem } from '@/core/storage'
 import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
 import { UserData } from '../../features/profile/profile.interface'
@@ -112,9 +112,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 		loadUser()
 	}, [loadUser])
 
-	const refreshUser = async () => {
+	const refreshUser = useCallback(async () => {
 		await loadUser()
-	}
+	}, [loadUser])
 
 	// Derived settings - prioritize user profile, then guest settings, then defaults
 	const appLang = user?.settings?.lang?.app || guestSettings.appLang
@@ -164,24 +164,23 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 		[currency]
 	)
 
-	return (
-		<UserContext.Provider
-			value={{
-				user,
-				loading,
-				refreshUser,
-				appLang,
-				contentLang,
-				currency,
-				localize,
-				translate,
-				formatPrice,
-				setAppLang,
-				setContentLang,
-				setCurrency
-			}}
-		>
-			{children}
-		</UserContext.Provider>
+	const value = useMemo(
+		() => ({
+			user,
+			loading,
+			refreshUser,
+			appLang,
+			contentLang,
+			currency,
+			localize,
+			translate,
+			formatPrice,
+			setAppLang,
+			setContentLang,
+			setCurrency
+		}),
+		[user, loading, refreshUser, appLang, contentLang, currency, localize, translate, formatPrice, setAppLang, setContentLang, setCurrency]
 	)
+
+	return <UserContext.Provider value={value}>{children}</UserContext.Provider>
 }

@@ -95,14 +95,14 @@ export default function ModalButton({
 
 const styles = StyleSheet.create({
 	button: {
-		borderRadius: 12,
-		minHeight: 48,
+		borderRadius: 10,
+		minHeight: 44,
 		justifyContent: 'center',
-		paddingHorizontal: 20,
+		paddingHorizontal: 16,
 		flex: 1
 	},
 	iconOnly: {
-		minWidth: 48,
+		minWidth: 44,
 		paddingHorizontal: 0
 	},
 	disabled: {
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
-		gap: 8
+		gap: 6
 	},
 	innerReversed: {
 		flexDirection: 'row-reverse'

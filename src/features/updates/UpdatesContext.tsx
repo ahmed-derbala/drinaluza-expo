@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Platform, Alert } from 'react-native'
+import { Platform, Alert, AppState, type AppStateStatus } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import { config } from '@/config'
 import { log } from '@/core/log'
@@ -82,6 +82,12 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const resumeDataRef = useRef<string | null>(null)
 	const isPausingRef = useRef(false)
 	const isCancellingRef = useRef(false)
+	const isAutoPausedRef = useRef(false)
+	const isDownloadingRef = useRef(isDownloading)
+	const isPausedRef = useRef(isPaused)
+	const latestReleaseRef = useRef(latestRelease)
+	const pauseDownloadRef = useRef<() => Promise<void>>(async () => {})
+	const resumeDownloadRef = useRef<() => Promise<string | null>>(async () => null)
 
 	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
@@ -412,6 +418,35 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		}
 	}, [latestRelease, refreshApkList, installApk])
 
+	// Sync refs for AppState handler
+	useEffect(() => {
+		isDownloadingRef.current = isDownloading
+		isPausedRef.current = isPaused
+		latestReleaseRef.current = latestRelease
+		pauseDownloadRef.current = pauseDownload
+		resumeDownloadRef.current = resumeDownload
+	}, [isDownloading, isPaused, latestRelease, pauseDownload, resumeDownload])
+
+	// Pause download when the app goes to background, resume when it comes back to foreground
+	useEffect(() => {
+		const handleAppStateChange = (nextAppState: AppStateStatus) => {
+			if (nextAppState === 'active') {
+				if (isAutoPausedRef.current && !isDownloadingRef.current && isPausedRef.current && resumeDataRef.current && latestReleaseRef.current) {
+					resumeDownloadRef.current()
+				}
+				isAutoPausedRef.current = false
+			} else {
+				if (!isAutoPausedRef.current && isDownloadingRef.current && !isPausedRef.current) {
+					isAutoPausedRef.current = true
+					pauseDownloadRef.current()
+				}
+			}
+		}
+
+		const subscription = AppState.addEventListener('change', handleAppStateChange)
+		return () => subscription.remove()
+	}, [])
+
 	// Cancel Download completely
 	const cancelDownload = useCallback(async () => {
 		isCancellingRef.current = true
@@ -463,7 +498,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			const validApks: { filename: string; version: string }[] = []
 
 			const downloadStatus = await getItem<string>('download_status')
-			const isPausedStatus = downloadStatus === 'paused'
+			const savedResumeData = await getItem<any>('download_resume_data')
+			const isPausedStatus = downloadStatus === 'paused' || savedResumeData !== null
 
 			if (!isPausedStatus) {
 				await removeItem('download_resume_data')

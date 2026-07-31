@@ -387,7 +387,6 @@ export default function BusinessDashboardProductDetailScreen() {
 				toast.show({ title: translate('success', 'Success'), message: translate('photo_uploaded', 'Photos uploaded successfully!'), color: colors.success })
 			}
 		} catch (error: any) {
-			console.error('Error uploading photo:', error)
 			toast.show({ title: translate('error', 'Error'), message: error.message || translate('failed_to_upload', 'Failed to upload photo'), color: colors.error })
 		} finally {
 			setUploadingPhoto(false)
@@ -481,7 +480,6 @@ export default function BusinessDashboardProductDetailScreen() {
 	const productState = product.state?.code || 'active'
 	const isProductActive = productState === 'active'
 	const canEditProduct = viewer ? viewer.canEdit === true : true
-	console.log('viewer:', viewer, 'canEditProduct:', canEditProduct)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>

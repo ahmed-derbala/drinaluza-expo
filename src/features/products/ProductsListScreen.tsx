@@ -140,6 +140,34 @@ export default function ProductsListScreen() {
 		]
 	}, [cart.length, handleRefresh, isRefreshing, router])
 
+	const renderEmpty = useCallback(() => {
+		if (isInitialLoading) return null
+		if (isOffline) {
+			return (
+				<View style={styles.emptyContainer}>
+					<ErrorState icon="cloud-offline-outline" iconOnly />
+				</View>
+			)
+		}
+		return (
+			<View style={styles.emptyContainer}>
+				<Ionicons name="fish-outline" size={64} color={colors.textTertiary} style={{ marginBottom: 16 }} />
+				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_products', 'No products found')}</Text>
+			</View>
+		)
+	}, [isInitialLoading, isOffline, colors.textTertiary, colors.text, translate])
+
+	const renderFooter = useCallback(() => {
+		if (isLoadingMore) {
+			return (
+				<View style={{ paddingVertical: 20, alignItems: 'center' }}>
+					<ActivityIndicator size="small" color={colors.primary} />
+				</View>
+			)
+		}
+		return <View style={{ height: 20 }} />
+	}, [isLoadingMore, colors.primary])
+
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
@@ -155,39 +183,16 @@ export default function ProductsListScreen() {
 				data={products}
 				key={numColumns}
 				numColumns={numColumns}
-				keyExtractor={(item: ProductFeedItem, idx: number) => item._id + '-' + idx}
+				keyExtractor={(item: ProductFeedItem) => item._id}
 				renderItem={renderItem}
+				estimatedItemSize={260}
 				contentContainerStyle={{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding, paddingTop: padding, paddingBottom: 100 }}
 				showsVerticalScrollIndicator={false}
 				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 				onEndReached={handleLoadMore}
 				onEndReachedThreshold={0.5}
-				ListEmptyComponent={() => {
-					if (isInitialLoading) return null
-					if (isOffline) {
-						return (
-							<View style={styles.emptyContainer}>
-								<ErrorState icon="cloud-offline-outline" iconOnly />
-							</View>
-						)
-					}
-					return (
-						<View style={styles.emptyContainer}>
-							<Ionicons name="fish-outline" size={64} color={colors.textTertiary} style={{ marginBottom: 16 }} />
-							<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_products', 'No products found')}</Text>
-						</View>
-					)
-				}}
-				ListFooterComponent={() => {
-					if (isLoadingMore) {
-						return (
-							<View style={{ paddingVertical: 20, alignItems: 'center' }}>
-								<ActivityIndicator size="small" color={colors.primary} />
-							</View>
-						)
-					}
-					return <View style={{ height: 20 }} />
-				}}
+				ListEmptyComponent={renderEmpty}
+				ListFooterComponent={renderFooter}
 			/>
 
 			{isInitialLoading && !isRefreshing && products.length === 0 && (

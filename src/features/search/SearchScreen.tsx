@@ -325,6 +325,15 @@ export default function SearchScreen() {
 	)
 
 	// List renderers
+	const renderFooter = useCallback(() => {
+		if (!loadingMore) return null
+		return (
+			<View style={styles.footerLoader}>
+				<ActivityIndicator size="small" color={colors.primary} />
+			</View>
+		)
+	}, [loadingMore, colors.primary])
+
 	const renderItem = useCallback(
 		({ item }: { item: any }) => (
 			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: gap }}>
@@ -513,53 +522,22 @@ export default function SearchScreen() {
 					renderSkeletons()
 				) : results.length === 0 ? (
 					renderEmpty()
-				) : isWeb ? (
-					<ScrollView
-						style={styles.container}
-						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]}
-						showsVerticalScrollIndicator={false}
-						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-					>
-						<View style={styles.webGridContainer}>
-							{results.map((item, index) => (
-								<View
-									key={item._id || index}
-									style={[
-										styles.webGridItem,
-										{
-											width: `${100 / numColumns}%`,
-											paddingHorizontal: gap / 2,
-											marginBottom: 16
-										}
-									]}
-								>
-									<FeedCard item={item} addToCart={handleAddToCart} />
-								</View>
-							))}
-						</View>
-					</ScrollView>
 				) : (
 					<TypedFlashList
 						data={results}
 						renderItem={renderItem}
-						keyExtractor={(item: any, index: number) => `${item._id || index}`}
+						keyExtractor={(item: any) => item._id}
 						estimatedItemSize={220}
 						numColumns={numColumns}
 						contentContainerStyle={{
 							padding,
-							paddingBottom: 100 + insets.bottom
+							paddingBottom: 120 + insets.bottom
 						}}
 						ListEmptyComponent={renderEmpty}
 						onEndReached={handleLoadMore}
 						onEndReachedThreshold={0.5}
 						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-						ListFooterComponent={
-							loadingMore ? (
-								<View style={styles.footerLoader}>
-									<ActivityIndicator size="small" color={colors.primary} />
-								</View>
-							) : null
-						}
+						ListFooterComponent={renderFooter}
 					/>
 				)}
 			</View>

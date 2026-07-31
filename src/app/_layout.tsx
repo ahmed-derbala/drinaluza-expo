@@ -8,7 +8,8 @@ import { config } from '@/config'
 import { getItem, setItem } from '@/core/storage'
 import { translate } from '@/core/translation'
 import { SmartModal } from '@/core/smart-modal'
-import ModalButton from '@/core/smart-modal/ModalButton'
+import { DownloadButton } from '@/features/common/DownloadButton'
+import { CancelButton } from '@/features/common/CancelButton'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -49,8 +50,7 @@ import { SocketProvider } from '@/core/socketio/SocketContext'
 import { BackendConnectionProvider } from '@/core/connection'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
-import { UpdatesProvider } from '@/features/updates'
-
+import { UpdatesProvider } from '@/features/updates/UpdatesContext'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
@@ -62,16 +62,14 @@ let startupCheckPerformed = false
 const WEB_UPDATE_MODAL_DISMISSED_KEY = 'web_update_modal_dismissed'
 
 const updateModalStyles = StyleSheet.create({
-	footer: {
-		gap: 12
-	},
 	actionRow: {
 		flexDirection: 'row',
 		justifyContent: 'center',
+		alignItems: 'center',
 		gap: 16
 	},
 	iconButton: {
-		width: 56,
+		height: 56,
 		minWidth: 56,
 		flex: 0
 	},
@@ -140,19 +138,6 @@ function RootLayoutContent() {
 		setWebUpdateModal(null)
 	}
 
-	const handleWebDownload = async () => {
-		if (webUpdateModal?.download_url && typeof document !== 'undefined') {
-			const link = document.createElement('a')
-			link.href = webUpdateModal.download_url
-			link.setAttribute('download', '')
-			link.style.display = 'none'
-			document.body.appendChild(link)
-			link.click()
-			document.body.removeChild(link)
-		}
-		await closeWebUpdateModal()
-	}
-
 	if (loading) {
 		return (
 			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background || '#000000' }}>
@@ -186,11 +171,7 @@ function RootLayoutContent() {
 				title={translate('download_app', 'Download App')}
 				message={webUpdateModal ? `drinaluza-${webUpdateModal.latest_version}.apk` : undefined}
 				footer={
-					<View style={updateModalStyles.footer}>
-						<View style={updateModalStyles.actionRow}>
-							<ModalButton icon="close-outline" variant="outlined" defaultColor={colors.error} onPress={closeWebUpdateModal} accessibilityLabel="Cancel" style={updateModalStyles.iconButton} />
-							<ModalButton icon="download-outline" variant="filled" defaultColor={colors.primary} onPress={handleWebDownload} accessibilityLabel="Download" style={updateModalStyles.iconButton} />
-						</View>
+					<View style={updateModalStyles.actionRow}>
 						<TouchableOpacity
 							onPress={() => setDontShowWebUpdateModalAgain((prev) => !prev)}
 							style={updateModalStyles.checkboxRow}
@@ -200,6 +181,14 @@ function RootLayoutContent() {
 						>
 							<Ionicons name={dontShowWebUpdateModalAgain ? 'eye-off-outline' : 'eye-outline'} size={20} color={dontShowWebUpdateModalAgain ? colors.primary : colors.textSecondary} />
 						</TouchableOpacity>
+						<CancelButton onPress={closeWebUpdateModal} style={updateModalStyles.iconButton} />
+						<DownloadButton
+							downloadUrl={webUpdateModal?.download_url}
+							version={webUpdateModal?.latest_version}
+							onAfterDownload={closeWebUpdateModal}
+							variant="primary"
+							style={updateModalStyles.iconButton}
+						/>
 					</View>
 				}
 			/>

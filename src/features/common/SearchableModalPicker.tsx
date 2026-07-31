@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
-import { FlashList } from '@shopify/flash-list'
+import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
+const FlashList = ShopifyFlashList as any
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -69,7 +70,7 @@ function SearchableModalPicker<T>({
 	const [searchQuery, setSearchQuery] = useState('')
 
 	// Filter data based on search searchKeyExtractor
-	const filteredData = React.useMemo(() => {
+	const filteredData = useMemo(() => {
 		if (!searchQuery.trim() || !searchKeyExtractor) return data
 		return data.filter((item) => searchKeyExtractor(item).toLowerCase().includes(searchQuery.toLowerCase()))
 	}, [data, searchQuery, searchKeyExtractor])
@@ -79,10 +80,22 @@ function SearchableModalPicker<T>({
 		onClose()
 	}
 
-	const handleSelect = (item: T) => {
-		onSelect(item)
-		setSearchQuery('')
-	}
+	const handleSelect = useCallback(
+		(item: T) => {
+			onSelect(item)
+			setSearchQuery('')
+		},
+		[onSelect]
+	)
+
+	const renderListItem = useCallback(
+		({ item }: { item: T }) => {
+			const id = keyExtractor(item)
+			const isSelected = selectedId === id
+			return <TouchableOpacity onPress={() => handleSelect(item)}>{renderItem(item, isSelected)}</TouchableOpacity>
+		},
+		[keyExtractor, selectedId, handleSelect, renderItem]
+	)
 
 	return (
 		<Modal visible={visible} animationType="slide" transparent onRequestClose={handleClose}>
@@ -126,11 +139,8 @@ function SearchableModalPicker<T>({
 							data={filteredData}
 							keyExtractor={keyExtractor}
 							keyboardShouldPersistTaps="handled"
-							renderItem={({ item }) => {
-								const id = keyExtractor(item)
-								const isSelected = selectedId === id
-								return <TouchableOpacity onPress={() => handleSelect(item)}>{renderItem(item, isSelected)}</TouchableOpacity>
-							}}
+							renderItem={renderListItem}
+							estimatedItemSize={64}
 							ListEmptyComponent={<Text style={[styles.emptyState, { color: colors.textSecondary }]}>{translate('no_results_found', 'No results found')}</Text>}
 							contentContainerStyle={styles.listContent}
 						/>

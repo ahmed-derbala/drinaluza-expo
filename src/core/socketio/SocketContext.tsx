@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { Socket } from 'socket.io-client'
 import { useRouter } from 'expo-router'
 import { ConnectionService } from '@/core/connection'
@@ -56,7 +56,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 							router.push('/' as any)
 						}
 					} catch (e) {
-						console.error(e)
+						log({ level: 'error', label: 'Socket', message: 'Failed to handle navigation for notification', error: e })
 					}
 				}
 			}
@@ -81,7 +81,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		}
 	}, [user?.slug, refreshNotificationCount, router])
 
-	return <SocketContext.Provider value={{ socket }}>{children}</SocketContext.Provider>
+	const value = useMemo(() => ({ socket }), [socket])
+
+	return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
 }
 
 const useSocket = () => {

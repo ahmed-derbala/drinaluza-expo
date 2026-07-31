@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useCallback } from 'react'
 import { View, ActivityIndicator, RefreshControl } from 'react-native'
 
 import { SmartHeader } from '@/core/smart-header'
@@ -47,6 +47,8 @@ export const OrderList = React.memo(function OrderList<T>({
 		)
 	}, [loadingMore, colors.primary])
 
+	const empty = useMemo(() => <EmptyState title={emptyTitle} subtitle={emptySubtitle} iconName={emptyIcon} iconType="material" style={styles.empty} />, [emptyTitle, emptySubtitle, emptyIcon])
+
 	return (
 		<SmartHeader.FlashList
 			data={data}
@@ -54,13 +56,14 @@ export const OrderList = React.memo(function OrderList<T>({
 			keyExtractor={keyExtractor}
 			key={numColumns}
 			numColumns={numColumns}
+			estimatedItemSize={180}
 			contentContainerStyle={contentContainerStyle}
 			refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
 			onEndReached={onEndReached}
 			onEndReachedThreshold={0.5}
 			ListFooterComponent={footer}
 			ListHeaderComponent={ListHeaderComponent}
-			ListEmptyComponent={<EmptyState title={emptyTitle} subtitle={emptySubtitle} iconName={emptyIcon} iconType="material" style={styles.empty} />}
+			ListEmptyComponent={empty}
 		/>
 	)
 }) as <T>(props: OrderListProps<T>) => React.ReactElement

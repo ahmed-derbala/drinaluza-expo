@@ -10,30 +10,10 @@ import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
 import { useUpdates } from './useUpdates'
 import { isVersionGreater } from './UpdatesContext'
-
-const hexToRgba = (hex: string, alpha: number): string => {
-	if (!hex) return `rgba(0, 0, 0, ${alpha})`
-	if (!hex.startsWith('#')) return `rgba(128, 128, 128, ${alpha})`
-
-	const c = hex.slice(1)
-	const expand = (ch: string) => ch + ch
-
-	if (c.length === 3 || c.length === 4) {
-		const r = parseInt(expand(c[0]), 16)
-		const g = parseInt(expand(c[1]), 16)
-		const b = parseInt(expand(c[2]), 16)
-		return `rgba(${r}, ${g}, ${b}, ${alpha})`
-	}
-
-	if (c.length === 6 || c.length === 8) {
-		const r = parseInt(c.substring(0, 2), 16)
-		const g = parseInt(c.substring(2, 4), 16)
-		const b = parseInt(c.substring(4, 6), 16)
-		return `rgba(${r}, ${g}, ${b}, ${alpha})`
-	}
-
-	return `rgba(128, 128, 128, ${alpha})`
-}
+import { hexToRgba } from '@/core/helpers/colors'
+import { IconButton } from '@/features/common/IconButton'
+import { DownloadButton } from '@/features/common/DownloadButton'
+import { CancelButton } from '@/features/common/CancelButton'
 
 const styles = StyleSheet.create({
 	container: {
@@ -112,8 +92,7 @@ const styles = StyleSheet.create({
 		fontSize: 10,
 		fontWeight: '600'
 	},
-	iconButton: {
-		width: 50,
+	actionButton: {
 		height: 50,
 		borderRadius: 14,
 		justifyContent: 'center',
@@ -265,49 +244,6 @@ const InfoCard = ({ icon, label, value, color, active, activeBorderColor, footer
 	</View>
 )
 
-type IconVariant = 'primary' | 'success' | 'secondary' | 'danger'
-
-interface IconButtonProps {
-	icon: React.ComponentProps<typeof Ionicons>['name']
-	label: string
-	subtitle?: string
-	onPress: () => void
-	disabled?: boolean
-	variant?: IconVariant
-	colors: AppThemeColors
-}
-
-const IconButton = ({ icon, label, subtitle, onPress, disabled, variant = 'secondary', colors }: IconButtonProps) => {
-	const isPrimary = variant === 'primary'
-	const isSuccess = variant === 'success'
-	const isDanger = variant === 'danger'
-
-	const backgroundColor = disabled ? colors.surfaceVariant : isPrimary ? colors.primary : isSuccess ? colors.success : isDanger ? hexToRgba(colors.error, 0.1) : colors.surface
-
-	const borderColor = disabled ? colors.surfaceVariant : isPrimary ? colors.primary : isSuccess ? colors.success : isDanger ? hexToRgba(colors.error, 0.25) : colors.borderLight
-
-	const iconColor = disabled ? colors.textTertiary : isPrimary || isSuccess ? colors.textOnPrimary : isDanger ? colors.error : colors.textSecondary
-
-	const accessibilityLabel = subtitle ? `${label} ${subtitle}` : label
-
-	return (
-		<TouchableOpacity
-			onPress={onPress}
-			disabled={disabled}
-			activeOpacity={0.8}
-			accessibilityLabel={accessibilityLabel}
-			style={[styles.iconButton, subtitle ? { width: 72, height: 62 } : null, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }]}
-		>
-			<Ionicons name={icon} size={24} color={iconColor} />
-			{subtitle ? (
-				<Text style={{ fontSize: 11, fontWeight: '600', color: iconColor, textAlign: 'center', marginTop: 2 }} numberOfLines={1} adjustsFontSizeToFit>
-					{subtitle}
-				</Text>
-			) : null}
-		</TouchableOpacity>
-	)
-}
-
 export default function UpdatesScreen() {
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
@@ -379,12 +315,11 @@ export default function UpdatesScreen() {
 
 	const formatRemainingTime = (seconds: number | null): string => {
 		if (seconds === null) return ''
-		if (seconds < 60) {
-			return `${seconds}s`
-		}
-		const minutes = Math.floor(seconds / 60)
+		const hours = Math.floor(seconds / 3600)
+		const minutes = Math.floor((seconds % 3600) / 60)
 		const remainingSeconds = seconds % 60
-		return `${minutes}m ${remainingSeconds}s`
+		const pad = (value: number) => value.toString().padStart(2, '0')
+		return `${pad(hours)}:${pad(minutes)}:${pad(remainingSeconds)}`
 	}
 
 	const formatSpeed = (speedBytesPerSec: number | null): string => {
@@ -514,19 +449,6 @@ export default function UpdatesScreen() {
 		}
 	}
 
-	const handleDownloadWeb = () => {
-		if (!latestRelease?.download_url) return
-		if (Platform.OS === 'web' && typeof document !== 'undefined') {
-			const link = (document as any).createElement('a')
-			link.href = latestRelease.download_url
-			link.setAttribute('download', '')
-			link.style.display = 'none'
-			document.body.appendChild(link)
-			link.click()
-			document.body.removeChild(link)
-		}
-	}
-
 	const releaseBadges = useMemo(
 		() =>
 			latestRelease ? (
@@ -624,7 +546,11 @@ export default function UpdatesScreen() {
 									</View>
 									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: remainingTime === null ? 0 : 1 }]}>
 										<Ionicons name="time-outline" size={12} color={colors.textTertiary} />
-										<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]} numberOfLines={1} adjustsFontSizeToFit>
+										<Text
+											style={[styles.progressBadgeText, { color: colors.textTertiary, textAlign: 'center', fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', web: 'monospace' }) }]}
+											numberOfLines={1}
+											adjustsFontSizeToFit
+										>
 											{formatRemainingTime(remainingTime)}
 										</Text>
 									</View>
@@ -636,15 +562,7 @@ export default function UpdatesScreen() {
 					<View style={styles.actionBar}>
 						{isWeb ? (
 							<>
-								<IconButton
-									icon="download-outline"
-									label={translate('download', 'Download')}
-									subtitle={latestRelease ? `v${latestRelease.latest_version}` : undefined}
-									onPress={handleDownloadWeb}
-									disabled={!latestRelease?.download_url}
-									variant="primary"
-									colors={colors}
-								/>
+								<DownloadButton downloadUrl={latestRelease?.download_url} version={latestRelease?.latest_version} variant="primary" style={styles.actionButton} />
 								<IconButton
 									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
 									label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
@@ -652,9 +570,10 @@ export default function UpdatesScreen() {
 									disabled={!latestRelease?.download_url}
 									variant={copied ? 'success' : 'secondary'}
 									colors={colors}
+									style={styles.actionButton}
 								/>
-								<View style={[styles.iconButton, { opacity: 0 }]} />
-								<View style={[styles.iconButton, { opacity: 0 }]} />
+								<View style={[styles.actionButton, { opacity: 0, width: 50 }]} />
+								<View style={[styles.actionButton, { opacity: 0, width: 50 }]} />
 							</>
 						) : (
 							<>
@@ -666,8 +585,9 @@ export default function UpdatesScreen() {
 									disabled={!isDownloading && !isPaused && isDownloadDisabled}
 									variant={isPaused ? 'primary' : isDownloading ? 'secondary' : 'primary'}
 									colors={colors}
+									style={styles.actionButton}
 								/>
-								<IconButton icon="close-outline" label={translate('cancel', 'Cancel')} onPress={cancelDownload} disabled={!isDownloading && !isPaused} variant="danger" colors={colors} />
+								<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
 								<IconButton
 									icon="archive-outline"
 									label={translate('install', 'Install')}
@@ -676,6 +596,7 @@ export default function UpdatesScreen() {
 									disabled={isInstallDisabled || isDownloading || isPaused}
 									variant="success"
 									colors={colors}
+									style={styles.actionButton}
 								/>
 								<IconButton
 									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
@@ -684,6 +605,7 @@ export default function UpdatesScreen() {
 									disabled={!latestRelease?.download_url}
 									variant={copied ? 'success' : 'secondary'}
 									colors={colors}
+									style={styles.actionButton}
 								/>
 								<IconButton
 									icon="share-social-outline"
@@ -692,6 +614,7 @@ export default function UpdatesScreen() {
 									disabled={!latestRelease?.download_url}
 									variant="secondary"
 									colors={colors}
+									style={styles.actionButton}
 								/>
 							</>
 						)}

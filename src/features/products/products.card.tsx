@@ -16,7 +16,7 @@ type ProductCardProps = {
 	addToCart: (item: ProductFeedItem, quantity: number) => void
 }
 
-export default function ProductCard({ item, addToCart }: ProductCardProps) {
+const ProductCard = React.memo(function ProductCard({ item, addToCart }: ProductCardProps) {
 	const { localize, currency, formatPrice, translate } = useUser()
 	const { colors } = useTheme()
 	const router = useRouter()
@@ -60,10 +60,24 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		}
 	}
 
+	const minQuantity = item.unit?.min || 1
+	const maxQuantity = item.unit?.max || Infinity
+	const [quantity, setQuantity] = useState(minQuantity)
+	const step = item.unit?.step || 1
+
 	useEffect(() => {
 		startAutoplay()
 		return () => stopAutoplay()
 	}, [images.length, autoplayEnabled])
+
+	useEffect(() => {
+		setActiveImageIndex(0)
+		setAutoplayEnabled(true)
+	}, [images])
+
+	useEffect(() => {
+		setQuantity(minQuantity)
+	}, [minQuantity])
 
 	const handlePreviewPress = (e: any, index: number) => {
 		e.stopPropagation?.()
@@ -72,11 +86,6 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 		setAutoplayEnabled(false)
 		setActiveImageIndex(index)
 	}
-
-	const minQuantity = item.unit?.min || 1
-	const maxQuantity = item.unit?.max || Infinity
-	const [quantity, setQuantity] = useState(minQuantity)
-	const step = item.unit?.step || 1
 
 	const rating = item.rating?.average || 0
 	const ratingCount = item.rating?.count || 0
@@ -318,7 +327,9 @@ export default function ProductCard({ item, addToCart }: ProductCardProps) {
 			</View>
 		</Pressable>
 	)
-}
+})
+
+export default ProductCard
 
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({

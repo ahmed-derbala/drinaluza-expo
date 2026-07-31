@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react'
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react'
 import { usePathname } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
@@ -36,22 +36,21 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 		[pathname]
 	)
 
-	return (
-		<LayoutContext.Provider
-			value={{
-				isTabBarVisible,
-				setTabBarVisible,
-				isSearchBarVisible,
-				setSearchBarVisible,
-				isHeaderVisible,
-				setHeaderVisible,
-				headerHeight: currentHeight,
-				setHeaderHeight
-			}}
-		>
-			{children}
-		</LayoutContext.Provider>
+	const value = useMemo(
+		() => ({
+			isTabBarVisible,
+			setTabBarVisible,
+			isSearchBarVisible,
+			setSearchBarVisible,
+			isHeaderVisible,
+			setHeaderVisible,
+			headerHeight: currentHeight,
+			setHeaderHeight
+		}),
+		[isTabBarVisible, setTabBarVisible, isSearchBarVisible, setSearchBarVisible, isHeaderVisible, setHeaderVisible, currentHeight, setHeaderHeight]
 	)
+
+	return <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>
 }
 
 export const useLayout = () => {

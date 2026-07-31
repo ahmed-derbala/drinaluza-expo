@@ -210,7 +210,6 @@ export default function EditBusinessScreen() {
 			try {
 				DocumentPicker = require('expo-document-picker')
 			} catch (e) {
-				console.error('expo-document-picker not installed:', e)
 				toast.show({ title: 'Error', message: 'expo-document-picker is not installed. Install it to enable photo upload.', color: colors.error })
 				return
 			}
@@ -237,9 +236,7 @@ export default function EditBusinessScreen() {
 				type: file.mimeType || 'image/jpeg',
 				fileType: 'image',
 				fileObj: file,
-				onProgress: (progress) => {
-					console.log(`Upload progress: ${progress}%`)
-				}
+				onProgress: (progress) => {}
 			})
 
 			if (uploadResult.success && uploadResult.file) {
@@ -264,7 +261,6 @@ export default function EditBusinessScreen() {
 				toast.show({ title: 'Error', message: uploadResult.error || 'Failed to upload photo', color: colors.error })
 			}
 		} catch (error: any) {
-			console.error('Error uploading photo:', error)
 			toast.show({ title: 'Error', message: error.message || 'Failed to upload photo', color: colors.error })
 		} finally {
 			setUploadingPhoto(false)

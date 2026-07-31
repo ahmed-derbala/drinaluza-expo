@@ -1,7 +1,8 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
-import { FlashList } from '@shopify/flash-list'
+import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
+const FlashList = ShopifyFlashList as any
 import { LinearGradient } from 'expo-linear-gradient'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { Product } from '@/features/businesses/businesses.interface'
@@ -34,7 +35,7 @@ type ProductCardProps = {
 	businessSlug?: string
 }
 
-function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard, businessSlug }: ProductCardProps) {
+const ProductCard = React.memo(function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard, businessSlug }: ProductCardProps) {
 	const router = useRouter()
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 	const stockQty = item.stock?.quantity || 0
@@ -49,6 +50,10 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 	const maxQuantity = item.unit?.max || Infinity
 	const step = item.unit?.step || 1
 	const [quantity, setQuantity] = useState(minQty)
+
+	useEffect(() => {
+		setQuantity(minQty)
+	}, [minQty])
 
 	const increment = (e: any) => {
 		e.stopPropagation?.()
@@ -200,7 +205,7 @@ function ProductCard({ item, colors, localize, formatPrice, currency, translate,
 			</View>
 		</Pressable>
 	)
-}
+})
 
 const cardStyles = StyleSheet.create({
 	card: {
@@ -463,6 +468,31 @@ export default function BusinessProductsScreen() {
 		{ key: 'outOfStock', label: translate('out_of_stock', 'Out of Stock'), color: colors.error, count: counts.outOfStock }
 	]
 
+	const renderFilterChip = useCallback(
+		({ item: f }: { item: any }) => {
+			const active = activeFilter === f.key
+			return (
+				<TouchableOpacity
+					onPress={() => setActiveFilter(f.key)}
+					style={[
+						s.chip,
+						{
+							backgroundColor: active ? f.color + '22' : colors.surface,
+							borderColor: active ? f.color : colors.border
+						}
+					]}
+					activeOpacity={0.75}
+				>
+					<Text style={[s.chipText, { color: active ? f.color : colors.textSecondary }]}>{f.label}</Text>
+					<View style={[s.chipCount, { backgroundColor: active ? f.color : colors.surfaceVariant }]}>
+						<Text style={[s.chipCountText, { color: active ? '#0F172A' : colors.textSecondary }]}>{f.count}</Text>
+					</View>
+				</TouchableOpacity>
+			)
+		},
+		[activeFilter, colors, s, setActiveFilter]
+	)
+
 	// Render item
 	const renderItem = useCallback(
 		({ item }: { item: Product }) => {
@@ -545,30 +575,11 @@ export default function BusinessProductsScreen() {
 					<FlashList
 						horizontal
 						data={filters}
-						keyExtractor={(f) => f.key}
+						keyExtractor={(f: any) => f.key}
 						showsHorizontalScrollIndicator={false}
+						estimatedItemSize={96}
 						contentContainerStyle={[s.filtersContent, { paddingHorizontal: horizontalPadding }]}
-						renderItem={({ item: f }) => {
-							const active = activeFilter === f.key
-							return (
-								<TouchableOpacity
-									onPress={() => setActiveFilter(f.key)}
-									style={[
-										s.chip,
-										{
-											backgroundColor: active ? f.color + '22' : colors.surface,
-											borderColor: active ? f.color : colors.border
-										}
-									]}
-									activeOpacity={0.75}
-								>
-									<Text style={[s.chipText, { color: active ? f.color : colors.textSecondary }]}>{f.label}</Text>
-									<View style={[s.chipCount, { backgroundColor: active ? f.color : colors.surfaceVariant }]}>
-										<Text style={[s.chipCountText, { color: active ? '#0F172A' : colors.textSecondary }]}>{f.count}</Text>
-									</View>
-								</TouchableOpacity>
-							)
-						}}
+						renderItem={renderFilterChip}
 					/>
 				</View>
 			)}
@@ -589,6 +600,7 @@ export default function BusinessProductsScreen() {
 				data={filteredProducts}
 				renderItem={renderItem}
 				keyExtractor={(item: any) => item._id}
+				estimatedItemSize={260}
 				numColumns={numColumns}
 				contentContainerStyle={{
 					paddingHorizontal: horizontalPadding,

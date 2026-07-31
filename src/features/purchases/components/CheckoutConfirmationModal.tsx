@@ -153,6 +153,16 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 						</View>
 					)}
 					<View style={styles.actionRow}>
+						<TouchableOpacity
+							onPress={() => setDisableConfirmation((prev) => !prev)}
+							disabled={isSaving}
+							style={styles.checkboxRow}
+							accessibilityLabel={translate('disable_confirm', "Don't ask again")}
+							accessibilityRole="checkbox"
+							accessibilityState={{ checked: disableConfirmation }}
+						>
+							<Ionicons name={disableConfirmation ? 'eye-off-outline' : 'eye-outline'} size={22} color={disableConfirmation ? colors.primary : colors.textSecondary} />
+						</TouchableOpacity>
 						<ModalButton
 							icon="close-outline"
 							variant="outlined"
@@ -174,16 +184,6 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 							style={styles.iconButton}
 						/>
 					</View>
-					<TouchableOpacity
-						onPress={() => setDisableConfirmation((prev) => !prev)}
-						disabled={isSaving}
-						style={styles.checkboxRow}
-						accessibilityLabel={translate('disable_confirm', "Don't ask again")}
-						accessibilityRole="checkbox"
-						accessibilityState={{ checked: disableConfirmation }}
-					>
-						<Ionicons name={disableConfirmation ? 'eye-off-outline' : 'eye-outline'} size={22} color={disableConfirmation ? colors.primary : colors.textSecondary} />
-					</TouchableOpacity>
 				</View>
 			}
 		>
@@ -245,6 +245,7 @@ const styles = StyleSheet.create({
 	actionRow: {
 		flexDirection: 'row',
 		justifyContent: 'center',
+		alignItems: 'center',
 		gap: 16
 	},
 	iconButton: {

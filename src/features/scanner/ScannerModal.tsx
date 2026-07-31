@@ -32,8 +32,6 @@ export default function ScannerModal({ visible, onClose }: ScannerModalProps) {
 		if (scanned) return
 		setScanned(true)
 
-		console.log(`Scanned QR code: ${data}`)
-
 		try {
 			// E.g., https://drinaluza.vercel.app/b/my-business
 			const baseUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'

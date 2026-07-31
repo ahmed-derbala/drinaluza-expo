@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react'
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { secureGetItem } from '@/core/storage'
 import { getNotifications } from './notifications.api'
 import { log } from '@/core/log'
@@ -43,7 +43,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 		refreshNotificationCount()
 	}, [refreshNotificationCount])
 
-	return <NotificationContext.Provider value={{ notificationCount, refreshNotificationCount, decrementNotificationCount }}>{children}</NotificationContext.Provider>
+	const value = useMemo(() => ({ notificationCount, refreshNotificationCount, decrementNotificationCount }), [notificationCount, refreshNotificationCount, decrementNotificationCount])
+
+	return <NotificationContext.Provider value={value}>{children}</NotificationContext.Provider>
 }
 
 export const useNotification = () => {

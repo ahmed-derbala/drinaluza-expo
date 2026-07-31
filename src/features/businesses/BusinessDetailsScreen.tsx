@@ -1,6 +1,8 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, Linking, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
+import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
+const FlashList = ShopifyFlashList as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import StateBadge from '@/features/common/StateBadge'
@@ -24,21 +26,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 
 // Product Card for inline display
-const ProductCard = ({
-	product,
-	colors,
-	localize,
-	onPress,
-	cardWidth,
-	styles
-}: {
-	product: ProductType
-	colors: any
-	localize: (obj: any) => string
-	onPress?: () => void
-	cardWidth: number
-	styles: any
-}) => {
+const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }: { product: ProductType; colors: any; localize: (obj: any) => string; cardWidth: number; styles: any }) => {
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
 	const stockQty = product.stock?.quantity || 0
 	const isOutOfStock = stockQty === 0
@@ -46,6 +34,15 @@ const ProductCard = ({
 	const ratingCount = product.rating?.count || 0
 
 	const { translate } = useUser()
+	const router = useRouter()
+	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
+
+	const handlePress = useCallback(() => {
+		if (product.slug && businessSlug) {
+			router.push(`/businesses/${businessSlug}/products/${product.slug}` as any)
+		}
+	}, [product.slug, businessSlug, router])
+
 	return (
 		<TouchableOpacity
 			style={[
@@ -57,7 +54,7 @@ const ProductCard = ({
 				}
 			]}
 			activeOpacity={0.8}
-			onPress={onPress}
+			onPress={handlePress}
 		>
 			<View style={styles.productImageContainer}>
 				<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
@@ -145,7 +142,7 @@ const ProductCard = ({
 			</View>
 		</TouchableOpacity>
 	)
-}
+})
 
 export default function BusinessDetailsScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
@@ -159,12 +156,17 @@ export default function BusinessDetailsScreen() {
 
 	const cardWidth = isWideScreen ? (Math.min(width, maxWidth) - 40 - 24) / 3 : (width - 40 - 12) / 2
 
-	const styles = createStyles(colors, isWideScreen, width)
+	const styles = useMemo(() => createStyles(colors, isWideScreen, width), [colors, isWideScreen, width])
+
+	const renderProductCard = useCallback(
+		({ item }: { item: ProductType }) => <ProductCard product={item} colors={colors} localize={localize} cardWidth={cardWidth} styles={styles} />,
+		[colors, localize, cardWidth, styles]
+	)
 
 	const handleCall = () => {
 		const phone = business?.contact?.phone?.fullNumber
 		if (phone) {
-			Linking.openURL(`tel:${phone}`).catch((err) => console.log('Call action failed', err))
+			Linking.openURL(`tel:${phone}`).catch(() => {})
 		}
 	}
 
@@ -172,14 +174,14 @@ export default function BusinessDetailsScreen() {
 		const whatsapp = business?.contact?.whatsapp || business?.contact?.phone?.fullNumber
 		if (whatsapp) {
 			const cleanNum = whatsapp.replace(/[^\d]/g, '')
-			Linking.openURL(`https://wa.me/${cleanNum}`).catch((err) => console.log('WhatsApp action failed', err))
+			Linking.openURL(`https://wa.me/${cleanNum}`).catch(() => {})
 		}
 	}
 
 	const handleEmail = () => {
 		const email = business?.contact?.email
 		if (email) {
-			Linking.openURL(`mailto:${email}`).catch((err) => console.log('Email action failed', err))
+			Linking.openURL(`mailto:${email}`).catch(() => {})
 		}
 	}
 
@@ -205,9 +207,7 @@ export default function BusinessDetailsScreen() {
 			try {
 				const ownerResponse = await getUserBySlug(business.owner.slug)
 				if (!cancelled) setOwnerPhoto(ownerResponse.data?.media?.thumbnail?.url || null)
-			} catch (ownerErr) {
-				console.log('Failed to fetch owner details for photo:', ownerErr)
-			}
+			} catch (ownerErr) {}
 		}
 		fetchOwner()
 		return () => {
@@ -452,23 +452,16 @@ export default function BusinessDetailsScreen() {
 					</View>
 
 					{products.length > 0 ? (
-						<ScrollView horizontal showsHorizontalScrollIndicator={true} contentContainerStyle={styles.productsScrollContainer} style={styles.productsScrollView}>
-							{products.map((product) => (
-								<ProductCard
-									key={product._id}
-									product={product}
-									colors={colors}
-									localize={localize}
-									cardWidth={160}
-									styles={styles}
-									onPress={() => {
-										if (product.slug) {
-											router.push(`/businesses/${businessSlug}/products/${product.slug}` as any)
-										}
-									}}
-								/>
-							))}
-						</ScrollView>
+						<FlashList
+							horizontal
+							showsHorizontalScrollIndicator={true}
+							data={products}
+							renderItem={renderProductCard}
+							keyExtractor={(item: ProductType) => item._id}
+							estimatedItemSize={cardWidth}
+							contentContainerStyle={styles.productsScrollContainer}
+							style={styles.productsScrollView}
+						/>
 					) : (
 						<View style={styles.emptyProducts}>
 							<Ionicons name="fish-outline" size={48} color={colors.textTertiary} />
