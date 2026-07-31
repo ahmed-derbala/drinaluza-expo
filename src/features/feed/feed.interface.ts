@@ -92,6 +92,11 @@ interface Unit {
 	max: number
 	step?: number
 	updatedAt?: string
+	singlePiece?: {
+		minWeightKg?: number
+		avgWeightKg?: number
+		maxWeightKg?: number
+	}
 }
 interface Stock {
 	quantity: number

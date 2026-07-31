@@ -48,6 +48,9 @@ export default function CreateProductScreen() {
 	const [minUnit, setMinUnit] = useState('1')
 	const [maxUnit, setMaxUnit] = useState('10')
 	const [unitStep, setUnitStep] = useState('1')
+	const [singlePieceMinWeightKg, setSinglePieceMinWeightKg] = useState('')
+	const [singlePieceAvgWeightKg, setSinglePieceAvgWeightKg] = useState('')
+	const [singlePieceMaxWeightKg, setSinglePieceMaxWeightKg] = useState('')
 
 	// Inventory
 	const [stockQuantity, setStockQuantity] = useState('100')
@@ -244,6 +247,18 @@ export default function CreateProductScreen() {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_unit_step', 'Unit step must be greater than 0'))
 			return false
 		}
+
+		const minW = singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : NaN
+		const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
+		const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
+		if ((!isNaN(minW) && minW <= 0) || (!isNaN(avgW) && avgW <= 0) || (!isNaN(maxW) && maxW <= 0)) {
+			showAlert(translate('validation_error', 'Validation Error'), translate('err_weight_positive', 'Single piece weights must be greater than 0'))
+			return false
+		}
+		if ((!isNaN(maxW) && !isNaN(minW) && maxW < minW) || (!isNaN(maxW) && !isNaN(avgW) && maxW < avgW) || (!isNaN(avgW) && !isNaN(minW) && avgW < minW)) {
+			showAlert(translate('validation_error', 'Validation Error'), translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'))
+			return false
+		}
 		return true
 	}
 
@@ -265,7 +280,14 @@ export default function CreateProductScreen() {
 					measure: unit,
 					min: parseFloat(minUnit),
 					max: parseFloat(maxUnit),
-					step: parseFloat(unitStep)
+					step: parseFloat(unitStep),
+					singlePiece: [singlePieceMinWeightKg, singlePieceAvgWeightKg, singlePieceMaxWeightKg].some((v) => v.trim().length > 0)
+						? {
+								minWeightKg: singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : undefined,
+								avgWeightKg: singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : undefined,
+								maxWeightKg: singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : undefined
+							}
+						: undefined
 				},
 				searchKeywords: selectedDefaultProduct.searchKeywords,
 				stock: stockQuantity ? { quantity: parseInt(stockQuantity), minThreshold: parseInt(minThreshold) } : undefined,
@@ -409,6 +431,12 @@ export default function CreateProductScreen() {
 						setMaxUnit={setMaxUnit}
 						unitStep={unitStep}
 						setUnitStep={setUnitStep}
+						singlePieceMinWeightKg={singlePieceMinWeightKg}
+						setSinglePieceMinWeightKg={setSinglePieceMinWeightKg}
+						singlePieceAvgWeightKg={singlePieceAvgWeightKg}
+						setSinglePieceAvgWeightKg={setSinglePieceAvgWeightKg}
+						singlePieceMaxWeightKg={singlePieceMaxWeightKg}
+						setSinglePieceMaxWeightKg={setSinglePieceMaxWeightKg}
 					/>
 
 					{/* Stock Section */}

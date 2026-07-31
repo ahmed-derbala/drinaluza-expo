@@ -55,6 +55,9 @@ export default function BusinessDashboardProductDetailScreen() {
 	const [minUnit, setMinUnit] = useState('1')
 	const [maxUnit, setMaxUnit] = useState('10')
 	const [unitStep, setUnitStep] = useState('1')
+	const [singlePieceMinWeightKg, setSinglePieceMinWeightKg] = useState('')
+	const [singlePieceAvgWeightKg, setSinglePieceAvgWeightKg] = useState('')
+	const [singlePieceMaxWeightKg, setSinglePieceMaxWeightKg] = useState('')
 
 	const [stockQuantity, setStockQuantity] = useState('0')
 	const [minThreshold, setMinThreshold] = useState('5')
@@ -88,6 +91,9 @@ export default function BusinessDashboardProductDetailScreen() {
 		setMinUnit(prod.unit?.min?.toString() || '1')
 		setMaxUnit(prod.unit?.max?.toString() || '10')
 		setUnitStep(prod.unit?.step?.toString() || '1')
+		setSinglePieceMinWeightKg(prod.unit?.singlePiece?.minWeightKg?.toString() || '')
+		setSinglePieceAvgWeightKg(prod.unit?.singlePiece?.avgWeightKg?.toString() || '')
+		setSinglePieceMaxWeightKg(prod.unit?.singlePiece?.maxWeightKg?.toString() || '')
 
 		setStockQuantity(prod.stock?.quantity?.toString() || '0')
 		setMinThreshold(prod.stock?.minThreshold?.toString() || '5')
@@ -201,6 +207,18 @@ export default function BusinessDashboardProductDetailScreen() {
 			return
 		}
 
+		const minW = singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : NaN
+		const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
+		const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
+		if ((!isNaN(minW) && minW <= 0) || (!isNaN(avgW) && avgW <= 0) || (!isNaN(maxW) && maxW <= 0)) {
+			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_weight_positive', 'Single piece weights must be greater than 0'), color: colors.error })
+			return
+		}
+		if ((!isNaN(maxW) && !isNaN(minW) && maxW < minW) || (!isNaN(maxW) && !isNaN(avgW) && maxW < avgW) || (!isNaN(avgW) && !isNaN(minW) && avgW < minW)) {
+			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'), color: colors.error })
+			return
+		}
+
 		try {
 			setSaving(true)
 			const res = await updateProduct(productSlug!, {
@@ -209,7 +227,14 @@ export default function BusinessDashboardProductDetailScreen() {
 					measure: unit,
 					min: minUnitNum,
 					max: maxUnitNum,
-					step: stepUnitNum
+					step: stepUnitNum,
+					singlePiece: [singlePieceMinWeightKg, singlePieceAvgWeightKg, singlePieceMaxWeightKg].some((v) => v.trim().length > 0)
+						? {
+								minWeightKg: singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : undefined,
+								avgWeightKg: singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : undefined,
+								maxWeightKg: singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : undefined
+							}
+						: undefined
 				}
 			})
 			setProduct(res.data)
@@ -230,6 +255,9 @@ export default function BusinessDashboardProductDetailScreen() {
 			setMinUnit(product.unit?.min?.toString() || '1')
 			setMaxUnit(product.unit?.max?.toString() || '10')
 			setUnitStep(product.unit?.step?.toString() || '1')
+			setSinglePieceMinWeightKg(product.unit?.singlePiece?.minWeightKg?.toString() || '')
+			setSinglePieceAvgWeightKg(product.unit?.singlePiece?.avgWeightKg?.toString() || '')
+			setSinglePieceMaxWeightKg(product.unit?.singlePiece?.maxWeightKg?.toString() || '')
 		}
 		setEditMode((prev) => ({ ...prev, pricing: false }))
 	}
@@ -583,10 +611,19 @@ export default function BusinessDashboardProductDetailScreen() {
 								setMaxUnit={setMaxUnit}
 								unitStep={unitStep}
 								setUnitStep={setUnitStep}
+								singlePieceMinWeightKg={singlePieceMinWeightKg}
+								setSinglePieceMinWeightKg={setSinglePieceMinWeightKg}
+								singlePieceAvgWeightKg={singlePieceAvgWeightKg}
+								setSinglePieceAvgWeightKg={setSinglePieceAvgWeightKg}
+								singlePieceMaxWeightKg={singlePieceMaxWeightKg}
+								setSinglePieceMaxWeightKg={setSinglePieceMaxWeightKg}
 								formattedPrice={product ? formatPrice({ total: { [currency]: product.price?.total?.[currency as keyof typeof product.price.total] || product.price?.total?.tnd || 0 } }) : ''}
 								unitMeasure={product?.unit?.measure}
 								minLimit={product?.unit?.min}
 								maxLimit={product?.unit?.max}
+								singlePieceMin={product?.unit?.singlePiece?.minWeightKg}
+								singlePieceAvg={product?.unit?.singlePiece?.avgWeightKg}
+								singlePieceMax={product?.unit?.singlePiece?.maxWeightKg}
 								canEdit={canEditProduct}
 								onEditPress={() => setEditMode((prev) => ({ ...prev, pricing: true }))}
 								onSavePress={savePricing}

@@ -77,7 +77,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 
 	useEffect(() => {
 		setQuantity(minQuantity)
-	}, [minQuantity])
+	}, [item._id, minQuantity])
 
 	const handlePreviewPress = (e: any, index: number) => {
 		e.stopPropagation?.()
@@ -93,6 +93,14 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 	const pricePerUnit = unitPrice / (item.unit?.min || 1)
+
+	const singlePiece = item.unit?.singlePiece
+	const singlePieceAvg = useMemo(() => {
+		if (!singlePiece) return undefined
+		if (singlePiece.avgWeightKg != null) return singlePiece.avgWeightKg
+		if (singlePiece.minWeightKg != null && singlePiece.maxWeightKg != null) return (singlePiece.minWeightKg + singlePiece.maxWeightKg) / 2
+		return undefined
+	}, [singlePiece])
 
 	const mainName = localize(item.name)
 	const secondaryNames = useMemo(() => {
@@ -237,9 +245,9 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 							) : null}
 						</View>
 
-						{/* Specs row: caliber + harvest + origin + stepper */}
+						{/* Specs row: caliber + weight, then harvest/gear/origin */}
 						<View style={styles.specsStepperRow}>
-							{(item.specs?.caliber || item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
+							<View style={styles.specsRowTop}>
 								<View style={styles.specsIconRow}>
 									{item.specs?.caliber ? (
 										<View style={{ justifyContent: 'center', alignItems: 'center' }}>
@@ -259,6 +267,22 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 											</Text>
 										</View>
 									) : null}
+									{singlePieceAvg != null && <Text style={[styles.weightChipText, { color: colors.primary }]}>~ {singlePieceAvg.toFixed(2)} kg/piece</Text>}
+								</View>
+								{purchaseAllowed && isActive && !isOutOfStock && (
+									<View style={styles.qtyControl}>
+										<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
+											<MaterialIcons name="remove" size={16} color="#FFFFFF" />
+										</TouchableOpacity>
+										<Text style={styles.qtyValue}>{quantity}</Text>
+										<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
+											<MaterialIcons name="add" size={16} color="#FFFFFF" />
+										</TouchableOpacity>
+									</View>
+								)}
+							</View>
+							{(item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
+								<View style={styles.specsRowBottom}>
 									{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
 									{item.specs?.gear ? <GearIcon type={item.specs.gear} size={14} color={colors.primary} /> : null}
 									{item.specs?.origin?.city ? (
@@ -267,17 +291,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 											<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
 										</>
 									) : null}
-								</View>
-							)}
-							{purchaseAllowed && isActive && !isOutOfStock && (
-								<View style={styles.qtyControl}>
-									<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-										<MaterialIcons name="remove" size={16} color="#FFFFFF" />
-									</TouchableOpacity>
-									<Text style={styles.qtyValue}>{quantity}</Text>
-									<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-										<MaterialIcons name="add" size={16} color="#FFFFFF" />
-									</TouchableOpacity>
 								</View>
 							)}
 						</View>
@@ -289,7 +302,9 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 							<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
 								{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
 							</Text>
-							{quantity === 1 && <Text style={styles.priceUnit}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
+							<Text style={styles.priceUnit} numberOfLines={1}>
+								{quantity === 1 ? `/ ${item.unit?.measure || translate('unit', 'unit')}` : `${quantity} ${item.unit?.measure || translate('unit', 'unit')}`}
+							</Text>
 						</View>
 
 						<TouchableOpacity
@@ -614,13 +629,25 @@ const styles = StyleSheet.create({
 		color: '#ffffff'
 	},
 	specsStepperRow: {
+		flexDirection: 'column',
+		justifyContent: 'center',
+		gap: 4,
+		minHeight: 58,
+		marginTop: 4,
+		marginBottom: 6
+	},
+	specsRowTop: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		gap: 8,
-		height: 58,
-		marginTop: 4,
-		marginBottom: 6
+		gap: 8
+	},
+	specsRowBottom: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 5,
+		flex: 1,
+		overflow: 'hidden'
 	},
 	specsIconRow: {
 		flexDirection: 'row',
@@ -628,6 +655,10 @@ const styles = StyleSheet.create({
 		gap: 5,
 		flex: 1,
 		overflow: 'hidden'
+	},
+	weightChipText: {
+		fontSize: 11,
+		fontWeight: '700'
 	},
 	specsCardRow: {
 		flexDirection: 'row',

@@ -162,6 +162,11 @@ export interface Product {
 		max: number
 		step?: number
 		updatedAt?: string
+		singlePiece?: {
+			minWeightKg?: number
+			avgWeightKg?: number
+			maxWeightKg?: number
+		}
 	}
 	searchKeywords?: string[]
 	state?: {

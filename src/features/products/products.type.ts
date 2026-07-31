@@ -99,6 +99,11 @@ export type ProductType = {
 		max: number
 		step?: number
 		updatedAt: string
+		singlePiece?: {
+			minWeightKg?: number
+			avgWeightKg?: number
+			maxWeightKg?: number
+		}
 	}
 	searchTerms: string[]
 	availability: {

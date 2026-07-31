@@ -25,6 +25,11 @@ export interface CreateProductRequest {
 		min: number
 		max: number
 		step: number
+		singlePiece?: {
+			minWeightKg?: number
+			avgWeightKg?: number
+			maxWeightKg?: number
+		}
 	}
 	searchKeywords?: string[]
 	stock?: {

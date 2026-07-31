@@ -17,11 +17,21 @@ export interface ProductPricingSectionProps {
 	setMaxUnit: (v: string) => void
 	unitStep: string
 	setUnitStep: (v: string) => void
+	// Single piece weight values
+	singlePieceMinWeightKg: string
+	setSinglePieceMinWeightKg: (v: string) => void
+	singlePieceAvgWeightKg: string
+	setSinglePieceAvgWeightKg: (v: string) => void
+	singlePieceMaxWeightKg: string
+	setSinglePieceMaxWeightKg: (v: string) => void
 	// View values
 	formattedPrice?: string
 	unitMeasure?: string
 	minLimit?: number
 	maxLimit?: number | string
+	singlePieceMin?: number
+	singlePieceAvg?: number
+	singlePieceMax?: number
 	// Inline Edit Actions
 	canEdit?: boolean
 	onEditPress?: () => void
@@ -43,10 +53,19 @@ export default function ProductPricingSection({
 	setMaxUnit,
 	unitStep,
 	setUnitStep,
+	singlePieceMinWeightKg,
+	setSinglePieceMinWeightKg,
+	singlePieceAvgWeightKg,
+	setSinglePieceAvgWeightKg,
+	singlePieceMaxWeightKg,
+	setSinglePieceMaxWeightKg,
 	formattedPrice,
 	unitMeasure,
 	minLimit = 1,
 	maxLimit = '∞',
+	singlePieceMin,
+	singlePieceAvg,
+	singlePieceMax,
 	canEdit,
 	onEditPress,
 	onSavePress,
@@ -101,6 +120,29 @@ export default function ProductPricingSection({
 						<Text style={styles.fieldLabel}>{translate('max_unit', 'Max Limit')}</Text>
 						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
 							<TextInput style={[styles.textInput, { color: colors.text }]} value={maxUnit} onChangeText={setMaxUnit} placeholder="10" keyboardType="numeric" />
+						</View>
+					</View>
+				</View>
+				<Text style={styles.subSectionTitle}>{translate('single_piece_weight_kg', 'Single piece weight (kg)')}</Text>
+				<View style={styles.row}>
+					<View style={styles.flexItem}>
+						<Text style={styles.fieldLabel}>{translate('min', 'Min')}</Text>
+						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
+							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMinWeightKg} onChangeText={setSinglePieceMinWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
+						</View>
+					</View>
+					<View style={{ width: 12 }} />
+					<View style={styles.flexItem}>
+						<Text style={styles.fieldLabel}>{translate('avg', 'Avg')}</Text>
+						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
+							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceAvgWeightKg} onChangeText={setSinglePieceAvgWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
+						</View>
+					</View>
+					<View style={{ width: 12 }} />
+					<View style={styles.flexItem}>
+						<Text style={styles.fieldLabel}>{translate('max', 'Max')}</Text>
+						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
+							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMaxWeightKg} onChangeText={setSinglePieceMaxWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
 						</View>
 					</View>
 				</View>
@@ -172,6 +214,29 @@ export default function ProductPricingSection({
 						</View>
 					</View>
 				</View>
+				<Text style={styles.subSectionTitle}>{translate('single_piece_weight_kg', 'Single piece weight (kg)')}</Text>
+				<View style={styles.row}>
+					<View style={styles.flexItem}>
+						<Text style={styles.fieldLabel}>{translate('min', 'Min')}</Text>
+						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
+							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMinWeightKg} onChangeText={setSinglePieceMinWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
+						</View>
+					</View>
+					<View style={{ width: 12 }} />
+					<View style={styles.flexItem}>
+						<Text style={styles.fieldLabel}>{translate('avg', 'Avg')}</Text>
+						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
+							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceAvgWeightKg} onChangeText={setSinglePieceAvgWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
+						</View>
+					</View>
+					<View style={{ width: 12 }} />
+					<View style={styles.flexItem}>
+						<Text style={styles.fieldLabel}>{translate('max', 'Max')}</Text>
+						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
+							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMaxWeightKg} onChangeText={setSinglePieceMaxWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
+						</View>
+					</View>
+				</View>
 			</View>
 		)
 	}
@@ -194,6 +259,12 @@ export default function ProductPricingSection({
 			<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
 				{translate('min', 'Min')}: {minLimit} - {translate('max', 'Max')}: {maxLimit} {unitMeasure || ''}
 			</Text>
+			{(singlePieceMin != null || singlePieceAvg != null || singlePieceMax != null) && (
+				<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
+					{translate('single_piece_weight', 'Single piece weight')}: {singlePieceMin != null ? singlePieceMin.toFixed(2) : '—'} / {singlePieceAvg != null ? singlePieceAvg.toFixed(2) : '—'} /{' '}
+					{singlePieceMax != null ? singlePieceMax.toFixed(2) : '—'} kg
+				</Text>
+			)}
 		</View>
 	)
 }
@@ -307,6 +378,13 @@ const createStyles = (colors: any) =>
 			fontSize: 13,
 			marginTop: 6,
 			fontWeight: '500'
+		},
+		subSectionTitle: {
+			fontSize: 13,
+			fontWeight: '700',
+			color: colors.text,
+			marginTop: 16,
+			marginBottom: 8
 		},
 		segmentContainer: {
 			flexDirection: 'row',
