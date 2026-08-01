@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow, AppThemeColors } from '@/core/theme'
+import { useTheme, createShadow, AppThemeColors, colors as themeColors } from '@/core/theme'
 import { STATUS_ICONS, getStatusColor } from './utils'
 import { IconButton, type IconVariant } from '@/features/common/buttons/IconButton'
 import type { SmartModalProps, SmartModalButton } from './types'
@@ -214,7 +214,7 @@ export default function SmartModal({
 	}
 
 	const getModalStyle = (): any => {
-		const baseStyle = { backgroundColor: colors.card, borderWidth: 1, borderColor: '#FFFFFF' }
+		const baseStyle = { backgroundColor: colors.background, borderWidth: 1, borderColor: themeColors.buttonText }
 
 		switch (variant) {
 			case 'centered':

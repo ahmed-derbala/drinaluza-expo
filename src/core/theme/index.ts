@@ -1,7 +1,7 @@
 import { useTheme as useNavigationTheme } from 'expo-router/react-navigation'
 import { Platform } from 'react-native'
 
-export { AppThemeProvider, DarkTheme, useThemeContext } from './provider'
+export { AppThemeProvider, DarkTheme } from './provider'
 export { colors } from './colors'
 export type { AppThemeColors } from './types'
 
@@ -58,8 +58,4 @@ export function createShadow({ offsetY = 2, opacity = 0.1, radius = 4, elevation
 		},
 		default: {}
 	})
-}
-
-export function createColorShadow(options: ShadowOptions): any {
-	return createShadow(options)
 }

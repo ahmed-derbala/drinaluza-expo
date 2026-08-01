@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
@@ -48,7 +48,7 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 
 	return (
 		<View style={styles.cardContainer}>
-			<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+			<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 				<View style={styles.header}>
 					<TouchableOpacity
 						style={styles.headerLeft}
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
 	card: {
 		borderRadius: 28,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.06)',
+		borderColor: themeColors.buttonText5,
 		padding: 22,
 		minHeight: 320,
 		justifyContent: 'space-between',
@@ -207,15 +207,15 @@ const styles = StyleSheet.create({
 		padding: 10,
 		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.04)',
-		backgroundColor: 'rgba(255, 255, 255, 0.01)'
+		borderColor: themeColors.buttonText5,
+		backgroundColor: themeColors.buttonText5
 	},
 	productThumb: {
 		width: 56,
 		height: 56,
 		borderRadius: 14,
 		borderWidth: 1,
-		borderColor: '#FFFFFF08'
+		borderColor: themeColors.buttonText5
 	},
 	itemDetails: {
 		flex: 1,
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
 		padding: 2,
 		borderRadius: 10,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.06)'
+		borderColor: themeColors.buttonText5
 	},
 	qtyBtn: {
 		width: 28,

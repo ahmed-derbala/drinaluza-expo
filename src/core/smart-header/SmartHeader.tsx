@@ -5,7 +5,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Href, usePathname } from 'expo-router'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
@@ -362,8 +362,8 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					opacity: animatedOpacity,
 					transform: [{ translateY: animatedTranslateY }],
 					borderBottomWidth: StyleSheet.hairlineWidth,
-					backgroundColor: colors.header,
-					borderBottomColor: colors.borderLight,
+					backgroundColor: colors.background,
+					borderBottomColor: colors.border,
 					overflow: isHeaderVisible ? 'visible' : 'hidden'
 				}
 			]}
@@ -513,11 +513,6 @@ export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHea
 	FlashList: any
 }
 
-/** @deprecated Use SmartHeader instead */
-export const SmartScreenHeader = SmartHeader
-/** @deprecated Use SmartHeaderProps instead */
-export type SmartScreenHeaderProps = SmartHeaderProps
-
 const styles = StyleSheet.create({
 	headerContainer: {
 		position: 'absolute',
@@ -526,18 +521,7 @@ const styles = StyleSheet.create({
 		right: 0,
 		width: '100%',
 		borderBottomWidth: StyleSheet.hairlineWidth,
-		zIndex: 100,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000000',
-				shadowOffset: { width: 0, height: 1 },
-				shadowOpacity: 0.15,
-				shadowRadius: 2
-			},
-			android: {
-				elevation: 2
-			}
-		})
+		zIndex: 100
 	},
 	headerInner: {
 		height: 56,

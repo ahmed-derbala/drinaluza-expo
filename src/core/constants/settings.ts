@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 export const LANGUAGES = [
 	{ code: 'en', label: 'English', flag: '🇺🇸' },
 	{ code: 'tn_latn', label: 'Tunisian (Latin)', flag: '🇹🇳', icon: 'A' },
@@ -11,6 +12,6 @@ export const CURRENCIES = [
 ]
 
 export const SOCIAL_PLATFORMS = [
-	{ id: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: '#1877F2', prefix: 'facebook.com/' },
-	{ id: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: '#E4405F', prefix: 'instagram.com/' }
+	{ id: 'facebook', label: 'Facebook', icon: 'logo-facebook', color: themeColors.facebook, prefix: 'facebook.com/' },
+	{ id: 'instagram', label: 'Instagram', icon: 'logo-instagram', color: themeColors.instagram, prefix: 'instagram.com/' }
 ]

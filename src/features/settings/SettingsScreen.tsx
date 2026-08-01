@@ -5,7 +5,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, useWindowDimensio
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -110,7 +110,7 @@ export default function SettingsScreen() {
 					<SettingItem icon="server-outline" title={translate('environment', 'Environment')} value={serverInfo.NODE_ENV} color={colors.textSecondary} />
 					<SettingItem icon="information-circle-outline" title={translate('app_name', 'App Name')} value={serverInfo.app?.name} color={colors.textSecondary} />
 					<SettingItem icon="git-network-outline" title={translate('version', 'Version')} value={serverInfo.app?.version} color={colors.textSecondary} />
-					{serverInfo.NODE_VERSION && <SettingItem icon="logo-nodejs" title="Node.js" value={serverInfo.NODE_VERSION} color="#339933" />}
+					{serverInfo.NODE_VERSION && <SettingItem icon="logo-nodejs" title="Node.js" value={serverInfo.NODE_VERSION} color={themeColors.success} />}
 					{serverInfo.uptime && <SettingItem icon="time-outline" title={translate('uptime', 'Uptime')} value={formatUptime(serverInfo.uptime)} color={colors.textSecondary} />}
 				</SettingSection>
 			)}
@@ -165,11 +165,11 @@ const createStyles = (colors: any) =>
 			marginLeft: 4
 		},
 		sectionContent: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			overflow: 'hidden',
 			borderWidth: 1,
-			borderColor: colors.info || '#3B82F6'
+			borderColor: colors.info
 		},
 		item: {
 			flexDirection: 'row',

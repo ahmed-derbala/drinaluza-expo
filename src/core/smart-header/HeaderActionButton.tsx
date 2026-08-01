@@ -1,7 +1,7 @@
 import React from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 
 export interface HeaderActionButtonProps {
 	/**
@@ -51,7 +51,7 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconT
 					style={[
 						styles.badge,
 						{
-							backgroundColor: colors.error || '#ef4444',
+							backgroundColor: colors.error,
 							borderColor: colors.surface,
 							top: -Math.round(size * 0.15),
 							right: -Math.round(size * 0.15)
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1.5
 	},
 	badgeText: {
-		color: '#fff',
+		color: themeColors.buttonText,
 		fontSize: 9,
 		fontWeight: 'bold'
 	}

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '@/core/contexts'
 import { toast } from '@/features/common/Toast'
@@ -40,14 +40,14 @@ export default function ScannerModal({ visible, onClose }: ScannerModalProps) {
 			if (url.hostname.includes(frontendHostname) || url.hostname.includes('localhost')) {
 				const path = url.pathname // e.g., /b/my-business
 				if (path.startsWith('/b/') || path.startsWith('/businesses/')) {
-					toast.show({ title: 'Success', message: translate('business_found', 'Business found!'), color: '#10B981' })
+					toast.show({ title: 'Success', message: translate('business_found', 'Business found!'), color: themeColors.success })
 					onClose()
 					// Expo Router will handle the alias /b/ or direct /businesses/ navigation
 					setTimeout(() => {
 						router.push(path as any)
 					}, 300)
 				} else if (path.startsWith('/u/') || path.startsWith('/users/')) {
-					toast.show({ title: 'Success', message: translate('user_found', 'User found!'), color: '#10B981' })
+					toast.show({ title: 'Success', message: translate('user_found', 'User found!'), color: themeColors.success })
 					onClose()
 					setTimeout(() => {
 						router.push(path as any)
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
 		paddingBottom: 16,
 		paddingHorizontal: 20,
 		borderBottomWidth: 1,
-		borderBottomColor: 'rgba(0,0,0,0.1)',
+		borderBottomColor: themeColors.background5,
 		zIndex: 10
 	},
 	title: {
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
 		borderRadius: 12
 	},
 	permissionBtnText: {
-		color: '#fff',
+		color: themeColors.buttonText,
 		fontWeight: '600',
 		fontSize: 16
 	},
@@ -170,20 +170,20 @@ const styles = StyleSheet.create({
 		...StyleSheet.absoluteFill,
 		justifyContent: 'center',
 		alignItems: 'center',
-		backgroundColor: 'rgba(0,0,0,0.4)'
+		backgroundColor: themeColors.background50
 	},
 	scannerFrame: {
 		width: frameSize,
 		height: frameSize,
 		borderWidth: 2,
-		borderColor: '#fff',
+		borderColor: themeColors.buttonText,
 		backgroundColor: 'transparent',
 		borderRadius: 24,
 		// Semi-transparent cutout effect
 		...createShadow({ offsetY: 0, opacity: 0.5, radius: 100, elevation: 0 })
 	},
 	instructionText: {
-		color: '#fff',
+		color: themeColors.buttonText,
 		fontSize: 14,
 		fontWeight: '500',
 		marginTop: 32,

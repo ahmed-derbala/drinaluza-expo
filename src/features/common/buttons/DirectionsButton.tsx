@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { IconButton } from './IconButton'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { hasDirectionsTarget, openDirections, type LocationLike, type AddressLike } from '@/core/helpers/maps'
 import { translate } from '@/core/translation'
 
@@ -23,8 +23,8 @@ export function DirectionsButton({ location, address, label, size, disabled = fa
 	const { colors } = useTheme()
 	if (!hasDirectionsTarget(location, address)) return null
 
-	const resolvedIconColor = '#F59E0B'
-	const resolvedStyle = useMemo(() => ({ backgroundColor: '#F59E0B1A', borderColor: '#F59E0B38' }), [])
+	const resolvedIconColor = themeColors.warning
+	const resolvedStyle = useMemo(() => ({ backgroundColor: themeColors.warning10, borderColor: themeColors.warning10 }), [])
 
 	const handlePress = (e?: any) => {
 		e?.stopPropagation?.()

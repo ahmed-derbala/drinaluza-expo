@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Linking } from 'react-native'
 import { IconButton } from './IconButton'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export interface EmailButtonProps {
@@ -21,8 +21,8 @@ export function EmailButton({ email, label, size, disabled = false, onPress }: E
 	const { colors } = useTheme()
 	if (!email) return null
 
-	const resolvedIconColor = '#818CF8'
-	const resolvedStyle = useMemo(() => ({ backgroundColor: '#818CF81A', borderColor: '#818CF838' }), [])
+	const resolvedIconColor = themeColors.email
+	const resolvedStyle = useMemo(() => ({ backgroundColor: themeColors.email10, borderColor: themeColors.email10 }), [])
 
 	const handlePress = (e?: any) => {
 		e?.stopPropagation?.()

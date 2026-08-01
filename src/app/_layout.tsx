@@ -21,9 +21,12 @@ if (typeof setImmediate === 'undefined') {
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
 	const style = document.createElement('style')
 	style.type = 'text/css'
-	style.innerHTML = `
+	style.innerHTML =
+		`
 		html, body {
-			background-color: #000000 !important;
+			background-color: ` +
+		themeColors.background +
+		` !important;
 			color-scheme: dark;
 		}
 		* {
@@ -52,7 +55,7 @@ import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 import { UpdatesProvider } from '@/features/updates/UpdatesContext'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
-import { AppThemeProvider, useTheme } from '@/core/theme'
+import { AppThemeProvider, useTheme, colors as themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 
 // Module-level flag — survives component remounts (e.g. user switch)
@@ -140,8 +143,8 @@ function RootLayoutContent() {
 
 	if (loading) {
 		return (
-			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background || '#000000' }}>
-				<ActivityIndicator size="large" color={colors.primary || '#0EA5E9'} />
+			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+				<ActivityIndicator size="large" color={colors.primary} />
 			</View>
 		)
 	}

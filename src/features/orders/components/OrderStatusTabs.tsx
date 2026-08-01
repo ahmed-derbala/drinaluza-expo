@@ -98,7 +98,7 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 								</Text>
 								{showCount && (
 									<View style={[styles.badge, { backgroundColor: selected ? colors.primary : colors.surfaceVariant || colors.border }]}>
-										<Text style={[styles.badgeText, { color: selected ? colors.textOnPrimary || '#fff' : colors.textSecondary }]} numberOfLines={1}>
+										<Text style={[styles.badgeText, { color: selected ? colors.buttonText : colors.textSecondary }]} numberOfLines={1}>
 											{count}
 										</Text>
 									</View>

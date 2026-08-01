@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions, KeyboardAvoidingView } from 'react-native'
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { translate } from '@/core/translation'
 import ErrorState from '@/features/common/ErrorState'
@@ -413,11 +413,13 @@ export default function EditBusinessScreen() {
 				<SmartHeader.ScrollView style={styles.form} contentContainerStyle={[styles.formContent, styles.grow]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 					{/* Top Hero Banner */}
 					<View style={styles.heroBanner}>
-						<LinearGradient colors={['#0EA5E930', '#00000000']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
+						<LinearGradient colors={[themeColors.primaryContainer20, themeColors.background0]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
 						<View style={styles.heroContent}>
 							<TouchableOpacity style={styles.avatarWrapper} onPress={handleUploadPhoto} disabled={uploadingPhoto} activeOpacity={0.8}>
 								<SmartImage source={thumbnailUrl} style={styles.avatarImage} entityType="business" />
-								<View style={styles.cameraIconBadge}>{uploadingPhoto ? <ActivityIndicator size="small" color="#ffffff" /> : <Ionicons name="camera" size={12} color="#ffffff" />}</View>
+								<View style={styles.cameraIconBadge}>
+									{uploadingPhoto ? <ActivityIndicator size="small" color={themeColors.buttonText} /> : <Ionicons name="camera" size={12} color={themeColors.buttonText} />}
+								</View>
 							</TouchableOpacity>
 							<View style={styles.heroInfoText}>
 								<Text style={styles.heroTitle}>{nameEn || translate('business_name', 'Business Name')}</Text>
@@ -594,7 +596,7 @@ export default function EditBusinessScreen() {
 									<View style={styles.inputGroup}>
 										<Text style={styles.inputLabel}>WhatsApp</Text>
 										<View style={[styles.inputWrapper, focusedField === 'whatsapp' && styles.inputWrapperFocused]}>
-											<Ionicons name="logo-whatsapp" size={18} color={focusedField === 'whatsapp' ? '#25D366' : colors.textTertiary} style={styles.inputIcon} />
+											<Ionicons name="logo-whatsapp" size={18} color={focusedField === 'whatsapp' ? themeColors.whatsApp : colors.textTertiary} style={styles.inputIcon} />
 											<TextInput
 												style={styles.textInput}
 												value={whatsapp}
@@ -760,7 +762,7 @@ export default function EditBusinessScreen() {
 									</View>
 
 									<TouchableOpacity style={[styles.sharingCard, sharingEnabled && styles.sharingCardActive]} onPress={() => setSharingEnabled(!sharingEnabled)} activeOpacity={0.8}>
-										<View style={[styles.checkbox, sharingEnabled && styles.checkboxActive]}>{sharingEnabled && <Ionicons name="checkmark" size={16} color="#ffffff" />}</View>
+										<View style={[styles.checkbox, sharingEnabled && styles.checkboxActive]}>{sharingEnabled && <Ionicons name="checkmark" size={16} color={themeColors.buttonText} />}</View>
 										<View style={{ flex: 1 }}>
 											<Text style={styles.sharingTitle}>{translate('share_location', 'Share location with customers')}</Text>
 											<Text style={styles.sharingDesc}>{translate('share_location_desc', 'Show store coordinates on map details')}</Text>
@@ -855,7 +857,7 @@ const createStyles = (colors: any, width: number) =>
 			justifyContent: 'flex-end',
 			paddingBottom: 24,
 			borderBottomWidth: 1.5,
-			borderColor: colors.borderLight,
+			borderColor: colors.border,
 			backgroundColor: colors.surface
 		},
 		heroContent: {
@@ -929,12 +931,8 @@ const createStyles = (colors: any, width: number) =>
 			backgroundColor: colors.surface,
 			borderRadius: 24,
 			borderWidth: 1.5,
-			borderColor: colors.borderLight,
-			padding: 20,
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-				android: { elevation: 2 }
-			})
+			borderColor: colors.border,
+			padding: 20
 		},
 		cardHeader: {
 			fontSize: 16,
@@ -966,7 +964,7 @@ const createStyles = (colors: any, width: number) =>
 			alignItems: 'center',
 			backgroundColor: colors.background,
 			borderWidth: 1.5,
-			borderColor: colors.borderLight,
+			borderColor: colors.border,
 			borderRadius: 16,
 			paddingHorizontal: 16,
 			paddingVertical: 12,
@@ -1007,7 +1005,7 @@ const createStyles = (colors: any, width: number) =>
 			flexDirection: 'row',
 			alignItems: 'center',
 			backgroundColor: colors.background,
-			borderColor: colors.borderLight,
+			borderColor: colors.border,
 			borderWidth: 1.5,
 			borderRadius: 16,
 			padding: 16,
@@ -1050,7 +1048,7 @@ const createStyles = (colors: any, width: number) =>
 			paddingVertical: 10,
 			gap: 14,
 			borderBottomWidth: 1,
-			borderBottomColor: `${colors.borderLight}40`
+			borderBottomColor: `${colors.border}40`
 		},
 		infoRowIconContainer: {
 			width: 38,

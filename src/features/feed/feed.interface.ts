@@ -186,17 +186,6 @@ export interface ProductFeedItem extends FeedItem {
 	isActive?: boolean
 }
 
-export interface BusinessFeedItem extends FeedItem {
-	business: FeedBusiness
-	name: LocalizedName
-	media: {
-		thumbnail?: {
-			url: string
-		}
-	}
-	rating?: Rating
-}
-
 export interface UserFeedItem extends FeedItem {
 	name: LocalizedName
 	role: string

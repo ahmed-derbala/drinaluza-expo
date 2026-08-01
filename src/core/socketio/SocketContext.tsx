@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { Socket } from 'socket.io-client'
 import { useRouter } from 'expo-router'
@@ -66,7 +67,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 				message: toastMessage,
 				screen: targetScreen,
 				onPress: customOnPress,
-				color: '#3B82F6'
+				color: themeColors.info
 			})
 
 			// Refresh count

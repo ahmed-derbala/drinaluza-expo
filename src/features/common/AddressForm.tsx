@@ -40,7 +40,7 @@ export default function AddressForm({ street, setStreet, city, setCity, region, 
 						styles.inputWrapper,
 						{
 							borderColor: isFocused ? colors.primary : colors.border,
-							backgroundColor: colors.card
+							backgroundColor: colors.background
 						}
 					]}
 				>

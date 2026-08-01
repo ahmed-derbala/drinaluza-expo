@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -86,7 +87,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 	const renderStars = (stars: number, interactive: boolean = false) => <RatingStars rating={stars} size={interactive ? 28 : 16} interactive={interactive} onRatingChange={handleStarPress} />
 
 	const renderReviewItem = (review: Review) => (
-		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.background, borderColor: colors.info }]}>
 			<View style={styles.reviewHeader}>
 				<View style={styles.authorInfo}>
 					<View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryContainer }]}>
@@ -115,7 +116,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					<Text style={[styles.headerTitle, { color: colors.text }]}>{translate('reviews', 'Reviews')}</Text>
 					{pagination.totalDocs > 0 && (
 						<View style={styles.ratingSummary}>
-							<Ionicons name="star" size={16} color="#FFD700" />
+							<Ionicons name="star" size={16} color={themeColors.warning} />
 							<Text style={[styles.ratingText, { color: colors.text }]}>{averageRating.toFixed(1)}</Text>
 							<Text style={[styles.reviewCount, { color: colors.textSecondary }]}>({pagination.totalDocs})</Text>
 						</View>
@@ -126,7 +127,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					label={showAddReview ? translate('close', 'Close') : translate('add_review', 'Add Review')}
 					onPress={() => setShowAddReview(!showAddReview)}
 					variant="primary"
-					iconColor="#fff"
+					iconColor={themeColors.buttonText}
 					colors={colors}
 					style={styles.addButton}
 				/>
@@ -134,7 +135,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 
 			{/* Add Review Form */}
 			{showAddReview && (
-				<View style={[styles.addReviewForm, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+				<View style={[styles.addReviewForm, { backgroundColor: colors.background, borderColor: colors.info }]}>
 					<Text style={[styles.formTitle, { color: colors.text }]}>
 						{translate('write_review', 'Write a Review')}
 						{targetName && ` for ${targetName}`}
@@ -144,7 +145,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					{/* Anonymous Toggle */}
 					<TouchableOpacity style={styles.anonymousToggle} onPress={() => setIsAnonymous(!isAnonymous)} activeOpacity={0.7}>
 						<View style={[styles.toggleTrack, { backgroundColor: isAnonymous ? colors.primary : colors.surfaceVariant }]}>
-							<View style={[styles.toggleThumb, { backgroundColor: '#fff', transform: [{ translateX: isAnonymous ? 20 : 0 }] }]} />
+							<View style={[styles.toggleThumb, { backgroundColor: themeColors.buttonText, transform: [{ translateX: isAnonymous ? 20 : 0 }] }]} />
 						</View>
 						<Text style={[styles.toggleLabel, { color: colors.text }]}>{translate('post_anonymously', 'Post anonymously')}</Text>
 					</TouchableOpacity>
@@ -159,7 +160,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 						onChangeText={(text) => setNewReview({ ...newReview, comment: text })}
 					/>
 					<TouchableOpacity style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }]} onPress={handleSubmitReview} disabled={submitting}>
-						{submitting ? <ActivityIndicator size="small" color="#fff" /> : <Text style={styles.submitButtonText}>{translate('submit_review', 'Submit Review')}</Text>}
+						{submitting ? <ActivityIndicator size="small" color={themeColors.buttonText} /> : <Text style={styles.submitButtonText}>{translate('submit_review', 'Submit Review')}</Text>}
 					</TouchableOpacity>
 				</View>
 			)}
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
 		justifyContent: 'center'
 	},
 	submitButtonText: {
-		color: '#fff',
+		color: themeColors.buttonText,
 		fontSize: 16,
 		fontWeight: '600'
 	},

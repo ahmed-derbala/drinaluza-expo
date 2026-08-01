@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, ActivityIndicator } from 'react-native'
 import { useTheme, createShadow } from '../../core/theme'
@@ -52,7 +53,7 @@ const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDec
 	}, [product.product.price?.total, quantity])
 
 	return (
-		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.info || '#3B82F6' }]}>
+		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.info }]}>
 			<SmartImage source={getImageUrl()} style={styles.productImage} entityType="product" />
 			<View style={styles.productDetails}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
@@ -182,10 +183,10 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 
 			await updateSaleStatus(sale._id, payloadStatus, productsPayload)
 			setCurrentStatus(payloadStatus)
-			toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Status updated successfully'), color: '#10B981' })
+			toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Status updated successfully'), color: themeColors.success })
 			if (onStatusUpdate) onStatusUpdate()
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update_status', 'Failed to update status'), color: '#EF4444' })
+			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update_status', 'Failed to update status'), color: themeColors.error })
 		} finally {
 			setUpdating(false)
 		}
@@ -254,8 +255,8 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			style={[
 				styles.card,
 				{
-					backgroundColor: colors.card,
-					borderColor: colors.info || '#3B82F6'
+					backgroundColor: colors.background,
+					borderColor: colors.info
 				}
 			]}
 		>
@@ -494,7 +495,7 @@ const styles = StyleSheet.create({
 		padding: 12,
 		gap: 12,
 		borderTopWidth: 1,
-		backgroundColor: 'rgba(0,0,0,0.02)'
+		backgroundColor: themeColors.background5
 	},
 	actionBtn: {
 		flex: 1,

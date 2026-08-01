@@ -1,7 +1,7 @@
 import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { IconButton } from './buttons/IconButton'
 import { CancelButton } from './buttons/CancelButton'
 
@@ -23,7 +23,7 @@ export function ProfileSection({ title, children, isEditing, onEdit, onSave, onC
 	const { colors } = useTheme()
 
 	return (
-		<View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }, style]} testID={testID}>
+		<View style={[styles.section, { backgroundColor: colors.background, borderColor: colors.info }, style]} testID={testID}>
 			<View style={styles.header}>
 				<View style={styles.titleRow}>
 					{iconName && <Ionicons name={iconName} size={18} color={colors.primary} style={styles.titleIcon} />}

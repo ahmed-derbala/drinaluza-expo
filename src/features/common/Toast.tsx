@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
 import { createShadow } from '../../core/theme'
@@ -96,7 +97,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 		<ToastContext.Provider value={{}}>
 			{children}
 			{visible && options && (
-				<Animated.View style={[styles.container, { opacity, transform: [{ translateY }], top: Math.max(insets.top, 20) + 10, backgroundColor: options.color || '#3B82F6' }]}>
+				<Animated.View style={[styles.container, { opacity, transform: [{ translateY }], top: Math.max(insets.top, 20) + 10, backgroundColor: options.color || themeColors.info }]}>
 					<TouchableOpacity style={styles.content} onPress={handlePress} activeOpacity={0.8}>
 						<View style={styles.textContainer}>
 							<Text style={styles.title}>{options.title}</Text>
@@ -107,7 +108,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							)}
 						</View>
 						<TouchableOpacity onPress={hide} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-							<Ionicons name="close" size={20} color="#FFFFFF" />
+							<Ionicons name="close" size={20} color={themeColors.buttonText} />
 						</TouchableOpacity>
 					</TouchableOpacity>
 				</Animated.View>
@@ -135,13 +136,13 @@ const styles = StyleSheet.create({
 		marginRight: 12
 	},
 	title: {
-		color: '#FFFFFF',
+		color: themeColors.buttonText,
 		fontWeight: '700',
 		fontSize: 15,
 		marginBottom: 2
 	},
 	message: {
-		color: '#FFFFFF',
+		color: themeColors.buttonText,
 		fontSize: 13,
 		opacity: 0.9
 	},
@@ -149,7 +150,7 @@ const styles = StyleSheet.create({
 		width: 28,
 		height: 28,
 		borderRadius: 14,
-		backgroundColor: 'rgba(255,255,255,0.2)',
+		backgroundColor: themeColors.buttonText20,
 		justifyContent: 'center',
 		alignItems: 'center'
 	}

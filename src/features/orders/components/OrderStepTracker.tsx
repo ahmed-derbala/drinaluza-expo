@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 
 interface OrderStepTrackerProps {
 	stepIndex: number
@@ -44,7 +44,7 @@ export const OrderStepTracker = React.memo(function OrderStepTracker({ stepIndex
 										}
 									]}
 								>
-									{active && <Ionicons name="checkmark" size={8} color="#fff" />}
+									{active && <Ionicons name="checkmark" size={8} color={themeColors.buttonText} />}
 								</View>
 							</View>
 							<Text style={[styles.label, { color: active ? colors.text : colors.textSecondary, fontWeight: active ? '700' : '500' }]}>{step}</Text>

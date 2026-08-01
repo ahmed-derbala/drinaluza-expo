@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { IconButton } from './buttons/IconButton'
 import { DeleteButton } from './buttons/DeleteButton'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import type { Contact, Phone } from '@/features/profile/profile.interface'
 
@@ -87,7 +87,7 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 		<>
 			<View style={styles.inputGroup}>
 				<Text style={styles.inputLabel}>Primary Phone</Text>
-				<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+				<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
 					<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
 						<TextInput
 							style={[styles.phoneCodeInput, { color: colors.text }]}
@@ -115,7 +115,7 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 				<View key={index} style={styles.inputGroup}>
 					<Text style={styles.inputLabel}>Backup Phone {index + 1}</Text>
 					<View style={styles.backupRow}>
-						<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.card, flex: 1 }]}>
+						<View style={[styles.phoneInputContainer, { borderColor: colors.border, backgroundColor: colors.background, flex: 1 }]}>
 							<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05', width: 80 }]}>
 								<TextInput
 									style={[styles.phoneCodeInput, { color: colors.text }]}
@@ -152,7 +152,7 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 
 			<View style={styles.inputGroup}>
 				<Text style={styles.inputLabel}>Email</Text>
-				<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+				<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
 					<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 						<Ionicons name="mail-outline" size={20} color={colors.textSecondary} />
 					</View>
@@ -170,9 +170,9 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 
 			<View style={styles.inputGroup}>
 				<Text style={styles.inputLabel}>WhatsApp</Text>
-				<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
-					<View style={[styles.socialIconBadge, { backgroundColor: '#25D36615' }]}>
-						<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
+				<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
+					<View style={[styles.socialIconBadge, { backgroundColor: themeColors.whatsApp10 }]}>
+						<Ionicons name="logo-whatsapp" size={20} color={themeColors.whatsApp} />
 					</View>
 					<TextInput
 						style={[styles.socialInput, { color: colors.text }]}
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontWeight: '600',
 		marginBottom: 6,
-		color: '#666'
+		color: themeColors.textTertiary
 	},
 	phoneInputContainer: {
 		flexDirection: 'row',
@@ -235,7 +235,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		borderRightWidth: 1,
-		borderRightColor: '#E5E7EB'
+		borderRightColor: themeColors.textSecondary
 	},
 	socialInput: {
 		flex: 1,

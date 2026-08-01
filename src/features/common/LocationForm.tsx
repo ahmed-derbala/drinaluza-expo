@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { IconButton } from './buttons/IconButton'
 import type { Location as LocationType } from '@/features/profile/profile.interface'
@@ -117,7 +117,7 @@ export default function LocationForm({ location, onChange }: LocationFormProps) 
 			<View style={styles.locationGrid}>
 				<View style={styles.locationCol}>
 					<Text style={[styles.locationSubLabel, { color: colors.textTertiary }]}>Longitude</Text>
-					<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card, opacity: sharingEnabled ? 1 : 0.5 }]}>
+					<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.background, opacity: sharingEnabled ? 1 : 0.5 }]}>
 						<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 							<Ionicons name="location" size={20} color={colors.textSecondary} />
 						</View>
@@ -134,7 +134,7 @@ export default function LocationForm({ location, onChange }: LocationFormProps) 
 				</View>
 				<View style={styles.locationCol}>
 					<Text style={[styles.locationSubLabel, { color: colors.textTertiary }]}>Latitude</Text>
-					<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card, opacity: sharingEnabled ? 1 : 0.5 }]}>
+					<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.background, opacity: sharingEnabled ? 1 : 0.5 }]}>
 						<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 							<Ionicons name="location" size={20} color={colors.textSecondary} />
 						</View>
@@ -155,7 +155,7 @@ export default function LocationForm({ location, onChange }: LocationFormProps) 
 				<View style={styles.switchContainer}>
 					<Text style={[styles.switchLabel, { color: colors.text }]}>Share Location</Text>
 					<TouchableOpacity style={[styles.switch, sharingEnabled ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]} onPress={handleToggleSharing}>
-						<View style={[styles.switchThumb, sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }]} />
+						<View style={[styles.switchThumb, sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: themeColors.buttonText } : { backgroundColor: themeColors.buttonText }]} />
 					</TouchableOpacity>
 				</View>
 				<IconButton
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
 		fontSize: 14,
 		fontWeight: '600',
 		marginBottom: 6,
-		color: '#666'
+		color: themeColors.textTertiary
 	},
 	locationGrid: {
 		flexDirection: 'row',
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		borderRightWidth: 1,
-		borderRightColor: '#E5E7EB'
+		borderRightColor: themeColors.textSecondary
 	},
 	socialInput: {
 		flex: 1,

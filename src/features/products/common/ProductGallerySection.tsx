@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
@@ -58,7 +59,15 @@ export default function ProductGallerySection({
 							<View key={item._id || idx} style={styles.galleryItem}>
 								<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
 								{onRemovePress && (
-									<IconButton icon="close" label={translate('remove', 'Remove')} onPress={() => onRemovePress(item)} variant="danger" iconColor="#ffffff" colors={colors} style={styles.removeBadge} />
+									<IconButton
+										icon="close"
+										label={translate('remove', 'Remove')}
+										onPress={() => onRemovePress(item)}
+										variant="danger"
+										iconColor={themeColors.buttonText}
+										colors={colors}
+										style={styles.removeBadge}
+									/>
 								)}
 							</View>
 						))}
@@ -166,7 +175,7 @@ const createStyles = (colors: any) =>
 			position: 'absolute',
 			top: 4,
 			right: 4,
-			backgroundColor: 'rgba(0,0,0,0.6)',
+			backgroundColor: themeColors.background50,
 			borderRadius: 10,
 			width: 20,
 			height: 20,

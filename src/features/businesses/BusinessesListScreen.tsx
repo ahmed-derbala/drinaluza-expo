@@ -1,6 +1,6 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
@@ -70,10 +70,10 @@ const createStyles = (
 			margin: opts.isExtraSmall ? 4 : 6,
 			borderRadius: opts.isExtraSmall ? 12 : 16,
 			overflow: 'hidden',
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderWidth: 1.5,
-			borderColor: colors.info || '#3B82F6',
-			shadowColor: '#000',
+			borderColor: colors.info,
+			shadowColor: themeColors.background,
 			shadowOffset: { width: 0, height: 2 },
 			shadowOpacity: 0.15,
 			shadowRadius: 6,
@@ -89,7 +89,7 @@ const createStyles = (
 			position: 'relative',
 			width: '100%',
 			height: opts.imageHeight,
-			backgroundColor: 'rgba(255, 255, 255, 0.05)'
+			backgroundColor: themeColors.buttonText5
 		},
 		imageOverlay: {
 			position: 'absolute',
@@ -97,7 +97,7 @@ const createStyles = (
 			right: 0,
 			bottom: 0,
 			height: 64,
-			backgroundColor: 'rgba(0,0,0,0.45)'
+			backgroundColor: themeColors.background50
 		},
 		businessImage: {
 			width: '100%',
@@ -166,7 +166,7 @@ const createStyles = (
 			marginTop: 12,
 			paddingTop: 12,
 			borderTopWidth: 1,
-			borderTopColor: 'rgba(255, 255, 255, 0.1)'
+			borderTopColor: themeColors.buttonText10
 		},
 		businessStats: {
 			flexDirection: 'row',
@@ -193,7 +193,7 @@ const createStyles = (
 			flexDirection: 'row'
 		},
 		ratingText: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 12,
 			fontWeight: '600',
 			marginRight: 6
@@ -204,7 +204,7 @@ const createStyles = (
 			marginLeft: 4
 		},
 		ratingStars: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 14
 		},
 		reviewsContainer: {
@@ -221,12 +221,12 @@ const createStyles = (
 			marginBottom: opts.isExtraSmall ? 8 : 12
 		},
 		categoryChip: {
-			backgroundColor: colors.backgroundSecondary || 'rgba(0,0,0,0.05)',
+			backgroundColor: colors.backgroundSecondary,
 			paddingHorizontal: opts.isExtraSmall ? 6 : 8,
 			paddingVertical: opts.isExtraSmall ? 2 : 4,
 			borderRadius: opts.isExtraSmall ? 8 : 12,
 			borderWidth: 0.5,
-			borderColor: colors.border || 'rgba(0,0,0,0.1)'
+			borderColor: colors.border
 		},
 		categoryText: {
 			fontSize: opts.smallFontSize,
@@ -250,7 +250,7 @@ const createStyles = (
 			justifyContent: 'center'
 		},
 		quickActionText: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 14,
 			fontWeight: '600',
 			marginLeft: 8
@@ -303,15 +303,15 @@ const createStyles = (
 			fontWeight: '600'
 		},
 		distanceBadgeText: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 12,
 			fontWeight: '600'
 		},
 		hoursContainer: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 8,
 			borderWidth: 1,
-			borderColor: colors.info || '#3B82F6',
+			borderColor: colors.info,
 			padding: 12
 		},
 		hoursHeader: {
@@ -350,7 +350,7 @@ const createStyles = (
 			...createShadow({ offsetY: 2, opacity: 0.2, radius: 8, elevation: 3 })
 		},
 		buttonText: {
-			color: '#fff'
+			color: themeColors.buttonText
 		},
 		// Status and Business State Styles
 		statusBadge: {
@@ -366,7 +366,7 @@ const createStyles = (
 			minWidth: 80
 		},
 		statusText: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 12,
 			fontWeight: '600',
 			marginLeft: 4
@@ -378,13 +378,13 @@ const createStyles = (
 			borderRadius: 12,
 			paddingHorizontal: 8,
 			paddingVertical: 4,
-			backgroundColor: 'rgba(0, 0, 0, 0.5)',
+			backgroundColor: themeColors.background50,
 			backdropFilter: 'blur(4px)'
 		},
 		businessStateText: {
 			fontSize: 11,
 			fontWeight: '600',
-			color: '#fff'
+			color: themeColors.buttonText
 		},
 		// Contact Buttons
 		contactButtons: {
@@ -401,13 +401,13 @@ const createStyles = (
 			paddingVertical: opts.isExtraSmall ? 8 : 10,
 			paddingHorizontal: opts.isExtraSmall ? 10 : 12,
 			borderRadius: opts.isExtraSmall ? 6 : 8,
-			backgroundColor: colors.backgroundSecondary || 'rgba(0,0,0,0.05)',
+			backgroundColor: colors.backgroundSecondary,
 			borderWidth: 0.5,
-			borderColor: colors.border || 'rgba(0,0,0,0.1)'
+			borderColor: colors.border
 		},
 		whatsappButton: {
-			backgroundColor: '#25D366',
-			borderColor: '#25D366'
+			backgroundColor: themeColors.whatsApp,
+			borderColor: themeColors.whatsApp
 		},
 		viewButton: {
 			backgroundColor: colors.primary,
@@ -444,7 +444,7 @@ const createStyles = (
 			width: opts.isExtraSmall ? 60 : 80,
 			height: opts.isExtraSmall ? 60 : 80,
 			borderRadius: 40,
-			backgroundColor: colors.backgroundSecondary || 'rgba(0,0,0,0.05)',
+			backgroundColor: colors.backgroundSecondary,
 			justifyContent: 'center',
 			alignItems: 'center',
 			marginBottom: opts.isExtraSmall ? 12 : 16

@@ -31,7 +31,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
-import { useTheme, createShadow, createColorShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { ProfileSection, InfoItem } from '@/features/common/ProfileSection'
 import SmartImage from '@/core/SmartImageViewer'
@@ -60,13 +60,12 @@ import { LANGUAGES, SOCIAL_PLATFORMS } from '@/core/constants/settings'
 export default function ProfileScreen() {
 	const router = useRouter()
 	const { colors } = useTheme()
-	const isDark = true
 	const { refreshUser, translate, localize } = useUser()
 	const { width } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
-	const styles = createStyles(colors, isDark, isWideScreen, width)
+	const styles = createStyles(colors, isWideScreen, width)
 
 	const renderLangFlag = (code: string | undefined, fallback: string = translate('not_set', 'Not set')) => {
 		const lang = LANGUAGES.find((l) => l.code === code)
@@ -75,7 +74,7 @@ export default function ProfileScreen() {
 			<View style={styles.flagContainer}>
 				<Text style={styles.flagText}>{lang.flag}</Text>
 				{lang.icon && (
-					<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={[styles.langIconBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
 					</View>
 				)}
@@ -544,7 +543,7 @@ export default function ProfileScreen() {
 									icon={editMode.photo ? 'close' : 'camera'}
 									label={editMode.photo ? translate('cancel', 'Cancel') : translate('change_profile_photo', 'Change profile photo')}
 									onPress={() => toggleEdit('photo', !editMode.photo)}
-									iconColor="#fff"
+									iconColor={themeColors.buttonText}
 									colors={colors}
 									style={styles.changePhotoButton}
 								/>
@@ -692,7 +691,7 @@ export default function ProfileScreen() {
 											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 												<View style={styles.flagContainer}>
 													<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
-													<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+													<View style={[styles.langIconBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
 														<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
 													</View>
 												</View>
@@ -710,7 +709,7 @@ export default function ProfileScreen() {
 											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
 												<View style={styles.flagContainer}>
 													<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
-													<View style={[styles.langIconBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+													<View style={[styles.langIconBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
 														<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
 													</View>
 												</View>
@@ -739,7 +738,7 @@ export default function ProfileScreen() {
 							<>
 								<View style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>Biography</Text>
-									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: colors.text + '05' }]}>
 											<Ionicons name="document-text" size={20} color={colors.textSecondary} />
 										</View>
@@ -897,7 +896,7 @@ export default function ProfileScreen() {
 							SOCIAL_PLATFORMS.map((platform) => (
 								<View key={platform.id} style={styles.inputGroup}>
 									<Text style={styles.inputLabel}>{platform.label}</Text>
-									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.card }]}>
+									<View style={[styles.socialInputContainer, { borderColor: colors.border, backgroundColor: colors.background }]}>
 										<View style={[styles.socialIconBadge, { backgroundColor: platform.color + '15' }]}>
 											<Ionicons name={platform.icon as any} size={20} color={platform.color} />
 										</View>
@@ -1028,7 +1027,7 @@ export default function ProfileScreen() {
 										label="WhatsApp"
 										value={userData.contact.whatsapp}
 										icon="logo-whatsapp"
-										iconColor="#25D366"
+										iconColor={themeColors.whatsApp}
 										onPress={() => Linking.openURL(`https://wa.me/${userData.contact?.whatsapp?.replace(/[^0-9]/g, '')}`).catch(() => {})}
 										onCopy={async () => {
 											await Clipboard.setStringAsync(userData.contact?.whatsapp || '')
@@ -1060,7 +1059,7 @@ export default function ProfileScreen() {
 												key={lang.code}
 												style={[
 													styles.langOption,
-													{ borderColor: colors.border, backgroundColor: colors.card },
+													{ borderColor: colors.border, backgroundColor: colors.background },
 													userData.settings?.lang?.app === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
 												]}
 												onPress={() => {
@@ -1081,7 +1080,7 @@ export default function ProfileScreen() {
 												key={lang.code}
 												style={[
 													styles.langOption,
-													{ borderColor: colors.border, backgroundColor: colors.card },
+													{ borderColor: colors.border, backgroundColor: colors.background },
 													userData.settings?.lang?.content === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
 												]}
 												onPress={() => {
@@ -1114,7 +1113,9 @@ export default function ProfileScreen() {
 											<View
 												style={[
 													styles.switchThumb,
-													userData.settings?.purchases?.confirmation?.isEnabled !== false ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }
+													userData.settings?.purchases?.confirmation?.isEnabled !== false
+														? { transform: [{ translateX: 20 }], backgroundColor: themeColors.buttonText }
+														: { backgroundColor: themeColors.buttonText }
 												]}
 											/>
 										</TouchableOpacity>
@@ -1139,7 +1140,7 @@ export default function ProfileScreen() {
 					{personalDashboard && (
 						<ProfileSection title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')}>
 							<View style={{ gap: 16 }}>
-								<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+								<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
 									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
 									{personalDashboard.topBusinesses.frequent.length === 0 ? (
 										<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
@@ -1162,7 +1163,7 @@ export default function ProfileScreen() {
 										))
 									)}
 								</View>
-								<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+								<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
 									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_new', 'Recently Discovered')}</Text>
 									{personalDashboard.topBusinesses.new.length === 0 ? (
 										<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
@@ -1200,7 +1201,7 @@ export default function ProfileScreen() {
 							keyboardShouldPersistTaps="handled"
 							showsVerticalScrollIndicator={false}
 						>
-							<View style={[styles.businessModalContent, { backgroundColor: colors.card }]}>
+							<View style={[styles.businessModalContent, { backgroundColor: colors.background }]}>
 								<View style={styles.businessModalHeader}>
 									<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
 										<Ionicons name="briefcase" size={32} color={colors.primary} />
@@ -1213,7 +1214,7 @@ export default function ProfileScreen() {
 									<View style={styles.languageInputGroup}>
 										<View style={styles.inputLabelRow}>
 											<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
-											<Text style={[styles.required, { color: '#EF4444' }]}>*</Text>
+											<Text style={[styles.required, { color: themeColors.error }]}>*</Text>
 										</View>
 										<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
 											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
@@ -1321,7 +1322,7 @@ export default function ProfileScreen() {
 	)
 }
 
-const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, width?: number) =>
+const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 	StyleSheet.create({
 		container: {
 			flex: 1,
@@ -1370,10 +1371,10 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		profileCard: {
 			alignItems: 'center',
 			marginBottom: 24,
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 20,
 			borderWidth: 1,
-			borderColor: colors.info || '#3B82F6',
+			borderColor: colors.info,
 			overflow: 'hidden'
 		},
 		profileBanner: {
@@ -1405,7 +1406,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			alignItems: 'center'
 		},
 		placeholderText: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 36,
 			fontWeight: 'bold'
 		},
@@ -1420,7 +1421,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 3,
-			borderColor: colors.card,
+			borderColor: colors.background,
 			...createShadow({ offsetY: 2, opacity: 0.25, radius: 3, elevation: 3 })
 		},
 		photoActionsPanel: {
@@ -1535,11 +1536,11 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 		},
 		section: {
 			marginBottom: 32,
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			padding: 20,
 			borderWidth: 1,
-			borderColor: colors.info || '#3B82F6'
+			borderColor: colors.info
 		},
 		sectionTitle: {
 			fontSize: 18,
@@ -1667,7 +1668,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			marginBottom: 2
 		},
 		input: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			color: colors.text,
 			fontSize: 14,
 			paddingHorizontal: 12,
@@ -1678,7 +1679,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			borderRadius: 12,
 			borderWidth: 2,
 			borderColor: colors.border,
-			...createColorShadow({ color: colors.primary, offsetY: 0, opacity: 0, radius: 0, elevation: 0 })
+			...createShadow({ color: colors.primary, offsetY: 0, opacity: 0, radius: 0, elevation: 0 })
 		},
 		textArea: {
 			minHeight: 100,
@@ -1728,7 +1729,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 1,
-			borderColor: 'rgba(0,0,0,0.05)'
+			borderColor: themeColors.background5
 		},
 		langOption: {
 			justifyContent: 'center',
@@ -1888,7 +1889,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			width: 24,
 			height: 24,
 			borderRadius: 12,
-			backgroundColor: '#fff',
+			backgroundColor: themeColors.buttonText,
 			position: 'absolute',
 			top: 2,
 			left: 2,
@@ -1899,7 +1900,7 @@ const createStyles = (colors: any, isDark: boolean, isWideScreen?: boolean, widt
 			flex: 1,
 			justifyContent: 'center',
 			alignItems: 'center',
-			backgroundColor: 'rgba(0, 0, 0, 0.5)'
+			backgroundColor: themeColors.background50
 		},
 		modalBackdrop: {
 			position: 'absolute',

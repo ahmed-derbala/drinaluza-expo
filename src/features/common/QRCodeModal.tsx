@@ -5,7 +5,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { IconButton } from './buttons/IconButton'
 import { DownloadButton } from './buttons/DownloadButton'
@@ -190,7 +190,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 	return (
 		<Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
 			<View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay }]}>
-				<View style={[styles.qrModalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.qrModalCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					{/* Close Button */}
 					<IconButton icon="close" label={translate('close', 'Close')} onPress={onClose} colors={colors} style={{ position: 'absolute', top: 16, right: 16, backgroundColor: colors.surfaceVariant }} />
 
@@ -205,13 +205,13 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 					) : null}
 
 					{/* QR Code Container */}
-					<View ref={containerRef} style={[styles.qrImageContainer, { borderColor: colors.primary + '30', backgroundColor: '#FFFFFF', marginTop: subtitle ? 0 : 16 }]}>
+					<View ref={containerRef} style={[styles.qrImageContainer, { borderColor: colors.primary + '30', backgroundColor: themeColors.buttonText, marginTop: subtitle ? 0 : 16 }]}>
 						{visible && value ? (
 							<QRCode
 								value={value}
 								size={190}
-								color="#0B132B"
-								backgroundColor="#FFFFFF"
+								color={themeColors.background}
+								backgroundColor={themeColors.buttonText}
 								getRef={(ref) => {
 									qrRef.current = ref
 								}}
@@ -275,18 +275,7 @@ const styles = StyleSheet.create({
 		padding: 28,
 		alignItems: 'center',
 		borderWidth: 1.5,
-		position: 'relative',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 10 },
-				shadowOpacity: 0.25,
-				shadowRadius: 20
-			},
-			android: {
-				elevation: 10
-			}
-		})
+		position: 'relative'
 	},
 	qrModalTitle: {
 		fontSize: 22,
@@ -311,18 +300,7 @@ const styles = StyleSheet.create({
 		padding: 10,
 		justifyContent: 'center',
 		alignItems: 'center',
-		marginBottom: 28,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.1,
-				shadowRadius: 10
-			},
-			android: {
-				elevation: 4
-			}
-		})
+		marginBottom: 28
 	},
 	qrActions: {
 		flexDirection: 'row',

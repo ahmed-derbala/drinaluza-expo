@@ -94,17 +94,20 @@ export default function FeedScreen() {
 		}
 	}, [])
 
+	const isProductCard = useCallback((item: FeedItem) => (item.card?.kind || 'product').startsWith('product'), [])
+
 	// ── Sync cache-first page 1 items into local state and enrich contacts ──
 	useEffect(() => {
-		setFeedItems(feedItemsFromCache)
-		setDisplayedItems(feedItemsFromCache)
-		if (feedItemsFromCache.length > 0) {
-			enrichFeedContacts(feedItemsFromCache, (enriched) => {
+		const products = feedItemsFromCache.filter(isProductCard)
+		setFeedItems(products)
+		setDisplayedItems(products)
+		if (products.length > 0) {
+			enrichFeedContacts(products, (enriched) => {
 				setFeedItems(enriched)
 				setDisplayedItems(enriched)
 			})
 		}
-	}, [feedItemsFromCache])
+	}, [feedItemsFromCache, isProductCard])
 
 	// ── Load more: append next page from network ──
 	const fetchMoreFeed = useCallback(
@@ -114,6 +117,7 @@ export default function FeedScreen() {
 				const apiFilter = filterType === 'all' ? undefined : filterType
 				const response = await getFeed(pageNum, 10, apiFilter)
 				const newItems = response.data.docs
+				const productNewItems = newItems.filter(isProductCard)
 
 				if (response.data.pagination) {
 					setHasMore(response.data.pagination.hasNextPage)
@@ -122,14 +126,14 @@ export default function FeedScreen() {
 				}
 
 				setFeedItems((prev) => {
-					const updated = [...prev, ...newItems]
+					const updated = [...prev, ...productNewItems]
 					enrichFeedContacts(updated, (enriched) => {
 						setFeedItems(enriched)
 						setDisplayedItems(enriched)
 					})
 					return updated
 				})
-				setDisplayedItems((prev) => [...prev, ...newItems])
+				setDisplayedItems((prev) => [...prev, ...productNewItems])
 			} catch (err) {
 				logError(err, 'fetchMoreFeed')
 				// Never clear cached feed because of a network failure.
@@ -137,7 +141,7 @@ export default function FeedScreen() {
 				setIsLoadingMore(false)
 			}
 		},
-		[selectedFilter]
+		[selectedFilter, isProductCard]
 	)
 
 	// ── Effects ──

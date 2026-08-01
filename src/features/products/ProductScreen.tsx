@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { updateProduct } from '@/features/products/products.api'
@@ -162,11 +162,11 @@ export default function ProductScreen() {
 			toast.show({
 				title: 'Success',
 				message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
-				color: '#10B981',
+				color: themeColors.success,
 				screen: user ? '/purchases?status=cart' : '/auth'
 			})
 		} catch {
-			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
+			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: themeColors.error })
 		}
 	}
 
@@ -565,7 +565,7 @@ export default function ProductScreen() {
 							<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
 						</View>
 					)}
-					<LinearGradient colors={['transparent', 'rgba(0,0,0,0.85)']} style={styles.imageGradient}>
+					<LinearGradient colors={['transparent', themeColors.background95]} style={styles.imageGradient}>
 						<View style={[styles.stockBadge, { backgroundColor: stockStatus.bgColor, borderColor: stockStatus.color + '40' }]}>
 							<View style={[styles.stockDot, { backgroundColor: stockStatus.color }]} />
 							<Text style={[styles.stockText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
@@ -581,7 +581,7 @@ export default function ProductScreen() {
 	}
 
 	const renderInfoCard = () => (
-		<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			{saving && (
 				<View style={styles.savingOverlay}>
 					<ActivityIndicator size="small" color={colors.primary} />
@@ -656,14 +656,14 @@ export default function ProductScreen() {
 			/>
 
 			{isAvailable && (
-				<View style={[styles.checkoutPanel, { borderTopColor: colors.borderLight }]}>
+				<View style={[styles.checkoutPanel, { borderTopColor: colors.border }]}>
 					<View style={styles.checkoutTotalCol}>
 						<Text style={[styles.checkoutTotalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 						<Text style={[styles.checkoutTotalPrice, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
 					</View>
 
 					<View style={styles.checkoutActionsCol}>
-						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.borderLight }]}>
+						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
 							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} colors={colors} iconColor={colors.text} style={styles.stepperBtn} />
 							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
 							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} colors={colors} iconColor={colors.text} style={styles.stepperBtn} />
@@ -700,7 +700,7 @@ export default function ProductScreen() {
 
 		return (
 			<View style={styles.metadataContainer}>
-				<View style={[styles.metaCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+				<View style={[styles.metaCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					<View style={[styles.metaCardHeader, styles.metaCardHeaderWithActions]}>
 						<TouchableOpacity onPress={handleBusinessNavPress} activeOpacity={0.75} style={styles.metaCardHeaderLeft}>
 							<View style={styles.metaCardTitleWrap}>
@@ -738,7 +738,7 @@ export default function ProductScreen() {
 				</View>
 
 				{product.defaultProduct && (
-					<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<View style={styles.metaCardHeader}>
 							<View style={styles.metaCardTitleWrap}>
 								<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
@@ -752,7 +752,7 @@ export default function ProductScreen() {
 				)}
 
 				{product.searchTerms && product.searchTerms.length > 0 && (
-					<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<Text style={[styles.metaCardTitleStatic, { color: colors.textTertiary }]}>{translate('search_keywords', 'Search Keywords')}</Text>
 						<View style={styles.tagWrap}>
 							{product.searchTerms.map((keyword, index) => (
@@ -765,7 +765,7 @@ export default function ProductScreen() {
 				)}
 
 				{product.availability && (
-					<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<View style={styles.metaCardHeader}>
 							<View style={styles.metaCardTitleWrap}>
 								<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
@@ -915,12 +915,12 @@ const styles = StyleSheet.create({
 	},
 	unavailableOverlay: {
 		...StyleSheet.absoluteFill,
-		backgroundColor: 'rgba(0,0,0,0.7)',
+		backgroundColor: themeColors.background75,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	unavailableText: {
-		color: '#EF4444',
+		color: themeColors.error,
 		fontSize: 22,
 		fontWeight: '800',
 		textTransform: 'uppercase',

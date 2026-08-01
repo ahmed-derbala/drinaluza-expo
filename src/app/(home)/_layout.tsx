@@ -3,7 +3,7 @@ import { Tabs, usePathname, useRouter } from 'expo-router'
 import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
 import { useLayout, useUser } from '@/core/contexts'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
@@ -51,25 +51,10 @@ export default function HomeLayout() {
 									width: barWidth,
 									height: 52,
 									flexDirection: 'row',
-									backgroundColor: 'rgba(20, 20, 20, 0.85)',
+									backgroundColor: themeColors.background,
 									borderRadius: 26,
 									borderWidth: 1,
-									borderColor: colors.primary,
-									...Platform.select({
-										ios: {
-											shadowColor: 'rgba(0, 0, 0, 0.5)',
-											shadowOffset: { width: 0, height: 4 },
-											shadowOpacity: 1,
-											shadowRadius: 16
-										},
-										android: {
-											elevation: 12
-										},
-										web: {
-											boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)',
-											backdropFilter: 'blur(20px)'
-										}
-									})
+									borderColor: colors.primary
 								}}
 							>
 								{state.routes.map((route: any, index: number) => {
@@ -128,7 +113,7 @@ export default function HomeLayout() {
 														}
 													]}
 												>
-													<Text style={{ color: '#fff', fontSize: 9, fontWeight: '700', lineHeight: 12 }}>{options.tabBarBadge}</Text>
+													<Text style={{ color: themeColors.buttonText, fontSize: 9, fontWeight: '700', lineHeight: 12 }}>{options.tabBarBadge}</Text>
 												</View>
 											)}
 										</TouchableOpacity>
@@ -173,7 +158,7 @@ export default function HomeLayout() {
 							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
 							tabBarBadgeStyle: {
 								backgroundColor: colors.error,
-								color: '#fff',
+								color: themeColors.buttonText,
 								fontSize: 9,
 								minWidth: 16,
 								height: 16,

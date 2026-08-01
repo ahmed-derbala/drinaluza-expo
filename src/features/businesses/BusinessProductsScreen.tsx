@@ -8,7 +8,7 @@ import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { Product } from '@/features/businesses/businesses.interface'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { Stack } from 'expo-router'
@@ -78,7 +78,7 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 
 	return (
 		<Pressable
-			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
+			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.background, borderColor: colors.info }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
 			onPress={() => {
 				if (!item.slug) return
 				if (isDashboard && businessSlug) {
@@ -93,7 +93,7 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 				<SmartImage source={imageUrl} style={cardStyles.image} resizeMode="cover" entityType="product" />
 				{/* Stock badge overlay */}
 				{(isOutOfStock || isLowStock) && (
-					<View style={[cardStyles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.35)' }]}>
+					<View style={[cardStyles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : themeColors.background25 }]}>
 						<View style={[cardStyles.stockPill, { backgroundColor: stockColor + '22', borderColor: stockColor + '66' }]}>
 							<MaterialIcons name={stockIcon} size={12} color={stockColor} />
 							<Text style={[cardStyles.stockPillText, { color: stockColor }]}>{stockLabel}</Text>
@@ -132,7 +132,7 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 											position: 'absolute',
 											fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
 											fontWeight: 'bold',
-											color: '#ffffff',
+											color: themeColors.buttonText,
 											textAlign: 'center',
 											includeFontPadding: false,
 											textAlignVertical: 'center'
@@ -157,7 +157,7 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 							</View>
 						) : null}
 						{item.specs?.origin?.city ? (
-							<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)' }]}>
+							<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant }]}>
 								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
 								<Text style={[cardStyles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
 							</View>
@@ -188,7 +188,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 							}}
 							variant="primary"
 							colors={colors}
-							style={Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any, default: {} })}
 						/>
 					</View>
 				)}
@@ -289,7 +288,7 @@ const cardStyles = StyleSheet.create({
 		borderRadius: 6,
 		gap: 3,
 		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.05)'
+		borderColor: themeColors.buttonText5
 	},
 	originChipText: {
 		fontSize: 10,
@@ -398,9 +397,14 @@ export default function BusinessProductsScreen() {
 				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`, color: '#10B981', screen: user ? '/purchases?status=cart' : '/auth' })
+				toast.show({
+					title: 'Success',
+					message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
+					color: themeColors.success,
+					screen: user ? '/purchases?status=cart' : '/auth'
+				})
 			} catch {
-				toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: '#EF4444' })
+				toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: themeColors.error })
 			}
 		},
 		[cart, localize, translate, router]
@@ -475,7 +479,7 @@ export default function BusinessProductsScreen() {
 				>
 					<Text style={[s.chipText, { color: active ? f.color : colors.textSecondary }]}>{f.label}</Text>
 					<View style={[s.chipCount, { backgroundColor: active ? f.color : colors.surfaceVariant }]}>
-						<Text style={[s.chipCountText, { color: active ? '#0F172A' : colors.textSecondary }]}>{f.count}</Text>
+						<Text style={[s.chipCountText, { color: active ? themeColors.surface : colors.textSecondary }]}>{f.count}</Text>
 					</View>
 				</TouchableOpacity>
 			)
@@ -641,7 +645,7 @@ export default function BusinessProductsScreen() {
 
 			{isDashboard && (
 				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/${businessSlug}/create-product` as any)}>
-					<Ionicons name="add" size={28} color={colors.textOnPrimary || '#0F172A'} />
+					<Ionicons name="add" size={28} color={colors.buttonText} />
 				</TouchableOpacity>
 			)}
 		</View>
@@ -665,14 +669,12 @@ const s = StyleSheet.create({
 		borderRadius: 14,
 		paddingHorizontal: 14,
 		height: 46,
-		borderWidth: 1,
-		...Platform.select({ web: { outlineWidth: 0 } as any })
+		borderWidth: 1
 	},
 	searchInput: {
 		flex: 1,
 		fontSize: 15,
-		padding: 0,
-		...Platform.select({ web: { outlineStyle: 'none' } as any })
+		padding: 0
 	},
 	filtersOuter: { paddingTop: 4, paddingBottom: 10 },
 	filtersContent: { gap: 8, paddingVertical: 2 },

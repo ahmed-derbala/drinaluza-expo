@@ -22,7 +22,7 @@ import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
@@ -52,8 +52,8 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 			style={[
 				styles.productCard,
 				{
-					backgroundColor: colors.card,
-					borderColor: colors.borderLight || '#1E293B',
+					backgroundColor: colors.background,
+					borderColor: colors.border,
 					width: cardWidth
 				}
 			]}
@@ -81,7 +81,7 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 
 					{rating > 0 ? (
 						<View style={styles.ratingRow}>
-							<Ionicons name="star" size={12} color="#FFD700" />
+							<Ionicons name="star" size={12} color={themeColors.warning} />
 							<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
 						</View>
 					) : null}
@@ -103,7 +103,7 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 											position: 'absolute',
 											fontSize: getCaliberFontSize(product.specs.caliber, 'chip'),
 											fontWeight: 'bold',
-											color: '#ffffff',
+											color: themeColors.buttonText,
 											textAlign: 'center',
 											includeFontPadding: false,
 											textAlignVertical: 'center'
@@ -134,7 +134,7 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 							</View>
 						) : null}
 						{product.specs?.origin?.city ? (
-							<View style={[styles.originChip, { backgroundColor: colors.borderLight + '25', borderColor: colors.borderLight + '40' }]}>
+							<View style={[styles.originChip, { backgroundColor: colors.border + '25', borderColor: colors.border + '40' }]}>
 								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
 								<Text style={[styles.originChipText, { color: colors.textSecondary }]} numberOfLines={1}>
 									{product.specs.origin.city}
@@ -290,7 +290,7 @@ export default function BusinessDetailsScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Business Info Card */}
-				<View style={[styles.infoCard, { backgroundColor: colors.card, borderColor: colors.borderLight || '#1E293B' }]}>
+				<View style={[styles.infoCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					<LinearGradient colors={[colors.primary, colors.primary + '10']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.businessBanner} />
 
 					<View style={styles.infoCardContent}>
@@ -307,7 +307,7 @@ export default function BusinessDetailsScreen() {
 								{business.state?.code && <StateBadge stateCode={business.state.code} />}
 								{business.rating?.average ? (
 									<View style={styles.headerRatingRow}>
-										<Ionicons name="star" size={14} color="#FFD700" />
+										<Ionicons name="star" size={14} color={themeColors.warning} />
 										<Text style={[styles.headerRatingText, { color: colors.text }]}>{business.rating.average.toFixed(1)}</Text>
 										<Text style={{ fontSize: 11, color: colors.textTertiary }}>({business.rating.count})</Text>
 									</View>
@@ -318,7 +318,7 @@ export default function BusinessDetailsScreen() {
 						{business.description ? <Text style={[styles.businessDescription, { color: colors.textSecondary }]}>{business.description}</Text> : null}
 
 						{/* Quick Actions Row */}
-						<View style={[styles.quickActionsRow, { borderTopColor: colors.borderLight + '30', borderBottomColor: colors.borderLight + '30' }]}>
+						<View style={[styles.quickActionsRow, { borderTopColor: colors.border + '30', borderBottomColor: colors.border + '30' }]}>
 							<PhoneButton phone={business.contact?.phone} size={50} />
 							<WhatsAppButton whatsapp={business.contact?.whatsapp || business.contact?.phone?.fullNumber} size={50} />
 							<EmailButton email={business.contact?.email} size={50} />
@@ -330,7 +330,7 @@ export default function BusinessDetailsScreen() {
 						<View style={styles.infoCardGrid}>
 							{business.owner ? (
 								<TouchableOpacity
-									style={[styles.infoCardCol, { borderColor: colors.borderLight + '40', backgroundColor: colors.background + '40' }]}
+									style={[styles.infoCardCol, { borderColor: colors.border + '40', backgroundColor: colors.background + '40' }]}
 									onPress={() => {
 										if (business.owner?.slug) {
 											router.push(`/users/${business.owner.slug}` as any)
@@ -355,7 +355,7 @@ export default function BusinessDetailsScreen() {
 							) : null}
 
 							{typeof business.deliveryRadiusKm === 'number' ? (
-								<View style={[styles.infoCardCol, { borderColor: colors.borderLight + '40', backgroundColor: colors.background + '40' }]}>
+								<View style={[styles.infoCardCol, { borderColor: colors.border + '40', backgroundColor: colors.background + '40' }]}>
 									<Ionicons name="bicycle" size={16} color={colors.primary} />
 									<View style={{ flex: 1 }}>
 										<Text style={styles.infoLabel}>{translate('delivery_radius', 'Delivery')}</Text>
@@ -368,7 +368,7 @@ export default function BusinessDetailsScreen() {
 						</View>
 
 						{business.address ? (
-							<View style={[styles.detailsSection, { borderTopWidth: 1, borderTopColor: colors.borderLight + '20' }]}>
+							<View style={[styles.detailsSection, { borderTopWidth: 1, borderTopColor: colors.border + '20' }]}>
 								<Ionicons name="location-outline" size={16} color={colors.textSecondary} />
 								<Text style={[styles.detailsText, { color: colors.textSecondary }]}>{fullAddress}</Text>
 							</View>
@@ -377,7 +377,7 @@ export default function BusinessDetailsScreen() {
 				</View>
 
 				{/* Products Section */}
-				<View style={[styles.productsSection, { backgroundColor: colors.card, borderColor: colors.borderLight || '#1E293B' }]}>
+				<View style={[styles.productsSection, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					<View style={styles.productsSectionHeader}>
 						<Ionicons name="fish-outline" size={20} color={colors.primary} />
 						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('business_products', 'Products')}</Text>
@@ -595,7 +595,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 1,
-			borderColor: colors.borderLight + '20'
+			borderColor: colors.border + '20'
 		},
 		detailsSection: {
 			flexDirection: 'row',
@@ -693,11 +693,11 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 		ratingText: {
 			fontSize: 12,
 			fontWeight: '700',
-			color: '#FFD700'
+			color: themeColors.warning
 		},
 		ratingCount: {
 			fontSize: 11,
-			color: '#666'
+			color: themeColors.textTertiary
 		},
 		productUnit: {
 			fontSize: 11,
@@ -822,7 +822,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			borderRadius: 6,
 			gap: 3,
 			borderWidth: 1,
-			borderColor: 'rgba(255,255,255,0.05)'
+			borderColor: themeColors.buttonText5
 		},
 		originChipText: {
 			fontSize: 10,

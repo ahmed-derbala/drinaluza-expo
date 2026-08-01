@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Linking } from 'react-native'
 import { IconButton } from './IconButton'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export interface WhatsAppButtonProps {
@@ -25,8 +25,8 @@ export function WhatsAppButton({ whatsapp, label, size, disabled = false, onPres
 	const { colors } = useTheme()
 	if (!whatsapp) return null
 
-	const resolvedIconColor = '#25D366'
-	const resolvedStyle = useMemo(() => ({ backgroundColor: '#25D3661A', borderColor: '#25D36638' }), [])
+	const resolvedIconColor = themeColors.whatsApp
+	const resolvedStyle = useMemo(() => ({ backgroundColor: themeColors.whatsApp10, borderColor: themeColors.whatsApp10 }), [])
 
 	const number = cleanWhatsAppNumber(whatsapp)
 	if (!number) return null

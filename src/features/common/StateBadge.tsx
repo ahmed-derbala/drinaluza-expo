@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export const STATES = {
@@ -24,23 +24,23 @@ export default function StateBadge({ stateCode, showDot = true, containerStyle, 
 	const { colors } = useTheme()
 	const code = stateCode ? stateCode.toLowerCase() : ''
 
-	let stateColor = '#64748B' // default neutral/deleted grey
-	let stateBg = '#64748B15'
+	let stateColor = themeColors.textTertiary // default neutral/deleted grey
+	let stateBg = themeColors.textTertiary8
 	let label = translate(code || 'unknown', (code || 'UNKNOWN').toUpperCase())
 
 	if (code === 'active') {
-		stateColor = colors.success || '#10B981'
-		stateBg = (colors.success || '#10B981') + '15'
+		stateColor = colors.success
+		stateBg = colors.success + '15'
 	} else if (code === 'pending') {
-		stateColor = colors.warning || '#F59E0B'
-		stateBg = (colors.warning || '#F59E0B') + '15'
+		stateColor = colors.warning
+		stateBg = colors.warning + '15'
 	} else if (code === 'suspended' || code === 'inactive') {
-		stateColor = colors.error || '#EF4444'
-		stateBg = (colors.error || '#EF4444') + '15'
+		stateColor = colors.error
+		stateBg = colors.error + '15'
 		label = code === 'suspended' ? translate('suspended', 'SUSPENDED') : translate('inactive', 'INACTIVE')
 	} else if (code === 'deleted') {
-		stateColor = '#64748B'
-		stateBg = '#64748B15'
+		stateColor = themeColors.textTertiary
+		stateBg = themeColors.textTertiary8
 	}
 
 	return (

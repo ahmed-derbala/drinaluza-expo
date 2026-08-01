@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import SmartImage from '@/core/SmartImageViewer'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
@@ -45,7 +45,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 	const canMarkReceived = item.status === 'delivered_to_customer'
 
 	return (
-		<View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			<View style={styles.header}>
 				<TouchableOpacity
 					style={styles.headerLeft}
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
 		height: 46,
 		borderRadius: 16,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.08)'
+		borderColor: themeColors.buttonText10
 	},
 	headerInfo: {
 		flex: 1,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
 		height: 56,
 		borderRadius: 14,
 		borderWidth: 1,
-		borderColor: '#FFFFFF08'
+		borderColor: themeColors.buttonText5
 	},
 	productInfo: {
 		flex: 1,

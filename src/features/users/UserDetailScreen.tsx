@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, Linking, TouchableOpacity } from 'react-native'
@@ -104,12 +105,12 @@ export default function UserDetailScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				{/* Profile Header Card */}
-				<View style={[styles.profileCard, { backgroundColor: colors.card, borderColor: '#FFFFFF' }]}>
+				<View style={[styles.profileCard, { backgroundColor: colors.background, borderColor: themeColors.buttonText }]}>
 					<LinearGradient colors={[`${colors.primary}15`, 'transparent']} style={StyleSheet.absoluteFill} />
 
 					<View style={styles.avatarContainer}>
 						<SmartImage source={user.media?.thumbnail?.url} style={styles.avatar} entityType="user" />
-						{user.state?.code === 'active' && <View style={[styles.activeBadge, { backgroundColor: colors.success, borderColor: colors.card }]} />}
+						{user.state?.code === 'active' && <View style={[styles.activeBadge, { backgroundColor: colors.success, borderColor: colors.background }]} />}
 					</View>
 
 					<Text style={[styles.nameText, { color: colors.text }]}>{localize(user.name)}</Text>
@@ -120,7 +121,7 @@ export default function UserDetailScreen() {
 
 				{/* Contact Information */}
 				{(user.contact?.phone || user.contact?.email || user.contact?.whatsapp) && (
-					<View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: '#FFFFFF' }]}>
+					<View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: themeColors.buttonText }]}>
 						<View style={styles.sectionHeader}>
 							<Ionicons name="call-outline" size={20} color={colors.primary} />
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('contact_info', 'Contact Information')}</Text>
@@ -142,7 +143,7 @@ export default function UserDetailScreen() {
 						{user.contact?.whatsapp && (
 							<TouchableOpacity style={[styles.infoRow, { borderBottomColor: colors.border }]} onPress={() => Linking.openURL(`whatsapp://send?phone=${user.contact!.whatsapp}`)}>
 								<View style={styles.infoIconContainer}>
-									<Ionicons name="logo-whatsapp" size={18} color="#25D366" />
+									<Ionicons name="logo-whatsapp" size={18} color={themeColors.whatsApp} />
 								</View>
 								<View style={styles.infoContent}>
 									<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{translate('whatsapp', 'WhatsApp')}</Text>
@@ -169,7 +170,7 @@ export default function UserDetailScreen() {
 
 				{/* Location / Address */}
 				{user.address && (
-					<View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: '#FFFFFF' }]}>
+					<View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: themeColors.buttonText }]}>
 						<View style={styles.sectionHeader}>
 							<Ionicons name="location-outline" size={20} color={colors.primary} />
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('location', 'Location')}</Text>
@@ -227,7 +228,7 @@ const styles = StyleSheet.create({
 		height: 120,
 		borderRadius: 60,
 		borderWidth: 3,
-		borderColor: '#FFFFFF'
+		borderColor: themeColors.buttonText
 	},
 	activeBadge: {
 		position: 'absolute',
@@ -281,7 +282,7 @@ const styles = StyleSheet.create({
 		width: 36,
 		height: 36,
 		borderRadius: 18,
-		backgroundColor: 'rgba(255,255,255,0.05)',
+		backgroundColor: themeColors.buttonText5,
 		justifyContent: 'center',
 		alignItems: 'center',
 		marginRight: 12
@@ -299,7 +300,7 @@ const styles = StyleSheet.create({
 		fontWeight: '600'
 	},
 	addressContainer: {
-		backgroundColor: 'rgba(0,0,0,0.1)',
+		backgroundColor: themeColors.background5,
 		padding: 16,
 		borderRadius: 12
 	},

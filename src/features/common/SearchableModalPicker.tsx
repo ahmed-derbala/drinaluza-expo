@@ -3,7 +3,7 @@ import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityInd
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export interface SearchableModalPickerProps<T> {
@@ -105,13 +105,13 @@ function SearchableModalPicker<T>({
 					<View style={styles.modalHeader}>
 						<Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
 						<TouchableOpacity onPress={handleClose} style={styles.closeBtn} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-							<Ionicons name="close" size={24} color={colors.error || '#EF4444'} />
+							<Ionicons name="close" size={24} color={colors.error} />
 						</TouchableOpacity>
 					</View>
 
 					{/* Optional Search Bar */}
 					{searchKeyExtractor && (
-						<View style={[styles.searchContainer, { backgroundColor: colors.background, borderColor: colors.borderLight || colors.border }]}>
+						<View style={[styles.searchContainer, { backgroundColor: colors.background, borderColor: colors.border }]}>
 							<Ionicons name="search" size={20} color={colors.textSecondary} />
 							<TextInput
 								style={[styles.searchInput, { color: colors.text }]}
@@ -154,7 +154,7 @@ function SearchableModalPicker<T>({
 const styles = StyleSheet.create({
 	modalOverlay: {
 		flex: 1,
-		backgroundColor: 'rgba(0, 0, 0, 0.5)',
+		backgroundColor: themeColors.background50,
 		justifyContent: 'flex-end'
 	},
 	modalContent: {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		paddingVertical: 16,
 		borderBottomWidth: 1,
-		borderBottomColor: 'rgba(0,0,0,0.05)'
+		borderBottomColor: themeColors.background5
 	},
 	modalTitle: {
 		fontSize: 18,

@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React, { Component, ReactNode } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useTheme } from '../theme'
@@ -77,7 +78,7 @@ function ErrorBoundaryContent({ error, onRetry }: { error?: Error; onRetry: () =
 				{error?.message && `Error: ${error.message}`}
 			</Text>
 			<TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={onRetry}>
-				<Text style={[styles.retryText, { color: '#fff' }]}>Try Again</Text>
+				<Text style={[styles.retryText, { color: themeColors.buttonText }]}>Try Again</Text>
 			</TouchableOpacity>
 		</View>
 	)

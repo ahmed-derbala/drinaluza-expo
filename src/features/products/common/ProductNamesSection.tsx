@@ -97,7 +97,7 @@ export default function ProductNamesSection({
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		card: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			padding: 16,
 			marginBottom: 16,
@@ -112,7 +112,7 @@ const createStyles = (colors: any) =>
 		},
 		editSection: {
 			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight,
+			borderBottomColor: colors.border,
 			paddingBottom: 16,
 			marginBottom: 16
 		},
@@ -135,7 +135,7 @@ const createStyles = (colors: any) =>
 			alignItems: 'flex-start',
 			gap: 12,
 			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight,
+			borderBottomColor: colors.border,
 			paddingBottom: 12,
 			marginBottom: 16
 		},

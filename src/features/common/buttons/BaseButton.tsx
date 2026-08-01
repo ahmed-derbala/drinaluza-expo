@@ -75,9 +75,9 @@ export function BaseButton({
 
 	const backgroundColor = disabled ? colors.surfaceVariant : accentColor ? accentColor : isDanger ? hexToRgba(colors.error, 0.1) : colors.surface
 
-	const borderColor = disabled ? colors.surfaceVariant : accentColor ? accentColor : isDanger ? hexToRgba(colors.error, 0.25) : colors.borderLight
+	const borderColor = disabled ? colors.surfaceVariant : accentColor ? accentColor : isDanger ? hexToRgba(colors.error, 0.25) : colors.border
 
-	const resolvedIconColor = iconColorOverride ?? (disabled ? colors.textTertiary : accentColor ? colors.textOnPrimary : isDanger ? colors.error : colors.textSecondary)
+	const resolvedIconColor = iconColorOverride ?? (disabled ? colors.textTertiary : accentColor ? colors.buttonText : isDanger ? colors.error : colors.textSecondary)
 
 	const accessibilityLabel = text && label && label !== text ? `${label} ${text}` : label || text
 
@@ -148,10 +148,6 @@ const styles = StyleSheet.create({
 	icon: {
 		lineHeight: 24,
 		textAlign: 'center',
-		textAlignVertical: 'center',
-		...Platform.select({
-			android: { includeFontPadding: false } as any,
-			default: {}
-		})
+		textAlignVertical: 'center'
 	}
 })

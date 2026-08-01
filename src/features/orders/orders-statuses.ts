@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import { translate } from '../../core/translation'
 
 export const ORDER_STATUSES = {
@@ -17,16 +18,16 @@ export const ORDER_STATUSES = {
 const orderStatuses = ORDER_STATUSES
 
 export const orderStatusColors = {
-	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: '#FFA500', // Orange
-	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: '#FF9800', // Deep Orange
-	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: '#2196F3', // Blue
-	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: '#9C27B0', // Purple
-	[ORDER_STATUSES.RESERVATION_EXPIRED]: '#607D8B', // Blue Grey
-	[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: '#03A9F4', // Light Blue
-	[ORDER_STATUSES.DELIVERED_TO_CUSTOMER]: '#4CAF50', // Green
-	[ORDER_STATUSES.RECEIVED_BY_CUSTOMER]: '#8BC34A', // Light Green
-	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: '#F44336', // Red
-	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: '#F44336' // Red
+	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: themeColors.warning, // Orange
+	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: themeColors.warning, // Deep Orange
+	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: themeColors.info, // Blue
+	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: themeColors.primary, // Purple
+	[ORDER_STATUSES.RESERVATION_EXPIRED]: themeColors.textTertiary, // Blue Grey
+	[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: themeColors.primary, // Light Blue
+	[ORDER_STATUSES.DELIVERED_TO_CUSTOMER]: themeColors.success, // Green
+	[ORDER_STATUSES.RECEIVED_BY_CUSTOMER]: themeColors.success, // Light Green
+	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: themeColors.error, // Red
+	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: themeColors.error // Red
 }
 
 export const orderStatusLabels = {

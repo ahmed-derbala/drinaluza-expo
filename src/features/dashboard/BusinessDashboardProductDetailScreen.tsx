@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView, KeyboardAvoidingView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
@@ -709,7 +709,7 @@ const createStyles = (colors: any) =>
 			justifyContent: 'flex-end',
 			paddingBottom: 24,
 			borderBottomWidth: 1.5,
-			borderColor: colors.borderLight,
+			borderColor: colors.border,
 			backgroundColor: colors.surface
 		},
 		heroContent: {
@@ -768,14 +768,10 @@ const createStyles = (colors: any) =>
 			flexDirection: 'column'
 		},
 		sectionCard: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 24,
 			borderWidth: 1.5,
-			borderColor: colors.borderLight,
-			padding: 20,
-			...Platform.select({
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.05, shadowRadius: 10 },
-				android: { elevation: 2 }
-			})
+			borderColor: colors.border,
+			padding: 20
 		}
 	})

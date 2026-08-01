@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { Business } from './businesses.interface'
@@ -78,7 +78,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 					</Text>
 					{showRating && (
 						<View style={styles.ratingContainer as ViewStyle}>
-							<Ionicons name="star" size={isExtraSmall ? 12 : 14} color="#FFD700" />
+							<Ionicons name="star" size={isExtraSmall ? 12 : 14} color={themeColors.warning} />
 							<Text style={styles.ratingText as TextStyle}>{rating.toFixed(1)}</Text>
 							<Text style={styles.ratingCount as TextStyle}>({ratingCount})</Text>
 						</View>
@@ -149,10 +149,10 @@ const createStyles = (
 			margin: opts.isExtraSmall ? 4 : 6,
 			borderRadius: opts.isExtraSmall ? 12 : 16,
 			overflow: 'hidden',
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderWidth: 1.5,
-			borderColor: colors.info || '#3B82F6',
-			shadowColor: '#000',
+			borderColor: colors.info,
+			shadowColor: themeColors.background,
 			shadowOffset: { width: 0, height: 2 },
 			shadowOpacity: 0.15,
 			shadowRadius: 6,
@@ -169,7 +169,7 @@ const createStyles = (
 			position: 'relative',
 			width: '100%',
 			height: Math.min(opts.imageHeight, opts.windowHeight * 0.18),
-			backgroundColor: 'rgba(255, 255, 255, 0.05)'
+			backgroundColor: themeColors.buttonText5
 		},
 		businessImage: {
 			width: '100%',

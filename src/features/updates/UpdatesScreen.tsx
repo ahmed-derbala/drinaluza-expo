@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { LinearGradient } from 'expo-linear-gradient'
 import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
 import { useTheme, AppThemeColors } from '@/core/theme'
@@ -116,15 +115,6 @@ const styles = StyleSheet.create({
 	progressPanel: {
 		gap: 12
 	},
-	progressTrack: {
-		height: 12,
-		borderRadius: 6,
-		overflow: 'hidden'
-	},
-	progressFill: {
-		height: '100%',
-		borderRadius: 6
-	},
 	progressMeta: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',
@@ -229,7 +219,7 @@ const InfoCard = ({ icon, label, value, color, active, activeBorderColor, footer
 			styles.infoCard,
 			{
 				backgroundColor: active ? hexToRgba(color, 0.06) : colors.background,
-				borderColor: active ? activeBorderColor || hexToRgba(color, 0.3) : colors.borderLight
+				borderColor: active ? activeBorderColor || hexToRgba(color, 0.3) : colors.border
 			}
 		]}
 	>
@@ -424,16 +414,6 @@ export default function UpdatesScreen() {
 		return downloadedApks.some((apk) => apk.version === latestRelease.latest_version)
 	}, [latestRelease, downloadedApks])
 
-	const installableApk = useMemo(() => {
-		const installables = downloadedApks.filter((apk) => apk.isInstallable)
-		if (installables.length === 0) return undefined
-		return [...installables].sort((a, b) => {
-			if (isVersionGreater(a.version, b.version)) return -1
-			if (isVersionGreater(b.version, a.version)) return 1
-			return 0
-		})[0]
-	}, [downloadedApks])
-
 	const sortedApks = useMemo(() => {
 		return [...downloadedApks].sort((a, b) => {
 			if (isVersionGreater(a.version, b.version)) return -1
@@ -443,13 +423,6 @@ export default function UpdatesScreen() {
 	}, [downloadedApks])
 
 	const isDownloadDisabled = isChecking || isDownloading || !latestRelease || isUpToDate || hasLatestApkInCache
-	const isInstallDisabled = !installableApk
-
-	const handleInstallPress = () => {
-		if (installableApk) {
-			installApk(installableApk.fileUri)
-		}
-	}
 
 	const releaseBadges = useMemo(
 		() =>
@@ -527,17 +500,14 @@ export default function UpdatesScreen() {
 					<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
 
 					{!isWeb && (
-						<View style={styles.progressPanel}>
-							<View style={[styles.progressTrack, { backgroundColor: colors.surfaceVariant }]}>
-								<LinearGradient colors={[colors.primary, colors.info]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={[styles.progressFill, { width: `${Math.round(downloadProgress * 100)}%` }]} />
-							</View>
+						<View style={[styles.progressPanel, { opacity: isDownloading || isPaused ? 1 : 0 }]}>
 							<View style={styles.progressMeta}>
-								<Text style={[styles.progressText, { color: colors.textSecondary }]}>
+								<Text style={[styles.progressText, { color: isDownloading ? colors.primary : isPaused ? colors.warning : colors.textSecondary }]}>
 									{isDownloading
 										? `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`
 										: isPaused
 											? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%`
-											: translate('ready', 'Ready')}
+											: ''}
 								</Text>
 								<View style={styles.progressBadges}>
 									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: downloadSpeed === null ? 0 : 1 }]}>
@@ -548,11 +518,7 @@ export default function UpdatesScreen() {
 									</View>
 									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: remainingTime === null ? 0 : 1 }]}>
 										<Ionicons name="time-outline" size={12} color={colors.textTertiary} />
-										<Text
-											style={[styles.progressBadgeText, { color: colors.textTertiary, textAlign: 'center', fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', web: 'monospace' }) }]}
-											numberOfLines={1}
-											adjustsFontSizeToFit
-										>
+										<Text style={[styles.progressBadgeText, { color: colors.textTertiary, textAlign: 'center' }]} numberOfLines={1} adjustsFontSizeToFit>
 											{formatRemainingTime(remainingTime)}
 										</Text>
 									</View>
@@ -585,18 +551,10 @@ export default function UpdatesScreen() {
 									isDownloading={isDownloading}
 									onPress={isPaused ? resumeDownload : isDownloading ? pauseDownload : downloadUpdate}
 									disabled={!isDownloading && !isPaused && isDownloadDisabled}
-									variant={isPaused ? 'primary' : isDownloading ? 'secondary' : 'primary'}
+									variant={isPaused ? 'primary' : isDownloading ? 'warning' : 'primary'}
 									style={styles.actionButton}
 								/>
 								<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
-								<InstallButton
-									fileUri={installableApk?.fileUri}
-									version={installableApk?.version}
-									onPress={handleInstallPress}
-									disabled={isInstallDisabled || isDownloading || isPaused}
-									variant="success"
-									style={styles.actionButton}
-								/>
 								<IconButton
 									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
 									label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
@@ -622,10 +580,10 @@ export default function UpdatesScreen() {
 
 				{sortedApks.length > 0 && (
 					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('cached_apk_files', 'Cached APK Installers')}</Text>
+						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('apk_installers', 'APK Installers')}</Text>
 						<View style={styles.apkList}>
 							{sortedApks.map((apk) => (
-								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.borderLight }]}>
+								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 									<View style={styles.apkLeft}>
 										<View style={[styles.apkIcon, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
 											<Ionicons name="logo-android" size={22} color={colors.primary} />
@@ -647,9 +605,9 @@ export default function UpdatesScreen() {
 													onPress={() => installApk(apk.fileUri)}
 													disabled={apkInstallDisabled}
 													accessibilityLabel={translate('install', 'Install')}
-													style={[styles.iconBtn, { backgroundColor: apkInstallDisabled ? colors.surfaceVariant : hexToRgba(colors.success, 0.12), opacity: apkInstallDisabled ? 0.5 : 1 }]}
+													style={[styles.iconBtn, { backgroundColor: apkInstallDisabled ? colors.surfaceVariant : colors.success, opacity: apkInstallDisabled ? 0.5 : 1 }]}
 												>
-													<Ionicons name="archive-outline" size={20} color={apkInstallDisabled ? colors.textTertiary : colors.success} />
+													<Ionicons name="archive-outline" size={20} color={apkInstallDisabled ? colors.textTertiary : colors.buttonText} />
 												</TouchableOpacity>
 											)
 										})()}

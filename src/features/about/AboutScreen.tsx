@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import { IconButton } from '@/features/common/buttons/IconButton'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
@@ -47,7 +47,7 @@ export default function AboutScreen() {
 		const handleCopy = async () => {
 			if (copyValue) {
 				await Clipboard.setStringAsync(copyValue)
-				toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: '#10B981' })
+				toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: themeColors.success })
 			}
 		}
 
@@ -98,7 +98,7 @@ export default function AboutScreen() {
 						subtitle="Follow us on Facebook"
 						onPress={() => Linking.openURL('https://www.facebook.com/Drinaluza')}
 						copyValue="https://www.facebook.com/Drinaluza"
-						color="#1877F2"
+						color={themeColors.facebook}
 					/>
 					<SettingItem
 						icon="logo-instagram"
@@ -106,7 +106,7 @@ export default function AboutScreen() {
 						subtitle={translate('follow_on_instagram', 'Follow us on Instagram')}
 						onPress={() => Linking.openURL('https://www.instagram.com/drinaluza/')}
 						copyValue="https://www.instagram.com/drinaluza/"
-						color="#E4405F"
+						color={themeColors.instagram}
 					/>
 					<SettingItem
 						icon="logo-tiktok"
@@ -114,12 +114,19 @@ export default function AboutScreen() {
 						subtitle="Follow us on TikTok"
 						onPress={() => Linking.openURL('https://www.tiktok.com/@drinaluza')}
 						copyValue="https://www.tiktok.com/@drinaluza"
-						color="#000000"
+						color={themeColors.background}
 					/>
 				</SettingSection>
 
 				<SettingSection title={translate('contact', 'Contact')}>
-					<SettingItem icon="mail" title="Email" subtitle="drinaluza@gmail.com" onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')} copyValue="drinaluza@gmail.com" color="#EA4335" />
+					<SettingItem
+						icon="mail"
+						title="Email"
+						subtitle="drinaluza@gmail.com"
+						onPress={() => Linking.openURL('mailto:drinaluza@gmail.com')}
+						copyValue="drinaluza@gmail.com"
+						color={themeColors.google}
+					/>
 				</SettingSection>
 
 				<SettingSection title={translate('downloads', 'Downloads')}>
@@ -129,7 +136,7 @@ export default function AboutScreen() {
 						subtitle="drinaluza.netlify.app"
 						onPress={() => Linking.openURL('https://drinaluza.netlify.app/')}
 						copyValue="https://drinaluza.netlify.app/"
-						color="#00C7B7"
+						color={themeColors.primary}
 					/>
 					<SettingItem
 						icon="globe-outline"
@@ -148,7 +155,7 @@ export default function AboutScreen() {
 						subtitle="Connect on LinkedIn"
 						onPress={() => Linking.openURL('https://www.linkedin.com/in/ahmed-derbala/')}
 						copyValue="https://www.linkedin.com/in/ahmed-derbala/"
-						color="#0077B5"
+						color={themeColors.info}
 					/>
 				</SettingSection>
 
@@ -191,11 +198,11 @@ const createStyles = (colors: any) =>
 			marginLeft: 4
 		},
 		sectionContent: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			overflow: 'hidden',
 			borderWidth: 1,
-			borderColor: colors.info || '#3B82F6'
+			borderColor: colors.info
 		},
 		item: {
 			flexDirection: 'row',

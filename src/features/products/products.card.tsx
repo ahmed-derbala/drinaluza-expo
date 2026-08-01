@@ -11,7 +11,7 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 
 type ProductCardProps = {
@@ -153,7 +153,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
 	const cartDisabled = !purchaseAllowed || !isActive || isOutOfStock
 
-	const stockColor = isOutOfStock ? '#EF4444' : isLowStock ? '#F59E0B' : '#10B981'
+	const stockColor = isOutOfStock ? themeColors.error : isLowStock ? themeColors.warning : themeColors.success
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
 
@@ -166,14 +166,24 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable style={[styles.card, { backgroundColor: colors.card }]} onPress={handleProductPress} accessibilityRole={Platform.OS === 'web' ? undefined : 'button'} accessibilityLabel={mainName}>
+		<Pressable
+			style={[styles.card, { backgroundColor: colors.background }]}
+			onPress={handleProductPress}
+			accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
+			accessibilityLabel={mainName}
+		>
 			{/* Background image */}
 			<View style={styles.bgImageContainer}>
 				<SmartImage source={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" entityType="product" />
 			</View>
 
 			{/* Gradient overlay for text readability */}
-			<LinearGradient colors={['rgba(0,0,0,0.55)', 'rgba(0,0,0,0.25)', 'rgba(0,0,0,0.75)']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={[styles.bgOverlay, { pointerEvents: 'none' }]} />
+			<LinearGradient
+				colors={[themeColors.background50, themeColors.background25, themeColors.background75]}
+				start={{ x: 0, y: 0 }}
+				end={{ x: 0, y: 1 }}
+				style={[styles.bgOverlay, { pointerEvents: 'none' }]}
+			/>
 
 			{/* Top content */}
 			<View style={styles.topContent}>
@@ -184,7 +194,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 							<SmartImage source={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
 						) : (
 							<View style={styles.bizAvatarFallback}>
-								<MaterialIcons name="store" size={14} color="#0EA5E9" />
+								<MaterialIcons name="store" size={14} color={themeColors.primary} />
 							</View>
 						)}
 						<View style={styles.bizInfo}>
@@ -203,7 +213,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 				{/* Address */}
 				{addressLine ? (
 					<View style={styles.addressRow}>
-						<Ionicons name="location-outline" size={11} color="rgba(255,255,255,0.35)" />
+						<Ionicons name="location-outline" size={11} color={themeColors.buttonText40} />
 						<Text style={styles.bizAddress} numberOfLines={1}>
 							{addressLine}
 						</Text>
@@ -213,7 +223,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 
 			{/* Stock overlay */}
 			{(isOutOfStock || isLowStock) && (
-				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? 'rgba(0,0,0,0.6)' : 'transparent', pointerEvents: 'none' }]}>
+				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : 'transparent', pointerEvents: 'none' }]}>
 					<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
 						<MaterialIcons name={stockIcon} size={11} color={stockColor} />
 						<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
@@ -246,7 +256,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 						<View style={styles.ratingRow}>
 							{rating > 0 ? (
 								<>
-									<MaterialIcons name="star" size={12} color="#FBBF24" />
+									<MaterialIcons name="star" size={12} color={themeColors.warning} />
 									<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
 									<Text style={styles.ratingCount}>({ratingCount})</Text>
 								</>
@@ -265,7 +275,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 													position: 'absolute',
 													fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
 													fontWeight: 'bold',
-													color: '#ffffff',
+													color: themeColors.buttonText,
 													textAlign: 'center',
 													includeFontPadding: false,
 													textAlignVertical: 'center'
@@ -280,11 +290,11 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 								{purchaseAllowed && isActive && !isOutOfStock && (
 									<View style={styles.qtyControl}>
 										<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-											<MaterialIcons name="remove" size={16} color="#FFFFFF" />
+											<MaterialIcons name="remove" size={16} color={themeColors.buttonText} />
 										</TouchableOpacity>
 										<Text style={styles.qtyValue}>{quantity}</Text>
 										<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-											<MaterialIcons name="add" size={16} color="#FFFFFF" />
+											<MaterialIcons name="add" size={16} color={themeColors.buttonText} />
 										</TouchableOpacity>
 									</View>
 								)}
@@ -327,7 +337,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 							disabled={cartDisabled}
 							accessibilityLabel={translate('add_to_cart', 'Add to cart')}
 						>
-							<MaterialIcons name="add-shopping-cart" size={18} color="#ffffff" />
+							<MaterialIcons name="add-shopping-cart" size={18} color={themeColors.buttonText} />
 						</TouchableOpacity>
 					</View>
 				</View>
@@ -340,7 +350,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 								key={index}
 								onPress={(e) => handlePreviewPress(e, index)}
 								activeOpacity={0.8}
-								style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : 'rgba(255, 255, 255, 0.3)', opacity: index === activeImageIndex ? 1 : 0.6 }]}
+								style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : themeColors.buttonText30, opacity: index === activeImageIndex ? 1 : 0.6 }]}
 							>
 								<SmartImage source={url} style={styles.previewImg} resizeMode="cover" entityType="product" />
 							</TouchableOpacity>
@@ -360,17 +370,10 @@ const styles = StyleSheet.create({
 		flex: 1,
 		borderRadius: 20,
 		borderWidth: 1,
-		borderColor: '#0EA5E9',
+		borderColor: themeColors.primary,
 		overflow: 'hidden',
 		justifyContent: 'space-between',
-		minHeight: 340,
-		...Platform.select({
-			web: {
-				transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-				backdropFilter: 'blur(20px)',
-				WebkitBackdropFilter: 'blur(20px)'
-			} as any
-		})
+		minHeight: 340
 	},
 	cardPressed: {
 		opacity: 0.95,
@@ -405,24 +408,24 @@ const styles = StyleSheet.create({
 		width: 32,
 		height: 32,
 		borderRadius: 16,
-		backgroundColor: 'rgba(255, 255, 255, 0.05)'
+		backgroundColor: themeColors.buttonText5
 	},
 	bizAvatarFallback: {
 		width: 32,
 		height: 32,
 		borderRadius: 16,
-		backgroundColor: 'rgba(14, 165, 233, 0.12)',
+		backgroundColor: themeColors.primaryContainer,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
 	bizName: {
 		fontSize: 13,
 		fontWeight: '700',
-		color: '#FFF'
+		color: themeColors.buttonText
 	},
 	bizSlug: {
 		fontSize: 10,
-		color: 'rgba(255, 255, 255, 0.4)'
+		color: themeColors.buttonText40
 	},
 	addressRow: {
 		flexDirection: 'row',
@@ -434,7 +437,7 @@ const styles = StyleSheet.create({
 	bizAddress: {
 		flex: 1,
 		fontSize: 11,
-		color: 'rgba(255, 255, 255, 0.35)'
+		color: themeColors.buttonText40
 	},
 	// ── Background image ──
 	bgImageContainer: {
@@ -465,7 +468,7 @@ const styles = StyleSheet.create({
 	productName: {
 		fontSize: 15,
 		fontWeight: '700',
-		color: '#FFF',
+		color: themeColors.buttonText,
 		textAlign: 'left',
 		height: 30,
 		lineHeight: 15,
@@ -514,7 +517,7 @@ const styles = StyleSheet.create({
 	altName: {
 		fontSize: 11,
 		fontWeight: '500',
-		color: 'rgba(255, 255, 255, 0.35)'
+		color: themeColors.buttonText40
 	},
 	ratingRow: {
 		flexDirection: 'row',
@@ -526,14 +529,14 @@ const styles = StyleSheet.create({
 	ratingValue: {
 		fontSize: 11,
 		fontWeight: '700',
-		color: '#FBBF24',
+		color: themeColors.warning,
 		marginLeft: 2,
 		lineHeight: 12,
 		includeFontPadding: false
 	},
 	ratingCount: {
 		fontSize: 10,
-		color: 'rgba(255, 255, 255, 0.35)',
+		color: themeColors.buttonText40,
 		lineHeight: 12,
 		includeFontPadding: false
 	},
@@ -546,7 +549,7 @@ const styles = StyleSheet.create({
 	},
 	price: {
 		fontWeight: '800',
-		color: '#0EA5E9',
+		color: themeColors.primary,
 		letterSpacing: -0.5,
 		flexShrink: 1
 	},
@@ -559,7 +562,7 @@ const styles = StyleSheet.create({
 	priceUnit: {
 		fontSize: 11,
 		fontWeight: '500',
-		color: 'rgba(255, 255, 255, 0.35)'
+		color: themeColors.buttonText40
 	},
 	// ── Quantity + Cart ──
 	actionRow: {
@@ -571,41 +574,24 @@ const styles = StyleSheet.create({
 	qtyControl: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		backgroundColor: 'rgba(15, 23, 42, 0.9)',
+		backgroundColor: themeColors.background95,
 		borderRadius: 14,
 		borderWidth: 1.5,
-		borderColor: '#0EA5E9',
-		padding: 3,
-		...Platform.select({
-			web: {
-				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.5)'
-			} as any,
-			default: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 3 },
-				shadowOpacity: 0.4,
-				shadowRadius: 3,
-				elevation: 5
-			}
-		})
+		borderColor: themeColors.primary,
+		padding: 3
 	},
 	qtyBtn: {
 		width: 32,
 		height: 32,
 		borderRadius: 10,
-		backgroundColor: 'rgba(255, 255, 255, 0.12)',
+		backgroundColor: themeColors.buttonText10,
 		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			web: {
-				transition: 'background-color 0.12s ease'
-			} as any
-		})
+		alignItems: 'center'
 	},
 	qtyValue: {
 		fontSize: 15,
 		fontWeight: '800',
-		color: '#FFFFFF',
+		color: themeColors.buttonText,
 		minWidth: 32,
 		textAlign: 'center',
 		marginHorizontal: 4
@@ -618,23 +604,17 @@ const styles = StyleSheet.create({
 		width: 36,
 		height: 36,
 		borderRadius: 12,
-		backgroundColor: '#0EA5E9',
+		backgroundColor: themeColors.primary,
 		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			web: {
-				boxShadow: '0 2px 10px rgba(14, 165, 233, 0.35)',
-				transition: 'transform 0.12s ease'
-			} as any
-		})
+		alignItems: 'center'
 	},
 	cartBtnDisabled: {
-		backgroundColor: 'rgba(255, 255, 255, 0.12)'
+		backgroundColor: themeColors.buttonText10
 	},
 	cartBtnText: {
 		fontSize: 13,
 		fontWeight: '700',
-		color: '#ffffff'
+		color: themeColors.buttonText
 	},
 	specsStepperRow: {
 		flexDirection: 'column',
@@ -695,7 +675,7 @@ const styles = StyleSheet.create({
 		borderRadius: 6,
 		gap: 3,
 		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.05)'
+		borderColor: themeColors.buttonText5
 	},
 	originChipText: {
 		fontSize: 10,
@@ -727,7 +707,7 @@ const styles = StyleSheet.create({
 		borderRadius: 8,
 		borderWidth: 2,
 		overflow: 'hidden',
-		backgroundColor: 'rgba(0, 0, 0, 0.35)',
+		backgroundColor: themeColors.background25,
 		...Platform.select({
 			web: {
 				cursor: 'pointer'

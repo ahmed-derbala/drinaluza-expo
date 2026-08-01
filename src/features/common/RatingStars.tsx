@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 
 export interface RatingStarsProps {
 	/**
@@ -26,7 +26,7 @@ export interface RatingStarsProps {
 	color?: string
 }
 
-const RatingStars: React.FC<RatingStarsProps> = ({ rating, size = 16, interactive = false, onRatingChange, color = '#FFD700' }) => {
+const RatingStars: React.FC<RatingStarsProps> = ({ rating, size = 16, interactive = false, onRatingChange, color = themeColors.warning }) => {
 	const { colors } = useTheme()
 
 	const handlePress = (stars: number) => {

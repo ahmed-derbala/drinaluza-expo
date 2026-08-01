@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
@@ -335,8 +336,8 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 			},
 			{
 				label: translate('edit_business', 'Edit Business'),
-				icon: <MaterialIcons name="edit" size={22} color="#A855F7" />,
-				color: '#A855F7',
+				icon: <MaterialIcons name="edit" size={22} color={themeColors.primary} />,
+				color: themeColors.primary,
 				onPress: () => router.push(`/dashboard/${business.slug}/edit` as never)
 			}
 		],
@@ -410,7 +411,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 			{loadingCustomers ? (
 				<ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
 			) : customers.length === 0 ? (
-				<View style={[styles.centered, { paddingVertical: 20, backgroundColor: colors.card, borderRadius: 16 }]}>
+				<View style={[styles.centered, { paddingVertical: 20, backgroundColor: colors.background, borderRadius: 16 }]}>
 					<Ionicons name="people-outline" size={32} color={colors.textTertiary} style={{ opacity: 0.5, marginBottom: 8 }} />
 					<Text style={{ color: colors.textSecondary, fontSize: 13 }}>{translate('dashboard.no_customers', 'No customers found yet.')}</Text>
 				</View>
@@ -424,7 +425,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 								key={doc._id}
 								activeOpacity={0.85}
 								onPress={() => router.push(`/dashboard/${business.slug}/sales?customerSlug=${customer.slug}` as never)}
-								style={[styles.customerChip, { backgroundColor: colors.card, borderColor: colors.border }]}
+								style={[styles.customerChip, { backgroundColor: colors.background, borderColor: colors.border }]}
 							>
 								<SmartImage source={thumb} style={styles.customerAvatar} entityType="user" />
 								<View style={styles.customerChipText}>
@@ -495,7 +496,7 @@ type StatCardProps = {
 }
 
 const StatCard = ({ title, value, icon, accent, styles, colors, onPress }: StatCardProps) => (
-	<TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.statCard, { borderColor: `${accent}40`, backgroundColor: colors.card }]}>
+	<TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.statCard, { borderColor: `${accent}40`, backgroundColor: colors.background }]}>
 		<LinearGradient colors={[`${accent}15`, `${accent}05`, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
 		<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
 		<Text style={[styles.statValue, { color: accent }]}>{value}</Text>
@@ -537,7 +538,7 @@ const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, 
 	const { localize } = useUser()
 
 	const renderList = (items: DashboardRankItem[], listTitle: string) => (
-		<View style={[styles.rankPanel, { backgroundColor: colors.card, borderColor: colors.info || '#3B82F6' }]}>
+		<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
 			<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{listTitle}</Text>
 			{items.length === 0 ? (
 				<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{emptyHint}</Text>
@@ -618,12 +619,7 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 			borderWidth: 1.5,
 			gap: 12,
 			maxWidth: width * 0.72,
-			position: 'relative',
-			...Platform.select({
-				web: { backdropFilter: 'blur(12px)', transition: 'all 0.2s ease' } as any,
-				ios: { shadowColor: colors.primary, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 8 },
-				android: { elevation: 3 }
-			})
+			position: 'relative'
 		},
 		profileAvatar: { width: 44, height: 44, borderRadius: 14 },
 		profileAvatarFallback: { justifyContent: 'center', alignItems: 'center' },
@@ -641,12 +637,7 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 			gap: 18,
 			borderWidth: 1,
 			borderColor: `${colors.primary}15`,
-			marginBottom: 12,
-			...Platform.select({
-				web: { backdropFilter: 'blur(20px)', boxShadow: `0 8px 32px ${colors.primary}12` } as any,
-				ios: { shadowColor: colors.primary, shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.12, shadowRadius: 20 },
-				android: { elevation: 6 }
-			})
+			marginBottom: 12
 		},
 		heroThumbnail: { width: 80, height: 80, borderRadius: 22, borderWidth: 2, borderColor: `${colors.primary}30` },
 		heroInfo: { flex: 1 },
@@ -672,12 +663,7 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 			borderRadius: 22,
 			padding: 18,
 			borderWidth: 1.5,
-			overflow: 'hidden',
-			...Platform.select({
-				web: { backdropFilter: 'blur(12px)', boxShadow: '0 4px 20px rgba(0,0,0,0.15)', transition: 'transform 0.2s ease, box-shadow 0.2s ease' } as any,
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 12 },
-				android: { elevation: 4 }
-			})
+			overflow: 'hidden'
 		},
 		statIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
 		statValue: { fontSize: 30, fontWeight: '800', letterSpacing: -1.5 },
@@ -689,12 +675,7 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 			borderWidth: 1,
 			padding: 18,
 			alignItems: 'center',
-			gap: 12,
-			...Platform.select({
-				web: { backdropFilter: 'blur(8px)', transition: 'transform 0.15s ease, box-shadow 0.15s ease', cursor: 'pointer' } as any,
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.08, shadowRadius: 6 },
-				android: { elevation: 2 }
-			})
+			gap: 12
 		},
 		quickActionIcon: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
 		quickActionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center', letterSpacing: -0.2 },
@@ -704,12 +685,7 @@ const createStyles = (colors: typeof import('../../core/theme').colors) =>
 			borderRadius: 22,
 			borderWidth: 1,
 			padding: 16,
-			minHeight: 140,
-			...Platform.select({
-				web: { backdropFilter: 'blur(8px)' } as any,
-				ios: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 6 },
-				android: { elevation: 2 }
-			})
+			minHeight: 140
 		},
 		rankPanelTitle: { fontSize: 14, fontWeight: '800', marginBottom: 12, letterSpacing: -0.2 },
 		rankEmpty: { fontSize: 12, lineHeight: 20, paddingVertical: 10, fontStyle: 'italic' },

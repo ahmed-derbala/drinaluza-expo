@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION, DEFAULT_BLURHASH, getTimeoutMs } from './constants'
 import type { SmartImageProps } from './types'
@@ -225,8 +225,8 @@ function SmartImageComponent({
 							label="Close"
 							onPress={() => setIsPreviewOpen(false)}
 							colors={colors}
-							iconColor="#FFFFFF"
-							style={{ position: 'absolute', top: insets.top + 16, right: 20, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'transparent' }}
+							iconColor={themeColors.buttonText}
+							style={{ position: 'absolute', top: insets.top + 16, right: 20, backgroundColor: themeColors.buttonText10, borderColor: 'transparent' }}
 						/>
 
 						<View style={styles.fullscreenImageWrapper}>
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
 	},
 	modalBackdrop: {
 		flex: 1,
-		backgroundColor: 'rgba(0, 0, 0, 0.95)',
+		backgroundColor: themeColors.background95,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
 		zIndex: 10,
 		padding: 8,
 		borderRadius: 20,
-		backgroundColor: 'rgba(255, 255, 255, 0.1)'
+		backgroundColor: themeColors.buttonText10
 	},
 	fullscreenImageWrapper: {
 		width: '90%',

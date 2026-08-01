@@ -52,7 +52,7 @@ export default function ProductStateSection({
 							{
 								flex: 1,
 								justifyContent: 'center',
-								borderColor: productState === 'active' ? colors.success : colors.borderLight,
+								borderColor: productState === 'active' ? colors.success : colors.border,
 								backgroundColor: productState === 'active' ? `${colors.success}15` : colors.surface,
 								flexDirection: 'row',
 								gap: 6
@@ -69,7 +69,7 @@ export default function ProductStateSection({
 							{
 								flex: 1,
 								justifyContent: 'center',
-								borderColor: productState === 'suspended' ? colors.error : colors.borderLight,
+								borderColor: productState === 'suspended' ? colors.error : colors.border,
 								backgroundColor: productState === 'suspended' ? `${colors.error}15` : colors.surface,
 								flexDirection: 'row',
 								gap: 6
@@ -148,7 +148,7 @@ const createStyles = (colors: any) =>
 			alignItems: 'center',
 			paddingVertical: 14,
 			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight
+			borderBottomColor: colors.border
 		},
 		statusLabelContainer: {
 			flexDirection: 'row',

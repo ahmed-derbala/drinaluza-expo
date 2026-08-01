@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React from 'react'
 import Svg, { Path, Circle, Line, G } from 'react-native-svg'
 
@@ -6,7 +7,7 @@ export interface GearIconProps {
 	color?: string
 }
 
-export const DrinaIcon: React.FC<GearIconProps> = ({ size = 24, color = '#000000' }) => (
+export const DrinaIcon: React.FC<GearIconProps> = ({ size = 24, color = themeColors.background }) => (
 	<Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
 		{/* Handle at the top */}
 		<Path d="M38,25 C38,10 62,10 62,25" stroke={color} strokeWidth="4.5" strokeLinecap="round" fill="none" />
@@ -32,7 +33,7 @@ export const DrinaIcon: React.FC<GearIconProps> = ({ size = 24, color = '#000000
 	</Svg>
 )
 
-export const GhzalIcon: React.FC<GearIconProps> = ({ size = 24, color = '#000000' }) => (
+export const GhzalIcon: React.FC<GearIconProps> = ({ size = 24, color = themeColors.background }) => (
 	<Svg width={size} height={size} viewBox="0 0 100 100" fill="none">
 		{/* Vertical side cords */}
 		<Line x1="22" y1="14" x2="22" y2="86" stroke={color} strokeWidth="4.5" strokeLinecap="round" />
@@ -69,21 +70,21 @@ export const GhzalIcon: React.FC<GearIconProps> = ({ size = 24, color = '#000000
 			{/* Fish outline */}
 			<Path
 				d="M0,16 C10,5 30,5 40,16 C45,21 51,23 56,21 C53,26 53,31 56,36 C51,34 45,36 40,41 C30,52 10,52 0,41 C-5,36 -5,21 0,16 Z"
-				fill="#ffffff"
+				fill={themeColors.buttonText}
 				stroke={color}
 				strokeWidth="3"
 				strokeLinecap="round"
 				strokeLinejoin="round"
 			/>
 			{/* Tail fin */}
-			<Path d="M0,16 L-13,9 L-9,28.5 L-13,48 L0,41 Z" fill="#ffffff" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+			<Path d="M0,16 L-13,9 L-9,28.5 L-13,48 L0,41 Z" fill={themeColors.buttonText} stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
 			{/* Eye */}
 			<Circle cx="35" cy="23" r="3" fill={color} />
 		</G>
 	</Svg>
 )
 
-export const GearIcon: React.FC<{ type: 'trap' | 'gillnet'; size?: number; color?: string }> = ({ type, size = 24, color = '#000000' }) => {
+export const GearIcon: React.FC<{ type: 'trap' | 'gillnet'; size?: number; color?: string }> = ({ type, size = 24, color = themeColors.background }) => {
 	if (type === 'trap') {
 		return <DrinaIcon size={size} color={color} />
 	}

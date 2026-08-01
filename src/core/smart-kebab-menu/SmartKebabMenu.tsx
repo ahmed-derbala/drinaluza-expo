@@ -22,7 +22,7 @@ export const SmartKebabMenu: React.FC = () => {
 	const context = useContext(SmartKebabMenuContext)
 	const screenItems = context ? context.screenItems : []
 
-	const { isDownloading, downloadProgress, downloadedApks, latestRelease } = useUpdates()
+	const { isDownloading, isPaused, downloadProgress, downloadedApks, latestRelease } = useUpdates()
 
 	const [isOpen, setIsOpen] = useState(false)
 	const [buttonLayout, setButtonLayout] = useState<{ x: number; y: number; width: number; height: number } | null>(null)
@@ -122,20 +122,25 @@ export const SmartKebabMenu: React.FC = () => {
 		})
 	}, [width, height, isOpen])
 
-	const updatesBadge = useMemo(() => {
+	type UpdateStatus = { type: 'dot'; color: string } | { type: 'percent'; color: string; content: string }
+
+	const updatesStatus = useMemo<UpdateStatus | undefined>(() => {
+		if (isPaused) {
+			return { type: 'percent', color: colors.warning, content: `${Math.round(downloadProgress * 100)}%` }
+		}
 		if (isDownloading) {
-			return `${Math.round(downloadProgress * 100)}%`
+			return { type: 'percent', color: colors.info, content: `${Math.round(downloadProgress * 100)}%` }
 		}
 		const hasInstallable = downloadedApks.some((apk) => apk.isInstallable)
 		if (hasInstallable) {
-			return 'READY'
+			return { type: 'dot', color: colors.success }
 		}
 		const hasDownloadable = latestRelease && isVersionGreater(latestRelease.latest_version, config.app.version)
 		if (hasDownloadable) {
-			return 'NEW'
+			return { type: 'dot', color: colors.info }
 		}
 		return undefined
-	}, [isDownloading, downloadProgress, downloadedApks, latestRelease])
+	}, [isPaused, isDownloading, downloadProgress, downloadedApks, latestRelease, colors.success, colors.warning, colors.info])
 
 	// Default menu items: /home, /settings, /about, and /updates
 	const defaultItems: SmartKebabMenuItem[] = useMemo(
@@ -168,13 +173,12 @@ export const SmartKebabMenu: React.FC = () => {
 				key: 'updates',
 				label: translate('updates', 'Updates'),
 				icon: 'cloud-download-outline',
-				badge: updatesBadge,
 				onPress: () => {
 					router.push('/updates' as any)
 				}
 			}
 		],
-		[router, updatesBadge]
+		[router]
 	)
 
 	// Combine default and screen-registered menu items, filtering out the current screen's item
@@ -225,8 +229,8 @@ export const SmartKebabMenu: React.FC = () => {
 	const menuStyle = [
 		styles.menuContainer,
 		{
-			backgroundColor: colors.card || '#1C2541',
-			borderColor: colors.borderLight || '#1E293B',
+			backgroundColor: colors.background,
+			borderColor: colors.border || '#1E293B',
 			opacity: opacityAnim,
 			transform: [{ scale: scaleAnim }, { translateY: scaleAnim.interpolate({ inputRange: [0, 1], outputRange: [-10, 0] }) }]
 		}
@@ -268,7 +272,7 @@ export const SmartKebabMenu: React.FC = () => {
 							const hasSeparator = item.type === 'separator'
 
 							if (hasSeparator) {
-								return <View key={`sep-${idx}`} style={[styles.separator, { backgroundColor: colors.borderLight || '#1E293B' }]} />
+								return <View key={`sep-${idx}`} style={[styles.separator, { backgroundColor: colors.border || '#1E293B' }]} />
 							}
 
 							const badgeContent = formatBadge(item.badge)
@@ -321,6 +325,21 @@ export const SmartKebabMenu: React.FC = () => {
 											</Text>
 										</View>
 									)}
+
+									{/* Updates status: dot or percentage */}
+									{item.key === 'updates' &&
+										updatesStatus &&
+										(updatesStatus.type === 'dot' ? (
+											<View style={styles.badgeDot} accessibilityLabel="Updates status dot">
+												<View style={[styles.badgeDotInner, { backgroundColor: updatesStatus.color }]} />
+											</View>
+										) : (
+											<View style={[styles.badge, { backgroundColor: updatesStatus.color }]} accessibilityLabel={`Badge: ${updatesStatus.content}`}>
+												<Text style={styles.badgeText} numberOfLines={1}>
+													{updatesStatus.content}
+												</Text>
+											</View>
+										))}
 								</Pressable>
 							)
 						})}
@@ -353,22 +372,7 @@ const styles = StyleSheet.create({
 		borderRadius: 12,
 		borderWidth: 1,
 		paddingVertical: 6,
-		zIndex: 1000,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.2,
-				shadowRadius: 5
-			},
-			android: {
-				elevation: 5
-			},
-			web: {
-				boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-				transition: 'transform 0.15s ease, opacity 0.15s ease'
-			} as any
-		})
+		zIndex: 1000
 	},
 	menuItem: {
 		flexDirection: 'row',
@@ -415,5 +419,16 @@ const styles = StyleSheet.create({
 		fontSize: 9,
 		fontWeight: 'bold',
 		includeFontPadding: false
+	},
+	badgeDot: {
+		minWidth: 16,
+		height: 16,
+		justifyContent: 'center',
+		alignItems: 'center'
+	},
+	badgeDotInner: {
+		width: 10,
+		height: 10,
+		borderRadius: 5
 	}
 })

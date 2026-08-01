@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, Platform } from 'react-native'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 
 export interface LocalizedFormInputProps {
 	/**
@@ -68,7 +68,7 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 					styles.inputBox,
 					{
 						backgroundColor: colors.background,
-						borderColor: isFocused ? colors.primary : colors.borderLight || colors.border,
+						borderColor: isFocused ? colors.primary : colors.border,
 						height: multiline ? 96 : 48
 					}
 				]}
@@ -77,7 +77,7 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 				<View style={[styles.badgeContainer, { backgroundColor: colors.text + '05', borderRightColor: colors.border + '20' }]}>
 					<Text style={styles.flagText}>{flag}</Text>
 					{badge ? (
-						<View style={[styles.langBadge, { backgroundColor: colors.card, borderColor: colors.border }]}>
+						<View style={[styles.langBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
 							<Text style={[styles.langBadgeText, { color: colors.text }]}>{badge}</Text>
 						</View>
 					) : null}
@@ -121,20 +121,14 @@ const styles = StyleSheet.create({
 		marginBottom: 8
 	},
 	required: {
-		color: '#EF4444'
+		color: themeColors.error
 	},
 	inputBox: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		borderWidth: 1.5,
 		borderRadius: 12,
-		overflow: 'hidden',
-		...Platform.select({
-			web: {
-				transition: 'border-color 0.2s ease'
-			} as any,
-			default: {}
-		})
+		overflow: 'hidden'
 	},
 	badgeContainer: {
 		width: 48,

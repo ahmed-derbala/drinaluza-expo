@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -81,7 +82,7 @@ export default function ProductPricingSection({
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('price_tnd', 'Price (TND)')} *</Text>
-						<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
+						<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.border }]}>
 							<Text style={styles.prefix}>TND</Text>
 							<TextInput style={[styles.textInput, { color: colors.text }]} value={priceTND} onChangeText={setPriceTND} placeholder="0.00" keyboardType="decimal-pad" />
 						</View>
@@ -95,7 +96,7 @@ export default function ProductPricingSection({
 								const isSelected = unit === val
 								return (
 									<TouchableOpacity key={val} style={[styles.segmentButton, isSelected && { backgroundColor: colors.primary }]} onPress={() => setUnit(val)}>
-										<Text style={[styles.segmentText, { color: isSelected ? '#ffffff' : colors.textSecondary }]}>{translate(val, val)}</Text>
+										<Text style={[styles.segmentText, { color: isSelected ? themeColors.buttonText : colors.textSecondary }]}>{translate(val, val)}</Text>
 									</TouchableOpacity>
 								)
 							})}
@@ -164,7 +165,7 @@ export default function ProductPricingSection({
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('price_tnd', 'Price (TND)')} *</Text>
-						<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.borderLight }]}>
+						<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.border }]}>
 							<Text style={styles.prefix}>TND</Text>
 							<TextInput style={[styles.textInput, { color: colors.text }]} value={priceTND} onChangeText={setPriceTND} placeholder="0.00" keyboardType="decimal-pad" />
 						</View>
@@ -178,7 +179,7 @@ export default function ProductPricingSection({
 								const isSelected = unit === val
 								return (
 									<TouchableOpacity key={val} style={[styles.segmentButton, isSelected && { backgroundColor: colors.primary }]} onPress={() => setUnit(val)}>
-										<Text style={[styles.segmentText, { color: isSelected ? '#ffffff' : colors.textSecondary }]}>{translate(val, val)}</Text>
+										<Text style={[styles.segmentText, { color: isSelected ? themeColors.buttonText : colors.textSecondary }]}>{translate(val, val)}</Text>
 									</TouchableOpacity>
 								)
 							})}
@@ -261,7 +262,7 @@ export default function ProductPricingSection({
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		card: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			padding: 16,
 			marginBottom: 16,
@@ -276,7 +277,7 @@ const createStyles = (colors: any) =>
 		},
 		editSection: {
 			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight,
+			borderBottomColor: colors.border,
 			paddingBottom: 16,
 			marginBottom: 16
 		},
@@ -331,7 +332,7 @@ const createStyles = (colors: any) =>
 			marginBottom: 20,
 			paddingBottom: 20,
 			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight
+			borderBottomColor: colors.border
 		},
 		viewHeader: {
 			flexDirection: 'row',
@@ -380,7 +381,7 @@ const createStyles = (colors: any) =>
 			height: 48,
 			borderRadius: 12,
 			borderWidth: 1.5,
-			borderColor: colors.borderLight,
+			borderColor: colors.border,
 			backgroundColor: colors.surfaceVariant,
 			padding: 4,
 			gap: 4

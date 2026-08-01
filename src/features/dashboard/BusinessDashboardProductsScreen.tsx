@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -134,13 +134,13 @@ export default function BusinessDashboardProductsScreen() {
 				toast.show({
 					title: translate('success', 'Success'),
 					message: `${localize(product.name)} ${newActive ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
-					color: '#10B981'
+					color: themeColors.success
 				})
 			} catch (err: any) {
 				toast.show({
 					title: translate('error', 'Error'),
 					message: err.message || translate('failed_to_update_status', 'Failed to update status'),
-					color: '#EF4444'
+					color: themeColors.error
 				})
 			} finally {
 				setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: false }))
@@ -168,7 +168,7 @@ export default function BusinessDashboardProductsScreen() {
 
 			return (
 				<TouchableOpacity
-					style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}
+					style={[cardStyles.card, { backgroundColor: colors.background, borderColor: colors.border }]}
 					onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
 					activeOpacity={0.85}
 				>
@@ -207,7 +207,7 @@ export default function BusinessDashboardProductsScreen() {
 														position: 'absolute',
 														fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
 														fontWeight: 'bold',
-														color: '#ffffff',
+														color: themeColors.buttonText,
 														textAlign: 'center',
 														includeFontPadding: false,
 														textAlignVertical: 'center'
@@ -232,7 +232,7 @@ export default function BusinessDashboardProductsScreen() {
 										</View>
 									) : null}
 									{item.specs?.origin?.city ? (
-										<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant || 'rgba(255,255,255,0.05)', borderColor: colors.borderLight }]}>
+										<View style={[cardStyles.originChip, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
 											<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
 											<Text style={[cardStyles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
 										</View>
@@ -256,7 +256,7 @@ export default function BusinessDashboardProductsScreen() {
 									value={isCurrentlyActive}
 									onValueChange={() => handleToggleActive(item, isCurrentlyActive)}
 									disabled={isUpdating}
-									trackColor={{ false: colors.borderLight, true: colors.primary + '50' }}
+									trackColor={{ false: colors.border, true: colors.primary + '50' }}
 									thumbColor={isCurrentlyActive ? colors.primary : colors.textTertiary}
 								/>
 							</View>
@@ -266,14 +266,14 @@ export default function BusinessDashboardProductsScreen() {
 									label={translate('sales_reports', 'Sales')}
 									onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
 									colors={colors}
-									style={{ backgroundColor: colors.surface, borderColor: colors.borderLight }}
+									style={{ backgroundColor: colors.surface, borderColor: colors.border }}
 								/>
 								<IconButton
 									icon="qr-code-outline"
 									label={translate('qr_code', 'QR Code')}
 									onPress={() => setSelectedProductForQR(item)}
 									colors={colors}
-									style={{ backgroundColor: colors.surface, borderColor: colors.borderLight }}
+									style={{ backgroundColor: colors.surface, borderColor: colors.border }}
 								/>
 							</View>
 						</View>
@@ -287,19 +287,19 @@ export default function BusinessDashboardProductsScreen() {
 	// ─── Render Skeleton Loader Component ─────────────────────────────────────────
 	const renderSkeleton = () => {
 		return (
-			<View style={[cardStyles.card, { backgroundColor: colors.card, borderColor: colors.borderLight }]}>
+			<View style={[cardStyles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 				<View style={cardStyles.mainRow}>
-					<View style={[cardStyles.imageContainer, { backgroundColor: '#3A506B40' }]} />
+					<View style={[cardStyles.imageContainer, { backgroundColor: themeColors.surfaceVariant25 }]} />
 					<View style={[cardStyles.details, { gap: 8 }]}>
-						<View style={{ width: '80%', height: 16, backgroundColor: '#3A506B40', borderRadius: 4 }} />
-						<View style={{ width: '40%', height: 12, backgroundColor: '#3A506B40', borderRadius: 4 }} />
-						<View style={{ width: '60%', height: 20, backgroundColor: '#3A506B40', borderRadius: 10 }} />
+						<View style={{ width: '80%', height: 16, backgroundColor: themeColors.surfaceVariant25, borderRadius: 4 }} />
+						<View style={{ width: '40%', height: 12, backgroundColor: themeColors.surfaceVariant25, borderRadius: 4 }} />
+						<View style={{ width: '60%', height: 20, backgroundColor: themeColors.surfaceVariant25, borderRadius: 10 }} />
 					</View>
 					<View style={cardStyles.rightColumn}>
-						<View style={{ width: 48, height: 24, backgroundColor: '#3A506B40', borderRadius: 12 }} />
+						<View style={{ width: 48, height: 24, backgroundColor: themeColors.surfaceVariant25, borderRadius: 12 }} />
 						<View style={{ flexDirection: 'row', gap: 8 }}>
-							<View style={{ width: 32, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
-							<View style={{ width: 32, height: 32, backgroundColor: '#3A506B40', borderRadius: 8 }} />
+							<View style={{ width: 32, height: 32, backgroundColor: themeColors.surfaceVariant25, borderRadius: 8 }} />
+							<View style={{ width: 32, height: 32, backgroundColor: themeColors.surfaceVariant25, borderRadius: 8 }} />
 						</View>
 					</View>
 				</View>
@@ -350,7 +350,7 @@ export default function BusinessDashboardProductsScreen() {
 				{/* Top stats summary banner */}
 				{!isInitialLoading && (
 					<View style={[s.statsContainer, { maxWidth: contentMaxWidth }]}>
-						<LinearGradient colors={[colors.primary + '15', colors.primary + '05']} style={[s.statsBanner, { borderColor: colors.borderLight }]}>
+						<LinearGradient colors={[colors.primary + '15', colors.primary + '05']} style={[s.statsBanner, { borderColor: colors.border }]}>
 							<View style={s.statsGrid}>
 								<View style={s.statBox}>
 									<Text style={[s.statVal, { color: colors.primary }]}>{counts.total}</Text>
@@ -405,7 +405,7 @@ export default function BusinessDashboardProductsScreen() {
 						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.filtersScroll}>
 							<TouchableOpacity
 								onPress={() => setActiveFilter('all')}
-								style={[s.filterChip, { backgroundColor: activeFilter === 'all' ? colors.primary + '18' : colors.card, borderColor: activeFilter === 'all' ? colors.primary : colors.borderLight }]}
+								style={[s.filterChip, { backgroundColor: activeFilter === 'all' ? colors.primary + '18' : colors.background, borderColor: activeFilter === 'all' ? colors.primary : colors.border }]}
 							>
 								<Text style={[s.filterChipText, { color: activeFilter === 'all' ? colors.primary : colors.textSecondary }]}>
 									{translate('all', 'All')} ({counts.total})
@@ -416,7 +416,7 @@ export default function BusinessDashboardProductsScreen() {
 								onPress={() => setActiveFilter('active')}
 								style={[
 									s.filterChip,
-									{ backgroundColor: activeFilter === 'active' ? colors.success + '18' : colors.card, borderColor: activeFilter === 'active' ? colors.success : colors.borderLight }
+									{ backgroundColor: activeFilter === 'active' ? colors.success + '18' : colors.background, borderColor: activeFilter === 'active' ? colors.success : colors.border }
 								]}
 							>
 								<Text style={[s.filterChipText, { color: activeFilter === 'active' ? colors.success : colors.textSecondary }]}>
@@ -428,7 +428,7 @@ export default function BusinessDashboardProductsScreen() {
 								onPress={() => setActiveFilter('inactive')}
 								style={[
 									s.filterChip,
-									{ backgroundColor: activeFilter === 'inactive' ? colors.borderLight + '80' : colors.card, borderColor: activeFilter === 'inactive' ? colors.textTertiary : colors.borderLight }
+									{ backgroundColor: activeFilter === 'inactive' ? colors.border + '80' : colors.background, borderColor: activeFilter === 'inactive' ? colors.textTertiary : colors.border }
 								]}
 							>
 								<Text style={[s.filterChipText, { color: activeFilter === 'inactive' ? colors.textSecondary : colors.textSecondary }]}>
@@ -440,7 +440,7 @@ export default function BusinessDashboardProductsScreen() {
 								onPress={() => setActiveFilter('lowStock')}
 								style={[
 									s.filterChip,
-									{ backgroundColor: activeFilter === 'lowStock' ? colors.warning + '18' : colors.card, borderColor: activeFilter === 'lowStock' ? colors.warning : colors.borderLight }
+									{ backgroundColor: activeFilter === 'lowStock' ? colors.warning + '18' : colors.background, borderColor: activeFilter === 'lowStock' ? colors.warning : colors.border }
 								]}
 							>
 								<Text style={[s.filterChipText, { color: activeFilter === 'lowStock' ? colors.warning : colors.textSecondary }]}>
@@ -452,7 +452,7 @@ export default function BusinessDashboardProductsScreen() {
 								onPress={() => setActiveFilter('outOfStock')}
 								style={[
 									s.filterChip,
-									{ backgroundColor: activeFilter === 'outOfStock' ? colors.error + '18' : colors.card, borderColor: activeFilter === 'outOfStock' ? colors.error : colors.borderLight }
+									{ backgroundColor: activeFilter === 'outOfStock' ? colors.error + '18' : colors.background, borderColor: activeFilter === 'outOfStock' ? colors.error : colors.border }
 								]}
 							>
 								<Text style={[s.filterChipText, { color: activeFilter === 'outOfStock' ? colors.error : colors.textSecondary }]}>
@@ -556,7 +556,7 @@ const s = StyleSheet.create({
 	statDivider: {
 		width: 1,
 		height: 32,
-		backgroundColor: 'rgba(255, 255, 255, 0.1)'
+		backgroundColor: themeColors.buttonText10
 	},
 	searchWrap: {
 		width: '100%',
@@ -571,14 +571,12 @@ const s = StyleSheet.create({
 		borderRadius: 14,
 		paddingHorizontal: 14,
 		height: 46,
-		borderWidth: 1,
-		...Platform.select({ web: { outlineWidth: 0 } as any })
+		borderWidth: 1
 	},
 	searchInput: {
 		flex: 1,
 		fontSize: 15,
-		padding: 0,
-		...Platform.select({ web: { outlineStyle: 'none' } as any })
+		padding: 0
 	},
 	filtersWrap: {
 		width: '100%',
@@ -646,7 +644,7 @@ const cardStyles = StyleSheet.create({
 	},
 	updatingOverlay: {
 		...StyleSheet.absoluteFill,
-		backgroundColor: 'rgba(0, 0, 0, 0.4)',
+		backgroundColor: themeColors.background50,
 		justifyContent: 'center',
 		alignItems: 'center',
 		zIndex: 10
@@ -735,7 +733,7 @@ const cardStyles = StyleSheet.create({
 		borderRadius: 6,
 		gap: 3,
 		borderWidth: 1,
-		borderColor: 'rgba(255,255,255,0.05)'
+		borderColor: themeColors.buttonText5
 	},
 	originChipText: {
 		fontSize: 10,

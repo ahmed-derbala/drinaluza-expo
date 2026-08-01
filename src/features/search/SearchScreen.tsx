@@ -7,7 +7,7 @@ import { FlashList } from '@shopify/flash-list'
 
 const TypedFlashList = FlashList as any
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { useUser } from '@/core/contexts/UserContext'
 import { getItem, setItem, getToken } from '@/core/storage'
@@ -290,7 +290,7 @@ export default function SearchScreen() {
 			try {
 				const token = await getToken()
 				if (!token) {
-					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: colors.info || '#3B82F6' })
+					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: colors.info })
 					router.push('/auth')
 					return
 				}
@@ -405,7 +405,7 @@ export default function SearchScreen() {
 			<SmartHeader title={translate('search_title', 'Search')} fallbackRoute="/(home)/feed" />
 
 			{/* Search input container */}
-			<View style={[styles.searchBarContainer, { borderBottomColor: colors.borderLight }]}>
+			<View style={[styles.searchBarContainer, { borderBottomColor: colors.border }]}>
 				<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
 					<Ionicons name="search" size={20} color={colors.textSecondary} style={styles.searchIcon} />
 					<TextInput
@@ -449,7 +449,7 @@ export default function SearchScreen() {
 
 			{/* Collapsible Filter Panel */}
 			{showFilters && (
-				<View style={[styles.panel, { backgroundColor: colors.card, borderBottomColor: colors.borderLight }]}>
+				<View style={[styles.panel, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
 					<Text style={[styles.panelTitle, { color: colors.textSecondary }]}>{translate('filters', 'Filters')}</Text>
 					<View style={styles.scopesRow}>
 						<TouchableOpacity
@@ -483,7 +483,7 @@ export default function SearchScreen() {
 
 			{/* Collapsible History Panel */}
 			{showHistory && (
-				<View style={[styles.panel, { backgroundColor: colors.card, borderBottomColor: colors.borderLight }]}>
+				<View style={[styles.panel, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
 					<View style={styles.panelHeader}>
 						<Text style={[styles.panelTitle, { color: colors.textSecondary }]}>{translate('search_history', 'Search History')}</Text>
 						{history.length > 0 && (
@@ -499,7 +499,7 @@ export default function SearchScreen() {
 							{history.map((term, index) => (
 								<TouchableOpacity
 									key={`${term}-${index}`}
-									style={[styles.historyItem, { borderBottomColor: colors.borderLight }]}
+									style={[styles.historyItem, { borderBottomColor: colors.border }]}
 									onPress={() => {
 										setQuery(term)
 										setShowHistory(false)
@@ -567,12 +567,7 @@ const styles = StyleSheet.create({
 	input: {
 		flex: 1,
 		fontSize: 16,
-		paddingVertical: 8,
-		...Platform.select({
-			web: {
-				outlineStyle: 'none'
-			} as any
-		})
+		paddingVertical: 8
 	},
 	actionBtn: {
 		padding: 6,
@@ -696,15 +691,15 @@ const styles = StyleSheet.create({
 	},
 	skeletonCard: {
 		borderRadius: 20,
-		backgroundColor: 'rgba(255, 255, 255, 0.02)',
+		backgroundColor: themeColors.buttonText5,
 		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.04)',
+		borderColor: themeColors.buttonText5,
 		overflow: 'hidden'
 	},
 	skeletonImg: {
 		width: '100%',
 		aspectRatio: 1.35,
-		backgroundColor: 'rgba(255, 255, 255, 0.03)'
+		backgroundColor: themeColors.buttonText5
 	},
 	skeletonBody: {
 		padding: 14,
@@ -713,13 +708,13 @@ const styles = StyleSheet.create({
 	skeletonLine: {
 		height: 12,
 		borderRadius: 6,
-		backgroundColor: 'rgba(255, 255, 255, 0.04)'
+		backgroundColor: themeColors.buttonText5
 	},
 	skeletonLineLg: {
 		height: 18,
 		width: '40%',
 		borderRadius: 6,
-		backgroundColor: 'rgba(255, 255, 255, 0.05)',
+		backgroundColor: themeColors.buttonText5,
 		marginTop: 4
 	},
 	listContent: {

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, TextInput, Keyboard
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { createProduct, getDefaultProducts, type DefaultProduct } from '@/features/products/products.api'
@@ -475,11 +475,11 @@ export default function CreateProductScreen() {
 					<View style={{ padding: 16, marginTop: 12 }}>
 						<TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleCreateProduct} disabled={saving}>
 							{saving ? (
-								<ActivityIndicator size="small" color="#fff" />
+								<ActivityIndicator size="small" color={themeColors.buttonText} />
 							) : (
 								<>
 									<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
-									<Ionicons name="checkmark-done" size={22} color="#fff" />
+									<Ionicons name="checkmark-done" size={22} color={themeColors.buttonText} />
 								</>
 							)}
 						</TouchableOpacity>
@@ -563,13 +563,13 @@ const createStyles = (colors: any) =>
 			zIndex: 100,
 			flexDirection: 'row',
 			alignItems: 'center',
-			backgroundColor: 'rgba(0,0,0,0.8)',
+			backgroundColor: themeColors.background75,
 			paddingVertical: 10,
 			paddingHorizontal: 20,
 			borderRadius: 30
 		},
 		card: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			padding: 16,
 			marginBottom: 16,
@@ -592,7 +592,7 @@ const createStyles = (colors: any) =>
 			marginBottom: 8
 		},
 		required: {
-			color: colors.error || '#EF4444'
+			color: colors.error
 		},
 		pickerButton: {
 			height: 54,
@@ -655,7 +655,7 @@ const createStyles = (colors: any) =>
 			gap: 10
 		},
 		submitBtnText: {
-			color: '#fff',
+			color: themeColors.buttonText,
 			fontSize: 16,
 			fontWeight: '700'
 		}

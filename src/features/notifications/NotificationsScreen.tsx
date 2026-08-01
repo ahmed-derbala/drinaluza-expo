@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 import { FlashList } from '@shopify/flash-list'
@@ -18,9 +18,9 @@ import { log } from '@/core/log'
 
 // Priority color mapping
 const PRIORITY_COLORS = {
-	high: { bg: '#FEE2E2', border: '#EF4444', text: '#DC2626', icon: 'alert-circle' },
-	medium: { bg: '#FEF3C7', border: '#F59E0B', text: '#D97706', icon: 'warning' },
-	low: { bg: '#DBEAFE', border: '#3B82F6', text: '#2563EB', icon: 'information-circle' }
+	high: { bg: themeColors.error, border: themeColors.error, text: themeColors.text, icon: 'alert-circle' },
+	medium: { bg: themeColors.warning, border: themeColors.warning, text: themeColors.text, icon: 'warning' },
+	low: { bg: themeColors.info, border: themeColors.info, text: themeColors.text, icon: 'information-circle' }
 } as const
 
 const getPriorityStyles = (priority?: 'low' | 'medium' | 'high') => {
@@ -186,8 +186,8 @@ export default function NotificationsScreen() {
 					style={[
 						styles.card,
 						{
-							backgroundColor: priorityStyles ? priorityStyles.backgroundColor : isUnseen ? colors.primary + '08' : colors.card,
-							borderColor: priorityStyles ? priorityStyles.borderColor : isUnseen ? colors.primary : colors.info || '#3B82F6',
+							backgroundColor: priorityStyles ? priorityStyles.backgroundColor : isUnseen ? colors.primary + '08' : colors.background,
+							borderColor: priorityStyles ? priorityStyles.borderColor : isUnseen ? colors.primary : colors.info,
 							borderLeftWidth: isUnseen || priorityStyles ? 4 : 1,
 							maxHeight: maxCardHeight,
 							padding: isCompact ? 10 : 16,
@@ -284,7 +284,7 @@ export default function NotificationsScreen() {
 		if (isInitialLoading) return null
 		return (
 			<View style={styles.emptyContainer}>
-				<View style={[styles.emptyIconContainer, { backgroundColor: colors.card }]}>
+				<View style={[styles.emptyIconContainer, { backgroundColor: colors.background }]}>
 					<Ionicons name="notifications-off-outline" size={48} color={colors.textTertiary} />
 				</View>
 				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_notifications', 'No notifications')}</Text>

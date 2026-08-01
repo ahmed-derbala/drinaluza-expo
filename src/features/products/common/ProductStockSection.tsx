@@ -117,7 +117,7 @@ export default function ProductStockSection({
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		card: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			padding: 16,
 			marginBottom: 16,
@@ -132,7 +132,7 @@ const createStyles = (colors: any) =>
 		},
 		editSection: {
 			borderBottomWidth: 1,
-			borderBottomColor: colors.borderLight,
+			borderBottomColor: colors.border,
 			paddingBottom: 16,
 			marginBottom: 16
 		},

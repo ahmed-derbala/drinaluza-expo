@@ -1,3 +1,4 @@
+import { colors as themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -99,7 +100,7 @@ export default function ProductSpecsSection({
 								onPress={() => setCaliber && setCaliber(val)}
 							>
 								<View style={{ justifyContent: 'center', alignItems: 'center' }}>
-									<Ionicons name={caliber === val ? 'fish' : 'fish-outline'} size={getCaliberIconSize(val, 'selector')} color={caliber === val ? '#ffffff' : colors.primary} />
+									<Ionicons name={caliber === val ? 'fish' : 'fish-outline'} size={getCaliberIconSize(val, 'selector')} color={caliber === val ? themeColors.buttonText : colors.primary} />
 									<Text
 										style={{
 											position: 'absolute',
@@ -129,8 +130,8 @@ export default function ProductSpecsSection({
 								style={[styles.harvestButton, harvest === val && { backgroundColor: colors.primary, borderColor: colors.primary }]}
 								onPress={() => setHarvest && setHarvest(val)}
 							>
-								<Ionicons name={getHarvestIcon(val)} size={16} color={harvest === val ? '#ffffff' : colors.primary} />
-								<Text style={[styles.harvestButtonText, harvest === val && { color: '#ffffff' }]}>{getHarvestLabel(val)}</Text>
+								<Ionicons name={getHarvestIcon(val)} size={16} color={harvest === val ? themeColors.buttonText : colors.primary} />
+								<Text style={[styles.harvestButtonText, harvest === val && { color: themeColors.buttonText }]}>{getHarvestLabel(val)}</Text>
 							</TouchableOpacity>
 						))}
 					</View>
@@ -146,8 +147,8 @@ export default function ProductSpecsSection({
 								style={[styles.harvestButton, gear === val && { backgroundColor: colors.primary, borderColor: colors.primary }]}
 								onPress={() => setGear && setGear(gear === val ? undefined : val)}
 							>
-								<GearIcon type={val} size={24} color={gear === val ? '#ffffff' : colors.primary} />
-								<Text style={[styles.harvestButtonText, gear === val && { color: '#ffffff' }]}>{getGearLabel(val)}</Text>
+								<GearIcon type={val} size={24} color={gear === val ? themeColors.buttonText : colors.primary} />
+								<Text style={[styles.harvestButtonText, gear === val && { color: themeColors.buttonText }]}>{getGearLabel(val)}</Text>
 							</TouchableOpacity>
 						))}
 					</View>
@@ -176,7 +177,7 @@ export default function ProductSpecsSection({
 	if (!specs) return null
 
 	return (
-		<View style={[styles.metaCardStatic, { backgroundColor: colors.card, borderColor: colors.border }]}>
+		<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			<View style={styles.metaCardHeader}>
 				<View style={styles.metaCardTitleWrap}>
 					<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
@@ -206,13 +207,13 @@ export default function ProductSpecsSection({
 								]}
 							>
 								<View style={{ justifyContent: 'center', alignItems: 'center' }}>
-									<Ionicons name={isCurrent ? 'fish' : 'fish-outline'} size={iconSize} color={isCurrent ? colors.primary : colors.textTertiary || '#8E8E93'} />
+									<Ionicons name={isCurrent ? 'fish' : 'fish-outline'} size={iconSize} color={isCurrent ? colors.primary : colors.textTertiary} />
 									<Text
 										style={{
 											position: 'absolute',
 											fontSize: getCaliberFontSize(val, 'static'),
 											fontWeight: 'bold',
-											color: isCurrent ? '#ffffff' : colors.textTertiary || '#8E8E93',
+											color: isCurrent ? themeColors.buttonText : colors.textTertiary,
 											textAlign: 'center',
 											includeFontPadding: false,
 											textAlignVertical: 'center'
@@ -263,7 +264,7 @@ export default function ProductSpecsSection({
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		card: {
-			backgroundColor: colors.card,
+			backgroundColor: colors.background,
 			borderRadius: 16,
 			padding: 16,
 			marginBottom: 16,
@@ -291,7 +292,7 @@ const createStyles = (colors: any) =>
 			fontSize: 12
 		},
 		required: {
-			color: colors.error || '#EF4444'
+			color: colors.error
 		},
 		caliberContainer: {
 			flexDirection: 'row',

@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { format, formatDistanceToNow } from 'date-fns'
 import { clearAllStorage, getToken } from '@/core/storage'
 
-import { useTheme } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
@@ -38,46 +38,46 @@ const LANGUAGES_LIST: LanguageConfig[] = [
 
 // ─── Static stylesheet — defined ONCE at module level, never recreated ────────
 const S = StyleSheet.create({
-	root: { flex: 1, backgroundColor: '#000' },
+	root: { flex: 1, backgroundColor: themeColors.background },
 	flex: { flex: 1 },
 	scrollContent: { flexGrow: 1 },
 
 	desktopGrid: { flex: 1, flexDirection: 'row', minHeight: '100%' as any },
 	brandPane: {
 		flex: 1,
-		backgroundColor: '#030712',
+		backgroundColor: themeColors.modalOverlay,
 		padding: 56,
 		justifyContent: 'center',
 		borderRightWidth: StyleSheet.hairlineWidth,
-		borderRightColor: '#1E293B'
+		borderRightColor: themeColors.border
 	},
 	brandLogoRow: { marginBottom: 20 },
 	brandIconBox: {
 		width: 52,
 		height: 52,
 		borderRadius: 14,
-		backgroundColor: 'rgba(14,165,233,0.1)',
+		backgroundColor: themeColors.primaryContainer,
 		borderWidth: 1,
-		borderColor: 'rgba(14,165,233,0.2)',
+		borderColor: themeColors.primaryContainer20,
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
 	brandName: {
 		fontSize: 13,
 		fontWeight: '900',
-		color: '#0EA5E9',
+		color: themeColors.primary,
 		letterSpacing: 3,
 		textTransform: 'uppercase',
 		marginBottom: 16
 	},
-	brandDivider: { width: 40, height: 2, backgroundColor: '#0EA5E9', borderRadius: 1, marginBottom: 24 },
-	brandHeadline: { fontSize: 36, fontWeight: '800', color: '#F8FAFC', lineHeight: 44, marginBottom: 16 },
-	brandSub: { fontSize: 15, color: '#64748B', lineHeight: 22, marginBottom: 40 },
+	brandDivider: { width: 40, height: 2, backgroundColor: themeColors.primary, borderRadius: 1, marginBottom: 24 },
+	brandHeadline: { fontSize: 36, fontWeight: '800', color: themeColors.text, lineHeight: 44, marginBottom: 16 },
+	brandSub: { fontSize: 15, color: themeColors.textTertiary, lineHeight: 22, marginBottom: 40 },
 	featuresList: { gap: 14 },
 	featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-	featureDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#0EA5E9' },
-	featureText: { fontSize: 14, color: '#94A3B8', fontWeight: '500' },
-	formPane: { flex: 1, justifyContent: 'center', backgroundColor: '#000' },
+	featureDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: themeColors.primary },
+	featureText: { fontSize: 14, color: themeColors.textSecondary, fontWeight: '500' },
+	formPane: { flex: 1, justifyContent: 'center', backgroundColor: themeColors.background },
 
 	formContainer: { padding: 24 },
 	formContainerTablet: { padding: 48, maxWidth: 480, alignSelf: 'center' as const, width: 480 },
@@ -88,15 +88,15 @@ const S = StyleSheet.create({
 		width: 40,
 		height: 40,
 		borderRadius: 11,
-		backgroundColor: 'rgba(14,165,233,0.1)',
+		backgroundColor: themeColors.primaryContainer,
 		borderWidth: 1,
-		borderColor: 'rgba(14,165,233,0.2)',
+		borderColor: themeColors.primaryContainer20,
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	mobileBrandName: { fontSize: 12, fontWeight: '900', color: '#0EA5E9', letterSpacing: 2.5, textTransform: 'uppercase' },
-	mobileTitle: { fontSize: 34, fontWeight: '800', color: '#F8FAFC', lineHeight: 40, marginBottom: 6 },
-	mobileSub: { fontSize: 15, color: '#64748B', lineHeight: 20 },
+	mobileBrandName: { fontSize: 12, fontWeight: '900', color: themeColors.primary, letterSpacing: 2.5, textTransform: 'uppercase' },
+	mobileTitle: { fontSize: 34, fontWeight: '800', color: themeColors.text, lineHeight: 40, marginBottom: 6 },
+	mobileSub: { fontSize: 15, color: themeColors.textTertiary, lineHeight: 20 },
 
 	langSection: { marginBottom: 20 },
 	langRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
@@ -108,19 +108,19 @@ const S = StyleSheet.create({
 		paddingVertical: 6,
 		borderRadius: 20,
 		borderWidth: 1,
-		borderColor: '#1E293B',
+		borderColor: themeColors.border,
 		backgroundColor: 'transparent'
 	},
-	langChipActive: { borderColor: '#0EA5E9', backgroundColor: 'rgba(14,165,233,0.08)' },
+	langChipActive: { borderColor: themeColors.primary, backgroundColor: themeColors.primaryContainer },
 	langFlag: { fontSize: 18, lineHeight: 22 },
-	langBadgeText: { fontSize: 10, fontWeight: '700', color: '#64748B' },
-	langBadgeTextActive: { color: '#0EA5E9' },
+	langBadgeText: { fontSize: 10, fontWeight: '700', color: themeColors.textTertiary },
+	langBadgeTextActive: { color: themeColors.primary },
 
 	accountsSection: { marginBottom: 20 },
 	sectionLabel: {
 		fontSize: 11,
 		fontWeight: '700',
-		color: '#475569',
+		color: themeColors.textTertiary,
 		letterSpacing: 0.8,
 		textTransform: 'uppercase',
 		marginBottom: 10
@@ -130,15 +130,15 @@ const S = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'space-between',
-		backgroundColor: '#090F1A',
+		backgroundColor: themeColors.surface,
 		borderWidth: 1,
-		borderColor: '#1E293B',
+		borderColor: themeColors.border,
 		borderRadius: 12,
 		padding: 10
 	},
 	accountRowActive: {
-		borderColor: '#0EA5E9',
-		backgroundColor: '#0A1628'
+		borderColor: themeColors.primary,
+		backgroundColor: themeColors.primaryContainer20
 	},
 	accountRowClickable: {
 		flex: 1,
@@ -150,17 +150,12 @@ const S = StyleSheet.create({
 		height: 40,
 		borderRadius: 20,
 		overflow: 'hidden',
-		backgroundColor: '#0F172A',
+		backgroundColor: themeColors.surface,
 		borderWidth: 1.5,
-		borderColor: '#1E293B'
+		borderColor: themeColors.border
 	},
 	accountAvatarActive: {
-		borderColor: '#0EA5E9',
-		...Platform.select({
-			ios: { shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.5, shadowRadius: 6 },
-			android: { elevation: 4 },
-			web: { boxShadow: '0px 0px 10px rgba(14,165,233,0.4)' } as any
-		})
+		borderColor: themeColors.primary
 	},
 	accountAvatarImg: { width: '100%', height: '100%' },
 	accountInfo: {
@@ -170,14 +165,14 @@ const S = StyleSheet.create({
 	accountSlug: {
 		fontSize: 14,
 		fontWeight: '600',
-		color: '#F8FAFC'
+		color: themeColors.text
 	},
 	accountSlugActive: {
-		color: '#0EA5E9'
+		color: themeColors.primary
 	},
 	accountAccessTime: {
 		fontSize: 11,
-		color: '#64748B',
+		color: themeColors.textTertiary,
 		marginTop: 2
 	},
 	accountRemoveBtn: {
@@ -186,13 +181,13 @@ const S = StyleSheet.create({
 		justifyContent: 'center'
 	},
 
-	divider: { height: StyleSheet.hairlineWidth, backgroundColor: '#1A2332', marginBottom: 24 },
+	divider: { height: StyleSheet.hairlineWidth, backgroundColor: themeColors.textTertiary, marginBottom: 24 },
 
 	fieldGroup: { marginBottom: 16 },
 	fieldLabel: {
 		fontSize: 12,
 		fontWeight: '600',
-		color: '#64748B',
+		color: themeColors.textTertiary,
 		letterSpacing: 0.4,
 		textTransform: 'uppercase',
 		marginBottom: 8
@@ -203,24 +198,20 @@ const S = StyleSheet.create({
 		height: 50,
 		borderRadius: 12,
 		borderWidth: 1,
-		borderColor: '#1E293B',
-		backgroundColor: '#090F1A',
+		borderColor: themeColors.border,
+		backgroundColor: themeColors.surface,
 		paddingHorizontal: 14
 	},
 	inputBoxFocused: {
-		borderColor: '#0EA5E9',
-		backgroundColor: '#0A1628',
-		...Platform.select({
-			ios: { shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 0 }, shadowOpacity: 0.12, shadowRadius: 6 },
-			web: { boxShadow: '0px 0px 0px 3px rgba(14,165,233,0.12)' } as any
-		})
+		borderColor: themeColors.primary,
+		backgroundColor: themeColors.primaryContainer20
 	},
-	inputBoxError: { borderColor: '#EF4444' },
+	inputBoxError: { borderColor: themeColors.error },
 	inputIcon: { marginRight: 10 },
-	inputText: { flex: 1, fontSize: 15, color: '#F8FAFC', paddingVertical: 0 },
+	inputText: { flex: 1, fontSize: 15, color: themeColors.text, paddingVertical: 0 },
 	eyeBtn: { padding: 6 },
 	errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-	errorText: { fontSize: 12, color: '#EF4444', fontWeight: '500', flex: 1 },
+	errorText: { fontSize: 12, color: themeColors.error, fontWeight: '500', flex: 1 },
 
 	toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
 	toggleBox: {
@@ -228,13 +219,13 @@ const S = StyleSheet.create({
 		height: 18,
 		borderRadius: 5,
 		borderWidth: 1.5,
-		borderColor: '#334155',
+		borderColor: themeColors.inputBorder,
 		backgroundColor: 'transparent',
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	toggleBoxActive: { backgroundColor: '#0EA5E9', borderColor: '#0EA5E9' },
-	toggleLabel: { fontSize: 13, color: '#64748B', fontWeight: '500', flex: 1 },
+	toggleBoxActive: { backgroundColor: themeColors.primary, borderColor: themeColors.primary },
+	toggleLabel: { fontSize: 13, color: themeColors.textTertiary, fontWeight: '500', flex: 1 },
 
 	ctaBtn: {
 		height: 52,
@@ -242,14 +233,9 @@ const S = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center',
 		marginTop: 8,
-		overflow: 'hidden',
-		...Platform.select({
-			ios: { shadowColor: '#0EA5E9', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
-			android: { elevation: 5 },
-			web: { boxShadow: '0px 4px 20px rgba(14,165,233,0.3)' } as any
-		})
+		overflow: 'hidden'
 	},
-	ctaBtnText: { fontSize: 16, fontWeight: '700', color: '#fff', letterSpacing: 0.2 }
+	ctaBtnText: { fontSize: 16, fontWeight: '700', color: themeColors.buttonText, letterSpacing: 0.2 }
 })
 
 // ─── Types for AuthForm props ─────────────────────────────────────────────────
@@ -337,7 +323,7 @@ const AuthForm = React.memo(
 					<View style={S.mobileHeader}>
 						<View style={S.mobileLogoRow}>
 							<View style={S.mobileIconBox}>
-								<Ionicons name="business" size={22} color="#0EA5E9" />
+								<Ionicons name="business" size={22} color={themeColors.primary} />
 							</View>
 							<Text style={S.mobileBrandName}>DRINALUZA</Text>
 						</View>
@@ -406,14 +392,14 @@ const AuthForm = React.memo(
 				<View style={S.fieldGroup}>
 					<Text style={S.fieldLabel}>{translate('username', 'Username')}</Text>
 					<View style={[S.inputBox, isSlugFocused && S.inputBoxFocused, !!slugError && S.inputBoxError]}>
-						<Ionicons name="at-outline" size={17} color={isSlugFocused ? '#0EA5E9' : '#64748B'} style={S.inputIcon} />
+						<Ionicons name="at-outline" size={17} color={isSlugFocused ? themeColors.primary : themeColors.textTertiary} style={S.inputIcon} />
 						<TextInput
 							ref={slugInputRef}
 							style={S.inputText}
 							value={slug}
 							onChangeText={handleSlugChange}
 							placeholder={translate('username_placeholder', 'your-username')}
-							placeholderTextColor="#3D4F66"
+							placeholderTextColor={themeColors.slate}
 							autoCapitalize="none"
 							autoCorrect={false}
 							maxLength={25}
@@ -429,7 +415,7 @@ const AuthForm = React.memo(
 					</View>
 					{slugError && (
 						<View style={S.errorRow}>
-							<Ionicons name="alert-circle-outline" size={13} color="#EF4444" />
+							<Ionicons name="alert-circle-outline" size={13} color={themeColors.error} />
 							<Text style={S.errorText}>{slugError}</Text>
 						</View>
 					)}
@@ -437,7 +423,7 @@ const AuthForm = React.memo(
 
 				{/* Save account toggle */}
 				<TouchableOpacity style={S.toggleRow} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.75} accessibilityRole="checkbox" accessibilityState={{ checked: saveAccount }}>
-					<View style={[S.toggleBox, saveAccount && S.toggleBoxActive]}>{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}</View>
+					<View style={[S.toggleBox, saveAccount && S.toggleBoxActive]}>{saveAccount && <Ionicons name="checkmark" size={12} color={themeColors.buttonText} />}</View>
 					<Text style={S.toggleLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
 				</TouchableOpacity>
 
@@ -445,14 +431,14 @@ const AuthForm = React.memo(
 				<View style={S.fieldGroup}>
 					<Text style={S.fieldLabel}>{translate('password', 'Password')}</Text>
 					<View style={[S.inputBox, isPasswordFocused && S.inputBoxFocused]}>
-						<Ionicons name="lock-closed-outline" size={17} color={isPasswordFocused ? '#0EA5E9' : '#64748B'} style={S.inputIcon} />
+						<Ionicons name="lock-closed-outline" size={17} color={isPasswordFocused ? themeColors.primary : themeColors.textTertiary} style={S.inputIcon} />
 						<TextInput
 							ref={passwordInputRef}
 							style={S.inputText}
 							value={password}
 							onChangeText={setPassword}
 							placeholder="••••••••"
-							placeholderTextColor="#3D4F66"
+							placeholderTextColor={themeColors.slate}
 							secureTextEntry={!showPassword}
 							autoCapitalize="none"
 							autoCorrect={false}
@@ -478,16 +464,21 @@ const AuthForm = React.memo(
 						accessibilityRole="checkbox"
 						accessibilityState={{ checked: needPassword }}
 					>
-						<View style={[S.toggleBox, needPassword && S.toggleBoxActive]}>{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}</View>
+						<View style={[S.toggleBox, needPassword && S.toggleBoxActive]}>{needPassword && <Ionicons name="checkmark" size={12} color={themeColors.buttonText} />}</View>
 						<Text style={S.toggleLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
 					</TouchableOpacity>
-					<EyeButton visible={showPassword} onPress={() => setShowPassword(!showPassword)} iconColor={isPasswordFocused ? '#0EA5E9' : '#64748B'} style={S.eyeBtn} />
+					<EyeButton visible={showPassword} onPress={() => setShowPassword(!showPassword)} iconColor={isPasswordFocused ? themeColors.primary : themeColors.textTertiary} style={S.eyeBtn} />
 				</View>
 
 				{/* CTA */}
 				<TouchableOpacity style={S.ctaBtn} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.85} accessibilityLabel={translate('continue', 'Continue')} accessibilityRole="button">
-					<LinearGradient colors={loading ? ['#1e293b', '#1e293b'] : ['#0EA5E9', '#0284C7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-					{loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>}
+					<LinearGradient
+						colors={loading ? [themeColors.border, themeColors.border] : [themeColors.primary, themeColors.info]}
+						start={{ x: 0, y: 0 }}
+						end={{ x: 1, y: 0 }}
+						style={StyleSheet.absoluteFill}
+					/>
+					{loading ? <ActivityIndicator size="small" color={themeColors.buttonText} /> : <Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>}
 				</TouchableOpacity>
 
 				<View style={{ height: 32 }} />
@@ -503,7 +494,7 @@ const BrandPane = React.memo(({ translate }: { translate: (k: string, d: string)
 	<View style={S.brandPane}>
 		<View style={S.brandLogoRow}>
 			<View style={S.brandIconBox}>
-				<Ionicons name="business" size={28} color="#0EA5E9" />
+				<Ionicons name="business" size={28} color={themeColors.primary} />
 			</View>
 		</View>
 		<Text style={S.brandName}>DRINALUZA</Text>
@@ -650,16 +641,16 @@ export default function AuthScreen() {
 
 	const handleSignInSubmit = useCallback(async () => {
 		if (!validateSlug(slug)) {
-			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: slugError || translate('username_invalid_chars'), color: '#EF4444' })
+			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: slugError || translate('username_invalid_chars'), color: themeColors.error })
 			return
 		}
 		if (password.length < 1) {
-			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: translate('password_required', 'Password is required.'), color: '#EF4444' })
+			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: translate('password_required', 'Password is required.'), color: themeColors.error })
 			passwordInputRef.current?.focus()
 			return
 		}
 		if (password.length > 20) {
-			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: translate('password_too_long', 'Password must not exceed 20 characters.'), color: '#EF4444' })
+			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: translate('password_too_long', 'Password must not exceed 20 characters.'), color: themeColors.error })
 			passwordInputRef.current?.focus()
 			return
 		}
@@ -682,17 +673,21 @@ export default function AuthScreen() {
 							await refreshUser()
 						} catch (signUpErr: any) {
 							log({ level: 'error', label: 'AuthScreen', message: 'Sign up submission failed', error: signUpErr })
-							toast.show({ title: translate('error', 'Signup Failed'), message: signUpErr.response?.data?.message || signUpErr.message || 'Signup failed', color: '#EF4444' })
+							toast.show({ title: translate('error', 'Signup Failed'), message: signUpErr.response?.data?.message || signUpErr.message || 'Signup failed', color: themeColors.error })
 						} finally {
 							setLoading(false)
 						}
 					}
 				)
 			} else if (status === 409) {
-				toast.show({ title: translate('error', 'Authentication Failed'), message: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'), color: '#EF4444' })
+				toast.show({
+					title: translate('error', 'Authentication Failed'),
+					message: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'),
+					color: themeColors.error
+				})
 				focusPasswordField()
 			} else {
-				toast.show({ title: translate('error', 'Error'), message: err.response?.data?.message || err.message || 'Unable to connect to server.', color: '#EF4444' })
+				toast.show({ title: translate('error', 'Error'), message: err.response?.data?.message || err.message || 'Unable to connect to server.', color: themeColors.error })
 			}
 		} finally {
 			setLoading(false)
@@ -731,7 +726,7 @@ export default function AuthScreen() {
 					throw new Error('Quick sign in token failed')
 				} catch (err) {
 					log({ level: 'error', label: 'AuthScreen', message: 'Quick sign in token error', error: err })
-					toast.show({ title: translate('error', 'Switch Failed'), message: translate('quick_signin_failed', 'Quick sign in failed.'), color: '#EF4444' })
+					toast.show({ title: translate('error', 'Switch Failed'), message: translate('quick_signin_failed', 'Quick sign in failed.'), color: themeColors.error })
 					setLoading(false)
 					loadingRef.current = false
 					populateFormAndFocus()
@@ -750,13 +745,13 @@ export default function AuthScreen() {
 					try {
 						await deleteSavedAuthentication(slugToRemove)
 						await loadSavedAccounts()
-						toast.show({ title: translate('success', 'Success'), message: `@${slugToRemove} removed from accounts list.`, color: '#10B981' })
+						toast.show({ title: translate('success', 'Success'), message: `@${slugToRemove} removed from accounts list.`, color: themeColors.success })
 						if (slug === slugToRemove) {
 							setSlug('')
 							setPassword('')
 						}
 					} catch {
-						toast.show({ title: translate('error', 'Error'), message: 'Failed to remove saved account.', color: '#EF4444' })
+						toast.show({ title: translate('error', 'Error'), message: 'Failed to remove saved account.', color: themeColors.error })
 					}
 				}
 			)
@@ -773,9 +768,9 @@ export default function AuthScreen() {
 				await loadSavedAccounts()
 				setSlug('')
 				setPassword('')
-				toast.show({ title: translate('reset_success', 'App reset successfully.'), message: '', color: '#10B981' })
+				toast.show({ title: translate('reset_success', 'App reset successfully.'), message: '', color: themeColors.success })
 			} catch {
-				toast.show({ title: translate('error', 'Reset Failed'), message: translate('reset_failed', 'Failed to reset app.'), color: '#EF4444' })
+				toast.show({ title: translate('error', 'Reset Failed'), message: translate('reset_failed', 'Failed to reset app.'), color: themeColors.error })
 			} finally {
 				setLoading(false)
 			}
