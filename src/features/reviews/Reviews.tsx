@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '../../core/theme'
 import { useUser } from '../../core/contexts/UserContext'
 import { getReviews, createReview } from './reviews.api'
@@ -8,6 +8,7 @@ import { Review } from './reviews.interface'
 import RatingStars from '../common/RatingStars'
 import LoadingState from '../common/LoadingState'
 import EmptyState from '../common/EmptyState'
+import { IconButton } from '../common/buttons/IconButton'
 
 type ReviewSectionProps = {
 	targetResource: 'businesses' | 'products' | 'users'
@@ -120,9 +121,15 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 						</View>
 					)}
 				</View>
-				<TouchableOpacity style={[styles.addButton, { backgroundColor: colors.primary }]} onPress={() => setShowAddReview(!showAddReview)}>
-					<Ionicons name={showAddReview ? 'close' : 'add'} size={20} color="#fff" />
-				</TouchableOpacity>
+				<IconButton
+					icon={showAddReview ? 'close' : 'add'}
+					label={showAddReview ? translate('close', 'Close') : translate('add_review', 'Add Review')}
+					onPress={() => setShowAddReview(!showAddReview)}
+					variant="primary"
+					iconColor="#fff"
+					colors={colors}
+					style={styles.addButton}
+				/>
 			</View>
 
 			{/* Add Review Form */}

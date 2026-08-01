@@ -28,6 +28,7 @@ export interface SalesResponse {
 }
 
 interface SaleProduct {
+	_id?: string
 	product: {
 		_id: string
 		name: {
@@ -70,6 +71,7 @@ interface SaleProduct {
 			measure: string
 			min: number
 			max: number
+			step?: number
 			updatedAt?: string
 		}
 		updatedAt?: string
@@ -164,6 +166,7 @@ export interface Sale {
 			}>
 			whatsapp?: string
 			email?: string
+			website?: string
 			createdAt?: string
 			updatedAt?: string
 		}
@@ -208,9 +211,10 @@ export const getSales = async (businessSlug: string, page = 1, limit = 10, statu
 	}
 }
 
-export const updateSaleStatus = async (orderId: string, status: string): Promise<any> => {
+export const updateSaleStatus = async (orderId: string, status: string, products?: { _id: string; quantity: number }[]): Promise<any> => {
 	try {
-		const response = await apiClient.patch(`sales/${orderId}`, { status })
+		const body = { status, ...(products && products.length ? { products } : {}) }
+		const response = await apiClient.patch(`sales/${orderId}`, body)
 		return response.data
 	} catch (error) {
 		throw parseError(error)

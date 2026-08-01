@@ -7,6 +7,7 @@ const FlashList = ShopifyFlashList as any
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
@@ -260,23 +261,20 @@ export default function BusinessDashboardProductsScreen() {
 								/>
 							</View>
 							<View style={cardStyles.iconActionsRow}>
-								<TouchableOpacity
-									style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+								<IconButton
+									icon="trending-up-outline"
+									label={translate('sales_reports', 'Sales')}
 									onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
-									activeOpacity={0.7}
-									accessibilityLabel={translate('sales_reports', 'Sales')}
-								>
-									<Ionicons name="trending-up-outline" size={16} color={colors.textSecondary} />
-								</TouchableOpacity>
-
-								<TouchableOpacity
-									style={[cardStyles.iconActionBtn, { backgroundColor: colors.surface, borderColor: colors.borderLight }]}
+									colors={colors}
+									style={{ backgroundColor: colors.surface, borderColor: colors.borderLight }}
+								/>
+								<IconButton
+									icon="qr-code-outline"
+									label={translate('qr_code', 'QR Code')}
 									onPress={() => setSelectedProductForQR(item)}
-									activeOpacity={0.7}
-									accessibilityLabel={translate('qr_code', 'QR Code')}
-								>
-									<Ionicons name="qr-code-outline" size={16} color={colors.textSecondary} />
-								</TouchableOpacity>
+									colors={colors}
+									style={{ backgroundColor: colors.surface, borderColor: colors.borderLight }}
+								/>
 							</View>
 						</View>
 					</View>
@@ -766,14 +764,6 @@ const cardStyles = StyleSheet.create({
 	iconActionsRow: {
 		flexDirection: 'row',
 		gap: 8,
-		alignItems: 'center'
-	},
-	iconActionBtn: {
-		width: 32,
-		height: 32,
-		borderRadius: 8,
-		borderWidth: 1,
-		justifyContent: 'center',
 		alignItems: 'center'
 	}
 })

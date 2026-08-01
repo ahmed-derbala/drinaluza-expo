@@ -76,6 +76,7 @@ export interface Contact {
 	backupPhones?: Phone[]
 	whatsapp?: string
 	email?: string
+	website?: string
 }
 
 export interface UserData {

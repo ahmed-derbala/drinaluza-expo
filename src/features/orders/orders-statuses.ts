@@ -2,6 +2,7 @@ import { translate } from '../../core/translation'
 
 export const ORDER_STATUSES = {
 	PENDING_BUSINESS_CONFIRMATION: 'pending_business_confirmation', //active
+	PENDING_CUSTOMER_CONFIRMATION: 'pending_customer_confirmation', //active
 	CONFIRMED_BY_BUSINESS: 'confirmed_by_business', //active
 	RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER: 'reserved_by_business_for_pickup_by_customer', //active
 	RESERVATION_EXPIRED: 'reservation_expired', //done
@@ -17,6 +18,7 @@ const orderStatuses = ORDER_STATUSES
 
 export const orderStatusColors = {
 	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: '#FFA500', // Orange
+	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: '#FF9800', // Deep Orange
 	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: '#2196F3', // Blue
 	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: '#9C27B0', // Purple
 	[ORDER_STATUSES.RESERVATION_EXPIRED]: '#607D8B', // Blue Grey
@@ -29,6 +31,7 @@ export const orderStatusColors = {
 
 export const orderStatusLabels = {
 	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: translate('pending_businessconfirmation', 'Pending Confirmation'),
+	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: translate('pending_customer_confirmation', 'Pending Customer Confirmation'),
 	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: translate('confirmed_by_business', 'Confirmed'),
 	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: translate('reserved_by_businessfor_pickup_by_customer', 'Ready for Pickup'),
 	[ORDER_STATUSES.RESERVATION_EXPIRED]: translate('reservation_expired', 'Reservation Expired'),
@@ -43,6 +46,7 @@ export const orderStatusIcons: Record<string, string> = {
 	all: 'list',
 	cart: 'cart-outline',
 	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: 'time-outline',
+	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: 'time-outline',
 	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: 'checkmark-circle-outline',
 	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: 'bag-outline',
 	[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: 'car-outline',

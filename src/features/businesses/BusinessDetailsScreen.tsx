@@ -1,6 +1,6 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, Linking, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -10,6 +10,11 @@ import StateBadge from '@/features/common/StateBadge'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import QRCodeModal from '@/features/common/QRCodeModal'
+import { PhoneButton } from '@/features/common/buttons/PhoneButton'
+import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
+import { EmailButton } from '@/features/common/buttons/EmailButton'
+import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
+import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { useBusinessBySlug } from '@/features/businesses/useBusinessBySlug'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { getUserBySlug } from '@/features/users/users.api'
@@ -18,7 +23,6 @@ import { ProductType } from '@/features/products/products.type'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, createShadow } from '@/core/theme'
-import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
@@ -163,28 +167,6 @@ export default function BusinessDetailsScreen() {
 		[colors, localize, cardWidth, styles]
 	)
 
-	const handleCall = () => {
-		const phone = business?.contact?.phone?.fullNumber
-		if (phone) {
-			Linking.openURL(`tel:${phone}`).catch(() => {})
-		}
-	}
-
-	const handleWhatsApp = () => {
-		const whatsapp = business?.contact?.whatsapp || business?.contact?.phone?.fullNumber
-		if (whatsapp) {
-			const cleanNum = whatsapp.replace(/[^\d]/g, '')
-			Linking.openURL(`https://wa.me/${cleanNum}`).catch(() => {})
-		}
-	}
-
-	const handleEmail = () => {
-		const email = business?.contact?.email
-		if (email) {
-			Linking.openURL(`mailto:${email}`).catch(() => {})
-		}
-	}
-
 	const { data: businessResponse, isInitialLoading: businessLoading, isRefreshing: businessRefreshing, isOffline: businessOffline, refresh: refreshBusiness } = useBusinessBySlug({ businessSlug })
 	const business = businessResponse?.data ?? null
 
@@ -222,10 +204,6 @@ export default function BusinessDetailsScreen() {
 
 	// QR Code state
 	const [showQRCode, setShowQRCode] = useState(false)
-
-	const handleOpenMap = () => {
-		openDirections(business?.location, business?.address)
-	}
 
 	if (isInitialLoading) {
 		return (
@@ -275,7 +253,6 @@ export default function BusinessDetailsScreen() {
 	if (business.address?.region) addressParts.push(business.address.region)
 	if (business.address?.country) addressParts.push(business.address.country)
 	const fullAddress = addressParts.join(', ')
-	const businessCoords = getGeoCoordinates(business.location)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -342,53 +319,11 @@ export default function BusinessDetailsScreen() {
 
 						{/* Quick Actions Row */}
 						<View style={[styles.quickActionsRow, { borderTopColor: colors.borderLight + '30', borderBottomColor: colors.borderLight + '30' }]}>
-							{business.contact?.phone?.fullNumber ? (
-								<View style={styles.actionButtonWrapper}>
-									<TouchableOpacity
-										style={[styles.actionCircleButton, { backgroundColor: colors.primary + '10', borderColor: colors.primary + '35' }]}
-										onPress={handleCall}
-										accessibilityLabel="Call business"
-									>
-										<Ionicons name="call" size={18} color={colors.primary} />
-									</TouchableOpacity>
-									<Text style={[styles.actionButtonLabel, { color: colors.textSecondary }]}>{translate('call', 'Call')}</Text>
-								</View>
-							) : null}
-
-							{business.contact?.whatsapp || business.contact?.phone?.fullNumber ? (
-								<View style={styles.actionButtonWrapper}>
-									<TouchableOpacity style={[styles.actionCircleButton, { backgroundColor: '#25D36615', borderColor: '#25D36635' }]} onPress={handleWhatsApp} accessibilityLabel="Chat on WhatsApp">
-										<Ionicons name="logo-whatsapp" size={18} color="#25D366" />
-									</TouchableOpacity>
-									<Text style={[styles.actionButtonLabel, { color: colors.textSecondary }]}>WhatsApp</Text>
-								</View>
-							) : null}
-
-							{business.contact?.email ? (
-								<View style={styles.actionButtonWrapper}>
-									<TouchableOpacity
-										style={[styles.actionCircleButton, { backgroundColor: colors.warning + '10', borderColor: colors.warning + '35' }]}
-										onPress={handleEmail}
-										accessibilityLabel="Email business"
-									>
-										<Ionicons name="mail" size={18} color={colors.warning} />
-									</TouchableOpacity>
-									<Text style={[styles.actionButtonLabel, { color: colors.textSecondary }]}>{translate('email', 'Email')}</Text>
-								</View>
-							) : null}
-
-							{businessCoords ? (
-								<View style={styles.actionButtonWrapper}>
-									<TouchableOpacity
-										style={[styles.actionCircleButton, { backgroundColor: colors.success + '10', borderColor: colors.success + '35' }]}
-										onPress={handleOpenMap}
-										accessibilityLabel="Get directions"
-									>
-										<Ionicons name="map" size={18} color={colors.success} />
-									</TouchableOpacity>
-									<Text style={[styles.actionButtonLabel, { color: colors.textSecondary }]}>{translate('directions', 'Directions')}</Text>
-								</View>
-							) : null}
+							<PhoneButton phone={business.contact?.phone} size={50} />
+							<WhatsAppButton whatsapp={business.contact?.whatsapp || business.contact?.phone?.fullNumber} size={50} />
+							<EmailButton email={business.contact?.email} size={50} />
+							<WebsiteButton website={business.contact?.website} size={50} />
+							<DirectionsButton location={business.location} address={business.address} size={50} />
 						</View>
 
 						{/* Metadata Cards Grid */}
@@ -629,21 +564,10 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			borderBottomWidth: 1,
 			marginBottom: 16
 		},
-		actionButtonWrapper: {
-			alignItems: 'center',
-			gap: 6
-		},
 		actionCircleButton: {
-			width: 44,
-			height: 44,
-			borderRadius: 22,
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 1
-		},
-		actionButtonLabel: {
-			fontSize: 11,
-			fontWeight: '600'
 		},
 		infoCardGrid: {
 			flexDirection: 'row',

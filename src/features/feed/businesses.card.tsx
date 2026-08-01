@@ -5,7 +5,11 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { BusinessFeedItem } from './feed.interface'
 import { useRouter } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
-import ContactButtons from '@/features/common/ContactButtons'
+import { PhoneButton } from '@/features/common/buttons/PhoneButton'
+import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
+import { EmailButton } from '@/features/common/buttons/EmailButton'
+import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
+import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { useTheme } from '@/core/theme'
 
 type BusinessCardProps = {
@@ -65,9 +69,13 @@ export default function BusinessCard({ item }: BusinessCardProps) {
 			) : null}
 
 			{/* Contact buttons row below name/slug */}
-			{(item.contact?.phone?.fullNumber || item.contact?.whatsapp || item.contact?.email || item.business?.location || item.business?.address) && (
+			{(item.contact?.phone?.fullNumber || item.contact?.whatsapp || item.contact?.email || item.contact?.website || item.business?.location || item.business?.address) && (
 				<View style={styles.bizContactRow}>
-					<ContactButtons contact={item.contact} location={item.business?.location} address={item.business?.address} />
+					<PhoneButton phone={item.contact?.phone} size={36} />
+					<WhatsAppButton whatsapp={item.contact?.whatsapp} size={36} />
+					<EmailButton email={item.contact?.email} size={36} />
+					<WebsiteButton website={item.contact?.website} size={36} />
+					<DirectionsButton location={item.business?.location} address={item.business?.address} size={36} />
 				</View>
 			)}
 

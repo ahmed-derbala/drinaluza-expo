@@ -1,11 +1,20 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
-import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native'
+import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, createShadow, AppThemeColors } from '@/core/theme'
 import { STATUS_ICONS, getStatusColor } from './utils'
-import ModalButton from './ModalButton'
-import type { SmartModalProps } from './types'
+import { IconButton, type IconVariant } from '@/features/common/buttons/IconButton'
+import type { SmartModalProps, SmartModalButton } from './types'
+
+function resolveIconVariant(color: string, colors: AppThemeColors, variant: SmartModalButton['variant']): IconVariant {
+	if (color === colors.error) return 'danger'
+	if (variant !== 'filled') return 'secondary'
+	if (color === colors.success) return 'success'
+	if (color === colors.warning) return 'warning'
+	if (color === colors.info) return 'info'
+	return 'primary'
+}
 
 const ModalBackdrop = Platform.OS === 'web' ? (View as any) : View
 
@@ -174,9 +183,22 @@ export default function SmartModal({
 		return (
 			<View style={[styles.footer, { borderTopColor: colors.border + '20' }]}>
 				<View style={[styles.buttonRow, isWideScreen && styles.buttonRowWide]}>
-					{buttons.map((button, index) => (
-						<ModalButton key={`smart-modal-button-${index}`} {...button} defaultColor={button.color || statusColor} contrastColor={colors.buttonText} />
-					))}
+					{buttons.map((button, index) => {
+						const accentColor = button.color || statusColor
+						return (
+							<IconButton
+								key={`smart-modal-button-${index}`}
+								icon={button.icon || (button.variant && button.variant !== 'filled' ? 'close-outline' : 'checkmark')}
+								label={button.accessibilityLabel || button.text || 'Button'}
+								onPress={button.onPress}
+								disabled={button.disabled}
+								loading={button.loading}
+								variant={resolveIconVariant(accentColor, colors, button.variant)}
+								colors={colors}
+								style={button.style}
+							/>
+						)
+					})}
 				</View>
 			</View>
 		)
@@ -414,13 +436,13 @@ const styles = StyleSheet.create({
 		marginTop: 'auto'
 	},
 	buttonRow: {
-		flexDirection: 'column',
-		gap: 8,
+		flexDirection: 'row',
+		justifyContent: 'center',
+		alignItems: 'center',
+		gap: 10,
 		width: '100%'
 	},
 	buttonRowWide: {
-		flexDirection: 'row',
-		justifyContent: 'flex-end',
-		gap: 10
+		justifyContent: 'flex-end'
 	}
 })

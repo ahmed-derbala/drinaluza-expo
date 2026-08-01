@@ -10,6 +10,8 @@ import { clearAllStorage, getToken } from '@/core/storage'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
+import { DeleteButton } from '@/features/common/buttons/DeleteButton'
+import { EyeButton } from '@/features/common/buttons/EyeButton'
 import { SmartHeader } from '@/core/smart-header'
 import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 
@@ -326,165 +328,172 @@ const AuthForm = React.memo(
 		handleSignInSubmit,
 		handleSelectSavedAccount,
 		handleRemoveSavedAccount
-	}: AuthFormProps) => (
-		<>
-			{/* Mobile-only hero */}
-			{!isTablet && (
-				<View style={S.mobileHeader}>
-					<View style={S.mobileLogoRow}>
-						<View style={S.mobileIconBox}>
-							<Ionicons name="business" size={22} color="#0EA5E9" />
+	}: AuthFormProps) => {
+		const { colors } = useTheme()
+		return (
+			<>
+				{/* Mobile-only hero */}
+				{!isTablet && (
+					<View style={S.mobileHeader}>
+						<View style={S.mobileLogoRow}>
+							<View style={S.mobileIconBox}>
+								<Ionicons name="business" size={22} color="#0EA5E9" />
+							</View>
+							<Text style={S.mobileBrandName}>DRINALUZA</Text>
 						</View>
-						<Text style={S.mobileBrandName}>DRINALUZA</Text>
-					</View>
-					<Text style={S.mobileTitle}>{translate('welcome_back', 'Welcome back.')}</Text>
-					<Text style={S.mobileSub}>{translate('auth_subtitle', 'Sign in to your business account.')}</Text>
-				</View>
-			)}
-
-			{/* Language selector */}
-			<View style={S.langSection}>
-				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.langRow} keyboardShouldPersistTaps="handled">
-					{LANGUAGES_LIST.map((lang) => {
-						const selected = appLang === lang.code
-						return (
-							<TouchableOpacity
-								key={lang.code}
-								style={[S.langChip, selected && S.langChipActive]}
-								onPress={() => setAppLang(lang.code)}
-								activeOpacity={0.75}
-								accessibilityLabel={lang.label}
-								accessibilityRole="button"
-							>
-								<Text style={S.langFlag}>{lang.flag}</Text>
-								{lang.badge && <Text style={[S.langBadgeText, selected && S.langBadgeTextActive]}>{lang.badge}</Text>}
-							</TouchableOpacity>
-						)
-					})}
-				</ScrollView>
-			</View>
-
-			{/* Saved accounts chip strip */}
-			{savedAccounts.length > 0 && (
-				<View style={S.accountsSection}>
-					<Text style={S.sectionLabel}>{translate('saved_accounts', 'Saved Accounts')}</Text>
-					<View style={S.accountsList}>
-						{savedAccounts.map((account) => {
-							const isActive = activeSlug === account.slug
-							return (
-								<View key={account.slug} style={[S.accountRow, isActive && S.accountRowActive]}>
-									<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to @${account.slug}`}>
-										<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
-											<SmartImage source={account.photoUrl} style={S.accountAvatarImg} entityType="user" />
-										</View>
-										<View style={S.accountInfo}>
-											<Text style={[S.accountSlug, isActive && S.accountSlugActive]} numberOfLines={1}>
-												@{account.slug}
-											</Text>
-											{account.lastSignIn && (
-												<Text style={S.accountAccessTime} numberOfLines={2}>
-													{formatLastAccess(account.lastSignIn)}
-												</Text>
-											)}
-										</View>
-									</TouchableOpacity>
-									<TouchableOpacity style={S.accountRemoveBtn} onPress={() => handleRemoveSavedAccount(account.slug)} activeOpacity={0.7} accessibilityLabel={`Remove @${account.slug}`}>
-										<Ionicons name="trash-outline" size={18} color="#EF4444" />
-									</TouchableOpacity>
-								</View>
-							)
-						})}
-					</View>
-				</View>
-			)}
-
-			<View style={S.divider} />
-
-			{/* Username */}
-			<View style={S.fieldGroup}>
-				<Text style={S.fieldLabel}>{translate('username', 'Username')}</Text>
-				<View style={[S.inputBox, isSlugFocused && S.inputBoxFocused, !!slugError && S.inputBoxError]}>
-					<Ionicons name="at-outline" size={17} color={isSlugFocused ? '#0EA5E9' : '#64748B'} style={S.inputIcon} />
-					<TextInput
-						ref={slugInputRef}
-						style={S.inputText}
-						value={slug}
-						onChangeText={handleSlugChange}
-						placeholder={translate('username_placeholder', 'your-username')}
-						placeholderTextColor="#3D4F66"
-						autoCapitalize="none"
-						autoCorrect={false}
-						maxLength={25}
-						onFocus={() => {
-							setIsSlugFocused(true)
-							scrollToInput(slugInputRef)
-						}}
-						onBlur={() => setIsSlugFocused(false)}
-						returnKeyType="next"
-						onSubmitEditing={focusPasswordField}
-						accessibilityLabel={translate('username', 'Username')}
-					/>
-				</View>
-				{slugError && (
-					<View style={S.errorRow}>
-						<Ionicons name="alert-circle-outline" size={13} color="#EF4444" />
-						<Text style={S.errorText}>{slugError}</Text>
+						<Text style={S.mobileTitle}>{translate('welcome_back', 'Welcome back.')}</Text>
+						<Text style={S.mobileSub}>{translate('auth_subtitle', 'Sign in to your business account.')}</Text>
 					</View>
 				)}
-			</View>
 
-			{/* Save account toggle */}
-			<TouchableOpacity style={S.toggleRow} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.75} accessibilityRole="checkbox" accessibilityState={{ checked: saveAccount }}>
-				<View style={[S.toggleBox, saveAccount && S.toggleBoxActive]}>{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}</View>
-				<Text style={S.toggleLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
-			</TouchableOpacity>
-
-			{/* Password */}
-			<View style={S.fieldGroup}>
-				<Text style={S.fieldLabel}>{translate('password', 'Password')}</Text>
-				<View style={[S.inputBox, isPasswordFocused && S.inputBoxFocused]}>
-					<Ionicons name="lock-closed-outline" size={17} color={isPasswordFocused ? '#0EA5E9' : '#64748B'} style={S.inputIcon} />
-					<TextInput
-						ref={passwordInputRef}
-						style={S.inputText}
-						value={password}
-						onChangeText={setPassword}
-						placeholder="••••••••"
-						placeholderTextColor="#3D4F66"
-						secureTextEntry={!showPassword}
-						autoCapitalize="none"
-						autoCorrect={false}
-						maxLength={20}
-						onFocus={() => {
-							setIsPasswordFocused(true)
-							scrollToInput(passwordInputRef)
-						}}
-						onBlur={() => setIsPasswordFocused(false)}
-						returnKeyType="done"
-						onSubmitEditing={handleSignInSubmit}
-						accessibilityLabel={translate('password', 'Password')}
-					/>
-					<TouchableOpacity style={S.eyeBtn} onPress={() => setShowPassword(!showPassword)} accessibilityLabel={showPassword ? 'Hide password' : 'Show password'}>
-						<Ionicons name={showPassword ? 'eye-off-outline' : 'eye-outline'} size={18} color={isPasswordFocused ? '#0EA5E9' : '#64748B'} />
-					</TouchableOpacity>
+				{/* Language selector */}
+				<View style={S.langSection}>
+					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.langRow} keyboardShouldPersistTaps="handled">
+						{LANGUAGES_LIST.map((lang) => {
+							const selected = appLang === lang.code
+							return (
+								<TouchableOpacity
+									key={lang.code}
+									style={[S.langChip, selected && S.langChipActive]}
+									onPress={() => setAppLang(lang.code)}
+									activeOpacity={0.75}
+									accessibilityLabel={lang.label}
+									accessibilityRole="button"
+								>
+									<Text style={S.langFlag}>{lang.flag}</Text>
+									{lang.badge && <Text style={[S.langBadgeText, selected && S.langBadgeTextActive]}>{lang.badge}</Text>}
+								</TouchableOpacity>
+							)
+						})}
+					</ScrollView>
 				</View>
-			</View>
 
-			{/* Require password on switch */}
-			<TouchableOpacity style={S.toggleRow} onPress={() => setNeedPassword(!needPassword)} activeOpacity={0.75} accessibilityRole="checkbox" accessibilityState={{ checked: needPassword }}>
-				<View style={[S.toggleBox, needPassword && S.toggleBoxActive]}>{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}</View>
-				<Text style={S.toggleLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
-			</TouchableOpacity>
+				{/* Saved accounts chip strip */}
+				{savedAccounts.length > 0 && (
+					<View style={S.accountsSection}>
+						<Text style={S.sectionLabel}>{translate('saved_accounts', 'Saved Accounts')}</Text>
+						<View style={S.accountsList}>
+							{savedAccounts.map((account) => {
+								const isActive = activeSlug === account.slug
+								return (
+									<View key={account.slug} style={[S.accountRow, isActive && S.accountRowActive]}>
+										<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to @${account.slug}`}>
+											<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
+												<SmartImage source={account.photoUrl} style={S.accountAvatarImg} entityType="user" />
+											</View>
+											<View style={S.accountInfo}>
+												<Text style={[S.accountSlug, isActive && S.accountSlugActive]} numberOfLines={1}>
+													@{account.slug}
+												</Text>
+												{account.lastSignIn && (
+													<Text style={S.accountAccessTime} numberOfLines={2}>
+														{formatLastAccess(account.lastSignIn)}
+													</Text>
+												)}
+											</View>
+										</TouchableOpacity>
+										<DeleteButton onPress={() => handleRemoveSavedAccount(account.slug)} label={`Remove @${account.slug}`} style={S.accountRemoveBtn} />
+									</View>
+								)
+							})}
+						</View>
+					</View>
+				)}
 
-			{/* CTA */}
-			<TouchableOpacity style={S.ctaBtn} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.85} accessibilityLabel={translate('continue', 'Continue')} accessibilityRole="button">
-				<LinearGradient colors={loading ? ['#1e293b', '#1e293b'] : ['#0EA5E9', '#0284C7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-				{loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>}
-			</TouchableOpacity>
+				<View style={S.divider} />
 
-			<View style={{ height: 32 }} />
-		</>
-	)
+				{/* Username */}
+				<View style={S.fieldGroup}>
+					<Text style={S.fieldLabel}>{translate('username', 'Username')}</Text>
+					<View style={[S.inputBox, isSlugFocused && S.inputBoxFocused, !!slugError && S.inputBoxError]}>
+						<Ionicons name="at-outline" size={17} color={isSlugFocused ? '#0EA5E9' : '#64748B'} style={S.inputIcon} />
+						<TextInput
+							ref={slugInputRef}
+							style={S.inputText}
+							value={slug}
+							onChangeText={handleSlugChange}
+							placeholder={translate('username_placeholder', 'your-username')}
+							placeholderTextColor="#3D4F66"
+							autoCapitalize="none"
+							autoCorrect={false}
+							maxLength={25}
+							onFocus={() => {
+								setIsSlugFocused(true)
+								scrollToInput(slugInputRef)
+							}}
+							onBlur={() => setIsSlugFocused(false)}
+							returnKeyType="next"
+							onSubmitEditing={focusPasswordField}
+							accessibilityLabel={translate('username', 'Username')}
+						/>
+					</View>
+					{slugError && (
+						<View style={S.errorRow}>
+							<Ionicons name="alert-circle-outline" size={13} color="#EF4444" />
+							<Text style={S.errorText}>{slugError}</Text>
+						</View>
+					)}
+				</View>
+
+				{/* Save account toggle */}
+				<TouchableOpacity style={S.toggleRow} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.75} accessibilityRole="checkbox" accessibilityState={{ checked: saveAccount }}>
+					<View style={[S.toggleBox, saveAccount && S.toggleBoxActive]}>{saveAccount && <Ionicons name="checkmark" size={12} color="#fff" />}</View>
+					<Text style={S.toggleLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
+				</TouchableOpacity>
+
+				{/* Password */}
+				<View style={S.fieldGroup}>
+					<Text style={S.fieldLabel}>{translate('password', 'Password')}</Text>
+					<View style={[S.inputBox, isPasswordFocused && S.inputBoxFocused]}>
+						<Ionicons name="lock-closed-outline" size={17} color={isPasswordFocused ? '#0EA5E9' : '#64748B'} style={S.inputIcon} />
+						<TextInput
+							ref={passwordInputRef}
+							style={S.inputText}
+							value={password}
+							onChangeText={setPassword}
+							placeholder="••••••••"
+							placeholderTextColor="#3D4F66"
+							secureTextEntry={!showPassword}
+							autoCapitalize="none"
+							autoCorrect={false}
+							maxLength={20}
+							onFocus={() => {
+								setIsPasswordFocused(true)
+								scrollToInput(passwordInputRef)
+							}}
+							onBlur={() => setIsPasswordFocused(false)}
+							returnKeyType="done"
+							onSubmitEditing={handleSignInSubmit}
+							accessibilityLabel={translate('password', 'Password')}
+						/>
+					</View>
+				</View>
+
+				{/* Require password on switch */}
+				<View style={S.toggleRow}>
+					<TouchableOpacity
+						style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}
+						onPress={() => setNeedPassword(!needPassword)}
+						activeOpacity={0.75}
+						accessibilityRole="checkbox"
+						accessibilityState={{ checked: needPassword }}
+					>
+						<View style={[S.toggleBox, needPassword && S.toggleBoxActive]}>{needPassword && <Ionicons name="checkmark" size={12} color="#fff" />}</View>
+						<Text style={S.toggleLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
+					</TouchableOpacity>
+					<EyeButton visible={showPassword} onPress={() => setShowPassword(!showPassword)} iconColor={isPasswordFocused ? '#0EA5E9' : '#64748B'} style={S.eyeBtn} />
+				</View>
+
+				{/* CTA */}
+				<TouchableOpacity style={S.ctaBtn} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.85} accessibilityLabel={translate('continue', 'Continue')} accessibilityRole="button">
+					<LinearGradient colors={loading ? ['#1e293b', '#1e293b'] : ['#0EA5E9', '#0284C7']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+					{loading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>}
+				</TouchableOpacity>
+
+				<View style={{ height: 32 }} />
+			</>
+		)
+	}
 )
 
 AuthForm.displayName = 'AuthForm'

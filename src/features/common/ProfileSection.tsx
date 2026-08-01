@@ -2,6 +2,8 @@ import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
+import { IconButton } from './buttons/IconButton'
+import { CancelButton } from './buttons/CancelButton'
 
 interface ProfileSectionProps {
 	title: string
@@ -27,19 +29,11 @@ export function ProfileSection({ title, children, isEditing, onEdit, onSave, onC
 					{iconName && <Ionicons name={iconName} size={18} color={colors.primary} style={styles.titleIcon} />}
 					<Text style={[styles.title, { color: colors.text }, titleStyle]}>{title}</Text>
 				</View>
-				{onEdit && !isEditing && (
-					<TouchableOpacity onPress={onEdit} style={styles.iconButton}>
-						<Ionicons name="create-outline" size={20} color={colors.text} />
-					</TouchableOpacity>
-				)}
+				{onEdit && !isEditing && <IconButton icon="create-outline" label="Edit" onPress={onEdit} colors={colors} style={styles.iconButton} />}
 				{isEditing && (
 					<View style={styles.actions}>
-						<TouchableOpacity onPress={onCancel} style={styles.iconButton}>
-							<Ionicons name="close-circle-outline" size={22} color={colors.error} />
-						</TouchableOpacity>
-						<TouchableOpacity onPress={onSave} style={styles.iconButton}>
-							<Ionicons name="checkmark-circle" size={22} color={colors.success} />
-						</TouchableOpacity>
+						{onCancel && <CancelButton onPress={onCancel} style={styles.iconButton} />}
+						{onSave && <IconButton icon="checkmark-circle" label="Save" onPress={onSave} variant="success" colors={colors} style={styles.iconButton} />}
 					</View>
 				)}
 			</View>
@@ -71,11 +65,7 @@ export function InfoItem({ label, value, icon, iconColor, onPress, onLongPress, 
 				<Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>
 				{typeof value === 'string' ? <Text style={[styles.infoValue, { color: colors.text }]}>{value}</Text> : value}
 			</View>
-			{onCopy && (
-				<TouchableOpacity onPress={onCopy} style={styles.copyButton}>
-					<Ionicons name="copy-outline" size={18} color={colors.textTertiary} />
-				</TouchableOpacity>
-			)}
+			{onCopy && <IconButton icon="copy-outline" label="Copy" onPress={onCopy} colors={colors} style={styles.copyButton} />}
 		</View>
 	)
 

@@ -1,6 +1,5 @@
 import React, { useRef } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Modal, Platform, Alert, Share } from 'react-native'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { View, Text, StyleSheet, ActivityIndicator, Modal, Platform, Alert, Share } from 'react-native'
 import * as Print from 'expo-print'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
@@ -8,6 +7,8 @@ import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
+import { IconButton } from './buttons/IconButton'
+import { DownloadButton } from './buttons/DownloadButton'
 
 export interface QRCodeModalProps {
 	visible: boolean
@@ -191,9 +192,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 			<View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay }]}>
 				<View style={[styles.qrModalCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
 					{/* Close Button */}
-					<TouchableOpacity style={[styles.closeBtn, { backgroundColor: colors.surfaceVariant }]} onPress={onClose} activeOpacity={0.7}>
-						<Ionicons name="close" size={20} color={colors.text} />
-					</TouchableOpacity>
+					<IconButton icon="close" label={translate('close', 'Close')} onPress={onClose} colors={colors} style={{ position: 'absolute', top: 16, right: 16, backgroundColor: colors.surfaceVariant }} />
 
 					{/* Header */}
 					<Text style={[styles.qrModalTitle, { color: colors.text }]} numberOfLines={1}>
@@ -224,43 +223,36 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 
 					{/* Action Buttons */}
 					<View style={styles.qrActions}>
-						<TouchableOpacity style={[styles.qrActionBtn, { backgroundColor: colors.primary }]} onPress={handleDownload} activeOpacity={0.8} disabled={!value}>
-							<MaterialIcons name="file-download" size={22} color="#FFFFFF" />
-							<Text style={styles.qrActionBtnText}>{translate('download', 'Download')}</Text>
-						</TouchableOpacity>
-
-						<TouchableOpacity
-							style={[styles.qrActionBtn, { backgroundColor: colors.primaryContainer, borderColor: colors.primary, borderWidth: 1 }]}
+						<DownloadButton onPress={handleDownload} disabled={!value} variant="primary" style={{ backgroundColor: colors.primaryContainer, borderColor: colors.primary }} />
+						<IconButton
+							icon="print-outline"
+							label={translate('print', 'Print')}
 							onPress={handlePrint}
-							activeOpacity={0.8}
 							disabled={!value}
-						>
-							<MaterialIcons name="print" size={22} color={colors.primary} />
-							<Text style={[styles.qrActionBtnText, { color: colors.primary }]}>{translate('print', 'Print')}</Text>
-						</TouchableOpacity>
+							colors={colors}
+							iconColor={colors.primary}
+							style={{ backgroundColor: colors.primaryContainer, borderColor: colors.primary }}
+						/>
 					</View>
 
 					<View style={[styles.qrActions, { marginTop: 12 }]}>
-						<TouchableOpacity
-							style={[styles.qrActionBtn, { backgroundColor: colors.surfaceVariant, borderColor: colors.border, borderWidth: 1 }]}
+						<IconButton
+							icon="copy-outline"
+							label={translate('copy_link', 'Copy Link')}
 							onPress={handleCopyLink}
-							activeOpacity={0.8}
 							disabled={!value}
-						>
-							<Ionicons name="copy-outline" size={20} color={colors.text} />
-							<Text style={[styles.qrActionBtnText, { color: colors.text }]}>{translate('copy_link', 'Copy Link')}</Text>
-						</TouchableOpacity>
-
+							colors={colors}
+							style={{ backgroundColor: colors.surfaceVariant, borderColor: colors.border }}
+						/>
 						{Platform.OS !== 'web' && (
-							<TouchableOpacity
-								style={[styles.qrActionBtn, { backgroundColor: colors.surfaceVariant, borderColor: colors.border, borderWidth: 1 }]}
+							<IconButton
+								icon="share-social-outline"
+								label={translate('share_link', 'Share')}
 								onPress={handleShareLink}
-								activeOpacity={0.8}
 								disabled={!value}
-							>
-								<Ionicons name="share-social-outline" size={20} color={colors.text} />
-								<Text style={[styles.qrActionBtnText, { color: colors.text }]}>{translate('share_link', 'Share')}</Text>
-							</TouchableOpacity>
+								colors={colors}
+								style={{ backgroundColor: colors.surfaceVariant, borderColor: colors.border }}
+							/>
 						)}
 					</View>
 				</View>
@@ -295,17 +287,6 @@ const styles = StyleSheet.create({
 				elevation: 10
 			}
 		})
-	},
-	closeBtn: {
-		position: 'absolute',
-		top: 16,
-		right: 16,
-		width: 36,
-		height: 36,
-		borderRadius: 18,
-		justifyContent: 'center',
-		alignItems: 'center',
-		zIndex: 10
 	},
 	qrModalTitle: {
 		fontSize: 22,
@@ -347,30 +328,5 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		width: '100%',
 		gap: 12
-	},
-	qrActionBtn: {
-		flex: 1,
-		flexDirection: 'row',
-		height: 48,
-		borderRadius: 14,
-		alignItems: 'center',
-		justifyContent: 'center',
-		gap: 8,
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 2 },
-				shadowOpacity: 0.1,
-				shadowRadius: 4
-			},
-			android: {
-				elevation: 2
-			}
-		})
-	},
-	qrActionBtnText: {
-		fontSize: 14,
-		fontWeight: '700',
-		color: '#FFFFFF'
 	}
 })

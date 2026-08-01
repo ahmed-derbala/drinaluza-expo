@@ -17,6 +17,7 @@ import LoadingState from '@/features/common/LoadingState'
 import { SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import StateBadge from '@/features/common/StateBadge'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
 import { uploadFile } from '@/core/file'
 import { parseError } from '@/core/helpers/errorHandler'
@@ -540,16 +541,14 @@ export default function BusinessDashboardProductDetailScreen() {
 								<Text style={styles.heroTitle}>{displayTitle}</Text>
 								<View style={styles.heroBadgeRow}>
 									<StateBadge stateCode={productState} />
-									<TouchableOpacity
-										style={[styles.statusToggleBtn, { borderColor: isProductActive ? colors.error + '40' : colors.success + '40' }]}
+									<IconButton
+										icon={isProductActive ? 'pause-circle-outline' : 'play-circle-outline'}
+										label={isProductActive ? translate('suspend', 'Suspend') : translate('activate', 'Activate')}
 										onPress={handleToggleState}
 										disabled={saving || !canEditProduct}
-										activeOpacity={0.7}
-									>
-										<Text style={[styles.statusToggleText, { color: isProductActive ? colors.error : colors.success }]}>
-											{isProductActive ? translate('suspend', 'Suspend') : translate('activate', 'Activate')}
-										</Text>
-									</TouchableOpacity>
+										colors={colors}
+										variant={isProductActive ? 'danger' : 'success'}
+									/>
 								</View>
 							</View>
 						</View>
@@ -747,18 +746,10 @@ const createStyles = (colors: any) =>
 			alignItems: 'center',
 			gap: 12
 		},
-		statusToggleBtn: {
-			paddingHorizontal: 10,
-			paddingVertical: 4,
-			borderRadius: 8,
-			borderWidth: 1.5,
-			backgroundColor: 'transparent'
-		},
-		statusToggleText: {
-			fontSize: 11,
-			fontWeight: '700',
-			textTransform: 'uppercase',
-			letterSpacing: 0.5
+		headerActions: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 12
 		},
 		savingOverlay: {
 			flexDirection: 'row',

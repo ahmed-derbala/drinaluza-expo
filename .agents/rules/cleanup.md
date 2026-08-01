@@ -171,7 +171,9 @@ Do not over-optimize.
 ### 11. Preserve behavior
 
 Do NOT change:
-
+---
+trigger: always_on
+---
 - business logic
 - navigation
 - API contracts

@@ -10,6 +10,7 @@ import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabe
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, createShadow } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { Stack } from 'expo-router'
 import { SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
@@ -174,24 +175,21 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 				{!isDashboard && isActive && !isOutOfStock && (
 					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, zIndex: 10 }}>
 						<View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceVariant, borderRadius: 10, padding: 2 }}>
-							<TouchableOpacity onPress={decrement} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
-								<MaterialIcons name="remove" size={16} color={colors.text} />
-							</TouchableOpacity>
+							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} colors={colors} iconColor={colors.text} />
 							<Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 24, textAlign: 'center' }}>{quantity}</Text>
-							<TouchableOpacity onPress={increment} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }} activeOpacity={0.7}>
-								<MaterialIcons name="add" size={16} color={colors.text} />
-							</TouchableOpacity>
+							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} colors={colors} iconColor={colors.text} />
 						</View>
-						<TouchableOpacity
-							style={[cardStyles.addBtn, { backgroundColor: colors.primary }]}
+						<IconButton
+							icon="cart-outline"
+							label={translate('add_to_cart', 'Add to Cart')}
 							onPress={(e) => {
 								e.stopPropagation?.()
 								onAddToCart(item, quantity)
 							}}
-							activeOpacity={0.8}
-						>
-							<MaterialIcons name="add-shopping-cart" size={16} color={colors.textOnPrimary || '#0F172A'} />
-						</TouchableOpacity>
+							variant="primary"
+							colors={colors}
+							style={Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any, default: {} })}
+						/>
 					</View>
 				)}
 
@@ -264,14 +262,6 @@ const cardStyles = StyleSheet.create({
 		borderRadius: 8
 	},
 	qtyText: { fontSize: 12, fontWeight: '600' },
-	addBtn: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({ web: { boxShadow: '0 2px 8px rgba(56,189,248,0.35)' } as any })
-	},
 	specsCardRow: {
 		flexDirection: 'row',
 		flexWrap: 'wrap',

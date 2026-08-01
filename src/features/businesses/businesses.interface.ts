@@ -42,6 +42,7 @@ type Contact = {
 	}>
 	whatsapp?: string
 	email?: string
+	website?: string
 }
 
 type RatingBreakdown = {

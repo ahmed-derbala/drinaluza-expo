@@ -1,7 +1,8 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme } from '@/core/theme'
+import { IconButton } from './buttons/IconButton'
 
 export interface EmptyStateProps {
 	/**
@@ -50,11 +51,7 @@ const EmptyState: React.FC<EmptyStateProps> = ({ title, subtitle, iconName = 'al
 			{title ? <Text style={[styles.title, { color: colors.text }]}>{title}</Text> : null}
 			{subtitle ? <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{subtitle}</Text> : null}
 
-			{actionLabel && onActionPress && (
-				<TouchableOpacity style={[styles.actionButton, { backgroundColor: colors.primary }]} onPress={onActionPress} activeOpacity={0.8}>
-					<Text style={styles.actionText}>{actionLabel}</Text>
-				</TouchableOpacity>
-			)}
+			{actionLabel && onActionPress && <IconButton icon="arrow-forward" label={actionLabel} onPress={onActionPress} variant="primary" colors={colors} />}
 		</View>
 	)
 }
@@ -86,19 +83,6 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		marginBottom: 20,
 		lineHeight: 20
-	},
-	actionButton: {
-		paddingHorizontal: 24,
-		paddingVertical: 12,
-		borderRadius: 12,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...createShadow({ offsetY: 2, opacity: 0.1, radius: 4, elevation: 2 })
-	},
-	actionText: {
-		color: '#fff',
-		fontSize: 15,
-		fontWeight: '600'
 	}
 })
 

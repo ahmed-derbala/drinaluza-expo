@@ -129,6 +129,7 @@ export interface OrderItem {
 			}>
 			whatsapp?: string
 			email?: string
+			website?: string
 			createdAt: string
 			updatedAt: string
 		}

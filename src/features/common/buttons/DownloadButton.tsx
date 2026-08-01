@@ -5,17 +5,25 @@ import { translate } from '@/core/translation'
 import { IconButton, type IconVariant } from './IconButton'
 
 export interface DownloadButtonProps {
+	/** Download URL. Required on web unless an explicit onPress is provided. */
 	downloadUrl?: string | null
-	version?: string | null
+	/** Accessibility label, not displayed as visible text. */
 	label?: string
+	/** Icon style variant. */
 	variant?: IconVariant
+	/** Optional button size. */
+	size?: number
+	/** Whether the button is disabled. */
 	disabled?: boolean
+	/** Optional style override. */
 	style?: StyleProp<ViewStyle>
+	/** Optional press override. */
 	onPress?: () => void
+	/** Optional callback after the download action. */
 	onAfterDownload?: () => void
 }
 
-export function DownloadButton({ downloadUrl, version, label = translate('download', 'Download'), variant = 'primary', disabled, style, onPress, onAfterDownload }: DownloadButtonProps) {
+export function DownloadButton({ downloadUrl, label = translate('download', 'Download'), variant = 'primary', size, disabled, style, onPress, onAfterDownload }: DownloadButtonProps) {
 	const { colors } = useTheme()
 
 	const handlePress = useCallback(() => {
@@ -40,5 +48,5 @@ export function DownloadButton({ downloadUrl, version, label = translate('downlo
 
 	const isDisabled = disabled !== undefined ? disabled : !downloadUrl
 
-	return <IconButton icon="download-outline" label={label} subtitle={version ? `v${version}` : undefined} onPress={handlePress} disabled={isDisabled} variant={variant} colors={colors} style={style} />
+	return <IconButton icon="download-outline" label={label} onPress={handlePress} disabled={isDisabled} variant={variant} size={size} colors={colors} style={style} />
 }

@@ -1,7 +1,8 @@
 import React from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { FileRef } from '@/features/products/products.type'
 
 export interface ProductGallerySectionProps {
@@ -47,16 +48,8 @@ export default function ProductGallerySection({
 						<Text style={{ fontSize: 12, fontWeight: 'normal', color: colors.textSecondary }}> ({gallery.length}/5)</Text>
 					</Text>
 					<View style={{ flexDirection: 'row', gap: 12 }}>
-						{onCancelPress && (
-							<TouchableOpacity onPress={onCancelPress} style={{ padding: 4 }}>
-								<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
-							</TouchableOpacity>
-						)}
-						{onSavePress && (
-							<TouchableOpacity onPress={onSavePress} style={{ padding: 4 }}>
-								<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
-							</TouchableOpacity>
-						)}
+						{onCancelPress && <CancelButton onPress={onCancelPress} style={{ padding: 4 }} />}
+						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={{ padding: 4 }} />}
 					</View>
 				</View>
 				<View style={styles.galleryWrapper}>
@@ -65,23 +58,20 @@ export default function ProductGallerySection({
 							<View key={item._id || idx} style={styles.galleryItem}>
 								<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
 								{onRemovePress && (
-									<TouchableOpacity style={styles.removeBadge} onPress={() => onRemovePress(item)}>
-										<Ionicons name="close" size={14} color="#ffffff" />
-									</TouchableOpacity>
+									<IconButton icon="close" label={translate('remove', 'Remove')} onPress={() => onRemovePress(item)} variant="danger" iconColor="#ffffff" colors={colors} style={styles.removeBadge} />
 								)}
 							</View>
 						))}
 						{gallery.length < 5 && onUploadPress && (
-							<TouchableOpacity style={styles.addPhotoBtn} onPress={onUploadPress} disabled={uploading}>
-								{uploading ? (
-									<ActivityIndicator size="small" color={colors.primary} />
-								) : (
-									<>
-										<Ionicons name="camera-outline" size={24} color={colors.primary} />
-										<Text style={styles.addPhotoText}>{translate('add_photo', 'Add Photo')}</Text>
-									</>
-								)}
-							</TouchableOpacity>
+							<IconButton
+								icon="camera-outline"
+								label={translate('add_photo', 'Add Photo')}
+								onPress={onUploadPress}
+								disabled={uploading}
+								loading={uploading}
+								colors={colors}
+								style={styles.addPhotoBtn}
+							/>
 						)}
 					</ScrollView>
 				</View>
@@ -118,11 +108,7 @@ export default function ProductGallerySection({
 		<View style={styles.fieldContainer}>
 			<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
 				<Text style={[styles.fieldLabel, { marginBottom: 0 }]}>{translate('gallery', 'Gallery')}</Text>
-				{onEditPress && (
-					<TouchableOpacity onPress={onEditPress} style={{ padding: 4 }}>
-						<Ionicons name="create-outline" size={18} color={colors.primary} />
-					</TouchableOpacity>
-				)}
+				{onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={{ padding: 4 }} />}
 			</View>
 			<View style={styles.galleryWrapper}>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
@@ -199,11 +185,6 @@ const createStyles = (colors: any) =>
 			justifyContent: 'center',
 			alignItems: 'center',
 			gap: 4
-		},
-		addPhotoText: {
-			fontSize: 10,
-			fontWeight: '700',
-			color: colors.primary
 		},
 		// Detail mode specific styles
 		galleryScrollContainer: {

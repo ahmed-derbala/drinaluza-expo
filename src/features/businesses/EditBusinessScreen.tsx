@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
+import { translate } from '@/core/translation'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
 import { toast } from '@/features/common/Toast'
@@ -15,6 +16,9 @@ import SmartImage from '@/core/SmartImageViewer'
 import StateBadge from '@/features/common/StateBadge'
 import MultilingualNameInput from '@/features/common/MultilingualNameInput'
 import { SmartHeader } from '@/core/smart-header'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { DeleteButton } from '@/features/common/buttons/DeleteButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { uploadFile } from '@/core/file'
 
 const SectionCard = ({
@@ -43,19 +47,11 @@ const SectionCard = ({
 			<Text style={[styles.cardHeader, { marginBottom: 0 }]}>{title}</Text>
 			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
 				{headerRight}
-				{onEdit && !isEditing && (
-					<TouchableOpacity onPress={onEdit} style={{ padding: 4 }} activeOpacity={0.7}>
-						<Ionicons name="create-outline" size={20} color={colors.primary} />
-					</TouchableOpacity>
-				)}
+				{onEdit && !isEditing && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={() => onEdit?.()} variant="primary" colors={colors} />}
 				{isEditing && (
 					<View style={{ flexDirection: 'row', gap: 12 }}>
-						<TouchableOpacity onPress={onCancel} style={{ padding: 4 }} activeOpacity={0.7}>
-							<Ionicons name="close-circle-outline" size={22} color={colors.error} />
-						</TouchableOpacity>
-						<TouchableOpacity onPress={onSave} style={{ padding: 4 }} activeOpacity={0.7}>
-							<Ionicons name="checkmark-circle" size={22} color={colors.success} />
-						</TouchableOpacity>
+						<CancelButton onPress={() => onCancel?.()} />
+						<IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={() => onSave?.()} variant="success" colors={colors} />
 					</View>
 				)}
 			</View>
@@ -576,14 +572,12 @@ export default function EditBusinessScreen() {
 														onBlur={() => setFocusedField(null)}
 													/>
 												</View>
-												<TouchableOpacity
-													style={{ flex: 0.1, alignItems: 'center', justifyContent: 'center' }}
+												<DeleteButton
 													onPress={() => {
 														setBackupPhones(backupPhones.filter((_, idx) => idx !== index))
 													}}
-												>
-													<Ionicons name="trash-outline" size={20} color={colors.error} />
-												</TouchableOpacity>
+													size={36}
+												/>
 											</View>
 										))}
 										<TouchableOpacity
@@ -661,12 +655,7 @@ export default function EditBusinessScreen() {
 							onSave={saveCoordinates}
 							onCancel={() => cancelEdit('coordinates')}
 							headerRight={
-								editMode.coordinates && (
-									<TouchableOpacity style={styles.getLocationChip} onPress={handleGetCurrentLocation} activeOpacity={0.8}>
-										<Ionicons name="navigate" size={12} color={colors.primary} />
-										<Text style={styles.getLocationText}>{translate('get_current', 'GPS')}</Text>
-									</TouchableOpacity>
-								)
+								editMode.coordinates && <IconButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} colors={colors} style={styles.getLocationChip} />
 							}
 						>
 							{editMode.coordinates ? (
@@ -1013,11 +1002,6 @@ const createStyles = (colors: any, width: number) =>
 			borderRadius: 10,
 			borderWidth: 1,
 			borderColor: `${colors.primary}30`
-		},
-		getLocationText: {
-			fontSize: 11,
-			fontWeight: '700',
-			color: colors.primary
 		},
 		sharingCard: {
 			flexDirection: 'row',

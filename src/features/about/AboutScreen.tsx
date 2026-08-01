@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
+import { IconButton } from '@/features/common/buttons/IconButton'
 
 import { useTheme } from '@/core/theme'
 import { config } from '@/config'
@@ -61,15 +62,16 @@ export default function AboutScreen() {
 				</View>
 				<View style={styles.itemRight}>
 					{copyValue && (
-						<TouchableOpacity
+						<IconButton
+							icon="copy-outline"
+							label={translate('copy', 'Copy')}
 							onPress={(e) => {
-								e.stopPropagation()
+								e?.stopPropagation?.()
 								handleCopy()
 							}}
+							colors={colors}
 							style={styles.copyButton}
-						>
-							<Ionicons name="copy-outline" size={18} color={colors.textTertiary} />
-						</TouchableOpacity>
+						/>
 					)}
 					{type === 'arrow' && <Ionicons name="chevron-forward" size={20} color={colors.textTertiary} />}
 				</View>

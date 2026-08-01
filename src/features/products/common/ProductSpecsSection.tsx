@@ -2,6 +2,8 @@ import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 import AddressForm from '@/features/common/AddressForm'
 import { GearIcon } from './GearIcons'
 
@@ -79,16 +81,8 @@ export default function ProductSpecsSection({
 						{translate('specifications', 'Specifications')} <Text style={styles.optional}>({translate('optional', 'Optional')})</Text>
 					</Text>
 					<View style={{ flexDirection: 'row', gap: 12 }}>
-						{onCancelPress && (
-							<TouchableOpacity onPress={onCancelPress} style={{ padding: 4 }}>
-								<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
-							</TouchableOpacity>
-						)}
-						{onSavePress && (
-							<TouchableOpacity onPress={onSavePress} style={{ padding: 4 }}>
-								<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
-							</TouchableOpacity>
-						)}
+						{onCancelPress && <CancelButton onPress={onCancelPress} style={{ padding: 4 }} />}
+						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={{ padding: 4 }} />}
 					</View>
 				</View>
 
@@ -190,11 +184,7 @@ export default function ProductSpecsSection({
 					</View>
 					<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('specifications', 'Specifications')}</Text>
 				</View>
-				{onEdit && (
-					<TouchableOpacity onPress={onEdit} style={{ padding: 4 }} activeOpacity={0.7}>
-						<Ionicons name="create-outline" size={18} color={colors.primary} />
-					</TouchableOpacity>
-				)}
+				{onEdit && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEdit} colors={colors} style={{ padding: 4 }} />}
 			</View>
 
 			{/* Caliber */}

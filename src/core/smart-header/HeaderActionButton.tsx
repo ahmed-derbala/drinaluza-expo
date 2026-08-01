@@ -1,6 +1,6 @@
-import React, { useRef } from 'react'
-import { TouchableOpacity, Animated, StyleSheet, View, Text, Platform } from 'react-native'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import React from 'react'
+import { StyleSheet, View, Text } from 'react-native'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme } from '@/core/theme'
 
 export interface HeaderActionButtonProps {
@@ -21,90 +21,47 @@ export interface HeaderActionButtonProps {
 	 */
 	badgeCount?: number
 	/**
-	 * Custom background color. Defaults to HSL theme overlay.
-	 */
-	backgroundColor?: string
-	/**
-	 * Icon color. Defaults to `colors.primary`.
-	 */
-	iconColor?: string
-	/**
 	 * Accessibility string describing the action.
 	 */
 	accessibilityLabel: string
 	/**
-	 * Custom container size override. Defaults to 36.
+	 * Custom container size override. Defaults to 40.
 	 */
 	size?: number
 }
 
-const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconType = 'ionicons', onPress, badgeCount = 0, backgroundColor, iconColor, accessibilityLabel, size = 36 }) => {
+const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconType = 'ionicons', onPress, badgeCount = 0, accessibilityLabel, size = 40 }) => {
 	const { colors } = useTheme()
-	const scaleValue = useRef(new Animated.Value(1)).current
-
-	const handlePress = () => {
-		// Tactile Spring Scaling
-		Animated.sequence([
-			Animated.timing(scaleValue, {
-				toValue: 0.85,
-				duration: 80,
-				useNativeDriver: Platform.OS !== 'web'
-			}),
-			Animated.spring(scaleValue, {
-				toValue: 1,
-				friction: 4,
-				tension: 40,
-				useNativeDriver: Platform.OS !== 'web'
-			})
-		]).start()
-
-		onPress()
-	}
-
-	const renderIcon = () => {
-		const finalColor = iconColor || colors.primary
-		const iconSize = Math.round(size * 0.55)
-
-		if (iconType === 'material') {
-			return <MaterialIcons name={iconName} size={iconSize} color={finalColor} />
-		}
-		return <Ionicons name={iconName} size={iconSize} color={finalColor} />
-	}
 
 	return (
-		<TouchableOpacity onPress={handlePress} accessibilityRole="button" accessibilityLabel={accessibilityLabel} style={{ justifyContent: 'center', alignItems: 'center' }}>
-			<Animated.View
-				style={[
-					styles.buttonContainer,
-					{
-						width: size,
-						height: size,
-						borderRadius: Math.round(size * 0.28),
-						backgroundColor: backgroundColor || colors.primary + '15',
-						transform: [{ scale: scaleValue }]
-					}
-				]}
-			>
-				{renderIcon()}
+		<View style={styles.buttonContainer}>
+			<IconButton
+				icon={iconName}
+				iconType={iconType}
+				label={accessibilityLabel}
+				onPress={onPress}
+				colors={colors}
+				iconColor={colors.primary}
+				size={size}
+				style={{ backgroundColor: colors.primary + '15', borderColor: 'transparent' }}
+			/>
 
-				{/* Optional Badge Count Overlay */}
-				{badgeCount > 0 && (
-					<View
-						style={[
-							styles.badge,
-							{
-								backgroundColor: colors.error || '#ef4444',
-								borderColor: colors.surface,
-								top: -Math.round(size * 0.15),
-								right: -Math.round(size * 0.15)
-							}
-						]}
-					>
-						<Text style={styles.badgeText}>{badgeCount}</Text>
-					</View>
-				)}
-			</Animated.View>
-		</TouchableOpacity>
+			{badgeCount > 0 && (
+				<View
+					style={[
+						styles.badge,
+						{
+							backgroundColor: colors.error || '#ef4444',
+							borderColor: colors.surface,
+							top: -Math.round(size * 0.15),
+							right: -Math.round(size * 0.15)
+						}
+					]}
+				>
+					<Text style={styles.badgeText}>{badgeCount}</Text>
+				</View>
+			)}
+		</View>
 	)
 }
 

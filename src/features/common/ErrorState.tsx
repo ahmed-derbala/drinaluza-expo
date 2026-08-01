@@ -1,7 +1,8 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '../../core/theme'
+import { IconButton } from './buttons/IconButton'
 
 interface ErrorStateProps {
 	title?: string
@@ -38,11 +39,7 @@ const ErrorState: React.FC<ErrorStateProps> = ({
 			</View>
 			<Text style={[styles.title, { color: colors.text }]}>{title}</Text>
 			<Text style={[styles.message, { color: colors.textSecondary }]}>{message}</Text>
-			{onRetry && (
-				<TouchableOpacity style={[styles.retryButton, { backgroundColor: colors.primary }]} onPress={onRetry}>
-					<Ionicons name="refresh" size={24} color={colors.textOnPrimary} />
-				</TouchableOpacity>
-			)}
+			{onRetry && <IconButton icon="refresh" label="Retry" onPress={onRetry} variant="primary" colors={colors} />}
 		</View>
 	)
 }
@@ -74,24 +71,6 @@ const styles = StyleSheet.create({
 		lineHeight: 22,
 		marginBottom: 32,
 		maxWidth: 300
-	},
-	retryButton: {
-		width: 56,
-		height: 56,
-		borderRadius: 16,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			ios: {
-				shadowColor: '#000',
-				shadowOffset: { width: 0, height: 4 },
-				shadowOpacity: 0.2,
-				shadowRadius: 8
-			},
-			android: {
-				elevation: 6
-			}
-		})
 	}
 })
 

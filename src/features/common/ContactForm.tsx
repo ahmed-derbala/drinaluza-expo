@@ -1,8 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native'
+import { StyleSheet, Text, TextInput, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { IconButton } from './buttons/IconButton'
+import { DeleteButton } from './buttons/DeleteButton'
 
 import { useTheme } from '@/core/theme'
+import { useUser } from '@/core/contexts/UserContext'
 import type { Contact, Phone } from '@/features/profile/profile.interface'
 
 interface ContactFormProps {
@@ -16,6 +19,7 @@ interface ContactFormProps {
 
 export default function ContactForm({ contact, phone, backupPhones, email, whatsapp, onChange }: ContactFormProps) {
 	const { colors } = useTheme()
+	const { translate } = useUser()
 
 	const DEFAULT_COUNTRY = '216'
 
@@ -133,21 +137,18 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 								maxLength={15}
 							/>
 						</View>
-						<TouchableOpacity onPress={() => removeBackupPhone(index)} style={styles.deleteButton}>
-							<Ionicons name="trash-outline" size={18} color={colors.error} />
-						</TouchableOpacity>
+						<DeleteButton onPress={() => removeBackupPhone(index)} style={styles.deleteButton} />
 					</View>
 				</View>
 			))}
 
-			<TouchableOpacity onPress={addBackupPhone} style={[styles.addButtonIcon, { borderColor: colors.primary }]} accessibilityLabel="Add Backup Phone" accessibilityRole="button">
-				<View style={styles.phonePlusIcon}>
-					<Ionicons name="call-outline" size={20} color={colors.primary} />
-					<View style={[styles.phonePlusBadge, { backgroundColor: colors.card }]}>
-						<Ionicons name="add" size={14} color={colors.primary} />
-					</View>
-				</View>
-			</TouchableOpacity>
+			<IconButton
+				icon="call-outline"
+				label={translate('add_backup_phone', 'Add Backup Phone')}
+				onPress={addBackupPhone}
+				colors={colors}
+				style={[styles.addButtonIcon, { borderColor: colors.primary }]}
+			/>
 
 			<View style={styles.inputGroup}>
 				<Text style={styles.inputLabel}>Email</Text>
@@ -266,22 +267,6 @@ const styles = StyleSheet.create({
 	deleteButton: {
 		width: 40,
 		height: 40,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	phonePlusIcon: {
-		width: 24,
-		height: 24,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	phonePlusBadge: {
-		position: 'absolute',
-		right: -2,
-		top: -2,
-		width: 16,
-		height: 16,
-		borderRadius: 8,
 		justifyContent: 'center',
 		alignItems: 'center'
 	}

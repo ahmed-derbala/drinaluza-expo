@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts'
-import ModalButton from '@/core/smart-modal/ModalButton'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import SmartImage from '@/core/SmartImageViewer'
 import { FeedItem } from '@/features/feed/feed.interface'
 
@@ -104,9 +105,7 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 												{localize(item.name)}
 											</Text>
 										</TouchableOpacity>
-										<TouchableOpacity onPress={() => handleRemove(item._id)} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-											<Ionicons name="trash-outline" size={16} color={colors.error} />
-										</TouchableOpacity>
+										<DeleteButton onPress={() => handleRemove(item._id)} size={28} style={{ backgroundColor: 'transparent', borderColor: 'transparent' }} />
 									</View>
 
 									<View style={styles.itemFooter}>
@@ -135,15 +134,7 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 						<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 						<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 					</View>
-					<ModalButton
-						icon="checkmark"
-						variant="filled"
-						defaultColor={colors.primary}
-						contrastColor={colors.buttonText || '#FFFFFF'}
-						onPress={() => onCheckout(group)}
-						style={{ width: 48, flex: 0 }}
-						accessibilityLabel="Place order"
-					/>
+					<IconButton icon="checkmark" label="Place order" variant="primary" colors={colors} onPress={() => onCheckout(group)} />
 				</View>
 			</View>
 		</View>

@@ -1,11 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
 
 import { CenteredModal } from '@/core/smart-modal'
-import ModalButton from '@/core/smart-modal/ModalButton'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { EyeButton } from '@/features/common/buttons/EyeButton'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { updateMyProfile } from '@/features/auth/auth.api'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { ProfileSection } from '@/features/common/ProfileSection'
@@ -153,35 +154,22 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 						</View>
 					)}
 					<View style={styles.actionRow}>
-						<TouchableOpacity
+						<EyeButton
 							onPress={() => setDisableConfirmation((prev) => !prev)}
-							disabled={isSaving}
-							style={styles.checkboxRow}
-							accessibilityLabel={translate('disable_confirm', "Don't ask again")}
+							visible={disableConfirmation}
+							label={translate('disable_confirm', "Don't ask again")}
 							accessibilityRole="checkbox"
 							accessibilityState={{ checked: disableConfirmation }}
-						>
-							<Ionicons name={disableConfirmation ? 'eye-off-outline' : 'eye-outline'} size={22} color={disableConfirmation ? colors.primary : colors.textSecondary} />
-						</TouchableOpacity>
-						<ModalButton
-							icon="close-outline"
-							variant="outlined"
-							color={colors.error}
-							onPress={onClose}
-							disabled={isSaving}
-							defaultColor={colors.error}
-							accessibilityLabel={translate('cancel', 'Cancel')}
-							style={styles.iconButton}
 						/>
-						<ModalButton
+						<CancelButton onPress={onClose} disabled={isSaving} />
+						<IconButton
 							icon="checkmark"
-							variant="filled"
+							label={translate('confirm_purchase', 'Confirm Purchase')}
 							onPress={() => handleSave(disableConfirmation)}
 							disabled={isSaving}
 							loading={isSaving}
-							defaultColor={colors.primary}
-							accessibilityLabel={translate('confirm_purchase', 'Confirm Purchase')}
-							style={styles.iconButton}
+							variant="primary"
+							colors={colors}
 						/>
 					</View>
 				</View>
@@ -247,11 +235,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		gap: 16
-	},
-	iconButton: {
-		width: 56,
-		minWidth: 56,
-		flex: 0
 	},
 	checkboxRow: {
 		flexDirection: 'row',

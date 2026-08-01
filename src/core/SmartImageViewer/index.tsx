@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
+import { useTheme } from '@/core/theme'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION, DEFAULT_BLURHASH, getTimeoutMs } from './constants'
 import type { SmartImageProps } from './types'
 
@@ -74,6 +75,7 @@ function SmartImageComponent({
 	const [isLoaded, setIsLoaded] = useState(false)
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 	const insets = useSafeAreaInsets()
+	const { colors } = useTheme()
 	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const isMountedRef = useRef(true)
 
@@ -218,9 +220,14 @@ function SmartImageComponent({
 					<View style={styles.modalBackdrop}>
 						<TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setIsPreviewOpen(false)} />
 
-						<TouchableOpacity style={[styles.closeModalButton, { top: insets.top + 16 }]} onPress={() => setIsPreviewOpen(false)} activeOpacity={0.7}>
-							<Ionicons name="close" size={28} color="#FFFFFF" />
-						</TouchableOpacity>
+						<IconButton
+							icon="close"
+							label="Close"
+							onPress={() => setIsPreviewOpen(false)}
+							colors={colors}
+							iconColor="#FFFFFF"
+							style={{ position: 'absolute', top: insets.top + 16, right: 20, backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: 'transparent' }}
+						/>
 
 						<View style={styles.fullscreenImageWrapper}>
 							<Image source={source} style={styles.fullscreenImage} contentFit="contain" cachePolicy="disk" />

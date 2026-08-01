@@ -1,7 +1,8 @@
 import React from 'react'
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View, Text, StyleSheet } from 'react-native'
 import MultilingualNameInput from '@/features/common/MultilingualNameInput'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 
 export interface ProductNamesSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -64,16 +65,8 @@ export default function ProductNamesSection({
 				<View style={styles.editHeader}>
 					<Text style={styles.cardTitle}>{translate('names', 'Names')}</Text>
 					<View style={styles.actionButtons}>
-						{onCancelPress && (
-							<TouchableOpacity onPress={onCancelPress} style={styles.actionBtn}>
-								<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
-							</TouchableOpacity>
-						)}
-						{onSavePress && (
-							<TouchableOpacity onPress={onSavePress} style={styles.actionBtn}>
-								<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
-							</TouchableOpacity>
-						)}
+						{onCancelPress && <CancelButton onPress={onCancelPress} style={styles.actionBtn} />}
+						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={styles.actionBtn} />}
 					</View>
 				</View>
 				<MultilingualNameInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
@@ -96,11 +89,7 @@ export default function ProductNamesSection({
 					</Text>
 				)}
 			</View>
-			{canEdit && onEditPress && (
-				<TouchableOpacity onPress={onEditPress} style={styles.actionBtn} activeOpacity={0.7}>
-					<Ionicons name="create-outline" size={20} color={colors.primary} />
-				</TouchableOpacity>
-			)}
+			{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={styles.actionBtn} />}
 		</View>
 	)
 }

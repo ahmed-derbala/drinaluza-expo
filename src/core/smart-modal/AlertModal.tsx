@@ -28,7 +28,7 @@ export default function AlertModal({ confirmText = 'OK', onConfirm, confirmButto
 		onPress: onConfirm ?? props.onClose,
 		variant: confirmButton?.variant ?? 'filled',
 		color: confirmButton?.color,
-		icon: confirmButton?.icon,
+		icon: confirmButton?.icon ?? 'checkmark',
 		iconPosition: confirmButton?.iconPosition,
 		disabled: confirmButton?.disabled,
 		loading: confirmButton?.loading,

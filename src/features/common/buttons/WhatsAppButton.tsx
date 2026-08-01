@@ -1,0 +1,63 @@
+import { useMemo } from 'react'
+import { Linking } from 'react-native'
+import { IconButton } from './IconButton'
+import { useTheme } from '@/core/theme'
+import { translate } from '@/core/translation'
+
+export interface WhatsAppButtonProps {
+	/** WhatsApp number as a string. */
+	whatsapp?: string | null
+	/** Optional accessibility label. Defaults to "WhatsApp". */
+	label?: string
+	/** Optional button size. */
+	size?: number
+	/** Whether the button is disabled (grayed out). */
+	disabled?: boolean
+	/** Optional press handler called before opening WhatsApp. */
+	onPress?: (e?: any) => void
+}
+
+function cleanWhatsAppNumber(value: string): string {
+	return value.replace(/[^\d+]/g, '')
+}
+
+export function WhatsAppButton({ whatsapp, label, size, disabled = false, onPress }: WhatsAppButtonProps) {
+	const { colors } = useTheme()
+	if (!whatsapp) return null
+
+	const resolvedIconColor = '#25D366'
+	const resolvedStyle = useMemo(() => ({ backgroundColor: '#25D3661A', borderColor: '#25D36638' }), [])
+
+	const number = cleanWhatsAppNumber(whatsapp)
+	if (!number) return null
+
+	const handlePress = async (e?: any) => {
+		e?.stopPropagation?.()
+		onPress?.(e)
+		const webUrl = `https://wa.me/${number}`
+		const appUrl = `whatsapp://send?phone=${number}`
+		try {
+			const canOpenWeb = await Linking.canOpenURL(webUrl)
+			if (canOpenWeb) {
+				await Linking.openURL(webUrl)
+			} else {
+				await Linking.openURL(appUrl)
+			}
+		} catch {
+			await Linking.openURL(appUrl)
+		}
+	}
+
+	return (
+		<IconButton
+			icon="logo-whatsapp"
+			label={label ?? translate('whatsapp', 'WhatsApp')}
+			onPress={handlePress}
+			colors={colors}
+			iconColor={disabled ? undefined : resolvedIconColor}
+			size={size}
+			disabled={disabled}
+			style={disabled ? undefined : resolvedStyle}
+		/>
+	)
+}

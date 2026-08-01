@@ -7,12 +7,13 @@ import { IconButton } from './IconButton'
 export interface CancelButtonProps {
 	onPress: () => void
 	disabled?: boolean
+	loading?: boolean
 	style?: StyleProp<ViewStyle>
 	label?: string
 }
 
-export function CancelButton({ onPress, disabled = false, style, label = translate('cancel', 'Cancel') }: CancelButtonProps) {
+export function CancelButton({ onPress, disabled = false, loading = false, style, label = translate('cancel', 'Cancel') }: CancelButtonProps) {
 	const { colors } = useTheme()
 
-	return <IconButton icon="close-outline" label={label} onPress={onPress} disabled={disabled} variant="danger" colors={colors} style={style} />
+	return <IconButton icon="close-outline" label={label} onPress={onPress} disabled={disabled} loading={loading} variant="danger" colors={colors} style={style} />
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform, ScrollView, ActivityIndicator, Linking } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform, ScrollView, ActivityIndicator } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
@@ -18,6 +18,12 @@ import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { PhoneButton } from '@/features/common/buttons/PhoneButton'
+import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
+import { EmailButton } from '@/features/common/buttons/EmailButton'
+import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
+import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
@@ -469,50 +475,6 @@ export default function ProductScreen() {
 		}
 	}
 
-	const handleCallBusiness = async () => {
-		const phoneNumber = product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber
-		if (!phoneNumber) {
-			toast.show({ title: translate('error', 'Error'), message: translate('no_phone_number', 'No phone number available'), color: colors.error })
-			return
-		}
-		const url = `tel:${phoneNumber}`
-		const canOpen = await Linking.canOpenURL(url)
-		if (canOpen) {
-			Linking.openURL(url)
-		} else {
-			toast.show({ title: translate('error', 'Error'), message: translate('cannot_open_phone', 'Cannot open phone app'), color: colors.error })
-		}
-	}
-
-	const handleWhatsAppBusiness = async () => {
-		const whatsapp = product?.business?.contact?.whatsapp || product?.business?.contact?.phone?.fullNumber
-		if (!whatsapp) {
-			toast.show({ title: translate('error', 'Error'), message: translate('no_whatsapp', 'No WhatsApp number available'), color: colors.error })
-			return
-		}
-		const cleanNumber = whatsapp.replace(/[^\d+]/g, '')
-		const url = `https://wa.me/${cleanNumber}`
-		try {
-			const canOpen = await Linking.canOpenURL(url)
-			if (canOpen) {
-				Linking.openURL(url)
-			} else {
-				Linking.openURL(`whatsapp://send?phone=${cleanNumber}`)
-			}
-		} catch {
-			Linking.openURL(`whatsapp://send?phone=${cleanNumber}`)
-		}
-	}
-
-	const handleEmailBusiness = async () => {
-		const email = product?.business?.contact?.email
-		if (!email) {
-			toast.show({ title: translate('error', 'Error'), message: translate('no_email', 'No email address available'), color: colors.error })
-			return
-		}
-		Linking.openURL(`mailto:${email}`)
-	}
-
 	const headerActions = useMemo(
 		() => [
 			{
@@ -702,18 +664,12 @@ export default function ProductScreen() {
 
 					<View style={styles.checkoutActionsCol}>
 						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.borderLight }]}>
-							<TouchableOpacity onPress={decrement} style={styles.stepperBtn} activeOpacity={0.6}>
-								<MaterialIcons name="remove" size={18} color={colors.text} />
-							</TouchableOpacity>
+							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} colors={colors} iconColor={colors.text} style={styles.stepperBtn} />
 							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
-							<TouchableOpacity onPress={increment} style={styles.stepperBtn} activeOpacity={0.6}>
-								<MaterialIcons name="add" size={18} color={colors.text} />
-							</TouchableOpacity>
+							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} colors={colors} iconColor={colors.text} style={styles.stepperBtn} />
 						</View>
 
-						<TouchableOpacity style={[styles.cartSubmitBtn, { backgroundColor: colors.primary }]} onPress={handleAddToCart} activeOpacity={0.85}>
-							<MaterialIcons name="add-shopping-cart" size={20} color={colors.textOnPrimary || '#FFFFFF'} />
-						</TouchableOpacity>
+						<IconButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" colors={colors} />
 					</View>
 				</View>
 			)}
@@ -737,8 +693,10 @@ export default function ProductScreen() {
 
 	const renderMetadata = () => {
 		const hasPhone = Boolean(product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber)
-		const hasWhatsApp = Boolean(product?.business?.contact?.whatsapp || product?.business?.contact?.phone?.fullNumber)
+		const hasWhatsApp = Boolean(product?.business?.contact?.whatsapp || product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber)
 		const hasEmail = Boolean(product?.business?.contact?.email)
+		const hasWebsite = Boolean(product?.business?.contact?.website)
+		const hasDirections = Boolean(product?.business?.location?.coordinates?.length || product?.business?.address)
 
 		return (
 			<View style={styles.metadataContainer}>
@@ -756,23 +714,16 @@ export default function ProductScreen() {
 								<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('business', 'Business')}</Text>
 							</View>
 						</TouchableOpacity>
-						{(hasPhone || hasWhatsApp || hasEmail) && (
+						{(hasPhone || hasWhatsApp || hasEmail || hasWebsite || hasDirections) && (
 							<View style={[styles.contactButtonsRow, styles.contactButtonsRowInHeader]}>
-								{hasPhone && (
-									<TouchableOpacity style={[styles.contactBtn, { backgroundColor: colors.primary + '12' }]} onPress={handleCallBusiness} activeOpacity={0.7}>
-										<Ionicons name="call" size={20} color={colors.primary} />
-									</TouchableOpacity>
-								)}
-								{hasWhatsApp && (
-									<TouchableOpacity style={[styles.contactBtn, { backgroundColor: '#25D36612' }]} onPress={handleWhatsAppBusiness} activeOpacity={0.7}>
-										<Ionicons name="logo-whatsapp" size={20} color="#25D366" />
-									</TouchableOpacity>
-								)}
-								{hasEmail && (
-									<TouchableOpacity style={[styles.contactBtn, { backgroundColor: colors.surfaceVariant }]} onPress={handleEmailBusiness} activeOpacity={0.7}>
-										<Ionicons name="mail" size={20} color={colors.textSecondary} />
-									</TouchableOpacity>
-								)}
+								<PhoneButton phone={product?.business?.contact?.phone} backupPhones={product?.business?.contact?.backupPhones} size={40} />
+								<WhatsAppButton
+									whatsapp={product?.business?.contact?.whatsapp || product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber}
+									size={40}
+								/>
+								<EmailButton email={product?.business?.contact?.email} size={40} />
+								<WebsiteButton website={product?.business?.contact?.website} size={40} />
+								<DirectionsButton location={product?.business?.location} address={product?.business?.address} size={40} />
 							</View>
 						)}
 					</View>
@@ -1064,14 +1015,6 @@ const styles = StyleSheet.create({
 		minWidth: 32,
 		textAlign: 'center'
 	},
-	cartSubmitBtn: {
-		width: 46,
-		height: 46,
-		borderRadius: 14,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({ web: { boxShadow: '0 4px 12px rgba(14,165,233,0.35)' } as any })
-	},
 	metadataContainer: {
 		gap: 12
 	},
@@ -1164,12 +1107,5 @@ const styles = StyleSheet.create({
 		justifyContent: 'flex-end',
 		paddingTop: 0,
 		marginTop: 0
-	},
-	contactBtn: {
-		alignItems: 'center',
-		justifyContent: 'center',
-		width: 40,
-		height: 40,
-		borderRadius: 12
 	}
 })

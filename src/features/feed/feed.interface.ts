@@ -71,6 +71,7 @@ interface FeedBusiness {
 		}>
 		whatsapp?: string
 		email?: string
+		website?: string
 	}
 	createdAt: string
 	updatedAt: string
@@ -161,6 +162,7 @@ export interface FeedItem {
 		}>
 		whatsapp?: string
 		email?: string
+		website?: string
 	}
 	role?: string
 	address?: BusinessAddress

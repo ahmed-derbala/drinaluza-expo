@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'
 import { StyleSheet, Text, View, Animated, Platform, Pressable, useWindowDimensions, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { usePathname, useRouter, useNavigation } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -245,22 +246,15 @@ export const SmartKebabMenu: React.FC = () => {
 	return (
 		<View ref={buttonRef} style={styles.container}>
 			{/* Kebab Icon Button */}
-			<Pressable
+			<IconButton
+				icon="ellipsis-vertical"
+				label={translate('kebab_menu_button', 'Open menu')}
 				onPress={toggleMenu}
-				focusable={true}
-				accessibilityRole="button"
-				accessibilityLabel={translate('kebab_menu_button', 'Open menu')}
-				accessibilityState={{ expanded: isOpen }}
-				hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-				style={({ hovered, pressed }) => [
-					styles.kebabButton,
-					{
-						backgroundColor: isOpen ? colors.surfaceVariant || '#3A506B30' : hovered ? colors.surfaceVariant || '#3A506B30' : pressed ? colors.primary + '15' : colors.primary + '0A'
-					}
-				]}
-			>
-				<Ionicons name="ellipsis-vertical" size={20} color={colors.primary} />
-			</Pressable>
+				colors={colors}
+				iconColor={colors.primary}
+				size={40}
+				style={{ backgroundColor: colors.primary + '15', borderColor: 'transparent' }}
+			/>
 
 			{/* Render the dropdown in a Modal so it is never clipped by header siblings or parent stacking contexts */}
 			<Modal transparent visible={isOpen} animationType="none" onRequestClose={closeMenu}>
@@ -341,20 +335,6 @@ const styles = StyleSheet.create({
 	container: {
 		position: 'relative',
 		zIndex: 1000
-	},
-	kebabButton: {
-		width: 38,
-		height: 38,
-		borderRadius: 10,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			web: {
-				cursor: 'pointer',
-				outlineStyle: 'none',
-				transition: 'background-color 0.2s ease'
-			} as any
-		})
 	},
 	modalOverlay: {
 		flex: 1

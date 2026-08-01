@@ -1,6 +1,7 @@
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 
 export interface ProductPricingSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -156,16 +157,8 @@ export default function ProductPricingSection({
 				<View style={styles.editHeader}>
 					<Text style={styles.cardTitle}>{translate('pricing_units', 'Pricing & Units')}</Text>
 					<View style={styles.actionButtons}>
-						{onCancelPress && (
-							<TouchableOpacity onPress={onCancelPress} style={styles.actionBtn}>
-								<Ionicons name="close-circle-outline" size={22} color={colors.error || '#EF4444'} />
-							</TouchableOpacity>
-						)}
-						{onSavePress && (
-							<TouchableOpacity onPress={onSavePress} style={styles.actionBtn}>
-								<Ionicons name="checkmark-circle" size={22} color={colors.success || '#10B981'} />
-							</TouchableOpacity>
-						)}
+						{onCancelPress && <CancelButton onPress={onCancelPress} style={styles.actionBtn} />}
+						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={styles.actionBtn} />}
 					</View>
 				</View>
 				<View style={styles.row}>
@@ -246,11 +239,7 @@ export default function ProductPricingSection({
 		<View style={styles.viewSection}>
 			<View style={styles.viewHeader}>
 				<Text style={styles.priceLabel}>{translate('price', 'Price')}</Text>
-				{canEdit && onEditPress && (
-					<TouchableOpacity onPress={onEditPress} style={styles.editActionBtn} activeOpacity={0.7}>
-						<Ionicons name="create-outline" size={16} color={colors.primary} />
-					</TouchableOpacity>
-				)}
+				{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={styles.editActionBtn} />}
 			</View>
 			<View style={styles.priceContainer}>
 				<Text style={[styles.priceValue, { color: colors.primary }]}>{formattedPrice}</Text>

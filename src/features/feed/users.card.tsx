@@ -1,11 +1,15 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, Linking } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { UserFeedItem } from './feed.interface'
 import { useUser } from '../../core/contexts/UserContext'
 import { useRouter } from 'expo-router'
 import { useTheme } from '@/core/theme'
+import { PhoneButton } from '@/features/common/buttons/PhoneButton'
+import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
+import { EmailButton } from '@/features/common/buttons/EmailButton'
+import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 
 type UserCardProps = {
 	item: UserFeedItem
@@ -28,25 +32,7 @@ export default function UserCard({ item }: UserCardProps) {
 	const address = item.address
 	const locationText = address ? [address.city, address.country].filter(Boolean).join(', ') : ''
 	const isActive = item.state?.code === 'active'
-	const hasContact = item.contact?.phone || item.contact?.whatsapp || item.contact?.email
-
-	const handleCall = (e: any) => {
-		e.stopPropagation?.()
-		const phone = item.contact?.phone?.fullNumber
-		if (phone) Linking.openURL(`tel:${phone}`).catch(() => {})
-	}
-
-	const handleWhatsApp = (e: any) => {
-		e.stopPropagation?.()
-		const wa = item.contact?.whatsapp
-		if (wa) Linking.openURL(`https://wa.me/${wa.replace(/[^0-9]/g, '')}`).catch(() => {})
-	}
-
-	const handleEmail = (e: any) => {
-		e.stopPropagation?.()
-		const email = item.contact?.email
-		if (email) Linking.openURL(`mailto:${email}`).catch(() => {})
-	}
+	const hasContact = item.contact?.phone || item.contact?.whatsapp || item.contact?.email || item.contact?.website
 
 	const handlePress = () => {
 		if (item.slug) router.push(`/users/${item.slug}` as any)
@@ -102,21 +88,10 @@ export default function UserCard({ item }: UserCardProps) {
 
 				{hasContact && (
 					<View style={styles.contactActionsRow}>
-						{item.contact?.phone && (
-							<TouchableOpacity style={styles.contactBtn} onPress={handleCall} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-								<Ionicons name="call-outline" size={16} color="#0EA5E9" />
-							</TouchableOpacity>
-						)}
-						{item.contact?.whatsapp && (
-							<TouchableOpacity style={[styles.contactBtn, { backgroundColor: 'rgba(45, 212, 191, 0.1)' }]} onPress={handleWhatsApp} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-								<Ionicons name="logo-whatsapp" size={16} color="#2DD4BF" />
-							</TouchableOpacity>
-						)}
-						{item.contact?.email && (
-							<TouchableOpacity style={styles.contactBtn} onPress={handleEmail} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
-								<Ionicons name="mail-outline" size={16} color="#0EA5E9" />
-							</TouchableOpacity>
-						)}
+						<PhoneButton phone={item.contact?.phone} size={36} />
+						<WhatsAppButton whatsapp={item.contact?.whatsapp} size={36} />
+						<EmailButton email={item.contact?.email} size={36} />
+						<WebsiteButton website={item.contact?.website} size={36} />
 					</View>
 				)}
 			</View>
@@ -244,13 +219,5 @@ const styles = StyleSheet.create({
 		gap: 6,
 		marginTop: 8,
 		width: '100%'
-	},
-	contactBtn: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		backgroundColor: 'rgba(14, 165, 233, 0.1)',
-		justifyContent: 'center',
-		alignItems: 'center'
 	}
 })

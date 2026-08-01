@@ -36,6 +36,8 @@ import ErrorState from '@/features/common/ErrorState'
 import { ProfileSection, InfoItem } from '@/features/common/ProfileSection'
 import SmartImage from '@/core/SmartImageViewer'
 import { HeaderRefreshButton, HeaderActionButton, SmartHeader } from '@/core/smart-header'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import MultilingualNameInput from '@/features/common/MultilingualNameInput'
 import LoadingState from '@/features/common/LoadingState'
@@ -538,31 +540,34 @@ export default function ProfileScreen() {
 						<View style={styles.profileCardContent}>
 							<View style={styles.photoContainer}>
 								<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} resizeMode="cover" entityType="user" enableFullscreenPreview={true} />
-								<TouchableOpacity style={styles.changePhotoButton} onPress={() => toggleEdit('photo', !editMode.photo)} accessibilityLabel="Change profile photo">
-									<Ionicons name={editMode.photo ? 'close' : 'camera'} size={18} color="#fff" />
-								</TouchableOpacity>
+								<IconButton
+									icon={editMode.photo ? 'close' : 'camera'}
+									label={editMode.photo ? translate('cancel', 'Cancel') : translate('change_profile_photo', 'Change profile photo')}
+									onPress={() => toggleEdit('photo', !editMode.photo)}
+									iconColor="#fff"
+									colors={colors}
+									style={styles.changePhotoButton}
+								/>
 							</View>
 
 							{editMode.photo && (
 								<View style={styles.photoActionsPanel}>
-									<TouchableOpacity
-										style={[styles.photoPanelButton, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}
+									<IconButton
+										icon="cloud-upload-outline"
+										label={uploadingPhoto ? translate('uploading', 'Uploading...') : translate('upload_image', 'Upload Image')}
 										onPress={handleUploadPhoto}
 										disabled={uploadingPhoto}
-										accessibilityLabel="Upload photo from library"
-									>
-										{uploadingPhoto ? <ActivityIndicator size={16} color={colors.primary} /> : <Ionicons name="cloud-upload-outline" size={16} color={colors.primary} />}
-										<Text style={[styles.photoPanelButtonText, { color: colors.primary }]}>{uploadingPhoto ? translate('uploading', 'Uploading...') : translate('upload_image', 'Upload Image')}</Text>
-									</TouchableOpacity>
-
-									<TouchableOpacity
-										style={[styles.photoPanelButton, { backgroundColor: colors.border + '15', borderColor: colors.border + '30' }]}
+										loading={uploadingPhoto}
+										colors={colors}
+										style={{ backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }}
+									/>
+									<IconButton
+										icon="link-outline"
+										label={showUrlInput ? translate('hide_url', 'Hide URL') : translate('enter_url', 'Enter URL')}
 										onPress={() => setShowUrlInput(!showUrlInput)}
-										accessibilityLabel="Enter photo URL"
-									>
-										<Ionicons name="link-outline" size={16} color={colors.text} />
-										<Text style={[styles.photoPanelButtonText, { color: colors.text }]}>{showUrlInput ? translate('hide_url', 'Hide URL') : translate('enter_url', 'Enter URL')}</Text>
-									</TouchableOpacity>
+										colors={colors}
+										style={{ backgroundColor: colors.border + '15', borderColor: colors.border + '30' }}
+									/>
 								</View>
 							)}
 
@@ -578,27 +583,28 @@ export default function ProfileScreen() {
 											placeholderTextColor={colors.textTertiary}
 											selectTextOnFocus
 										/>
-										<TouchableOpacity
+										<IconButton
+											icon="clipboard-outline"
+											label={translate('paste', 'Paste')}
 											onPress={handlePastePhoto}
-											style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }]}
-											accessibilityLabel="Paste clipboard content"
-										>
-											<Ionicons name="clipboard-outline" size={18} color={colors.primary} />
-										</TouchableOpacity>
-										<TouchableOpacity
+											colors={colors}
+											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }}
+										/>
+										<IconButton
+											icon="save-outline"
+											label={translate('save', 'Save')}
 											onPress={() => saveUserData('photo')}
-											style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }]}
-											accessibilityLabel="Save photo URL"
-										>
-											<Ionicons name="save-outline" size={18} color={colors.primary} />
-										</TouchableOpacity>
-										<TouchableOpacity
+											colors={colors}
+											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }}
+										/>
+										<IconButton
+											icon="close-outline"
+											label={translate('cancel', 'Cancel')}
 											onPress={() => toggleEdit('photo', false)}
-											style={[styles.socialIconBadge, { borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.error + '10' }]}
-											accessibilityLabel="Cancel URL edit"
-										>
-											<Ionicons name="close-outline" size={18} color={colors.error} />
-										</TouchableOpacity>
+											variant="danger"
+											colors={colors}
+											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }}
+										/>
 									</View>
 								</View>
 							)}
@@ -857,9 +863,14 @@ export default function ProfileScreen() {
 												}
 											}}
 										/>
-										<TouchableOpacity style={[styles.iconButton, { alignSelf: 'center', marginTop: 16 }]} onPress={() => openDirections(userData.location, userData.address)}>
-											<Ionicons name="map" size={24} color={colors.primary} />
-										</TouchableOpacity>
+										<IconButton
+											icon="map"
+											label={translate('open_directions', 'Open Directions')}
+											onPress={() => openDirections(userData.location, userData.address)}
+											variant="primary"
+											colors={colors}
+											style={{ alignSelf: 'center', marginTop: 16 }}
+										/>
 									</>
 								)}
 								{userData.location?.sharingEnabled !== undefined && (
@@ -1274,20 +1285,17 @@ export default function ProfileScreen() {
 									</View>
 								</View>
 								<View style={styles.businessModalActions}>
-									<TouchableOpacity
-										style={[styles.businessModalButton, styles.businessModalCancelButton, { borderColor: colors.border }]}
-										onPress={() => setShowBusinessModal(false)}
-										disabled={businessLoading}
-									>
-										<Text style={[styles.businessModalButtonText, { color: colors.textSecondary }]}>{translate('cancel', 'Cancel')}</Text>
-									</TouchableOpacity>
-									<TouchableOpacity
-										style={[styles.businessModalButton, styles.businessModalSubmitButton, { backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }]}
+									<CancelButton onPress={() => setShowBusinessModal(false)} disabled={businessLoading} />
+									<IconButton
+										icon="checkmark"
+										label={translate('submit', 'Submit')}
 										onPress={handleSubmitBusinessRequest}
 										disabled={businessLoading || !businessName.en.trim()}
-									>
-										{businessLoading ? <ActivityIndicator size="small" color="#fff" /> : <Text style={[styles.businessModalButtonText, { color: '#fff' }]}>{translate('submit', 'Submit')}</Text>}
-									</TouchableOpacity>
+										loading={businessLoading}
+										variant="primary"
+										colors={colors}
+										style={{ backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }}
+									/>
 								</View>
 							</View>
 						</ScrollView>
@@ -1302,10 +1310,12 @@ export default function ProfileScreen() {
 				title={translate('switch_account', 'Switch User')}
 				icon="people"
 				message={translate('switch_account_description', 'You will be redirected to the login screen where you can select a different account or sign in with a new one.')}
-				buttons={[
-					{ text: translate('cancel', 'Cancel'), variant: 'outlined', onPress: () => setShowSwitchAccountModal(false) },
-					{ text: translate('switch', 'Switch'), variant: 'filled', onPress: confirmSwitchUser }
-				]}
+				footer={
+					<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, width: '100%' }}>
+						<CancelButton onPress={() => setShowSwitchAccountModal(false)} />
+						<IconButton icon="people" label={translate('switch', 'Switch')} onPress={confirmSwitchUser} variant="primary" colors={colors} />
+					</View>
+				}
 			/>
 		</View>
 	)

@@ -1,12 +1,16 @@
 import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Linking, Platform, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { Business } from './businesses.interface'
 import { useRouter } from 'expo-router'
-import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { PhoneButton } from '@/features/common/buttons/PhoneButton'
+import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
+import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
+import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 
 export interface BusinessCardProps {
 	business: Business
@@ -28,6 +32,8 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 	const handleBusinessPress = (slug: string) => {
 		router.push(`/businesses/${slug}` as any)
 	}
+
+	const isCompact = windowHeight < 550
 
 	// Build address string
 	const addressParts = []
@@ -99,43 +105,25 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 					</View>
 				) : null}
 
-				{/* Contact Buttons */}
-				<View style={styles.contactButtons as ViewStyle}>
-					{business.contact?.phone?.fullNumber ? (
-						<TouchableOpacity
-							style={styles.contactButton as ViewStyle}
-							onPress={() => {
-								if (business.contact?.phone?.fullNumber) {
-									Linking.openURL(`tel:${business.contact.phone.fullNumber}`).catch(() => {})
-								}
-							}}
-						>
-							<Ionicons name="call-outline" size={isExtraSmall ? 16 : 18} color={colors.primary} />
-						</TouchableOpacity>
-					) : null}
-					{business.contact?.whatsapp ? (
-						<TouchableOpacity
-							style={[styles.contactButton as ViewStyle, styles.whatsappButton as ViewStyle]}
-							onPress={() => {
-								if (business.contact?.whatsapp) {
-									Linking.openURL(`https://wa.me/${business.contact.whatsapp.replace(/[^0-9]/g, '')}`).catch(() => {})
-								}
-							}}
-						>
-							<Ionicons name="logo-whatsapp" size={isExtraSmall ? 16 : 18} color="#fff" />
-						</TouchableOpacity>
-					) : null}
-					{getGeoCoordinates(business.location) ? (
-						<TouchableOpacity style={styles.contactButton as ViewStyle} onPress={() => openDirections(business.location, business.address)}>
-							<Ionicons name="map-outline" size={isExtraSmall ? 16 : 18} color={colors.primary} />
-						</TouchableOpacity>
-					) : null}
+				{/* Contact & View Buttons */}
+				<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: isCompact ? 4 : isExtraSmall ? 8 : 12 }}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+						<PhoneButton phone={business.contact?.phone} size={44} />
+						<WhatsAppButton whatsapp={business.contact?.whatsapp} size={44} />
+						<WebsiteButton website={business.contact?.website} size={44} />
+						<DirectionsButton location={business.location} address={business.address} size={44} />
+					</View>
+					<IconButton
+						icon="storefront-outline"
+						label={translate('view_business', 'View Business')}
+						onPress={(e) => {
+							e.stopPropagation?.()
+							handleBusinessPress(business.slug)
+						}}
+						variant="primary"
+						colors={colors}
+					/>
 				</View>
-
-				{/* View Business Button */}
-				<TouchableOpacity style={styles.viewButton as ViewStyle} onPress={() => handleBusinessPress(business.slug)}>
-					<Ionicons name="storefront-outline" size={isExtraSmall ? 16 : 18} color="#fff" />
-				</TouchableOpacity>
 			</View>
 		</TouchableOpacity>
 	)
@@ -228,38 +216,6 @@ const createStyles = (
 			color: colors.textSecondary,
 			fontSize: 12,
 			marginLeft: 4
-		},
-		contactButtons: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			marginTop: isCompact ? 4 : opts.isExtraSmall ? 8 : 12,
-			gap: opts.isExtraSmall ? 6 : 8
-		},
-		contactButton: {
-			flex: 1,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			paddingVertical: isCompact ? 4 : opts.isExtraSmall ? 8 : 10,
-			paddingHorizontal: opts.isExtraSmall ? 10 : 12,
-			borderRadius: opts.isExtraSmall ? 6 : 8,
-			backgroundColor: colors.backgroundSecondary || 'rgba(0,0,0,0.05)',
-			borderWidth: 0.5,
-			borderColor: colors.border || 'rgba(0,0,0,0.1)'
-		},
-		whatsappButton: {
-			backgroundColor: '#25D366',
-			borderColor: '#25D366'
-		},
-		viewButton: {
-			backgroundColor: colors.primary,
-			borderRadius: opts.isExtraSmall ? 6 : 10,
-			paddingVertical: isCompact ? 6 : opts.isExtraSmall ? 10 : 12,
-			paddingHorizontal: opts.isExtraSmall ? 14 : 18,
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			marginTop: isCompact ? 4 : opts.isExtraSmall ? 8 : 12
 		},
 		addressContainer: {
 			flexDirection: 'row',

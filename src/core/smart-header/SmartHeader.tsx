@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import { StyleSheet, View, Text, Platform, Animated, Pressable, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
+import { StyleSheet, View, Text, Platform, Animated, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
 import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Href, usePathname } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
@@ -41,21 +41,15 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 	}
 
 	return (
-		<Pressable
+		<IconButton
+			icon={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
+			label={translate('go_back', 'Go back')}
 			onPress={handlePress}
-			focusable={true}
-			accessibilityRole="button"
-			accessibilityLabel={translate('go_back', 'Go back')}
-			hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-			style={({ hovered, pressed }) => [
-				styles.backBtn,
-				{
-					backgroundColor: hovered ? colors.surfaceVariant || '#3A506B30' : pressed ? colors.primary + '15' : 'transparent'
-				}
-			]}
-		>
-			<Ionicons name={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} size={24} color={colors.text} />
-		</Pressable>
+			colors={colors}
+			iconColor={colors.primary}
+			size={40}
+			style={{ backgroundColor: colors.primary + '15', borderColor: 'transparent' }}
+		/>
 	)
 })
 
@@ -75,8 +69,6 @@ export const HeaderNotificationsButton: React.FC = React.memo(() => {
 			badgeCount={notificationCount}
 			onPress={() => router.push('/notifications')}
 			accessibilityLabel={translate('notifications', 'Notifications')}
-			backgroundColor={colors.surface}
-			size={40}
 		/>
 	)
 })
@@ -86,7 +78,7 @@ export const HeaderSearchButton: React.FC = React.memo(() => {
 	const router = useRouter()
 	const { colors } = useTheme()
 
-	return <HeaderActionButton iconName="search-outline" onPress={() => router.push('/search')} accessibilityLabel={translate('search', 'Search')} backgroundColor={colors.surface} size={40} />
+	return <HeaderActionButton iconName="search-outline" onPress={() => router.push('/search')} accessibilityLabel={translate('search', 'Search')} />
 })
 HeaderSearchButton.displayName = 'HeaderSearchButton'
 
@@ -104,20 +96,10 @@ export const HeaderCartButton: React.FC<HeaderCartButtonProps> = React.memo(({ b
 			onPress={() => router.push(user ? '/purchases?status=cart' : '/auth')}
 			badgeCount={badgeCount}
 			accessibilityLabel={translate('view_cart', 'View Cart')}
-			backgroundColor={colors.surface}
-			size={40}
 		/>
 	)
 })
 HeaderCartButton.displayName = 'HeaderCartButton'
-
-export const HeaderSettingsButton: React.FC = React.memo(() => {
-	const router = useRouter()
-	const { colors } = useTheme()
-
-	return <HeaderActionButton iconName="settings-outline" onPress={() => router.push('/settings')} accessibilityLabel={translate('settings', 'Settings')} backgroundColor={colors.surface} size={40} />
-})
-HeaderSettingsButton.displayName = 'HeaderSettingsButton'
 
 // ----------------------------------------
 // 4. Header Actions configuration types
@@ -126,7 +108,6 @@ export type HeaderActionType =
 	| 'search'
 	| 'notifications'
 	| 'cart'
-	| 'settings'
 	| 'refresh'
 	| 'scanner'
 	| {
@@ -291,8 +272,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					return <HeaderNotificationsButton key="predefined-notifications" />
 				case 'cart':
 					return <HeaderCartButton key="predefined-cart" />
-				case 'settings':
-					return <HeaderSettingsButton key="predefined-settings" />
 				case 'refresh':
 					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} isOffline={options?.isOffline} />
 				case 'scanner':
@@ -308,8 +287,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 								}
 							}}
 							accessibilityLabel="Scan QR Code"
-							backgroundColor={colors.surface}
-							size={40}
 						/>
 					)
 				default:
@@ -330,9 +307,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					badgeCount={config.badgeCount}
 					onPress={config.onPress}
 					accessibilityLabel={config.accessibilityLabel}
-					backgroundColor={config.backgroundColor || colors.surface}
-					iconColor={config.iconColor}
-					size={40}
+					size={config.size}
 				/>
 			)
 		}
@@ -524,7 +499,6 @@ MemoizedHeader.RefreshButton = HeaderRefreshButton
 MemoizedHeader.NotificationsButton = HeaderNotificationsButton
 MemoizedHeader.SearchButton = HeaderSearchButton
 MemoizedHeader.CartButton = HeaderCartButton
-MemoizedHeader.SettingsButton = HeaderSettingsButton
 MemoizedHeader.ScrollView = SmartScrollView
 MemoizedHeader.FlashList = SmartFlashList
 
@@ -535,7 +509,6 @@ export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHea
 	NotificationsButton: typeof HeaderNotificationsButton
 	SearchButton: typeof HeaderSearchButton
 	CartButton: typeof HeaderCartButton
-	SettingsButton: typeof HeaderSettingsButton
 	ScrollView: any
 	FlashList: any
 }
@@ -591,20 +564,6 @@ const styles = StyleSheet.create({
 		zIndex: 2,
 		minHeight: 38,
 		gap: 8
-	},
-	backBtn: {
-		width: 38,
-		height: 38,
-		borderRadius: 10,
-		justifyContent: 'center',
-		alignItems: 'center',
-		...Platform.select({
-			web: {
-				cursor: 'pointer',
-				transition: 'background-color 0.2s ease',
-				outlineStyle: 'none'
-			} as any
-		})
 	},
 	titleContainerWrapper: {
 		flex: 1

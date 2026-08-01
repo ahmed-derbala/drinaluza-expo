@@ -7,7 +7,10 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
-import ContactButtons from '@/features/common/ContactButtons'
+import { PhoneButton } from '@/features/common/buttons/PhoneButton'
+import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
+import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
+import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { useTheme } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -219,9 +222,14 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 			)}
 
 			{/* Contact buttons - right side */}
-			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.location || item.business?.address) && (
+			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.website || item.business?.location || item.business?.address) && (
 				<View style={styles.contactButtonsSide}>
-					<ContactButtons contact={item.business?.contact} location={item.business?.location} address={item.business?.address} layout="column" showEmail={false} phoneIconColor={colors.primary} />
+					<View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+						<PhoneButton phone={item.business?.contact?.phone} size={36} />
+						<WhatsAppButton whatsapp={item.business?.contact?.whatsapp} size={36} />
+						<WebsiteButton website={item.business?.contact?.website} size={36} />
+						<DirectionsButton location={item.business?.location} address={item.business?.address} size={36} />
+					</View>
 				</View>
 			)}
 

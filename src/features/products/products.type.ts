@@ -62,6 +62,7 @@ export type ProductType = {
 			}>
 			whatsapp?: string
 			email?: string
+			website?: string
 		}
 		createdAt: string
 		updatedAt: string

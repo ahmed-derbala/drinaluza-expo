@@ -11,9 +11,11 @@ import { config } from '@/config'
 import { useUpdates } from './useUpdates'
 import { isVersionGreater } from './UpdatesContext'
 import { hexToRgba } from '@/core/helpers/colors'
-import { IconButton } from '@/features/common/IconButton'
-import { DownloadButton } from '@/features/common/DownloadButton'
-import { CancelButton } from '@/features/common/CancelButton'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { InstallButton } from '@/features/common/buttons/InstallButton'
+import { DownloadUpdateButton } from '@/features/common/buttons/DownloadUpdateButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 
 const styles = StyleSheet.create({
 	container: {
@@ -562,7 +564,7 @@ export default function UpdatesScreen() {
 					<View style={styles.actionBar}>
 						{isWeb ? (
 							<>
-								<DownloadButton downloadUrl={latestRelease?.download_url} version={latestRelease?.latest_version} variant="primary" style={styles.actionButton} />
+								<DownloadUpdateButton downloadUrl={latestRelease?.download_url} version={latestRelease?.latest_version} variant="primary" style={styles.actionButton} />
 								<IconButton
 									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
 									label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
@@ -577,25 +579,22 @@ export default function UpdatesScreen() {
 							</>
 						) : (
 							<>
-								<IconButton
-									icon={isPaused ? 'play-outline' : isDownloading ? 'pause-outline' : 'cloud-download-outline'}
-									label={isPaused ? translate('resume', 'Resume') : isDownloading ? translate('pause', 'Pause') : translate('download', 'Download')}
-									subtitle={latestRelease ? `v${latestRelease.latest_version}` : undefined}
+								<DownloadUpdateButton
+									version={latestRelease?.latest_version}
+									isPaused={isPaused}
+									isDownloading={isDownloading}
 									onPress={isPaused ? resumeDownload : isDownloading ? pauseDownload : downloadUpdate}
 									disabled={!isDownloading && !isPaused && isDownloadDisabled}
 									variant={isPaused ? 'primary' : isDownloading ? 'secondary' : 'primary'}
-									colors={colors}
 									style={styles.actionButton}
 								/>
 								<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
-								<IconButton
-									icon="archive-outline"
-									label={translate('install', 'Install')}
-									subtitle={installableApk ? `v${installableApk.version}` : undefined}
+								<InstallButton
+									fileUri={installableApk?.fileUri}
+									version={installableApk?.version}
 									onPress={handleInstallPress}
 									disabled={isInstallDisabled || isDownloading || isPaused}
 									variant="success"
-									colors={colors}
 									style={styles.actionButton}
 								/>
 								<IconButton
@@ -661,9 +660,7 @@ export default function UpdatesScreen() {
 										>
 											<Ionicons name="share-social-outline" size={20} color={colors.primary} />
 										</TouchableOpacity>
-										<TouchableOpacity onPress={() => deleteApk(apk.fileUri)} accessibilityLabel="Delete cached APK" style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.error, 0.12) }]}>
-											<Ionicons name="trash-outline" size={20} color={colors.error} />
-										</TouchableOpacity>
+										<DeleteButton onPress={() => deleteApk(apk.fileUri)} style={styles.iconBtn} />
 									</View>
 								</View>
 							))}

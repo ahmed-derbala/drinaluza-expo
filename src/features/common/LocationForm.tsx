@@ -4,6 +4,8 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 
 import { useTheme } from '@/core/theme'
+import { useUser } from '@/core/contexts/UserContext'
+import { IconButton } from './buttons/IconButton'
 import type { Location as LocationType } from '@/features/profile/profile.interface'
 
 interface LocationFormProps {
@@ -13,6 +15,7 @@ interface LocationFormProps {
 
 export default function LocationForm({ location, onChange }: LocationFormProps) {
 	const { colors } = useTheme()
+	const { translate } = useUser()
 
 	const coordinates = location?.geo?.coordinates || [0, 0]
 	const sharingEnabled = location?.sharingEnabled !== false
@@ -155,10 +158,14 @@ export default function LocationForm({ location, onChange }: LocationFormProps) 
 						<View style={[styles.switchThumb, sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: '#fff' } : { backgroundColor: '#fff' }]} />
 					</TouchableOpacity>
 				</View>
-				<TouchableOpacity style={[styles.addButton, { borderColor: colors.primary, marginTop: 12, opacity: sharingEnabled ? 1 : 0.5 }]} onPress={handleGetCurrentLocation} disabled={!sharingEnabled}>
-					<Ionicons name="location" size={20} color={colors.primary} />
-					<Text style={[styles.addButtonText, { color: colors.primary }]}>Get Current Location</Text>
-				</TouchableOpacity>
+				<IconButton
+					icon="location"
+					label={translate('get_current', 'Get Current Location')}
+					onPress={handleGetCurrentLocation}
+					disabled={!sharingEnabled}
+					colors={colors}
+					style={[styles.addButton, { borderColor: colors.primary, marginTop: 12, opacity: sharingEnabled ? 1 : 0.5 }]}
+				/>
 			</View>
 		</View>
 	)
@@ -241,10 +248,5 @@ const styles = StyleSheet.create({
 		borderRadius: 10,
 		borderWidth: 1,
 		marginBottom: 6
-	},
-	addButtonText: {
-		marginLeft: 8,
-		fontWeight: '600',
-		fontSize: 14
 	}
 })

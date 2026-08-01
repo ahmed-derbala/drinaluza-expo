@@ -6,6 +6,8 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import SmartImage from '@/core/SmartImageViewer'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { OrderItem } from '@/features/orders/orders.interface'
 import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
 import { OrderStepTracker } from './OrderStepTracker'
@@ -19,7 +21,7 @@ interface PurchaseCardProps {
 const ORDER_STEPS = ['Ordered', 'Confirmed', 'Transit', 'Delivered']
 
 function getStepIndex(status: string) {
-	if (status === 'pending_business_confirmation') return 0
+	if (status === 'pending_business_confirmation' || status === 'pending_customer_confirmation') return 0
 	if (status === 'confirmed_by_business') return 1
 	if (status === 'reserved_by_business_for_pickup_by_customer' || status === 'delivering_to_customer') return 2
 	if (status === 'delivered_to_customer' || status === 'received_by_customer') return 3
@@ -115,17 +117,9 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 
 			{(canCancel || canMarkReceived) && (
 				<View style={styles.actionsRow}>
-					{canCancel && (
-						<TouchableOpacity style={[styles.actionBtn, { borderColor: colors.error, backgroundColor: colors.error + '10' }]} onPress={() => onCancel?.(item._id)} activeOpacity={0.8}>
-							<Ionicons name="close-circle-outline" size={18} color={colors.error} />
-							<Text style={[styles.actionBtnText, { color: colors.error }]}>{translate('cancel', 'Cancel')}</Text>
-						</TouchableOpacity>
-					)}
+					{canCancel && <CancelButton onPress={() => onCancel?.(item._id)} />}
 					{canMarkReceived && (
-						<TouchableOpacity style={[styles.actionBtn, { borderColor: colors.success, backgroundColor: colors.success + '10' }]} onPress={() => onMarkReceived?.(item._id)} activeOpacity={0.8}>
-							<Ionicons name="checkmark-circle-outline" size={18} color={colors.success} />
-							<Text style={[styles.actionBtnText, { color: colors.success }]}>{translate('mark_as_received', 'Mark Received')}</Text>
-						</TouchableOpacity>
+						<IconButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" colors={colors} />
 					)}
 				</View>
 			)}

@@ -1,6 +1,6 @@
-import React, { useRef, useEffect, useSyncExternalStore, useCallback } from 'react'
-import { TouchableOpacity, Animated, Easing, StyleSheet, Platform, StyleProp, ViewStyle } from 'react-native'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import React, { useSyncExternalStore, useCallback } from 'react'
+import { StyleSheet, StyleProp, ViewStyle } from 'react-native'
+import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme } from '@/core/theme'
 import { ConnectionService, BackendState } from '@/core/connection'
 import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/hooks/useCacheFirst'
@@ -27,18 +27,8 @@ export interface HeaderRefreshButtonProps {
 	 */
 	backendState?: BackendState
 	/**
-	 * Optional custom color for the refresh icon.
-	 * Defaults to `colors.primary`.
-	 */
-	color?: string
-	/**
-	 * Optional custom color for the offline icon.
-	 * Defaults to `colors.error`.
-	 */
-	offlineColor?: string
-	/**
 	 * Optional custom size for the refresh icon.
-	 * Defaults to 22.
+	 * Defaults to 40.
 	 */
 	size?: number
 	/**
@@ -65,130 +55,53 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	isRefreshing: isRefreshingProp,
 	isOffline = false,
 	backendState: backendStateProp,
-	color,
-	offlineColor,
-	size = 22,
+	size = 40,
 	style,
 	disabled = false
 }) => {
-	// useSyncExternalStore guarantees synchronous, tear-free reads from
-	// ConnectionService on every platform, including Android's Fabric renderer.
 	const liveBackendState = useSyncExternalStore(subscribeToBackendState, ConnectionService.getBackendState, ConnectionService.getBackendState)
-
-	// Fetch global refreshing state if no local prop is provided
 	const globalRefreshing = useGlobalRefreshingState()
 	const isRefreshing = isRefreshingProp ?? globalRefreshing
 
 	const backendState = backendStateProp ?? liveBackendState
 	const isBackendOffline = backendState === 'offline'
 	const isBackendConnecting = backendState === 'connecting'
-	const showSpinner = isRefreshing || isBackendConnecting
+	const showSpinner = (isRefreshing || isBackendConnecting) && !isBackendOffline
 	const showOffline = isBackendOffline || (isOffline && backendState !== 'online')
 	const { colors } = useTheme()
-	const rotationValue = useRef(new Animated.Value(0)).current
-	const scaleValue = useRef(new Animated.Value(1)).current
-
-	useEffect(() => {
-		let animation: Animated.CompositeAnimation | null = null
-		if (showSpinner) {
-			animation = Animated.loop(
-				Animated.timing(rotationValue, {
-					toValue: 1,
-					duration: 1000,
-					easing: Easing.linear,
-					useNativeDriver: Platform.OS !== 'web'
-				})
-			)
-			animation.start()
-		} else {
-			Animated.timing(rotationValue, {
-				toValue: 0,
-				duration: 300,
-				easing: Easing.out(Easing.ease),
-				useNativeDriver: Platform.OS !== 'web'
-			}).start()
-		}
-
-		return () => {
-			if (animation) {
-				animation.stop()
-			}
-		}
-	}, [showSpinner, rotationValue])
-
-	const spin = rotationValue.interpolate({
-		inputRange: [0, 1],
-		outputRange: ['0deg', '360deg']
-	})
 
 	const handleRefresh = useCallback(async () => {
-		if (!isRefreshing && !disabled) {
-			// Trigger spring scale bounce
-			Animated.sequence([
-				Animated.timing(scaleValue, {
-					toValue: 0.85,
-					duration: 80,
-					useNativeDriver: Platform.OS !== 'web'
-				}),
-				Animated.spring(scaleValue, {
-					toValue: 1,
-					friction: 4,
-					tension: 40,
-					useNativeDriver: Platform.OS !== 'web'
-				})
-			]).start()
-
-			// Trigger rotation spin on press
-			Animated.timing(rotationValue, {
-				toValue: 1,
-				duration: 500,
-				easing: Easing.bezier(0.25, 1, 0.5, 1),
-				useNativeDriver: Platform.OS !== 'web'
-			}).start(() => {
-				if (!isRefreshing) {
-					rotationValue.setValue(0)
-				}
-			})
-
-			if (onRefresh) {
-				await onRefresh()
-			} else {
-				await triggerGlobalRefresh()
-			}
+		if (showSpinner || disabled) return
+		if (onRefresh) {
+			await onRefresh()
+		} else {
+			await triggerGlobalRefresh()
 		}
-	}, [onRefresh, isRefreshing, disabled, scaleValue, rotationValue])
+	}, [onRefresh, showSpinner, disabled])
 
 	const isDisabled = showSpinner || disabled
-
-	// Derive a visual mode key so React is forced to reconcile the icon
-	// subtree when the button switches between offline / spinning / idle.
-	const visualMode = showOffline ? 'offline' : showSpinner ? 'spinning' : 'idle'
+	const icon = showOffline ? 'cloud-offline' : 'refresh'
+	const iconType = showOffline ? 'ionicons' : 'material'
+	const iconColor = showOffline ? colors.error : colors.primary
 
 	return (
-		<TouchableOpacity
-			style={[styles.refreshButton, { backgroundColor: colors.surface, opacity: isDisabled ? 0.5 : 1 }, style]}
+		<IconButton
+			icon={icon}
+			iconType={iconType}
+			label={showOffline ? 'Offline' : 'Refresh'}
 			onPress={handleRefresh}
 			disabled={isDisabled}
-			hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-			accessibilityRole="button"
-			accessibilityLabel={showOffline ? 'Offline' : 'Refresh'}
-			accessibilityState={{ disabled: isDisabled }}
-		>
-			<Animated.View key={visualMode} style={{ transform: showSpinner ? [{ rotate: spin }, { scale: scaleValue }] : [{ scale: scaleValue }] }}>
-				{showOffline ? <Ionicons name="cloud-offline" size={size} color={offlineColor || colors.error} /> : <MaterialIcons name="refresh" size={size} color={color || colors.primary} />}
-			</Animated.View>
-		</TouchableOpacity>
+			loading={showSpinner}
+			colors={colors}
+			iconColor={iconColor}
+			size={size}
+			style={[styles.refreshButton, { backgroundColor: colors.primary + '15', borderColor: 'transparent' }, style]}
+		/>
 	)
 }
 
 const styles = StyleSheet.create({
-	refreshButton: {
-		width: 36,
-		height: 36,
-		borderRadius: 10,
-		justifyContent: 'center',
-		alignItems: 'center'
-	}
+	refreshButton: {}
 })
 
 export default HeaderRefreshButton

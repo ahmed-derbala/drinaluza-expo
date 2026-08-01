@@ -1,15 +1,15 @@
 import { Stack, usePathname, Redirect, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, ActivityIndicator, Platform, StyleSheet, TouchableOpacity } from 'react-native'
-import { Ionicons } from '@expo/vector-icons'
+import { View, ActivityIndicator, Platform, StyleSheet } from 'react-native'
 import { useUpdates, isVersionGreater, UpdateCheckResult } from '@/features/updates'
 import { config } from '@/config'
 import { getItem, setItem } from '@/core/storage'
 import { translate } from '@/core/translation'
 import { SmartModal } from '@/core/smart-modal'
-import { DownloadButton } from '@/features/common/DownloadButton'
-import { CancelButton } from '@/features/common/CancelButton'
+import { DownloadUpdateButton } from '@/features/common/buttons/DownloadUpdateButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { EyeButton } from '@/features/common/buttons/EyeButton'
 
 // Polyfill for setImmediate which is missing in some web environments
 if (typeof setImmediate === 'undefined') {
@@ -172,17 +172,15 @@ function RootLayoutContent() {
 				message={webUpdateModal ? `drinaluza-${webUpdateModal.latest_version}.apk` : undefined}
 				footer={
 					<View style={updateModalStyles.actionRow}>
-						<TouchableOpacity
+						<EyeButton
 							onPress={() => setDontShowWebUpdateModalAgain((prev) => !prev)}
-							style={updateModalStyles.checkboxRow}
-							accessibilityLabel={translate('dont_show_again', "Don't show again")}
+							visible={dontShowWebUpdateModalAgain}
+							label={translate('dont_show_again', "Don't show again")}
 							accessibilityRole="checkbox"
 							accessibilityState={{ checked: dontShowWebUpdateModalAgain }}
-						>
-							<Ionicons name={dontShowWebUpdateModalAgain ? 'eye-off-outline' : 'eye-outline'} size={20} color={dontShowWebUpdateModalAgain ? colors.primary : colors.textSecondary} />
-						</TouchableOpacity>
+						/>
 						<CancelButton onPress={closeWebUpdateModal} style={updateModalStyles.iconButton} />
-						<DownloadButton
+						<DownloadUpdateButton
 							downloadUrl={webUpdateModal?.download_url}
 							version={webUpdateModal?.latest_version}
 							onAfterDownload={closeWebUpdateModal}
