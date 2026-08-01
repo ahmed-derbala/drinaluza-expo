@@ -120,7 +120,7 @@ export const deleteSavedAuthentication = async (slug: string) => {
 			log({
 				level: 'warn',
 				label: 'auth.api',
-				message: `Server signout failed for saved account @${slug}`,
+				message: `Server signout failed for saved account ${slug}`,
 				error
 			})
 		}

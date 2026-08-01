@@ -609,7 +609,7 @@ export default function ProfileScreen() {
 							)}
 
 							<Text style={styles.profileFullName}>{localize(userData.name) || 'User'}</Text>
-							<Text style={styles.profileSlug}>@{userData.slug}</Text>
+							<Text style={styles.profileSlug}>{userData.slug}</Text>
 
 							{userData.basicInfos?.biography && (
 								<Text style={styles.profileBio} numberOfLines={2}>

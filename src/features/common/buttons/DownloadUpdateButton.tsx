@@ -65,10 +65,25 @@ export function DownloadUpdateButton({
 		onAfterDownload?.()
 	}, [onPress, downloadUrl, onAfterDownload])
 
-	const icon = isPaused ? 'play-outline' : isDownloading ? 'pause-outline' : 'cloud-download-outline'
-	const actionLabel = isPaused ? translate('resume', 'Resume') : isDownloading ? translate('pause', 'Pause') : translate('download', 'Download')
+	const isPause = isDownloading && !isPaused
+	const icon = isPaused ? 'play-outline' : isPause ? 'pause-outline' : 'cloud-download-outline'
+	const actionLabel = isPaused ? translate('resume', 'Resume') : isPause ? translate('pause', 'Pause') : translate('download', 'Download')
 	const text = version ? `v${version}` : ''
 	const isDisabled = disabled !== undefined ? disabled : !downloadUrl && !onPress
+	const pauseStyle: StyleProp<ViewStyle> | undefined = isPause ? { backgroundColor: 'transparent', borderColor: colors.warning } : undefined
 
-	return <TextButton icon={icon} text={text} label={label ?? actionLabel} onPress={handlePress} disabled={isDisabled} variant={variant} size={size} colors={colors} style={style} />
+	return (
+		<TextButton
+			icon={icon}
+			text={text}
+			label={label ?? actionLabel}
+			onPress={handlePress}
+			disabled={isDisabled}
+			variant={isPause ? 'secondary' : variant}
+			iconColor={isPause ? colors.warning : undefined}
+			size={size}
+			colors={colors}
+			style={style ? [style, pauseStyle] : pauseStyle}
+		/>
+	)
 }

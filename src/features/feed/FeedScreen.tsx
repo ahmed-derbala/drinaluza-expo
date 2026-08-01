@@ -279,7 +279,6 @@ export default function FeedScreen() {
 		() => ({
 			title: translate('feed', 'Feed'),
 			showBackButton: false,
-			isLoading: isInitialLoading,
 			headerActions: [
 				...(!isWeb ? [<SmartHeader.ActionButton key="scanner" iconName="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} accessibilityLabel="Scan Barcode" />] : []),
 				<SmartHeader.SearchButton key="search" />,
@@ -287,7 +286,7 @@ export default function FeedScreen() {
 				<SmartHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={isRefreshing} isOffline={isOffline} />
 			]
 		}),
-		[translate, user, isInitialLoading, isWeb, cart.length, refreshData, isRefreshing, isOffline]
+		[translate, user, isWeb, cart.length, refreshData, isRefreshing, isOffline]
 	)
 
 	// ═══════════════════════════════════════════════════════════════════════════════

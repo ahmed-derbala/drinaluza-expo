@@ -483,7 +483,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader title={translate('loading', 'Loading...')} fallbackRoute={`/dashboard/${businessSlug}/products`} isLoading={true} />
+				<SmartHeader fallbackRoute={`/dashboard/${businessSlug}/products`} />
 				<LoadingState />
 			</View>
 		)
@@ -493,7 +493,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader title={translate('error', 'Error')} fallbackRoute={`/dashboard/${businessSlug}/products`} />
+				<SmartHeader fallbackRoute={`/dashboard/${businessSlug}/products`} />
 				<ErrorState
 					title={error?.type === 'network' ? undefined : error?.title || translate('product_not_found', 'Product Not Found')}
 					message={error?.type === 'network' ? undefined : error?.message || translate('product_not_found_desc', 'The product could not be loaded.')}

@@ -363,13 +363,13 @@ const AuthForm = React.memo(
 								const isActive = activeSlug === account.slug
 								return (
 									<View key={account.slug} style={[S.accountRow, isActive && S.accountRowActive]}>
-										<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to @${account.slug}`}>
+										<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to ${account.slug}`}>
 											<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
 												<SmartImage source={account.photoUrl} style={S.accountAvatarImg} entityType="user" />
 											</View>
 											<View style={S.accountInfo}>
 												<Text style={[S.accountSlug, isActive && S.accountSlugActive]} numberOfLines={1}>
-													@{account.slug}
+													{account.slug}
 												</Text>
 												{account.lastSignIn && (
 													<Text style={S.accountAccessTime} numberOfLines={2}>
@@ -378,7 +378,7 @@ const AuthForm = React.memo(
 												)}
 											</View>
 										</TouchableOpacity>
-										<DeleteButton onPress={() => handleRemoveSavedAccount(account.slug)} label={`Remove @${account.slug}`} style={S.accountRemoveBtn} />
+										<DeleteButton onPress={() => handleRemoveSavedAccount(account.slug)} label={`Remove ${account.slug}`} style={S.accountRemoveBtn} />
 									</View>
 								)
 							})}
@@ -740,12 +740,12 @@ export default function AuthScreen() {
 		(slugToRemove: string) => {
 			showConfirm(
 				translate('remove_account_title', 'Remove Account?'),
-				translate('remove_account_confirm', `Are you sure you want to remove @${slugToRemove} from the saved accounts list?`),
+				translate('remove_account_confirm', `Are you sure you want to remove ${slugToRemove} from the saved accounts list?`),
 				async () => {
 					try {
 						await deleteSavedAuthentication(slugToRemove)
 						await loadSavedAccounts()
-						toast.show({ title: translate('success', 'Success'), message: `@${slugToRemove} removed from accounts list.`, color: themeColors.success })
+						toast.show({ title: translate('success', 'Success'), message: `${slugToRemove} removed from accounts list.`, color: themeColors.success })
 						if (slug === slugToRemove) {
 							setSlug('')
 							setPassword('')
@@ -789,7 +789,7 @@ export default function AuthScreen() {
 
 	return (
 		<View style={S.root}>
-			<SmartHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/feed" loading={loading} />
+			<SmartHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/feed" />
 
 			<KeyboardAvoidingView style={S.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? headerH : 0}>
 				<ScrollView ref={scrollViewRef} style={S.flex} contentContainerStyle={scrollContentStyle} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>

@@ -316,7 +316,8 @@ export default function UpdatesScreen() {
 
 	const formatSpeed = (speedBytesPerSec: number | null): string => {
 		if (speedBytesPerSec === null || speedBytesPerSec <= 0) return ''
-		return `${formatBytes(speedBytesPerSec)}/s`
+		const mbs = speedBytesPerSec / (1024 * 1024)
+		return `${parseFloat(mbs.toFixed(2))} MB/s`
 	}
 
 	useEffect(() => {
@@ -457,7 +458,6 @@ export default function UpdatesScreen() {
 				title={translate('updates', 'Updates')}
 				subtitle={config.app.env}
 				fallbackRoute="/feed"
-				loading={isChecking}
 				disableAnimations={true}
 				headerActions={[
 					<SmartHeader.RefreshButton

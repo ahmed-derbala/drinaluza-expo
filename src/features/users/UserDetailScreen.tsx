@@ -53,7 +53,7 @@ export default function UserDetailScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader title={displayTitle} subtitle={`@${userSlug}`} isLoading={true} />
+				<SmartHeader title={displayTitle} subtitle={`${userSlug}`} />
 				<LoadingState />
 			</View>
 		)
@@ -193,7 +193,7 @@ export default function UserDetailScreen() {
 					onClose={() => setShowQRCode(false)}
 					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/u/${user.slug || userSlug}`}
 					title={localize(user.name)}
-					subtitle={`@${user.slug || userSlug}`}
+					subtitle={`${user.slug || userSlug}`}
 					filenamePrefix={`user_${user.slug || userSlug}`}
 				/>
 			)}

@@ -271,7 +271,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 					onClose={() => setShowQRCode(false)}
 					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${dashboardData.business.slug}`}
 					title={localize(dashboardData.business.name)}
-					subtitle={`@${dashboardData.business.slug}`}
+					subtitle={`${dashboardData.business.slug}`}
 					filenamePrefix={`business_${dashboardData.business.slug}`}
 				/>
 			)}
@@ -375,7 +375,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 						<Text style={[styles.kindBadgeText, { color: colors.primary }]}>{translate('dashboard.business', 'Business')}</Text>
 					</View>
 					<Text style={[styles.heroTitle, { color: colors.text }]}>{localize(business.name)}</Text>
-					<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>@{business.slug}</Text>
+					<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>{business.slug}</Text>
 					{business.owner && (
 						<Text style={[styles.heroMeta, { color: colors.textTertiary }]}>
 							{translate('business_owner', 'Owner')}: {localize(business.owner.name)}
@@ -433,7 +433,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 										{localize(customer.name)}
 									</Text>
 									<Text style={[styles.customerSlugText, { color: colors.textSecondary }]} numberOfLines={2}>
-										@{customer.slug}
+										{customer.slug}
 									</Text>
 									{customer.address?.city && (
 										<Text style={[styles.customerCityText, { color: colors.textTertiary }]} numberOfLines={1}>

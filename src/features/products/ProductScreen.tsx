@@ -94,7 +94,8 @@ export default function ProductScreen() {
 	const [originCountry, setOriginCountry] = useState('')
 	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
 
-	const displayTitle = product ? localize(product.name) : translate('loading', 'Loading...')
+	const displayTitle = product ? localize(product.name) : ''
+
 	const isLandscape = width > height
 	const isLargeScreen = width > 800 && height > 600
 	const imageHeight = isLandscape ? (isLargeScreen ? 420 : 220) : 420
@@ -520,7 +521,7 @@ export default function ProductScreen() {
 	if (isInitialLoading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: displayTitle }} />
+				<Stack.Screen options={{ title: displayTitle, subtitle: productSlug } as any} />
 				<LoadingState />
 			</View>
 		)
@@ -529,7 +530,7 @@ export default function ProductScreen() {
 	if (!product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: displayTitle }} />
+				<Stack.Screen options={{ title: displayTitle, subtitle: productSlug } as any} />
 				<ErrorState icon={isOffline ? 'cloud-offline-outline' : 'fish-outline'} iconOnly={true} />
 			</View>
 		)
@@ -820,6 +821,7 @@ export default function ProductScreen() {
 				options={
 					{
 						title: displayTitle,
+						subtitle: productSlug,
 						headerActions: headerActions as any
 					} as any
 				}

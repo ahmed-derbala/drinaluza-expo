@@ -180,7 +180,7 @@ export default function BusinessDetailsScreen() {
 	const isRefreshing = businessRefreshing || productsRefreshing
 	const isOffline = businessOffline && productsOffline
 
-	const displayTitle = business ? localize(business.name) : translate('loading', 'Loading...')
+	const displayTitle = business ? localize(business.name) : ''
 
 	useEffect(() => {
 		if (!business?.owner?.slug) return
@@ -212,8 +212,7 @@ export default function BusinessDetailsScreen() {
 					options={
 						{
 							title: displayTitle,
-							subtitle: `@${businessSlug}`,
-							isLoading: true
+							subtitle: `${businessSlug}`
 						} as any
 					}
 				/>
@@ -260,8 +259,7 @@ export default function BusinessDetailsScreen() {
 				options={
 					{
 						title: displayTitle,
-						subtitle: `@${business.slug}`,
-						isLoading: false,
+						subtitle: `${business.slug}`,
 						fallbackRoute: '/(home)/feed',
 						headerActions: [
 							{
@@ -301,7 +299,7 @@ export default function BusinessDetailsScreen() {
 						<View style={styles.brandingHeader}>
 							<View style={{ flex: 1, gap: 4 }}>
 								<Text style={[styles.businessName, { color: colors.text }]}>{localize(business.name)}</Text>
-								<Text style={[styles.slugText, { color: colors.textSecondary }]}>@{business.slug}</Text>
+								<Text style={[styles.slugText, { color: colors.textSecondary }]}>{business.slug}</Text>
 							</View>
 							<View style={{ gap: 6, alignItems: 'flex-end' }}>
 								{business.state?.code && <StateBadge stateCode={business.state.code} />}
@@ -416,7 +414,7 @@ export default function BusinessDetailsScreen() {
 					onClose={() => setShowQRCode(false)}
 					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${business.slug}`}
 					title={localize(business.name)}
-					subtitle={`@${business.slug}`}
+					subtitle={`${business.slug}`}
 					filenamePrefix={`business_${business.slug}`}
 				/>
 			)}

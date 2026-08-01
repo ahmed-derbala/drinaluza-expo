@@ -337,7 +337,6 @@ export default function BusinessDashboardProductsScreen() {
 				fallbackRoute={`/dashboard?businessSlug=${businessSlug}` as any}
 				headerActions={headerActionsConfig}
 				onBackPress={() => router.replace(`/dashboard?businessSlug=${businessSlug}` as any)}
-				isLoading={isInitialLoading && !isRefreshing}
 			/>
 
 			<SmartHeader.ScrollView

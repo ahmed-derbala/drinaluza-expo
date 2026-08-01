@@ -203,7 +203,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 							</Text>
 							{item.business?.slug ? (
 								<Text style={styles.bizSlug} numberOfLines={2}>
-									@{item.business.slug}
+									{item.business.slug}
 								</Text>
 							) : null}
 						</View>

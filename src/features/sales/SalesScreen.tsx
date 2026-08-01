@@ -140,9 +140,9 @@ export default function SalesScreen() {
 					<View style={{ flex: 1 }}>
 						<Text style={[styles.activeFiltersTitle, { color: colors.text }]}>Filtered Sales</Text>
 						<Text style={[styles.activeFiltersSubtitle, { color: colors.textSecondary }]}>
-							Showing sales for {customerSlug ? `Customer: @${customerSlug}` : ''}
+							Showing sales for {customerSlug ? `Customer: ${customerSlug}` : ''}
 							{customerSlug && productSlug ? ' • ' : ''}
-							{productSlug ? `Product: @${productSlug}` : ''}
+							{productSlug ? `Product: ${productSlug}` : ''}
 						</Text>
 					</View>
 				</View>

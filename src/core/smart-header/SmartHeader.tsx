@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import { StyleSheet, View, Text, Platform, Animated, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
+import { StyleSheet, View, Platform, Animated, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
 import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -7,16 +7,19 @@ import { useRouter, Href, usePathname } from 'expo-router'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { SmartKebabMenu, useSmartKebabMenu } from '@/core/smart-kebab-menu'
+import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
-import { useNotification } from '@/features/notifications/NotificationContext'
-import { useLayout, useUser } from '@/core/contexts'
-import { useBackendConnection } from '@/core/connection'
+import { useLayout } from '@/core/contexts'
 import HeaderActionButton from './HeaderActionButton'
 import HeaderRefreshButton from './HeaderRefreshButton'
+import HeaderNotificationsButton from './HeaderNotificationsButton'
+import HeaderSearchButton from './HeaderSearchButton'
+import HeaderCartButton from './HeaderCartButton'
+import HeaderActions, { HeaderActionType } from './HeaderActions'
+import HeaderTitle from './HeaderTitle'
 
 // Re-export actions for convenience
-export { HeaderActionButton, HeaderRefreshButton }
+export { HeaderActionButton, HeaderRefreshButton, HeaderNotificationsButton, HeaderSearchButton, HeaderCartButton }
 
 // ----------------------------------------
 // 1. HeaderBackButton Component
@@ -55,71 +58,6 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 
 HeaderBackButton.displayName = 'HeaderBackButton'
 
-// ----------------------------------------
-// 2. Predefined Reusable Header Actions
-// ----------------------------------------
-export const HeaderNotificationsButton: React.FC = React.memo(() => {
-	const router = useRouter()
-	const { colors } = useTheme()
-	const { notificationCount } = useNotification()
-
-	return (
-		<HeaderActionButton
-			iconName="notifications-outline"
-			badgeCount={notificationCount}
-			onPress={() => router.push('/notifications')}
-			accessibilityLabel={translate('notifications', 'Notifications')}
-		/>
-	)
-})
-HeaderNotificationsButton.displayName = 'HeaderNotificationsButton'
-
-export const HeaderSearchButton: React.FC = React.memo(() => {
-	const router = useRouter()
-	const { colors } = useTheme()
-
-	return <HeaderActionButton iconName="search-outline" onPress={() => router.push('/search')} accessibilityLabel={translate('search', 'Search')} />
-})
-HeaderSearchButton.displayName = 'HeaderSearchButton'
-
-interface HeaderCartButtonProps {
-	badgeCount?: number
-}
-export const HeaderCartButton: React.FC<HeaderCartButtonProps> = React.memo(({ badgeCount = 0 }) => {
-	const router = useRouter()
-	const { colors } = useTheme()
-	const { user } = useUser()
-
-	return (
-		<HeaderActionButton
-			iconName="cart-outline"
-			onPress={() => router.push(user ? '/purchases?status=cart' : '/auth')}
-			badgeCount={badgeCount}
-			accessibilityLabel={translate('view_cart', 'View Cart')}
-		/>
-	)
-})
-HeaderCartButton.displayName = 'HeaderCartButton'
-
-// ----------------------------------------
-// 4. Header Actions configuration types
-// ----------------------------------------
-export type HeaderActionType =
-	| 'search'
-	| 'notifications'
-	| 'cart'
-	| 'refresh'
-	| 'scanner'
-	| {
-			key: string
-			iconName: string
-			iconType?: 'material' | 'ionicons'
-			badgeCount?: number
-			onPress: () => void
-			accessibilityLabel: string
-			disabled?: boolean
-	  }
-
 export interface SmartHeaderProps {
 	title?: React.ReactNode
 	subtitle?: string
@@ -127,7 +65,6 @@ export interface SmartHeaderProps {
 	onBackPress?: () => void
 	headerActions?: (HeaderActionType | React.ReactNode)[]
 	SmartKebabMenuItems?: SmartKebabMenuItem[]
-	isLoading?: boolean
 	fallbackRoute?: Href
 	centerLeftOffset?: number
 	centerRightOffset?: number
@@ -136,7 +73,6 @@ export interface SmartHeaderProps {
 	headerBottomHeight?: number
 
 	// Backward compatibility props
-	loading?: boolean
 	headerLeft?: React.ReactNode
 	headerRight?: React.ReactNode
 
@@ -172,12 +108,6 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	const insets = useSafeAreaInsets()
 	const pathname = usePathname()
 
-	// Subscribe to backend connection state so SmartHeader re-renders when
-	// it changes. Context changes bypass React.memo, which guarantees that
-	// child components (like HeaderRefreshButton) get reconciled on all
-	// platforms — including Chromium-based browsers and Android.
-	useBackendConnection()
-
 	const resolvedBottom = headerBottom ?? options?.headerBottom
 	const resolvedBottomHeight = headerBottomHeight ?? options?.headerBottomHeight ?? 0
 	const headerHeight = 56 + insets.top + resolvedBottomHeight
@@ -199,149 +129,74 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		visibleAnim.setValue(isHeaderVisible ? 1 : 0)
 	}, [isHeaderVisible, visibleAnim])
 
-	const resolvedSubtitle = subtitle ?? options?.subtitle
+	const resolvedSubtitle = useMemo(() => subtitle ?? options?.subtitle, [subtitle, options?.subtitle])
 
 	// Resolve title
-	let resolvedTitle = title
-	if (resolvedTitle === undefined) {
+	const resolvedTitle = useMemo(() => {
+		if (title !== undefined) return title
 		if (typeof options?.headerTitle === 'function') {
-			resolvedTitle = options.headerTitle()
-		} else if (options?.headerTitle !== undefined) {
-			resolvedTitle = options.headerTitle
-		} else if (options?.title !== undefined) {
-			resolvedTitle = options.title
-		} else if (route?.name !== undefined) {
-			resolvedTitle = route.name
+			return options.headerTitle()
 		}
-	}
+		if (options?.headerTitle !== undefined) {
+			return options.headerTitle
+		}
+		if (options?.title !== undefined) {
+			return options.title
+		}
+		if (route?.name !== undefined && !/[\[\]]/.test(route.name)) {
+			return route.name
+		}
+		return undefined
+	}, [title, options?.headerTitle, options?.title, route?.name])
 
 	// Resolve headerLeft (for backward compatibility)
-	let resolvedHeaderLeft = headerLeft
-	if (resolvedHeaderLeft === undefined) {
+	const resolvedHeaderLeft = useMemo(() => {
+		if (headerLeft !== undefined) return headerLeft
 		if (typeof options?.headerLeft === 'function') {
-			resolvedHeaderLeft = options.headerLeft()
-		} else if (options?.headerLeft !== undefined) {
-			resolvedHeaderLeft = options.headerLeft
+			return options.headerLeft()
 		}
-	}
+		return options?.headerLeft
+	}, [headerLeft, options?.headerLeft])
+
+	const rootPaths = useMemo(
+		() => ['/', '/feed', '/dashboard', '/notifications', '/profile', '/settings', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile', '/(home)/settings'],
+		[]
+	)
 
 	// Determine if we should show the back button
-	const rootPaths = ['/', '/feed', '/dashboard', '/notifications', '/profile', '/settings', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile', '/(home)/settings']
-	const isRootPath = rootPaths.includes(pathname)
-	const resolvedShowBackButton = showBackButton ?? options?.showBackButton ?? !isRootPath
+	const resolvedShowBackButton = useMemo(() => {
+		const isRootPath = rootPaths.includes(pathname)
+		return showBackButton ?? options?.showBackButton ?? !isRootPath
+	}, [showBackButton, options?.showBackButton, pathname, rootPaths])
 
 	// Register kebab menu items dynamically
-	const screenKebabItems = SmartKebabMenuItems ?? options?.SmartKebabMenuItems ?? []
+	const screenKebabItems = useMemo(() => SmartKebabMenuItems ?? options?.SmartKebabMenuItems ?? [], [SmartKebabMenuItems, options?.SmartKebabMenuItems])
 	useSmartKebabMenu(screenKebabItems)
 
 	// Resolve headerRight (for backward compatibility)
-	let resolvedHeaderRight = headerRight
-	if (resolvedHeaderRight === undefined) {
+	const resolvedHeaderRight = useMemo(() => {
+		if (headerRight !== undefined) return headerRight
 		if (typeof options?.headerRight === 'function') {
-			resolvedHeaderRight = options.headerRight()
-		} else if (options?.headerRight !== undefined) {
-			resolvedHeaderRight = options.headerRight
+			return options.headerRight()
 		}
-	}
+		return options?.headerRight
+	}, [headerRight, options?.headerRight])
 
 	// Resolve headerActions
-	const rawActions: (HeaderActionType | React.ReactNode)[] = headerActions ?? options?.headerActions ?? []
-
-	// Ensure the 'refresh' action is automatically shown on every screen
-	const hasRefresh = rawActions.some((action) => {
-		if (action === 'refresh') return true
-		if (action && typeof action === 'object' && 'key' in action && (action as any).key === 'refresh') return true
-		return false
-	})
-
-	const resolvedActions = [...rawActions]
-	if (!hasRefresh) {
-		resolvedActions.push('refresh')
-	}
-
-	const resolveHeaderAction = (action: HeaderActionType | React.ReactNode, index: number) => {
-		if (React.isValidElement(action)) {
-			return React.cloneElement(action as React.ReactElement, { key: `custom-action-${index}` })
+	const resolvedActions = useMemo(() => {
+		const rawActions: (HeaderActionType | React.ReactNode)[] = headerActions ?? options?.headerActions ?? []
+		const hasRefresh = rawActions.some((action) => {
+			if (action === 'refresh') return true
+			if (action && typeof action === 'object' && 'key' in action && (action as any).key === 'refresh') return true
+			return false
+		})
+		if (!hasRefresh) {
+			return [...rawActions, 'refresh']
 		}
+		return rawActions
+	}, [headerActions, options?.headerActions])
 
-		if (typeof action === 'string') {
-			switch (action) {
-				case 'search':
-					return <HeaderSearchButton key="predefined-search" />
-				case 'notifications':
-					return <HeaderNotificationsButton key="predefined-notifications" />
-				case 'cart':
-					return <HeaderCartButton key="predefined-cart" />
-				case 'refresh':
-					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} isOffline={options?.isOffline} />
-				case 'scanner':
-					if (Platform.OS === 'web') return null
-					return (
-						<HeaderActionButton
-							key="predefined-scanner"
-							iconName="qr-code-scanner"
-							iconType="material"
-							onPress={() => {
-								if (typeof options?.onScannerPress === 'function') {
-									options.onScannerPress()
-								}
-							}}
-							accessibilityLabel="Scan QR Code"
-						/>
-					)
-				default:
-					return null
-			}
-		}
-
-		if (action && typeof action === 'object' && 'key' in action) {
-			const config = action as any
-			if (config.key === 'refresh') {
-				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} isOffline={config.isOffline} />
-			}
-			return (
-				<HeaderActionButton
-					key={config.key}
-					iconName={config.iconName}
-					iconType={config.iconType || 'ionicons'}
-					badgeCount={config.badgeCount}
-					onPress={config.onPress}
-					accessibilityLabel={config.accessibilityLabel}
-					size={config.size}
-				/>
-			)
-		}
-
-		return null
-	}
-
-	const renderTitleSection = () => {
-		if (React.isValidElement(resolvedTitle)) {
-			return resolvedTitle
-		}
-
-		const titleLineHeight = Platform.OS === 'ios' ? 22 : 24
-
-		return (
-			<View style={styles.titleContainer}>
-				{/* Title Wrapper */}
-				<View style={{ height: titleLineHeight, justifyContent: 'center' }}>
-					<Text style={[styles.titleText, { color: colors.text }]} numberOfLines={1} ellipsizeMode="tail">
-						{resolvedTitle}
-					</Text>
-				</View>
-
-				{/* Subtitle Wrapper */}
-				{resolvedSubtitle ? (
-					<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
-						<Text style={[styles.subtitleText, { color: colors.textSecondary }]} numberOfLines={1} ellipsizeMode="tail">
-							{resolvedSubtitle}
-						</Text>
-					</View>
-				) : null}
-			</View>
-		)
-	}
+	const titleSection = <HeaderTitle title={resolvedTitle} subtitle={resolvedSubtitle} />
 
 	const animatedOpacity = visibleAnim.interpolate({
 		inputRange: [0, 0.8, 1],
@@ -361,9 +216,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					height: headerHeight,
 					opacity: animatedOpacity,
 					transform: [{ translateY: animatedTranslateY }],
-					borderBottomWidth: StyleSheet.hairlineWidth,
 					backgroundColor: colors.background,
-					borderBottomColor: colors.border,
 					overflow: isHeaderVisible ? 'visible' : 'hidden'
 				}
 			]}
@@ -384,15 +237,11 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 						{resolvedHeaderLeft
 							? resolvedHeaderLeft
 							: resolvedShowBackButton && <HeaderBackButton onPress={onBackPress ?? options?.onBackPress} fallbackRoute={fallbackRoute ?? options?.fallbackRoute ?? '/feed'} />}
-						<View style={[styles.titleContainerWrapper, (resolvedHeaderLeft || resolvedShowBackButton) && { marginLeft: 12 }]}>{renderTitleSection()}</View>
+						<View style={[styles.titleContainerWrapper, (resolvedHeaderLeft || resolvedShowBackButton) && { marginLeft: 12 }]}>{titleSection}</View>
 					</View>
 
 					{/* Right Section: Actions + Kebab menu (stable container width to guarantee zero layout shifts) */}
-					<View style={styles.rightSection}>
-						{resolvedHeaderRight}
-						{resolvedActions.map((action, idx) => resolveHeaderAction(action, idx))}
-						<SmartKebabMenu />
-					</View>
+					<HeaderActions resolvedHeaderRight={resolvedHeaderRight} resolvedActions={resolvedActions} options={options} />
 				</View>
 
 				{/* Custom Bottom Content (e.g. status filter bar in sales screen) */}
@@ -520,7 +369,6 @@ const styles = StyleSheet.create({
 		left: 0,
 		right: 0,
 		width: '100%',
-		borderBottomWidth: StyleSheet.hairlineWidth,
 		zIndex: 100
 	},
 	headerInner: {
@@ -538,33 +386,7 @@ const styles = StyleSheet.create({
 		marginRight: 16,
 		minHeight: 38
 	},
-	rightSection: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'flex-end',
-		width: 180, // stable container width to guarantee zero layout shifts
-		flexShrink: 0,
-		flexGrow: 0,
-		zIndex: 2,
-		minHeight: 38,
-		gap: 8
-	},
 	titleContainerWrapper: {
 		flex: 1
-	},
-	titleContainer: {
-		flexDirection: 'column',
-		justifyContent: 'center',
-		alignItems: 'flex-start'
-	},
-	titleText: {
-		fontSize: Platform.OS === 'ios' ? 17 : 18,
-		fontWeight: Platform.OS === 'ios' ? '600' : '700',
-		lineHeight: Platform.OS === 'ios' ? 22 : 24
-	},
-	subtitleText: {
-		fontSize: 12,
-		marginTop: 2,
-		lineHeight: 16
 	}
 })
