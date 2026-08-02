@@ -21,20 +21,7 @@ import { config } from '@/config'
 import { log } from '@/core/log'
 
 import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, signInWithToken, switchUser, SavedAuth } from './auth.api'
-
-// ─── Language config ──────────────────────────────────────────────────────────
-interface LanguageConfig {
-	code: 'tn_arab' | 'tn_latn' | 'en'
-	flag: string
-	badge?: string
-	label: string
-}
-
-const LANGUAGES_LIST: LanguageConfig[] = [
-	{ code: 'tn_arab', flag: '🇹🇳', badge: 'ع', label: 'Tunisian Arabic' },
-	{ code: 'tn_latn', flag: '🇹🇳', badge: 'A', label: 'Tunisian Latin' },
-	{ code: 'en', flag: '🇺🇸', label: 'English' }
-]
+import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
 
 // ─── Static stylesheet — defined ONCE at module level, never recreated ────────
 const S = StyleSheet.create({
@@ -112,9 +99,6 @@ const S = StyleSheet.create({
 		backgroundColor: 'transparent'
 	},
 	langChipActive: { borderColor: themeColors.primary, backgroundColor: themeColors.primaryContainer },
-	langFlag: { fontSize: 18, lineHeight: 22 },
-	langBadgeText: { fontSize: 10, fontWeight: '700', color: themeColors.textTertiary },
-	langBadgeTextActive: { color: themeColors.primary },
 
 	accountsSection: { marginBottom: 20 },
 	sectionLabel: {
@@ -335,7 +319,7 @@ const AuthForm = React.memo(
 				{/* Language selector */}
 				<View style={S.langSection}>
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.langRow} keyboardShouldPersistTaps="handled">
-						{LANGUAGES_LIST.map((lang) => {
+						{LANGUAGES.map((lang) => {
 							const selected = appLang === lang.code
 							return (
 								<TouchableOpacity
@@ -346,8 +330,7 @@ const AuthForm = React.memo(
 									accessibilityLabel={lang.label}
 									accessibilityRole="button"
 								>
-									<Text style={S.langFlag}>{lang.flag}</Text>
-									{lang.badge && <Text style={[S.langBadgeText, selected && S.langBadgeTextActive]}>{lang.badge}</Text>}
+									<LanguageIcon code={lang.code} size={18} />
 								</TouchableOpacity>
 							)
 						})}

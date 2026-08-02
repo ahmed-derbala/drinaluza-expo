@@ -7,6 +7,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
+import { setCacheItem } from '@/core/cache'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
@@ -137,6 +138,10 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 
 	const handleProductPress = () => {
 		if (item.slug) {
+			// Seed the product detail cache with what we already have from the feed so
+			// the detail screen can render instantly instead of waiting on a fresh fetch.
+			setCacheItem(`product:${item.slug}`, { status: 200, data: item })
+
 			if (pathname.startsWith('/products') || pathname.includes('/feed') || pathname === '/') {
 				router.push(`/products/${item.slug}` as any)
 			} else if (item.business?.slug) {

@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import MultilingualNameInput from '@/features/common/MultilingualNameInput'
+import MultiLingualInput from '@/features/common/languages/MultiLingualInput'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { EditableSection } from '@/features/common/sections/EditableSection'
 
 export interface ProductNamesSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -50,27 +50,12 @@ export default function ProductNamesSection({
 }: ProductNamesSectionProps) {
 	const styles = createStyles(colors)
 
-	if (variant === 'create') {
+	if (variant === 'create' || variant === 'edit') {
+		const isEditing = variant === 'edit'
 		return (
-			<View style={styles.card}>
-				<Text style={styles.cardTitle}>{translate('names', 'Names')}</Text>
-				<MultilingualNameInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
-			</View>
-		)
-	}
-
-	if (variant === 'edit') {
-		return (
-			<View style={styles.editSection}>
-				<View style={styles.editHeader}>
-					<Text style={styles.cardTitle}>{translate('names', 'Names')}</Text>
-					<View style={styles.actionButtons}>
-						{onCancelPress && <CancelButton onPress={onCancelPress} style={styles.actionBtn} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={styles.actionBtn} />}
-					</View>
-				</View>
-				<MultilingualNameInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
-			</View>
+			<EditableSection title={translate('names', 'Names')} isEditing={isEditing} onSave={isEditing ? onSavePress : undefined} onCancel={isEditing ? onCancelPress : undefined}>
+				<MultiLingualInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
+			</EditableSection>
 		)
 	}
 
@@ -96,36 +81,6 @@ export default function ProductNamesSection({
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
-		card: {
-			backgroundColor: colors.background,
-			borderRadius: 16,
-			padding: 16,
-			marginBottom: 16,
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		cardTitle: {
-			fontSize: 16,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 16
-		},
-		editSection: {
-			borderBottomWidth: 1,
-			borderBottomColor: colors.border,
-			paddingBottom: 16,
-			marginBottom: 16
-		},
-		editHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 12
-		},
-		actionButtons: {
-			flexDirection: 'row',
-			gap: 12
-		},
 		actionBtn: {
 			padding: 4
 		},

@@ -2,7 +2,7 @@ import { colors as themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { EditableSection } from '@/features/common/sections/EditableSection'
 
 export interface ProductPricingSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -75,10 +75,10 @@ export default function ProductPricingSection({
 }: ProductPricingSectionProps) {
 	const styles = createStyles(colors)
 
-	if (variant === 'create') {
+	if (variant === 'create' || variant === 'edit') {
+		const isEditing = variant === 'edit'
 		return (
-			<View style={styles.card}>
-				<Text style={styles.cardTitle}>{translate('pricing_units', 'Pricing & Units')}</Text>
+			<EditableSection title={translate('pricing_units', 'Pricing & Units')} isEditing={isEditing} onSave={isEditing ? onSavePress : undefined} onCancel={isEditing ? onCancelPress : undefined}>
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('price_tnd', 'Price (TND)')} *</Text>
@@ -148,90 +148,7 @@ export default function ProductPricingSection({
 						</View>
 					</View>
 				</View>
-			</View>
-		)
-	}
-
-	if (variant === 'edit') {
-		return (
-			<View style={styles.editSection}>
-				<View style={styles.editHeader}>
-					<Text style={styles.cardTitle}>{translate('pricing_units', 'Pricing & Units')}</Text>
-					<View style={styles.actionButtons}>
-						{onCancelPress && <CancelButton onPress={onCancelPress} style={styles.actionBtn} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={styles.actionBtn} />}
-					</View>
-				</View>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('price_tnd', 'Price (TND)')} *</Text>
-						<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.border }]}>
-							<Text style={styles.prefix}>TND</Text>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={priceTND} onChangeText={setPriceTND} placeholder="0.00" keyboardType="decimal-pad" />
-						</View>
-					</View>
-				</View>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('unit_measure', 'Unit Measure')}</Text>
-						<View style={styles.segmentContainer}>
-							{['kg', 'piece', 'crate'].map((val) => {
-								const isSelected = unit === val
-								return (
-									<TouchableOpacity key={val} style={[styles.segmentButton, isSelected && { backgroundColor: colors.primary }]} onPress={() => setUnit(val)}>
-										<Text style={[styles.segmentText, { color: isSelected ? themeColors.buttonText : colors.textSecondary }]}>{translate(val, val)}</Text>
-									</TouchableOpacity>
-								)
-							})}
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('unit_step', 'Unit Step')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={unitStep} onChangeText={setUnitStep} placeholder="1" keyboardType="numeric" />
-						</View>
-					</View>
-				</View>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('min_unit', 'Min Limit')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={minUnit} onChangeText={setMinUnit} placeholder="1" keyboardType="numeric" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('max_unit', 'Max Limit')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={maxUnit} onChangeText={setMaxUnit} placeholder="10" keyboardType="numeric" />
-						</View>
-					</View>
-				</View>
-				<Text style={styles.subSectionTitle}>{translate('single_piece_weight_kg', 'Single piece weight (kg)')}</Text>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('min', 'Min')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMinWeightKg} onChangeText={setSinglePieceMinWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('avg', 'Avg')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceAvgWeightKg} onChangeText={setSinglePieceAvgWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('max', 'Max')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMaxWeightKg} onChangeText={setSinglePieceMaxWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
-						</View>
-					</View>
-				</View>
-			</View>
+			</EditableSection>
 		)
 	}
 
@@ -261,39 +178,6 @@ export default function ProductPricingSection({
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
-		card: {
-			backgroundColor: colors.background,
-			borderRadius: 16,
-			padding: 16,
-			marginBottom: 16,
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		cardTitle: {
-			fontSize: 16,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 16
-		},
-		editSection: {
-			borderBottomWidth: 1,
-			borderBottomColor: colors.border,
-			paddingBottom: 16,
-			marginBottom: 16
-		},
-		editHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 12
-		},
-		actionButtons: {
-			flexDirection: 'row',
-			gap: 12
-		},
-		actionBtn: {
-			padding: 4
-		},
 		row: {
 			flexDirection: 'row',
 			marginBottom: 16

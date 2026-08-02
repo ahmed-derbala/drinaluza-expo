@@ -9,7 +9,7 @@ import { EyeButton } from '@/features/common/buttons/EyeButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { updateMyProfile } from '@/features/auth/auth.api'
 import { useMyProfile } from '@/features/profile/useMyProfile'
-import { ProfileSection } from '@/features/common/ProfileSection'
+import { EditableSection } from '@/features/common/sections/EditableSection'
 import AddressForm from '@/features/common/AddressForm'
 import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
@@ -181,7 +181,7 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 				</View>
 			)}
 
-			<ProfileSection title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
+			<EditableSection title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
 				<AddressForm
 					street={form.address.street || ''}
 					setStreet={(value) => updateAddress({ ...form.address, street: value })}
@@ -194,15 +194,15 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 					country={form.address.country || ''}
 					setCountry={(value) => updateAddress({ ...form.address, country: value })}
 				/>
-			</ProfileSection>
+			</EditableSection>
 
-			<ProfileSection title={translate('contact_info', 'Contact Information')} iconName="call-outline" style={styles.section}>
+			<EditableSection title={translate('contact_info', 'Contact Information')} iconName="call-outline" style={styles.section}>
 				<ContactForm phone={form.contact.phone} backupPhones={form.contact.backupPhones} email={form.contact.email} whatsapp={form.contact.whatsapp} onChange={updateContact} />
-			</ProfileSection>
+			</EditableSection>
 
-			<ProfileSection title={translate('location', 'Location')} iconName="navigate-outline" style={styles.section}>
+			<EditableSection title={translate('location', 'Location')} iconName="navigate-outline" style={styles.section}>
 				<LocationForm location={form.location} onChange={updateLocation} />
-			</ProfileSection>
+			</EditableSection>
 		</CenteredModal>
 	)
 }

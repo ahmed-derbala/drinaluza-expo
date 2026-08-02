@@ -33,13 +33,14 @@ import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
-import { ProfileSection, InfoItem } from '@/features/common/ProfileSection'
+import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
+import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
 import SmartImage from '@/core/SmartImageViewer'
 import { HeaderRefreshButton, HeaderActionButton, SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
-import MultilingualNameInput from '@/features/common/MultilingualNameInput'
+import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
 import LoadingState from '@/features/common/LoadingState'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
@@ -55,7 +56,7 @@ import { UserData } from '@/features/profile/profile.interface'
 import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
 import { useMyProfile } from '@/features/profile/useMyProfile'
-import { LANGUAGES, SOCIAL_PLATFORMS } from '@/core/constants/settings'
+import { SOCIAL_PLATFORMS } from '@/core/constants/settings'
 
 export default function ProfileScreen() {
 	const router = useRouter()
@@ -68,18 +69,8 @@ export default function ProfileScreen() {
 	const styles = createStyles(colors, isWideScreen, width)
 
 	const renderLangFlag = (code: string | undefined, fallback: string = translate('not_set', 'Not set')) => {
-		const lang = LANGUAGES.find((l) => l.code === code)
-		if (!lang) return <Text style={{ color: colors.text }}>{fallback}</Text>
-		return (
-			<View style={styles.flagContainer}>
-				<Text style={styles.flagText}>{lang.flag}</Text>
-				{lang.icon && (
-					<View style={[styles.langIconBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
-						<Text style={[styles.langIconText, { color: colors.text }]}>{lang.icon}</Text>
-					</View>
-				)}
-			</View>
-		)
+		if (!LANGUAGES.find((l) => l.code === code)) return <Text style={{ color: colors.text }}>{fallback}</Text>
+		return <LanguageIcon code={code} />
 	}
 
 	const { onScroll } = useScrollHandler()
@@ -650,84 +641,16 @@ export default function ProfileScreen() {
 						</View>
 					</View>
 
-					<ProfileSection
-						title={'✏️ ' + translate('name', 'Name')}
+					<MultiLingualSection
+						name={userData.name}
 						isEditing={editMode.name}
 						onEdit={() => toggleEdit('name', true)}
 						onSave={() => saveUserData('name')}
 						onCancel={() => toggleEdit('name', false)}
-					>
-						{editMode.name ? (
-							<>
-								<MultilingualNameInput
-									nameEn={userData.name?.en || ''}
-									setNameEn={(value) => updateField('en', value, 'name')}
-									nameTnLatn={userData.name?.tn_latn || ''}
-									setNameTnLatn={(value) => updateField('tn_latn', value, 'name')}
-									nameTnArab={userData.name?.tn_arab || ''}
-									setNameTnArab={(value) => updateField('tn_arab', value, 'name')}
-									labelPrefix="Name"
-								/>
-							</>
-						) : (
-							<>
-								{userData?.name?.en && (
-									<InfoItem
-										label="Name (English)"
-										value={
-											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-												<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'en')?.flag}</Text>
-												<Text style={styles.infoValue}>{userData.name.en}</Text>
-											</View>
-										}
-										icon="person"
-										iconColor={colors.primary}
-									/>
-								)}
-								{userData?.name?.tn_arab && (
-									<InfoItem
-										label="Name (Tunisian Arabic)"
-										value={
-											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-												<View style={styles.flagContainer}>
-													<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_arab')?.flag}</Text>
-													<View style={[styles.langIconBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
-														<Text style={[styles.langIconText, { color: colors.text }]}>ع</Text>
-													</View>
-												</View>
-												<Text style={[styles.infoValue, { textAlign: 'right', flex: 1 }]}>{userData.name.tn_arab}</Text>
-											</View>
-										}
-										icon="person"
-										iconColor={colors.primary}
-									/>
-								)}
-								{userData?.name?.tn_latn && (
-									<InfoItem
-										label="Name (Tunisian Latin)"
-										value={
-											<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-												<View style={styles.flagContainer}>
-													<Text style={styles.flagText}>{LANGUAGES.find((l) => l.code === 'tn_latn')?.flag}</Text>
-													<View style={[styles.langIconBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
-														<Text style={[styles.langIconText, { color: colors.text }]}>A</Text>
-													</View>
-												</View>
-												<Text style={styles.infoValue}>{userData.name.tn_latn}</Text>
-											</View>
-										}
-										icon="person"
-										iconColor={colors.primary}
-									/>
-								)}
-								{!userData?.name?.en && !userData?.name?.tn_arab && !userData?.name?.tn_latn && (
-									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No name information set.</Text>
-								)}
-							</>
-						)}
-					</ProfileSection>
+						onChange={(lang, value) => updateField(lang, value, 'name')}
+					/>
 
-					<ProfileSection
+					<EditableSection
 						title="👤 Basic Information"
 						isEditing={editMode.basic}
 						onEdit={() => toggleEdit('basic', true)}
@@ -776,9 +699,9 @@ export default function ProfileScreen() {
 							</>
 						) : (
 							<>
-								<InfoItem label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" iconColor={colors.primary} />
+								<SectionRow label="Birth Date" value={formatDate(userData?.basicInfos?.birthDate)} icon="calendar" iconColor={colors.primary} />
 								{userData?.basicInfos?.biography && (
-									<View style={styles.infoItem}>
+									<View style={styles.sectionRow}>
 										<View style={styles.infoIconContainer}>
 											<Ionicons name="document-text" size={20} color={colors.primary} />
 										</View>
@@ -790,9 +713,9 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</ProfileSection>
+					</EditableSection>
 
-					<ProfileSection
+					<EditableSection
 						title="📍 Address"
 						isEditing={editMode.address}
 						onEdit={() => toggleEdit('address', true)}
@@ -814,24 +737,24 @@ export default function ProfileScreen() {
 							/>
 						) : (
 							<>
-								{userData?.address?.street && <InfoItem label="Street" value={userData.address.street} icon="home" iconColor={colors.primary} />}
+								{userData?.address?.street && <SectionRow label="Street" value={userData.address.street} icon="home" iconColor={colors.primary} />}
 								{(userData?.address?.city || userData?.address?.region || userData?.address?.postalCode) && (
-									<InfoItem
+									<SectionRow
 										label="City/Region/Postal Code"
 										value={[userData?.address?.city, userData?.address?.region, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
 										icon="business"
 										iconColor={colors.primary}
 									/>
 								)}
-								{userData?.address?.country && <InfoItem label="Country" value={userData.address.country} icon="earth" iconColor={colors.primary} />}
+								{userData?.address?.country && <SectionRow label="Country" value={userData.address.country} icon="earth" iconColor={colors.primary} />}
 								{!userData?.address?.street && !userData?.address?.city && !userData?.address?.region && !userData?.address?.country && (
 									<Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No address information set.</Text>
 								)}
 							</>
 						)}
-					</ProfileSection>
+					</EditableSection>
 
-					<ProfileSection
+					<EditableSection
 						title="📍 Location"
 						isEditing={editMode.location}
 						onEdit={() => toggleEdit('location', true)}
@@ -844,7 +767,7 @@ export default function ProfileScreen() {
 							<>
 								{getGeoCoordinates(userData.location) && (
 									<>
-										<InfoItem
+										<SectionRow
 											label="GPS Coordinates"
 											value={(() => {
 												const coords = getGeoCoordinates(userData.location)
@@ -873,7 +796,7 @@ export default function ProfileScreen() {
 									</>
 								)}
 								{userData.location?.sharingEnabled !== undefined && (
-									<InfoItem
+									<SectionRow
 										label="Location Sharing"
 										value={userData.location.sharingEnabled ? 'Enabled' : 'Disabled'}
 										icon={userData.location.sharingEnabled ? 'share-social' : 'share-social-outline'}
@@ -883,9 +806,9 @@ export default function ProfileScreen() {
 								{!getGeoCoordinates(userData.location) && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
 							</>
 						)}
-					</ProfileSection>
+					</EditableSection>
 
-					<ProfileSection
+					<EditableSection
 						title="🌐 Social Media"
 						isEditing={editMode.social}
 						onEdit={() => toggleEdit('social', true)}
@@ -937,7 +860,7 @@ export default function ProfileScreen() {
 									const url = constructUrl(platform.id, username)
 
 									return (
-										<InfoItem
+										<SectionRow
 											key={platform.id}
 											label={platform.label}
 											value={username}
@@ -962,9 +885,9 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</ProfileSection>
+					</EditableSection>
 
-					<ProfileSection
+					<EditableSection
 						title="📞 Contact Information"
 						isEditing={editMode.phone}
 						onEdit={() => toggleEdit('phone', true)}
@@ -983,7 +906,7 @@ export default function ProfileScreen() {
 						) : (
 							<>
 								{getPhone(userData)?.fullNumber && (
-									<InfoItem
+									<SectionRow
 										label="Primary Phone"
 										value={getPhone(userData)?.fullNumber || 'Not set'}
 										icon="call"
@@ -996,7 +919,7 @@ export default function ProfileScreen() {
 									/>
 								)}
 								{getBackupPhones(userData).map((backupPhone: any, index: number) => (
-									<InfoItem
+									<SectionRow
 										key={index}
 										label={`Backup Phone ${index + 1}`}
 										value={backupPhone?.fullNumber || 'Not set'}
@@ -1010,7 +933,7 @@ export default function ProfileScreen() {
 									/>
 								))}
 								{getEmail(userData) && (
-									<InfoItem
+									<SectionRow
 										label="Email"
 										value={getEmail(userData) || 'Not set'}
 										icon="mail"
@@ -1023,7 +946,7 @@ export default function ProfileScreen() {
 									/>
 								)}
 								{userData.contact?.whatsapp && (
-									<InfoItem
+									<SectionRow
 										label="WhatsApp"
 										value={userData.contact.whatsapp}
 										icon="logo-whatsapp"
@@ -1040,9 +963,9 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</ProfileSection>
+					</EditableSection>
 
-					<ProfileSection
+					<EditableSection
 						title={'⚙️ ' + translate('settings', 'Account Settings')}
 						isEditing={editMode.settings}
 						onEdit={() => toggleEdit('settings', true)}
@@ -1124,9 +1047,9 @@ export default function ProfileScreen() {
 							</>
 						) : (
 							<>
-								<InfoItem label={translate('app_lang', 'App Language')} value={renderLangFlag(userData.settings?.lang?.app)} icon="globe" iconColor={colors.primary} />
-								<InfoItem label={translate('content_lang', 'Content Language')} value={renderLangFlag(userData.settings?.lang?.content)} icon="language" iconColor={colors.primary} />
-								<InfoItem
+								<SectionRow label={translate('app_lang', 'App Language')} value={renderLangFlag(userData.settings?.lang?.app)} icon="globe" iconColor={colors.primary} />
+								<SectionRow label={translate('content_lang', 'Content Language')} value={renderLangFlag(userData.settings?.lang?.content)} icon="language" iconColor={colors.primary} />
+								<SectionRow
 									label={translate('purchase_confirmation', 'Purchase Confirmation')}
 									value={userData.settings?.purchases?.confirmation?.isEnabled !== false ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}
 									icon="cart-outline"
@@ -1134,11 +1057,11 @@ export default function ProfileScreen() {
 								/>
 							</>
 						)}
-					</ProfileSection>
+					</EditableSection>
 
 					{/* Customer Dashboard Data */}
 					{personalDashboard && (
-						<ProfileSection title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')}>
+						<EditableSection title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')}>
 							<View style={{ gap: 16 }}>
 								<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
 									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
@@ -1182,7 +1105,7 @@ export default function ProfileScreen() {
 									)}
 								</View>
 							</View>
-						</ProfileSection>
+						</EditableSection>
 					)}
 
 					{/* Reviews Section */}
@@ -1548,7 +1471,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			color: colors.text,
 			marginBottom: 16
 		},
-		infoItem: {
+		sectionRow: {
 			flexDirection: 'row',
 			alignItems: 'center',
 			marginBottom: 16
@@ -1740,35 +1663,12 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			width: 64,
 			height: 64
 		},
-		flagContainer: {
-			position: 'relative',
-			width: 32,
-			height: 32,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		flagText: {
-			fontSize: 24
-		},
-		langIconBadge: {
-			position: 'absolute',
-			bottom: -4,
-			right: -4,
-			width: 16,
-			height: 16,
-			borderRadius: 8,
-			justifyContent: 'center',
-			alignItems: 'center',
-			borderWidth: 1,
-			...createShadow({ offsetY: 1, opacity: 0.1, radius: 1, elevation: 1 })
-		},
-		langIconText: {
-			fontSize: 10,
-			fontWeight: '700'
-		},
 		langLabel: {
 			fontSize: 14,
 			fontWeight: '500'
+		},
+		flagText: {
+			fontSize: 24
 		},
 		socialInputContainer: {
 			flexDirection: 'row',

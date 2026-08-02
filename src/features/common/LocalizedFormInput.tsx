@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, Platform } from 'react-native'
 import { useTheme, colors as themeColors } from '@/core/theme'
+import { LanguageIcon } from '@/features/common/languages'
 
 export interface LocalizedFormInputProps {
 	/**
 	 * Form field label text.
 	 */
-	label: string
+	label?: string
 	/**
 	 * TextInput value.
 	 */
@@ -41,27 +42,15 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 	const { colors } = useTheme()
 	const [isFocused, setIsFocused] = useState(false)
 
-	// Get flag details
-	const getFlagDetails = () => {
-		switch (lang) {
-			case 'tn_arab':
-				return { flag: '🇹🇳', badge: 'ع' }
-			case 'tn_latn':
-				return { flag: '🇹🇳', badge: 'A' }
-			case 'en':
-			default:
-				return { flag: '🇺🇸', badge: '' }
-		}
-	}
-
-	const { flag, badge } = getFlagDetails()
 	const isRtl = lang === 'tn_arab'
 
 	return (
 		<View style={[styles.fieldContainer, style]}>
-			<Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
-				{label} {required && <Text style={styles.required}>*</Text>}
-			</Text>
+			{label && (
+				<Text style={[styles.fieldLabel, { color: colors.textSecondary }]}>
+					{label} {required && <Text style={styles.required}>*</Text>}
+				</Text>
+			)}
 
 			<View
 				style={[
@@ -75,12 +64,7 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 			>
 				{/* Flag Prefix Badge */}
 				<View style={[styles.badgeContainer, { backgroundColor: colors.text + '05', borderRightColor: colors.border + '20' }]}>
-					<Text style={styles.flagText}>{flag}</Text>
-					{badge ? (
-						<View style={[styles.langBadge, { backgroundColor: colors.background, borderColor: colors.border }]}>
-							<Text style={[styles.langBadgeText, { color: colors.text }]}>{badge}</Text>
-						</View>
-					) : null}
+					<LanguageIcon code={lang} size={18} />
 				</View>
 
 				{/* Input */}
@@ -138,24 +122,6 @@ const styles = StyleSheet.create({
 		borderRightWidth: 1,
 		flexDirection: 'row',
 		gap: 2
-	},
-	flagText: {
-		fontSize: 18
-	},
-	langBadge: {
-		position: 'absolute',
-		bottom: 6,
-		right: 6,
-		borderRadius: 4,
-		borderWidth: 1,
-		width: 14,
-		height: 14,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	langBadgeText: {
-		fontSize: 8,
-		fontWeight: 'bold'
 	},
 	textInput: {
 		flex: 1,

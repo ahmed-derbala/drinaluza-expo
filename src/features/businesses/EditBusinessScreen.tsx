@@ -4,7 +4,6 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import { translate } from '@/core/translation'
 import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
 import { toast } from '@/features/common/Toast'
@@ -14,63 +13,12 @@ import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import SmartImage from '@/core/SmartImageViewer'
 import StateBadge from '@/features/common/StateBadge'
-import MultilingualNameInput from '@/features/common/MultilingualNameInput'
+import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
 import { SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
 import { uploadFile } from '@/core/file'
-
-const SectionCard = ({
-	title,
-	children,
-	colors,
-	styles,
-	isEditing,
-	onEdit,
-	onSave,
-	onCancel,
-	headerRight
-}: {
-	title: string
-	children: React.ReactNode
-	colors: any
-	styles: any
-	isEditing?: boolean
-	onEdit?: () => void
-	onSave?: () => void
-	onCancel?: () => void
-	headerRight?: React.ReactNode
-}) => (
-	<View style={styles.card}>
-		<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-			<Text style={[styles.cardHeader, { marginBottom: 0 }]}>{title}</Text>
-			<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-				{headerRight}
-				{onEdit && !isEditing && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={() => onEdit?.()} variant="primary" colors={colors} />}
-				{isEditing && (
-					<View style={{ flexDirection: 'row', gap: 12 }}>
-						<CancelButton onPress={() => onCancel?.()} />
-						<IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={() => onSave?.()} variant="success" colors={colors} />
-					</View>
-				)}
-			</View>
-		</View>
-		<View style={styles.cardContent}>{children}</View>
-	</View>
-)
-
-const InfoRow = ({ label, value, icon, colors, styles, isRtl }: any) => (
-	<View style={styles.infoRow}>
-		<View style={styles.infoRowIconContainer}>
-			<Ionicons name={icon} size={18} color={colors.textSecondary} />
-		</View>
-		<View style={styles.infoRowContent}>
-			<Text style={styles.infoRowLabel}>{label}</Text>
-			<Text style={[styles.infoRowValue, { color: colors.text }, isRtl && { textAlign: 'right' }]}>{value}</Text>
-		</View>
-	</View>
-)
 
 export default function EditBusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
@@ -439,31 +387,23 @@ export default function EditBusinessScreen() {
 
 					<View style={styles.tabContent}>
 						{/* Translations Card */}
-						<SectionCard
-							title={translate('business_names', 'Business Names')}
-							colors={colors}
-							styles={styles}
+						<MultiLingualSection
+							title={translate('name', 'Name')}
+							name={{ en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab }}
 							isEditing={editMode.names}
 							onEdit={() => setEditMode((prev) => ({ ...prev, names: true }))}
 							onSave={saveNames}
 							onCancel={() => cancelEdit('names')}
-						>
-							{editMode.names ? (
-								<MultilingualNameInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
-							) : (
-								<View style={{ gap: 12 }}>
-									<InfoRow label={translate('english_name', 'English Name')} value={nameEn} icon="text" colors={colors} styles={styles} />
-									<InfoRow label={translate('tunisian_latin_name', 'Tunisian Name (Latin)')} value={nameTnLatn || '—'} icon="text-outline" colors={colors} styles={styles} />
-									<InfoRow label={translate('tunisian_arabic_name', 'Tunisian Name (Arabic)')} value={nameTnArab || '—'} icon="language" colors={colors} styles={styles} isRtl />
-								</View>
-							)}
-						</SectionCard>
+							onChange={(lang, value) => {
+								if (lang === 'en') setNameEn(value)
+								else if (lang === 'tn_latn') setNameTnLatn(value)
+								else setNameTnArab(value)
+							}}
+						/>
 
 						{/* Description Card */}
-						<SectionCard
+						<EditableSection
 							title={translate('about_business', 'About Business')}
-							colors={colors}
-							styles={styles}
 							isEditing={editMode.about}
 							onEdit={() => setEditMode((prev) => ({ ...prev, about: true }))}
 							onSave={saveAbout}
@@ -489,13 +429,11 @@ export default function EditBusinessScreen() {
 							) : (
 								<Text style={[styles.descriptionText, { color: description ? colors.text : colors.textTertiary }]}>{description || translate('no_description', 'No description provided yet.')}</Text>
 							)}
-						</SectionCard>
+						</EditableSection>
 
 						{/* Contact Info Card */}
-						<SectionCard
+						<EditableSection
 							title={translate('contact', 'Contact Info')}
-							colors={colors}
-							styles={styles}
 							isEditing={editMode.contact}
 							onEdit={() => setEditMode((prev) => ({ ...prev, contact: true }))}
 							onSave={saveContact}
@@ -630,28 +568,19 @@ export default function EditBusinessScreen() {
 								</View>
 							) : (
 								<View style={{ gap: 12 }}>
-									<InfoRow label={translate('phone_number', 'Phone Number')} value={`+${phoneCountry} ${phoneLocal}`.trim()} icon="call" colors={colors} styles={styles} />
+									<SectionRow label={translate('phone_number', 'Phone Number')} value={`+${phoneCountry} ${phoneLocal}`.trim()} icon="call" />
 									{backupPhones.map((bp, index) => (
-										<InfoRow
-											key={`backup-${index}`}
-											label={`${translate('backup_phone', 'Backup Phone')} ${index + 1}`}
-											value={`+${bp.countryCode} ${bp.localNumber}`.trim()}
-											icon="call-outline"
-											colors={colors}
-											styles={styles}
-										/>
+										<SectionRow key={`backup-${index}`} label={`${translate('backup_phone', 'Backup Phone')} ${index + 1}`} value={`+${bp.countryCode} ${bp.localNumber}`.trim()} icon="call-outline" />
 									))}
-									<InfoRow label="WhatsApp" value={whatsapp || '—'} icon="logo-whatsapp" colors={colors} styles={styles} />
-									<InfoRow label="Email" value={email || '—'} icon="mail" colors={colors} styles={styles} />
+									<SectionRow label="WhatsApp" value={whatsapp || '—'} icon="logo-whatsapp" />
+									<SectionRow label="Email" value={email || '—'} icon="mail" />
 								</View>
 							)}
-						</SectionCard>
+						</EditableSection>
 
 						{/* Coordinates Card */}
-						<SectionCard
+						<EditableSection
 							title={translate('coordinates', 'Coordinates')}
-							colors={colors}
-							styles={styles}
 							isEditing={editMode.coordinates}
 							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
 							onSave={saveCoordinates}
@@ -771,28 +700,24 @@ export default function EditBusinessScreen() {
 								</View>
 							) : (
 								<View style={{ gap: 12 }}>
-									<InfoRow label="Latitude" value={latitude || '—'} icon="compass" colors={colors} styles={styles} />
-									<InfoRow label="Longitude" value={longitude || '—'} icon="compass-outline" colors={colors} styles={styles} />
-									<InfoRow label="Accuracy" value={accuracy ? `${accuracy} m` : '—'} icon="locate-outline" colors={colors} styles={styles} />
-									<InfoRow label="Altitude" value={altitude ? `${altitude} m` : '—'} icon="trending-up-outline" colors={colors} styles={styles} />
-									<InfoRow label="Heading" value={heading ? `${heading}°` : '—'} icon="compass-outline" colors={colors} styles={styles} />
-									<InfoRow label="Speed" value={speed ? `${speed} m/s` : '—'} icon="speedometer-outline" colors={colors} styles={styles} />
-									<InfoRow
+									<SectionRow label="Latitude" value={latitude || '—'} icon="compass" />
+									<SectionRow label="Longitude" value={longitude || '—'} icon="compass-outline" />
+									<SectionRow label="Accuracy" value={accuracy ? `${accuracy} m` : '—'} icon="locate-outline" />
+									<SectionRow label="Altitude" value={altitude ? `${altitude} m` : '—'} icon="trending-up-outline" />
+									<SectionRow label="Heading" value={heading ? `${heading}°` : '—'} icon="compass-outline" />
+									<SectionRow label="Speed" value={speed ? `${speed} m/s` : '—'} icon="speedometer-outline" />
+									<SectionRow
 										label={translate('location_sharing', 'Location Sharing')}
 										value={sharingEnabled ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}
 										icon={sharingEnabled ? 'eye' : 'eye-off'}
-										colors={colors}
-										styles={styles}
 									/>
 								</View>
 							)}
-						</SectionCard>
+						</EditableSection>
 
 						{/* Address Card */}
-						<SectionCard
+						<EditableSection
 							title={translate('address', 'Address')}
-							colors={colors}
-							styles={styles}
 							isEditing={editMode.address}
 							onEdit={() => setEditMode((prev) => ({ ...prev, address: true }))}
 							onSave={saveAddress}
@@ -813,14 +738,14 @@ export default function EditBusinessScreen() {
 								/>
 							) : (
 								<View style={{ gap: 12 }}>
-									<InfoRow label={translate('street', 'Street')} value={street || '—'} icon="location" colors={colors} styles={styles} />
-									<InfoRow label={translate('city', 'City')} value={city || '—'} icon="business" colors={colors} styles={styles} />
-									<InfoRow label={translate('region', 'Region')} value={region || '—'} icon="map" colors={colors} styles={styles} />
-									<InfoRow label={translate('country', 'Country')} value={country || '—'} icon="globe" colors={colors} styles={styles} />
-									<InfoRow label={translate('postal_code', 'Postal Code')} value={postalCode || '—'} icon="mail-unread" colors={colors} styles={styles} />
+									<SectionRow label={translate('street', 'Street')} value={street || '—'} icon="location" />
+									<SectionRow label={translate('city', 'City')} value={city || '—'} icon="business" />
+									<SectionRow label={translate('region', 'Region')} value={region || '—'} icon="map" />
+									<SectionRow label={translate('country', 'Country')} value={country || '—'} icon="globe" />
+									<SectionRow label={translate('postal_code', 'Postal Code')} value={postalCode || '—'} icon="mail-unread" />
 								</View>
 							)}
-						</SectionCard>
+						</EditableSection>
 					</View>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
@@ -927,23 +852,6 @@ const createStyles = (colors: any, width: number) =>
 			fontSize: 13,
 			fontWeight: '700'
 		},
-		card: {
-			backgroundColor: colors.surface,
-			borderRadius: 24,
-			borderWidth: 1.5,
-			borderColor: colors.border,
-			padding: 20
-		},
-		cardHeader: {
-			fontSize: 16,
-			fontWeight: '800',
-			color: colors.text,
-			marginBottom: 0,
-			letterSpacing: -0.2
-		},
-		cardContent: {
-			marginTop: 4
-		},
 		inputGroup: {
 			marginBottom: 16
 		},
@@ -1041,37 +949,6 @@ const createStyles = (colors: any, width: number) =>
 			fontWeight: '500',
 			color: colors.textSecondary,
 			marginTop: 2
-		},
-		infoRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			paddingVertical: 10,
-			gap: 14,
-			borderBottomWidth: 1,
-			borderBottomColor: `${colors.border}40`
-		},
-		infoRowIconContainer: {
-			width: 38,
-			height: 38,
-			borderRadius: 12,
-			backgroundColor: `${colors.textSecondary}12`,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		infoRowContent: {
-			flex: 1
-		},
-		infoRowLabel: {
-			fontSize: 11,
-			fontWeight: '700',
-			color: colors.textSecondary,
-			textTransform: 'uppercase',
-			letterSpacing: 0.5,
-			marginBottom: 2
-		},
-		infoRowValue: {
-			fontSize: 15,
-			fontWeight: '600'
 		},
 		descriptionText: {
 			fontSize: 15,

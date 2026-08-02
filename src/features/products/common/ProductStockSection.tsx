@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { EditableSection } from '@/features/common/sections/EditableSection'
 
 export interface ProductStockSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -40,10 +40,10 @@ export default function ProductStockSection({
 }: ProductStockSectionProps) {
 	const styles = createStyles(colors)
 
-	if (variant === 'create') {
+	if (variant === 'create' || variant === 'edit') {
+		const isEditing = variant === 'edit'
 		return (
-			<View style={styles.card}>
-				<Text style={styles.cardTitle}>{translate('inventory', 'Inventory')}</Text>
+			<EditableSection title={translate('inventory', 'Inventory')} isEditing={isEditing} onSave={isEditing ? onSavePress : undefined} onCancel={isEditing ? onCancelPress : undefined}>
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
@@ -59,36 +59,7 @@ export default function ProductStockSection({
 						</View>
 					</View>
 				</View>
-			</View>
-		)
-	}
-
-	if (variant === 'edit') {
-		return (
-			<View style={styles.editSection}>
-				<View style={styles.editHeader}>
-					<Text style={styles.cardTitle}>{translate('inventory', 'Inventory')}</Text>
-					<View style={styles.actionButtons}>
-						{onCancelPress && <CancelButton onPress={onCancelPress} style={styles.actionBtn} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={styles.actionBtn} />}
-					</View>
-				</View>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={stockQuantity} onChangeText={setStockQuantity} keyboardType="numeric" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('min_threshold', 'Min Threshold')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={minThreshold} onChangeText={setMinThreshold} keyboardType="numeric" />
-						</View>
-					</View>
-				</View>
-			</View>
+			</EditableSection>
 		)
 	}
 
@@ -116,39 +87,6 @@ export default function ProductStockSection({
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
-		card: {
-			backgroundColor: colors.background,
-			borderRadius: 16,
-			padding: 16,
-			marginBottom: 16,
-			borderWidth: 1,
-			borderColor: colors.border
-		},
-		cardTitle: {
-			fontSize: 16,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 16
-		},
-		editSection: {
-			borderBottomWidth: 1,
-			borderBottomColor: colors.border,
-			paddingBottom: 16,
-			marginBottom: 16
-		},
-		editHeader: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginBottom: 12
-		},
-		actionButtons: {
-			flexDirection: 'row',
-			gap: 12
-		},
-		actionBtn: {
-			padding: 4
-		},
 		row: {
 			flexDirection: 'row',
 			marginBottom: 16
