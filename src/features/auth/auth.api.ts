@@ -1,7 +1,7 @@
 import { getApiClient } from '@/core/api'
 import { Platform } from 'react-native'
 import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@/core/storage'
-import { setCacheItem } from '@/core/cache'
+import { setCacheItem, clearMemoryCache } from '@/core/cache'
 import { log } from '@/core/log'
 import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
 
@@ -430,6 +430,7 @@ export const switchUser = async (): Promise<boolean> => {
 		}
 
 		await clearStorageExceptSavedAuths()
+		clearMemoryCache()
 
 		return true
 	} catch (error) {

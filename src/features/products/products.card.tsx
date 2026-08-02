@@ -7,7 +7,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '../feed/feed.interface'
 import { useRouter, usePathname } from 'expo-router'
 import { useUser } from '../../core/contexts/UserContext'
-import { setCacheItem } from '@/core/cache'
+import { getCacheItem, setCacheItem } from '@/core/cache'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
@@ -140,7 +140,12 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart }: Product
 		if (item.slug) {
 			// Seed the product detail cache with what we already have from the feed so
 			// the detail screen can render instantly instead of waiting on a fresh fetch.
-			setCacheItem(`product:${item.slug}`, { status: 200, data: item })
+			// Only seed if there's no cache entry yet — a feed item is a partial shape and
+			// must never clobber a fuller detail response already cached from a prior visit.
+			const cacheKey = `product:${item.slug}`
+			getCacheItem(cacheKey).then((existing) => {
+				if (!existing) setCacheItem(cacheKey, { status: 200, data: item })
+			})
 
 			if (pathname.startsWith('/products') || pathname.includes('/feed') || pathname === '/') {
 				router.push(`/products/${item.slug}` as any)

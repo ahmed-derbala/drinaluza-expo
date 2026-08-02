@@ -169,7 +169,6 @@ export interface Product {
 			maxWeightKg?: number
 		}
 	}
-	searchKeywords?: string[]
 	state?: {
 		code: string
 		_id?: string

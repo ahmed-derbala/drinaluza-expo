@@ -118,7 +118,6 @@ export interface FeedItem {
 	name?: LocalizedName
 	price?: Price
 	unit?: Unit
-	searchTerms?: string[]
 	state?: {
 		code: string
 		updatedAt: string

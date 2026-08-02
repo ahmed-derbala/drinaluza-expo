@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { format, formatDistanceToNow } from 'date-fns'
 import { clearAllStorage, getToken } from '@/core/storage'
+import { clearMemoryCache } from '@/core/cache'
 
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -747,6 +748,7 @@ export default function AuthScreen() {
 			try {
 				setLoading(true)
 				await clearAllStorage()
+				clearMemoryCache()
 				await refreshUser()
 				await loadSavedAccounts()
 				setSlug('')

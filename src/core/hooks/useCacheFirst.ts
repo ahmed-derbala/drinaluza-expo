@@ -62,6 +62,14 @@ export interface UseCacheFirstOptions<T> {
 	onError?: (error: unknown) => void
 	/** If true, the fetch is not triggered automatically on mount. */
 	skipInitialFetch?: boolean
+	/**
+	 * If true, the initial-mount fetch is skipped entirely when cached data is
+	 * still fresh (within `ttlMs`), avoiding a redundant network call. Manual
+	 * `refresh()`, the offline-to-online transition, and global refresh triggers
+	 * still always fetch. Defaults to false (always fetch on mount) to preserve
+	 * existing behavior for consumers that need eventual consistency on every mount.
+	 */
+	skipFetchIfFresh?: boolean
 }
 
 export interface UseCacheFirstResult<T> {
@@ -99,7 +107,7 @@ export interface UseCacheFirstResult<T> {
  * - When the backend comes back online, currently mounted hooks refresh automatically.
  */
 export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirstResult<T> {
-	const { cacheKey, fetchFn, ttlMs, onSuccess, onError, skipInitialFetch } = options
+	const { cacheKey, fetchFn, ttlMs, onSuccess, onError, skipInitialFetch, skipFetchIfFresh } = options
 	const { backendState } = useBackendConnection()
 	const isMountedRef = useRef(true)
 	const prevBackendStateRef = useRef<BackendState>(backendState)
@@ -213,7 +221,8 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 
 			// 3. Fire network fetch in the background — does NOT block UI rendering.
 			//    When it resolves it will update freshData and the cache silently.
-			if (!cancelled && !skipInitialFetch && backendState !== 'offline') {
+			const hasFreshCache = Boolean(cached && !cached.isStale)
+			if (!cancelled && !skipInitialFetch && backendState !== 'offline' && !(skipFetchIfFresh && hasFreshCache)) {
 				fetchFresh()
 			}
 		}
@@ -228,7 +237,7 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			cancelled = true
 			isMountedRef.current = false
 		}
-	}, [cacheKey, loadFromCache, fetchFresh, skipInitialFetch])
+	}, [cacheKey, loadFromCache, fetchFresh, skipInitialFetch, skipFetchIfFresh])
 
 	// Auto-refresh when the backend transitions from offline/connecting to online.
 	useEffect(() => {

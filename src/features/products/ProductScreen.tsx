@@ -752,19 +752,6 @@ export default function ProductScreen() {
 					</View>
 				)}
 
-				{product.searchTerms && product.searchTerms.length > 0 && (
-					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
-						<Text style={[styles.metaCardTitleStatic, { color: colors.textTertiary }]}>{translate('search_keywords', 'Search Keywords')}</Text>
-						<View style={styles.tagWrap}>
-							{product.searchTerms.map((keyword, index) => (
-								<View key={index} style={[styles.tagItem, { backgroundColor: colors.surfaceVariant }]}>
-									<Text style={[styles.tagText, { color: colors.textSecondary }]}>{keyword}</Text>
-								</View>
-							))}
-						</View>
-					</View>
-				)}
-
 				{product.availability && (
 					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<View style={styles.metaCardHeader}>

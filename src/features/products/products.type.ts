@@ -106,7 +106,6 @@ export type ProductType = {
 			maxWeightKg?: number
 		}
 	}
-	searchTerms: string[]
 	availability: {
 		endDate: string | null
 		startDate: string

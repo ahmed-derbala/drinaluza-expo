@@ -31,7 +31,6 @@ export interface CreateProductRequest {
 			maxWeightKg?: number
 		}
 	}
-	searchKeywords?: string[]
 	stock?: {
 		quantity: number
 		minThreshold: number
@@ -82,7 +81,6 @@ export interface DefaultProduct {
 		tn_latn?: string
 		tn_arab?: string
 	}
-	searchKeywords: string[]
 	media: {
 		thumbnail: {
 			url: string

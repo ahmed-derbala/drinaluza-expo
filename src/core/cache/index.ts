@@ -5,9 +5,18 @@ import { log } from '@/core/log'
 // Cache helpers (offline-first layer)
 // ───────────────────────────────────────────────────────────────────────────────
 
+/**
+ * Bump this whenever a cached payload's shape changes in a breaking way
+ * (e.g. renamed/removed fields on ProductType, FeedItem, etc.). Entries
+ * written under a previous version are treated as a cache miss, forcing
+ * one fresh fetch instead of risking a mismatched shape being trusted.
+ */
+const CACHE_SCHEMA_VERSION = 1
+
 export interface CacheEntry<T> {
 	data: T
 	cachedAt: number
+	v: number
 }
 
 export interface CacheReadResult<T> {
@@ -18,6 +27,10 @@ export interface CacheReadResult<T> {
 
 const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 
+// In-memory tier: avoids an AsyncStorage round-trip for repeat reads within the
+// same app session (e.g. re-mounting a screen already visited).
+const memoryCache = new Map<string, CacheEntry<unknown>>()
+
 /**
  * Store a value in cache with a cachedAt timestamp.
  * TTL is advisory; stale data is still returned by getCacheItem.
@@ -25,18 +38,28 @@ const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 export const setCacheItem = async <T>(key: string, data: T): Promise<boolean> => {
 	const entry: CacheEntry<T> = {
 		data,
-		cachedAt: Date.now()
+		cachedAt: Date.now(),
+		v: CACHE_SCHEMA_VERSION
 	}
+	memoryCache.set(key, entry)
 	return await setItem(key, entry)
 }
 
 /**
  * Read a cached value. Always returns the cached data if present.
  * `isStale` is true when the entry is older than `ttlMs`.
+ * Entries written under a stale schema version are treated as a miss.
  */
 export const getCacheItem = async <T>(key: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): Promise<CacheReadResult<T> | null> => {
-	const entry = await getItem<CacheEntry<T>>(key)
+	const cached = memoryCache.get(key) as CacheEntry<T> | undefined
+	const entry = cached ?? (await getItem<CacheEntry<T>>(key))
 	if (!entry || entry.data === undefined) return null
+	if (entry.v !== CACHE_SCHEMA_VERSION) {
+		memoryCache.delete(key)
+		await removeItem(key)
+		return null
+	}
+	if (!cached) memoryCache.set(key, entry)
 	return {
 		data: entry.data,
 		cachedAt: entry.cachedAt,
@@ -53,9 +76,19 @@ export const isCacheStale = (cachedAt: number, ttlMs: number = DEFAULT_CACHE_TTL
 }
 
 /**
+ * Wipe the in-memory tier only. Must be called after any raw storage wipe
+ * that bypasses this module (e.g. `clearAllStorage`, `clearStorageExceptSavedAuths`)
+ * so stale entries aren't served from memory after the underlying storage was cleared.
+ */
+export const clearMemoryCache = (): void => {
+	memoryCache.clear()
+}
+
+/**
  * Remove a single cache entry.
  */
 export const invalidateCache = async (key: string): Promise<boolean> => {
+	memoryCache.delete(key)
 	return await removeItem(key)
 }
 
@@ -64,13 +97,15 @@ export const invalidateCache = async (key: string): Promise<boolean> => {
  * Use this after local mutations so the UI stays consistent.
  */
 export const updateCacheItem = async <T>(key: string, updater: (current: T) => T): Promise<boolean> => {
-	const entry = await getItem<CacheEntry<T>>(key)
+	const entry = (memoryCache.get(key) as CacheEntry<T> | undefined) ?? (await getItem<CacheEntry<T>>(key))
 	if (!entry) return false
 	try {
 		const next: CacheEntry<T> = {
 			data: updater(entry.data),
-			cachedAt: entry.cachedAt
+			cachedAt: entry.cachedAt,
+			v: CACHE_SCHEMA_VERSION
 		}
+		memoryCache.set(key, next)
 		return await setItem(key, next)
 	} catch (error) {
 		log({
@@ -94,6 +129,7 @@ export const clearAllCache = async (): Promise<boolean> => {
 		// of protected prefixes explicit so we never wipe auth data.
 		const protectedPrefixes = ['authToken', 'refreshToken', 'userData', 'user._id', 'user.slug', 'user.settings', 'saved_authentications', 'expoPushToken']
 		const cacheKeys = allKeys.filter((key) => !protectedPrefixes.some((prefix) => key === prefix || key.startsWith(`${prefix}:`)))
+		cacheKeys.forEach((key) => memoryCache.delete(key))
 		await multiRemove(cacheKeys)
 		return true
 	} catch (error) {

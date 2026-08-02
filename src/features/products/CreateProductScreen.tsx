@@ -289,7 +289,6 @@ export default function CreateProductScreen() {
 							}
 						: undefined
 				},
-				searchKeywords: selectedDefaultProduct.searchKeywords,
 				stock: stockQuantity ? { quantity: parseInt(stockQuantity), minThreshold: parseInt(minThreshold) } : undefined,
 				availability: { startDate: new Date().toISOString(), endDate: null },
 				media: {
@@ -525,10 +524,7 @@ export default function CreateProductScreen() {
 						<View style={styles.listThumbContainer}>
 							<SmartImage source={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" entityType="product" />
 						</View>
-						<View style={{ flex: 1 }}>
-							<Text style={[styles.listTitle, { color: colors.text }]}>{item.name?.en || ''}</Text>
-							{item.searchKeywords && item.searchKeywords.length > 0 && <Text style={[styles.listSubtitle, { color: colors.textSecondary }]}>{item.searchKeywords.join(', ')}</Text>}
-						</View>
+
 						{isSelected && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
 					</View>
 				)}
