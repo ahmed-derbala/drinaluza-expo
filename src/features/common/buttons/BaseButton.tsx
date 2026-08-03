@@ -37,6 +37,8 @@ export interface BaseButtonProps {
 	loading?: boolean
 	/** Visual variant. */
 	variant?: ButtonVariant
+	/** When true, renders a tinted background with a colored border/icon instead of a solid fill. */
+	outline?: boolean
 	/** Optional icon color override. */
 	iconColor?: string
 	/** Theme colors. */
@@ -62,6 +64,7 @@ export function BaseButton({
 	disabled = false,
 	loading = false,
 	variant = 'secondary',
+	outline = false,
 	iconColor: iconColorOverride,
 	colors,
 	size,
@@ -72,12 +75,14 @@ export function BaseButton({
 	const isDanger = variant === 'danger'
 	const solidColorKey = SOLID_VARIANT_COLOR[variant]
 	const accentColor = solidColorKey ? colors[solidColorKey] : undefined
+	const useOutline = outline || isDanger
+	const outlineColor = accentColor ?? (isDanger ? colors.error : colors.textSecondary)
 
-	const backgroundColor = disabled ? colors.surfaceVariant : accentColor ? accentColor : isDanger ? hexToRgba(colors.error, 0.1) : colors.surface
+	const backgroundColor = disabled ? colors.surfaceVariant : useOutline ? hexToRgba(outlineColor, 0.1) : accentColor ? accentColor : colors.surface
 
-	const borderColor = disabled ? colors.surfaceVariant : accentColor ? accentColor : isDanger ? hexToRgba(colors.error, 0.25) : colors.border
+	const borderColor = disabled ? colors.surfaceVariant : useOutline ? hexToRgba(outlineColor, 0.25) : accentColor ? accentColor : colors.border
 
-	const resolvedIconColor = iconColorOverride ?? (disabled ? colors.textTertiary : accentColor ? colors.buttonText : isDanger ? colors.error : colors.textSecondary)
+	const resolvedIconColor = iconColorOverride ?? (disabled ? colors.textTertiary : useOutline ? outlineColor : accentColor ? colors.buttonText : colors.textSecondary)
 
 	const accessibilityLabel = text && label && label !== text ? `${label} ${text}` : label || text
 

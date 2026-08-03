@@ -12,7 +12,7 @@ import { isVersionGreater } from './UpdatesContext'
 import { hexToRgba } from '@/core/helpers/colors'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { InstallButton } from '@/features/common/buttons/InstallButton'
-import { DownloadUpdateButton } from '@/features/common/buttons/DownloadUpdateButton'
+import { DownloadButton } from '@/features/common/buttons/DownloadButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 
@@ -28,12 +28,6 @@ const styles = StyleSheet.create({
 	section: {
 		gap: 14
 	},
-	sectionLabel: {
-		fontSize: 12,
-		fontWeight: '700',
-		textTransform: 'uppercase',
-		letterSpacing: 1
-	},
 	row: {
 		gap: 12
 	},
@@ -42,12 +36,16 @@ const styles = StyleSheet.create({
 	},
 	infoCard: {
 		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
+		flexDirection: 'column',
 		gap: 14,
 		padding: 16,
 		borderRadius: 20,
 		borderWidth: 1
+	},
+	infoCardTopRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 14
 	},
 	infoIcon: {
 		width: 48,
@@ -203,7 +201,9 @@ const styles = StyleSheet.create({
 })
 
 interface InfoCardProps {
-	icon: React.ComponentProps<typeof Ionicons>['name']
+	icon?: React.ComponentProps<typeof Ionicons>['name']
+	/** Replaces the default icon container entirely, e.g. with an actionable button. */
+	iconElement?: React.ReactNode
 	label: string
 	value: string
 	color: string
@@ -211,9 +211,11 @@ interface InfoCardProps {
 	activeBorderColor?: string
 	footer?: React.ReactNode
 	colors: AppThemeColors
+	/** Extra content rendered below the icon/value row, inside the same card. */
+	children?: React.ReactNode
 }
 
-const InfoCard = ({ icon, label, value, color, active, activeBorderColor, footer, colors }: InfoCardProps) => (
+const InfoCard = ({ icon, iconElement, label, value, color, active, activeBorderColor, footer, colors, children }: InfoCardProps) => (
 	<View
 		style={[
 			styles.infoCard,
@@ -223,16 +225,19 @@ const InfoCard = ({ icon, label, value, color, active, activeBorderColor, footer
 			}
 		]}
 	>
-		<View style={[styles.infoIcon, { backgroundColor: hexToRgba(color, 0.12) }]}>
-			<Ionicons name={icon} size={22} color={color} />
+		<View style={styles.infoCardTopRow}>
+			{iconElement ?? <View style={[styles.infoIcon, { backgroundColor: hexToRgba(color, 0.12) }]}>{icon ? <Ionicons name={icon} size={22} color={color} /> : null}</View>}
+			<View style={styles.infoText}>
+				<View style={styles.infoTextRow}>
+					{label ? <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{label}</Text> : null}
+					<Text style={[styles.infoValue, { color: active ? color : colors.text }]} numberOfLines={1}>
+						{value}
+					</Text>
+				</View>
+				{footer}
+			</View>
 		</View>
-		<View style={[styles.infoText, styles.infoTextRow]}>
-			{label ? <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{label}</Text> : null}
-			<Text style={[styles.infoValue, { color: active ? color : colors.text }]} numberOfLines={1}>
-				{value}
-			</Text>
-			{footer}
-		</View>
+		{children}
 	</View>
 )
 
@@ -317,7 +322,7 @@ export default function UpdatesScreen() {
 	const formatSpeed = (speedBytesPerSec: number | null): string => {
 		if (speedBytesPerSec === null || speedBytesPerSec <= 0) return ''
 		const mbs = speedBytesPerSec / (1024 * 1024)
-		return `${parseFloat(mbs.toFixed(2))} MB/s`
+		return `${mbs.toFixed(1)} MB/s`
 	}
 
 	useEffect(() => {
@@ -480,11 +485,9 @@ export default function UpdatesScreen() {
 				showsVerticalScrollIndicator={false}
 			>
 				<View style={styles.section}>
-					<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('version', 'Version')}</Text>
 					<View style={styles.row}>
 						<InfoCard icon="phone-portrait-outline" label="" value={`v${config.app.version}`} color={colors.textTertiary} colors={colors} />
 						<InfoCard
-							icon={isUpToDate || !latestRelease ? 'cloud-outline' : 'cloud'}
 							label=""
 							value={latestRelease ? `v${latestRelease.latest_version}` : '—'}
 							color={isUpToDate || !latestRelease ? colors.textTertiary : colors.info}
@@ -492,95 +495,90 @@ export default function UpdatesScreen() {
 							activeBorderColor={colors.info}
 							colors={colors}
 							footer={releaseBadges}
-						/>
-					</View>
-				</View>
-
-				<View style={styles.section}>
-					<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('actions', 'Actions')}</Text>
-
-					{!isWeb && (
-						<View style={[styles.progressPanel, { opacity: isDownloading || isPaused ? 1 : 0 }]}>
-							<View style={styles.progressMeta}>
-								<Text style={[styles.progressText, { color: isDownloading ? colors.primary : isPaused ? colors.warning : colors.textSecondary }]}>
-									{isDownloading
-										? `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`
-										: isPaused
-											? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%`
-											: ''}
-								</Text>
-								<View style={styles.progressBadges}>
-									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: downloadSpeed === null ? 0 : 1 }]}>
-										<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} />
-										<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]} numberOfLines={1} adjustsFontSizeToFit>
-											{formatSpeed(downloadSpeed)}
+							iconElement={
+								isWeb ? (
+									<DownloadButton downloadUrl={latestRelease?.download_url} size={48} variant={isUpToDate || !latestRelease ? 'secondary' : 'primary'} disabled={!latestRelease?.download_url} />
+								) : (
+									<DownloadButton
+										size={48}
+										variant={isPaused ? 'primary' : isDownloading ? 'warning' : isUpToDate || !latestRelease ? 'secondary' : 'primary'}
+										isDownloading={isDownloading}
+										isPaused={isPaused}
+										onPress={isPaused ? resumeDownload : isDownloading ? pauseDownload : downloadUpdate}
+										disabled={!isDownloading && !isPaused && isDownloadDisabled}
+									/>
+								)
+							}
+						>
+							{!isWeb && (
+								<View style={styles.progressPanel}>
+									<View style={styles.progressMeta}>
+										<Text style={[styles.progressText, { color: isDownloading ? colors.primary : isPaused ? colors.warning : colors.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>
+											{isDownloading
+												? `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`
+												: isPaused
+													? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%`
+													: ''}
 										</Text>
-									</View>
-									<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: remainingTime === null ? 0 : 1 }]}>
-										<Ionicons name="time-outline" size={12} color={colors.textTertiary} />
-										<Text style={[styles.progressBadgeText, { color: colors.textTertiary, textAlign: 'center' }]} numberOfLines={1} adjustsFontSizeToFit>
-											{formatRemainingTime(remainingTime)}
-										</Text>
+										<View style={styles.progressBadges}>
+											<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: downloadSpeed === null ? 0 : 1 }]}>
+												<Ionicons name="speedometer-outline" size={12} color={colors.textTertiary} />
+												<Text style={[styles.progressBadgeText, { color: colors.textTertiary }]} numberOfLines={1}>
+													{formatSpeed(downloadSpeed)}
+												</Text>
+											</View>
+											<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: remainingTime === null ? 0 : 1 }]}>
+												<Ionicons name="time-outline" size={12} color={colors.textTertiary} />
+												<Text style={[styles.progressBadgeText, { color: colors.textTertiary, textAlign: 'center' }]} numberOfLines={1} adjustsFontSizeToFit>
+													{formatRemainingTime(remainingTime)}
+												</Text>
+											</View>
+										</View>
 									</View>
 								</View>
-							</View>
-						</View>
-					)}
+							)}
 
-					<View style={styles.actionBar}>
-						{isWeb ? (
-							<>
-								<DownloadUpdateButton downloadUrl={latestRelease?.download_url} version={latestRelease?.latest_version} variant="primary" style={styles.actionButton} />
-								<IconButton
-									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
-									label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
-									onPress={handleCopyUrl}
-									disabled={!latestRelease?.download_url}
-									variant={copied ? 'success' : 'secondary'}
-									colors={colors}
-									style={styles.actionButton}
-								/>
-								<View style={[styles.actionButton, { opacity: 0, width: 50 }]} />
-								<View style={[styles.actionButton, { opacity: 0, width: 50 }]} />
-							</>
-						) : (
-							<>
-								<DownloadUpdateButton
-									version={latestRelease?.latest_version}
-									isPaused={isPaused}
-									isDownloading={isDownloading}
-									onPress={isPaused ? resumeDownload : isDownloading ? pauseDownload : downloadUpdate}
-									disabled={!isDownloading && !isPaused && isDownloadDisabled}
-									variant={isPaused ? 'primary' : isDownloading ? 'warning' : 'primary'}
-									style={styles.actionButton}
-								/>
-								<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
-								<IconButton
-									icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
-									label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
-									onPress={handleCopyUrl}
-									disabled={!latestRelease?.download_url}
-									variant={copied ? 'success' : 'secondary'}
-									colors={colors}
-									style={styles.actionButton}
-								/>
-								<IconButton
-									icon="share-social-outline"
-									label={translate('share_url', 'Share Link')}
-									onPress={handleShareUrl}
-									disabled={!latestRelease?.download_url}
-									variant="secondary"
-									colors={colors}
-									style={styles.actionButton}
-								/>
-							</>
-						)}
+							<View style={styles.actionBar}>
+								{isWeb ? (
+									<IconButton
+										icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
+										label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
+										onPress={handleCopyUrl}
+										disabled={!latestRelease?.download_url}
+										variant={copied ? 'success' : 'secondary'}
+										colors={colors}
+										style={styles.actionButton}
+									/>
+								) : (
+									<>
+										<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
+										<IconButton
+											icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
+											label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
+											onPress={handleCopyUrl}
+											disabled={!latestRelease?.download_url}
+											variant={copied ? 'success' : 'secondary'}
+											colors={colors}
+											style={styles.actionButton}
+										/>
+										<IconButton
+											icon="share-social-outline"
+											label={translate('share_url', 'Share Link')}
+											onPress={handleShareUrl}
+											disabled={!latestRelease?.download_url}
+											variant="secondary"
+											colors={colors}
+											style={styles.actionButton}
+										/>
+									</>
+								)}
+							</View>
+						</InfoCard>
 					</View>
 				</View>
 
 				{sortedApks.length > 0 && (
 					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('apk_installers', 'APK Installers')}</Text>
 						<View style={styles.apkList}>
 							{sortedApks.map((apk) => (
 								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -598,19 +596,12 @@ export default function UpdatesScreen() {
 										</View>
 									</View>
 									<View style={styles.apkActions}>
-										{(() => {
-											const apkInstallDisabled = !isAndroid || isDownloading || isPaused || apk.version === config.app.version
-											return (
-												<TouchableOpacity
-													onPress={() => installApk(apk.fileUri)}
-													disabled={apkInstallDisabled}
-													accessibilityLabel={translate('install', 'Install')}
-													style={[styles.iconBtn, { backgroundColor: apkInstallDisabled ? colors.surfaceVariant : colors.success, opacity: apkInstallDisabled ? 0.5 : 1 }]}
-												>
-													<Ionicons name="archive-outline" size={20} color={apkInstallDisabled ? colors.textTertiary : colors.buttonText} />
-												</TouchableOpacity>
-											)
-										})()}
+										<InstallButton
+											fileUri={apk.fileUri}
+											onPress={() => installApk(apk.fileUri)}
+											disabled={!isAndroid || isDownloading || isPaused || apk.version === config.app.version}
+											style={styles.iconBtn}
+										/>
 										<TouchableOpacity
 											onPress={() => handleShareApk(apk.fileUri)}
 											accessibilityLabel="Share APK Installer"

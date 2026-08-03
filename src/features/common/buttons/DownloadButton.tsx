@@ -15,6 +15,10 @@ export interface DownloadButtonProps {
 	size?: number
 	/** Whether the button is disabled. */
 	disabled?: boolean
+	/** Whether a download is currently in progress. Shows a pause icon. */
+	isDownloading?: boolean
+	/** Whether the download is paused. Shows a resume (play) icon. */
+	isPaused?: boolean
 	/** Optional style override. */
 	style?: StyleProp<ViewStyle>
 	/** Optional press override. */
@@ -23,7 +27,18 @@ export interface DownloadButtonProps {
 	onAfterDownload?: () => void
 }
 
-export function DownloadButton({ downloadUrl, label = translate('download', 'Download'), variant = 'primary', size, disabled, style, onPress, onAfterDownload }: DownloadButtonProps) {
+export function DownloadButton({
+	downloadUrl,
+	label = translate('download', 'Download'),
+	variant = 'primary',
+	size,
+	disabled,
+	isDownloading,
+	isPaused,
+	style,
+	onPress,
+	onAfterDownload
+}: DownloadButtonProps) {
 	const { colors } = useTheme()
 
 	const handlePress = useCallback(() => {
@@ -47,6 +62,7 @@ export function DownloadButton({ downloadUrl, label = translate('download', 'Dow
 	}, [onPress, downloadUrl, onAfterDownload])
 
 	const isDisabled = disabled !== undefined ? disabled : !downloadUrl
+	const icon = isPaused ? 'play-outline' : isDownloading ? 'pause-outline' : 'download-outline'
 
-	return <IconButton icon="download-outline" label={label} onPress={handlePress} disabled={isDisabled} variant={variant} size={size} colors={colors} style={style} />
+	return <IconButton icon={icon} label={label} onPress={handlePress} disabled={isDisabled} variant={variant} outline={isDownloading} size={size} colors={colors} style={style} />
 }

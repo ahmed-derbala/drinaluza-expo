@@ -26,6 +26,7 @@ export interface IconButtonProps {
 	disabled?: boolean
 	loading?: boolean
 	variant?: IconVariant
+	outline?: boolean
 	iconColor?: string
 	colors: AppThemeColors
 	size?: number
@@ -45,6 +46,7 @@ export function IconButton({
 	disabled = false,
 	loading = false,
 	variant = 'secondary',
+	outline,
 	iconColor,
 	colors,
 	size,
@@ -61,6 +63,7 @@ export function IconButton({
 			disabled={disabled}
 			loading={loading}
 			variant={variant}
+			outline={outline}
 			iconColor={iconColor}
 			colors={colors}
 			size={size}
