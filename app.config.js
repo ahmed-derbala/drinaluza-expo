@@ -72,6 +72,8 @@ export default {
                     android: {
                         usesCleartextTraffic: true,
                         enableProguardInReleaseBuilds: true,
+                        enableProguardInReleaseBuilds: true,
+                        enableShrinkResourcesInReleaseBuilds: true, // removes unused Android resources
                         ndk: {
                             abiFilters: [
                                 "arm64-v8a"
