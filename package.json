@@ -39,7 +39,7 @@
 		"android": "expo run:android",
 		"ios": "expo run:ios",
 		"web": "expo start --web",
-		"i": "npm i -g eas-cli expo expo-doctor && npm i",
+		"i": "npm i -g eas-cli expo expo-doctor dotenv-cli && npm i",
 		"i:prod": "NODE_ENV=production npm i --omit=dev",
 		"i:check": "echo y | expo install --check",
 		"fix": "npm run env:local && npm run i:check && expo-doctor",
@@ -98,7 +98,6 @@
 	},
 	"devDependencies": {
 		"@types/react": "~19.2.17",
-		"dotenv-cli": "^11.0.0",
 		"eslint": "^10.8.0",
 		"expo-dev-client": "^57.0.10",
 		"prettier": "^3.8.3",
