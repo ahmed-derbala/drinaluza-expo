@@ -245,8 +245,8 @@ export const SmartKebabMenu: React.FC = () => {
 				onPress={toggleMenu}
 				colors={colors}
 				iconColor={colors.primary}
-				size={40}
-				style={{ backgroundColor: colors.primary + '15', borderColor: 'transparent' }}
+				size={32}
+				style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
 			/>
 
 			{/* Render the dropdown in a Modal so it is never clipped by header siblings or parent stacking contexts */}

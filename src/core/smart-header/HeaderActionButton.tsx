@@ -30,7 +30,7 @@ export interface HeaderActionButtonProps {
 	size?: number
 }
 
-const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconType = 'ionicons', onPress, badgeCount = 0, accessibilityLabel, size = 40 }) => {
+const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconType = 'ionicons', onPress, badgeCount = 0, accessibilityLabel, size = 32 }) => {
 	const { colors } = useTheme()
 
 	return (
@@ -43,7 +43,7 @@ const HeaderActionButton: React.FC<HeaderActionButtonProps> = ({ iconName, iconT
 				colors={colors}
 				iconColor={colors.primary}
 				size={size}
-				style={{ backgroundColor: colors.primary + '15', borderColor: 'transparent' }}
+				style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
 			/>
 
 			{badgeCount > 0 && (

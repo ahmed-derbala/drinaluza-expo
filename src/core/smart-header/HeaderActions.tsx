@@ -88,7 +88,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 				flexGrow: 0,
 				zIndex: 2,
 				minHeight: 38,
-				gap: 8
+				gap: 2
 			}}
 		>
 			{resolvedHeaderRight}

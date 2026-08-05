@@ -55,7 +55,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 	isRefreshing: isRefreshingProp,
 	isOffline = false,
 	backendState: backendStateProp,
-	size = 40,
+	size = 32,
 	style,
 	disabled = false
 }) => {
@@ -95,7 +95,7 @@ const HeaderRefreshButton: React.FC<HeaderRefreshButtonProps> = ({
 			colors={colors}
 			iconColor={iconColor}
 			size={size}
-			style={[styles.refreshButton, { backgroundColor: colors.primary + '15', borderColor: 'transparent' }, style]}
+			style={[styles.refreshButton, { backgroundColor: 'transparent', borderColor: 'transparent' }, style]}
 		/>
 	)
 }

@@ -50,8 +50,8 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 			onPress={handlePress}
 			colors={colors}
 			iconColor={colors.primary}
-			size={40}
-			style={{ backgroundColor: colors.primary + '15', borderColor: 'transparent' }}
+			size={32}
+			style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
 		/>
 	)
 })
