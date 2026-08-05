@@ -260,15 +260,16 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		}
 	}, [refresh, skipInitialFetch])
 
-	// Synchronize refreshing state globally
+	// Synchronize loading/refreshing state globally
+	const isLoading = isInitialLoading || isRefreshing
 	useEffect(() => {
-		if (isRefreshing) {
+		if (isLoading) {
 			updateRefreshingCount(1)
 			return () => {
 				updateRefreshingCount(-1)
 			}
 		}
-	}, [isRefreshing])
+	}, [isLoading])
 
 	return {
 		data: displayedData,
