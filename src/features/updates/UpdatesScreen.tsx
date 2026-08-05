@@ -40,7 +40,12 @@ const styles = StyleSheet.create({
 		gap: 14,
 		padding: 16,
 		borderRadius: 20,
-		borderWidth: 1
+		borderWidth: 1,
+		...Platform.select({
+			web: {
+				position: 'relative'
+			} as any
+		})
 	},
 	infoCardTopRow: {
 		flexDirection: 'row',
@@ -99,16 +104,30 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		...Platform.select({
 			web: {
-				cursor: 'pointer'
+				cursor: 'pointer',
+				appearance: 'none',
+				WebkitAppearance: 'none',
+				padding: 0,
+				margin: 0,
+				display: 'flex'
 			} as any
 		})
 	},
 	actionBar: {
+		width: '100%',
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'flex-end',
 		flexWrap: 'wrap',
-		gap: 12
+		gap: 12,
+		...Platform.select({
+			web: {
+				position: 'absolute',
+				bottom: 16,
+				right: 16,
+				width: 'auto'
+			} as any
+		})
 	},
 	progressPanel: {
 		gap: 12
