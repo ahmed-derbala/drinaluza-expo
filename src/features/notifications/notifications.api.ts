@@ -1,4 +1,4 @@
-import { getApiClient } from '../../core/api'
+import { getApiClient } from '@/core/api'
 import { NotificationResponse } from './notifications.interface'
 import * as Device from 'expo-device'
 import Constants from 'expo-constants'

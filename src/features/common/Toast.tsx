@@ -1,7 +1,7 @@
 import { colors as themeColors } from '@/core/theme'
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
-import { createShadow } from '../../core/theme'
+import { createShadow } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'

@@ -1,9 +1,9 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { router } from 'expo-router'
-import { secureGetItem, secureRemoveItem } from '../storage'
-import { config } from '../../config'
-import { logError } from '../../core/helpers/errorHandler'
-import { log } from '../log'
+import { secureGetItem, secureRemoveItem } from '@/core/storage'
+import { config } from '@/config'
+import { logError } from '@/core/helpers/errorHandler'
+import { log } from '@/core/log'
 import { ConnectionService } from '@/core/connection'
 
 // Create an API client with the given base URL

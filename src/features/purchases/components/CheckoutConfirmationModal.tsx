@@ -15,7 +15,7 @@ import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
 import type { UserData } from '@/features/profile/profile.interface'
 import type { Address, Contact, Location } from '@/features/profile/profile.interface'
-import type { BusinessCartGroup } from '../hooks/useCart'
+import type { BusinessCartGroup } from '@/features/purchases/hooks/useCart'
 
 interface FormState {
 	address: Address

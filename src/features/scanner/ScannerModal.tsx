@@ -1,3 +1,4 @@
+import { config } from '@/config'
 import React, { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
@@ -33,8 +34,8 @@ export default function ScannerModal({ visible, onClose }: ScannerModalProps) {
 		setScanned(true)
 
 		try {
-			// E.g., https://drinaluza.vercel.app/b/my-business
-			const baseUrl = process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
+			// E.g., https://drinaluza.com/b/my-business
+			const baseUrl = config.frontend.url
 			const frontendHostname = new URL(baseUrl).hostname
 			const url = new URL(data)
 			if (url.hostname.includes(frontendHostname) || url.hostname.includes('localhost')) {

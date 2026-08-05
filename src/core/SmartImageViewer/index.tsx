@@ -3,8 +3,9 @@ import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme, colors as themeColors } from '@/core/theme'
+import { config } from '@/config'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION, DEFAULT_BLURHASH, getTimeoutMs } from './constants'
+import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION, DEFAULT_BLURHASH } from './constants'
 import type { SmartImageProps } from './types'
 
 /**
@@ -128,7 +129,7 @@ function SmartImageComponent({
 		// Only set timeout for valid remote sources that haven't loaded yet
 		if (!sourceIsValid || isLoaded || hasError) return
 
-		const timeoutMs = getTimeoutMs()
+		const timeoutMs = config.app.timeout
 		timeoutRef.current = setTimeout(() => {
 			if (isMountedRef.current && !isLoaded) {
 				setHasError(true)

@@ -1,3 +1,4 @@
+import { config } from '@/config'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, TextInput, Pressable, ActivityIndicator, Switch, ScrollView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
@@ -500,7 +501,7 @@ export default function BusinessDashboardProductsScreen() {
 				<QRCodeModal
 					visible={!!selectedProductForQR}
 					onClose={() => setSelectedProductForQR(null)}
-					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/p/${selectedProductForQR.slug}`}
+					value={`${config.frontend.url}/p/${selectedProductForQR.slug}`}
 					title={localize(selectedProductForQR.name)}
 					subtitle={selectedProductForQR.slug}
 					filenamePrefix={`product_${selectedProductForQR.slug}`}

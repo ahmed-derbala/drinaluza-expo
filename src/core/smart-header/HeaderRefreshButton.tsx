@@ -3,7 +3,7 @@ import { StyleSheet, StyleProp, ViewStyle } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme } from '@/core/theme'
 import { ConnectionService, BackendState } from '@/core/connection'
-import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/hooks/useCacheFirst'
+import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/cache/useCacheFirst'
 
 export interface HeaderRefreshButtonProps {
 	/**

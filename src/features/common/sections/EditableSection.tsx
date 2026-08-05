@@ -2,8 +2,8 @@ import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type TextStyle, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, colors as themeColors } from '@/core/theme'
-import { IconButton, type IconVariant } from '../buttons/IconButton'
-import { CancelButton } from '../buttons/CancelButton'
+import { IconButton, type IconVariant } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 
 interface EditableSectionProps {
 	title: React.ReactNode

@@ -1,13 +1,14 @@
+import { config } from '@/config'
 import { colors as themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, Stack } from 'expo-router'
-import { useTheme, createShadow } from '../../core/theme'
-import { useUser } from '../../core/contexts/UserContext'
+import { useTheme, createShadow } from '@/core/theme'
+import { useUser } from '@/core/contexts/UserContext'
 import { useUserProfile } from './useUserProfile'
-import ErrorState from '../common/ErrorState'
+import ErrorState from '@/features/common/ErrorState'
 import LoadingState from '@/features/common/LoadingState'
 import SmartImage from '@/core/SmartImageViewer'
 import { Ionicons } from '@expo/vector-icons'
@@ -191,7 +192,7 @@ export default function UserDetailScreen() {
 				<QRCodeModal
 					visible={showQRCode}
 					onClose={() => setShowQRCode(false)}
-					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/u/${user.slug || userSlug}`}
+					value={`${config.frontend.url}/u/${user.slug || userSlug}`}
 					title={localize(user.name)}
 					subtitle={`${user.slug || userSlug}`}
 					filenamePrefix={`user_${user.slug || userSlug}`}

@@ -5,7 +5,7 @@
 
 import * as FileSystem from 'expo-file-system/legacy'
 import { Platform } from 'react-native'
-import { getApiClient } from '../api'
+import { getApiClient } from '@/core/api'
 import { FileUploadOptions, UploadResult, FileInfo, FileType, FileMimeType } from './types'
 
 /**

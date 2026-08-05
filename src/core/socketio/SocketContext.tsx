@@ -3,11 +3,11 @@ import React, { createContext, useContext, useEffect, useState, useMemo } from '
 import { Socket } from 'socket.io-client'
 import { useRouter } from 'expo-router'
 import { ConnectionService } from '@/core/connection'
-import { useUser } from '../contexts/UserContext'
-import { useNotification } from '../../features/notifications/NotificationContext'
+import { useUser } from '@/core/contexts/UserContext'
+import { useNotification } from '@/features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
-import { log } from '../log'
-import { getDashboardProfiles } from '../../features/dashboard/dashboard.api'
+import { log } from '@/core/log'
+import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
 
 interface SocketContextType {
 	socket: Socket | null

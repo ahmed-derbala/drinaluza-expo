@@ -5,18 +5,9 @@ import { log } from '@/core/log'
 // Cache helpers (offline-first layer)
 // ───────────────────────────────────────────────────────────────────────────────
 
-/**
- * Bump this whenever a cached payload's shape changes in a breaking way
- * (e.g. renamed/removed fields on ProductType, FeedItem, etc.). Entries
- * written under a previous version are treated as a cache miss, forcing
- * one fresh fetch instead of risking a mismatched shape being trusted.
- */
-const CACHE_SCHEMA_VERSION = 1
-
 export interface CacheEntry<T> {
 	data: T
 	cachedAt: number
-	v: number
 }
 
 export interface CacheReadResult<T> {
@@ -38,8 +29,7 @@ const memoryCache = new Map<string, CacheEntry<unknown>>()
 export const setCacheItem = async <T>(key: string, data: T): Promise<boolean> => {
 	const entry: CacheEntry<T> = {
 		data,
-		cachedAt: Date.now(),
-		v: CACHE_SCHEMA_VERSION
+		cachedAt: Date.now()
 	}
 	memoryCache.set(key, entry)
 	return await setItem(key, entry)
@@ -48,17 +38,11 @@ export const setCacheItem = async <T>(key: string, data: T): Promise<boolean> =>
 /**
  * Read a cached value. Always returns the cached data if present.
  * `isStale` is true when the entry is older than `ttlMs`.
- * Entries written under a stale schema version are treated as a miss.
  */
 export const getCacheItem = async <T>(key: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): Promise<CacheReadResult<T> | null> => {
 	const cached = memoryCache.get(key) as CacheEntry<T> | undefined
 	const entry = cached ?? (await getItem<CacheEntry<T>>(key))
 	if (!entry || entry.data === undefined) return null
-	if (entry.v !== CACHE_SCHEMA_VERSION) {
-		memoryCache.delete(key)
-		await removeItem(key)
-		return null
-	}
 	if (!cached) memoryCache.set(key, entry)
 	return {
 		data: entry.data,
@@ -102,8 +86,7 @@ export const updateCacheItem = async <T>(key: string, updater: (current: T) => T
 	try {
 		const next: CacheEntry<T> = {
 			data: updater(entry.data),
-			cachedAt: entry.cachedAt,
-			v: CACHE_SCHEMA_VERSION
+			cachedAt: entry.cachedAt
 		}
 		memoryCache.set(key, next)
 		return await setItem(key, next)

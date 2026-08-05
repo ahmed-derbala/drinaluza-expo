@@ -1,3 +1,4 @@
+import { config } from '@/config'
 import { colors as themeColors } from '@/core/theme'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -6,16 +7,16 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter, Tabs, Stack, useLocalSearchParams } from 'expo-router'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { useTheme } from '../../core/theme'
-import ErrorState from '../common/ErrorState'
-import { useUser } from '../../core/contexts/UserContext'
+import { useTheme } from '@/core/theme'
+import ErrorState from '@/features/common/ErrorState'
+import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SmartImage from '@/core/SmartImageViewer'
 import { useDashboardProfiles } from './useDashboardProfiles'
 import { useBusinessDashboard } from './useBusinessDashboard'
-import { getBusinessCustomers } from '../businesses/businesses.api'
+import { getBusinessCustomers } from '@/features/businesses/businesses.api'
 import { isBusinessDashboard, DashboardData, DashboardProfile, DashboardRankItem, ProductStats, BusinessDashboard } from './dashboard.interface'
-import { LocalizedName } from '../businesses/businesses.interface'
+import { LocalizedName } from '@/features/businesses/businesses.interface'
 
 import QRCodeModal from '@/features/common/QRCodeModal'
 
@@ -269,7 +270,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 				<QRCodeModal
 					visible={showQRCode}
 					onClose={() => setShowQRCode(false)}
-					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${dashboardData.business.slug}`}
+					value={`${config.frontend.url}/b/${dashboardData.business.slug}`}
 					title={localize(dashboardData.business.name)}
 					subtitle={`${dashboardData.business.slug}`}
 					filenamePrefix={`business_${dashboardData.business.slug}`}

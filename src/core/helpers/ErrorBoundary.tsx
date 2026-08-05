@@ -1,7 +1,7 @@
 import { colors as themeColors } from '@/core/theme'
 import React, { Component, ReactNode } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
-import { useTheme } from '../theme'
+import { useTheme } from '@/core/theme'
 
 interface Props {
 	children: ReactNode

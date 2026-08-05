@@ -1,4 +1,4 @@
-import { getApiClient } from '../../core/api'
+import { getApiClient } from '@/core/api'
 import { FeedItem, FeedResponse, NormalizedFeedResponse, RawFeedDoc } from './feed.interface'
 
 /**

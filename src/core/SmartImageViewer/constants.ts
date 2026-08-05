@@ -19,19 +19,3 @@ export const DEFAULT_TRANSITION_DURATION = 200
  */
 export const DEFAULT_BLURHASH = 'L5H2EC=PM+yV0g-mq.wG9c010J}I'
 
-/**
- * Reads the image loading timeout from environment variables.
- * Falls back to 60000ms (60s) if not configured.
- *
- * Uses EXPO_PUBLIC_TIMEOUT_MS from .env — no hardcoded values.
- */
-export function getTimeoutMs(): number {
-	const envValue = process.env.EXPO_PUBLIC_TIMEOUT_MS
-	if (envValue) {
-		const parsed = parseInt(envValue, 10)
-		if (!isNaN(parsed) && parsed > 0) {
-			return parsed
-		}
-	}
-	return 60000
-}

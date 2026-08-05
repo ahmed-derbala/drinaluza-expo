@@ -1,4 +1,4 @@
-import { LocalizedName } from '../businesses/businesses.interface'
+import { LocalizedName } from '@/features/businesses/businesses.interface'
 
 export interface Phone {
 	fullNumber?: string

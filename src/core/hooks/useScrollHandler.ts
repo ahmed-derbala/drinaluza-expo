@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react'
 import { NativeScrollEvent, NativeSyntheticEvent, Platform } from 'react-native'
-import { useLayout } from '../contexts/LayoutContext'
+import { useLayout } from '@/core/contexts/LayoutContext'
 
 /**
  * A hook that provides a scroll handler to hide/show the tab bar based on scroll direction.

@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
 import { getItem, setItem } from '@/core/storage'
 import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
-import { UserData } from '../../features/profile/profile.interface'
-import { LocalizedName } from '../../features/businesses/businesses.interface'
-import { translate as translateHelper, setGlobalAppLang, localizeName } from '../translation'
+import { UserData } from '@/features/profile/profile.interface'
+import { LocalizedName } from '@/features/businesses/businesses.interface'
+import { translate as translateHelper, setGlobalAppLang, localizeName } from '@/core/translation'
 import { log } from '@/core/log'
 
 interface UserContextType {

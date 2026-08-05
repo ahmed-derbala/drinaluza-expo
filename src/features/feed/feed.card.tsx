@@ -1,6 +1,6 @@
 import React, { memo } from 'react'
 import { FeedItem, ProductFeedItem } from './feed.interface'
-import ProductCard from '../products/products.card'
+import ProductCard from '@/features/products/products.card'
 
 type FeedCardProps = {
 	item: FeedItem

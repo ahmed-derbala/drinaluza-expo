@@ -1,5 +1,5 @@
-import { getApiClient } from '../../core/api'
-import { parseError } from '../../core/helpers/errorHandler'
+import { getApiClient } from '@/core/api'
+import { parseError } from '@/core/helpers/errorHandler'
 
 const apiClient = getApiClient()
 

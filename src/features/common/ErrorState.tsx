@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '../../core/theme'
+import { useTheme } from '@/core/theme'
 import { IconButton } from './buttons/IconButton'
 
 interface ErrorStateProps {

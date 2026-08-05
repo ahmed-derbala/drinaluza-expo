@@ -1,4 +1,4 @@
-import { LocalizedName, ProductSpecs } from '../businesses/businesses.interface'
+import { LocalizedName, ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface Product {
 	_id: string

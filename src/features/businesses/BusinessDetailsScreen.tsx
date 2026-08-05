@@ -1,3 +1,4 @@
+import { config } from '@/config'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
@@ -412,7 +413,7 @@ export default function BusinessDetailsScreen() {
 				<QRCodeModal
 					visible={showQRCode}
 					onClose={() => setShowQRCode(false)}
-					value={`${process.env.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'}/b/${business.slug}`}
+					value={`${config.frontend.url}/b/${business.slug}`}
 					title={localize(business.name)}
 					subtitle={`${business.slug}`}
 					filenamePrefix={`business_${business.slug}`}

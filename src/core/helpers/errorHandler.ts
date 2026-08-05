@@ -1,5 +1,5 @@
-import { translate } from '../translation'
-import { log } from '../log'
+import { translate } from '@/core/translation'
+import { log } from '@/core/log'
 
 export interface ErrorInfo {
 	title: string
