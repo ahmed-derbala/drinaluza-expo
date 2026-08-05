@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
 	actionBar: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		justifyContent: 'flex-start',
+		justifyContent: 'flex-end',
 		flexWrap: 'wrap',
 		gap: 12
 	},
@@ -115,12 +115,11 @@ const styles = StyleSheet.create({
 	},
 	progressMeta: {
 		flexDirection: 'row',
-		justifyContent: 'space-between',
+		justifyContent: 'flex-start',
 		alignItems: 'center',
 		gap: 10
 	},
 	progressText: {
-		flex: 1,
 		marginRight: 4,
 		fontSize: 13,
 		fontWeight: '700'
@@ -506,11 +505,7 @@ export default function UpdatesScreen() {
 								<View style={styles.progressPanel}>
 									<View style={styles.progressMeta}>
 										<Text style={[styles.progressText, { color: isDownloading ? colors.primary : isPaused ? colors.warning : colors.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>
-											{isDownloading
-												? `${translate('downloading', 'Downloading')} • ${Math.round(downloadProgress * 100)}%`
-												: isPaused
-													? `${translate('paused', 'Paused')} • ${Math.round(downloadProgress * 100)}%`
-													: ''}
+											{isDownloading || isPaused ? `${Math.round(downloadProgress * 100)}%` : ''}
 										</Text>
 										<View style={styles.progressBadges}>
 											<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: downloadSpeed === null ? 0 : 1 }]}>
@@ -568,8 +563,8 @@ export default function UpdatesScreen() {
 													disabled={!isAndroid || isDownloading || isPaused || apk.version === config.app.version}
 													style={styles.iconBtn}
 												/>
-												<ShareButton label="Share APK Installer" onPress={() => handleShareApk(apk.fileUri)} style={styles.iconBtn} />
 												<DeleteButton onPress={() => deleteApk(apk.fileUri)} style={styles.iconBtn} />
+												<ShareButton label="Share APK Installer" onPress={() => handleShareApk(apk.fileUri)} style={styles.iconBtn} />
 											</View>
 										</View>
 									</View>
