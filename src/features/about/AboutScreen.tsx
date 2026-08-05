@@ -114,7 +114,7 @@ export default function AboutScreen() {
 						subtitle="Follow us on TikTok"
 						onPress={() => Linking.openURL('https://www.tiktok.com/@drinaluza')}
 						copyValue="https://www.tiktok.com/@drinaluza"
-						color={themeColors.background}
+						color={themeColors.tiktok}
 					/>
 				</SettingSection>
 

@@ -109,7 +109,7 @@ export function BaseButton({
 		<TouchableOpacity
 			onPress={onPress}
 			disabled={disabled || loading}
-			activeOpacity={0.8}
+			activeOpacity={0.1}
 			accessibilityLabel={accessibilityLabel}
 			accessibilityRole={accessibilityRole}
 			accessibilityState={accessibilityState}

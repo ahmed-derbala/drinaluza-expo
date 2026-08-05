@@ -1,15 +1,10 @@
 import React from 'react'
 import { View, Platform } from 'react-native'
 import { SmartKebabMenu } from '@/core/smart-kebab-menu'
-import HeaderActionButton from './HeaderActionButton'
-import HeaderRefreshButton from './HeaderRefreshButton'
-import HeaderSearchButton from './HeaderSearchButton'
-import HeaderNotificationsButton from './HeaderNotificationsButton'
-import HeaderCartButton from './HeaderCartButton'
+import { HeaderIconButton, HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
 
 export type HeaderActionType =
 	| 'search'
-	| 'notifications'
 	| 'cart'
 	| 'refresh'
 	| 'scanner'
@@ -31,8 +26,6 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 			switch (action) {
 				case 'search':
 					return <HeaderSearchButton key="predefined-search" />
-				case 'notifications':
-					return <HeaderNotificationsButton key="predefined-notifications" />
 				case 'cart':
 					return <HeaderCartButton key="predefined-cart" />
 				case 'refresh':
@@ -40,16 +33,16 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 				case 'scanner':
 					if (Platform.OS === 'web') return null
 					return (
-						<HeaderActionButton
+						<HeaderIconButton
 							key="predefined-scanner"
-							iconName="qr-code-scanner"
+							icon="qr-code-scanner"
 							iconType="material"
 							onPress={() => {
 								if (typeof options?.onScannerPress === 'function') {
 									options.onScannerPress()
 								}
 							}}
-							accessibilityLabel="Scan QR Code"
+							label="Scan QR Code"
 						/>
 					)
 				default:
@@ -63,13 +56,13 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} isOffline={config.isOffline} />
 			}
 			return (
-				<HeaderActionButton
+				<HeaderIconButton
 					key={config.key}
-					iconName={config.iconName}
+					icon={config.iconName}
 					iconType={config.iconType || 'ionicons'}
 					badgeCount={config.badgeCount}
 					onPress={config.onPress}
-					accessibilityLabel={config.accessibilityLabel}
+					label={config.accessibilityLabel}
 					size={config.size}
 				/>
 			)
@@ -88,7 +81,7 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 				flexGrow: 0,
 				zIndex: 2,
 				minHeight: 38,
-				gap: 2
+				gap: 0
 			}}
 		>
 			{resolvedHeaderRight}

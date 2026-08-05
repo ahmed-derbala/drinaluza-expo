@@ -40,6 +40,7 @@ export const colors: AppThemeColors = {
 	textSecondary: '#94A3B8',
 	textTertiary: '#64748B',
 	textTertiary8: '#64748B15',
+	tiktok: '#FF0050',
 	warning: '#F59E0B',
 	warning10: '#F59E0B1A',
 	whatsApp: '#25D366',

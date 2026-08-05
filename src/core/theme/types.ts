@@ -40,6 +40,7 @@ export interface AppThemeColors {
 	textSecondary: string
 	textTertiary: string
 	textTertiary8: string
+	tiktok: string
 	warning: string
 	warning10: string
 	whatsApp: string

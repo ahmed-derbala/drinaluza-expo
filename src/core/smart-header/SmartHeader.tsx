@@ -4,22 +4,19 @@ import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-li
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Href, usePathname } from 'expo-router'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { HeaderIconButton } from './buttons'
+import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useLayout } from '@/core/contexts'
-import HeaderActionButton from './HeaderActionButton'
-import HeaderRefreshButton from './HeaderRefreshButton'
-import HeaderNotificationsButton from './HeaderNotificationsButton'
-import HeaderSearchButton from './HeaderSearchButton'
-import HeaderCartButton from './HeaderCartButton'
+import { HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
 import HeaderActions, { HeaderActionType } from './HeaderActions'
 import HeaderTitle from './HeaderTitle'
 
 // Re-export actions for convenience
-export { HeaderActionButton, HeaderRefreshButton, HeaderNotificationsButton, HeaderSearchButton, HeaderCartButton }
+export { HeaderIconButton } from './buttons'
+export { HeaderRefreshButton, HeaderSearchButton, HeaderCartButton }
 
 // ----------------------------------------
 // 1. HeaderBackButton Component
@@ -30,7 +27,6 @@ interface HeaderBackButtonProps {
 }
 
 export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ onPress, fallbackRoute = '/feed' }) => {
-	const { colors } = useTheme()
 	const router = useRouter()
 
 	const handlePress = () => {
@@ -43,17 +39,7 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 		}
 	}
 
-	return (
-		<IconButton
-			icon={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'}
-			label={translate('go_back', 'Go back')}
-			onPress={handlePress}
-			colors={colors}
-			iconColor={colors.primary}
-			size={32}
-			style={{ backgroundColor: 'transparent', borderColor: 'transparent' }}
-		/>
-	)
+	return <HeaderIconButton icon={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} label={translate('go_back', 'Go back')} onPress={handlePress} />
 })
 
 HeaderBackButton.displayName = 'HeaderBackButton'
@@ -340,9 +326,8 @@ SmartFlashList.displayName = 'SmartHeader.FlashList'
 const MemoizedHeader = React.memo(SmartHeaderComponent) as any
 
 MemoizedHeader.BackButton = HeaderBackButton
-MemoizedHeader.ActionButton = HeaderActionButton
+MemoizedHeader.ActionButton = HeaderIconButton
 MemoizedHeader.RefreshButton = HeaderRefreshButton
-MemoizedHeader.NotificationsButton = HeaderNotificationsButton
 MemoizedHeader.SearchButton = HeaderSearchButton
 MemoizedHeader.CartButton = HeaderCartButton
 MemoizedHeader.ScrollView = SmartScrollView
@@ -350,9 +335,8 @@ MemoizedHeader.FlashList = SmartFlashList
 
 export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHeaderProps> & {
 	BackButton: typeof HeaderBackButton
-	ActionButton: typeof HeaderActionButton
+	ActionButton: typeof HeaderIconButton
 	RefreshButton: typeof HeaderRefreshButton
-	NotificationsButton: typeof HeaderNotificationsButton
 	SearchButton: typeof HeaderSearchButton
 	CartButton: typeof HeaderCartButton
 	ScrollView: any
