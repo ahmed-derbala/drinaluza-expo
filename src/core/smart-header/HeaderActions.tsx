@@ -84,7 +84,6 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 				flexDirection: 'row',
 				alignItems: 'center',
 				justifyContent: 'flex-end',
-				width: 180,
 				flexShrink: 0,
 				flexGrow: 0,
 				zIndex: 2,

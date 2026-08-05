@@ -39,7 +39,7 @@ const HeaderTitle: React.FC<HeaderTitleProps> = ({ title, subtitle }) => {
 
 			{/* Subtitle Wrapper */}
 			{subtitle ? (
-				<View style={{ height: 16, marginTop: 2, justifyContent: 'center' }}>
+				<View style={{ height: 20, marginTop: 2, justifyContent: 'center' }}>
 					<Text
 						style={{
 							fontSize: 12,
