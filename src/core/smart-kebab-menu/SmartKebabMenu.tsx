@@ -142,7 +142,7 @@ export const SmartKebabMenu: React.FC = () => {
 		return undefined
 	}, [isPaused, isDownloading, downloadProgress, downloadedApks, latestRelease, colors.success, colors.warning, colors.info])
 
-	// Default menu items: /home, /settings, /about, and /updates
+	// Default menu items: /home, /about, and /updates
 	const defaultItems: SmartKebabMenuItem[] = useMemo(
 		() => [
 			{
@@ -151,14 +151,6 @@ export const SmartKebabMenu: React.FC = () => {
 				icon: 'home-outline',
 				onPress: () => {
 					router.push('/(home)/feed' as any)
-				}
-			},
-			{
-				key: 'settings',
-				label: translate('settings', 'Settings'),
-				icon: 'settings-outline',
-				onPress: () => {
-					router.push('/settings')
 				}
 			},
 			{
@@ -187,9 +179,6 @@ export const SmartKebabMenu: React.FC = () => {
 			const cleanPath = pathname.toLowerCase()
 			if (item.key === 'home') {
 				return !(cleanPath === '/' || cleanPath === '/feed' || cleanPath.endsWith('/feed'))
-			}
-			if (item.key === 'settings') {
-				return !(cleanPath === '/settings' || cleanPath.endsWith('/settings'))
 			}
 			if (item.key === 'about') {
 				return !(cleanPath === '/about' || cleanPath.endsWith('/about'))

@@ -158,10 +158,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		return options?.headerLeft
 	}, [headerLeft, options?.headerLeft])
 
-	const rootPaths = useMemo(
-		() => ['/', '/feed', '/dashboard', '/notifications', '/profile', '/settings', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile', '/(home)/settings'],
-		[]
-	)
+	const rootPaths = useMemo(() => ['/', '/feed', '/dashboard', '/notifications', '/profile', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile'], [])
 
 	// Determine if we should show the back button
 	const resolvedShowBackButton = useMemo(() => {

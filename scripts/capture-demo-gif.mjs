@@ -51,9 +51,6 @@ async function runDemo(page) {
 	await gotoPage(page, '/profile', 2500)
 	await scrollPage(page, 2, 1000)
 
-	await gotoPage(page, '/settings', 2200)
-	await scrollPage(page, 1, 900)
-
 	await gotoPage(page, '/auth', 2500)
 	await sleep(1500)
 

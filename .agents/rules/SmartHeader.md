@@ -11,7 +11,7 @@ every screen uses SmartHeader located in src/core/smart-header/
     - Title
     - Optional subtitle
   - right section:
-    - SmartKebabMenu: always visible, default menu items: /settings and /updates
+    - SmartKebabMenu: always visible, default menu items: /updates
     - headerActions: Container for screen-specific action buttons.
 - example of Core Props to support:
   - showBackButton

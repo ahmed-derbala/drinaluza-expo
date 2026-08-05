@@ -8,8 +8,7 @@ SmartKebabMenu is a reusable kebab menu that integrates with the existing `Smart
 
 SmartKebabMenu should be visible in headerRight of SmartScreenHeader on any screen
 
-SmartKebabMenu should has 2 default menu items always shown at the end of the menu:
- - /settings
+SmartKebabMenu should has default menu items always shown at the end of the menu:
  - /updates
 more menu items should be determined dynamically by the currently displayed screen.
 
