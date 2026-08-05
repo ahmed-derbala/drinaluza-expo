@@ -9,6 +9,7 @@ import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { IconButton } from './buttons/IconButton'
 import { DownloadButton } from './buttons/DownloadButton'
+import { ShareButton } from './buttons/ShareButton'
 
 export interface QRCodeModalProps {
 	visible: boolean
@@ -245,14 +246,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 							style={{ backgroundColor: colors.surfaceVariant, borderColor: colors.border }}
 						/>
 						{Platform.OS !== 'web' && (
-							<IconButton
-								icon="share-social-outline"
-								label={translate('share_link', 'Share')}
-								onPress={handleShareLink}
-								disabled={!value}
-								colors={colors}
-								style={{ backgroundColor: colors.surfaceVariant, borderColor: colors.border }}
-							/>
+							<ShareButton label={translate('share_link', 'Share')} onPress={handleShareLink} disabled={!value} style={{ backgroundColor: colors.surfaceVariant, borderColor: colors.border }} />
 						)}
 					</View>
 				</View>

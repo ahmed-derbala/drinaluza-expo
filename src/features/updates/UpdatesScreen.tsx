@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import * as Clipboard from 'expo-clipboard'
 import * as Sharing from 'expo-sharing'
 import { useTheme, AppThemeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -10,11 +9,12 @@ import { config } from '@/config'
 import { useUpdates } from './useUpdates'
 import { isVersionGreater } from './UpdatesContext'
 import { hexToRgba } from '@/core/helpers/colors'
-import { IconButton } from '@/features/common/buttons/IconButton'
 import { InstallButton } from '@/features/common/buttons/InstallButton'
 import { DownloadButton } from '@/features/common/buttons/DownloadButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
+import { ShareButton } from '@/features/common/buttons/ShareButton'
+import { CopyUrlButton } from '@/features/common/buttons/CopyUrlButton'
 
 const styles = StyleSheet.create({
 	container: {
@@ -160,8 +160,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'flex-start',
 		gap: 12,
-		flex: 1,
-		marginRight: 12
+		flex: 1
 	},
 	apkIcon: {
 		width: 36,
@@ -267,7 +266,6 @@ export default function UpdatesScreen() {
 		checkForUpdates()
 	}, [checkForUpdates])
 
-	const [copied, setCopied] = useState(false)
 	const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null)
 	const [remainingTime, setRemainingTime] = useState<number | null>(null)
 	const prevProgressRef = useRef(downloadProgress)
@@ -360,14 +358,6 @@ export default function UpdatesScreen() {
 			})
 		} catch (e) {
 			return dateStr
-		}
-	}
-
-	const handleCopyUrl = async () => {
-		if (latestRelease?.download_url) {
-			await Clipboard.setStringAsync(latestRelease.download_url)
-			setCopied(true)
-			setTimeout(() => setCopied(false), 2000)
 		}
 	}
 
@@ -499,7 +489,7 @@ export default function UpdatesScreen() {
 							footer={releaseBadges}
 							iconElement={
 								isWeb ? (
-									<DownloadButton downloadUrl={latestRelease?.download_url} size={48} variant={isUpToDate || !latestRelease ? 'secondary' : 'primary'} disabled={!latestRelease?.download_url} />
+									<DownloadButton downloadUrl={latestRelease?.download_url} size={48} variant="primary" disabled={!latestRelease?.download_url} />
 								) : (
 									<DownloadButton
 										size={48}
@@ -542,36 +532,12 @@ export default function UpdatesScreen() {
 
 							<View style={styles.actionBar}>
 								{isWeb ? (
-									<IconButton
-										icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
-										label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
-										onPress={handleCopyUrl}
-										disabled={!latestRelease?.download_url}
-										variant={copied ? 'success' : 'secondary'}
-										colors={colors}
-										style={styles.actionButton}
-									/>
+									<CopyUrlButton url={latestRelease?.download_url} style={styles.actionButton} />
 								) : (
 									<>
 										<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
-										<IconButton
-											icon={copied ? 'checkmark-circle-outline' : 'copy-outline'}
-											label={copied ? translate('copied', 'Copied') : translate('copy_url', 'Copy Link')}
-											onPress={handleCopyUrl}
-											disabled={!latestRelease?.download_url}
-											variant={copied ? 'success' : 'secondary'}
-											colors={colors}
-											style={styles.actionButton}
-										/>
-										<IconButton
-											icon="share-social-outline"
-											label={translate('share_url', 'Share Link')}
-											onPress={handleShareUrl}
-											disabled={!latestRelease?.download_url}
-											variant="secondary"
-											colors={colors}
-											style={styles.actionButton}
-										/>
+										<CopyUrlButton url={latestRelease?.download_url} style={styles.actionButton} />
+										<ShareButton label={translate('share_url', 'Share Link')} onPress={handleShareUrl} disabled={!latestRelease?.download_url} style={styles.actionButton} />
 									</>
 								)}
 							</View>
@@ -602,13 +568,7 @@ export default function UpdatesScreen() {
 													disabled={!isAndroid || isDownloading || isPaused || apk.version === config.app.version}
 													style={styles.iconBtn}
 												/>
-												<TouchableOpacity
-													onPress={() => handleShareApk(apk.fileUri)}
-													accessibilityLabel="Share APK Installer"
-													style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}
-												>
-													<Ionicons name="share-social-outline" size={20} color={colors.primary} />
-												</TouchableOpacity>
+												<ShareButton label="Share APK Installer" onPress={() => handleShareApk(apk.fileUri)} style={styles.iconBtn} />
 												<DeleteButton onPress={() => deleteApk(apk.fileUri)} style={styles.iconBtn} />
 											</View>
 										</View>
