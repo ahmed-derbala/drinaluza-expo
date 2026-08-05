@@ -18,4 +18,3 @@ export const DEFAULT_TRANSITION_DURATION = 200
  * light and dark themes.
  */
 export const DEFAULT_BLURHASH = 'L5H2EC=PM+yV0g-mq.wG9c010J}I'
-

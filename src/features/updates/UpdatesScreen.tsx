@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
 	},
 	apkCard: {
 		flexDirection: 'row',
-		alignItems: 'center',
+		alignItems: 'flex-start',
 		justifyContent: 'space-between',
 		padding: 14,
 		borderRadius: 18,
@@ -158,15 +158,15 @@ const styles = StyleSheet.create({
 	},
 	apkLeft: {
 		flexDirection: 'row',
-		alignItems: 'center',
+		alignItems: 'flex-start',
 		gap: 12,
 		flex: 1,
 		marginRight: 12
 	},
 	apkIcon: {
-		width: 44,
-		height: 44,
-		borderRadius: 12,
+		width: 36,
+		height: 36,
+		borderRadius: 10,
 		justifyContent: 'center',
 		alignItems: 'center'
 	},
@@ -184,7 +184,9 @@ const styles = StyleSheet.create({
 	},
 	apkActions: {
 		flexDirection: 'row',
-		gap: 8
+		justifyContent: 'flex-end',
+		gap: 8,
+		marginTop: 4
 	},
 	iconBtn: {
 		width: 42,
@@ -584,7 +586,7 @@ export default function UpdatesScreen() {
 								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 									<View style={styles.apkLeft}>
 										<View style={[styles.apkIcon, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
-											<Ionicons name="logo-android" size={22} color={colors.primary} />
+											<Ionicons name="logo-android" size={18} color={colors.primary} />
 										</View>
 										<View style={styles.apkText}>
 											<Text style={[styles.apkTitle, { color: colors.text }]} numberOfLines={1} adjustsFontSizeToFit>
@@ -593,23 +595,23 @@ export default function UpdatesScreen() {
 											<Text style={[styles.apkMeta, { color: colors.textTertiary }]}>
 												v{apk.version} • {formatBytes(apk.size)}
 											</Text>
+											<View style={styles.apkActions}>
+												<InstallButton
+													fileUri={apk.fileUri}
+													onPress={() => installApk(apk.fileUri)}
+													disabled={!isAndroid || isDownloading || isPaused || apk.version === config.app.version}
+													style={styles.iconBtn}
+												/>
+												<TouchableOpacity
+													onPress={() => handleShareApk(apk.fileUri)}
+													accessibilityLabel="Share APK Installer"
+													style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}
+												>
+													<Ionicons name="share-social-outline" size={20} color={colors.primary} />
+												</TouchableOpacity>
+												<DeleteButton onPress={() => deleteApk(apk.fileUri)} style={styles.iconBtn} />
+											</View>
 										</View>
-									</View>
-									<View style={styles.apkActions}>
-										<InstallButton
-											fileUri={apk.fileUri}
-											onPress={() => installApk(apk.fileUri)}
-											disabled={!isAndroid || isDownloading || isPaused || apk.version === config.app.version}
-											style={styles.iconBtn}
-										/>
-										<TouchableOpacity
-											onPress={() => handleShareApk(apk.fileUri)}
-											accessibilityLabel="Share APK Installer"
-											style={[styles.iconBtn, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}
-										>
-											<Ionicons name="share-social-outline" size={20} color={colors.primary} />
-										</TouchableOpacity>
-										<DeleteButton onPress={() => deleteApk(apk.fileUri)} style={styles.iconBtn} />
 									</View>
 								</View>
 							))}

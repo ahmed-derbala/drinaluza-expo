@@ -22,7 +22,8 @@ export const config = {
 		url: process.env.EXPO_PUBLIC_FRONTEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'
 	},
 	updates: {
-		checkUrl: process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
+		checkUrl:
+			process.env.EXPO_PUBLIC_UPDATE_CHECK_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
 		minFreeStorage: Number(process.env.EXPO_PUBLIC_UPDATE_MIN_FREE_STORAGE_MB || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_MIN_FREE_STORAGE_MB || 1000),
 		maxApkInstallersCount: Number(process.env.EXPO_PUBLIC_UPDATE_MAX_APK_INSTALLERS_COUNT || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATE_MAX_APK_INSTALLERS_COUNT || 3)
 	},

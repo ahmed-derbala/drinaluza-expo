@@ -7,7 +7,7 @@ import { config } from '@/config'
 import { getItem, setItem } from '@/core/storage'
 import { translate } from '@/core/translation'
 import { SmartModal } from '@/core/smart-modal'
-import { DownloadUpdateButton } from '@/features/common/buttons/DownloadUpdateButton'
+import { DownloadButton } from '@/features/common/buttons/DownloadButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { EyeButton } from '@/features/common/buttons/EyeButton'
 
@@ -183,13 +183,7 @@ function RootLayoutContent() {
 							accessibilityState={{ checked: dontShowWebUpdateModalAgain }}
 						/>
 						<CancelButton onPress={closeWebUpdateModal} style={updateModalStyles.iconButton} />
-						<DownloadUpdateButton
-							downloadUrl={webUpdateModal?.download_url}
-							version={webUpdateModal?.latest_version}
-							onAfterDownload={closeWebUpdateModal}
-							variant="primary"
-							style={updateModalStyles.iconButton}
-						/>
+						<DownloadButton downloadUrl={webUpdateModal?.download_url} onAfterDownload={closeWebUpdateModal} variant="primary" style={updateModalStyles.iconButton} />
 					</View>
 				}
 			/>

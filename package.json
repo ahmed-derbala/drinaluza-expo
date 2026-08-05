@@ -1,6 +1,6 @@
 {
 	"name": "drinaluza",
-	"version": "1.55.0",
+	"version": "1.55.1",
 	"main": "expo-router/entry",
 	"description": "Drinaluza, business manager app (mobile and web client)",
 	"author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -37,7 +37,7 @@
 		"android": "expo run:android",
 		"ios": "expo run:ios",
 		"web": "expo start --web",
-		"i": "npm i -g eas-cli expo expo-doctor dotenv-cli && npm i",
+		"i": "npm i -g eas-cli expo expo-doctor dotenv-cli prettier && npm i",
 		"i:prod": "NODE_ENV=production npm i --omit=dev",
 		"i:check": "echo y | expo install --check",
 		"fix": "npm run env:local && npm run i:check && expo-doctor",
@@ -49,7 +49,7 @@
 		"format": "prettier --write \"src/**/*.{js,jsx,ts,tsx}\"",
 		"push": "npm run format && git add . && git commit -m",
 		"postpush": "git push",
-		"pushd": "git add . && git commit -m",
+		"pushd": "npm run format && git add . && git commit -m",
 		"postpushd": "git push && npm run build:apk-prod",
 		"pull": "git pull origin main && npm run i && npm run dev"
 	},
@@ -98,7 +98,6 @@
 		"@types/react": "~19.2.17",
 		"eslint": "^10.8.0",
 		"expo-dev-client": "^57.0.10",
-		"prettier": "^3.8.3",
 		"sharp-cli": "^5.2.0",
 		"typescript": "~6.0.3"
 	}
