@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -11,6 +11,7 @@ import { FileRef } from '@/features/products/products.type'
 import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { SmartHeader } from '@/core/smart-header'
+import Spinner from '@/features/common/Spinner'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -343,12 +344,7 @@ export default function CreateProductScreen() {
 					keyboardShouldPersistTaps="handled"
 					showsVerticalScrollIndicator={false}
 				>
-					{saving && (
-						<View style={styles.savingOverlay}>
-							<ActivityIndicator size="small" color={colors.primary} />
-							<Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginLeft: 8 }}>{translate('saving', 'Saving...')}</Text>
-						</View>
-					)}
+					{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
 
 					{/* Business & Category Picker */}
 					<View style={styles.card}>
@@ -472,16 +468,14 @@ export default function CreateProductScreen() {
 
 					{/* Submit button */}
 					<View style={{ padding: 16, marginTop: 12 }}>
-						<TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleCreateProduct} disabled={saving}>
-							{saving ? (
-								<ActivityIndicator size="small" color={themeColors.buttonText} />
-							) : (
-								<>
-									<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
-									<Ionicons name="checkmark-done" size={22} color={themeColors.buttonText} />
-								</>
-							)}
-						</TouchableOpacity>
+						{saving ? (
+							<Spinner size="small" expand={false} />
+						) : (
+							<TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }]} onPress={handleCreateProduct}>
+								<Text style={styles.submitBtnText}>{translate('create_product', 'Create Product')}</Text>
+								<Ionicons name="checkmark-done" size={22} color={themeColors.buttonText} />
+							</TouchableOpacity>
+						)}
 					</View>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>

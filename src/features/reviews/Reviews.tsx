@@ -1,13 +1,13 @@
 import { colors as themeColors } from '@/core/theme'
 import React, { useState, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { getReviews, createReview } from './reviews.api'
 import { Review } from './reviews.interface'
 import RatingStars from '@/features/common/RatingStars'
-import LoadingState from '@/features/common/LoadingState'
+import Spinner from '@/features/common/Spinner'
 import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
 
@@ -159,15 +159,19 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 						value={newReview.comment}
 						onChangeText={(text) => setNewReview({ ...newReview, comment: text })}
 					/>
-					<TouchableOpacity style={[styles.submitButton, { backgroundColor: colors.primary, opacity: submitting ? 0.6 : 1 }]} onPress={handleSubmitReview} disabled={submitting}>
-						{submitting ? <ActivityIndicator size="small" color={themeColors.buttonText} /> : <Text style={styles.submitButtonText}>{translate('submit_review', 'Submit Review')}</Text>}
-					</TouchableOpacity>
+					{submitting ? (
+						<Spinner size="small" expand={false} />
+					) : (
+						<TouchableOpacity style={[styles.submitButton, { backgroundColor: colors.primary }]} onPress={handleSubmitReview}>
+							<Text style={styles.submitButtonText}>{translate('submit_review', 'Submit Review')}</Text>
+						</TouchableOpacity>
+					)}
 				</View>
 			)}
 
 			{/* Reviews List */}
 			{loading ? (
-				<LoadingState style={styles.loadingContainer} />
+				<Spinner style={styles.loadingContainer} />
 			) : reviews.length === 0 ? (
 				<EmptyState title={translate('no_reviews_yet', 'No reviews yet')} subtitle={translate('be_first_to_review', 'Be the first to review')} iconName="star-outline" style={styles.emptyContainer} />
 			) : (

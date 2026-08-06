@@ -1,7 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, LayoutRectangle, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
+import { LayoutRectangle, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 
 import { Ionicons } from '@expo/vector-icons'
+import Spinner from '@/features/common/Spinner'
 
 import { useTheme } from '@/core/theme'
 
@@ -89,7 +90,7 @@ export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, opti
 						>
 							<View style={[styles.tab, { borderBottomColor: selected ? colors.primary : 'transparent' }]}>
 								{selected && loading ? (
-									<ActivityIndicator size="small" color={selected ? colors.primary : colors.textSecondary} style={styles.icon} />
+									<Spinner size="small" expand={false} style={[styles.icon, { padding: 0 }]} />
 								) : option.iconName ? (
 									<Ionicons name={option.iconName as any} size={16} color={selected ? colors.primary : colors.textSecondary} style={styles.icon} />
 								) : null}

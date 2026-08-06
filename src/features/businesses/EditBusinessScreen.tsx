@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useMemo } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator, Platform, useWindowDimensions, KeyboardAvoidingView } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, useWindowDimensions, KeyboardAvoidingView } from 'react-native'
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import ErrorState from '@/features/common/ErrorState'
-import LoadingState from '@/features/common/LoadingState'
+import Spinner from '@/features/common/Spinner'
 import { toast } from '@/features/common/Toast'
 import { Ionicons } from '@expo/vector-icons'
 import AddressForm from '@/features/common/AddressForm'
@@ -337,7 +337,7 @@ export default function EditBusinessScreen() {
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-				<LoadingState />
+				<Spinner />
 			</View>
 		)
 	}
@@ -365,9 +365,13 @@ export default function EditBusinessScreen() {
 						<View style={styles.heroContent}>
 							<TouchableOpacity style={styles.avatarWrapper} onPress={handleUploadPhoto} disabled={uploadingPhoto} activeOpacity={0.8}>
 								<SmartImage source={thumbnailUrl} style={styles.avatarImage} entityType="business" />
-								<View style={styles.cameraIconBadge}>
-									{uploadingPhoto ? <ActivityIndicator size="small" color={themeColors.buttonText} /> : <Ionicons name="camera" size={12} color={themeColors.buttonText} />}
-								</View>
+								{uploadingPhoto ? (
+									<Spinner size="small" expand={false} style={{ padding: 0 }} />
+								) : (
+									<View style={styles.cameraIconBadge}>
+										<Ionicons name="camera" size={12} color={themeColors.buttonText} />
+									</View>
+								)}
 							</TouchableOpacity>
 							<View style={styles.heroInfoText}>
 								<Text style={styles.heroTitle}>{nameEn || translate('business_name', 'Business Name')}</Text>
@@ -378,12 +382,7 @@ export default function EditBusinessScreen() {
 						</View>
 					</View>
 
-					{saving && (
-						<View style={styles.savingOverlay}>
-							<ActivityIndicator size="small" color={colors.primary} />
-							<Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600' }}>{translate('saving', 'Saving...')}</Text>
-						</View>
-					)}
+					{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
 
 					<View style={styles.tabContent}>
 						{/* Translations Card */}

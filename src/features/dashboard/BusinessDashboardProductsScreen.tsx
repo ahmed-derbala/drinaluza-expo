@@ -1,6 +1,6 @@
 import { config } from '@/config'
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, TextInput, Pressable, ActivityIndicator, Switch, ScrollView, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, TextInput, Pressable, Switch, ScrollView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
@@ -10,6 +10,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
+import Spinner from '@/features/common/Spinner'
 import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { SmartHeader } from '@/core/smart-header'
@@ -173,11 +174,7 @@ export default function BusinessDashboardProductsScreen() {
 					onPress={() => router.push(`/dashboard/${businessSlug}/products/${item.slug}` as any)}
 					activeOpacity={0.85}
 				>
-					{isUpdating && (
-						<View style={cardStyles.updatingOverlay}>
-							<ActivityIndicator size="small" color={colors.primary} />
-						</View>
-					)}
+					{isUpdating && <Spinner size="small" expand={false} style={cardStyles.updatingOverlay} />}
 
 					<View style={cardStyles.mainRow}>
 						{/* Thumbnail */}
@@ -284,29 +281,6 @@ export default function BusinessDashboardProductsScreen() {
 		},
 		[businessSlug, colors, currency, formatPrice, handleToggleActive, localize, router, setSelectedProductForQR, translate, updatingSlugs]
 	)
-
-	// ─── Render Skeleton Loader Component ─────────────────────────────────────────
-	const renderSkeleton = () => {
-		return (
-			<View style={[cardStyles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-				<View style={cardStyles.mainRow}>
-					<View style={[cardStyles.imageContainer, { backgroundColor: themeColors.surfaceVariant25 }]} />
-					<View style={[cardStyles.details, { gap: 8 }]}>
-						<View style={{ width: '80%', height: 16, backgroundColor: themeColors.surfaceVariant25, borderRadius: 4 }} />
-						<View style={{ width: '40%', height: 12, backgroundColor: themeColors.surfaceVariant25, borderRadius: 4 }} />
-						<View style={{ width: '60%', height: 20, backgroundColor: themeColors.surfaceVariant25, borderRadius: 10 }} />
-					</View>
-					<View style={cardStyles.rightColumn}>
-						<View style={{ width: 48, height: 24, backgroundColor: themeColors.surfaceVariant25, borderRadius: 12 }} />
-						<View style={{ flexDirection: 'row', gap: 8 }}>
-							<View style={{ width: 32, height: 32, backgroundColor: themeColors.surfaceVariant25, borderRadius: 8 }} />
-							<View style={{ width: 32, height: 32, backgroundColor: themeColors.surfaceVariant25, borderRadius: 8 }} />
-						</View>
-					</View>
-				</View>
-			</View>
-		)
-	}
 
 	// Dynamic Header actions
 	const headerActionsConfig = useMemo(
@@ -466,13 +440,7 @@ export default function BusinessDashboardProductsScreen() {
 				{/* FlashList view container */}
 				<View style={[s.listContainer, { maxWidth: contentMaxWidth }]}>
 					{isInitialLoading && !isRefreshing ? (
-						<View style={s.grid}>
-							{Array.from({ length: 4 }).map((_, i) => (
-								<View key={i} style={{ width: numColumns === 1 ? '100%' : `${100 / numColumns - 1}%`, marginBottom: cardGap }}>
-									{renderSkeleton()}
-								</View>
-							))}
-						</View>
+						<Spinner />
 					) : filteredProducts.length === 0 ? (
 						<View style={s.emptyWrap}>
 							<Ionicons name="cube-outline" size={64} color={colors.textTertiary} />

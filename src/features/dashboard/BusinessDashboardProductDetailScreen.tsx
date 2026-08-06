@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Platform, ScrollView, KeyboardAvoidingView, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, colors as themeColors } from '@/core/theme'
@@ -13,7 +13,7 @@ import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import ErrorState from '@/features/common/ErrorState'
-import LoadingState from '@/features/common/LoadingState'
+import Spinner from '@/features/common/Spinner'
 import { SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import StateBadge from '@/features/common/StateBadge'
@@ -484,7 +484,7 @@ export default function BusinessDashboardProductDetailScreen() {
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader fallbackRoute={`/dashboard/${businessSlug}/products`} />
-				<LoadingState />
+				<Spinner />
 			</View>
 		)
 	}
@@ -523,12 +523,7 @@ export default function BusinessDashboardProductDetailScreen() {
 					keyboardShouldPersistTaps="handled"
 					showsVerticalScrollIndicator={false}
 				>
-					{saving && (
-						<View style={styles.savingOverlay}>
-							<ActivityIndicator size="small" color={colors.primary} />
-							<Text style={{ color: colors.textSecondary, fontSize: 13, fontWeight: '600', marginLeft: 8 }}>{translate('saving', 'Saving...')}</Text>
-						</View>
-					)}
+					{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
 
 					{/* Hero Banner Header */}
 					<View style={styles.heroBanner}>

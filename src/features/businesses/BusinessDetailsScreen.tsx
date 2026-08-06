@@ -1,7 +1,7 @@
 import { config } from '@/config'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, useWindowDimensions, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -16,6 +16,7 @@ import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { EmailButton } from '@/features/common/buttons/EmailButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
+import Spinner from '@/features/common/Spinner'
 import { useBusinessBySlug } from '@/features/businesses/useBusinessBySlug'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { getUserBySlug } from '@/features/users/users.api'
@@ -217,9 +218,7 @@ export default function BusinessDetailsScreen() {
 						} as any
 					}
 				/>
-				<View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+				<Spinner />
 			</View>
 		)
 	}

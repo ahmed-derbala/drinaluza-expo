@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
@@ -16,6 +16,7 @@ import { SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
+import Spinner from '@/features/common/Spinner'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -520,9 +521,7 @@ export default function BusinessProductsScreen() {
 		return (
 			<View style={[s.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: businessName || translate('business_products', 'Products') }} />
-				<View style={s.centered}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+				<Spinner />
 			</View>
 		)
 	}

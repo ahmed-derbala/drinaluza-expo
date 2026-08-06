@@ -9,7 +9,7 @@ import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useUserProfile } from './useUserProfile'
 import ErrorState from '@/features/common/ErrorState'
-import LoadingState from '@/features/common/LoadingState'
+import Spinner from '@/features/common/Spinner'
 import SmartImage from '@/core/SmartImageViewer'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -55,7 +55,7 @@ export default function UserDetailScreen() {
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader title={displayTitle} subtitle={`${userSlug}`} />
-				<LoadingState />
+				<Spinner />
 			</View>
 		)
 	}

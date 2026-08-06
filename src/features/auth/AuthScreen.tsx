@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, Platform, useWindowDimensions, KeyboardAvoidingView, Keyboard, findNodeHandle } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, useWindowDimensions, KeyboardAvoidingView, Keyboard, findNodeHandle } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
@@ -10,6 +10,7 @@ import { clearMemoryCache } from '@/core/cache'
 
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
+import Spinner from '@/features/common/Spinner'
 import SmartImage from '@/core/SmartImageViewer'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import { EyeButton } from '@/features/common/buttons/EyeButton'
@@ -455,15 +456,14 @@ const AuthForm = React.memo(
 				</View>
 
 				{/* CTA */}
-				<TouchableOpacity style={S.ctaBtn} onPress={handleSignInSubmit} disabled={loading} activeOpacity={0.85} accessibilityLabel={translate('continue', 'Continue')} accessibilityRole="button">
-					<LinearGradient
-						colors={loading ? [themeColors.border, themeColors.border] : [themeColors.primary, themeColors.info]}
-						start={{ x: 0, y: 0 }}
-						end={{ x: 1, y: 0 }}
-						style={StyleSheet.absoluteFill}
-					/>
-					{loading ? <ActivityIndicator size="small" color={themeColors.buttonText} /> : <Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>}
-				</TouchableOpacity>
+				{loading ? (
+					<Spinner size="small" expand={false} />
+				) : (
+					<TouchableOpacity style={S.ctaBtn} onPress={handleSignInSubmit} activeOpacity={0.85} accessibilityLabel={translate('continue', 'Continue')} accessibilityRole="button">
+						<LinearGradient colors={[themeColors.primary, themeColors.info]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
+						<Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>
+					</TouchableOpacity>
+				)}
 
 				<View style={{ height: 32 }} />
 			</>

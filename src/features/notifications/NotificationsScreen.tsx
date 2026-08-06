@@ -1,6 +1,6 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, ActivityIndicator, useWindowDimensions, Platform } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
 import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
@@ -8,6 +8,7 @@ import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
+import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
@@ -295,12 +296,8 @@ export default function NotificationsScreen() {
 
 	const renderFooter = useCallback(() => {
 		if (!isInitialLoading || notifications.length === 0) return null
-		return (
-			<View style={styles.loadingFooter}>
-				<ActivityIndicator size="small" color={colors.primary} />
-			</View>
-		)
-	}, [isInitialLoading, notifications.length, colors.primary])
+		return <Spinner size="small" expand={false} />
+	}, [isInitialLoading, notifications.length])
 
 	if (isOffline && notifications.length === 0) {
 		return (

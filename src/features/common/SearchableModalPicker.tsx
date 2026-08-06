@@ -1,10 +1,11 @@
 import React, { useState, useCallback, useMemo } from 'react'
-import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native'
+import { Modal, View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
+import Spinner from '@/features/common/Spinner'
 
 export interface SearchableModalPickerProps<T> {
 	/**
@@ -132,7 +133,7 @@ function SearchableModalPicker<T>({
 
 					{/* Data List */}
 					{loading ? (
-						<ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 40 }} />
+						<Spinner />
 					) : (
 						<FlashList
 							style={{ flex: 1 }}

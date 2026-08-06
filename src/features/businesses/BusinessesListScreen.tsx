@@ -2,11 +2,12 @@ import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
-import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, ActivityIndicator, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
+import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
+import Spinner from '@/features/common/Spinner'
 import { useBusinesses } from '@/features/businesses/useBusinesses'
 import { showPopup, showAlert } from '@/core/helpers/popup'
 import { Business } from '@/features/businesses/businesses.interface'
@@ -640,13 +641,7 @@ export default function BusinessesListScreen() {
 
 	// Handle loading state
 	if (isInitialLoading) {
-		return (
-			<View style={styles.container as ViewStyle}>
-				<View style={styles.loadingContainer as ViewStyle}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
-			</View>
-		)
+		return <Spinner />
 	}
 
 	// Main render

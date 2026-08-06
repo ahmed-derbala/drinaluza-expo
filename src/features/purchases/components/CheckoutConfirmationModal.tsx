@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native'
+import { StyleSheet, Text, View } from 'react-native'
 
 import { CenteredModal } from '@/core/smart-modal'
+import Spinner from '@/features/common/Spinner'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
@@ -175,11 +176,7 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 				</View>
 			}
 		>
-			{isSaving && (
-				<View style={styles.loader}>
-					<ActivityIndicator size="small" color={colors.primary} />
-				</View>
-			)}
+			{isSaving && <Spinner size="small" expand={false} style={styles.loader} />}
 
 			<EditableSection title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
 				<AddressForm

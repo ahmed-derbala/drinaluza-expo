@@ -1,8 +1,9 @@
 import React from 'react'
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
+import { StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { AppThemeColors } from '@/core/theme'
 import { hexToRgba } from '@/core/helpers/colors'
+import Spinner from '@/features/common/Spinner'
 
 export type ButtonVariant = 'primary' | 'success' | 'warning' | 'info' | 'secondary' | 'danger'
 
@@ -105,10 +106,14 @@ export function BaseButton({
 
 	const Icon = iconType === 'material' ? MaterialIcons : Ionicons
 
+	if (loading) {
+		return <Spinner size="small" expand={false} style={[styles.baseButton, sizeStyle, { opacity: disabled ? 0.5 : 1 }, style]} />
+	}
+
 	return (
 		<TouchableOpacity
 			onPress={onPress}
-			disabled={disabled || loading}
+			disabled={disabled}
 			activeOpacity={0.1}
 			accessibilityLabel={accessibilityLabel}
 			accessibilityRole={accessibilityRole}
@@ -116,7 +121,7 @@ export function BaseButton({
 			style={[styles.baseButton, sizeStyle, { backgroundColor, borderColor, opacity: disabled ? 0.5 : 1 }, style]}
 		>
 			<View style={isRow ? styles.contentRow : styles.contentColumn}>
-				{loading ? <ActivityIndicator size="small" color={resolvedIconColor} /> : icon ? <Icon name={icon} size={iconSize} color={resolvedIconColor} style={styles.icon} /> : null}
+				{icon ? <Icon name={icon} size={iconSize} color={resolvedIconColor} style={styles.icon} /> : null}
 				{text ? (
 					<Text style={[defaultTextStyle, textStyle]} numberOfLines={isRow ? 1 : undefined} adjustsFontSizeToFit={isRow} minimumFontScale={0.5}>
 						{text}

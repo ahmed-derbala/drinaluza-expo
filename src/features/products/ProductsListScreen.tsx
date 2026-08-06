@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 
 import { getItem, setItem } from '@/core/storage'
@@ -11,6 +11,7 @@ import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
+import Spinner from '@/features/common/Spinner'
 import { useUser } from '@/core/contexts/UserContext'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { toast } from '@/features/common/Toast'
@@ -159,11 +160,7 @@ export default function ProductsListScreen() {
 
 	const renderFooter = useCallback(() => {
 		if (isLoadingMore) {
-			return (
-				<View style={{ paddingVertical: 20, alignItems: 'center' }}>
-					<ActivityIndicator size="small" color={colors.primary} />
-				</View>
-			)
+			return <Spinner size="small" expand={false} />
 		}
 		return <View style={{ height: 20 }} />
 	}, [isLoadingMore, colors.primary])
@@ -195,11 +192,7 @@ export default function ProductsListScreen() {
 				ListFooterComponent={renderFooter}
 			/>
 
-			{isInitialLoading && !isRefreshing && products.length === 0 && (
-				<View style={styles.loadingOverlay}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
-			)}
+			{isInitialLoading && !isRefreshing && products.length === 0 && <Spinner style={styles.loadingOverlay} />}
 		</View>
 	)
 }

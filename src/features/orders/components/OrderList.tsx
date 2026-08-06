@@ -1,7 +1,8 @@
 import React, { useMemo, useCallback } from 'react'
-import { View, ActivityIndicator, RefreshControl } from 'react-native'
+import { View, RefreshControl } from 'react-native'
 
 import { SmartHeader } from '@/core/smart-header'
+import Spinner from '@/features/common/Spinner'
 import { useTheme } from '@/core/theme'
 import EmptyState from '@/features/common/EmptyState'
 
@@ -40,12 +41,8 @@ export const OrderList = React.memo(function OrderList<T>({
 
 	const footer = useMemo(() => {
 		if (!loadingMore) return null
-		return (
-			<View style={styles.loadingMore}>
-				<ActivityIndicator size="small" color={colors.primary} />
-			</View>
-		)
-	}, [loadingMore, colors.primary])
+		return <Spinner size="small" expand={false} />
+	}, [loadingMore])
 
 	const empty = useMemo(() => <EmptyState title={emptyTitle} subtitle={emptySubtitle} iconName={emptyIcon} iconType="material" style={styles.empty} />, [emptyTitle, emptySubtitle, emptyIcon])
 

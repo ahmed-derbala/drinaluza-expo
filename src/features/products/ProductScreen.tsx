@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform, ScrollView, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
@@ -17,7 +17,7 @@ import ProductGallerySection from '@/features/products/common/ProductGallerySect
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import { parseError } from '@/core/helpers/errorHandler'
 import ErrorState from '@/features/common/ErrorState'
-import LoadingState from '@/features/common/LoadingState'
+import Spinner from '@/features/common/Spinner'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
@@ -522,7 +522,7 @@ export default function ProductScreen() {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle, subtitle: productSlug } as any} />
-				<LoadingState />
+				<Spinner />
 			</View>
 		)
 	}
@@ -583,11 +583,7 @@ export default function ProductScreen() {
 
 	const renderInfoCard = () => (
 		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-			{saving && (
-				<View style={styles.savingOverlay}>
-					<ActivityIndicator size="small" color={colors.primary} />
-				</View>
-			)}
+			{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
 
 			<ProductNamesSection
 				variant={editMode.names ? 'edit' : 'view'}

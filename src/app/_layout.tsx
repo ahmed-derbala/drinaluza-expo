@@ -1,7 +1,7 @@
 import { Stack, usePathname, Redirect, useRouter } from 'expo-router'
 import React, { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, ActivityIndicator, Platform, StyleSheet } from 'react-native'
+import { View, Platform, StyleSheet } from 'react-native'
 import { useUpdates, isVersionGreater, UpdateCheckResult } from '@/features/updates'
 import { config } from '@/config'
 import { getItem, setItem } from '@/core/storage'
@@ -57,6 +57,7 @@ import { UpdatesProvider } from '@/features/updates/UpdatesContext'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme, colors as themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
+import Spinner from '@/features/common/Spinner'
 
 // Module-level flag — survives component remounts (e.g. user switch)
 let startupCheckPerformed = false
@@ -142,11 +143,7 @@ function RootLayoutContent() {
 	}
 
 	if (loading) {
-		return (
-			<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
-				<ActivityIndicator size="large" color={colors.primary} />
-			</View>
-		)
+		return <Spinner />
 	}
 
 	const isAuthenticated = !!user

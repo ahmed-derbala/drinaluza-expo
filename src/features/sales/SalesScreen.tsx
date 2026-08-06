@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useEffect } from 'react'
-import { View, StyleSheet, Text, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -9,6 +9,7 @@ import { useTheme } from '@/core/theme'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
 import ErrorState from '@/features/common/ErrorState'
+import Spinner from '@/features/common/Spinner'
 import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/orders/orders-statuses'
 import { OrderStatusTabs, OrderStatusTabOption } from '@/features/orders/components/OrderStatusTabs'
 import { OrderList } from '@/features/orders/components/OrderList'
@@ -182,9 +183,7 @@ export default function SalesScreen() {
 			{isOffline && sales.length === 0 ? (
 				<ErrorState icon="cloud-offline-outline" iconOnly />
 			) : isInitialLoading ? (
-				<View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+				<Spinner />
 			) : (
 				<OrderList
 					data={sales}

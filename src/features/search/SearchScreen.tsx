@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, useWindowDimensions, Platform, Animated, Easing, RefreshControl } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, useWindowDimensions, Platform, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
@@ -12,6 +12,7 @@ import { translate } from '@/core/translation'
 import { useUser } from '@/core/contexts/UserContext'
 import { getItem, setItem, getToken } from '@/core/storage'
 import { toast } from '@/features/common/Toast'
+import Spinner from '@/features/common/Spinner'
 import { log } from '@/core/log'
 import { logError, parseError } from '@/core/helpers/errorHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
@@ -55,32 +56,8 @@ export default function SearchScreen() {
 	// Cart state
 	const [cart, setCart] = useState<CartItem[]>([])
 
-	// Animation refs
-	const shimmerAnim = useRef(new Animated.Value(0.35)).current
 	const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const inputRef = useRef<TextInput | null>(null)
-
-	// Shimmer pulsing animation loop for loading skeletons
-	useEffect(() => {
-		const animation = Animated.loop(
-			Animated.sequence([
-				Animated.timing(shimmerAnim, {
-					toValue: 0.65,
-					duration: 800,
-					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: true
-				}),
-				Animated.timing(shimmerAnim, {
-					toValue: 0.35,
-					duration: 800,
-					easing: Easing.inOut(Easing.ease),
-					useNativeDriver: true
-				})
-			])
-		)
-		animation.start()
-		return () => animation.stop()
-	}, [shimmerAnim])
 
 	// Load search history and cart on mount
 	useEffect(() => {
@@ -327,12 +304,8 @@ export default function SearchScreen() {
 	// List renderers
 	const renderFooter = useCallback(() => {
 		if (!loadingMore) return null
-		return (
-			<View style={styles.footerLoader}>
-				<ActivityIndicator size="small" color={colors.primary} />
-			</View>
-		)
-	}, [loadingMore, colors.primary])
+		return <Spinner size="small" expand={false} />
+	}, [loadingMore])
 
 	const renderItem = useCallback(
 		({ item }: { item: any }) => (
@@ -381,24 +354,6 @@ export default function SearchScreen() {
 			</View>
 		)
 	}, [error, query, colors, translate])
-
-	const renderSkeletons = useCallback(() => {
-		const count = numColumns * 3
-		return (
-			<ScrollView contentContainerStyle={styles.skeletonWrap} showsVerticalScrollIndicator={false}>
-				{Array.from({ length: count }).map((_, i) => (
-					<View key={`sk-${i}`} style={[styles.skeletonCard, { width: itemWidth, marginHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: 16 }]}>
-						<Animated.View style={[styles.skeletonImg, { opacity: shimmerAnim }]} />
-						<View style={styles.skeletonBody}>
-							<Animated.View style={[styles.skeletonLine, { width: '75%', opacity: shimmerAnim }]} />
-							<Animated.View style={[styles.skeletonLine, { width: '50%', opacity: shimmerAnim }]} />
-							<Animated.View style={[styles.skeletonLineLg, { opacity: shimmerAnim }]} />
-						</View>
-					</View>
-				))}
-			</ScrollView>
-		)
-	}, [numColumns, itemWidth, shimmerAnim])
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: headerHeight }]}>
@@ -519,7 +474,7 @@ export default function SearchScreen() {
 			{/* Main Results Container */}
 			<View style={styles.contentWrap}>
 				{loading && results.length === 0 ? (
-					renderSkeletons()
+					<Spinner />
 				) : results.length === 0 ? (
 					renderEmpty()
 				) : (
@@ -682,40 +637,6 @@ const styles = StyleSheet.create({
 	footerLoader: {
 		paddingVertical: 16,
 		alignItems: 'center'
-	},
-	// Skeleton
-	skeletonWrap: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		padding: 16
-	},
-	skeletonCard: {
-		borderRadius: 20,
-		backgroundColor: themeColors.buttonText5,
-		borderWidth: 1,
-		borderColor: themeColors.buttonText5,
-		overflow: 'hidden'
-	},
-	skeletonImg: {
-		width: '100%',
-		aspectRatio: 1.35,
-		backgroundColor: themeColors.buttonText5
-	},
-	skeletonBody: {
-		padding: 14,
-		gap: 12
-	},
-	skeletonLine: {
-		height: 12,
-		borderRadius: 6,
-		backgroundColor: themeColors.buttonText5
-	},
-	skeletonLineLg: {
-		height: 18,
-		width: '40%',
-		borderRadius: 6,
-		backgroundColor: themeColors.buttonText5,
-		marginTop: 4
 	},
 	listContent: {
 		paddingTop: 12,

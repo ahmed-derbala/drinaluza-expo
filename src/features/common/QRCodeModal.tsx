@@ -1,5 +1,5 @@
 import React, { useRef } from 'react'
-import { View, Text, StyleSheet, ActivityIndicator, Modal, Platform, Alert, Share } from 'react-native'
+import { View, Text, StyleSheet, Modal, Platform, Alert, Share } from 'react-native'
 import * as Print from 'expo-print'
 import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
@@ -8,6 +8,7 @@ import QRCode from 'react-native-qrcode-svg'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { IconButton } from './buttons/IconButton'
+import Spinner from './Spinner'
 import { DownloadButton } from './buttons/DownloadButton'
 import { ShareButton } from './buttons/ShareButton'
 
@@ -218,7 +219,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 								}}
 							/>
 						) : (
-							<ActivityIndicator size="large" color={colors.primary} />
+							<Spinner expand={false} />
 						)}
 					</View>
 

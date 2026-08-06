@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
-import { View, StyleSheet, ActivityIndicator } from 'react-native'
+import { View, StyleSheet } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, Stack, useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
 
@@ -9,6 +9,7 @@ import { useBackButton } from '@/core/hooks/useBackButton'
 
 import { useUser } from '@/core/contexts'
 import ErrorState from '@/features/common/ErrorState'
+import Spinner from '@/features/common/Spinner'
 import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/orders/orders-statuses'
 import { OrderStatusTabs, OrderStatusTabOption } from '@/features/orders/components/OrderStatusTabs'
 import { OrderList } from '@/features/orders/components/OrderList'
@@ -322,9 +323,7 @@ export default function PurchasesScreen() {
 			{isOffline && displayData.length === 0 ? (
 				<ErrorState icon="cloud-offline-outline" iconOnly />
 			) : isInitialLoading ? (
-				<View style={[styles.loadingOverlay, { backgroundColor: colors.background }]}>
-					<ActivityIndicator size="large" color={colors.primary} />
-				</View>
+				<Spinner />
 			) : (
 				<OrderList
 					data={displayData}

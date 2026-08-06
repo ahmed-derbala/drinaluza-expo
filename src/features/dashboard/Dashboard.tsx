@@ -1,8 +1,9 @@
 import { config } from '@/config'
 import { colors as themeColors } from '@/core/theme'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import Spinner from '@/features/common/Spinner'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useRouter, Tabs, Stack, useLocalSearchParams } from 'expo-router'
@@ -146,11 +147,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 	const getProfileThumbnail = (profile: DashboardProfile) => profile.media?.thumbnail?.url
 
 	if (isInitialLoading) {
-		return (
-			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
-				<ActivityIndicator size="large" color={colors.primary} />
-			</View>
-		)
+		return <Spinner />
 	}
 
 	if (!profilesLoading && !dashboardLoading && !targetSlug && profiles.length === 0) {
@@ -410,7 +407,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 
 			<SectionTitle title={translate('dashboard.customers', 'Customers')} colors={colors} />
 			{loadingCustomers ? (
-				<ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 20 }} />
+				<Spinner size="small" expand={false} />
 			) : customers.length === 0 ? (
 				<View style={[styles.centered, { paddingVertical: 20, backgroundColor: colors.background, borderRadius: 16 }]}>
 					<Ionicons name="people-outline" size={32} color={colors.textTertiary} style={{ opacity: 0.5, marginBottom: 8 }} />

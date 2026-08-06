@@ -1,22 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import {
-	View,
-	Text,
-	StyleSheet,
-	ScrollView,
-	TextInput,
-	TouchableOpacity,
-	Image,
-	Alert,
-	Platform,
-	useWindowDimensions,
-	ActivityIndicator,
-	Linking,
-	Modal,
-	Animated,
-	Easing,
-	KeyboardAvoidingView
-} from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, Linking, Modal, Animated, Easing, KeyboardAvoidingView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
@@ -41,7 +24,7 @@ import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
-import LoadingState from '@/features/common/LoadingState'
+import Spinner from '@/features/common/Spinner'
 import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { CenteredModal } from '@/core/smart-modal'
@@ -493,11 +476,7 @@ export default function ProfileScreen() {
 	}, [userData?.role, handleRequestBusiness, handleSwitchUser, cart.length, refreshProfile, isRefreshing, isOffline, colors, router])
 
 	if (isInitialLoading) {
-		return (
-			<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-				<ActivityIndicator size="large" color={colors.primary} />
-			</View>
-		)
+		return <Spinner />
 	}
 
 	if (isOffline && !userData) {

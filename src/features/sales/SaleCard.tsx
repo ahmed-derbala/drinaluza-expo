@@ -1,6 +1,6 @@
 import { colors as themeColors } from '@/core/theme'
 import React from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions, ActivityIndicator } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native'
 import { useTheme, createShadow } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'

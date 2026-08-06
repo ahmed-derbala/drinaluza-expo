@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, StyleSheet, RefreshControl, ActivityIndicator, Animated, Platform, Easing } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getItem, setItem } from '@/core/storage'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
@@ -17,6 +17,7 @@ import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { getToken } from '@/core/storage'
+import Spinner from '@/features/common/Spinner'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { SmartHeader } from '@/core/smart-header'
@@ -57,9 +58,6 @@ export default function FeedScreen() {
 	// ── Context ──
 	const { user, localize, translate } = useUser()
 
-	// ── Skeleton pulse ──
-	const shimmerAnim = useRef(new Animated.Value(0.35)).current
-
 	// ── Scroll position restoration (especially for web where the screen remounts) ──
 	const listRef = useRef<any>(null)
 	const savedScrollOffsetRef = useRef(0)
@@ -72,17 +70,6 @@ export default function FeedScreen() {
 		},
 		[selectedFilter]
 	)
-
-	useEffect(() => {
-		const loop = Animated.loop(
-			Animated.sequence([
-				Animated.timing(shimmerAnim, { toValue: 0.65, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: Platform.OS !== 'web' }),
-				Animated.timing(shimmerAnim, { toValue: 0.35, duration: 800, easing: Easing.inOut(Easing.ease), useNativeDriver: Platform.OS !== 'web' })
-			])
-		)
-		loop.start()
-		return () => loop.stop()
-	}, [shimmerAnim])
 
 	// ── Cart ──
 	const loadCart = useCallback(async () => {
@@ -228,24 +215,6 @@ export default function FeedScreen() {
 	// ── Render helpers ──
 	// ═══════════════════════════════════════════════════════════════════════════════
 
-	const renderSkeletons = useCallback(() => {
-		const count = numColumns * 3
-		return (
-			<SmartHeader.ScrollView contentContainerStyle={[styles.skeletonWrap, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }]} showsVerticalScrollIndicator={false}>
-				{Array.from({ length: count }).map((_, i) => (
-					<View key={`sk-${i}`} style={[styles.skeletonCard, { width: itemWidth, marginHorizontal: gap / 2, marginBottom: 16 }]}>
-						<Animated.View style={[styles.skeletonImg, { opacity: shimmerAnim }]} />
-						<View style={styles.skeletonBody}>
-							<Animated.View style={[styles.skeletonLine, { width: '75%', opacity: shimmerAnim }]} />
-							<Animated.View style={[styles.skeletonLine, { width: '50%', opacity: shimmerAnim }]} />
-							<Animated.View style={[styles.skeletonLineLg, { opacity: shimmerAnim }]} />
-						</View>
-					</View>
-				))}
-			</SmartHeader.ScrollView>
-		)
-	}, [numColumns, itemWidth, shimmerAnim, padding, insets.bottom])
-
 	const renderItem = useCallback(
 		({ item }: { item: FeedItem }) => (
 			<View style={[styles.cardWrap, { paddingHorizontal: numColumns > 1 ? gap / 2 : 0 }]}>
@@ -297,7 +266,7 @@ export default function FeedScreen() {
 			<Tabs.Screen options={headerOptions as any} />
 
 			{isInitialLoading ? (
-				renderSkeletons()
+				<Spinner />
 			) : (
 				<SmartHeader.FlashList
 					ref={listRef}
@@ -315,7 +284,7 @@ export default function FeedScreen() {
 					onScroll={handleListScroll}
 					onEndReached={handleLoadMore}
 					onEndReachedThreshold={0.2}
-					ListFooterComponent={isLoadingMore ? <ActivityIndicator size="small" color="#0EA5E9" style={{ paddingVertical: 24 }} /> : null}
+					ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
 				/>
 			)}
 
@@ -367,40 +336,5 @@ const styles = StyleSheet.create({
 		color: 'rgba(255, 255, 255, 0.45)',
 		textAlign: 'center',
 		lineHeight: 22
-	},
-	// ── Skeleton ──
-	skeletonWrap: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		paddingTop: 12,
-		paddingBottom: 120
-	},
-	skeletonCard: {
-		borderRadius: 20,
-		backgroundColor: 'rgba(255, 255, 255, 0.02)',
-		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.04)',
-		overflow: 'hidden'
-	},
-	skeletonImg: {
-		width: '100%',
-		aspectRatio: 1.35,
-		backgroundColor: 'rgba(255, 255, 255, 0.03)'
-	},
-	skeletonBody: {
-		padding: 14,
-		gap: 12
-	},
-	skeletonLine: {
-		height: 12,
-		borderRadius: 6,
-		backgroundColor: 'rgba(255, 255, 255, 0.04)'
-	},
-	skeletonLineLg: {
-		height: 18,
-		width: '40%',
-		borderRadius: 6,
-		backgroundColor: 'rgba(255, 255, 255, 0.05)',
-		marginTop: 4
 	}
 })
