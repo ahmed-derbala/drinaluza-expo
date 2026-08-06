@@ -5,7 +5,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION, DEFAULT_BLURHASH } from './constants'
+import Spinner from '@/features/common/Spinner'
+import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION } from './constants'
 import type { SmartImageProps } from './types'
 
 /**
@@ -40,7 +41,7 @@ function isValidSource(source: string | null | undefined): source is string {
  *
  * Features:
  * - Uses expo-image for native caching (disk + memory) and web compatibility
- * - Smooth blurhash placeholder while loading (no layout shift)
+ * - Spinner overlay while loading
  * - Automatic fallback to no_image.png on error or missing URL
  * - Configurable timeout from EXPO_PUBLIC_TIMEOUT_MS
  * - React.memo for safe usage in FlashList
@@ -63,7 +64,6 @@ function SmartImageComponent({
 	resizeMode,
 	entityType: _entityType = 'generic',
 	containerStyle,
-	placeholder,
 	width,
 	height,
 	borderRadius,
@@ -185,20 +185,23 @@ function SmartImageComponent({
 	const recyclingKey = showFallback ? 'fallback' : source
 
 	const imageElement = (
-		<Image
-			source={imageSource}
-			style={[styles.image, cleanedStyle, dimensionStyle]}
-			contentFit={showFallback ? 'contain' : resolvedContentFit}
-			placeholder={showFallback ? undefined : placeholder || { blurhash: DEFAULT_BLURHASH }}
-			transition={showFallback ? undefined : { duration: DEFAULT_TRANSITION_DURATION }}
-			cachePolicy="disk"
-			recyclingKey={recyclingKey}
-			onLoad={showFallback ? undefined : handleLoad}
-			onError={showFallback ? undefined : handleError}
-			accessible={accessible}
-			accessibilityLabel={accessibilityLabel}
-			testID={testID}
-		/>
+		<>
+			{!showFallback && !isLoaded && <Spinner size="small" expand={false} style={styles.loadingOverlay} />}
+			<Image
+				source={imageSource}
+				style={[styles.image, cleanedStyle, dimensionStyle]}
+				contentFit={showFallback ? 'contain' : resolvedContentFit}
+				placeholder={undefined}
+				transition={showFallback ? undefined : { duration: DEFAULT_TRANSITION_DURATION }}
+				cachePolicy="disk"
+				recyclingKey={recyclingKey}
+				onLoad={showFallback ? undefined : handleLoad}
+				onError={showFallback ? undefined : handleError}
+				accessible={accessible}
+				accessibilityLabel={accessibilityLabel}
+				testID={testID}
+			/>
+		</>
 	)
 
 	const handlePress = useCallback(() => {
@@ -210,16 +213,15 @@ function SmartImageComponent({
 	const renderedElement = cleanedContainerStyle ? <View style={cleanedContainerStyle}>{imageElement}</View> : imageElement
 
 	if (enableFullscreenPreview && sourceIsValid && !showFallback) {
-		const touchableStyle = [cleanedStyle, dimensionStyle]
 		return (
 			<>
-				<TouchableOpacity activeOpacity={0.9} onPress={handlePress} style={touchableStyle}>
+				<TouchableOpacity onPress={handlePress} style={[styles.image, cleanedStyle, dimensionStyle]}>
 					{renderedElement}
 				</TouchableOpacity>
 
-				<Modal visible={isPreviewOpen} transparent={true} animationType="fade" onRequestClose={() => setIsPreviewOpen(false)}>
+				<Modal visible={isPreviewOpen} animationType="fade" onRequestClose={() => setIsPreviewOpen(false)}>
 					<View style={styles.modalBackdrop}>
-						<TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={() => setIsPreviewOpen(false)} />
+						<TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setIsPreviewOpen(false)} />
 
 						<IconButton
 							icon="close"
@@ -244,9 +246,17 @@ function SmartImageComponent({
 
 const styles = StyleSheet.create({
 	image: {
-		// Base styles — consumers override via style prop
 		width: '100%',
 		height: '100%'
+	},
+	loadingOverlay: {
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		padding: 0,
+		zIndex: 1
 	},
 	modalBackdrop: {
 		flex: 1,

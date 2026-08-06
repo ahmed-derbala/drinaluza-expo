@@ -1,5 +1,5 @@
 import type { StyleProp, ViewStyle } from 'react-native'
-import type { ImageStyle, ImageContentFit, ImageSource } from 'expo-image'
+import type { ImageStyle, ImageContentFit } from 'expo-image'
 
 /**
  * Entity type hint for the image.
@@ -44,9 +44,6 @@ export interface SmartImageProps {
 
 	/** Style applied to the outer wrapper View container. */
 	containerStyle?: StyleProp<ViewStyle>
-
-	/** Custom placeholder image source (overrides default blurhash). */
-	placeholder?: ImageSource
 
 	/** Explicit width (alternative to setting via style). */
 	width?: number
