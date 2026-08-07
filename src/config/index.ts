@@ -1,22 +1,19 @@
 import packagejson from '../../package.json' with { type: 'json' }
 import Constants from 'expo-constants'
 
-const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.1.11:5001'
-
 export const config = {
 	app: {
 		env: process.env.EXPO_PUBLIC_APP_ENV || Constants.expoConfig?.extra?.APP_ENV || 'local',
 		name: packagejson.name,
-		version: packagejson.version,
-		timeout: Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000,
-		retryAttempts: 3
-	},
-	backend: {
-		url: backendUrl
+		version: packagejson.version
 	},
 	api: {
 		prefix: '/api',
-		url: backendUrl ? `${backendUrl.replace(/\/$/, '')}/api` : undefined
+		url: `${process.env.EXPO_PUBLIC_BACKEND_URL}/api` || `${Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL}/api` || 'http://192.168.1.11:5001/api',
+		timeout: Number(process.env.EXPO_PUBLIC_API_TIMEOUT_MS) || 60000
+	},
+	backend: {
+		url: process.env.EXPO_PUBLIC_BACKEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.1.11:5001'
 	},
 	frontend: {
 		url: process.env.EXPO_PUBLIC_FRONTEND_URL || Constants.expoConfig?.extra?.EXPO_PUBLIC_FRONTEND_URL || 'https://drinaluza.com'

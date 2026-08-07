@@ -26,7 +26,7 @@ const ensureUpdatesFolder = async () => {
 // Function that parses Github release response
 export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> => {
 	const controller = new AbortController()
-	const id = setTimeout(() => controller.abort(), config.app.timeout)
+	const id = setTimeout(() => controller.abort(), config.api.timeout)
 
 	try {
 		const res = await fetch(url, { signal: controller.signal })

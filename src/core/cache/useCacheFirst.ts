@@ -124,7 +124,7 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 	const isStale = cacheResult?.isStale ?? false
 	// Offline when the socket reports the backend is unreachable, or when the
 	// last fetch itself failed with a network/timeout error (server unreachable
-	// or didn't respond within config.app.timeout).
+	// or didn't respond within config.api.timeout).
 	const isOffline = backendState === 'offline' || hasConnectionError
 
 	const loadFromCache = useCallback(async () => {

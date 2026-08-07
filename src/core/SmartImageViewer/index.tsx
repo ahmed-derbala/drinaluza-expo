@@ -131,7 +131,7 @@ function SmartImageComponent({
 		// Only set timeout for valid remote sources that haven't loaded yet
 		if (!sourceIsValid || isLoaded || hasError) return
 
-		const timeoutMs = config.app.timeout
+		const timeoutMs = config.api.timeout
 		timeoutRef.current = setTimeout(() => {
 			if (isMountedRef.current && !isLoaded) {
 				setHasError(true)

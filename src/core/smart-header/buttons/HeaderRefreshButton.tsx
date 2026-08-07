@@ -28,7 +28,7 @@ export function HeaderRefreshButton({ onRefresh, isRefreshing: isRefreshingProp,
 	const isBackendOffline = backendState === 'offline'
 	const isBackendConnecting = backendState === 'connecting'
 	// Backend unreachable (socket) or last fetch failed with a network/timeout
-	// error (server unreachable or didn't respond within config.app.timeout):
+	// error (server unreachable or didn't respond within config.api.timeout):
 	// show the red cloud-offline icon directly.
 	const showOffline = isBackendOffline || isOffline
 	// While a refresh is in flight (or the socket is still connecting), keep
