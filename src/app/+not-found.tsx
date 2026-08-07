@@ -1,1 +1,1 @@
-export { default } from '@/features/common/NotFoundScreen'
+export { default } from '@/features/common/screens/NotFoundScreen'
