@@ -173,7 +173,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 			{loading ? (
 				<Spinner style={styles.loadingContainer} />
 			) : reviews.length === 0 ? (
-				<EmptyState title={translate('no_reviews_yet', 'No reviews yet')} subtitle={translate('be_first_to_review', 'Be the first to review')} iconName="star-outline" style={styles.emptyContainer} />
+				<EmptyState style={styles.emptyContainer} />
 			) : (
 				<ScrollView style={styles.reviewsList}>
 					{reviews.map(renderReviewItem)}

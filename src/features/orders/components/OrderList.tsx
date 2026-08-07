@@ -15,9 +15,6 @@ interface OrderListProps<T> {
 	onRefresh: () => void
 	onEndReached?: () => void
 	loadingMore?: boolean
-	emptyTitle?: string
-	emptySubtitle?: string
-	emptyIcon?: string
 	ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null
 	contentContainerStyle?: any
 }
@@ -31,9 +28,6 @@ export const OrderList = React.memo(function OrderList<T>({
 	onRefresh,
 	onEndReached,
 	loadingMore = false,
-	emptyTitle,
-	emptySubtitle,
-	emptyIcon = 'receipt-long',
 	ListHeaderComponent,
 	contentContainerStyle
 }: OrderListProps<T>) {
@@ -44,7 +38,7 @@ export const OrderList = React.memo(function OrderList<T>({
 		return <Spinner size="small" expand={false} />
 	}, [loadingMore])
 
-	const empty = useMemo(() => <EmptyState title={emptyTitle} subtitle={emptySubtitle} iconName={emptyIcon} iconType="material" style={styles.empty} />, [emptyTitle, emptySubtitle, emptyIcon])
+	const empty = useMemo(() => <EmptyState style={styles.empty} />, [])
 
 	return (
 		<SmartHeader.FlashList

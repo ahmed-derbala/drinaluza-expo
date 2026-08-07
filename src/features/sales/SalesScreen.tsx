@@ -181,7 +181,7 @@ export default function SalesScreen() {
 			/>
 
 			{isOffline && sales.length === 0 ? (
-				<ErrorState icon="cloud-offline-outline" iconOnly />
+				<ErrorState />
 			) : isInitialLoading ? (
 				<Spinner />
 			) : (
@@ -194,7 +194,6 @@ export default function SalesScreen() {
 					onRefresh={handleRefresh}
 					onEndReached={loadMore}
 					loadingMore={loadingMore}
-					emptyIcon="receipt-long"
 					ListHeaderComponent={activeFiltersBanner}
 					contentContainerStyle={[styles.listContent, numColumns > 1 && { paddingHorizontal: 8 }]}
 				/>

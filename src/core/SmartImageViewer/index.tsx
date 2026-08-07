@@ -6,8 +6,10 @@ import { useTheme, colors as themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
-import { FALLBACK_IMAGE, DEFAULT_TRANSITION_DURATION } from './constants'
 import type { SmartImageProps } from './types'
+
+// Fallback image shown when source is missing or fails to load
+const FALLBACK_IMAGE = require('../../../assets/images/no_image.png')
 
 /**
  * Maps legacy `resizeMode` values to expo-image's `contentFit`.
@@ -192,7 +194,6 @@ function SmartImageComponent({
 				style={[styles.image, cleanedStyle, dimensionStyle]}
 				contentFit={showFallback ? 'contain' : resolvedContentFit}
 				placeholder={undefined}
-				transition={showFallback ? undefined : { duration: DEFAULT_TRANSITION_DURATION }}
 				cachePolicy="disk"
 				recyclingKey={recyclingKey}
 				onLoad={showFallback ? undefined : handleLoad}

@@ -347,7 +347,7 @@ export default function EditBusinessScreen() {
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader title={translate('edit_business', 'Edit Business')} fallbackRoute="/dashboard" />
-				<ErrorState title="Error" message={error} onRetry={loadBusiness} />
+				<ErrorState onRetry={loadBusiness} />
 			</View>
 		)
 	}

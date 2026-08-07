@@ -3,13 +3,13 @@ import { View, Text, StyleSheet, RefreshControl, useWindowDimensions, TouchableO
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
-import { LinearGradient } from 'expo-linear-gradient'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { Product } from '@/features/businesses/businesses.interface'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
+import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { Stack } from 'expo-router'
 import { SmartHeader } from '@/core/smart-header'
@@ -610,34 +610,18 @@ export default function BusinessProductsScreen() {
 				keyboardShouldPersistTaps="handled"
 				ListEmptyComponent={
 					isOffline ? (
-						<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-							<ErrorState icon="cloud-offline-outline" iconOnly />
-						</View>
+						<ErrorState />
 					) : !isInitialLoading ? (
-						<View style={s.emptyWrap}>
-							<LinearGradient colors={[colors.primary + '18', colors.primary + '06']} style={s.emptyIconWrap}>
-								<Ionicons name={searchText || activeFilter !== 'all' ? 'search-outline' : 'cube-outline'} size={48} color={colors.primary} />
-							</LinearGradient>
-							<Text style={[s.emptyTitle, { color: colors.text }]}>
-								{searchText
-									? translate('business_no_results', 'No products match your search')
-									: activeFilter !== 'all'
-										? translate('no_products_this_filter', 'No products in this category')
-										: translate('business_no_products', 'No products yet')}
-							</Text>
-							<Text style={[s.emptySubtitle, { color: colors.textSecondary }]}>{translate('business_no_products_hint', 'Products from this business will appear here.')}</Text>
-							{(searchText || activeFilter !== 'all') && (
-								<TouchableOpacity
-									style={[s.clearBtn, { borderColor: colors.primary }]}
-									onPress={() => {
-										setSearchText('')
-										setActiveFilter('all')
-									}}
-								>
-									<Text style={[s.clearBtnText, { color: colors.primary }]}>{translate('clear_filters', 'Clear filters')}</Text>
-								</TouchableOpacity>
-							)}
-						</View>
+						<EmptyState
+							onActionPress={
+								searchText || activeFilter !== 'all'
+									? () => {
+											setSearchText('')
+											setActiveFilter('all')
+										}
+									: undefined
+							}
+						/>
 					) : null
 				}
 			/>
@@ -697,30 +681,6 @@ const s = StyleSheet.create({
 	},
 	chipCountText: { fontSize: 11, fontWeight: '700' },
 	resultsText: { fontSize: 12, fontWeight: '500' },
-	emptyWrap: {
-		alignItems: 'center',
-		paddingTop: 60,
-		paddingHorizontal: 32,
-		gap: 12
-	},
-	emptyIconWrap: {
-		width: 96,
-		height: 96,
-		borderRadius: 48,
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginBottom: 8
-	},
-	emptyTitle: { fontSize: 18, fontWeight: '700', textAlign: 'center', letterSpacing: -0.3 },
-	emptySubtitle: { fontSize: 14, textAlign: 'center', lineHeight: 20, maxWidth: 300 },
-	clearBtn: {
-		marginTop: 8,
-		paddingHorizontal: 20,
-		paddingVertical: 10,
-		borderRadius: 10,
-		borderWidth: 1
-	},
-	clearBtnText: { fontSize: 14, fontWeight: '600' },
 	fab: {
 		position: 'absolute',
 		bottom: 24,

@@ -494,12 +494,7 @@ export default function BusinessDashboardProductDetailScreen() {
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader fallbackRoute={`/dashboard/${businessSlug}/products`} />
-				<ErrorState
-					title={error?.type === 'network' ? undefined : error?.title || translate('product_not_found', 'Product Not Found')}
-					message={error?.type === 'network' ? undefined : error?.message || translate('product_not_found_desc', 'The product could not be loaded.')}
-					onRetry={error?.type === 'network' ? undefined : () => loadProduct()}
-					iconOnly={error?.type === 'network'}
-				/>
+				<ErrorState onRetry={error?.type === 'network' ? undefined : () => loadProduct()} />
 			</View>
 		)
 	}

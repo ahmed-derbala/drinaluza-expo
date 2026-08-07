@@ -8,6 +8,7 @@ import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
+import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
 import { getNotifications, markNotificationSeen } from './notifications.api'
@@ -283,16 +284,8 @@ export default function NotificationsScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (isInitialLoading) return null
-		return (
-			<View style={styles.emptyContainer}>
-				<View style={[styles.emptyIconContainer, { backgroundColor: colors.background }]}>
-					<Ionicons name="notifications-off-outline" size={48} color={colors.textTertiary} />
-				</View>
-				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_notifications', 'No notifications')}</Text>
-				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{translate('no_notifications_desc', "You're all caught up!")}</Text>
-			</View>
-		)
-	}, [isInitialLoading, colors, translate])
+		return <EmptyState style={styles.empty} />
+	}, [isInitialLoading])
 
 	const renderFooter = useCallback(() => {
 		if (!isInitialLoading || notifications.length === 0) return null
@@ -303,7 +296,7 @@ export default function NotificationsScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
-				<ErrorState icon="cloud-offline-outline" iconOnly />
+				<ErrorState />
 			</View>
 		)
 	}
@@ -421,26 +414,10 @@ const styles = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-	emptyContainer: {
+	empty: {
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingTop: 80,
-		gap: 12
-	},
-	emptyIconContainer: {
-		width: 96,
-		height: 96,
-		borderRadius: 48,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: 8
-	},
-	emptyTitle: {
-		fontSize: 18,
-		fontWeight: '600'
-	},
-	emptySubtitle: {
-		fontSize: 14
+		paddingTop: 80
 	},
 	loadingFooter: {
 		padding: 24,

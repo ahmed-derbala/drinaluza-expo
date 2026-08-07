@@ -159,7 +159,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 						headerLeft: () => null
 					}}
 				/>
-				<ErrorState icon="storefront-outline" iconOnly />
+				<ErrorState />
 			</View>
 		)
 	}
@@ -178,7 +178,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 						)
 					}}
 				/>
-				<ErrorState icon="cloud-offline-outline" iconOnly />
+				<ErrorState />
 			</View>
 		)
 	}

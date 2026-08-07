@@ -483,7 +483,7 @@ export default function ProfileScreen() {
 		return (
 			<View style={styles.container}>
 				<Tabs.Screen options={{ title: 'Profile', headerLeft: () => null }} />
-				<ErrorState icon="cloud-offline-outline" iconOnly={true} />
+				<ErrorState />
 			</View>
 		)
 	}

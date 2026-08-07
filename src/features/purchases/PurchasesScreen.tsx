@@ -321,7 +321,7 @@ export default function PurchasesScreen() {
 			/>
 
 			{isOffline && displayData.length === 0 ? (
-				<ErrorState icon="cloud-offline-outline" iconOnly />
+				<ErrorState />
 			) : isInitialLoading ? (
 				<Spinner />
 			) : (
@@ -332,7 +332,6 @@ export default function PurchasesScreen() {
 					numColumns={numColumns}
 					isRefreshing={isRefreshing}
 					onRefresh={handleRefresh}
-					emptyIcon="receipt-long"
 					contentContainerStyle={[styles.listContent, numColumns > 1 && { paddingHorizontal: 8 }]}
 				/>
 			)}

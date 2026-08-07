@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheReadResult } from '@/core/cache'
 import { BackendState, useBackendConnection } from '@/core/connection'
 import { log } from '@/core/log'
+import { parseError } from '@/core/helpers/errorHandler'
 
 const pendingFetches = new Map<string, Promise<unknown>>()
 
@@ -117,10 +118,14 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 	const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!skipInitialFetch)
 	const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 	const [fetchError, setFetchError] = useState<unknown>(null)
+	const [hasConnectionError, setHasConnectionError] = useState<boolean>(false)
 
 	const displayedData = freshData ?? cacheResult?.data ?? null
 	const isStale = cacheResult?.isStale ?? false
-	const isOffline = backendState === 'offline'
+	// Offline when the socket reports the backend is unreachable, or when the
+	// last fetch itself failed with a network/timeout error (server unreachable
+	// or didn't respond within config.app.timeout).
+	const isOffline = backendState === 'offline' || hasConnectionError
 
 	const loadFromCache = useCallback(async () => {
 		try {
@@ -163,6 +168,7 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			const data = await fetchFn()
 			if (isMountedRef.current) {
 				setFreshData(data)
+				setHasConnectionError(false)
 			}
 			await setCacheItem(cacheKey, data)
 			onSuccess?.(data)
@@ -170,6 +176,8 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		} catch (error) {
 			if (isMountedRef.current) {
 				setFetchError(error)
+				const { type } = parseError(error)
+				setHasConnectionError(type === 'network' || type === 'timeout')
 			}
 			onError?.(error)
 		} finally {

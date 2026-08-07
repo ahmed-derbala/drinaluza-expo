@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, StyleSheet, RefreshControl, Platform } from 'react-native'
+import { View, StyleSheet, RefreshControl, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { getItem, setItem } from '@/core/storage'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
@@ -9,8 +9,8 @@ import useFeed from '@/features/feed/useFeed'
 
 import FeedCard from '@/features/feed/feed.card'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
-import { Ionicons } from '@expo/vector-icons'
 import ErrorState from '@/features/common/ErrorState'
+import EmptyState from '@/features/common/EmptyState'
 import { toast } from '@/features/common/Toast'
 import { logError } from '@/core/helpers/errorHandler'
 import { useUser } from '@/core/contexts'
@@ -226,22 +226,10 @@ export default function FeedScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (isOffline && displayedItems.length === 0) {
-			return (
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<ErrorState icon="cloud-offline-outline" iconOnly={true} />
-				</View>
-			)
+			return <ErrorState />
 		}
-		return (
-			<View style={styles.emptyWrap}>
-				<View style={styles.emptyIconWrap}>
-					<Ionicons name="fish-outline" size={38} color="rgba(255, 255, 255, 0.2)" />
-				</View>
-				<Text style={styles.emptyTitle}>{translate('no_items', 'No items found')}</Text>
-				<Text style={styles.emptySubtitle}>{translate('try_adjusting', 'Try adjusting your search or check back later!')}</Text>
-			</View>
-		)
-	}, [isOffline, displayedItems.length, translate])
+		return <EmptyState style={styles.emptyWrap} />
+	}, [isOffline, displayedItems.length])
 
 	// ── Header Actions (reusable & zero layout shift) ──
 	const headerOptions = useMemo(
@@ -265,7 +253,7 @@ export default function FeedScreen() {
 		<View style={[styles.root, { backgroundColor: colors.background }]}>
 			<Tabs.Screen options={headerOptions as any} />
 
-			{isInitialLoading ? (
+			{isInitialLoading || (isRefreshing && displayedItems.length === 0) ? (
 				<Spinner />
 			) : (
 				<SmartHeader.FlashList
@@ -312,29 +300,5 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		paddingTop: 120,
 		paddingHorizontal: 40
-	},
-	emptyIconWrap: {
-		width: 84,
-		height: 84,
-		borderRadius: 26,
-		backgroundColor: 'rgba(255, 255, 255, 0.03)',
-		borderWidth: 1,
-		borderColor: 'rgba(255, 255, 255, 0.06)',
-		justifyContent: 'center',
-		alignItems: 'center',
-		marginBottom: 24
-	},
-	emptyTitle: {
-		fontSize: 18,
-		fontWeight: '700',
-		color: '#F8FAFC',
-		marginBottom: 10,
-		letterSpacing: -0.3
-	},
-	emptySubtitle: {
-		fontSize: 14,
-		color: 'rgba(255, 255, 255, 0.45)',
-		textAlign: 'center',
-		lineHeight: 22
 	}
 })

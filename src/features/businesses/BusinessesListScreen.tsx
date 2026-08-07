@@ -1,11 +1,12 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
-import { StyleSheet, View, Text, TouchableOpacity, RefreshControl, Linking, ViewStyle, TextStyle, ImageStyle, Platform } from 'react-native'
+import { StyleSheet, View, TouchableOpacity, RefreshControl, Linking, ViewStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
 import ErrorState from '@/features/common/ErrorState'
+import EmptyState from '@/features/common/EmptyState'
 import SmartImage from '@/core/SmartImageViewer'
 import Spinner from '@/features/common/Spinner'
 import { useBusinesses } from '@/features/businesses/useBusinesses'
@@ -441,29 +442,6 @@ const createStyles = (
 			alignItems: 'center',
 			padding: opts.isExtraSmall ? 16 : 24
 		},
-		emptyIcon: {
-			width: opts.isExtraSmall ? 60 : 80,
-			height: opts.isExtraSmall ? 60 : 80,
-			borderRadius: 40,
-			backgroundColor: colors.backgroundSecondary,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: opts.isExtraSmall ? 12 : 16
-		},
-		emptyTitle: {
-			fontSize: opts.fontSize,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 8,
-			textAlign: 'center'
-		},
-		emptyText: {
-			fontSize: opts.subtitleFontSize,
-			color: colors.textSecondary,
-			textAlign: 'center',
-			paddingHorizontal: opts.isExtraSmall ? 16 : 24,
-			maxWidth: 300
-		},
 		// Loading State
 		loadingContainer: {
 			flex: 1,
@@ -622,22 +600,10 @@ export default function BusinessesListScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (isOffline) {
-			return (
-				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-					<ErrorState icon="cloud-offline-outline" iconOnly />
-				</View>
-			)
+			return <ErrorState />
 		}
-		return (
-			<View style={styles.emptyContainer as ViewStyle}>
-				<View style={styles.emptyIcon as ViewStyle}>
-					<MaterialIcons name="store" size={isExtraSmall ? 32 : 40} color={colors.textTertiary} />
-				</View>
-				<Text style={styles.emptyTitle as TextStyle}>{translate('no_businesses', 'No businesses available')}</Text>
-				<Text style={styles.emptyText as TextStyle}>{translate('check_back_later_businesses', 'Check back later for new businesses')}</Text>
-			</View>
-		)
-	}, [isOffline, isExtraSmall, colors, translate])
+		return <EmptyState style={styles.emptyContainer as ViewStyle} />
+	}, [isOffline])
 
 	// Handle loading state
 	if (isInitialLoading) {

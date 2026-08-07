@@ -531,7 +531,7 @@ export default function ProductScreen() {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ title: displayTitle, subtitle: productSlug } as any} />
-				<ErrorState icon={isOffline ? 'cloud-offline-outline' : 'fish-outline'} iconOnly={true} />
+				<ErrorState />
 			</View>
 		)
 	}

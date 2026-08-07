@@ -65,13 +65,7 @@ export default function UserDetailScreen() {
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
 				<SmartHeader title={displayTitle} />
-				<ErrorState
-					title={isOffline ? undefined : translate('not_found', 'Not Found')}
-					message={isOffline ? undefined : translate('user_not_found', 'User not found')}
-					onRetry={isOffline ? undefined : () => refresh()}
-					icon={isOffline ? 'cloud-offline-outline' : 'alert-circle-outline'}
-					iconOnly={isOffline}
-				/>
+				<ErrorState onRetry={isOffline ? undefined : () => refresh()} />
 			</View>
 		)
 	}

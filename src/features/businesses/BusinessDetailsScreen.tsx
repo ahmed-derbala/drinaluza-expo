@@ -228,7 +228,7 @@ export default function BusinessDetailsScreen() {
 			<View style={styles.container}>
 				<Stack.Screen options={{ title: displayTitle }} />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-					<ErrorState icon="cloud-offline-outline" iconOnly />
+					<ErrorState />
 				</View>
 			</View>
 		)

@@ -13,6 +13,8 @@ import { useUser } from '@/core/contexts/UserContext'
 import { getItem, setItem, getToken } from '@/core/storage'
 import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
+import ErrorState from '@/features/common/ErrorState'
+import EmptyState from '@/features/common/EmptyState'
 import { log } from '@/core/log'
 import { logError, parseError } from '@/core/helpers/errorHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
@@ -318,42 +320,10 @@ export default function SearchScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (error) {
-			return (
-				<View style={styles.centerContainer}>
-					<View style={[styles.emptyIconWrap, { backgroundColor: colors.surfaceVariant }]}>
-						<Ionicons name="cloud-offline-outline" size={32} color={colors.error} />
-					</View>
-					<Text style={[styles.emptyTitle, { color: colors.text }]}>{error.title || 'Error'}</Text>
-					<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{error.message}</Text>
-					<TouchableOpacity style={[styles.retryBtn, { backgroundColor: colors.primary }]} onPress={handleRefresh}>
-						<Text style={[styles.retryBtnText, { color: colors.buttonText }]}>{translate('retry', 'Retry')}</Text>
-					</TouchableOpacity>
-				</View>
-			)
+			return <ErrorState onRetry={handleRefresh} />
 		}
-
-		if (!query.trim()) {
-			return (
-				<View style={styles.centerContainer}>
-					<View style={[styles.emptyIconWrap, { backgroundColor: colors.surfaceVariant }]}>
-						<Ionicons name="search-outline" size={32} color={colors.textTertiary} />
-					</View>
-					<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('search_title', 'Search')}</Text>
-					<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{translate('search_start_typing', 'Search for products or user profiles')}</Text>
-				</View>
-			)
-		}
-
-		return (
-			<View style={styles.centerContainer}>
-				<View style={[styles.emptyIconWrap, { backgroundColor: colors.surfaceVariant }]}>
-					<Ionicons name="warning-outline" size={32} color={colors.textTertiary} />
-				</View>
-				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('search_no_results', 'No search results found')}</Text>
-				<Text style={[styles.emptySubtitle, { color: colors.textSecondary }]}>{translate('try_adjusting', 'Try adjusting your search or check back later.')}</Text>
-			</View>
-		)
-	}, [error, query, colors, translate])
+		return <EmptyState style={styles.empty} />
+	}, [error, handleRefresh])
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: headerHeight }]}>
@@ -598,41 +568,8 @@ const styles = StyleSheet.create({
 	contentWrap: {
 		flex: 1
 	},
-	centerContainer: {
-		flex: 1,
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingTop: 120,
-		paddingHorizontal: 32
-	},
-	emptyIconWrap: {
-		width: 64,
-		height: 64,
-		borderRadius: 32,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginBottom: 16
-	},
-	emptyTitle: {
-		fontSize: 18,
-		fontWeight: '700',
-		marginBottom: 8,
-		textAlign: 'center'
-	},
-	emptySubtitle: {
-		fontSize: 14,
-		textAlign: 'center',
-		lineHeight: 20
-	},
-	retryBtn: {
-		marginTop: 16,
-		paddingHorizontal: 20,
-		paddingVertical: 10,
-		borderRadius: 8
-	},
-	retryBtnText: {
-		fontSize: 14,
-		fontWeight: '600'
+	empty: {
+		paddingTop: 120
 	},
 	footerLoader: {
 		paddingVertical: 16,

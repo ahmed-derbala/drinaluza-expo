@@ -1,9 +1,8 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, RefreshControl } from 'react-native'
+import { View, StyleSheet, RefreshControl } from 'react-native'
 import { useRouter, useFocusEffect } from 'expo-router'
 
 import { getItem, setItem } from '@/core/storage'
-import { Ionicons } from '@expo/vector-icons'
 import { useProducts } from '@/features/products/useProducts'
 import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
@@ -11,6 +10,7 @@ import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
+import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useUser } from '@/core/contexts/UserContext'
 import { useTheme, colors as themeColors } from '@/core/theme'
@@ -146,17 +146,16 @@ export default function ProductsListScreen() {
 		if (isOffline) {
 			return (
 				<View style={styles.emptyContainer}>
-					<ErrorState icon="cloud-offline-outline" iconOnly />
+					<ErrorState />
 				</View>
 			)
 		}
 		return (
 			<View style={styles.emptyContainer}>
-				<Ionicons name="fish-outline" size={64} color={colors.textTertiary} style={{ marginBottom: 16 }} />
-				<Text style={[styles.emptyTitle, { color: colors.text }]}>{translate('no_products', 'No products found')}</Text>
+				<EmptyState />
 			</View>
 		)
-	}, [isInitialLoading, isOffline, colors.textTertiary, colors.text, translate])
+	}, [isInitialLoading, isOffline])
 
 	const renderFooter = useCallback(() => {
 		if (isLoadingMore) {
@@ -204,11 +203,7 @@ const styles = StyleSheet.create({
 	emptyContainer: {
 		alignItems: 'center',
 		justifyContent: 'center',
-		paddingVertical: 60
-	},
-	emptyTitle: {
-		fontSize: 18,
-		fontWeight: '600'
+		paddingVertical: 120
 	},
 	loadingOverlay: {
 		...StyleSheet.absoluteFill,
