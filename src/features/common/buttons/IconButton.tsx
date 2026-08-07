@@ -1,6 +1,6 @@
 import React from 'react'
 import { StyleSheet, type StyleProp, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
-import { BaseButton, type ButtonVariant, BASE_BUTTON_SIZE, BASE_BUTTON_RADIUS } from './BaseButton'
+import { BaseButton, type ButtonVariant } from './BaseButton'
 import { AppThemeColors } from '@/core/theme'
 
 const SIZE_KEYS = new Set(['width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'flex', 'flexGrow', 'flexShrink', 'flexBasis'])
@@ -34,9 +34,6 @@ export interface IconButtonProps {
 	accessibilityRole?: AccessibilityRole
 	accessibilityState?: AccessibilityState
 }
-
-export const ACTION_BUTTON_SIZE = BASE_BUTTON_SIZE
-export const ACTION_BUTTON_RADIUS = BASE_BUTTON_RADIUS
 
 export function IconButton({
 	icon,

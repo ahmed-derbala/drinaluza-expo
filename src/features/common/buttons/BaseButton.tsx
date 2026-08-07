@@ -14,8 +14,8 @@ const SOLID_VARIANT_COLOR: Partial<Record<ButtonVariant, keyof AppThemeColors>> 
 	info: 'info'
 }
 
-export const BASE_BUTTON_SIZE = 44
-export const BASE_BUTTON_RADIUS = 14
+const BASE_BUTTON_SIZE = 44
+const BASE_BUTTON_RADIUS = 14
 
 export interface BaseButtonProps {
 	/** Optional icon name. */

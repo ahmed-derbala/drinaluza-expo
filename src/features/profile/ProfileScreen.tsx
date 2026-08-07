@@ -13,7 +13,6 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
-import { getPersonalDashboard } from '@/features/dashboard/dashboard.api'
 import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
@@ -25,18 +24,15 @@ import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
 import Spinner from '@/features/common/Spinner'
-import EmptyState from '@/features/common/EmptyState'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { CenteredModal } from '@/core/smart-modal'
 import { requestBusiness } from '@/features/businesses/business.api'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import ReviewSection from '@/features/reviews/Reviews'
 import { uploadFile } from '@/core/file'
 import { log } from '@/core/log'
 
 import { UserData } from '@/features/profile/profile.interface'
-import { PersonalDashboard } from '@/features/dashboard/dashboard.interface'
 import { LocalizedName } from '@/features/businesses/businesses.interface'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { SOCIAL_PLATFORMS } from '@/core/constants/settings'
@@ -60,7 +56,6 @@ export default function ProfileScreen() {
 
 	const [userData, setUserData] = useState<UserData | null>(null)
 	const [cart, setCart] = useState<any[]>([])
-	const [personalDashboard, setPersonalDashboard] = useState<PersonalDashboard | null>(null)
 
 	// ── Cache-first profile ──
 	const { profile: cachedProfile, isInitialLoading, isRefreshing, isOffline, refresh: refreshProfile } = useMyProfile()
@@ -105,15 +100,6 @@ export default function ProfileScreen() {
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
-	const loadDashboard = useCallback(async () => {
-		try {
-			const dashboardRes = await getPersonalDashboard()
-			if (dashboardRes?.data?.kind === 'personal') {
-				setPersonalDashboard(dashboardRes.data)
-			}
-		} catch (dashboardErr) {}
-	}, [])
-
 	// Sync cached profile into editable state as soon as it is available.
 	useEffect(() => {
 		if (cachedProfile) {
@@ -123,9 +109,8 @@ export default function ProfileScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
-			loadDashboard()
 			loadCart()
-		}, [loadDashboard])
+		}, [])
 	)
 
 	const saveUserData = async (sectionKey?: keyof typeof editMode) => {
@@ -1037,58 +1022,6 @@ export default function ProfileScreen() {
 							</>
 						)}
 					</EditableSection>
-
-					{/* Customer Dashboard Data */}
-					{personalDashboard && (
-						<EditableSection title={'📊 ' + translate('dashboard.top_businesses', 'Your Top Businesses')}>
-							<View style={{ gap: 16 }}>
-								<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
-									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_frequent', 'Most Frequent')}</Text>
-									{personalDashboard.topBusinesses.frequent.length === 0 ? (
-										<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
-									) : (
-										personalDashboard.topBusinesses.frequent.slice(0, 3).map((item, index) => (
-											<View
-												key={item._id || index}
-												style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.frequent.length, 3) - 1 && { borderBottomWidth: 0 }]}
-											>
-												<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
-												<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
-													{item.name ? localize(item.name) : item.slug || '—'}
-												</Text>
-												{item.count !== undefined && (
-													<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}15` }]}>
-														<Text style={[styles.rankMetricText, { color: colors.primary }]}>{item.count}</Text>
-													</View>
-												)}
-											</View>
-										))
-									)}
-								</View>
-								<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
-									<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{translate('dashboard.top_businesses_new', 'Recently Discovered')}</Text>
-									{personalDashboard.topBusinesses.new.length === 0 ? (
-										<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{translate('dashboard.no_businesses_yet', 'No businesses yet')}</Text>
-									) : (
-										personalDashboard.topBusinesses.new.slice(0, 3).map((item, index) => (
-											<View
-												key={item._id || index}
-												style={[styles.rankRow, { borderColor: `${colors.border}60` }, index === Math.min(personalDashboard.topBusinesses.new.length, 3) - 1 && { borderBottomWidth: 0 }]}
-											>
-												<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType="business" />
-												<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
-													{item.name ? localize(item.name) : item.slug || '—'}
-												</Text>
-											</View>
-										))
-									)}
-								</View>
-							</View>
-						</EditableSection>
-					)}
-
-					{/* Reviews Section */}
-					{userData._id && <ReviewSection targetResource="users" targetId={userData._id} targetName={localize(userData.name)} />}
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
 
@@ -1879,50 +1812,5 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 		businessModalButtonText: {
 			fontSize: 16,
 			fontWeight: '600'
-		},
-		rankPanel: {
-			flex: 1,
-			borderRadius: 16,
-			borderWidth: 1,
-			padding: 16,
-			minHeight: 120,
-			marginBottom: 12
-		},
-		rankPanelTitle: {
-			fontSize: 14,
-			fontWeight: '700',
-			marginBottom: 12
-		},
-		rankEmpty: {
-			fontSize: 12,
-			lineHeight: 20,
-			paddingVertical: 10,
-			fontStyle: 'italic'
-		},
-		rankRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 10,
-			paddingVertical: 10,
-			borderBottomWidth: 1
-		},
-		rankAvatar: {
-			width: 32,
-			height: 32,
-			borderRadius: 8
-		},
-		rankName: {
-			flex: 1,
-			fontSize: 13,
-			fontWeight: '600'
-		},
-		rankMetric: {
-			paddingHorizontal: 10,
-			paddingVertical: 4,
-			borderRadius: 10
-		},
-		rankMetricText: {
-			fontSize: 11,
-			fontWeight: '800'
 		}
 	})
