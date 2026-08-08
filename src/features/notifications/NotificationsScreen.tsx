@@ -170,8 +170,12 @@ export default function NotificationsScreen() {
 					log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to mark notification as seen', error })
 				}
 			}
+
+			if (item.screen) {
+				router.push(item.screen as any)
+			}
 		},
-		[page1Response, page1Notifications, updateCache, setExtraNotifications, decrementNotificationCount]
+		[page1Response, page1Notifications, updateCache, setExtraNotifications, decrementNotificationCount, router]
 	)
 
 	const renderItem = useCallback(

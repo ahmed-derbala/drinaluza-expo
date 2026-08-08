@@ -47,6 +47,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 }
 
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
+import { usePushNotificationNavigation } from '@/features/notifications/usePushNotificationNavigation'
 import { UserProvider, useUser } from '@/core/contexts/UserContext'
 import { ToastProvider } from '@/features/common/Toast'
 import { SocketProvider } from '@/core/socketio/SocketContext'
@@ -89,6 +90,7 @@ const updateModalStyles = StyleSheet.create({
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList } = useUpdates()
 	const router = useRouter()
+	usePushNotificationNavigation()
 	const pathname = usePathname()
 	const { user, loading } = useUser()
 	const { colors } = useTheme()

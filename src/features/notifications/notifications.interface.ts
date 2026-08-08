@@ -20,6 +20,7 @@ export interface NotificationItem {
 	_id: string
 	user: NotificationUser
 	template: NotificationTemplate
+	screen?: string
 	title: LocalizedText
 	content: LocalizedText
 	priority?: 'low' | 'medium' | 'high'
