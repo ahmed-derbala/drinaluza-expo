@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { updateProduct } from '@/features/products/products.api'
@@ -661,12 +661,12 @@ export default function ProductScreen() {
 
 					<View style={styles.checkoutActionsCol}>
 						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} colors={colors} iconColor={colors.text} style={styles.stepperBtn} />
+							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} style={styles.stepperBtn} />
 							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
-							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} colors={colors} iconColor={colors.text} style={styles.stepperBtn} />
+							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} style={styles.stepperBtn} />
 						</View>
 
-						<IconButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" colors={colors} />
+						<IconButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" />
 					</View>
 				</View>
 			)}
@@ -891,8 +891,7 @@ const styles = StyleSheet.create({
 		width: '100%',
 		borderRadius: 24,
 		overflow: 'hidden',
-		position: 'relative',
-		...createShadow({ offsetY: 4, opacity: 0.2, radius: 12, elevation: 4 })
+		position: 'relative'
 	},
 	productImage: {
 		width: '100%',
@@ -944,8 +943,7 @@ const styles = StyleSheet.create({
 	card: {
 		borderRadius: 24,
 		padding: 24,
-		borderWidth: 1,
-		...createShadow({ offsetY: 2, opacity: 0.08, radius: 6, elevation: 2 })
+		borderWidth: 1
 	},
 	savingOverlay: {
 		position: 'absolute',
@@ -1006,8 +1004,7 @@ const styles = StyleSheet.create({
 	metaCard: {
 		borderRadius: 16,
 		padding: 16,
-		borderWidth: 1,
-		...createShadow({ offsetY: 1, opacity: 0.05, radius: 4, elevation: 1 })
+		borderWidth: 1
 	},
 	metaCardStatic: {
 		borderRadius: 16,

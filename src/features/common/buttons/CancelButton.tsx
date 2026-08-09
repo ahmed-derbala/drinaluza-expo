@@ -1,6 +1,5 @@
 import React from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
-import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { IconButton } from './IconButton'
 
@@ -13,7 +12,5 @@ export interface CancelButtonProps {
 }
 
 export function CancelButton({ onPress, disabled = false, loading = false, style, label = translate('cancel', 'Cancel') }: CancelButtonProps) {
-	const { colors } = useTheme()
-
-	return <IconButton icon="close-outline" label={label} onPress={onPress} disabled={disabled} loading={loading} variant="danger" colors={colors} style={style} />
+	return <IconButton icon="close-outline" label={label} onPress={onPress} disabled={disabled} loading={loading} variant="danger" style={style} />
 }

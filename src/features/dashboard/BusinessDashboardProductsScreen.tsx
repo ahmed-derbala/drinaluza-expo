@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -263,14 +263,12 @@ export default function BusinessDashboardProductsScreen() {
 									icon="trending-up-outline"
 									label={translate('sales_reports', 'Sales')}
 									onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
-									colors={colors}
 									style={{ backgroundColor: colors.surface, borderColor: colors.border }}
 								/>
 								<IconButton
 									icon="qr-code-outline"
 									label={translate('qr_code', 'QR Code')}
 									onPress={() => setSelectedProductForQR(item)}
-									colors={colors}
 									style={{ backgroundColor: colors.surface, borderColor: colors.border }}
 								/>
 							</View>
@@ -607,8 +605,7 @@ const cardStyles = StyleSheet.create({
 		padding: 16,
 		marginBottom: 16,
 		position: 'relative',
-		overflow: 'hidden',
-		...createShadow({ offsetY: 2, opacity: 0.05, radius: 8, elevation: 2 })
+		overflow: 'hidden'
 	},
 	updatingOverlay: {
 		...StyleSheet.absoluteFill,

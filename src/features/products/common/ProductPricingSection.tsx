@@ -157,7 +157,7 @@ export default function ProductPricingSection({
 		<View style={styles.viewSection}>
 			<View style={styles.viewHeader}>
 				<Text style={styles.priceLabel}>{translate('price', 'Price')}</Text>
-				{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={styles.editActionBtn} />}
+				{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.editActionBtn} />}
 			</View>
 			<View style={styles.priceContainer}>
 				<Text style={[styles.priceValue, { color: colors.primary }]}>{formattedPrice}</Text>

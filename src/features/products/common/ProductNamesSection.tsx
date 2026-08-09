@@ -74,7 +74,7 @@ export default function ProductNamesSection({
 					</Text>
 				)}
 			</View>
-			{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={styles.actionBtn} />}
+			{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.actionBtn} />}
 		</View>
 	)
 }

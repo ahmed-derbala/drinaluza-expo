@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import SmartImage from '@/core/SmartImageViewer'
 import { Business } from './businesses.interface'
@@ -121,7 +121,6 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 							handleBusinessPress(business.slug)
 						}}
 						variant="primary"
-						colors={colors}
 					/>
 				</View>
 			</View>
@@ -152,11 +151,6 @@ const createStyles = (
 			backgroundColor: colors.background,
 			borderWidth: 1.5,
 			borderColor: colors.info,
-			shadowColor: themeColors.background,
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.15,
-			shadowRadius: 6,
-			elevation: 2,
 			width: opts.width - (opts.isExtraSmall ? 8 : 12),
 			maxWidth: opts.width - (opts.isExtraSmall ? 8 : 12),
 			minHeight: Math.min(opts.isExtraSmall ? 220 : 280, maxCardHeight),

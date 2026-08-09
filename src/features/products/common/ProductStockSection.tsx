@@ -68,7 +68,7 @@ export default function ProductStockSection({
 		<View style={[styles.stockSection, { backgroundColor: colors.surfaceVariant }]}>
 			{canEdit && onEditPress && (
 				<View style={styles.editBtnContainer}>
-					<IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={{ padding: 2 }} />
+					<IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={{ padding: 2 }} />
 				</View>
 			)}
 			<View style={styles.stockRow}>

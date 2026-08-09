@@ -1,7 +1,7 @@
 import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { AppThemeColors } from '@/core/theme'
+import { useTheme, AppThemeColors } from '@/core/theme'
 import { hexToRgba } from '@/core/helpers/colors'
 import Spinner from '@/features/common/Spinner'
 
@@ -42,8 +42,6 @@ export interface BaseButtonProps {
 	outline?: boolean
 	/** Optional icon color override. */
 	iconColor?: string
-	/** Theme colors. */
-	colors: AppThemeColors
 	/** Button size (affects icon and minimum height). */
 	size?: number
 	/** Optional container style override. */
@@ -67,12 +65,12 @@ export function BaseButton({
 	variant = 'secondary',
 	outline = false,
 	iconColor: iconColorOverride,
-	colors,
 	size,
 	style,
 	accessibilityRole,
 	accessibilityState
 }: BaseButtonProps) {
+	const { colors } = useTheme()
 	const isDanger = variant === 'danger'
 	const solidColorKey = SOLID_VARIANT_COLOR[variant]
 	const accentColor = solidColorKey ? colors[solidColorKey] : undefined

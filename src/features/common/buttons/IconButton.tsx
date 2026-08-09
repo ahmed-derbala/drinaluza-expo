@@ -1,7 +1,6 @@
 import React from 'react'
 import { StyleSheet, type StyleProp, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { BaseButton, type ButtonVariant } from './BaseButton'
-import { AppThemeColors } from '@/core/theme'
 
 const SIZE_KEYS = new Set(['width', 'height', 'minWidth', 'minHeight', 'maxWidth', 'maxHeight', 'flex', 'flexGrow', 'flexShrink', 'flexBasis'])
 
@@ -28,7 +27,6 @@ export interface IconButtonProps {
 	variant?: IconVariant
 	outline?: boolean
 	iconColor?: string
-	colors: AppThemeColors
 	size?: number
 	style?: StyleProp<ViewStyle>
 	accessibilityRole?: AccessibilityRole
@@ -45,7 +43,6 @@ export function IconButton({
 	variant = 'secondary',
 	outline,
 	iconColor,
-	colors,
 	size,
 	style,
 	accessibilityRole,
@@ -62,7 +59,6 @@ export function IconButton({
 			variant={variant}
 			outline={outline}
 			iconColor={iconColor}
-			colors={colors}
 			size={size}
 			style={stripSizeOverrides(style)}
 			accessibilityRole={accessibilityRole}

@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
-import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { IconButton, type IconVariant } from './IconButton'
 
@@ -43,7 +42,6 @@ export function HomeButton({
 	style,
 	iconColor
 }: HomeButtonProps) {
-	const { colors } = useTheme()
 	const router = useRouter()
 
 	const handlePress = useCallback(() => {
@@ -60,18 +58,6 @@ export function HomeButton({
 	}, [onPress, href, replace, router])
 
 	return (
-		<IconButton
-			icon="home-outline"
-			label={label}
-			onPress={handlePress}
-			disabled={disabled}
-			loading={loading}
-			variant={variant}
-			outline={outline}
-			iconColor={iconColor}
-			colors={colors}
-			size={size}
-			style={style}
-		/>
+		<IconButton icon="home-outline" label={label} onPress={handlePress} disabled={disabled} loading={loading} variant={variant} outline={outline} iconColor={iconColor} size={size} style={style} />
 	)
 }

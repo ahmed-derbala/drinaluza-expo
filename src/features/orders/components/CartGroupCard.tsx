@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
@@ -134,7 +134,7 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 						<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 						<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 					</View>
-					<IconButton icon="checkmark" label="Place order" variant="primary" colors={colors} onPress={() => onCheckout(group)} />
+					<IconButton icon="checkmark" label="Place order" variant="primary" onPress={() => onCheckout(group)} />
 				</View>
 			</View>
 		</View>
@@ -152,8 +152,7 @@ const styles = StyleSheet.create({
 		borderColor: themeColors.buttonText5,
 		padding: 22,
 		minHeight: 320,
-		justifyContent: 'space-between',
-		...createShadow({ offsetY: 12, opacity: 0.1, radius: 24, elevation: 4 })
+		justifyContent: 'space-between'
 	},
 	header: {
 		flexDirection: 'row',

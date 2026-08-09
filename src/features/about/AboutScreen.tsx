@@ -69,7 +69,6 @@ export default function AboutScreen() {
 								e?.stopPropagation?.()
 								handleCopy()
 							}}
-							colors={colors}
 							style={styles.copyButton}
 						/>
 					)}

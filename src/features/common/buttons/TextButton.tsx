@@ -1,7 +1,6 @@
 import React from 'react'
 import { type StyleProp, type ViewStyle, type TextStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { BaseButton, type ButtonVariant } from './BaseButton'
-import { AppThemeColors } from '@/core/theme'
 
 export interface TextButtonProps {
 	/** Optional icon name. */
@@ -22,8 +21,6 @@ export interface TextButtonProps {
 	variant?: ButtonVariant
 	/** Optional icon color override. */
 	iconColor?: string
-	/** Theme colors. */
-	colors: AppThemeColors
 	/** Button size (affects icon and minimum height). */
 	size?: number
 	/** Optional container style override. */
@@ -46,7 +43,6 @@ export function TextButton({
 	loading = false,
 	variant = 'primary',
 	iconColor,
-	colors,
 	size,
 	style,
 	textStyle,
@@ -65,7 +61,6 @@ export function TextButton({
 			loading={loading}
 			variant={variant}
 			iconColor={iconColor}
-			colors={colors}
 			size={size}
 			style={style}
 			textStyle={textStyle}

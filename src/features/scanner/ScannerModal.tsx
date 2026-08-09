@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '@/core/contexts'
 import { toast } from '@/features/common/Toast'
@@ -179,9 +179,7 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		borderColor: themeColors.buttonText,
 		backgroundColor: 'transparent',
-		borderRadius: 24,
-		// Semi-transparent cutout effect
-		...createShadow({ offsetY: 0, opacity: 0.5, radius: 100, elevation: 0 })
+		borderRadius: 24
 	},
 	instructionText: {
 		color: themeColors.buttonText,

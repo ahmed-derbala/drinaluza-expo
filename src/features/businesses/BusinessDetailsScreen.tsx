@@ -24,7 +24,7 @@ import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
@@ -456,8 +456,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			borderRadius: 20,
 			marginBottom: 20,
 			borderWidth: 1,
-			overflow: 'hidden',
-			...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
+			overflow: 'hidden'
 		},
 		businessBanner: {
 			height: 140,
@@ -609,8 +608,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 		productsSection: {
 			borderRadius: 20,
 			padding: 20,
-			borderWidth: 1,
-			...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
+			borderWidth: 1
 		},
 		productsSectionHeader: {
 			flexDirection: 'row',
@@ -738,8 +736,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 		customersSection: {
 			borderRadius: 20,
 			padding: 20,
-			borderWidth: 1,
-			...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
+			borderWidth: 1
 		},
 		customersSectionHeader: {
 			flexDirection: 'row',

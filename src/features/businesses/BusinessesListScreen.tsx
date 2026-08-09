@@ -1,6 +1,6 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, TouchableOpacity, RefreshControl, Linking, ViewStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
@@ -75,11 +75,6 @@ const createStyles = (
 			backgroundColor: colors.background,
 			borderWidth: 1.5,
 			borderColor: colors.info,
-			shadowColor: themeColors.background,
-			shadowOffset: { width: 0, height: 2 },
-			shadowOpacity: 0.15,
-			shadowRadius: 6,
-			elevation: 2,
 			width: opts.cardWidth - (opts.isExtraSmall ? 8 : 12), // Subtract margin from width
 			maxWidth: opts.cardWidth - (opts.isExtraSmall ? 8 : 12),
 			minHeight: opts.isExtraSmall ? 240 : 300,
@@ -348,8 +343,7 @@ const createStyles = (
 			paddingHorizontal: 20,
 			flexDirection: 'row',
 			alignItems: 'center',
-			justifyContent: 'center',
-			...createShadow({ offsetY: 2, opacity: 0.2, radius: 8, elevation: 3 })
+			justifyContent: 'center'
 		},
 		buttonText: {
 			color: themeColors.buttonText

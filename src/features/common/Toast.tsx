@@ -1,7 +1,6 @@
 import { colors as themeColors } from '@/core/theme'
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
 import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
-import { createShadow } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -123,8 +122,7 @@ const styles = StyleSheet.create({
 		left: 16,
 		right: 16,
 		borderRadius: 12,
-		zIndex: 9999,
-		...createShadow({ offsetY: 4, opacity: 0.2, radius: 8, elevation: 5 })
+		zIndex: 9999
 	},
 	content: {
 		flexDirection: 'row',

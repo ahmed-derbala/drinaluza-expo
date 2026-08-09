@@ -13,7 +13,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
@@ -499,7 +499,6 @@ export default function ProfileScreen() {
 									label={editMode.photo ? translate('cancel', 'Cancel') : translate('change_profile_photo', 'Change profile photo')}
 									onPress={() => toggleEdit('photo', !editMode.photo)}
 									iconColor={themeColors.buttonText}
-									colors={colors}
 									style={styles.changePhotoButton}
 								/>
 							</View>
@@ -512,14 +511,12 @@ export default function ProfileScreen() {
 										onPress={handleUploadPhoto}
 										disabled={uploadingPhoto}
 										loading={uploadingPhoto}
-										colors={colors}
 										style={{ backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }}
 									/>
 									<IconButton
 										icon="link-outline"
 										label={showUrlInput ? translate('hide_url', 'Hide URL') : translate('enter_url', 'Enter URL')}
 										onPress={() => setShowUrlInput(!showUrlInput)}
-										colors={colors}
 										style={{ backgroundColor: colors.border + '15', borderColor: colors.border + '30' }}
 									/>
 								</View>
@@ -541,14 +538,12 @@ export default function ProfileScreen() {
 											icon="clipboard-outline"
 											label={translate('paste', 'Paste')}
 											onPress={handlePastePhoto}
-											colors={colors}
 											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }}
 										/>
 										<IconButton
 											icon="save-outline"
 											label={translate('save', 'Save')}
 											onPress={() => saveUserData('photo')}
-											colors={colors}
 											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }}
 										/>
 										<IconButton
@@ -556,7 +551,6 @@ export default function ProfileScreen() {
 											label={translate('cancel', 'Cancel')}
 											onPress={() => toggleEdit('photo', false)}
 											variant="danger"
-											colors={colors}
 											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }}
 										/>
 									</View>
@@ -754,7 +748,6 @@ export default function ProfileScreen() {
 											label={translate('open_directions', 'Open Directions')}
 											onPress={() => openDirections(userData.location, userData.address)}
 											variant="primary"
-											colors={colors}
 											style={{ alignSelf: 'center', marginTop: 16 }}
 										/>
 									</>
@@ -1129,7 +1122,6 @@ export default function ProfileScreen() {
 										disabled={businessLoading || !businessName.en.trim()}
 										loading={businessLoading}
 										variant="primary"
-										colors={colors}
 										style={{ backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }}
 									/>
 								</View>
@@ -1149,7 +1141,7 @@ export default function ProfileScreen() {
 				footer={
 					<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, width: '100%' }}>
 						<CancelButton onPress={() => setShowSwitchAccountModal(false)} />
-						<IconButton icon="people" label={translate('switch', 'Switch')} onPress={confirmSwitchUser} variant="primary" colors={colors} />
+						<IconButton icon="people" label={translate('switch', 'Switch')} onPress={confirmSwitchUser} variant="primary" />
 					</View>
 				}
 			/>
@@ -1256,8 +1248,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			justifyContent: 'center',
 			alignItems: 'center',
 			borderWidth: 3,
-			borderColor: colors.background,
-			...createShadow({ offsetY: 2, opacity: 0.25, radius: 3, elevation: 3 })
+			borderColor: colors.background
 		},
 		photoActionsPanel: {
 			flexDirection: 'row',
@@ -1513,8 +1504,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			includeFontPadding: false,
 			borderRadius: 12,
 			borderWidth: 2,
-			borderColor: colors.border,
-			...createShadow({ color: colors.primary, offsetY: 0, opacity: 0, radius: 0, elevation: 0 })
+			borderColor: colors.border
 		},
 		textArea: {
 			minHeight: 100,
@@ -1704,8 +1694,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			backgroundColor: themeColors.buttonText,
 			position: 'absolute',
 			top: 2,
-			left: 2,
-			...createShadow({ offsetY: 2, opacity: 0.2, radius: 2, elevation: 2 })
+			left: 2
 		},
 		// Business Modal Styles
 		modalOverlay: {
@@ -1725,8 +1714,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			width: isWideScreen ? 500 : (width || 400) - 40,
 			maxWidth: 500,
 			borderRadius: 16,
-			padding: 24,
-			...createShadow({ offsetY: 4, opacity: 0.3, radius: 8, elevation: 8 })
+			padding: 24
 		},
 		businessModalHeader: {
 			alignItems: 'center',

@@ -1,6 +1,5 @@
 import React, { useCallback } from 'react'
 import { Platform, type StyleProp, type ViewStyle } from 'react-native'
-import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { IconButton, type IconVariant } from './IconButton'
 
@@ -39,8 +38,6 @@ export function DownloadButton({
 	onPress,
 	onAfterDownload
 }: DownloadButtonProps) {
-	const { colors } = useTheme()
-
 	const handlePress = useCallback(() => {
 		if (onPress) {
 			onPress()
@@ -64,5 +61,5 @@ export function DownloadButton({
 	const isDisabled = disabled !== undefined ? disabled : !downloadUrl
 	const icon = isPaused ? 'play-outline' : isDownloading ? 'pause-outline' : 'download-outline'
 
-	return <IconButton icon={icon} label={label} onPress={handlePress} disabled={isDisabled} variant={variant} outline={isDownloading} size={size} colors={colors} style={style} />
+	return <IconButton icon={icon} label={label} onPress={handlePress} disabled={isDisabled} variant={variant} outline={isDownloading} size={size} style={style} />
 }

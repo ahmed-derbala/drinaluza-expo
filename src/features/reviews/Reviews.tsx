@@ -1,8 +1,7 @@
-import { colors as themeColors } from '@/core/theme'
 import React, { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, createShadow } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { getReviews, createReview } from './reviews.api'
 import { Review } from './reviews.interface'
@@ -128,7 +127,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					onPress={() => setShowAddReview(!showAddReview)}
 					variant="primary"
 					iconColor={themeColors.buttonText}
-					colors={colors}
 					style={styles.addButton}
 				/>
 			</View>
@@ -255,8 +253,7 @@ const styles = StyleSheet.create({
 	toggleThumb: {
 		width: 24,
 		height: 24,
-		borderRadius: 12,
-		...createShadow({ offsetY: 2, opacity: 0.2, radius: 2, elevation: 2 })
+		borderRadius: 12
 	},
 	toggleLabel: {
 		fontSize: 14,

@@ -1,11 +1,10 @@
 import { config } from '@/config'
-import { colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, Stack } from 'expo-router'
-import { useTheme, createShadow } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useUserProfile } from './useUserProfile'
 import ErrorState from '@/features/common/ErrorState'
@@ -211,8 +210,7 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 20,
 		borderRadius: 20,
 		borderWidth: 1.5,
-		overflow: 'hidden',
-		...createShadow({ offsetY: 4, opacity: 0.2, radius: 12, elevation: 6 })
+		overflow: 'hidden'
 	},
 	avatarContainer: {
 		position: 'relative',
@@ -253,8 +251,7 @@ const styles = StyleSheet.create({
 	section: {
 		borderRadius: 20,
 		borderWidth: 1.5,
-		padding: 20,
-		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 4 })
+		padding: 20
 	},
 	sectionHeader: {
 		flexDirection: 'row',

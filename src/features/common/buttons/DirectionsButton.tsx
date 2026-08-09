@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { IconButton } from './IconButton'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { colors as themeColors } from '@/core/theme'
 import { hasDirectionsTarget, openDirections, type LocationLike, type AddressLike } from '@/core/helpers/maps'
 import { translate } from '@/core/translation'
 
@@ -20,7 +20,6 @@ export interface DirectionsButtonProps {
 }
 
 export function DirectionsButton({ location, address, label, size, disabled = false, onPress }: DirectionsButtonProps) {
-	const { colors } = useTheme()
 	if (!hasDirectionsTarget(location, address)) return null
 
 	const resolvedIconColor = themeColors.warning
@@ -37,7 +36,6 @@ export function DirectionsButton({ location, address, label, size, disabled = fa
 			icon="navigate-outline"
 			label={label ?? translate('open_directions', 'Open Directions')}
 			onPress={handlePress}
-			colors={colors}
 			iconColor={disabled ? undefined : resolvedIconColor}
 			size={size}
 			disabled={disabled}

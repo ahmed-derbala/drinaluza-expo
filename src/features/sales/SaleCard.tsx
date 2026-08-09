@@ -1,7 +1,6 @@
-import { colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native'
-import { useTheme, createShadow } from '@/core/theme'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
@@ -242,7 +241,6 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 							disabled={updating}
 							loading={updating}
 							variant={resolveVariant(action.color)}
-							colors={colors}
 						/>
 					)
 				)}
@@ -343,8 +341,7 @@ const styles = StyleSheet.create({
 		borderWidth: 2,
 		marginBottom: 16,
 		overflow: 'hidden',
-		width: '100%',
-		...createShadow({ offsetY: 2, opacity: 0.1, radius: 8, elevation: 3 })
+		width: '100%'
 	},
 	header: {
 		flexDirection: 'row',

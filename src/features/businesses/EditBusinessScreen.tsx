@@ -584,9 +584,7 @@ export default function EditBusinessScreen() {
 							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
 							onSave={saveCoordinates}
 							onCancel={() => cancelEdit('coordinates')}
-							headerRight={
-								editMode.coordinates && <IconButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} colors={colors} style={styles.getLocationChip} />
-							}
+							headerRight={editMode.coordinates && <IconButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} style={styles.getLocationChip} />}
 						>
 							{editMode.coordinates ? (
 								<View style={{ gap: 12 }}>

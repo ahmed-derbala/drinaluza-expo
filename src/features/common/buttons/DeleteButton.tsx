@@ -1,6 +1,5 @@
 import React from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
-import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { IconButton } from './IconButton'
 
@@ -18,7 +17,5 @@ export interface DeleteButtonProps {
 }
 
 export function DeleteButton({ onPress, label = translate('delete', 'Delete'), disabled = false, size, style }: DeleteButtonProps) {
-	const { colors } = useTheme()
-
-	return <IconButton icon="trash-outline" label={label} onPress={onPress} disabled={disabled} variant="danger" size={size} colors={colors} style={style} />
+	return <IconButton icon="trash-outline" label={label} onPress={onPress} disabled={disabled} variant="danger" size={size} style={style} />
 }

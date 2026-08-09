@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs, useFocusEffect } from 'expo-router'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
 import { FlashList } from '@shopify/flash-list'
@@ -348,8 +348,7 @@ const styles = StyleSheet.create({
 		padding: 16,
 		borderRadius: 16,
 		marginBottom: 12,
-		borderWidth: 1,
-		...createShadow({ offsetY: 4, opacity: 0.08, radius: 8, elevation: 3 })
+		borderWidth: 1
 	},
 	priorityBadge: {
 		flexDirection: 'row',

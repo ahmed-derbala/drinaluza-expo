@@ -142,13 +142,7 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 				</View>
 			))}
 
-			<IconButton
-				icon="call-outline"
-				label={translate('add_backup_phone', 'Add Backup Phone')}
-				onPress={addBackupPhone}
-				colors={colors}
-				style={[styles.addButtonIcon, { borderColor: colors.primary }]}
-			/>
+			<IconButton icon="call-outline" label={translate('add_backup_phone', 'Add Backup Phone')} onPress={addBackupPhone} style={[styles.addButtonIcon, { borderColor: colors.primary }]} />
 
 			<View style={styles.inputGroup}>
 				<Text style={styles.inputLabel}>Email</Text>

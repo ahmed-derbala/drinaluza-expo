@@ -41,7 +41,6 @@ export function WebsiteButton({ website, label, size, disabled = false, onPress 
 			icon="globe-outline"
 			label={label ?? translate('website', 'Website')}
 			onPress={handlePress}
-			colors={colors}
 			iconColor={disabled ? undefined : resolvedIconColor}
 			size={size}
 			disabled={disabled}

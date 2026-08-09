@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
-import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { IconButton } from './IconButton'
 
@@ -23,7 +22,6 @@ export interface CopyUrlButtonProps {
 }
 
 export function CopyUrlButton({ url, label = translate('copy_url', 'Copy Link'), copiedLabel = translate('copied', 'Copied'), disabled, onAfterCopy, size, style }: CopyUrlButtonProps) {
-	const { colors } = useTheme()
 	const [copied, setCopied] = useState(false)
 	const copiedTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
@@ -60,7 +58,6 @@ export function CopyUrlButton({ url, label = translate('copy_url', 'Copy Link'),
 			disabled={isDisabled}
 			variant={copied ? 'success' : 'secondary'}
 			size={size}
-			colors={colors}
 			style={style}
 		/>
 	)

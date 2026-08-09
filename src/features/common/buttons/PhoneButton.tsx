@@ -53,7 +53,6 @@ export function PhoneButton({ phone, backupPhones, label, size, disabled = false
 			icon="call"
 			label={label ?? translate('call', 'Call')}
 			onPress={handlePress}
-			colors={colors}
 			iconColor={disabled ? undefined : resolvedIconColor}
 			size={size}
 			disabled={disabled}

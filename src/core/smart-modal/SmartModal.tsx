@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow, AppThemeColors, colors as themeColors } from '@/core/theme'
+import { useTheme, AppThemeColors, colors as themeColors } from '@/core/theme'
 import { STATUS_ICONS, getStatusColor } from './utils'
 import { IconButton, type IconVariant } from '@/features/common/buttons/IconButton'
 import type { SmartModalProps, SmartModalButton } from './types'
@@ -194,7 +194,6 @@ export default function SmartModal({
 								disabled={button.disabled}
 								loading={button.loading}
 								variant={resolveIconVariant(accentColor, colors, button.variant)}
-								colors={colors}
 								style={button.style}
 							/>
 						)
@@ -225,8 +224,7 @@ export default function SmartModal({
 					alignSelf: 'center',
 					borderRadius: 24,
 					padding: isWideScreen ? 16 : 12,
-					maxHeight: height * 0.88,
-					...createShadow({ offsetY: 16, opacity: 0.18, radius: 32, elevation: 12 })
+					maxHeight: height * 0.88
 				}
 			case 'bottomSheet':
 				return {
@@ -238,8 +236,7 @@ export default function SmartModal({
 					paddingTop: 4,
 					paddingBottom: isWideScreen ? 16 : 12,
 					paddingHorizontal: isWideScreen ? 16 : 12,
-					maxHeight: height * BOTTOM_SHEET_MAX_HEIGHT_RATIO,
-					...createShadow({ offsetY: -6, opacity: 0.18, radius: 20, elevation: 10 })
+					maxHeight: height * BOTTOM_SHEET_MAX_HEIGHT_RATIO
 				}
 			case 'fullscreen':
 				return {

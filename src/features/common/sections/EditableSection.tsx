@@ -33,11 +33,11 @@ export function EditableSection({ title, children, isEditing, onEdit, onSave, on
 				</View>
 				<View style={styles.actions}>
 					{headerRight}
-					{onEdit && !isEditing && <IconButton icon="create-outline" label="Edit" onPress={onEdit} colors={colors} style={styles.iconButton} />}
+					{onEdit && !isEditing && <IconButton icon="create-outline" label="Edit" onPress={onEdit} style={styles.iconButton} />}
 					{isEditing && (
 						<>
 							{onCancel && <CancelButton onPress={onCancel} style={styles.iconButton} />}
-							{onSave && <IconButton icon="checkmark-circle" label="Save" onPress={onSave} variant="success" colors={colors} style={styles.iconButton} />}
+							{onSave && <IconButton icon="checkmark-circle" label="Save" onPress={onSave} variant="success" style={styles.iconButton} />}
 						</>
 					)}
 				</View>
@@ -73,7 +73,7 @@ export function SectionRow({ label, value, icon, iconColor, onPress, onLongPress
 				{label && <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>}
 				{typeof value === 'string' ? <Text style={[styles.infoValue, { color: colors.text }, isRtl && styles.infoValueRtl]}>{value}</Text> : value}
 			</View>
-			{onCopy && <IconButton icon="copy-outline" label="Copy" onPress={onCopy} colors={colors} style={styles.copyButton} />}
+			{onCopy && <IconButton icon="copy-outline" label="Copy" onPress={onCopy} style={styles.copyButton} />}
 		</View>
 	)
 

@@ -1,7 +1,6 @@
 import React from 'react'
 import { type StyleProp, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { IconButton } from './IconButton'
-import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export interface EyeButtonProps {
@@ -36,7 +35,6 @@ export function EyeButton({
 	accessibilityRole,
 	accessibilityState
 }: EyeButtonProps) {
-	const { colors } = useTheme()
 	const accessibilityLabel = label ? label : visible ? hideLabel : showLabel
 
 	return (
@@ -44,7 +42,6 @@ export function EyeButton({
 			icon={visible ? 'eye-off-outline' : 'eye-outline'}
 			label={accessibilityLabel}
 			onPress={onPress}
-			colors={colors}
 			iconColor={iconColor}
 			style={style}
 			accessibilityRole={accessibilityRole}

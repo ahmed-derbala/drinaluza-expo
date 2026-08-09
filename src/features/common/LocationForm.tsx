@@ -163,7 +163,6 @@ export default function LocationForm({ location, onChange }: LocationFormProps) 
 					label={translate('get_current', 'Get Current Location')}
 					onPress={handleGetCurrentLocation}
 					disabled={!sharingEnabled}
-					colors={colors}
 					style={[styles.addButton, { borderColor: colors.primary, marginTop: 12, opacity: sharingEnabled ? 1 : 0.5 }]}
 				/>
 			</View>

@@ -7,7 +7,7 @@ import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { Product } from '@/features/businesses/businesses.interface'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -176,9 +176,9 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 				{!isDashboard && isActive && !isOutOfStock && (
 					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, zIndex: 10 }}>
 						<View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceVariant, borderRadius: 10, padding: 2 }}>
-							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} colors={colors} iconColor={colors.text} />
+							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} />
 							<Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 24, textAlign: 'center' }}>{quantity}</Text>
-							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} colors={colors} iconColor={colors.text} />
+							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} />
 						</View>
 						<IconButton
 							icon="cart-outline"
@@ -188,7 +188,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 								onAddToCart(item, quantity)
 							}}
 							variant="primary"
-							colors={colors}
 						/>
 					</View>
 				)}
@@ -209,8 +208,7 @@ const cardStyles = StyleSheet.create({
 	card: {
 		borderRadius: 20,
 		borderWidth: 1,
-		overflow: 'hidden',
-		...createShadow({ offsetY: 6, opacity: 0.15, radius: 12, elevation: 4 })
+		overflow: 'hidden'
 	},
 	imageWrap: {
 		width: '100%',
@@ -689,7 +687,6 @@ const s = StyleSheet.create({
 		height: 56,
 		borderRadius: 28,
 		justifyContent: 'center',
-		alignItems: 'center',
-		...createShadow({ offsetY: 4, opacity: 0.3, radius: 4, elevation: 6 })
+		alignItems: 'center'
 	}
 })

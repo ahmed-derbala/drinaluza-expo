@@ -170,7 +170,6 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 							disabled={isSaving}
 							loading={isSaving}
 							variant="primary"
-							colors={colors}
 						/>
 					</View>
 				</View>

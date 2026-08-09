@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, createShadow, colors as themeColors } from '@/core/theme'
+import { useTheme, colors as themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import SmartImage from '@/core/SmartImageViewer'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
@@ -118,9 +118,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 			{(canCancel || canMarkReceived) && (
 				<View style={styles.actionsRow}>
 					{canCancel && <CancelButton onPress={() => onCancel?.(item._id)} />}
-					{canMarkReceived && (
-						<IconButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" colors={colors} />
-					)}
+					{canMarkReceived && <IconButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" />}
 				</View>
 			)}
 		</View>
@@ -134,8 +132,7 @@ const styles = StyleSheet.create({
 		padding: 22,
 		marginBottom: 16,
 		minHeight: 320,
-		justifyContent: 'space-between',
-		...createShadow({ offsetY: 12, opacity: 0.1, radius: 24, elevation: 4 })
+		justifyContent: 'space-between'
 	},
 	header: {
 		flexDirection: 'row',

@@ -536,7 +536,6 @@ export default function BusinessDashboardProductDetailScreen() {
 										label={isProductActive ? translate('suspend', 'Suspend') : translate('activate', 'Activate')}
 										onPress={handleToggleState}
 										disabled={saving || !canEditProduct}
-										colors={colors}
 										variant={isProductActive ? 'danger' : 'success'}
 									/>
 								</View>

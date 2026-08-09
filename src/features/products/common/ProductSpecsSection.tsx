@@ -83,7 +83,7 @@ export default function ProductSpecsSection({
 					</Text>
 					<View style={{ flexDirection: 'row', gap: 12 }}>
 						{onCancelPress && <CancelButton onPress={onCancelPress} style={{ padding: 4 }} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={{ padding: 4 }} />}
+						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={{ padding: 4 }} />}
 					</View>
 				</View>
 
@@ -185,7 +185,7 @@ export default function ProductSpecsSection({
 					</View>
 					<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('specifications', 'Specifications')}</Text>
 				</View>
-				{onEdit && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEdit} colors={colors} style={{ padding: 4 }} />}
+				{onEdit && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEdit} style={{ padding: 4 }} />}
 			</View>
 
 			{/* Caliber */}

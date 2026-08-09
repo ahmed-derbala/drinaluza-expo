@@ -27,7 +27,6 @@ export function HeaderIconButton({ icon, iconType = 'ionicons', label, onPress, 
 			onPress={onPress}
 			disabled={disabled}
 			loading={loading}
-			colors={colors}
 			iconColor={iconColor ?? colors.primary}
 			size={size}
 			style={[{ backgroundColor: 'transparent', borderColor: 'transparent' }, style]}

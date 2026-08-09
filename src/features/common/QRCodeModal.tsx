@@ -194,7 +194,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 			<View style={[styles.modalOverlay, { backgroundColor: colors.modalOverlay }]}>
 				<View style={[styles.qrModalCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					{/* Close Button */}
-					<IconButton icon="close" label={translate('close', 'Close')} onPress={onClose} colors={colors} style={{ position: 'absolute', top: 16, right: 16, backgroundColor: colors.surfaceVariant }} />
+					<IconButton icon="close" label={translate('close', 'Close')} onPress={onClose} style={{ position: 'absolute', top: 16, right: 16, backgroundColor: colors.surfaceVariant }} />
 
 					{/* Header */}
 					<Text style={[styles.qrModalTitle, { color: colors.text }]} numberOfLines={1}>
@@ -231,7 +231,6 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 							label={translate('print', 'Print')}
 							onPress={handlePrint}
 							disabled={!value}
-							colors={colors}
 							iconColor={colors.primary}
 							style={{ backgroundColor: colors.primaryContainer, borderColor: colors.primary }}
 						/>
@@ -243,7 +242,6 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 							label={translate('copy_link', 'Copy Link')}
 							onPress={handleCopyLink}
 							disabled={!value}
-							colors={colors}
 							style={{ backgroundColor: colors.surfaceVariant, borderColor: colors.border }}
 						/>
 						{Platform.OS !== 'web' && (

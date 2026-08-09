@@ -50,7 +50,7 @@ export default function ProductGallerySection({
 					</Text>
 					<View style={{ flexDirection: 'row', gap: 12 }}>
 						{onCancelPress && <CancelButton onPress={onCancelPress} style={{ padding: 4 }} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" colors={colors} style={{ padding: 4 }} />}
+						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={{ padding: 4 }} />}
 					</View>
 				</View>
 				<View style={styles.galleryWrapper}>
@@ -59,28 +59,12 @@ export default function ProductGallerySection({
 							<View key={item._id || idx} style={styles.galleryItem}>
 								<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
 								{onRemovePress && (
-									<IconButton
-										icon="close"
-										label={translate('remove', 'Remove')}
-										onPress={() => onRemovePress(item)}
-										variant="danger"
-										iconColor={themeColors.buttonText}
-										colors={colors}
-										style={styles.removeBadge}
-									/>
+									<IconButton icon="close" label={translate('remove', 'Remove')} onPress={() => onRemovePress(item)} variant="danger" iconColor={themeColors.buttonText} style={styles.removeBadge} />
 								)}
 							</View>
 						))}
 						{gallery.length < 5 && onUploadPress && (
-							<IconButton
-								icon="camera-outline"
-								label={translate('add_photo', 'Add Photo')}
-								onPress={onUploadPress}
-								disabled={uploading}
-								loading={uploading}
-								colors={colors}
-								style={styles.addPhotoBtn}
-							/>
+							<IconButton icon="camera-outline" label={translate('add_photo', 'Add Photo')} onPress={onUploadPress} disabled={uploading} loading={uploading} style={styles.addPhotoBtn} />
 						)}
 					</ScrollView>
 				</View>
@@ -117,7 +101,7 @@ export default function ProductGallerySection({
 		<View style={styles.fieldContainer}>
 			<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
 				<Text style={[styles.fieldLabel, { marginBottom: 0 }]}>{translate('gallery', 'Gallery')}</Text>
-				{onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} colors={colors} style={{ padding: 4 }} />}
+				{onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={{ padding: 4 }} />}
 			</View>
 			<View style={styles.galleryWrapper}>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>

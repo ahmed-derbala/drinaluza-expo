@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { View, StyleSheet, TouchableOpacity, Modal } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { colors as themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
@@ -78,7 +78,6 @@ function SmartImageComponent({
 	const [isLoaded, setIsLoaded] = useState(false)
 	const [isPreviewOpen, setIsPreviewOpen] = useState(false)
 	const insets = useSafeAreaInsets()
-	const { colors } = useTheme()
 	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const isMountedRef = useRef(true)
 
@@ -228,7 +227,6 @@ function SmartImageComponent({
 							icon="close"
 							label="Close"
 							onPress={() => setIsPreviewOpen(false)}
-							colors={colors}
 							iconColor={themeColors.buttonText}
 							style={{ position: 'absolute', top: insets.top + 16, right: 20, backgroundColor: themeColors.buttonText10, borderColor: 'transparent' }}
 						/>
