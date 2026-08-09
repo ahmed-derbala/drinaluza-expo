@@ -431,7 +431,8 @@ const styles = StyleSheet.create({
 	bizName: {
 		fontSize: 13,
 		fontWeight: '700',
-		color: themeColors.buttonText
+		color: themeColors.buttonText,
+		textAlign: 'left'
 	},
 	bizSlug: {
 		fontSize: 10,

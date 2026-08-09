@@ -1,6 +1,8 @@
 import React from 'react'
-import { StyleSheet, View, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native'
+import { StyleSheet, View, TouchableOpacity, Text, type StyleProp, type ViewStyle } from 'react-native'
 import { useTheme } from '@/core/theme'
+import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/features/common/buttons/CancelButton'
 
 export type CardSize = 'sm' | 'md' | 'lg' | number
 
@@ -35,6 +37,18 @@ export interface BaseCardProps {
 	style?: StyleProp<ViewStyle>
 	/** Optional test ID. */
 	testID?: string
+	/** Card interaction mode. 'view' is read-only, 'editable' shows an edit trigger, 'edit' shows save/cancel. Defaults to 'view'. */
+	mode?: 'view' | 'edit' | 'editable'
+	/** Optional title displayed in the header for 'edit' or 'editable' modes. */
+	title?: React.ReactNode
+	/** Edit action for 'editable' mode. */
+	onEdit?: () => void
+	/** Save action for 'edit' mode. */
+	onSave?: () => void
+	/** Cancel action for 'edit' mode. */
+	onCancel?: () => void
+	/** Loading state for the 'edit' mode save action. */
+	loading?: boolean
 }
 
 function resolveSize(size: CardSize = 'md'): { padding: number; minHeight: number } {
@@ -44,7 +58,25 @@ function resolveSize(size: CardSize = 'md'): { padding: number; minHeight: numbe
 	return SIZE_MAP[size] ?? SIZE_MAP.md
 }
 
-export function BaseCard({ children, backgroundColor, borderColor, borderWidth = 1, size = 'md', overflow = 'hidden', onPress, disabled = false, activeOpacity = 0.2, style, testID }: BaseCardProps) {
+export function BaseCard({
+	children,
+	backgroundColor,
+	borderColor,
+	borderWidth = 1,
+	size = 'md',
+	overflow = 'hidden',
+	onPress,
+	disabled = false,
+	activeOpacity = 0.2,
+	style,
+	testID,
+	mode = 'view',
+	title,
+	onEdit,
+	onSave,
+	onCancel,
+	loading = false
+}: BaseCardProps) {
 	const { colors } = useTheme()
 	const { padding, minHeight } = resolveSize(size)
 	const borderRadius = BASE_CARD_RADIUS
@@ -63,17 +95,63 @@ export function BaseCard({ children, backgroundColor, borderColor, borderWidth =
 
 	const cardStyles = [styles.baseCard, computedStyle, style]
 
-	if (onPress) {
+	const [currentMode, setCurrentMode] = React.useState(mode)
+	React.useEffect(() => {
+		setCurrentMode(mode)
+	}, [mode])
+
+	const isEdit = currentMode === 'edit'
+	const isEditable = currentMode === 'editable'
+	const showHeader = isEdit || isEditable
+
+	const handleEdit = () => {
+		onEdit?.()
+		setCurrentMode('edit')
+	}
+
+	const handleSave = () => {
+		onSave?.()
+		setCurrentMode('editable')
+	}
+
+	const handleCancel = () => {
+		onCancel?.()
+		setCurrentMode('editable')
+	}
+
+	const header = showHeader ? (
+		<View style={styles.header}>
+			<View style={styles.titleRow}>{title ? typeof title === 'string' ? <Text style={[styles.title, { color: colors.text }]}>{title}</Text> : title : null}</View>
+			<View style={styles.actions}>
+				{isEditable ? <IconButton icon="create-outline" label="Edit" onPress={handleEdit} style={styles.iconButton} /> : null}
+				{isEdit ? (
+					<>
+						<CancelButton onPress={handleCancel} style={styles.iconButton} />
+						<IconButton icon="checkmark-circle" label="Save" onPress={handleSave} variant="success" disabled={loading} loading={loading} style={styles.iconButton} />
+					</>
+				) : null}
+			</View>
+		</View>
+	) : null
+
+	const cardContent = (
+		<>
+			{header}
+			<View style={styles.content}>{children}</View>
+		</>
+	)
+
+	if (onPress && !showHeader) {
 		return (
 			<TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={activeOpacity} style={cardStyles} testID={testID} accessibilityRole="button">
-				{children}
+				{cardContent}
 			</TouchableOpacity>
 		)
 	}
 
 	return (
 		<View style={cardStyles} testID={testID}>
-			{children}
+			{cardContent}
 		</View>
 	)
 }
@@ -81,5 +159,28 @@ export function BaseCard({ children, backgroundColor, borderColor, borderWidth =
 const styles = StyleSheet.create({
 	baseCard: {
 		width: '100%'
-	}
+	},
+	header: {
+		flexDirection: 'row',
+		justifyContent: 'space-between',
+		alignItems: 'center',
+		marginBottom: 12
+	},
+	titleRow: {
+		flex: 1,
+		marginRight: 12
+	},
+	title: {
+		fontSize: 16,
+		fontWeight: '600'
+	},
+	actions: {
+		flexDirection: 'row',
+		gap: 8,
+		alignItems: 'center'
+	},
+	iconButton: {
+		padding: 4
+	},
+	content: {}
 })

@@ -18,6 +18,7 @@ export default function DashboardLayout() {
 			<Stack.Screen name="[businessSlug]/index" />
 			<Stack.Screen name="[businessSlug]/edit" />
 			<Stack.Screen name="[businessSlug]/sales" />
+			<Stack.Screen name="[businessSlug]/sales/[saleId]" />
 			<Stack.Screen name="[businessSlug]/products/index" options={{ headerShown: false }} />
 			<Stack.Screen name="[businessSlug]/create-product" />
 			<Stack.Screen name="[businessSlug]/products/[productSlug]/index" />

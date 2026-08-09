@@ -311,7 +311,7 @@ export default function NotificationsScreen() {
 				options={
 					{
 						title: translate('notifications_title', 'Notifications'),
-						subtitle: `${notifications.length} ${notifications.length === 1 ? translate('notification', 'notification') : translate('notifications_plural', 'notifications')}`,
+						subtitle: `${notifications.length}`,
 						headerLeft: () => null,
 						headerActions: headerActions
 					} as any

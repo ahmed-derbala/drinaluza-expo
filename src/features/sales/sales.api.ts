@@ -27,6 +27,16 @@ export interface SalesResponse {
 	}
 }
 
+export interface SaleResponse {
+	level?: string
+	status: number
+	viewer?: {
+		canEdit: boolean
+		canCreate: boolean
+	}
+	data: Sale
+}
+
 interface SaleProduct {
 	_id?: string
 	product: {
@@ -205,6 +215,15 @@ export const getSales = async (businessSlug: string, page = 1, limit = 10, statu
 				...(productSlug ? { productSlug } : {})
 			}
 		})
+		return response.data
+	} catch (error) {
+		throw parseError(error)
+	}
+}
+
+export const getSaleById = async (saleId: string): Promise<SaleResponse> => {
+	try {
+		const response = await apiClient.get(`sales/${saleId}`)
 		return response.data
 	} catch (error) {
 		throw parseError(error)

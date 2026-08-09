@@ -104,14 +104,6 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 
 		const business = dashboardData.business
 		const actions: any[] = []
-		if (business.slug) {
-			actions.push({
-				key: 'sales',
-				iconName: 'trending-up',
-				onPress: () => router.push(`/dashboard/${business.slug}/sales` as never),
-				accessibilityLabel: 'Sales Stats'
-			})
-		}
 		actions.push({
 			key: 'qr-code',
 			iconName: 'qr-code-outline',

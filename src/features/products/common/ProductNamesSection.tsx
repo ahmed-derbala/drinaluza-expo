@@ -60,19 +60,18 @@ export default function ProductNamesSection({
 	}
 
 	// view mode
-	const displayName = productNameEn || (productNameObj && localize ? localize(productNameObj) : '')
-	const tnLatn = productNameTnLatn || productNameObj?.tn_latn
-	const tnArab = productNameTnArab || productNameObj?.tn_arab
+	const mainName = React.useMemo(() => (productNameObj && localize ? localize(productNameObj) : productNameEn || ''), [productNameObj, localize, productNameEn])
+
+	const otherNames = React.useMemo(() => {
+		const candidates = productNameObj ? [productNameObj.en, productNameObj.tn_latn, productNameObj.tn_arab] : [productNameEn, productNameTnLatn, productNameTnArab]
+		return Array.from(new Set(candidates.filter((n): n is string => Boolean(n) && n !== mainName)))
+	}, [productNameObj, productNameEn, productNameTnLatn, productNameTnArab, mainName])
 
 	return (
 		<View style={styles.viewRow}>
 			<View style={styles.flexItem}>
-				<Text style={[styles.productName, { color: colors.text }]}>{displayName}</Text>
-				{(tnLatn || tnArab) && (
-					<Text style={[styles.productNameSecondary, { color: colors.textSecondary }]}>
-						{tnLatn} {tnArab && `• ${tnArab}`}
-					</Text>
-				)}
+				<Text style={[styles.productName, { color: colors.text }]}>{mainName}</Text>
+				{otherNames.length > 0 && <Text style={[styles.productNameSecondary, { color: colors.textSecondary }]}>{otherNames.join(' • ')}</Text>}
 			</View>
 			{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.actionBtn} />}
 		</View>

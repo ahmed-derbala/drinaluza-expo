@@ -123,13 +123,20 @@ export default function SalesScreen() {
 		}, [selectedStatus, refresh, refreshCounts, setStatusCount])
 	)
 
+	const handleCardPress = useCallback(
+		(sale: Sale) => {
+			router.push(`/dashboard/${businessSlug}/sales/${sale._id}` as any)
+		},
+		[businessSlug, router]
+	)
+
 	const renderItem = useCallback(
 		({ item }: { item: Sale }) => (
 			<View style={[numColumns > 1 ? styles.columnItem : styles.fullWidthItem, numColumns > 1 && { paddingHorizontal: 8, marginBottom: 16 }]}>
-				<SaleCard sale={item} onStatusUpdate={handleRefresh} />
+				<SaleCard sale={item} onStatusUpdate={handleRefresh} onPress={() => handleCardPress(item)} />
 			</View>
 		),
-		[numColumns, handleRefresh]
+		[numColumns, handleRefresh, handleCardPress]
 	)
 
 	const activeFiltersBanner = useMemo(() => {

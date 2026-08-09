@@ -17,10 +17,12 @@ import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 
 interface SaleCardProps {
 	sale: Sale
 	onStatusUpdate?: () => void
+	onPress?: () => void
 }
 
 interface ProductItemProps {
@@ -85,7 +87,7 @@ const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDec
 	)
 }
 
-const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
+const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 	const { colors } = useTheme()
 	const { localize, formatPrice, translate } = useUser()
 	const { width } = useWindowDimensions()
@@ -249,15 +251,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	}
 
 	return (
-		<View
-			style={[
-				styles.card,
-				{
-					backgroundColor: colors.background,
-					borderColor: colors.info
-				}
-			]}
-		>
+		<BaseCard style={styles.card} borderWidth={2} borderColor={colors.info} onPress={onPress} testID={`sale-card-${sale._id}`}>
 			{/* Header Section */}
 			<View style={styles.header}>
 				<View style={styles.headerLeft}>
@@ -331,17 +325,14 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			</View>
 
 			{renderStatusActions()}
-		</View>
+		</BaseCard>
 	)
 }
 
 const styles = StyleSheet.create({
 	card: {
-		borderRadius: 16,
-		borderWidth: 2,
 		marginBottom: 16,
-		overflow: 'hidden',
-		width: '100%'
+		padding: 0
 	},
 	header: {
 		flexDirection: 'row',
