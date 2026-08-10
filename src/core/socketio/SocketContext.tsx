@@ -8,6 +8,7 @@ import { useNotification } from '@/features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
 import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
+import { PRIORITY_COLORS, Priority } from '@/features/common/PriorityBadge'
 
 interface SocketContextType {
 	socket: Socket | null
@@ -16,7 +17,7 @@ interface SocketContextType {
 const SocketContext = createContext<SocketContextType | undefined>(undefined)
 
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-	const { user } = useUser()
+	const { user, localize } = useUser()
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
 	const [socket, setSocket] = useState<Socket | null>(ConnectionService.getSocket())
@@ -39,8 +40,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 		const handleNewNotification = async (data: any) => {
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
 
-			const toastTitle = data.title || 'New notification'
-			const toastMessage = data.content || ''
+			const toastTitle = localize(data.title) || 'New notification'
+			const toastMessage = localize(data.content) || ''
+			const priorityColor = data.priority ? PRIORITY_COLORS[data.priority as Priority] : undefined
 
 			let targetScreen = data.screen
 			let customOnPress: (() => void) | undefined
@@ -65,9 +67,10 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			toast.show({
 				title: toastTitle,
 				message: toastMessage,
+				imageUrl: data.media?.thumbnail?.url,
 				screen: targetScreen,
 				onPress: customOnPress,
-				color: themeColors.info
+				color: priorityColor ?? themeColors.info
 			})
 
 			// Refresh count
@@ -80,7 +83,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			log({ level: 'info', label: 'socket', message: 'Cleaning up notification listener' })
 			currentSocket.off('new_notification', handleNewNotification)
 		}
-	}, [user?.slug, refreshNotificationCount, router])
+	}, [user?.slug, refreshNotificationCount, router, localize])
 
 	const value = useMemo(() => ({ socket }), [socket])
 

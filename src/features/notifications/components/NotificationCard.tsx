@@ -1,30 +1,33 @@
 import React from 'react'
-import { View, Text, StyleSheet, useWindowDimensions } from 'react-native'
+import { View, StyleSheet, useWindowDimensions } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import PriorityBadge, { PRIORITY_COLORS } from '@/features/common/PriorityBadge'
 import ElapsedTimeBadge from '@/features/common/ElapsedTimeBadge'
-import SeenBadge from '@/features/common/SeenBadge'
+import NotificationContentBlock from '@/features/common/blocks/NotificationContentBlock'
 import { NotificationItem } from '../notifications.interface'
 
 interface NotificationCardProps {
 	item: NotificationItem
 	onPress: (item: NotificationItem) => void
+	/** Optional image override (e.g. a customer avatar). Defaults to the notification's own media, if any. */
+	imageUrl?: string
 	/** Optional extra content rendered between the header and the notification's text, e.g. a customer block. */
 	children?: React.ReactNode
 }
 
-export const NotificationCard = React.memo(function NotificationCard({ item, onPress, children }: NotificationCardProps) {
+export const NotificationCard = React.memo(function NotificationCard({ item, onPress, imageUrl, children }: NotificationCardProps) {
 	const { colors } = useTheme()
 	const { localize } = useUser()
 	const { height: windowHeight } = useWindowDimensions()
 
 	const isUnseen = !item.seenAt
 	const priorityColor = item.priority ? PRIORITY_COLORS[item.priority] : undefined
-	const accentColor = priorityColor ?? (isUnseen ? colors.primary : colors.info)
+	const accentColor = priorityColor ?? (isUnseen ? colors.primary : colors.border)
 	const isCompact = windowHeight < 550
 	const maxCardHeight = Math.max(100, windowHeight - 140)
+	const resolvedImageUrl = imageUrl ?? item.media?.thumbnail?.url
 
 	const handlePress = () => onPress(item)
 
@@ -42,22 +45,24 @@ export const NotificationCard = React.memo(function NotificationCard({ item, onP
 					minHeight: 0,
 					maxHeight: maxCardHeight,
 					padding: isCompact ? 10 : 16,
-					marginBottom: isCompact ? 8 : 12
+					marginBottom: isCompact ? 8 : 12,
+					opacity: isUnseen ? 1 : 0.55
 				}
 			]}
 			testID={`notification-card-${item._id}`}
 		>
-			{/* Header: title on the left, badges on the right */}
-			<View style={[styles.cardHeader, { marginBottom: isCompact ? 6 : 10 }]}>
-				<View style={styles.titleContainer}>
-					{isUnseen && <View style={[styles.dot, { backgroundColor: colors.primary }]} />}
-					<Text
-						style={[styles.title, { color: colors.text, fontWeight: isUnseen ? '700' : '600', fontSize: isCompact ? 14 : 16, lineHeight: isCompact ? 18 : 22 }]}
-						numberOfLines={windowHeight < 500 ? 1 : 2}
-					>
-						{localize(item.title as any)}
-					</Text>
-				</View>
+			{/* Header: image + title + content block on the top left, badges on the top right */}
+			<View style={styles.cardHeader}>
+				<NotificationContentBlock
+					imageUrl={resolvedImageUrl}
+					title={localize(item.title as any)}
+					titleStyle={{ fontWeight: isUnseen ? '700' : '600', fontSize: isCompact ? 14 : 16 }}
+					titleNumberOfLines={windowHeight < 500 ? 1 : 2}
+					content={localize(item.content as any)}
+					contentStyle={{ fontSize: isCompact ? 12 : 14 }}
+					contentNumberOfLines={windowHeight < 500 ? 1 : windowHeight < 650 ? 2 : 3}
+					style={styles.contentBlock}
+				/>
 
 				{windowHeight >= 480 && (
 					<View style={styles.badgeGroup}>
@@ -67,35 +72,7 @@ export const NotificationCard = React.memo(function NotificationCard({ item, onP
 				)}
 			</View>
 
-			{children && <View style={{ marginBottom: isCompact ? 8 : 12 }}>{children}</View>}
-
-			{/* Content */}
-			<Text
-				style={[
-					styles.content,
-					{
-						color: isUnseen ? colors.text : colors.textSecondary,
-						fontWeight: isUnseen ? '500' : '400',
-						fontSize: isCompact ? 12 : 14,
-						lineHeight: isCompact ? 17 : 21,
-						marginBottom: isCompact ? 8 : 12
-					}
-				]}
-				numberOfLines={windowHeight < 500 ? 1 : windowHeight < 650 ? 2 : 3}
-			>
-				{localize(item.content as any)}
-			</Text>
-
-			{/* Footer */}
-			<View style={styles.cardFooter}>
-				<SeenBadge
-					seen={!isUnseen}
-					onPress={(e) => {
-						e.stopPropagation()
-						handlePress()
-					}}
-				/>
-			</View>
+			{children && <View style={{ marginTop: isCompact ? 8 : 12 }}>{children}</View>}
 		</BaseCard>
 	)
 })
@@ -110,35 +87,13 @@ const styles = StyleSheet.create({
 		alignItems: 'flex-start',
 		gap: 8
 	},
-	titleContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		flex: 1,
-		gap: 8
-	},
-	dot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4
-	},
-	title: {
-		flex: 1,
-		lineHeight: 22,
-		textAlign: 'left',
-		writingDirection: 'ltr'
+	contentBlock: {
+		flex: 1
 	},
 	badgeGroup: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 6,
 		flexShrink: 0
-	},
-	content: {
-		fontSize: 14,
-		lineHeight: 21
-	},
-	cardFooter: {
-		flexDirection: 'row',
-		justifyContent: 'flex-end'
 	}
 })

@@ -12,9 +12,7 @@ import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
-import { NOTIFICATIONS_TEMPLATES } from './notifications.constant'
 import { NotificationCard } from './components/NotificationCard'
-import { PurchaseRequestNotificationCard } from './components/PurchaseRequestNotificationCard'
 
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
@@ -146,15 +144,7 @@ export default function NotificationsScreen() {
 		[page1Response, page1Notifications, updateCache, setExtraNotifications, decrementNotificationCount, router]
 	)
 
-	const renderItem = useCallback(
-		({ item }: { item: NotificationItem }) => {
-			if (item.template?.slug === NOTIFICATIONS_TEMPLATES.PURCHASE_REQUEST) {
-				return <PurchaseRequestNotificationCard item={item} onPress={handleNotificationPress} />
-			}
-			return <NotificationCard item={item} onPress={handleNotificationPress} />
-		},
-		[handleNotificationPress]
-	)
+	const renderItem = useCallback(({ item }: { item: NotificationItem }) => <NotificationCard item={item} onPress={handleNotificationPress} />, [handleNotificationPress])
 
 	const headerActions = useMemo(() => {
 		const actions: any[] = []

@@ -1,5 +1,4 @@
 import React, { useSyncExternalStore, useCallback } from 'react'
-import { StyleProp, ViewStyle } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { ConnectionService, BackendState } from '@/core/connection'
 import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/cache/useCacheFirst'
@@ -11,7 +10,6 @@ export interface HeaderRefreshButtonProps {
 	isOffline?: boolean
 	backendState?: BackendState
 	size?: number
-	style?: StyleProp<ViewStyle>
 	disabled?: boolean
 }
 
@@ -19,7 +17,7 @@ const subscribeToBackendState = (onStoreChange: () => void): (() => void) => {
 	return ConnectionService.subscribe(() => onStoreChange())
 }
 
-export function HeaderRefreshButton({ onRefresh, isRefreshing: isRefreshingProp, isOffline = false, backendState: backendStateProp, size, style, disabled = false }: HeaderRefreshButtonProps) {
+export function HeaderRefreshButton({ onRefresh, isRefreshing: isRefreshingProp, isOffline = false, backendState: backendStateProp, size, disabled = false }: HeaderRefreshButtonProps) {
 	const liveBackendState = useSyncExternalStore(subscribeToBackendState, ConnectionService.getBackendState, ConnectionService.getBackendState)
 	const globalRefreshing = useGlobalRefreshingState()
 	const isRefreshing = isRefreshingProp ?? globalRefreshing
@@ -60,7 +58,6 @@ export function HeaderRefreshButton({ onRefresh, isRefreshing: isRefreshingProp,
 			loading={showSpinner}
 			iconColor={iconColor}
 			size={size}
-			style={style}
 		/>
 	)
 }

@@ -4,18 +4,18 @@ import { Ionicons } from '@expo/vector-icons'
 import { colors as themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
-export type Priority = 'low' | 'medium' | 'high'
+export type Priority = 'default' | 'normal' | 'high'
 
 export const PRIORITY_COLORS: Record<Priority, string> = {
 	high: themeColors.error,
-	medium: themeColors.warning,
-	low: themeColors.info
+	normal: themeColors.warning,
+	default: themeColors.info
 }
 
 const PRIORITY_ICONS: Record<Priority, keyof typeof Ionicons.glyphMap> = {
 	high: 'alert-circle',
-	medium: 'warning',
-	low: 'information-circle'
+	normal: 'warning',
+	default: 'information-circle'
 }
 
 export interface PriorityBadgeProps {

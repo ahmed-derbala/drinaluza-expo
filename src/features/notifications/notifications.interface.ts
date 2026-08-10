@@ -1,4 +1,5 @@
 import { Customer } from '@/features/customers/customers.interface'
+import { Priority } from '@/features/common/PriorityBadge'
 
 interface LocalizedText {
 	en?: string
@@ -27,7 +28,12 @@ export interface NotificationItem {
 	screen?: string
 	title: LocalizedText
 	content: LocalizedText
-	priority?: 'low' | 'medium' | 'high'
+	media?: {
+		thumbnail?: {
+			url?: string
+		}
+	}
+	priority?: Priority
 	seenAt?: string | null
 	createdAt: string
 	updatedAt: string

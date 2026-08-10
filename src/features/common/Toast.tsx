@@ -1,9 +1,10 @@
 import { colors as themeColors } from '@/core/theme'
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
-import { View, Text, TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
+import { TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import NotificationContentBlock from '@/features/common/blocks/NotificationContentBlock'
 
 let useAudioPlayer: any = null
 try {
@@ -15,6 +16,7 @@ try {
 export interface ToastOptions {
 	title: string
 	message: string
+	imageUrl?: string
 	color?: string
 	timeout?: number
 	screen?: string
@@ -98,14 +100,14 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 			{visible && options && (
 				<Animated.View style={[styles.container, { opacity, transform: [{ translateY }], top: Math.max(insets.top, 20) + 10, backgroundColor: options.color || themeColors.info }]}>
 					<TouchableOpacity style={styles.content} onPress={handlePress} activeOpacity={0.8}>
-						<View style={styles.textContainer}>
-							<Text style={styles.title}>{options.title}</Text>
-							{!!options.message && (
-								<Text style={styles.message} numberOfLines={2}>
-									{options.message}
-								</Text>
-							)}
-						</View>
+						<NotificationContentBlock
+							imageUrl={options.imageUrl}
+							title={options.title}
+							content={options.message || undefined}
+							style={styles.textContainer}
+							titleStyle={styles.title}
+							contentStyle={styles.message}
+						/>
 						<TouchableOpacity onPress={hide} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
 							<Ionicons name="close" size={20} color={themeColors.buttonText} />
 						</TouchableOpacity>
