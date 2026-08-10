@@ -10,7 +10,7 @@ import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { OrderItem } from '@/features/orders/orders.interface'
 import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
-import { OrderStepTracker } from './OrderStepTracker'
+import { OrderStepTracker } from '@/features/orders/components/OrderStepTracker'
 
 interface PurchaseCardProps {
 	item: OrderItem

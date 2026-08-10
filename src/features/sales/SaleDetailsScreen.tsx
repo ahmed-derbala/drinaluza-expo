@@ -8,7 +8,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { SmartHeader } from '@/core/smart-header'
 import { HeaderSalesButton } from '@/core/smart-header/buttons'
 import { getSaleById, Sale } from './sales.api'
-import SaleDetailsCard from './SaleDetailsCard'
+import SaleCard from './SaleCard'
 import Spinner from '@/features/common/Spinner'
 import ErrorState from '@/features/common/ErrorState'
 
@@ -87,7 +87,7 @@ export default function SaleDetailsScreen() {
 				contentContainerStyle={[styles.scrollContent, { paddingBottom: 40 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 			>
-				<SaleDetailsCard sale={sale} />
+				<SaleCard sale={sale} onStatusUpdate={() => fetchSale(false)} />
 			</SmartHeader.ScrollView>
 		</View>
 	)

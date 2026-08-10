@@ -16,8 +16,8 @@ interface DefaultHeaderAction {
  */
 export const DEFAULT_HEADER_ACTIONS: DefaultHeaderAction[] = [
 	{ key: 'refresh', render: () => <HeaderRefreshButton key="refresh" /> },
-	{ key: 'cart', render: () => <HeaderCartButton key="cart" /> },
-	{ key: 'notifications', render: () => <HeaderNotificationsButton key="notifications" /> }
+	{ key: 'notifications', render: () => <HeaderNotificationsButton key="notifications" /> },
+	{ key: 'cart', render: () => <HeaderCartButton key="cart" /> }
 ]
 
 function getActionKey(action: React.ReactNode): string | undefined {
