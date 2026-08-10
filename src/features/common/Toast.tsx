@@ -78,7 +78,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 			timerRef.current = setTimeout(() => {
 				hide()
-			}, newOptions.timeout || 10000)
+			}, newOptions.timeout || 30000)
 		},
 		[player, opacity, translateY, hide]
 	)
@@ -109,7 +109,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 							opacity,
 							transform: [{ translateY }],
 							bottom: TAB_BAR_BOTTOM_MARGIN + insets.bottom + TAB_BAR_HEIGHT + 10,
-							backgroundColor: themeColors.background,
+							backgroundColor: themeColors.surface,
 							borderColor
 						}
 					]}

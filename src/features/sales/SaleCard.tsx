@@ -4,7 +4,6 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWind
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
-import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
 import SmartImage from '@/core/SmartImageViewer'
 import { useUser } from '@/core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
@@ -14,11 +13,12 @@ import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { CustomerContactBlock } from '@/features/customers/components/CustomerContactBlock'
+import SaleIdBadge from './SaleIdBadge'
+import SaleStatusBadge from './SaleStatusBadge'
 
 interface SaleCardProps {
 	sale: Sale
 	onStatusUpdate?: () => void
-	onPress?: () => void
 }
 
 interface ProductItemProps {
@@ -83,7 +83,7 @@ const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDec
 	)
 }
 
-const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
+const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const { colors } = useTheme()
 	const { localize, formatPrice, translate } = useUser()
 	const { width } = useWindowDimensions()
@@ -160,9 +160,6 @@ const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 		})
 		return { total }
 	}, [hasQuantityChanges, quantities, sale.price, sale.products])
-
-	const statusColor = orderStatusColors[currentStatus as keyof typeof orderStatusColors] || colors.primary
-	const statusLabel = orderStatusLabels[currentStatus as keyof typeof orderStatusLabels] || currentStatus
 
 	const handleStatusUpdate = async (newStatus: string) => {
 		try {
@@ -247,7 +244,7 @@ const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 	}
 
 	return (
-		<BaseCard style={styles.card} borderWidth={2} borderColor={colors.info} onPress={onPress} testID={`sale-card-${sale._id}`}>
+		<BaseCard style={styles.card} borderWidth={2} borderColor={colors.info} testID={`sale-card-${sale._id}`}>
 			{/* Header Section */}
 			<View style={styles.header}>
 				<View style={styles.headerLeft}>
@@ -256,11 +253,9 @@ const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 					</Text>
 					<Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(sale.createdAt), 'MMM d, yyyy • HH:mm')}</Text>
 				</View>
-				<View style={[styles.statusBadge, { backgroundColor: `${statusColor}20` }]}>
-					<View style={[styles.statusDot, { backgroundColor: statusColor }]} />
-					<Text style={[styles.statusText, { color: statusColor }]} numberOfLines={1}>
-						{statusLabel}
-					</Text>
+				<View style={styles.headerRight}>
+					<SaleStatusBadge sale={sale} />
+					<SaleIdBadge sale={sale} />
 				</View>
 			</View>
 
@@ -313,6 +308,10 @@ const styles = StyleSheet.create({
 	headerLeft: {
 		flex: 1
 	},
+	headerRight: {
+		alignItems: 'flex-end',
+		gap: 6
+	},
 	businessName: {
 		fontSize: 18,
 		fontWeight: '700',
@@ -320,23 +319,6 @@ const styles = StyleSheet.create({
 	},
 	dateText: {
 		fontSize: 13
-	},
-	statusBadge: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 20,
-		gap: 6
-	},
-	statusDot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4
-	},
-	statusText: {
-		fontSize: 12,
-		fontWeight: '600'
 	},
 	productsContainer: {
 		paddingVertical: 12

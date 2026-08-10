@@ -14,9 +14,6 @@ export const ORDER_STATUSES = {
 	CANCELLED_BY_BUSINESS: 'cancelled_by_business' //cancelled
 }
 
-// Alias for external usage (matches requested naming)
-const orderStatuses = ORDER_STATUSES
-
 export const orderStatusColors = {
 	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: themeColors.warning, // Orange
 	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: themeColors.warning, // Deep Orange
