@@ -12,7 +12,7 @@ import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { Stack } from 'expo-router'
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderCartButton, HeaderRefreshButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
@@ -428,31 +428,13 @@ export default function BusinessProductsScreen() {
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (isDashboard) {
-			if (businessSlug) {
-				actions.push({
-					key: 'sales',
-					iconName: 'trending-up',
-					onPress: () => router.push(`/dashboard/${businessSlug}/sales` as any),
-					accessibilityLabel: 'Sales Stats'
-				})
-			}
+			actions.push(<HeaderSalesButton key="sales" businessSlug={businessSlug} label={translate('sales', 'Sales')} />)
 		} else {
-			actions.push({
-				key: 'cart',
-				iconName: 'cart-outline',
-				badgeCount: cart.length,
-				onPress: () => router.push((user ? '/purchases?status=cart' : '/auth') as any),
-				accessibilityLabel: 'View Cart'
-			})
+			actions.push(<HeaderCartButton key="cart" badgeCount={cart.length} />)
 		}
-		actions.push({
-			key: 'refresh',
-			onPress: handleRefresh,
-			isRefreshing: isRefreshing,
-			accessibilityLabel: 'Refresh'
-		})
+		actions.push(<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />)
 		return actions
-	}, [isDashboard, businessSlug, cart.length, handleRefresh, isRefreshing, router, user])
+	}, [isDashboard, businessSlug, cart.length, handleRefresh, isRefreshing, translate])
 
 	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
 		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },

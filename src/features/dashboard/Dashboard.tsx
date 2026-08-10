@@ -1,6 +1,6 @@
 import { config } from '@/config'
 import { colors as themeColors } from '@/core/theme'
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, HeaderQRCodeButton, SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions } from 'react-native'
@@ -92,32 +92,15 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 
 	const headerActions = useMemo(() => {
 		if (!dashboardData || !isBusinessDashboard(dashboardData)) {
-			return [
-				{
-					key: 'refresh',
-					onPress: onRefresh,
-					isRefreshing: isRefreshing,
-					accessibilityLabel: 'Refresh'
-				}
-			]
+			return [<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />]
 		}
 
 		const business = dashboardData.business
 		const actions: any[] = []
-		actions.push({
-			key: 'qr-code',
-			iconName: 'qr-code-outline',
-			onPress: () => setShowQRCode(true),
-			accessibilityLabel: 'QR Code'
-		})
-		actions.push({
-			key: 'refresh',
-			onPress: onRefresh,
-			isRefreshing: isRefreshing,
-			accessibilityLabel: 'Refresh'
-		})
+		actions.push(<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />)
+		actions.push(<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />)
 		return actions
-	}, [dashboardData, isRefreshing, onRefresh, router])
+	}, [dashboardData, isRefreshing, onRefresh])
 
 	const handleSelectProfile = useCallback(
 		(profile: DashboardProfile) => {

@@ -201,6 +201,8 @@ export const en = {
 	yesterday: 'Yesterday',
 	days_ago: 'days ago',
 	ago: 'ago',
+	seen: 'Seen',
+	mark_as_seen: 'Mark as seen',
 	user_not_found_signup: 'User not found. Do you want to sign up? Your public profile will be accessible at:',
 	user_not_found: 'User Not Found',
 	password_incorrect_verify: 'Incorrect password. Please verify and try again.',

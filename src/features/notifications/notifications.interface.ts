@@ -1,3 +1,5 @@
+import { Customer } from '@/features/customers/customers.interface'
+
 interface LocalizedText {
 	en?: string
 	tn_latn?: string
@@ -19,6 +21,8 @@ interface NotificationTemplate {
 export interface NotificationItem {
 	_id: string
 	user: NotificationUser
+	/** Populated for templates that involve a second party, e.g. `purchase_request`. */
+	customer?: Customer
 	template: NotificationTemplate
 	screen?: string
 	title: LocalizedText

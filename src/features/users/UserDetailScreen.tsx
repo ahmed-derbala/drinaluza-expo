@@ -1,6 +1,6 @@
 import { config } from '@/config'
 import { useTheme, colors as themeColors } from '@/core/theme'
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, Linking, TouchableOpacity } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
@@ -74,22 +74,7 @@ export default function UserDetailScreen() {
 			<Stack.Screen options={{ headerShown: false }} />
 			<SmartHeader
 				title={displayTitle}
-				headerActions={
-					[
-						{
-							key: 'qr-code',
-							iconName: 'qr-code-outline',
-							onPress: () => setShowQRCode(true),
-							accessibilityLabel: 'QR Code'
-						},
-						{
-							key: 'refresh',
-							onPress: handleRefresh,
-							isRefreshing: isRefreshing,
-							accessibilityLabel: 'Refresh'
-						}
-					] as any[]
-				}
+				headerActions={[<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />] as any[]}
 				fallbackRoute="/(home)/feed"
 			/>
 

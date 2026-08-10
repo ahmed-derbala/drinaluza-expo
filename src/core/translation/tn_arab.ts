@@ -183,6 +183,8 @@ export const tn_arab = {
 	yesterday: 'البارح',
 	days_ago: 'أيام تالي',
 	ago: 'تالي',
+	seen: 'شافتها',
+	mark_as_seen: 'اعملها شافتها',
 	user_not_found_signup: 'المستخدم ماهوش موجود. تحب تعمل كونط جديد؟ توة ملفك الشخصي تنجم تدخلّه على الرابط:',
 	user_not_found: 'المستخدم موش موجود',
 	password_incorrect_verify: 'كلمة السر موش صحيحة. ثبت منها وعاود جرب.',

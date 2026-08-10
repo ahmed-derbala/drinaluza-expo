@@ -10,14 +10,10 @@ import { useUser } from '@/core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
 import { toast } from '@/features/common/Toast'
 import { ORDER_STATUSES as statuses } from '@/features/orders/orders-statuses'
-import { PhoneButton } from '@/features/common/buttons/PhoneButton'
-import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
-import { EmailButton } from '@/features/common/buttons/EmailButton'
-import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
-import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
+import { CustomerContactBlock } from '@/features/customers/components/CustomerContactBlock'
 
 interface SaleCardProps {
 	sale: Sale
@@ -270,33 +266,7 @@ const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 
 			{/* Customer Section */}
 			<View style={[styles.customerSection, { borderBottomColor: colors.border }]}>
-				<View style={styles.customerInfo}>
-					<SmartImage
-						source={typeof sale.customer.media?.thumbnail === 'string' ? sale.customer.media.thumbnail : sale.customer.media?.thumbnail?.url}
-						style={[styles.avatar, { borderColor: colors.border }]}
-						entityType="user"
-						containerStyle={[styles.avatarContainer, { backgroundColor: colors.surface }]}
-					/>
-					<View style={styles.customerDetails}>
-						<Text style={[styles.customerName, { color: colors.text }]} numberOfLines={1}>
-							{localize(sale.customer.name)}
-						</Text>
-						{sale.customer.address && (
-							<Text style={[styles.customerAddress, { color: colors.textSecondary }]} numberOfLines={2}>
-								{sale.customer.address.street}, {sale.customer.address.city}
-							</Text>
-						)}
-					</View>
-				</View>
-
-				{/* Contact Buttons */}
-				<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-					<PhoneButton phone={sale.customer.contact?.phone} size={36} />
-					<WhatsAppButton whatsapp={sale.customer.contact?.whatsapp} size={36} />
-					<EmailButton email={sale.customer.contact?.email} size={36} />
-					<WebsiteButton website={sale.customer.contact?.website} size={36} />
-					<DirectionsButton location={sale.customer.location} address={sale.customer.address} size={36} />
-				</View>
+				<CustomerContactBlock customer={sale.customer} />
 			</View>
 
 			{/* Products Section - Scrollable */}
@@ -372,38 +342,7 @@ const styles = StyleSheet.create({
 	},
 	customerSection: {
 		padding: 16,
-		borderBottomWidth: 1,
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		gap: 12
-	},
-	customerInfo: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		flex: 1
-	},
-	avatarContainer: {
-		borderRadius: 20,
-		overflow: 'hidden'
-	},
-	avatar: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		borderWidth: 1,
-		marginRight: 12
-	},
-	customerDetails: {
-		flex: 1
-	},
-	customerName: {
-		fontSize: 16,
-		fontWeight: '600',
-		marginBottom: 2
-	},
-	customerAddress: {
-		fontSize: 13
+		borderBottomWidth: 1
 	},
 	productsContainer: {
 		paddingVertical: 12

@@ -183,6 +183,8 @@ export const tn_latn = {
 	yesterday: 'El bareh',
 	days_ago: 'ayyam ltali',
 	ago: 'ltali',
+	seen: 'Chawfetha',
+	mark_as_seen: 'Aamelha chawfetha',
 	user_not_found_signup: 'El mostakhdem mouch mawjoud. Theb taamel kont jdid? Tawa profil mtak tnajem todkhlolha al rabt:',
 	user_not_found: 'El mostakhdem mouch mawjoud',
 	password_incorrect_verify: "Kelmetsir mouch s'hih'a. Thabet menha w aawed jarreb.",

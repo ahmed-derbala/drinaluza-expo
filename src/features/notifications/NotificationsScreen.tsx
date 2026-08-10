@@ -1,45 +1,30 @@
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderAllowPushButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform } from 'react-native'
+import { View, StyleSheet, RefreshControl, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter, Tabs, useFocusEffect } from 'expo-router'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router'
+import { useTheme } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser } from '@/core/contexts/UserContext'
-import { FlashList } from '@shopify/flash-list'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
 import { getNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
-import { Ionicons } from '@expo/vector-icons'
+import { NOTIFICATIONS_TEMPLATES } from './notifications.constant'
+import { NotificationCard } from './components/NotificationCard'
+import { PurchaseRequestNotificationCard } from './components/PurchaseRequestNotificationCard'
 
+import { useBackButton } from '@/core/hooks/useBackButton'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { log } from '@/core/log'
-
-// Priority color mapping
-const PRIORITY_COLORS = {
-	high: { bg: themeColors.error, border: themeColors.error, text: themeColors.text, icon: 'alert-circle' },
-	medium: { bg: themeColors.warning, border: themeColors.warning, text: themeColors.text, icon: 'warning' },
-	low: { bg: themeColors.info, border: themeColors.info, text: themeColors.text, icon: 'information-circle' }
-} as const
-
-const getPriorityStyles = (priority?: 'low' | 'medium' | 'high') => {
-	if (!priority) return null
-	const config = PRIORITY_COLORS[priority]
-	return {
-		backgroundColor: config.border + '20',
-		borderColor: config.border,
-		textColor: config.border,
-		iconName: config.icon as keyof typeof Ionicons.glyphMap
-	}
-}
 
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
-	const { height: windowHeight } = useWindowDimensions()
+	const navigation = useNavigation()
+	useBackButton()
 	const insets = useSafeAreaInsets()
 	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useNotifications()
 	const page1Notifications = page1Response?.data?.docs ?? []
@@ -49,7 +34,7 @@ export default function NotificationsScreen() {
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
 	const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null)
-	const { translate, localize } = useUser()
+	const { translate } = useUser()
 	const { onScroll } = useScrollHandler()
 
 	// Reset appended pages whenever page 1 cache refreshes
@@ -132,23 +117,6 @@ export default function NotificationsScreen() {
 		}, [refresh, checkPermissions])
 	)
 
-	const formatDate = useCallback(
-		(dateString: string) => {
-			const date = new Date(dateString)
-			const now = new Date()
-			const diffTime = Math.abs(now.getTime() - date.getTime())
-			const diffMinutes = Math.floor(diffTime / (1000 * 60))
-			const diffHours = Math.floor(diffTime / (1000 * 60 * 60))
-			const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24))
-
-			if (diffMinutes < 60) return `${diffMinutes}m ${translate('ago', 'ago')}`
-			if (diffHours < 24) return `${diffHours}h ${translate('ago', 'ago')}`
-			if (diffDays < 7) return `${diffDays}d ${translate('ago', 'ago')}`
-			return date.toLocaleDateString()
-		},
-		[translate]
-	)
-
 	const { decrementNotificationCount } = useNotification()
 
 	const handleNotificationPress = useCallback(
@@ -180,111 +148,22 @@ export default function NotificationsScreen() {
 
 	const renderItem = useCallback(
 		({ item }: { item: NotificationItem }) => {
-			const isUnseen = !item.seenAt
-			const priorityStyles = getPriorityStyles(item.priority)
-			const isHighPriority = item.priority === 'high'
-
-			const isCompact = windowHeight < 550
-			const maxCardHeight = Math.max(100, windowHeight - 140)
-
-			return (
-				<TouchableOpacity
-					style={[
-						styles.card,
-						{
-							backgroundColor: priorityStyles ? priorityStyles.backgroundColor : isUnseen ? colors.primary + '08' : colors.background,
-							borderColor: priorityStyles ? priorityStyles.borderColor : isUnseen ? colors.primary : colors.info,
-							borderLeftWidth: isUnseen || priorityStyles ? 4 : 1,
-							maxHeight: maxCardHeight,
-							padding: isCompact ? 10 : 16,
-							marginBottom: isCompact ? 8 : 12
-						}
-					]}
-					activeOpacity={0.7}
-					onPress={() => handleNotificationPress(item)}
-				>
-					{/* Priority Badge */}
-					{item.priority && windowHeight >= 520 && (
-						<View style={[styles.priorityBadge, { backgroundColor: priorityStyles?.borderColor + '20' }]}>
-							<Ionicons name={priorityStyles?.iconName || 'information-circle'} size={14} color={priorityStyles?.textColor} />
-							<Text style={[styles.priorityText, { color: priorityStyles?.textColor }]}>{translate(`priority_${item.priority}`, item.priority.charAt(0).toUpperCase() + item.priority.slice(1))}</Text>
-						</View>
-					)}
-
-					{/* Header */}
-					<View style={[styles.cardHeader, { marginBottom: isCompact ? 4 : 8 }]}>
-						<View style={styles.headerTitleContainer}>
-							{isUnseen && !priorityStyles && <View style={[styles.dot, { backgroundColor: colors.primary }]} />}
-							{isHighPriority && <Ionicons name="warning" size={18} color={priorityStyles?.textColor} style={styles.urgentIcon} />}
-							<Text
-								style={[styles.title, { color: priorityStyles?.textColor || colors.text, fontWeight: isUnseen ? '700' : '600', fontSize: isCompact ? 14 : 16, lineHeight: isCompact ? 18 : 22 }]}
-								numberOfLines={windowHeight < 500 ? 1 : 2}
-							>
-								{localize(item.title as any)}
-							</Text>
-						</View>
-					</View>
-
-					{/* Content */}
-					<Text
-						style={[
-							styles.content,
-							{
-								color: isUnseen ? colors.text : colors.textSecondary,
-								fontWeight: isUnseen ? '500' : '400',
-								fontSize: isCompact ? 12 : 14,
-								lineHeight: isCompact ? 17 : 21,
-								marginBottom: isCompact ? 6 : 12
-							}
-						]}
-						numberOfLines={windowHeight < 500 ? 1 : windowHeight < 650 ? 2 : 3}
-					>
-						{localize(item.content as any)}
-					</Text>
-
-					{/* Footer */}
-					<View style={styles.cardFooter}>
-						<View style={styles.timeContainer}>
-							<Ionicons name="time-outline" size={14} color={priorityStyles?.textColor || colors.textTertiary} />
-							<Text style={[styles.date, { color: priorityStyles?.textColor || colors.textSecondary }]}>{formatDate(item.createdAt)}</Text>
-						</View>
-						<TouchableOpacity
-							style={[styles.seenButton, { backgroundColor: isUnseen ? colors.primary + '15' : colors.success + '15' }]}
-							onPress={(e) => {
-								e.stopPropagation()
-								handleNotificationPress(item)
-							}}
-							hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-						>
-							<Ionicons name={isUnseen ? 'eye-off-outline' : 'checkmark-circle'} size={18} color={isUnseen ? colors.primary : colors.success} />
-						</TouchableOpacity>
-					</View>
-				</TouchableOpacity>
-			)
+			if (item.template?.slug === NOTIFICATIONS_TEMPLATES.PURCHASE_REQUEST) {
+				return <PurchaseRequestNotificationCard item={item} onPress={handleNotificationPress} />
+			}
+			return <NotificationCard item={item} onPress={handleNotificationPress} />
 		},
-		[colors, windowHeight, handleNotificationPress, translate, localize, formatDate]
+		[handleNotificationPress]
 	)
 
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (permissionGranted === false) {
-			actions.push({
-				key: 'allow-push',
-				iconName: 'notifications-outline',
-				onPress: requestNotificationPermission,
-				accessibilityLabel: translate('notifications_disabled_title', 'Notifications Disabled'),
-				iconColor: colors.warning,
-				backgroundColor: colors.warning + '1A'
-			})
+			actions.push(<HeaderAllowPushButton key="allow-push" onPress={requestNotificationPermission} label={translate('notifications_disabled_title', 'Notifications Disabled')} />)
 		}
-		actions.push({
-			key: 'refresh',
-			onPress: onRefresh,
-			isRefreshing: isRefreshing,
-			accessibilityLabel: 'Refresh'
-		})
+		actions.push(<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />)
 		return actions
-	}, [permissionGranted, isRefreshing, colors.warning, translate, onRefresh, requestNotificationPermission])
+	}, [permissionGranted, isRefreshing, translate, onRefresh, requestNotificationPermission])
 
 	const renderEmpty = useCallback(() => {
 		if (isInitialLoading) return null
@@ -299,7 +178,8 @@ export default function NotificationsScreen() {
 	if (isOffline && notifications.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Tabs.Screen options={{ title: translate('notifications_title', 'Notifications'), headerLeft: () => null }} />
+				<Stack.Screen options={{ headerShown: false }} />
+				<SmartHeader navigation={navigation} title={translate('notifications_title', 'Notifications')} back={navigation.canGoBack() ? { title: 'Back' } : undefined} />
 				<ErrorState />
 			</View>
 		)
@@ -307,15 +187,13 @@ export default function NotificationsScreen() {
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
-			<Tabs.Screen
-				options={
-					{
-						title: translate('notifications_title', 'Notifications'),
-						subtitle: `${notifications.length}`,
-						headerLeft: () => null,
-						headerActions: headerActions
-					} as any
-				}
+			<Stack.Screen options={{ headerShown: false }} />
+			<SmartHeader
+				navigation={navigation}
+				title={translate('notifications_title', 'Notifications')}
+				subtitle={`${notifications.length}`}
+				back={navigation.canGoBack() ? { title: 'Back' } : undefined}
+				headerActions={headerActions}
 			/>
 
 			<SmartHeader.FlashList
@@ -344,86 +222,9 @@ const styles = StyleSheet.create({
 		padding: 16,
 		paddingBottom: 90
 	},
-	card: {
-		padding: 16,
-		borderRadius: 16,
-		marginBottom: 12,
-		borderWidth: 1
-	},
-	priorityBadge: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		alignSelf: 'flex-start',
-		paddingHorizontal: 10,
-		paddingVertical: 4,
-		borderRadius: 12,
-		marginBottom: 10,
-		gap: 4
-	},
-	priorityText: {
-		fontSize: 11,
-		fontWeight: '700',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5
-	},
-	cardHeader: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'flex-start',
-		marginBottom: 8
-	},
-	headerTitleContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		flex: 1,
-		gap: 8
-	},
-	dot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4
-	},
-	urgentIcon: {
-		marginRight: 4
-	},
-	title: {
-		fontSize: 16,
-		flex: 1,
-		lineHeight: 22
-	},
-	content: {
-		fontSize: 14,
-		lineHeight: 21,
-		marginBottom: 12
-	},
-	cardFooter: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		marginTop: 4
-	},
-	timeContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4
-	},
-	date: {
-		fontSize: 12
-	},
-	seenButton: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
 	empty: {
 		alignItems: 'center',
 		justifyContent: 'center',
 		paddingTop: 80
-	},
-	loadingFooter: {
-		padding: 24,
-		alignItems: 'center'
 	}
 })

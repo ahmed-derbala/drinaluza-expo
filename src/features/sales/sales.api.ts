@@ -1,5 +1,6 @@
 import { getApiClient } from '@/core/api'
 import { parseError } from '@/core/helpers/errorHandler'
+import { Customer } from '@/features/customers/customers.interface'
 
 const apiClient = getApiClient()
 
@@ -136,57 +137,7 @@ export interface Sale {
 		createdAt?: string
 		updatedAt?: string
 	}
-	customer: {
-		_id: string
-		role: string
-		slug: string
-		name: {
-			en: string
-		}
-		address?: {
-			street: string
-			city: string
-			state: string
-			country: string
-		}
-		location?: {
-			geo?: { type: 'Point'; coordinates: [number, number] }
-			accuracy?: number
-			altitude?: number
-			heading?: number
-			speed?: number
-			deviceTimestamp?: string
-			sharingEnabled: boolean
-			updatedAt?: string
-		}
-		contact?: {
-			phone?: {
-				fullNumber: string
-				countryCode: string
-				localNumber: string
-				createdAt?: string
-				updatedAt?: string
-			}
-			backupPhones?: Array<{
-				fullNumber: string
-				countryCode: string
-				localNumber: string
-				createdAt?: string
-				updatedAt?: string
-			}>
-			whatsapp?: string
-			email?: string
-			website?: string
-			createdAt?: string
-			updatedAt?: string
-		}
-		media?: {
-			thumbnail?: {
-				url: string
-			}
-		}
-		updatedAt?: string
-	}
+	customer: Customer
 	products: SaleProduct[]
 	status: string
 	price: {

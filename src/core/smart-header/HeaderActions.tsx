@@ -1,75 +1,17 @@
 import React from 'react'
-import { View, Platform } from 'react-native'
+import { View } from 'react-native'
 import { SmartKebabMenu } from '@/core/smart-kebab-menu'
-import { HeaderIconButton, HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
+import { HeaderActionType, resolveHeaderActions } from './headerActionsConfig'
 
-export type HeaderActionType =
-	| 'search'
-	| 'cart'
-	| 'refresh'
-	| 'scanner'
-	| { key: string; iconName: string; iconType?: string; badgeCount?: number; onPress?: () => void; accessibilityLabel?: string; size?: number; isRefreshing?: boolean; isOffline?: boolean }
+export type { HeaderActionType }
 
 type HeaderActionsProps = {
-	resolvedHeaderRight?: React.ReactNode
-	resolvedActions: (HeaderActionType | React.ReactNode)[]
-	options?: any
+	headerRight?: React.ReactNode
+	headerActions?: HeaderActionType[]
 }
 
-const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, resolvedActions, options }) => {
-	const resolveHeaderAction = (action: HeaderActionType | React.ReactNode, index: number) => {
-		if (React.isValidElement(action)) {
-			return React.cloneElement(action as React.ReactElement, { key: `custom-action-${index}` })
-		}
-
-		if (typeof action === 'string') {
-			switch (action) {
-				case 'search':
-					return <HeaderSearchButton key="predefined-search" />
-				case 'cart':
-					return <HeaderCartButton key="predefined-cart" />
-				case 'refresh':
-					return <HeaderRefreshButton key="predefined-refresh" onRefresh={options?.onRefresh} isRefreshing={options?.isRefreshing} isOffline={options?.isOffline} />
-				case 'scanner':
-					if (Platform.OS === 'web') return null
-					return (
-						<HeaderIconButton
-							key="predefined-scanner"
-							icon="qr-code-scanner"
-							iconType="material"
-							onPress={() => {
-								if (typeof options?.onScannerPress === 'function') {
-									options.onScannerPress()
-								}
-							}}
-							label="Scan QR Code"
-						/>
-					)
-				default:
-					return null
-			}
-		}
-
-		if (action && typeof action === 'object' && 'key' in action) {
-			const config = action as any
-			if (config.key === 'refresh') {
-				return <HeaderRefreshButton key={config.key} onRefresh={config.onPress} isRefreshing={config.isRefreshing} isOffline={config.isOffline} />
-			}
-			return (
-				<HeaderIconButton
-					key={config.key}
-					icon={config.iconName}
-					iconType={config.iconType || 'ionicons'}
-					badgeCount={config.badgeCount}
-					onPress={config.onPress}
-					label={config.accessibilityLabel}
-					size={config.size}
-				/>
-			)
-		}
-
-		return null
-	}
+const HeaderActions: React.FC<HeaderActionsProps> = ({ headerRight, headerActions }) => {
+	const resolvedActions = resolveHeaderActions(headerActions)
 
 	return (
 		<View
@@ -84,8 +26,8 @@ const HeaderActions: React.FC<HeaderActionsProps> = ({ resolvedHeaderRight, reso
 				gap: 0
 			}}
 		>
-			{resolvedHeaderRight}
-			{resolvedActions.map((action, idx) => resolveHeaderAction(action, idx))}
+			{headerRight}
+			{resolvedActions.map((action, idx) => (React.isValidElement(action) ? React.cloneElement(action as React.ReactElement, { key: action.key ?? `header-action-${idx}` }) : action))}
 			<SmartKebabMenu />
 		</View>
 	)

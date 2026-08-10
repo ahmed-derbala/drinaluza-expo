@@ -18,7 +18,7 @@ import ErrorState from '@/features/common/ErrorState'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
 import SmartImage from '@/core/SmartImageViewer'
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderCartButton, HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
@@ -427,38 +427,25 @@ export default function ProfileScreen() {
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (userData?.role === 'customer') {
-			actions.push({
-				key: 'request-business',
-				iconName: 'briefcase',
-				onPress: handleRequestBusiness,
-				accessibilityLabel: 'Request Business'
-			})
+			actions.push(<HeaderRequestBusinessButton key="request-business" onPress={handleRequestBusiness} />)
 		}
-		actions.push({
-			key: 'switch-user',
-			iconName: 'people',
-			iconColor: colors.text,
-			backgroundColor: colors.text + '05',
-			onPress: handleSwitchUser,
-			accessibilityLabel: 'Switch User Account'
-		})
+		actions.push(
+			<HeaderSwitchUserButton key="switch-user" onPress={handleSwitchUser} iconColor={colors.text} backgroundColor={colors.text + '05'} label={translate('switch_user', 'Switch User Account')} />
+		)
 
-		actions.push({
-			key: 'cart',
-			iconName: 'cart-outline',
-			badgeCount: cart.length,
-			onPress: () => router.push('/purchases?status=cart'),
-			accessibilityLabel: 'View Cart'
-		})
-		actions.push({
-			key: 'refresh',
-			onPress: refreshProfile,
-			isRefreshing: isRefreshing,
-			isOffline: isOffline,
-			accessibilityLabel: 'Refresh'
-		})
+		actions.push(<HeaderCartButton key="cart" badgeCount={cart.length} />)
+		actions.push(
+			<HeaderRefreshButton
+				key="refresh"
+				onRefresh={async () => {
+					await refreshProfile()
+				}}
+				isRefreshing={isRefreshing}
+				isOffline={isOffline}
+			/>
+		)
 		return actions
-	}, [userData?.role, handleRequestBusiness, handleSwitchUser, cart.length, refreshProfile, isRefreshing, isOffline, colors, router])
+	}, [userData?.role, handleRequestBusiness, handleSwitchUser, cart.length, refreshProfile, isRefreshing, isOffline, colors, translate])
 
 	if (isInitialLoading) {
 		return <Spinner />

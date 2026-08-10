@@ -4,45 +4,30 @@ import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-li
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Href, usePathname } from 'expo-router'
-import { HeaderIconButton } from './buttons'
+import { HeaderBackButton, HeaderIconButton, HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
 import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
 import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
 import { useLayout } from '@/core/contexts'
-import { HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
 import HeaderActions, { HeaderActionType } from './HeaderActions'
 import HeaderTitle from './HeaderTitle'
 
 // Re-export actions for convenience
-export { HeaderIconButton } from './buttons'
-export { HeaderRefreshButton, HeaderSearchButton, HeaderCartButton }
-
-// ----------------------------------------
-// 1. HeaderBackButton Component
-// ----------------------------------------
-interface HeaderBackButtonProps {
-	onPress?: () => void
-	fallbackRoute?: Href
-}
-
-export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ onPress, fallbackRoute = '/feed' }) => {
-	const router = useRouter()
-
-	const handlePress = () => {
-		if (onPress) {
-			onPress()
-		} else if (router.canGoBack()) {
-			router.back()
-		} else {
-			router.replace(fallbackRoute)
-		}
-	}
-
-	return <HeaderIconButton icon={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} label={translate('go_back', 'Go back')} onPress={handlePress} />
-})
-
-HeaderBackButton.displayName = 'HeaderBackButton'
+export {
+	HeaderBackButton,
+	HeaderIconButton,
+	HeaderNotificationsButton,
+	HeaderRefreshButton,
+	HeaderSearchButton,
+	HeaderCartButton,
+	HeaderQRCodeButton,
+	HeaderScannerButton,
+	HeaderSalesButton,
+	HeaderCreateProductButton,
+	HeaderRequestBusinessButton,
+	HeaderSwitchUserButton,
+	HeaderAllowPushButton
+} from './buttons'
 
 export interface SmartHeaderProps {
 	title?: React.ReactNode
@@ -144,7 +129,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		return options?.headerLeft
 	}, [headerLeft, options?.headerLeft])
 
-	const rootPaths = useMemo(() => ['/', '/feed', '/dashboard', '/notifications', '/profile', '/(home)/feed', '/(home)/dashboard', '/(home)/notifications', '/(home)/profile'], [])
+	const rootPaths = useMemo(() => ['/', '/feed', '/dashboard', '/profile', '/(home)/feed', '/(home)/dashboard', '/(home)/profile'], [])
 
 	// Determine if we should show the back button
 	const resolvedShowBackButton = useMemo(() => {
@@ -165,19 +150,9 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		return options?.headerRight
 	}, [headerRight, options?.headerRight])
 
-	// Resolve headerActions
-	const resolvedActions = useMemo(() => {
-		const rawActions: (HeaderActionType | React.ReactNode)[] = headerActions ?? options?.headerActions ?? []
-		const hasRefresh = rawActions.some((action) => {
-			if (action === 'refresh') return true
-			if (action && typeof action === 'object' && 'key' in action && (action as any).key === 'refresh') return true
-			return false
-		})
-		if (!hasRefresh) {
-			return [...rawActions, 'refresh']
-		}
-		return rawActions
-	}, [headerActions, options?.headerActions])
+	// The actions this screen wants to show, in addition to (or overriding) the defaults.
+	// See `headerActionsConfig.tsx` for how these are merged with the default buttons.
+	const screenHeaderActions = useMemo(() => headerActions ?? options?.headerActions ?? [], [headerActions, options?.headerActions])
 
 	const titleSection = <HeaderTitle title={resolvedTitle} subtitle={resolvedSubtitle} />
 
@@ -224,7 +199,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					</View>
 
 					{/* Right Section: Actions + Kebab menu (stable container width to guarantee zero layout shifts) */}
-					<HeaderActions resolvedHeaderRight={resolvedHeaderRight} resolvedActions={resolvedActions} options={options} />
+					<HeaderActions headerRight={resolvedHeaderRight} headerActions={screenHeaderActions} />
 				</View>
 
 				{/* Custom Bottom Content (e.g. status filter bar in sales screen) */}

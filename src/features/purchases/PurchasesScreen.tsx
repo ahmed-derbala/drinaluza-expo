@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, Stack, useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
 
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
@@ -306,7 +306,7 @@ export default function PurchasesScreen() {
 				back={navigation.canGoBack() ? { title: 'Back' } : undefined}
 				headerBottomHeight={52}
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading || isCheckingOut }}
-				headerActions={['refresh']}
+				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading || isCheckingOut} />]}
 				headerBottom={
 					<OrderStatusTabs
 						value={selectedStatus}

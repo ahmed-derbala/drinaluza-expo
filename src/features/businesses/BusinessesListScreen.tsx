@@ -612,14 +612,7 @@ export default function BusinessesListScreen() {
 					{
 						title: translate('discover_businesses', 'Discover Businesses'),
 						subtitle: `${businesses.length} ${businesses.length === 1 ? translate('business_product', 'business') : translate('business_products_plural', 'businesses')} ${translate('businesses_available', 'available near you')}`,
-						headerActions: [
-							{
-								key: 'refresh',
-								onPress: handleRefresh,
-								isRefreshing: isRefreshing,
-								accessibilityLabel: 'Refresh'
-							}
-						]
+						headerActions: [<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />]
 					} as any
 				}
 			/>

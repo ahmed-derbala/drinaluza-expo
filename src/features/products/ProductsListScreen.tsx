@@ -8,7 +8,7 @@ import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
 import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderCartButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
@@ -124,22 +124,8 @@ export default function ProductsListScreen() {
 	)
 
 	const headerActions = useMemo(() => {
-		return [
-			{
-				key: 'cart',
-				iconName: 'cart-outline',
-				badgeCount: cart.length,
-				onPress: () => router.push((user ? '/purchases?status=cart' : '/auth') as any),
-				accessibilityLabel: 'View Cart'
-			},
-			{
-				key: 'refresh',
-				onPress: handleRefresh,
-				isRefreshing: isRefreshing,
-				accessibilityLabel: 'Refresh'
-			}
-		]
-	}, [cart.length, handleRefresh, isRefreshing, router])
+		return [<HeaderCartButton key="cart" badgeCount={cart.length} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />]
+	}, [cart.length, handleRefresh, isRefreshing])
 
 	const renderEmpty = useCallback(() => {
 		if (isInitialLoading) return null

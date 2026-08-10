@@ -2,7 +2,6 @@ import React, { useEffect } from 'react'
 import { Tabs, usePathname, useRouter } from 'expo-router'
 import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
 import { useLayout, useUser } from '@/core/contexts'
-import { useNotification } from '@/features/notifications/NotificationContext'
 import { useTheme, colors as themeColors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
@@ -18,10 +17,8 @@ export default function HomeLayout() {
 	const insets = useSafeAreaInsets()
 	useBackButton()
 	const isAuthenticated = !!user
-	const { notificationCount } = useNotification()
 	const isDashboardVisible = isAuthenticated && user?.role === 'business_owner'
-	const isNotificationsVisible = isAuthenticated
-	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0) + (isNotificationsVisible ? 1 : 0)
+	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0)
 	const barWidth = activeTabsCount * 56
 
 	useEffect(() => {
@@ -146,27 +143,6 @@ export default function HomeLayout() {
 							isVisible: isDashboardVisible,
 							tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <Ionicons name={focused ? 'grid' : 'grid-outline'} size={22} color={color} />,
 							tabBarAccessibilityLabel: translate('dashboard', 'Dashboard')
-						} as any
-					}
-				/>
-				<Tabs.Screen
-					name="notifications"
-					options={
-						{
-							href: isNotificationsVisible ? '/notifications' : null,
-							isVisible: isNotificationsVisible,
-							tabBarBadge: notificationCount > 0 ? notificationCount : undefined,
-							tabBarBadgeStyle: {
-								backgroundColor: colors.error,
-								color: themeColors.buttonText,
-								fontSize: 9,
-								minWidth: 16,
-								height: 16,
-								borderRadius: 8,
-								lineHeight: 16
-							},
-							tabBarIcon: ({ color, focused }: { color: string; focused: boolean }) => <Ionicons name={focused ? 'notifications' : 'notifications-outline'} size={22} color={color} />,
-							tabBarAccessibilityLabel: translate('notifications', 'Notifications')
 						} as any
 					}
 				/>

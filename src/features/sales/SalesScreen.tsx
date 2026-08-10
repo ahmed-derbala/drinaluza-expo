@@ -4,7 +4,7 @@ import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useTheme } from '@/core/theme'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
@@ -88,8 +88,6 @@ export default function SalesScreen() {
 		status: selectedStatus
 	})
 
-	const itemCount = totalCount ?? statusCounts[selectedStatus] ?? 0
-
 	useEffect(() => {
 		if (!businessSlug || !response) return
 		if (selectedStatus === 'all') {
@@ -169,11 +167,11 @@ export default function SalesScreen() {
 			<SmartHeader
 				navigation={navigation}
 				title="Sales"
-				subtitle={itemCount > 0 ? `${itemCount} ${itemCount === 1 ? 'item' : 'items'}` : undefined}
+				subtitle={businessSlug || undefined}
 				back={navigation.canGoBack() ? { title: 'Back' } : undefined}
 				headerBottomHeight={52}
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading }}
-				headerActions={['refresh']}
+				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading} />]}
 				headerBottom={
 					<OrderStatusTabs
 						value={selectedStatus}

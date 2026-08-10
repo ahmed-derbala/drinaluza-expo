@@ -1,5 +1,5 @@
 import { config } from '@/config'
-import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, HeaderQRCodeButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
@@ -261,20 +261,7 @@ export default function BusinessDetailsScreen() {
 						title: displayTitle,
 						subtitle: `${business.slug}`,
 						fallbackRoute: '/(home)/feed',
-						headerActions: [
-							{
-								key: 'qr-code',
-								iconName: 'qr-code-outline',
-								onPress: () => setShowQRCode(true),
-								accessibilityLabel: 'QR Code'
-							},
-							{
-								key: 'refresh',
-								onPress: handleRefresh,
-								isRefreshing: isRefreshing,
-								accessibilityLabel: 'Refresh'
-							}
-						]
+						headerActions: [<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />]
 					} as any
 				}
 			/>

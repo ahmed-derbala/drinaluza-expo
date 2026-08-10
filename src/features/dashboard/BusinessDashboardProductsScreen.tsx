@@ -13,7 +13,7 @@ import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
 import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderCreateProductButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { updateProduct } from '@/features/products/products.api'
@@ -283,23 +283,10 @@ export default function BusinessDashboardProductsScreen() {
 	// Dynamic Header actions
 	const headerActionsConfig = useMemo(
 		() => [
-			'refresh',
-			{
-				key: 'sales',
-				iconName: 'trending-up',
-				iconType: 'ionicons' as const,
-				onPress: () => router.push(`/dashboard/${businessSlug}/sales` as any),
-				accessibilityLabel: 'View Sales'
-			},
-			{
-				key: 'create-product',
-				iconName: 'add',
-				iconType: 'material' as const,
-				onPress: () => router.push(`/dashboard/${businessSlug}/create-product` as any),
-				accessibilityLabel: 'Create Product'
-			}
+			<HeaderSalesButton key="sales" businessSlug={businessSlug} label={translate('sales', 'Sales')} />,
+			<HeaderCreateProductButton key="create-product" businessSlug={businessSlug} label={translate('create_product', 'Create Product')} />
 		],
-		[businessSlug]
+		[businessSlug, translate]
 	)
 
 	return (

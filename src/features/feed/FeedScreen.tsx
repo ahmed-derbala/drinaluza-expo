@@ -20,7 +20,7 @@ import { getToken } from '@/core/storage'
 import Spinner from '@/features/common/Spinner'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -237,7 +237,7 @@ export default function FeedScreen() {
 			title: translate('feed', 'Feed'),
 			showBackButton: false,
 			headerActions: [
-				...(!isWeb ? [<SmartHeader.ActionButton key="scanner" icon="qr-code-scanner" iconType="material" onPress={() => setIsScannerVisible(true)} label="Scan Barcode" />] : []),
+				...(!isWeb ? [<HeaderScannerButton key="scanner" onPress={() => setIsScannerVisible(true)} />] : []),
 				<SmartHeader.SearchButton key="search" />,
 				<SmartHeader.CartButton key="cart" badgeCount={cart.length} />,
 				<SmartHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={isRefreshing} isOffline={isOffline} />

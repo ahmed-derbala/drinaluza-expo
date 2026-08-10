@@ -24,7 +24,7 @@ import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { EmailButton } from '@/features/common/buttons/EmailButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
-import { SmartHeader } from '@/core/smart-header'
+import { HeaderCartButton, HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -478,27 +478,11 @@ export default function ProductScreen() {
 
 	const headerActions = useMemo(
 		() => [
-			{
-				key: 'qr-code',
-				iconName: 'qr-code-outline',
-				onPress: () => setShowQRCode(true),
-				accessibilityLabel: 'QR Code'
-			},
-			{
-				key: 'cart',
-				iconName: 'cart-outline',
-				badgeCount: cart.length,
-				onPress: () => router.push((user ? '/purchases?status=cart' : '/auth') as any),
-				accessibilityLabel: 'View Cart'
-			},
-			{
-				key: 'refresh',
-				onPress: handleRefresh,
-				isRefreshing: isRefreshing,
-				accessibilityLabel: 'Refresh'
-			}
+			<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />,
+			<HeaderCartButton key="cart" badgeCount={cart.length} />,
+			<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />
 		],
-		[cart.length, handleRefresh, isRefreshing, router, user]
+		[cart.length, handleRefresh, isRefreshing]
 	)
 
 	const combinedGallery = useMemo(() => {

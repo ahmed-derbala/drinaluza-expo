@@ -204,6 +204,7 @@ function RootLayoutContent() {
 				<Stack.Screen name="about/index" options={{ headerShown: false }} />
 				<Stack.Screen name="updates/index" options={{ headerShown: false }} />
 				<Stack.Screen name="purchases" options={{ headerShown: false }} />
+				<Stack.Screen name="notifications" options={{ headerShown: false }} />
 			</Stack>
 		</ErrorBoundary>
 	)
