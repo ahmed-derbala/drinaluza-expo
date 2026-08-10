@@ -3,7 +3,7 @@ import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'reac
 import { Ionicons } from '@expo/vector-icons'
 import * as Location from 'expo-location'
 
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { IconButton } from './buttons/IconButton'
 import type { Location as LocationType } from '@/features/profile/profile.interface'

@@ -1,4 +1,4 @@
-import type { AppThemeColors } from '@/core/theme'
+import type { ThemeColors } from '@/core/theme'
 import type { IconName, ModalStatus } from './types'
 
 export const STATUS_ICONS: Record<ModalStatus, IconName> = {
@@ -9,7 +9,7 @@ export const STATUS_ICONS: Record<ModalStatus, IconName> = {
 	error: 'alert-circle'
 }
 
-export function getStatusColor(status: ModalStatus, colors: AppThemeColors): string {
+export function getStatusColor(status: ModalStatus, colors: ThemeColors): string {
 	switch (status) {
 		case 'info':
 			return colors.info

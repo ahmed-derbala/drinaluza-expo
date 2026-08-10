@@ -3,22 +3,22 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image,
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
-import { getItem } from '@/core/storage'
+
 import AddressForm from '@/features/common/AddressForm'
 import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
 import DateTimePicker from '@react-native-community/datetimepicker'
-import { useRouter, useFocusEffect, Tabs } from 'expo-router'
+import { useRouter, Tabs } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
 import SmartImage from '@/core/SmartImageViewer'
-import { HeaderCartButton, HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
@@ -55,7 +55,6 @@ export default function ProfileScreen() {
 	const { onScroll } = useScrollHandler()
 
 	const [userData, setUserData] = useState<UserData | null>(null)
-	const [cart, setCart] = useState<any[]>([])
 
 	// ── Cache-first profile ──
 	const { profile: cachedProfile, isInitialLoading, isRefreshing, isOffline, refresh: refreshProfile } = useMyProfile()
@@ -69,16 +68,6 @@ export default function ProfileScreen() {
 		setImageError(false)
 	}, [])
 
-	const loadCart = async () => {
-		try {
-			const storedCart = await getItem<any[]>('cart')
-			if (storedCart) {
-				setCart(storedCart)
-			} else {
-				setCart([])
-			}
-		} catch (error) {}
-	}
 	const [editMode, setEditMode] = useState({
 		name: false,
 		basic: false,
@@ -106,12 +95,6 @@ export default function ProfileScreen() {
 			applyProfileToState(cachedProfile)
 		}
 	}, [cachedProfile, applyProfileToState])
-
-	useFocusEffect(
-		useCallback(() => {
-			loadCart()
-		}, [])
-	)
 
 	const saveUserData = async (sectionKey?: keyof typeof editMode) => {
 		if (!userData) return
@@ -433,7 +416,6 @@ export default function ProfileScreen() {
 			<HeaderSwitchUserButton key="switch-user" onPress={handleSwitchUser} iconColor={colors.text} backgroundColor={colors.text + '05'} label={translate('switch_user', 'Switch User Account')} />
 		)
 
-		actions.push(<HeaderCartButton key="cart" badgeCount={cart.length} />)
 		actions.push(
 			<HeaderRefreshButton
 				key="refresh"
@@ -445,7 +427,7 @@ export default function ProfileScreen() {
 			/>
 		)
 		return actions
-	}, [userData?.role, handleRequestBusiness, handleSwitchUser, cart.length, refreshProfile, isRefreshing, isOffline, colors, translate])
+	}, [userData?.role, handleRequestBusiness, handleSwitchUser, refreshProfile, isRefreshing, isOffline, colors, translate])
 
 	if (isInitialLoading) {
 		return <Spinner />

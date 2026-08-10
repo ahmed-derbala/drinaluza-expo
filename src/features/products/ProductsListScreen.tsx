@@ -8,12 +8,12 @@ import { getProducts } from '@/features/products/products.api'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
 import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
-import { HeaderCartButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useUser } from '@/core/contexts/UserContext'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { toast } from '@/features/common/Toast'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { getToken } from '@/core/storage'
@@ -70,7 +70,7 @@ export default function ProductsListScreen() {
 
 			setExtraProducts((prev) => [...prev, ...newItems])
 		} catch (err) {
-			toast.show({ title: 'Error', message: 'Failed to load more products', color: themeColors.error })
+			toast.show({ title: 'Error', content: 'Failed to load more products', borderColor: themeColors.error })
 		} finally {
 			setIsLoadingMore(false)
 		}
@@ -96,7 +96,7 @@ export default function ProductsListScreen() {
 			try {
 				const token = await getToken()
 				if (!token) {
-					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: themeColors.info })
+					toast.show({ title: 'Info', content: 'Please log in to add items to cart', borderColor: themeColors.info })
 					router.push('/auth')
 					return
 				}
@@ -106,9 +106,9 @@ export default function ProductsListScreen() {
 
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `Added to cart`, color: themeColors.success, screen: user ? '/purchases?status=cart' : '/auth' })
+				toast.show({ title: 'Success', content: `Added to cart`, borderColor: themeColors.success, screen: user ? '/purchases?status=cart' : '/auth' })
 			} catch {
-				toast.show({ title: 'Error', message: 'Failed to add to cart', color: themeColors.error })
+				toast.show({ title: 'Error', content: 'Failed to add to cart', borderColor: themeColors.error })
 			}
 		},
 		[cart, router]
@@ -124,8 +124,8 @@ export default function ProductsListScreen() {
 	)
 
 	const headerActions = useMemo(() => {
-		return [<HeaderCartButton key="cart" badgeCount={cart.length} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />]
-	}, [cart.length, handleRefresh, isRefreshing])
+		return [<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />]
+	}, [handleRefresh, isRefreshing])
 
 	const renderEmpty = useCallback(() => {
 		if (isInitialLoading) return null

@@ -1,4 +1,4 @@
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 
 export const CURRENCIES = [
 	{ code: 'tnd', label: 'Tunisian Dinar', symbol: 'DT' },

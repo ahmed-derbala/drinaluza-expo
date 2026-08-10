@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, StyleSheet, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 
 export interface RatingStarsProps {
 	/**

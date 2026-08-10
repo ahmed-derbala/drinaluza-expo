@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import { IconButton } from '@/features/common/buttons/IconButton'
 
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
@@ -47,7 +47,7 @@ export default function AboutScreen() {
 		const handleCopy = async () => {
 			if (copyValue) {
 				await Clipboard.setStringAsync(copyValue)
-				toast.show({ title: 'Success', message: translate('copied_to_clipboard', 'Copied to clipboard!'), color: themeColors.success })
+				toast.show({ title: 'Success', content: translate('copied_to_clipboard', 'Copied to clipboard!'), borderColor: themeColors.success })
 			}
 		}
 

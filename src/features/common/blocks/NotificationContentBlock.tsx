@@ -1,20 +1,17 @@
 import React from 'react'
-import { View, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import SmartImage from '@/core/SmartImageViewer'
 
 const IMAGE_SIZE = 40
+const TITLE_NUMBER_OF_LINES = 1
+const CONTENT_NUMBER_OF_LINES = 3
 
 export interface NotificationContentBlockProps {
 	/** Optional image (e.g. sender avatar / notification thumbnail). Hidden when not provided. */
 	imageUrl?: string | null
 	title: React.ReactNode
 	content?: React.ReactNode
-	titleNumberOfLines?: number
-	contentNumberOfLines?: number
-	style?: StyleProp<ViewStyle>
-	titleStyle?: StyleProp<TextStyle>
-	contentStyle?: StyleProp<TextStyle>
 }
 
 /**
@@ -22,17 +19,18 @@ export interface NotificationContentBlockProps {
  * its container — including for RTL scripts like tn_arab, whose text would
  * otherwise auto-align to the right. Used by both notification list items
  * and the toast popup so both surfaces present notifications consistently.
+ * Meant to be used as-is, with no per-consumer style overrides.
  */
-export default function NotificationContentBlock({ imageUrl, title, content, titleNumberOfLines = 2, contentNumberOfLines = 2, style, titleStyle, contentStyle }: NotificationContentBlockProps) {
+export default function NotificationContentBlock({ imageUrl, title, content }: NotificationContentBlockProps) {
 	const { colors } = useTheme()
 
 	return (
-		<View style={[styles.container, style]}>
+		<View style={styles.container}>
 			{imageUrl ? <SmartImage source={imageUrl} entityType="user" style={styles.image} containerStyle={[styles.imageContainer, { backgroundColor: colors.surface }]} /> : null}
 
 			<View style={styles.textContainer}>
 				{typeof title === 'string' ? (
-					<Text style={[styles.title, { color: colors.text }, titleStyle]} numberOfLines={titleNumberOfLines}>
+					<Text style={[styles.title, { color: colors.text }]} numberOfLines={TITLE_NUMBER_OF_LINES}>
 						{title}
 					</Text>
 				) : (
@@ -40,7 +38,7 @@ export default function NotificationContentBlock({ imageUrl, title, content, tit
 				)}
 				{content ? (
 					typeof content === 'string' ? (
-						<Text style={[styles.content, { color: colors.textSecondary }, contentStyle]} numberOfLines={contentNumberOfLines}>
+						<Text style={[styles.content, { color: colors.textSecondary }]} numberOfLines={CONTENT_NUMBER_OF_LINES}>
 							{content}
 						</Text>
 					) : (
@@ -54,9 +52,9 @@ export default function NotificationContentBlock({ imageUrl, title, content, tit
 
 const styles = StyleSheet.create({
 	container: {
+		flex: 1,
 		flexDirection: 'row',
 		alignItems: 'flex-start',
-		alignSelf: 'flex-start',
 		gap: 10
 	},
 	imageContainer: {

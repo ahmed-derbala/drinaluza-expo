@@ -1,5 +1,5 @@
 import React from 'react'
-import { HeaderNotificationsButton, HeaderRefreshButton } from './buttons'
+import { HeaderCartButton, HeaderNotificationsButton, HeaderRefreshButton } from './buttons'
 
 export type HeaderActionType = React.ReactNode
 
@@ -16,6 +16,7 @@ interface DefaultHeaderAction {
  */
 export const DEFAULT_HEADER_ACTIONS: DefaultHeaderAction[] = [
 	{ key: 'refresh', render: () => <HeaderRefreshButton key="refresh" /> },
+	{ key: 'cart', render: () => <HeaderCartButton key="cart" /> },
 	{ key: 'notifications', render: () => <HeaderNotificationsButton key="notifications" /> }
 ]
 

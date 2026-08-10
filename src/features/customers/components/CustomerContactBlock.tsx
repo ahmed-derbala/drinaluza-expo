@@ -22,7 +22,7 @@ export function CustomerContactBlock({ customer, contactButtonSize = 36 }: Custo
 	const address = formatAddress(customer.address)
 
 	return (
-		<View style={styles.container}>
+		<View style={[styles.container, { borderBottomColor: colors.border }]}>
 			<View style={styles.info}>
 				<SmartImage
 					source={typeof customer.media?.thumbnail === 'string' ? customer.media.thumbnail : customer.media?.thumbnail?.url}
@@ -58,7 +58,9 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		justifyContent: 'space-between',
 		alignItems: 'center',
-		gap: 12
+		gap: 12,
+		padding: 16,
+		borderBottomWidth: 1
 	},
 	info: {
 		flexDirection: 'row',

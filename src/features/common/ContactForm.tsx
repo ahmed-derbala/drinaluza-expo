@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { IconButton } from './buttons/IconButton'
 import { DeleteButton } from './buttons/DeleteButton'
 
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import type { Contact, Phone } from '@/features/profile/profile.interface'
 

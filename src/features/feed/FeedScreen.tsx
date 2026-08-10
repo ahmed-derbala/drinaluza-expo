@@ -185,7 +185,7 @@ export default function FeedScreen() {
 			try {
 				const token = await getToken()
 				if (!token) {
-					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: '#3B82F6' })
+					toast.show({ title: 'Info', content: 'Please log in to add items to cart', borderColor: '#3B82F6' })
 					router.push('/auth')
 					return
 				}
@@ -202,10 +202,10 @@ export default function FeedScreen() {
 
 				setCart(newCart)
 				await setItem('cart', newCart)
-				toast.show({ title: 'Success', message: `${localize(item.name)} added to cart`, color: '#10B981', screen: user ? '/purchases?status=cart' : '/auth' })
+				toast.show({ title: 'Success', content: `${localize(item.name)} added to cart`, borderColor: '#10B981', screen: user ? '/purchases?status=cart' : '/auth' })
 			} catch (err) {
 				log({ level: 'error', label: 'FeedScreen', message: 'Failed to add to cart', error: err })
-				toast.show({ title: 'Error', message: 'Failed to add to cart', color: '#EF4444' })
+				toast.show({ title: 'Error', content: 'Failed to add to cart', borderColor: '#EF4444' })
 			}
 		},
 		[cart, localize, router]
@@ -239,11 +239,11 @@ export default function FeedScreen() {
 			headerActions: [
 				...(!isWeb ? [<HeaderScannerButton key="scanner" onPress={() => setIsScannerVisible(true)} />] : []),
 				<SmartHeader.SearchButton key="search" />,
-				<SmartHeader.CartButton key="cart" badgeCount={cart.length} />,
+				<SmartHeader.CartButton key="cart" />,
 				<SmartHeader.RefreshButton key="refresh" onRefresh={refreshData} isRefreshing={isRefreshing} isOffline={isOffline} />
 			]
 		}),
-		[translate, user, isWeb, cart.length, refreshData, isRefreshing, isOffline]
+		[translate, user, isWeb, refreshData, isRefreshing, isOffline]
 	)
 
 	// ═══════════════════════════════════════════════════════════════════════════════

@@ -8,7 +8,7 @@ import { format, formatDistanceToNow } from 'date-fns'
 import { clearAllStorage, getToken } from '@/core/storage'
 import { clearMemoryCache } from '@/core/cache'
 
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import Spinner from '@/features/common/Spinner'
 import SmartImage from '@/core/SmartImageViewer'
@@ -625,16 +625,16 @@ export default function AuthScreen() {
 
 	const handleSignInSubmit = useCallback(async () => {
 		if (!validateSlug(slug)) {
-			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: slugError || translate('username_invalid_chars'), color: themeColors.error })
+			toast.show({ title: translate('invalid_request_title', 'Validation Error'), content: slugError || translate('username_invalid_chars'), borderColor: themeColors.error })
 			return
 		}
 		if (password.length < 1) {
-			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: translate('password_required', 'Password is required.'), color: themeColors.error })
+			toast.show({ title: translate('invalid_request_title', 'Validation Error'), content: translate('password_required', 'Password is required.'), borderColor: themeColors.error })
 			passwordInputRef.current?.focus()
 			return
 		}
 		if (password.length > 20) {
-			toast.show({ title: translate('invalid_request_title', 'Validation Error'), message: translate('password_too_long', 'Password must not exceed 20 characters.'), color: themeColors.error })
+			toast.show({ title: translate('invalid_request_title', 'Validation Error'), content: translate('password_too_long', 'Password must not exceed 20 characters.'), borderColor: themeColors.error })
 			passwordInputRef.current?.focus()
 			return
 		}
@@ -657,7 +657,7 @@ export default function AuthScreen() {
 							await refreshUser()
 						} catch (signUpErr: any) {
 							log({ level: 'error', label: 'AuthScreen', message: 'Sign up submission failed', error: signUpErr })
-							toast.show({ title: translate('error', 'Signup Failed'), message: signUpErr.response?.data?.message || signUpErr.message || 'Signup failed', color: themeColors.error })
+							toast.show({ title: translate('error', 'Signup Failed'), content: signUpErr.response?.data?.message || signUpErr.message || 'Signup failed', borderColor: themeColors.error })
 						} finally {
 							setLoading(false)
 						}
@@ -666,12 +666,12 @@ export default function AuthScreen() {
 			} else if (status === 409) {
 				toast.show({
 					title: translate('error', 'Authentication Failed'),
-					message: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'),
-					color: themeColors.error
+					content: translate('password_incorrect_verify', 'Incorrect password. Please verify and try again.'),
+					borderColor: themeColors.error
 				})
 				focusPasswordField()
 			} else {
-				toast.show({ title: translate('error', 'Error'), message: err.response?.data?.message || err.message || 'Unable to connect to server.', color: themeColors.error })
+				toast.show({ title: translate('error', 'Error'), content: err.response?.data?.message || err.message || 'Unable to connect to server.', borderColor: themeColors.error })
 			}
 		} finally {
 			setLoading(false)
@@ -693,8 +693,8 @@ export default function AuthScreen() {
 				setSaveAccount(true)
 				toast.show({
 					title: translate('switch_requires_password', 'Password Required'),
-					message: translate('need_password_notice', 'Please enter your password to switch to this account.'),
-					color: colors.primary
+					content: translate('need_password_notice', 'Please enter your password to switch to this account.'),
+					borderColor: colors.primary
 				})
 				loadingRef.current = false
 				populateFormAndFocus()
@@ -710,7 +710,7 @@ export default function AuthScreen() {
 					throw new Error('Quick sign in token failed')
 				} catch (err) {
 					log({ level: 'error', label: 'AuthScreen', message: 'Quick sign in token error', error: err })
-					toast.show({ title: translate('error', 'Switch Failed'), message: translate('quick_signin_failed', 'Quick sign in failed.'), color: themeColors.error })
+					toast.show({ title: translate('error', 'Switch Failed'), content: translate('quick_signin_failed', 'Quick sign in failed.'), borderColor: themeColors.error })
 					setLoading(false)
 					loadingRef.current = false
 					populateFormAndFocus()
@@ -729,13 +729,13 @@ export default function AuthScreen() {
 					try {
 						await deleteSavedAuthentication(slugToRemove)
 						await loadSavedAccounts()
-						toast.show({ title: translate('success', 'Success'), message: `${slugToRemove} removed from accounts list.`, color: themeColors.success })
+						toast.show({ title: translate('success', 'Success'), content: `${slugToRemove} removed from accounts list.`, borderColor: themeColors.success })
 						if (slug === slugToRemove) {
 							setSlug('')
 							setPassword('')
 						}
 					} catch {
-						toast.show({ title: translate('error', 'Error'), message: 'Failed to remove saved account.', color: themeColors.error })
+						toast.show({ title: translate('error', 'Error'), content: 'Failed to remove saved account.', borderColor: themeColors.error })
 					}
 				}
 			)
@@ -753,9 +753,9 @@ export default function AuthScreen() {
 				await loadSavedAccounts()
 				setSlug('')
 				setPassword('')
-				toast.show({ title: translate('reset_success', 'App reset successfully.'), message: '', color: themeColors.success })
+				toast.show({ title: translate('reset_success', 'App reset successfully.'), content: '', borderColor: themeColors.success })
 			} catch {
-				toast.show({ title: translate('error', 'Reset Failed'), message: translate('reset_failed', 'Failed to reset app.'), color: themeColors.error })
+				toast.show({ title: translate('error', 'Reset Failed'), content: translate('reset_failed', 'Failed to reset app.'), borderColor: themeColors.error })
 			} finally {
 				setLoading(false)
 			}

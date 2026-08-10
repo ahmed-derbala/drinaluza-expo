@@ -4,7 +4,7 @@ import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, Stack, useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
 
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
 import { useUser } from '@/core/contexts'
@@ -190,12 +190,12 @@ export default function PurchasesScreen() {
 			try {
 				const result = await checkout(group)
 				if (result.success) {
-					toast.show({ title: translate('success', 'Success'), message: translate('checkout_success', 'Order placed successfully!'), color: themeColors.success })
+					toast.show({ title: translate('success', 'Success'), content: translate('checkout_success', 'Order placed successfully!'), borderColor: themeColors.success })
 					setSelectedStatus(ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION)
 				}
 			} catch (err) {
 				console.error('Checkout failed:', err)
-				toast.show({ title: translate('error', 'Error'), message: translate('checkout_failed', 'Failed to place order'), color: themeColors.error })
+				toast.show({ title: translate('error', 'Error'), content: translate('checkout_failed', 'Failed to place order'), borderColor: themeColors.error })
 			}
 		},
 		[checkout, setSelectedStatus, translate]
@@ -235,10 +235,10 @@ export default function PurchasesScreen() {
 							setStatusCount(selectedStatus, statusData)
 						}
 					}
-					toast.show({ title: translate('success', 'Success'), message: translate('cancel_order_success', 'Order cancelled successfully'), color: themeColors.success })
+					toast.show({ title: translate('success', 'Success'), content: translate('cancel_order_success', 'Order cancelled successfully'), borderColor: themeColors.success })
 				} catch (err) {
 					console.error('Failed to cancel order:', err)
-					toast.show({ title: translate('error', 'Error'), message: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), color: themeColors.error })
+					toast.show({ title: translate('error', 'Error'), content: translate('cancel_order_failed', 'Failed to cancel order. Please try again.'), borderColor: themeColors.error })
 				}
 			})
 		},
@@ -258,10 +258,10 @@ export default function PurchasesScreen() {
 						setStatusCount(selectedStatus, statusData)
 					}
 				}
-				toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Order status updated successfully'), color: themeColors.success })
+				toast.show({ title: translate('success', 'Success'), content: translate('status_updated', 'Order status updated successfully'), borderColor: themeColors.success })
 			} catch (err) {
 				console.error('Failed to update order status:', err)
-				toast.show({ title: translate('error', 'Error'), message: translate('status_update_failed', 'Failed to update order status. Please try again.'), color: themeColors.error })
+				toast.show({ title: translate('error', 'Error'), content: translate('status_update_failed', 'Failed to update order status. Please try again.'), borderColor: themeColors.error })
 			}
 		},
 		[refreshCounts, refresh, setStatusCount, translate, user, selectedStatus]

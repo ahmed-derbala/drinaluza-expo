@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useRouter } from 'expo-router'
 import { useUser } from '@/core/contexts'
 import { toast } from '@/features/common/Toast'
@@ -41,14 +41,14 @@ export default function ScannerModal({ visible, onClose }: ScannerModalProps) {
 			if (url.hostname.includes(frontendHostname) || url.hostname.includes('localhost')) {
 				const path = url.pathname // e.g., /b/my-business
 				if (path.startsWith('/b/') || path.startsWith('/businesses/')) {
-					toast.show({ title: 'Success', message: translate('business_found', 'Business found!'), color: themeColors.success })
+					toast.show({ title: 'Success', content: translate('business_found', 'Business found!'), borderColor: themeColors.success })
 					onClose()
 					// Expo Router will handle the alias /b/ or direct /businesses/ navigation
 					setTimeout(() => {
 						router.push(path as any)
 					}, 300)
 				} else if (path.startsWith('/u/') || path.startsWith('/users/')) {
-					toast.show({ title: 'Success', message: translate('user_found', 'User found!'), color: themeColors.success })
+					toast.show({ title: 'Success', content: translate('user_found', 'User found!'), borderColor: themeColors.success })
 					onClose()
 					setTimeout(() => {
 						router.push(path as any)

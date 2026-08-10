@@ -2,6 +2,11 @@ import React, { createContext, useContext, useState, ReactNode, useCallback, use
 import { usePathname } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 
+/** Height of the floating bottom tab bar pill, excluding safe area / margin. */
+export const TAB_BAR_HEIGHT = 52
+/** Space between the bottom tab bar and the bottom safe area edge. */
+export const TAB_BAR_BOTTOM_MARGIN = 16
+
 interface LayoutContextType {
 	isTabBarVisible: boolean
 	setTabBarVisible: (visible: boolean) => void

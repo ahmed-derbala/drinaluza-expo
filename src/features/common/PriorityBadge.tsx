@@ -1,8 +1,7 @@
-import React from 'react'
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native'
+import React, { useEffect, useRef } from 'react'
+import { View, StyleSheet, StyleProp, ViewStyle, Animated } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { colors as themeColors } from '@/core/theme'
-import { translate } from '@/core/translation'
+import { themeColors } from '@/core/theme'
 
 export type Priority = 'default' | 'normal' | 'high'
 
@@ -25,32 +24,36 @@ export interface PriorityBadgeProps {
 
 export default function PriorityBadge({ priority, style }: PriorityBadgeProps) {
 	const color = PRIORITY_COLORS[priority]
-	const label = translate(`priority_${priority}`, priority.charAt(0).toUpperCase() + priority.slice(1))
+	const blink = useRef(new Animated.Value(1)).current
+
+	useEffect(() => {
+		if (priority !== 'high') return
+
+		const animation = Animated.loop(
+			Animated.sequence([Animated.timing(blink, { toValue: 0.3, duration: 600, useNativeDriver: true }), Animated.timing(blink, { toValue: 1, duration: 600, useNativeDriver: true })])
+		)
+		animation.start()
+
+		return () => {
+			animation.stop()
+		}
+	}, [priority, blink])
 
 	return (
 		<View style={[styles.badge, { backgroundColor: color + '20' }, style]}>
-			<Ionicons name={PRIORITY_ICONS[priority]} size={12} color={color} />
-			<Text style={[styles.text, { color }]} numberOfLines={1}>
-				{label}
-			</Text>
+			<Animated.View style={{ opacity: blink }}>
+				<Ionicons name={PRIORITY_ICONS[priority]} size={12} color={color} />
+			</Animated.View>
 		</View>
 	)
 }
 
 const styles = StyleSheet.create({
 	badge: {
-		flexDirection: 'row',
+		justifyContent: 'center',
 		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingVertical: 3,
+		padding: 4,
 		borderRadius: 10,
-		gap: 4,
 		alignSelf: 'flex-start'
-	},
-	text: {
-		fontSize: 11,
-		fontWeight: '700',
-		textTransform: 'uppercase',
-		letterSpacing: 0.4
 	}
 })

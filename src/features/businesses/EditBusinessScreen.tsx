@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, useWindowDimensions, KeyboardAvoidingView } from 'react-native'
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import ErrorState from '@/features/common/ErrorState'
 import Spinner from '@/features/common/Spinner'
@@ -131,7 +131,7 @@ export default function EditBusinessScreen() {
 		try {
 			const { status } = await Location.requestForegroundPermissionsAsync()
 			if (status !== 'granted') {
-				toast.show({ title: 'Error', message: 'Permission to access location was denied', color: colors.error })
+				toast.show({ title: 'Error', content: 'Permission to access location was denied', borderColor: colors.error })
 				return
 			}
 
@@ -142,9 +142,9 @@ export default function EditBusinessScreen() {
 			setHeading(location.coords.heading?.toString() || '0')
 			setSpeed(location.coords.speed?.toString() || '0')
 			setAltitude(location.coords.altitude?.toString() || '0')
-			toast.show({ title: 'Success', message: 'Location coordinates retrieved successfully', color: colors.success })
+			toast.show({ title: 'Success', content: 'Location coordinates retrieved successfully', borderColor: colors.success })
 		} catch (error) {
-			toast.show({ title: 'Error', message: 'Failed to get current location', color: colors.error })
+			toast.show({ title: 'Error', content: 'Failed to get current location', borderColor: colors.error })
 		}
 	}
 
@@ -154,7 +154,7 @@ export default function EditBusinessScreen() {
 			try {
 				DocumentPicker = require('expo-document-picker')
 			} catch (e) {
-				toast.show({ title: 'Error', message: 'expo-document-picker is not installed. Install it to enable photo upload.', color: colors.error })
+				toast.show({ title: 'Error', content: 'expo-document-picker is not installed. Install it to enable photo upload.', borderColor: colors.error })
 				return
 			}
 
@@ -190,7 +190,7 @@ export default function EditBusinessScreen() {
 					}
 				})
 				setThumbnailUrl(uploadResult.file.url)
-				toast.show({ title: 'Success', message: 'Business photo updated successfully!', color: colors.success })
+				toast.show({ title: 'Success', content: 'Business photo updated successfully!', borderColor: colors.success })
 			} else if (uploadResult.success && uploadResult.fileUrl) {
 				await updateBusiness(businessSlug!, {
 					media: {
@@ -200,12 +200,12 @@ export default function EditBusinessScreen() {
 					}
 				})
 				setThumbnailUrl(uploadResult.fileUrl)
-				toast.show({ title: 'Success', message: 'Business photo updated successfully!', color: colors.success })
+				toast.show({ title: 'Success', content: 'Business photo updated successfully!', borderColor: colors.success })
 			} else {
-				toast.show({ title: 'Error', message: uploadResult.error || 'Failed to upload photo', color: colors.error })
+				toast.show({ title: 'Error', content: uploadResult.error || 'Failed to upload photo', borderColor: colors.error })
 			}
 		} catch (error: any) {
-			toast.show({ title: 'Error', message: error.message || 'Failed to upload photo', color: colors.error })
+			toast.show({ title: 'Error', content: error.message || 'Failed to upload photo', borderColor: colors.error })
 		} finally {
 			setUploadingPhoto(false)
 		}
@@ -213,7 +213,7 @@ export default function EditBusinessScreen() {
 
 	const saveNames = async () => {
 		if (!nameEn.trim()) {
-			toast.show({ title: 'Error', message: 'English name is required', color: colors.error })
+			toast.show({ title: 'Error', content: 'English name is required', borderColor: colors.error })
 			return
 		}
 		try {
@@ -225,10 +225,10 @@ export default function EditBusinessScreen() {
 					tn_arab: nameTnArab.trim() || undefined
 				}
 			})
-			toast.show({ title: 'Success', message: translate('business_names_updated', 'Business names updated successfully'), color: colors.success })
+			toast.show({ title: 'Success', content: translate('business_names_updated', 'Business names updated successfully'), borderColor: colors.success })
 			setEditMode((prev) => ({ ...prev, names: false }))
 		} catch (err: any) {
-			toast.show({ title: 'Error', message: err.message || 'Failed to update business names', color: colors.error })
+			toast.show({ title: 'Error', content: err.message || 'Failed to update business names', borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -240,10 +240,10 @@ export default function EditBusinessScreen() {
 			await updateBusiness(businessSlug!, {
 				description: description.trim() || undefined
 			})
-			toast.show({ title: 'Success', message: translate('business_about_updated', 'Business info updated successfully'), color: colors.success })
+			toast.show({ title: 'Success', content: translate('business_about_updated', 'Business info updated successfully'), borderColor: colors.success })
 			setEditMode((prev) => ({ ...prev, about: false }))
 		} catch (err: any) {
-			toast.show({ title: 'Error', message: err.message || 'Failed to update business description', color: colors.error })
+			toast.show({ title: 'Error', content: err.message || 'Failed to update business description', borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -270,10 +270,10 @@ export default function EditBusinessScreen() {
 					email: email.trim() || undefined
 				}
 			})
-			toast.show({ title: 'Success', message: translate('business_contact_updated', 'Business contact updated successfully'), color: colors.success })
+			toast.show({ title: 'Success', content: translate('business_contact_updated', 'Business contact updated successfully'), borderColor: colors.success })
 			setEditMode((prev) => ({ ...prev, contact: false }))
 		} catch (err: any) {
-			toast.show({ title: 'Error', message: err.message || 'Failed to update business contact', color: colors.error })
+			toast.show({ title: 'Error', content: err.message || 'Failed to update business contact', borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -297,10 +297,10 @@ export default function EditBusinessScreen() {
 				}
 			}
 			await updateBusiness(businessSlug!, updateData)
-			toast.show({ title: 'Success', message: translate('business_coordinates_updated', 'Business coordinates updated successfully'), color: colors.success })
+			toast.show({ title: 'Success', content: translate('business_coordinates_updated', 'Business coordinates updated successfully'), borderColor: colors.success })
 			setEditMode((prev) => ({ ...prev, coordinates: false }))
 		} catch (err: any) {
-			toast.show({ title: 'Error', message: err.message || 'Failed to update coordinates', color: colors.error })
+			toast.show({ title: 'Error', content: err.message || 'Failed to update coordinates', borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -318,10 +318,10 @@ export default function EditBusinessScreen() {
 					postalCode: postalCode.trim()
 				}
 			})
-			toast.show({ title: 'Success', message: translate('business_address_updated', 'Business address updated successfully'), color: colors.success })
+			toast.show({ title: 'Success', content: translate('business_address_updated', 'Business address updated successfully'), borderColor: colors.success })
 			setEditMode((prev) => ({ ...prev, address: false }))
 		} catch (err: any) {
-			toast.show({ title: 'Error', message: err.message || 'Failed to update address', color: colors.error })
+			toast.show({ title: 'Error', content: err.message || 'Failed to update address', borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}

@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Sharing from 'expo-sharing'
-import { useTheme, AppThemeColors } from '@/core/theme'
+import { useTheme, ThemeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
@@ -229,7 +229,7 @@ interface InfoCardProps {
 	active?: boolean
 	activeBorderColor?: string
 	footer?: React.ReactNode
-	colors: AppThemeColors
+	colors: ThemeColors
 	/** Extra content rendered below the icon/value row, inside the same card. */
 	children?: React.ReactNode
 }

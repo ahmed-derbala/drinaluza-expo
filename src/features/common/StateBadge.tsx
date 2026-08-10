@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, StyleProp, ViewStyle, TextStyle } from 'react-native'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export const STATES = {

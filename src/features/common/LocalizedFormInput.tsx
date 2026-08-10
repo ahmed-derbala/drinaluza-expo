@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { View, Text, TextInput, StyleSheet, Platform } from 'react-native'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { LanguageIcon } from '@/features/common/languages'
 
 export interface LocalizedFormInputProps {

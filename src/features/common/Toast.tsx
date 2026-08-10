@@ -1,9 +1,10 @@
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
 import { TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@/core/contexts'
 import NotificationContentBlock from '@/features/common/blocks/NotificationContentBlock'
 
 let useAudioPlayer: any = null
@@ -15,9 +16,10 @@ try {
 
 export interface ToastOptions {
 	title: string
-	message: string
+	content: string
 	imageUrl?: string
-	color?: string
+	/** Border color for the toast. */
+	borderColor?: string
 	timeout?: number
 	screen?: string
 	onPress?: () => void
@@ -34,7 +36,7 @@ const ToastContext = createContext({})
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [visible, setVisible] = useState(false)
 	const [options, setOptions] = useState<ToastOptions | null>(null)
-	const translateY = useRef(new Animated.Value(-100)).current
+	const translateY = useRef(new Animated.Value(100)).current
 	const opacity = useRef(new Animated.Value(0)).current
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
@@ -45,7 +47,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 	const hide = useCallback(() => {
 		Animated.parallel([
 			Animated.timing(opacity, { toValue: 0, duration: 200, useNativeDriver: Platform.OS !== 'web' }),
-			Animated.timing(translateY, { toValue: -100, duration: 200, useNativeDriver: Platform.OS !== 'web' })
+			Animated.timing(translateY, { toValue: 100, duration: 200, useNativeDriver: Platform.OS !== 'web' })
 		]).start(() => {
 			setVisible(false)
 			setOptions(null)
@@ -94,22 +96,28 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 		hide()
 	}
 
+	const borderColor = options?.borderColor || themeColors.info
+
 	return (
 		<ToastContext.Provider value={{}}>
 			{children}
 			{visible && options && (
-				<Animated.View style={[styles.container, { opacity, transform: [{ translateY }], top: Math.max(insets.top, 20) + 10, backgroundColor: options.color || themeColors.info }]}>
+				<Animated.View
+					style={[
+						styles.container,
+						{
+							opacity,
+							transform: [{ translateY }],
+							bottom: TAB_BAR_BOTTOM_MARGIN + insets.bottom + TAB_BAR_HEIGHT + 10,
+							backgroundColor: themeColors.background,
+							borderColor
+						}
+					]}
+				>
 					<TouchableOpacity style={styles.content} onPress={handlePress} activeOpacity={0.8}>
-						<NotificationContentBlock
-							imageUrl={options.imageUrl}
-							title={options.title}
-							content={options.message || undefined}
-							style={styles.textContainer}
-							titleStyle={styles.title}
-							contentStyle={styles.message}
-						/>
+						<NotificationContentBlock imageUrl={options.imageUrl} title={options.title} content={options.content || undefined} />
 						<TouchableOpacity onPress={hide} style={styles.closeBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-							<Ionicons name="close" size={20} color={themeColors.buttonText} />
+							<Ionicons name="close" size={20} color={themeColors.textSecondary} />
 						</TouchableOpacity>
 					</TouchableOpacity>
 				</Animated.View>
@@ -123,34 +131,21 @@ const styles = StyleSheet.create({
 		position: 'absolute',
 		left: 16,
 		right: 16,
-		borderRadius: 12,
+		borderRadius: 24,
+		borderWidth: 3,
 		zIndex: 9999
 	},
 	content: {
 		flexDirection: 'row',
 		alignItems: 'center',
-		padding: 16
-	},
-	textContainer: {
-		flex: 1,
-		marginRight: 12
-	},
-	title: {
-		color: themeColors.buttonText,
-		fontWeight: '700',
-		fontSize: 15,
-		marginBottom: 2
-	},
-	message: {
-		color: themeColors.buttonText,
-		fontSize: 13,
-		opacity: 0.9
+		padding: 16,
+		gap: 12
 	},
 	closeBtn: {
 		width: 28,
 		height: 28,
 		borderRadius: 14,
-		backgroundColor: themeColors.buttonText20,
+		backgroundColor: themeColors.surfaceVariant,
 		justifyContent: 'center',
 		alignItems: 'center'
 	}

@@ -56,7 +56,7 @@ import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 import { UpdatesProvider } from '@/features/updates/UpdatesContext'
 import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
-import { AppThemeProvider, useTheme, colors as themeColors } from '@/core/theme'
+import { AppThemeProvider, useTheme, themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 

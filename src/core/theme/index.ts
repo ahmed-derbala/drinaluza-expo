@@ -1,8 +1,8 @@
 import { useTheme as useNavigationTheme } from 'expo-router/react-navigation'
 
 export { AppThemeProvider, DarkTheme } from './provider'
-export { colors } from './colors'
-export type { AppThemeColors } from './types'
+export { themeColors } from './themeColors'
+export type { ThemeColors } from './types'
 
 /**
  * Custom hook to access the current theme context,

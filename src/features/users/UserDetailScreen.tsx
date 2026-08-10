@@ -1,5 +1,5 @@
 import { config } from '@/config'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, RefreshControl, Linking, TouchableOpacity } from 'react-native'

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { IconButton } from './IconButton'
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import { hasDirectionsTarget, openDirections, type LocationLike, type AddressLike } from '@/core/helpers/maps'
 import { translate } from '@/core/translation'
 

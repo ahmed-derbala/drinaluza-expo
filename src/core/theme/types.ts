@@ -1,6 +1,6 @@
 import 'expo-router/react-navigation'
 
-export interface AppThemeColors {
+export interface ThemeColors {
 	background: string
 	background0: string
 	background25: string
@@ -51,7 +51,7 @@ declare global {
 	namespace ReactNavigation {
 		interface Theme {
 			dark: boolean
-			colors: AppThemeColors
+			colors: ThemeColors
 		}
 	}
 }

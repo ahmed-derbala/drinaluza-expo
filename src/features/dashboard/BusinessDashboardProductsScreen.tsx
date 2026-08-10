@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -135,14 +135,14 @@ export default function BusinessDashboardProductsScreen() {
 
 				toast.show({
 					title: translate('success', 'Success'),
-					message: `${localize(product.name)} ${newActive ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
-					color: themeColors.success
+					content: `${localize(product.name)} ${newActive ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
+					borderColor: themeColors.success
 				})
 			} catch (err: any) {
 				toast.show({
 					title: translate('error', 'Error'),
-					message: err.message || translate('failed_to_update_status', 'Failed to update status'),
-					color: themeColors.error
+					content: err.message || translate('failed_to_update_status', 'Failed to update status'),
+					borderColor: themeColors.error
 				})
 			} finally {
 				setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: false }))

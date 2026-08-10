@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { Linking } from 'react-native'
 import { IconButton } from './IconButton'
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export interface EmailButtonProps {

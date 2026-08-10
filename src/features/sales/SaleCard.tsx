@@ -1,4 +1,4 @@
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -180,10 +180,10 @@ const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 
 			await updateSaleStatus(sale._id, payloadStatus, productsPayload)
 			setCurrentStatus(payloadStatus)
-			toast.show({ title: translate('success', 'Success'), message: translate('status_updated', 'Status updated successfully'), color: themeColors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('status_updated', 'Status updated successfully'), borderColor: themeColors.success })
 			if (onStatusUpdate) onStatusUpdate()
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update_status', 'Failed to update status'), color: themeColors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update_status', 'Failed to update status'), borderColor: themeColors.error })
 		} finally {
 			setUpdating(false)
 		}
@@ -265,9 +265,7 @@ const SaleCard = ({ sale, onStatusUpdate, onPress }: SaleCardProps) => {
 			</View>
 
 			{/* Customer Section */}
-			<View style={[styles.customerSection, { borderBottomColor: colors.border }]}>
-				<CustomerContactBlock customer={sale.customer} />
-			</View>
+			<CustomerContactBlock customer={sale.customer} />
 
 			{/* Products Section - Scrollable */}
 			<View style={styles.productsContainer}>
@@ -339,10 +337,6 @@ const styles = StyleSheet.create({
 	statusText: {
 		fontSize: 12,
 		fontWeight: '600'
-	},
-	customerSection: {
-		padding: 16,
-		borderBottomWidth: 1
 	},
 	productsContainer: {
 		paddingVertical: 12

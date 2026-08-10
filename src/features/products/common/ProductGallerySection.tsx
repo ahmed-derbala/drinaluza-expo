@@ -1,4 +1,4 @@
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'

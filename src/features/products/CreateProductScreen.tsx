@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, TextInput, Keyboard
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { createProduct, getDefaultProducts, type DefaultProduct } from '@/features/products/products.api'
@@ -312,7 +312,7 @@ export default function CreateProductScreen() {
 
 			await createProduct(productData)
 			log({ level: 'info', label: 'CreateProductScreen', message: 'Product created successfully', data: productData })
-			toast.show({ title: translate('success', 'Success'), message: translate('product_created_success', 'Product created successfully!'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_created_success', 'Product created successfully!'), borderColor: colors.success })
 			router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
 		} catch (error: any) {
 			console.error('Failed to create product:', error)

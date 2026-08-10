@@ -48,7 +48,8 @@ export default {
             package: IS_DEV ? "com.ahmedderbala.drinaluza.dev" : "com.ahmedderbala.drinaluza",
             versionCode: 1,
             permissions: [
-                "android.permission.REQUEST_INSTALL_PACKAGES"
+                "android.permission.REQUEST_INSTALL_PACKAGES",
+                "android.permission.POST_NOTIFICATIONS"
             ]
         },
         web: {
@@ -66,6 +67,7 @@ export default {
             "expo-audio",
             "expo-sharing",
             "expo-image",
+            "expo-notifications",
             [
                 "expo-build-properties",
                 {

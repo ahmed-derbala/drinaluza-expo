@@ -1,4 +1,4 @@
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'

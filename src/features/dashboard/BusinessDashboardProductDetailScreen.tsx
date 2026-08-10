@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
@@ -150,7 +150,7 @@ export default function BusinessDashboardProductDetailScreen() {
 
 	const saveNames = async () => {
 		if (!nameEn.trim()) {
-			toast.show({ title: translate('error', 'Error'), message: translate('err_enter_product_name', 'Please enter a product name (English)'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: translate('err_enter_product_name', 'Please enter a product name (English)'), borderColor: colors.error })
 			return
 		}
 		try {
@@ -165,9 +165,9 @@ export default function BusinessDashboardProductDetailScreen() {
 			setProduct(res.data)
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, names: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_names_updated', 'Names updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_names_updated', 'Names updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update names'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update names'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -185,26 +185,26 @@ export default function BusinessDashboardProductDetailScreen() {
 	const savePricing = async () => {
 		const price = parseFloat(priceTND)
 		if (isNaN(price) || price <= 0) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_valid_price', 'Please enter a valid price'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_valid_price', 'Please enter a valid price'), borderColor: colors.error })
 			return
 		}
 		const minUnitNum = parseFloat(minUnit)
 		if (isNaN(minUnitNum) || minUnitNum <= 0) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_min_unit', 'Minimum unit must be greater than 0'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_min_unit', 'Minimum unit must be greater than 0'), borderColor: colors.error })
 			return
 		}
 		const maxUnitNum = parseFloat(maxUnit)
 		if (isNaN(maxUnitNum) || maxUnitNum <= 0) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_max_unit', 'Maximum unit must be greater than 0'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_max_unit', 'Maximum unit must be greater than 0'), borderColor: colors.error })
 			return
 		}
 		if (maxUnitNum < minUnitNum) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_max_min', 'Maximum unit cannot be less than minimum unit'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_max_min', 'Maximum unit cannot be less than minimum unit'), borderColor: colors.error })
 			return
 		}
 		const stepUnitNum = parseFloat(unitStep)
 		if (isNaN(stepUnitNum) || stepUnitNum <= 0) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_unit_step', 'Unit step must be greater than 0'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_unit_step', 'Unit step must be greater than 0'), borderColor: colors.error })
 			return
 		}
 
@@ -212,11 +212,11 @@ export default function BusinessDashboardProductDetailScreen() {
 		const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
 		const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
 		if ((!isNaN(minW) && minW <= 0) || (!isNaN(avgW) && avgW <= 0) || (!isNaN(maxW) && maxW <= 0)) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_weight_positive', 'Single piece weights must be greater than 0'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_weight_positive', 'Single piece weights must be greater than 0'), borderColor: colors.error })
 			return
 		}
 		if ((!isNaN(maxW) && !isNaN(minW) && maxW < minW) || (!isNaN(maxW) && !isNaN(avgW) && maxW < avgW) || (!isNaN(avgW) && !isNaN(minW) && avgW < minW)) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'), borderColor: colors.error })
 			return
 		}
 
@@ -241,9 +241,9 @@ export default function BusinessDashboardProductDetailScreen() {
 			setProduct(res.data)
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, pricing: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_pricing_updated', 'Pricing updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_pricing_updated', 'Pricing updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update pricing'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update pricing'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -266,12 +266,12 @@ export default function BusinessDashboardProductDetailScreen() {
 	const saveStock = async () => {
 		const qty = parseInt(stockQuantity)
 		if (isNaN(qty) || qty < 0) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_stock_qty', 'Please enter a valid stock quantity'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_stock_qty', 'Please enter a valid stock quantity'), borderColor: colors.error })
 			return
 		}
 		const threshold = parseInt(minThreshold)
 		if (isNaN(threshold) || threshold < 0) {
-			toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_min_threshold', 'Please enter a valid threshold'), color: colors.error })
+			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_min_threshold', 'Please enter a valid threshold'), borderColor: colors.error })
 			return
 		}
 
@@ -286,9 +286,9 @@ export default function BusinessDashboardProductDetailScreen() {
 			setProduct(res.data)
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, stock: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_stock_updated', 'Stock updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_stock_updated', 'Stock updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update stock'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update stock'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -322,9 +322,9 @@ export default function BusinessDashboardProductDetailScreen() {
 			setProduct(res.data)
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, specs: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_specs_updated', 'Specifications updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_specs_updated', 'Specifications updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update specifications'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update specifications'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -350,13 +350,13 @@ export default function BusinessDashboardProductDetailScreen() {
 			try {
 				DocumentPicker = require('expo-document-picker')
 			} catch (e) {
-				toast.show({ title: translate('error', 'Error'), message: translate('err_no_doc_picker', 'Document picker is not available.'), color: colors.error })
+				toast.show({ title: translate('error', 'Error'), content: translate('err_no_doc_picker', 'Document picker is not available.'), borderColor: colors.error })
 				return
 			}
 
 			const remainingSlots = 5 - uploadedGallery.length
 			if (remainingSlots <= 0) {
-				toast.show({ title: translate('limit_reached', 'Limit Reached'), message: translate('err_max_photos', 'You can upload up to 5 photos.'), color: colors.warning })
+				toast.show({ title: translate('limit_reached', 'Limit Reached'), content: translate('err_max_photos', 'You can upload up to 5 photos.'), borderColor: colors.warning })
 				return
 			}
 
@@ -375,8 +375,8 @@ export default function BusinessDashboardProductDetailScreen() {
 			if (assets.length > remainingSlots) {
 				toast.show({
 					title: translate('limit_notice', 'Limit Notice'),
-					message: translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)),
-					color: colors.warning
+					content: translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)),
+					borderColor: colors.warning
 				})
 			}
 
@@ -407,16 +407,16 @@ export default function BusinessDashboardProductDetailScreen() {
 					}
 					uploadedFiles.push(newFile)
 				} else {
-					toast.show({ title: translate('error', 'Error'), message: (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`, color: colors.error })
+					toast.show({ title: translate('error', 'Error'), content: (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`, borderColor: colors.error })
 				}
 			}
 
 			if (uploadedFiles.length > 0) {
 				setUploadedGallery((prev) => [...prev, ...uploadedFiles])
-				toast.show({ title: translate('success', 'Success'), message: translate('photo_uploaded', 'Photos uploaded successfully!'), color: colors.success })
+				toast.show({ title: translate('success', 'Success'), content: translate('photo_uploaded', 'Photos uploaded successfully!'), borderColor: colors.success })
 			}
 		} catch (error: any) {
-			toast.show({ title: translate('error', 'Error'), message: error.message || translate('failed_to_upload', 'Failed to upload photo'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: error.message || translate('failed_to_upload', 'Failed to upload photo'), borderColor: colors.error })
 		} finally {
 			setUploadingPhoto(false)
 		}
@@ -433,9 +433,9 @@ export default function BusinessDashboardProductDetailScreen() {
 			setProduct(res.data)
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, gallery: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_gallery_updated', 'Gallery updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_gallery_updated', 'Gallery updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update gallery'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update gallery'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -461,14 +461,14 @@ export default function BusinessDashboardProductDetailScreen() {
 			syncProductToState(res.data)
 			toast.show({
 				title: translate('success', 'Success'),
-				message: `${localize(product.name)} ${newState === 'active' ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
-				color: colors.success
+				content: `${localize(product.name)} ${newState === 'active' ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
+				borderColor: colors.success
 			})
 		} catch (err: any) {
 			toast.show({
 				title: translate('error', 'Error'),
-				message: err.message || translate('failed_to_update', 'Failed to update product status'),
-				color: colors.error
+				content: err.message || translate('failed_to_update', 'Failed to update product status'),
+				borderColor: colors.error
 			})
 		} finally {
 			setSaving(false)

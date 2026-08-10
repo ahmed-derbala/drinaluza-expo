@@ -1,4 +1,4 @@
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { Socket } from 'socket.io-client'
 import { useRouter } from 'expo-router'
@@ -9,6 +9,7 @@ import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
 import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
 import { PRIORITY_COLORS, Priority } from '@/features/common/PriorityBadge'
+import { getNotificationTemplateColor } from '@/features/notifications/notifications.constant'
 
 interface SocketContextType {
 	socket: Socket | null
@@ -43,6 +44,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			const toastTitle = localize(data.title) || 'New notification'
 			const toastMessage = localize(data.content) || ''
 			const priorityColor = data.priority ? PRIORITY_COLORS[data.priority as Priority] : undefined
+			const templateColor = getNotificationTemplateColor(data.template?.slug)
 
 			let targetScreen = data.screen
 			let customOnPress: (() => void) | undefined
@@ -66,11 +68,11 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
 			toast.show({
 				title: toastTitle,
-				message: toastMessage,
+				content: toastMessage,
 				imageUrl: data.media?.thumbnail?.url,
 				screen: targetScreen,
 				onPress: customOnPress,
-				color: priorityColor ?? themeColors.info
+				borderColor: templateColor ?? priorityColor
 			})
 
 			// Refresh count

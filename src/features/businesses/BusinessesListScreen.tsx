@@ -1,6 +1,6 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, TouchableOpacity, RefreshControl, Linking, ViewStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'

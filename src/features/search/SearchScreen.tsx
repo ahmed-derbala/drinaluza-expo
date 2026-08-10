@@ -7,7 +7,7 @@ import { FlashList } from '@shopify/flash-list'
 
 const TypedFlashList = FlashList as any
 
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { useUser } from '@/core/contexts/UserContext'
 import { getItem, setItem, getToken } from '@/core/storage'
@@ -234,7 +234,7 @@ export default function SearchScreen() {
 			if (newScopes.length > 1) {
 				newScopes = newScopes.filter((s) => s !== scope)
 			} else {
-				toast.show({ title: 'Info', message: 'At least one scope must be selected', color: colors.warning })
+				toast.show({ title: 'Info', content: 'At least one scope must be selected', borderColor: colors.warning })
 				return
 			}
 		} else {
@@ -260,7 +260,7 @@ export default function SearchScreen() {
 	const clearHistory = async () => {
 		setHistory([])
 		await setItem('search_history', [])
-		toast.show({ title: 'Success', message: translate('clear_history', 'Search history cleared'), color: colors.success })
+		toast.show({ title: 'Success', content: translate('clear_history', 'Search history cleared'), borderColor: colors.success })
 	}
 
 	// Handle adding to cart
@@ -269,7 +269,7 @@ export default function SearchScreen() {
 			try {
 				const token = await getToken()
 				if (!token) {
-					toast.show({ title: 'Info', message: 'Please log in to add items to cart', color: colors.info })
+					toast.show({ title: 'Info', content: 'Please log in to add items to cart', borderColor: colors.info })
 					router.push('/auth')
 					return
 				}
@@ -291,13 +291,13 @@ export default function SearchScreen() {
 				await setItem('cart', newCart)
 				toast.show({
 					title: 'Success',
-					message: `${localize(item.name) || 'Product'} added to cart`,
-					color: colors.success,
+					content: `${localize(item.name) || 'Product'} added to cart`,
+					borderColor: colors.success,
 					screen: '/purchases?status=cart'
 				})
 			} catch (err) {
 				log({ level: 'error', label: 'SearchScreen', message: 'Failed to add to cart', error: err })
-				toast.show({ title: 'Error', message: 'Failed to add to cart', color: colors.error })
+				toast.show({ title: 'Error', content: 'Failed to add to cart', borderColor: colors.error })
 			}
 		},
 		[cart, localize, router, colors]

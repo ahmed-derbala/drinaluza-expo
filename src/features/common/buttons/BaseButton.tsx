@@ -1,13 +1,13 @@
 import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, AppThemeColors } from '@/core/theme'
+import { useTheme, ThemeColors } from '@/core/theme'
 import { hexToRgba } from '@/core/helpers/colors'
 import Spinner from '@/features/common/Spinner'
 
 export type ButtonVariant = 'primary' | 'success' | 'warning' | 'info' | 'secondary' | 'danger'
 
-const SOLID_VARIANT_COLOR: Partial<Record<ButtonVariant, keyof AppThemeColors>> = {
+const SOLID_VARIANT_COLOR: Partial<Record<ButtonVariant, keyof ThemeColors>> = {
 	primary: 'primary',
 	success: 'success',
 	warning: 'warning',

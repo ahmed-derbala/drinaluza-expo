@@ -3,9 +3,10 @@ import { View, StyleSheet, useWindowDimensions } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { BaseCard } from '@/features/common/cards/BaseCard'
-import PriorityBadge, { PRIORITY_COLORS } from '@/features/common/PriorityBadge'
 import ElapsedTimeBadge from '@/features/common/ElapsedTimeBadge'
+import PriorityBadge from '@/features/common/PriorityBadge'
 import NotificationContentBlock from '@/features/common/blocks/NotificationContentBlock'
+import { getNotificationTemplateColor } from '../notifications.constant'
 import { NotificationItem } from '../notifications.interface'
 
 interface NotificationCardProps {
@@ -23,8 +24,8 @@ export const NotificationCard = React.memo(function NotificationCard({ item, onP
 	const { height: windowHeight } = useWindowDimensions()
 
 	const isUnseen = !item.seenAt
-	const priorityColor = item.priority ? PRIORITY_COLORS[item.priority] : undefined
-	const accentColor = priorityColor ?? (isUnseen ? colors.primary : colors.border)
+	const templateColor = getNotificationTemplateColor(item.template?.slug)
+	const borderColor = templateColor ?? colors.border
 	const isCompact = windowHeight < 550
 	const maxCardHeight = Math.max(100, windowHeight - 140)
 	const resolvedImageUrl = imageUrl ?? item.media?.thumbnail?.url
@@ -35,39 +36,27 @@ export const NotificationCard = React.memo(function NotificationCard({ item, onP
 		<BaseCard
 			onPress={handlePress}
 			activeOpacity={0.7}
-			backgroundColor={priorityColor ? priorityColor + '0C' : isUnseen ? colors.primary + '08' : colors.background}
-			borderColor={colors.border}
+			borderColor={borderColor}
 			style={[
 				styles.card,
 				{
-					borderLeftColor: accentColor,
-					borderLeftWidth: 4,
 					minHeight: 0,
 					maxHeight: maxCardHeight,
 					padding: isCompact ? 10 : 16,
 					marginBottom: isCompact ? 8 : 12,
-					opacity: isUnseen ? 1 : 0.55
+					opacity: isUnseen ? 1 : 0.4
 				}
 			]}
 			testID={`notification-card-${item._id}`}
 		>
 			{/* Header: image + title + content block on the top left, badges on the top right */}
 			<View style={styles.cardHeader}>
-				<NotificationContentBlock
-					imageUrl={resolvedImageUrl}
-					title={localize(item.title as any)}
-					titleStyle={{ fontWeight: isUnseen ? '700' : '600', fontSize: isCompact ? 14 : 16 }}
-					titleNumberOfLines={windowHeight < 500 ? 1 : 2}
-					content={localize(item.content as any)}
-					contentStyle={{ fontSize: isCompact ? 12 : 14 }}
-					contentNumberOfLines={windowHeight < 500 ? 1 : windowHeight < 650 ? 2 : 3}
-					style={styles.contentBlock}
-				/>
+				<NotificationContentBlock imageUrl={resolvedImageUrl} title={localize(item.title as any)} content={localize(item.content as any)} />
 
 				{windowHeight >= 480 && (
 					<View style={styles.badgeGroup}>
+						{item.priority && !item.seenAt && <PriorityBadge priority={item.priority} />}
 						<ElapsedTimeBadge date={item.createdAt} color={colors.textTertiary} />
-						{item.priority && <PriorityBadge priority={item.priority} />}
 					</View>
 				)}
 			</View>
@@ -86,9 +75,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		alignItems: 'flex-start',
 		gap: 8
-	},
-	contentBlock: {
-		flex: 1
 	},
 	badgeGroup: {
 		flexDirection: 'row',

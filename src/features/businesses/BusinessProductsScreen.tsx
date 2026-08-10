@@ -7,12 +7,12 @@ import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { Product } from '@/features/businesses/businesses.interface'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { Stack } from 'expo-router'
-import { HeaderCartButton, HeaderRefreshButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
+import { HeaderRefreshButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
@@ -398,12 +398,12 @@ export default function BusinessProductsScreen() {
 				await setItem('cart', newCart)
 				toast.show({
 					title: 'Success',
-					message: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
-					color: themeColors.success,
+					content: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
+					borderColor: themeColors.success,
 					screen: user ? '/purchases?status=cart' : '/auth'
 				})
 			} catch {
-				toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: themeColors.error })
+				toast.show({ title: 'Error', content: translate('cart_failed_to_add', 'Failed to add to cart'), borderColor: themeColors.error })
 			}
 		},
 		[cart, localize, translate, router]
@@ -429,12 +429,12 @@ export default function BusinessProductsScreen() {
 		const actions: any[] = []
 		if (isDashboard) {
 			actions.push(<HeaderSalesButton key="sales" businessSlug={businessSlug} label={translate('sales', 'Sales')} />)
-		} else {
-			actions.push(<HeaderCartButton key="cart" badgeCount={cart.length} />)
+			// Hide the default cart button on the owner dashboard
+			actions.push(<React.Fragment key="cart" />)
 		}
 		actions.push(<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />)
 		return actions
-	}, [isDashboard, businessSlug, cart.length, handleRefresh, isRefreshing, translate])
+	}, [isDashboard, businessSlug, handleRefresh, isRefreshing, translate])
 
 	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
 		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },

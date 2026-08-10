@@ -12,7 +12,7 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 
 type ProductCardProps = {

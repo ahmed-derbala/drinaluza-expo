@@ -1,6 +1,6 @@
 import { HeaderAllowPushButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, StyleSheet, RefreshControl, Platform } from 'react-native'
+import { View, StyleSheet, RefreshControl, Platform, Linking } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router'
 import { useTheme } from '@/core/theme'
@@ -45,11 +45,6 @@ export default function NotificationsScreen() {
 	const checkPermissions = useCallback(async () => {
 		if (Platform.OS === 'web') return
 
-		const Constants = require('expo-constants').default
-		if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
-			return
-		}
-
 		try {
 			const Notifications = require('expo-notifications')
 			const { status } = await Notifications.getPermissionsAsync()
@@ -60,24 +55,22 @@ export default function NotificationsScreen() {
 	}, [])
 
 	const requestNotificationPermission = useCallback(async () => {
-		const Constants = require('expo-constants').default
-		if (Platform.OS === 'android' && Constants.appOwnership === 'expo') {
-			const { Alert } = require('react-native')
-			Alert.alert(
-				translate('expo_go_push_unsupported_title', 'Expo Go Limitation'),
-				translate('expo_go_push_unsupported_desc', 'Remote push notifications are not supported in Expo Go on Android. Please use a standalone build to test push features.')
-			)
-			return
-		}
-
 		try {
 			const Notifications = require('expo-notifications')
-			const { status } = await Notifications.requestPermissionsAsync()
-			setPermissionGranted(status === 'granted')
+			const { status, granted, canAskAgain } = await Notifications.requestPermissionsAsync()
+
+			setPermissionGranted(granted)
+
+			if (Platform.OS === 'android' && !granted && !canAskAgain) {
+				// User checked "Don't ask again" / permanently denied — open settings so they can enable it manually.
+				Linking.openSettings()
+			} else if (Platform.OS === 'android' && !granted) {
+				log({ level: 'info', label: 'NotificationsScreen', message: `Notification permission request returned ${status}` })
+			}
 		} catch (err) {
 			console.warn('[NotificationsScreen] Failed to request permissions:', err)
 		}
-	}, [translate])
+	}, [])
 
 	const loadMoreNotifications = useCallback(async (nextPage: number) => {
 		try {

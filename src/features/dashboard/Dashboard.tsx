@@ -1,5 +1,5 @@
 import { config } from '@/config'
-import { colors as themeColors } from '@/core/theme'
+import { themeColors, ThemeColors } from '@/core/theme'
 import { HeaderRefreshButton, HeaderQRCodeButton, SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -257,7 +257,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 type ContentProps = {
 	data: import('./dashboard.interface').BusinessDashboard
 	styles: ReturnType<typeof createStyles>
-	colors: typeof import('../../core/theme').colors
+	colors: ThemeColors
 	router: ReturnType<typeof useRouter>
 	onRefresh: () => void
 	refreshing: boolean
@@ -451,7 +451,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 
 // --- Shared UI pieces ---
 
-const SectionTitle = ({ title, colors }: { title: string; colors: typeof import('../../core/theme').colors }) => (
+const SectionTitle = ({ title, colors }: { title: string; colors: ThemeColors }) => (
 	<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginTop: 10 }}>
 		<View style={{ width: 4, height: 22, borderRadius: 2, backgroundColor: colors.primary }} />
 		<Text style={{ fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.5, flex: 1 }}>{title}</Text>
@@ -464,7 +464,7 @@ type StatCardProps = {
 	icon: React.ReactNode
 	accent: string
 	styles: ReturnType<typeof createStyles>
-	colors: typeof import('../../core/theme').colors
+	colors: ThemeColors
 	onPress?: () => void
 }
 
@@ -483,7 +483,7 @@ type QuickActionProps = {
 	color: string
 	onPress: () => void
 	styles: ReturnType<typeof createStyles>
-	colors: typeof import('../../core/theme').colors
+	colors: ThemeColors
 }
 
 const QuickAction = ({ label, icon, color, onPress, styles, colors }: QuickActionProps) => (
@@ -502,7 +502,7 @@ type RankPairSectionProps = {
 	leftItems: DashboardRankItem[]
 	rightItems: DashboardRankItem[]
 	styles: ReturnType<typeof createStyles>
-	colors: typeof import('../../core/theme').colors
+	colors: ThemeColors
 	entityType: 'business' | 'product' | 'user'
 	emptyHint: string
 }
@@ -549,7 +549,7 @@ type RankRowProps = {
 	item: DashboardRankItem
 	localize: (name?: LocalizedName) => string
 	styles: ReturnType<typeof createStyles>
-	colors: typeof import('../../core/theme').colors
+	colors: ThemeColors
 	entityType: 'business' | 'product' | 'user'
 	isLast: boolean
 }
@@ -575,7 +575,7 @@ const RankRow = ({ item, localize, styles, colors, entityType, isLast, index }: 
 	)
 }
 
-const createStyles = (colors: typeof import('../../core/theme').colors) =>
+const createStyles = (colors: ThemeColors) =>
 	StyleSheet.create({
 		container: { flex: 1 },
 		centered: { justifyContent: 'center', alignItems: 'center' },

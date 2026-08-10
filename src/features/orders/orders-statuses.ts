@@ -1,4 +1,4 @@
-import { colors as themeColors } from '@/core/theme'
+import { themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 
 export const ORDER_STATUSES = {

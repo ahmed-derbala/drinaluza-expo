@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react'
 import { Tabs, usePathname, useRouter } from 'expo-router'
 import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
-import { useLayout, useUser } from '@/core/contexts'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useLayout, useUser, TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@/core/contexts'
+import { useTheme, themeColors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
@@ -34,7 +34,7 @@ export default function HomeLayout() {
 						<View
 							style={{
 								position: 'absolute',
-								bottom: 16 + insets.bottom,
+								bottom: TAB_BAR_BOTTOM_MARGIN + insets.bottom,
 								left: 0,
 								right: 0,
 								alignItems: 'center',
@@ -46,7 +46,7 @@ export default function HomeLayout() {
 							<View
 								style={{
 									width: barWidth,
-									height: 52,
+									height: TAB_BAR_HEIGHT,
 									flexDirection: 'row',
 									backgroundColor: themeColors.background,
 									borderRadius: 26,

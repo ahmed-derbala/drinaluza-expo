@@ -2,12 +2,12 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, AppThemeColors, colors as themeColors } from '@/core/theme'
+import { useTheme, ThemeColors, themeColors } from '@/core/theme'
 import { STATUS_ICONS, getStatusColor } from './utils'
 import { IconButton, type IconVariant } from '@/features/common/buttons/IconButton'
 import type { SmartModalProps, SmartModalButton } from './types'
 
-function resolveIconVariant(color: string, colors: AppThemeColors, variant: SmartModalButton['variant']): IconVariant {
+function resolveIconVariant(color: string, colors: ThemeColors, variant: SmartModalButton['variant']): IconVariant {
 	if (color === colors.error) return 'danger'
 	if (variant !== 'filled') return 'secondary'
 	if (color === colors.success) return 'success'

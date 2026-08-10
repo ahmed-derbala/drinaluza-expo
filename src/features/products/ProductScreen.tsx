@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, colors as themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { updateProduct } from '@/features/products/products.api'
@@ -24,7 +24,7 @@ import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { EmailButton } from '@/features/common/buttons/EmailButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
-import { HeaderCartButton, HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import SmartImage from '@/core/SmartImageViewer'
 import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -162,12 +162,12 @@ export default function ProductScreen() {
 			await setItem('cart', newCart)
 			toast.show({
 				title: 'Success',
-				message: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
-				color: themeColors.success,
+				content: `${localize(product.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
+				borderColor: themeColors.success,
 				screen: user ? '/purchases?status=cart' : '/auth'
 			})
 		} catch {
-			toast.show({ title: 'Error', message: translate('cart_failed_to_add', 'Failed to add to cart'), color: themeColors.error })
+			toast.show({ title: 'Error', content: translate('cart_failed_to_add', 'Failed to add to cart'), borderColor: themeColors.error })
 		}
 	}
 
@@ -221,9 +221,9 @@ export default function ProductScreen() {
 			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, names: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_names_updated', 'Names updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_names_updated', 'Names updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update names'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update names'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -243,12 +243,12 @@ export default function ProductScreen() {
 			const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
 			const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
 			if ((!isNaN(minW) && minW <= 0) || (!isNaN(avgW) && avgW <= 0) || (!isNaN(maxW) && maxW <= 0)) {
-				toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_weight_positive', 'Single piece weights must be greater than 0'), color: colors.error })
+				toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_weight_positive', 'Single piece weights must be greater than 0'), borderColor: colors.error })
 				setSaving(false)
 				return
 			}
 			if ((!isNaN(maxW) && !isNaN(minW) && maxW < minW) || (!isNaN(maxW) && !isNaN(avgW) && maxW < avgW) || (!isNaN(avgW) && !isNaN(minW) && avgW < minW)) {
-				toast.show({ title: translate('validation_error', 'Validation Error'), message: translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'), color: colors.error })
+				toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'), borderColor: colors.error })
 				setSaving(false)
 				return
 			}
@@ -280,9 +280,9 @@ export default function ProductScreen() {
 			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, pricing: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_pricing_updated', 'Pricing updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_pricing_updated', 'Pricing updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update pricing'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update pricing'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -310,9 +310,9 @@ export default function ProductScreen() {
 			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, stock: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_stock_updated', 'Stock updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_stock_updated', 'Stock updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update stock'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update stock'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -330,13 +330,13 @@ export default function ProductScreen() {
 			try {
 				DocumentPicker = require('expo-document-picker')
 			} catch (e) {
-				toast.show({ title: translate('error', 'Error'), message: translate('err_no_doc_picker', 'Document picker is not available.'), color: colors.error })
+				toast.show({ title: translate('error', 'Error'), content: translate('err_no_doc_picker', 'Document picker is not available.'), borderColor: colors.error })
 				return
 			}
 
 			const remainingSlots = 5 - uploadedGallery.length
 			if (remainingSlots <= 0) {
-				toast.show({ title: translate('limit_reached', 'Limit Reached'), message: translate('err_max_photos', 'You can upload up to 5 photos.'), color: colors.warning })
+				toast.show({ title: translate('limit_reached', 'Limit Reached'), content: translate('err_max_photos', 'You can upload up to 5 photos.'), borderColor: colors.warning })
 				return
 			}
 
@@ -355,8 +355,8 @@ export default function ProductScreen() {
 			if (assets.length > remainingSlots) {
 				toast.show({
 					title: translate('limit_notice', 'Limit Notice'),
-					message: translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)),
-					color: colors.warning
+					content: translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)),
+					borderColor: colors.warning
 				})
 			}
 
@@ -387,17 +387,17 @@ export default function ProductScreen() {
 					}
 					uploadedFiles.push(newFile)
 				} else {
-					toast.show({ title: translate('error', 'Error'), message: (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`, color: colors.error })
+					toast.show({ title: translate('error', 'Error'), content: (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`, borderColor: colors.error })
 				}
 			}
 
 			if (uploadedFiles.length > 0) {
 				setUploadedGallery((prev) => [...prev, ...uploadedFiles])
-				toast.show({ title: translate('success', 'Success'), message: translate('photo_uploaded', 'Photos uploaded successfully!'), color: colors.success })
+				toast.show({ title: translate('success', 'Success'), content: translate('photo_uploaded', 'Photos uploaded successfully!'), borderColor: colors.success })
 			}
 		} catch (error: any) {
 			console.error('Error uploading photo:', error)
-			toast.show({ title: translate('error', 'Error'), message: error.message || translate('failed_to_upload', 'Failed to upload photo'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: error.message || translate('failed_to_upload', 'Failed to upload photo'), borderColor: colors.error })
 		} finally {
 			setUploadingPhoto(false)
 		}
@@ -419,9 +419,9 @@ export default function ProductScreen() {
 			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, gallery: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_gallery_updated', 'Gallery updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_gallery_updated', 'Gallery updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update gallery'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update gallery'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -457,9 +457,9 @@ export default function ProductScreen() {
 			}
 			syncProductToState(res.data)
 			setEditMode((prev) => ({ ...prev, specs: false }))
-			toast.show({ title: translate('success', 'Success'), message: translate('product_specs_updated', 'Specifications updated successfully'), color: colors.success })
+			toast.show({ title: translate('success', 'Success'), content: translate('product_specs_updated', 'Specifications updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
-			toast.show({ title: translate('error', 'Error'), message: err.message || translate('failed_to_update', 'Failed to update specifications'), color: colors.error })
+			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update specifications'), borderColor: colors.error })
 		} finally {
 			setSaving(false)
 		}
@@ -477,12 +477,8 @@ export default function ProductScreen() {
 	}
 
 	const headerActions = useMemo(
-		() => [
-			<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />,
-			<HeaderCartButton key="cart" badgeCount={cart.length} />,
-			<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />
-		],
-		[cart.length, handleRefresh, isRefreshing]
+		() => [<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />],
+		[handleRefresh, isRefreshing]
 	)
 
 	const combinedGallery = useMemo(() => {
