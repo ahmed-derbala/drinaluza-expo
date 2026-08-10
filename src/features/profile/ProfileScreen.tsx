@@ -909,11 +909,11 @@ export default function ProfileScreen() {
 												style={[
 													styles.langOption,
 													{ borderColor: colors.border, backgroundColor: colors.background },
-													userData.settings?.lang?.app === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
+													userData.settings?.language?.app === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
 												]}
 												onPress={() => {
-													const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
-													updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, app: lang.code } })
+													const prevSettings = userData.settings || { language: { app: 'en', content: 'en' }, currency: 'tnd' }
+													updateField('settings', { ...prevSettings, language: { ...prevSettings.language, app: lang.code } })
 												}}
 											>
 												{renderLangFlag(lang.code)}
@@ -930,11 +930,11 @@ export default function ProfileScreen() {
 												style={[
 													styles.langOption,
 													{ borderColor: colors.border, backgroundColor: colors.background },
-													userData.settings?.lang?.content === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
+													userData.settings?.language?.content === lang.code && { borderColor: colors.primary, backgroundColor: colors.primary + '15' }
 												]}
 												onPress={() => {
-													const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd' }
-													updateField('settings', { ...prevSettings, lang: { ...prevSettings.lang, content: lang.code } })
+													const prevSettings = userData.settings || { language: { app: 'en', content: 'en' }, currency: 'tnd' }
+													updateField('settings', { ...prevSettings, language: { ...prevSettings.language, content: lang.code } })
 												}}
 											>
 												{renderLangFlag(lang.code)}
@@ -948,7 +948,7 @@ export default function ProfileScreen() {
 										<TouchableOpacity
 											style={[styles.switch, userData.settings?.purchases?.confirmation?.isEnabled !== false ? { backgroundColor: colors.primary } : { backgroundColor: colors.border }]}
 											onPress={() => {
-												const prevSettings = userData.settings || { lang: { app: 'en', content: 'en' }, currency: 'tnd', purchases: { confirmation: { isEnabled: true } } }
+												const prevSettings = userData.settings || { language: { app: 'en', content: 'en' }, currency: 'tnd', purchases: { confirmation: { isEnabled: true } } }
 												const currentlyEnabled = prevSettings.purchases?.confirmation?.isEnabled !== false
 												updateField('settings', {
 													...prevSettings,
@@ -973,8 +973,8 @@ export default function ProfileScreen() {
 							</>
 						) : (
 							<>
-								<SectionRow label={translate('app_lang', 'App Language')} value={renderLangFlag(userData.settings?.lang?.app)} icon="globe" iconColor={colors.primary} />
-								<SectionRow label={translate('content_lang', 'Content Language')} value={renderLangFlag(userData.settings?.lang?.content)} icon="language" iconColor={colors.primary} />
+								<SectionRow label={translate('app_lang', 'App Language')} value={renderLangFlag(userData.settings?.language?.app)} icon="globe" iconColor={colors.primary} />
+								<SectionRow label={translate('content_lang', 'Content Language')} value={renderLangFlag(userData.settings?.language?.content)} icon="language" iconColor={colors.primary} />
 								<SectionRow
 									label={translate('purchase_confirmation', 'Purchase Confirmation')}
 									value={userData.settings?.purchases?.confirmation?.isEnabled !== false ? translate('enabled', 'Enabled') : translate('disabled', 'Disabled')}

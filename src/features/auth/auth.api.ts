@@ -179,7 +179,7 @@ interface SignInResponse {
 			name: any
 			role: string
 			settings?: {
-				lang: any
+				language: any
 				currency: string
 			}
 		}

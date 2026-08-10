@@ -1,6 +1,6 @@
 import { HeaderAllowPushButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
-import { View, StyleSheet, RefreshControl, Platform, Linking } from 'react-native'
+import { View, StyleSheet, RefreshControl, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router'
 import { useTheme } from '@/core/theme'
@@ -51,24 +51,6 @@ export default function NotificationsScreen() {
 			setPermissionGranted(status === 'granted')
 		} catch (err) {
 			console.warn('[NotificationsScreen] Failed to check permissions:', err)
-		}
-	}, [])
-
-	const requestNotificationPermission = useCallback(async () => {
-		try {
-			const Notifications = require('expo-notifications')
-			const { status, granted, canAskAgain } = await Notifications.requestPermissionsAsync()
-
-			setPermissionGranted(granted)
-
-			if (Platform.OS === 'android' && !granted && !canAskAgain) {
-				// User checked "Don't ask again" / permanently denied — open settings so they can enable it manually.
-				Linking.openSettings()
-			} else if (Platform.OS === 'android' && !granted) {
-				log({ level: 'info', label: 'NotificationsScreen', message: `Notification permission request returned ${status}` })
-			}
-		} catch (err) {
-			console.warn('[NotificationsScreen] Failed to request permissions:', err)
 		}
 	}, [])
 
@@ -142,11 +124,11 @@ export default function NotificationsScreen() {
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (permissionGranted === false) {
-			actions.push(<HeaderAllowPushButton key="allow-push" onPress={requestNotificationPermission} label={translate('notifications_disabled_title', 'Notifications Disabled')} />)
+			actions.push(<HeaderAllowPushButton key="allow-push" onPermissionResult={setPermissionGranted} label={translate('notifications_disabled_title', 'Notifications Disabled')} />)
 		}
 		actions.push(<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />)
 		return actions
-	}, [permissionGranted, isRefreshing, translate, onRefresh, requestNotificationPermission])
+	}, [permissionGranted, isRefreshing, translate, onRefresh, setPermissionGranted])
 
 	const renderEmpty = useCallback(() => {
 		if (isInitialLoading) return null

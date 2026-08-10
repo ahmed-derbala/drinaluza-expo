@@ -54,7 +54,7 @@ export interface Location {
 }
 
 interface UserSettings {
-	lang: {
+	language: {
 		app?: string
 		content?: string
 	}

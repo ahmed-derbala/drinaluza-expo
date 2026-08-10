@@ -1,8 +1,6 @@
-import React, { useMemo } from 'react'
+import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import SmartImage from '@/core/SmartImageViewer'

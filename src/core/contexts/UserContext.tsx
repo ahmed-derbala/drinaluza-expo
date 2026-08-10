@@ -117,8 +117,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 	}, [loadUser])
 
 	// Derived settings - prioritize user profile, then guest settings, then defaults
-	const appLang = user?.settings?.lang?.app || guestSettings.appLang
-	const contentLang = user?.settings?.lang?.content || guestSettings.contentLang
+	const appLang = user?.settings?.language?.app || guestSettings.appLang
+	const contentLang = user?.settings?.language?.content || guestSettings.contentLang
 	const currency = user?.settings?.currency || guestSettings.currency
 
 	// Sync global language for non-React components
