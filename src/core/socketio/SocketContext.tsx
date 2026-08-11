@@ -7,6 +7,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
+import { getToken } from '@/core/storage'
 import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
 import { PRIORITY_COLORS, Priority } from '@/features/common/PriorityBadge'
 import { getNotificationTemplateColor } from '@/features/notifications/notifications.constant'
@@ -21,7 +22,7 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 	const { user, localize } = useUser()
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
-	const [socket, setSocket] = useState<Socket | null>(ConnectionService.getSocket())
+	const [socket, setSocket] = useState<Socket | null>(ConnectionService.getPrivateSocket())
 
 	useEffect(() => {
 		// Only connect if user is logged in
@@ -31,12 +32,8 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			return
 		}
 
-		log({ level: 'info', label: 'socket', message: `Initializing for user: ${user.slug}` })
-		ConnectionService.connect(user.slug)
-		setSocket(ConnectionService.getSocket())
-
-		const currentSocket = ConnectionService.getSocket()
-		if (!currentSocket) return
+		let cancelled = false
+		let currentSocket: Socket | null = null
 
 		const handleNewNotification = async (data: any) => {
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
@@ -79,11 +76,28 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			refreshNotificationCount()
 		}
 
-		currentSocket.on('new_notification', handleNewNotification)
+		const setup = async () => {
+			const token = await getToken()
+			if (cancelled || !token) return
+
+			log({ level: 'info', label: 'socket', message: `Initializing private socket for user: ${user.slug}` })
+			ConnectionService.connect(token)
+
+			currentSocket = ConnectionService.getPrivateSocket()
+			if (!currentSocket) return
+
+			setSocket(currentSocket)
+			currentSocket.on('new_notification', handleNewNotification)
+		}
+
+		setup()
 
 		return () => {
-			log({ level: 'info', label: 'socket', message: 'Cleaning up notification listener' })
-			currentSocket.off('new_notification', handleNewNotification)
+			cancelled = true
+			if (currentSocket) {
+				log({ level: 'info', label: 'socket', message: 'Cleaning up notification listener' })
+				currentSocket.off('new_notification', handleNewNotification)
+			}
 		}
 	}, [user?.slug, refreshNotificationCount, router, localize])
 

@@ -19,6 +19,10 @@ export const BackendConnectionProvider: React.FC<{ children: React.ReactNode }> 
 	const [backendState, setBackendState] = useState<BackendState>(ConnectionService.getBackendState())
 
 	useEffect(() => {
+		// Only ever runs on the client (effects don't run during web static
+		// prerendering), so this is the safe place to open the public socket.
+		ConnectionService.init()
+
 		const unsubscribe = ConnectionService.subscribe((nextState) => {
 			setBackendState(nextState)
 		})

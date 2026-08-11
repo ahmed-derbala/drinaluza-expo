@@ -4,7 +4,7 @@ import { TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@/core/contexts'
+import { TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@/core/contexts/LayoutContext'
 import NotificationContentBlock from '@/features/common/blocks/NotificationContentBlock'
 
 let useAudioPlayer: any = null
