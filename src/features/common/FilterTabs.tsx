@@ -6,15 +6,15 @@ import Spinner from '@/features/common/Spinner'
 
 import { useTheme } from '@/core/theme'
 
-export interface OrderStatusTabOption {
+export interface FilterTabOption {
 	value: string
 	label: string
 	iconName?: string
 }
 
-interface OrderStatusTabsProps {
+interface FilterTabsProps {
 	value: string
-	options: OrderStatusTabOption[]
+	options: FilterTabOption[]
 	onChange: (value: string) => void
 	counts?: Record<string, number>
 	activeCount?: number
@@ -23,7 +23,7 @@ interface OrderStatusTabsProps {
 	testID?: string
 }
 
-export const OrderStatusTabs = React.memo(function OrderStatusTabs({ value, options, onChange, counts, activeCount, resetKey, loading, testID }: OrderStatusTabsProps) {
+export const FilterTabs = React.memo(function FilterTabs({ value, options, onChange, counts, activeCount, resetKey, loading, testID }: FilterTabsProps) {
 	const { colors } = useTheme()
 	const scrollViewRef = useRef<ScrollView>(null)
 	const [containerWidth, setContainerWidth] = useState(0)

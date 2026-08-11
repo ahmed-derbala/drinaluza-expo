@@ -11,7 +11,7 @@ import { useUser } from '@/core/contexts'
 import ErrorState from '@/features/common/ErrorState'
 import Spinner from '@/features/common/Spinner'
 import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/orders/orders-statuses'
-import { OrderStatusTabs, OrderStatusTabOption } from '@/features/orders/components/OrderStatusTabs'
+import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
 import { OrderList } from '@/features/orders/components/OrderList'
 import { PurchaseCard } from './PurchaseCard'
 import { CartGroupCard, BusinessCartGroup } from '@/features/orders/components/CartGroupCard'
@@ -24,7 +24,7 @@ import CheckoutConfirmationModal from './components/CheckoutConfirmationModal'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 
-const statusOptions: OrderStatusTabOption[] = [
+const statusOptions: FilterTabOption[] = [
 	{ value: 'cart', label: 'Cart', iconName: orderStatusIcons.cart },
 	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
 	{
@@ -308,7 +308,7 @@ export default function PurchasesScreen() {
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading || isCheckingOut }}
 				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading || isCheckingOut} />]}
 				headerBottom={
-					<OrderStatusTabs
+					<FilterTabs
 						value={selectedStatus}
 						onChange={setSelectedStatus}
 						options={statusOptions}

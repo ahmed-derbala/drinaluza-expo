@@ -10,13 +10,14 @@ import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
-import { getNotifications, markNotificationSeen } from './notifications.api'
+import { getNotifications, getUnseenNotifications, markNotificationSeen } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { NotificationCard } from './components/NotificationCard'
 
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { log } from '@/core/log'
+import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
 
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
@@ -24,7 +25,8 @@ export default function NotificationsScreen() {
 	const navigation = useNavigation()
 	useBackButton()
 	const insets = useSafeAreaInsets()
-	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useNotifications()
+	const [showUnseen, setShowUnseen] = useState(false)
+	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useNotifications({ unseen: showUnseen })
 	const page1Notifications = page1Response?.data?.docs ?? []
 	const [extraNotifications, setExtraNotifications] = useState<NotificationItem[]>([])
 	const notifications = useMemo(() => [...page1Notifications, ...extraNotifications], [page1Notifications, extraNotifications])
@@ -54,18 +56,21 @@ export default function NotificationsScreen() {
 		}
 	}, [])
 
-	const loadMoreNotifications = useCallback(async (nextPage: number) => {
-		try {
-			const response = await getNotifications(nextPage, 10)
-			const newItems = response.data.docs || []
+	const loadMoreNotifications = useCallback(
+		async (nextPage: number) => {
+			try {
+				const response = showUnseen ? await getUnseenNotifications(nextPage, 10) : await getNotifications(nextPage, 10)
+				const newItems = response.data.docs || []
 
-			setExtraNotifications((prev) => [...prev, ...newItems])
-			setHasMore(response.data.pagination.hasNextPage)
-			setPage(nextPage)
-		} catch (err: any) {
-			log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to load more notifications', error: err })
-		}
-	}, [])
+				setExtraNotifications((prev) => [...prev, ...newItems])
+				setHasMore(response.data.pagination.hasNextPage)
+				setPage(nextPage)
+			} catch (err: any) {
+				log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to load more notifications', error: err })
+			}
+		},
+		[showUnseen]
+	)
 
 	const onRefresh = useCallback(() => {
 		refresh()
@@ -121,6 +126,27 @@ export default function NotificationsScreen() {
 
 	const renderItem = useCallback(({ item }: { item: NotificationItem }) => <NotificationCard item={item} onPress={handleNotificationPress} />, [handleNotificationPress])
 
+	const filterOptions = useMemo<FilterTabOption[]>(
+		() => [
+			{ value: 'all', label: translate('all', 'All') },
+			{ value: 'unseen', label: translate('unseen', 'Unseen') }
+		],
+		[translate]
+	)
+
+	const headerBottom = useMemo(
+		() => (
+			<FilterTabs
+				value={showUnseen ? 'unseen' : 'all'}
+				options={filterOptions}
+				onChange={(value) => setShowUnseen(value === 'unseen')}
+				activeCount={page1Response?.data?.pagination?.totalDocs}
+				loading={isRefreshing}
+			/>
+		),
+		[filterOptions, showUnseen, page1Response, isRefreshing]
+	)
+
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (permissionGranted === false) {
@@ -156,9 +182,10 @@ export default function NotificationsScreen() {
 			<SmartHeader
 				navigation={navigation}
 				title={translate('notifications_title', 'Notifications')}
-				subtitle={`${notifications.length}`}
 				back={navigation.canGoBack() ? { title: 'Back' } : undefined}
 				headerActions={headerActions}
+				headerBottom={headerBottom}
+				headerBottomHeight={52}
 			/>
 
 			<SmartHeader.FlashList
@@ -172,6 +199,7 @@ export default function NotificationsScreen() {
 				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.2}
+
 				ListEmptyComponent={renderEmpty}
 				ListFooterComponent={renderFooter}
 			/>

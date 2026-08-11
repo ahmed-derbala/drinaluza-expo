@@ -14,6 +14,16 @@ export const getNotifications = async (page: number = 1, limit: number = 10): Pr
 	return response.data
 }
 
+export const getUnseenNotifications = async (page: number = 1, limit: number = 10): Promise<NotificationResponse> => {
+	const response = await getApiClient().get<NotificationResponse>('/notifications/unseen', {
+		params: {
+			page,
+			limit
+		}
+	})
+	return response.data
+}
+
 // Helper to mark as seen
 export const markNotificationSeen = async (notificationId: string): Promise<any> => {
 	const response = await getApiClient().patch(`/notifications/${notificationId}`, {
