@@ -2,22 +2,23 @@ import { HeaderAllowPushButton, HeaderRefreshButton, SmartHeader } from '@/core/
 import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useRouter, Stack, useNavigation, useFocusEffect } from 'expo-router'
+import { useRouter, Stack, useNavigation, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { useUser } from '@/core/contexts/UserContext'
+import { useUser, useLayout } from '@/core/contexts'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
-import { getNotifications, getUnseenNotifications, markNotificationSeen } from './notifications.api'
+import { getNotifications, markNotificationSeen, NotificationFilter } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { NotificationCard } from './components/NotificationCard'
 
 import { useBackButton } from '@/core/hooks/useBackButton'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { log } from '@/core/log'
 import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
+
+const isValidFilter = (value: string | undefined): value is NotificationFilter => value === 'all' || value === 'seen' || value === 'unseen'
 
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
@@ -25,8 +26,9 @@ export default function NotificationsScreen() {
 	const navigation = useNavigation()
 	useBackButton()
 	const insets = useSafeAreaInsets()
-	const [showUnseen, setShowUnseen] = useState(false)
-	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useNotifications({ unseen: showUnseen })
+	const params = useLocalSearchParams<{ filter?: string }>()
+	const filter: NotificationFilter = isValidFilter(params.filter) ? params.filter : 'all'
+	const { data: page1Response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useNotifications({ filter })
 	const page1Notifications = page1Response?.data?.docs ?? []
 	const [extraNotifications, setExtraNotifications] = useState<NotificationItem[]>([])
 	const notifications = useMemo(() => [...page1Notifications, ...extraNotifications], [page1Notifications, extraNotifications])
@@ -35,7 +37,6 @@ export default function NotificationsScreen() {
 	const [hasMore, setHasMore] = useState(true)
 	const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null)
 	const { translate } = useUser()
-	const { onScroll } = useScrollHandler()
 
 	// Reset appended pages whenever page 1 cache refreshes
 	useEffect(() => {
@@ -59,7 +60,7 @@ export default function NotificationsScreen() {
 	const loadMoreNotifications = useCallback(
 		async (nextPage: number) => {
 			try {
-				const response = showUnseen ? await getUnseenNotifications(nextPage, 10) : await getNotifications(nextPage, 10)
+				const response = await getNotifications(nextPage, 10, filter)
 				const newItems = response.data.docs || []
 
 				setExtraNotifications((prev) => [...prev, ...newItems])
@@ -69,7 +70,7 @@ export default function NotificationsScreen() {
 				log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to load more notifications', error: err })
 			}
 		},
-		[showUnseen]
+		[filter]
 	)
 
 	const onRefresh = useCallback(() => {
@@ -128,8 +129,9 @@ export default function NotificationsScreen() {
 
 	const filterOptions = useMemo<FilterTabOption[]>(
 		() => [
-			{ value: 'all', label: translate('all', 'All') },
-			{ value: 'unseen', label: translate('unseen', 'Unseen') }
+			{ value: 'all', label: translate('all', 'All'), iconName: 'list' },
+			{ value: 'unseen', label: translate('unseen', 'Unseen'), iconName: 'mail-unread-outline' },
+			{ value: 'seen', label: translate('seen', 'Seen'), iconName: 'mail-open-outline' }
 		],
 		[translate]
 	)
@@ -137,14 +139,14 @@ export default function NotificationsScreen() {
 	const headerBottom = useMemo(
 		() => (
 			<FilterTabs
-				value={showUnseen ? 'unseen' : 'all'}
+				value={filter}
 				options={filterOptions}
-				onChange={(value) => setShowUnseen(value === 'unseen')}
+				onChange={(value) => isValidFilter(value) && router.setParams({ filter: value })}
 				activeCount={page1Response?.data?.pagination?.totalDocs}
 				loading={isRefreshing}
 			/>
 		),
-		[filterOptions, showUnseen, page1Response, isRefreshing]
+		[filterOptions, filter, page1Response, isRefreshing]
 	)
 
 	const headerActions = useMemo(() => {
@@ -195,7 +197,6 @@ export default function NotificationsScreen() {
 				estimatedItemSize={96}
 				contentContainerStyle={[styles.list, { paddingBottom: 90 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-				onScroll={onScroll}
 				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.2}

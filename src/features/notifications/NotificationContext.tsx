@@ -27,9 +27,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 			if (now - lastRefreshRef.current < REFRESH_COOLDOWN_MS) return
 			lastRefreshRef.current = now
 
-			const response = await getNotifications(1, 20)
-			const unseen = response.data.docs.filter((n) => !n.seenAt).length
-			setNotificationCount(unseen)
+			const response = await getNotifications(1, 20, 'unseen')
+			setNotificationCount(response.data.pagination.totalDocs)
 		} catch (error) {
 			log({ level: 'error', label: 'NotificationContext', message: 'Failed to fetch notifications count', error })
 		}

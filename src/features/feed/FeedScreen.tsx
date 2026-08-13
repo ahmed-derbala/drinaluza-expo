@@ -7,7 +7,7 @@ import { getFeed } from '@/features/feed/feed.api'
 import { FeedItem } from '@/features/feed/feed.interface'
 import useFeed from '@/features/feed/useFeed'
 
-import FeedCard from '@/features/feed/feed.card'
+import FeedProductCard from '@/features/feed/FeedProductCard'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import ErrorState from '@/features/common/ErrorState'
 import EmptyState from '@/features/common/EmptyState'
@@ -218,7 +218,7 @@ export default function FeedScreen() {
 	const renderItem = useCallback(
 		({ item }: { item: FeedItem }) => (
 			<View style={[styles.cardWrap, { paddingHorizontal: numColumns > 1 ? gap / 2 : 0 }]}>
-				<FeedCard item={item} addToCart={addToCart} />
+				<FeedProductCard item={item} addToCart={addToCart} />
 			</View>
 		),
 		[numColumns, addToCart]

@@ -1,12 +1,12 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, type StyleProp, type ViewStyle } from 'react-native'
 import SmartImage from '@/core/SmartImageViewer'
-import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
-import { GearIcon } from './common/GearIcons'
+import { getCaliberIconSize, getCaliberFontSize, getHarvestIcon } from '@/features/products/products.helpers'
+import { GearIcon } from '@/features/products/common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { ProductFeedItem } from '@/features/feed/feed.interface'
+import { ProductFeedItem, FeedItem } from './feed.interface'
 import { useUser } from '@/core/contexts/UserContext'
-import { useProductCardPress } from './useProductCardPress'
+import { useProductCardPress } from '@/features/products/useProductCardPress'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
@@ -14,16 +14,17 @@ import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 
-type ProductCardProps = {
-	item: ProductFeedItem
-	addToCart: (item: ProductFeedItem, quantity: number) => void
+export interface FeedProductCardProps {
+	item: ProductFeedItem | FeedItem
+	addToCart: (item: any, quantity: number) => void
 	style?: StyleProp<ViewStyle>
 }
 
-const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: ProductCardProps) {
+const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, style }: FeedProductCardProps) {
+	const productFeedItem = item as ProductFeedItem
 	const { localize, currency, formatPrice, translate } = useUser()
 	const { colors } = useTheme()
-	const { handleBusinessPress, handleProductPress } = useProductCardPress(item)
+	const { handleBusinessPress, handleProductPress } = useProductCardPress(productFeedItem)
 	const { width } = useWindowDimensions()
 	const [activeImageIndex, setActiveImageIndex] = useState(0)
 	const [autoplayEnabled, setAutoplayEnabled] = useState(true)
@@ -84,7 +85,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 
 	const handlePreviewPress = (e: any, index: number) => {
 		e.stopPropagation?.()
-		// User interacted (preview tap), stop autoplay permanently
 		stopAutoplay()
 		setAutoplayEnabled(false)
 		setActiveImageIndex(index)
@@ -106,11 +106,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	}, [singlePiece])
 
 	const mainName = localize(item.name)
-	const secondaryNames = useMemo(() => {
-		if (!item.name) return []
-		const allNames = [item.name?.en, item.name?.tn_latn, item.name?.tn_arab].filter(Boolean) as string[]
-		return Array.from(new Set(allNames)).filter((n) => n !== mainName)
-	}, [item.name, mainName])
 
 	const increment = (e: any) => {
 		e.stopPropagation?.()
@@ -132,7 +127,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0
 	const isLowStock = stockQty > 0 && stockQty <= minThreshold
-	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
+	const isActive = item.state ? item.state.code === 'active' : (item as any).isActive !== false
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
 	const cartDisabled = !purchaseAllowed || !isActive || isOutOfStock
 
@@ -144,7 +139,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 
 	const isSmall = width < 500
 
-	// Build address line from structured address fields
 	const addr = item.business?.address
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
@@ -154,6 +148,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 			onPress={handleProductPress}
 			accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
 			accessibilityLabel={mainName}
+			testID={`feed-product-card-${item._id}`}
 		>
 			{/* Background image */}
 			<View style={styles.bgImageContainer}>
@@ -326,7 +321,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 				</View>
 
 				{/* Thumbnail previews */}
-				{images.length > 1 && (
+				{images.length > 0 && (
 					<View style={styles.previewsContainer}>
 						{images.map((url, index) => (
 							<TouchableOpacity
@@ -345,7 +340,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	)
 })
 
-export default ProductCard
+export default FeedProductCard
 
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
@@ -358,11 +353,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		minHeight: 340
 	},
-	cardPressed: {
-		opacity: 0.95,
-		transform: [{ scale: 0.985 }]
-	},
-	// ── Business row ──
 	bizRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -423,7 +413,6 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		color: themeColors.buttonText40
 	},
-	// ── Background image ──
 	bgImageContainer: {
 		position: 'absolute',
 		top: 0,
@@ -478,7 +467,6 @@ const styles = StyleSheet.create({
 		textTransform: 'uppercase',
 		letterSpacing: 0.5
 	},
-	// ── Body ──
 	body: {
 		justifyContent: 'space-between'
 	},
@@ -497,11 +485,6 @@ const styles = StyleSheet.create({
 	},
 	bodySmall: {
 		padding: 8
-	},
-	altName: {
-		fontSize: 11,
-		fontWeight: '500',
-		color: themeColors.buttonText40
 	},
 	ratingRow: {
 		flexDirection: 'row',
@@ -548,13 +531,6 @@ const styles = StyleSheet.create({
 		fontWeight: '500',
 		color: themeColors.buttonText40
 	},
-	// ── Quantity + Cart ──
-	actionRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		marginTop: 8
-	},
 	qtyControl: {
 		flexDirection: 'row',
 		alignItems: 'center',
@@ -580,10 +556,6 @@ const styles = StyleSheet.create({
 		textAlign: 'center',
 		marginHorizontal: 4
 	},
-	actionsColumn: {
-		alignItems: 'flex-end',
-		gap: 4
-	},
 	cartBtn: {
 		width: 36,
 		height: 36,
@@ -594,11 +566,6 @@ const styles = StyleSheet.create({
 	},
 	cartBtnDisabled: {
 		backgroundColor: themeColors.buttonText10
-	},
-	cartBtnText: {
-		fontSize: 13,
-		fontWeight: '700',
-		color: themeColors.buttonText
 	},
 	specsStepperRow: {
 		flexDirection: 'column',
@@ -632,50 +599,9 @@ const styles = StyleSheet.create({
 		fontSize: 11,
 		fontWeight: '700'
 	},
-	specsCardRow: {
-		flexDirection: 'row',
-		flexWrap: 'wrap',
-		gap: 6,
-		marginTop: 4,
-		alignItems: 'center'
-	},
-	caliberChip: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingVertical: 3,
-		borderRadius: 6,
-		gap: 3
-	},
-	caliberChipText: {
-		fontSize: 10,
-		fontWeight: '700'
-	},
-	originChip: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingVertical: 3,
-		borderRadius: 6,
-		gap: 3,
-		borderWidth: 1,
-		borderColor: themeColors.buttonText5
-	},
 	originChipText: {
 		fontSize: 10,
 		fontWeight: '600'
-	},
-	harvestChip: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 8,
-		paddingVertical: 4,
-		borderRadius: 6,
-		gap: 3
-	},
-	harvestChipText: {
-		fontSize: 10,
-		fontWeight: '700'
 	},
 	previewsContainer: {
 		flexDirection: 'row',
@@ -683,7 +609,8 @@ const styles = StyleSheet.create({
 		gap: 6,
 		marginHorizontal: 10,
 		marginTop: 8,
-		marginBottom: 8
+		marginBottom: 8,
+		minHeight: 40
 	},
 	previewThumb: {
 		width: 40,

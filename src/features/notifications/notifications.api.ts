@@ -4,21 +4,14 @@ import * as Device from 'expo-device'
 import Constants from 'expo-constants'
 import { Platform } from 'react-native'
 
-export const getNotifications = async (page: number = 1, limit: number = 10): Promise<NotificationResponse> => {
+export type NotificationFilter = 'all' | 'seen' | 'unseen'
+
+export const getNotifications = async (page: number = 1, limit: number = 10, filter: NotificationFilter = 'all'): Promise<NotificationResponse> => {
 	const response = await getApiClient().get<NotificationResponse>('/notifications', {
 		params: {
 			page,
-			limit
-		}
-	})
-	return response.data
-}
-
-export const getUnseenNotifications = async (page: number = 1, limit: number = 10): Promise<NotificationResponse> => {
-	const response = await getApiClient().get<NotificationResponse>('/notifications/unseen', {
-		params: {
-			page,
-			limit
+			limit,
+			filter
 		}
 	})
 	return response.data

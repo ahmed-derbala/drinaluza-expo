@@ -20,7 +20,7 @@ import { logError, parseError } from '@/core/helpers/errorHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { SmartHeader } from '@/core/smart-header'
 import { useLayout } from '@/core/contexts/LayoutContext'
-import FeedCard from '@/features/feed/feed.card'
+import FeedProductCard from '@/features/feed/FeedProductCard'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import { FeedItem } from '@/features/feed/feed.interface'
 import { searchApi } from './search.api'
@@ -130,7 +130,7 @@ export default function SearchScreen() {
 					}
 				}
 
-				// Map them to format expected by FeedCard
+				// Map them to format expected by FeedProductCard
 				const mappedDocs = fetchedDocs.map((item) => ({
 					...item,
 					card: item.card || { kind: getCardKind(item) }
@@ -312,7 +312,7 @@ export default function SearchScreen() {
 	const renderItem = useCallback(
 		({ item }: { item: any }) => (
 			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: gap }}>
-				<FeedCard item={item} addToCart={handleAddToCart} />
+				<FeedProductCard item={item} addToCart={handleAddToCart} />
 			</View>
 		),
 		[numColumns, handleAddToCart]
