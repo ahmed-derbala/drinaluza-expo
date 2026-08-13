@@ -1,0 +1,6 @@
+# smart media
+- SmartMedia (core/smart-media) handles all media (image, video) features (upload, download, delete,view, play, pause, gallery, carousel)
+- every feature should be on its own file or function
+
+## smart media upload
+- 

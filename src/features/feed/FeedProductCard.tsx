@@ -11,6 +11,8 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
+import { QuantityStepper } from '@/features/common/QuantityStepper'
+import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -143,13 +145,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
 
 	return (
-		<Pressable
-			style={[styles.card, { backgroundColor: colors.background }, style]}
-			onPress={handleProductPress}
-			accessibilityRole={Platform.OS === 'web' ? undefined : 'button'}
-			accessibilityLabel={mainName}
-			testID={`feed-product-card-${item._id}`}
-		>
+		<View style={[styles.card, { backgroundColor: colors.background }, style]} testID={`feed-product-card-${item._id}`}>
 			{/* Background image */}
 			<View style={styles.bgImageContainer}>
 				<SmartImage source={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" entityType="product" />
@@ -226,9 +222,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 				{/* ── Body ── */}
 				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 					<View style={styles.bodyTop}>
-						<Text style={styles.productName} numberOfLines={2}>
-							{mainName}
-						</Text>
+						<ProductNameWithThumbnailBlock name={mainName} imageUrl={imageUrl} onPress={handleProductPress} />
 
 						{/* Rating — always rendered for stable layout */}
 						<View style={styles.ratingRow}>
@@ -266,15 +260,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 									{singlePieceAvg != null && <Text style={[styles.weightChipText, { color: colors.primary }]}>~ {singlePieceAvg.toFixed(2)} kg/piece</Text>}
 								</View>
 								{purchaseAllowed && isActive && !isOutOfStock && (
-									<View style={styles.qtyControl}>
-										<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-											<MaterialIcons name="remove" size={16} color={themeColors.buttonText} />
-										</TouchableOpacity>
-										<Text style={styles.qtyValue}>{quantity}</Text>
-										<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-											<MaterialIcons name="add" size={16} color={themeColors.buttonText} />
-										</TouchableOpacity>
-									</View>
+									<QuantityStepper value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
 								)}
 							</View>
 							{(item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
@@ -336,7 +322,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 					</View>
 				)}
 			</View>
-		</Pressable>
+		</View>
 	)
 })
 
@@ -531,31 +517,7 @@ const styles = StyleSheet.create({
 		fontWeight: '500',
 		color: themeColors.buttonText40
 	},
-	qtyControl: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: themeColors.background95,
-		borderRadius: 14,
-		borderWidth: 1.5,
-		borderColor: themeColors.primary,
-		padding: 3
-	},
-	qtyBtn: {
-		width: 32,
-		height: 32,
-		borderRadius: 10,
-		backgroundColor: themeColors.buttonText10,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	qtyValue: {
-		fontSize: 15,
-		fontWeight: '800',
-		color: themeColors.buttonText,
-		minWidth: 32,
-		textAlign: 'center',
-		marginHorizontal: 4
-	},
+
 	cartBtn: {
 		width: 36,
 		height: 36,

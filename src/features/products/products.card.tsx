@@ -11,6 +11,8 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
+import { QuantityStepper } from '@/features/common/QuantityStepper'
+import ProductNameWithThumbnailBlock from './blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -231,9 +233,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 				{/* ── Body ── */}
 				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 					<View style={styles.bodyTop}>
-						<Text style={styles.productName} numberOfLines={2}>
-							{mainName}
-						</Text>
+						<ProductNameWithThumbnailBlock name={mainName} imageUrl={imageUrl} onPress={handleProductPress} />
 
 						{/* Rating — always rendered for stable layout */}
 						<View style={styles.ratingRow}>
@@ -271,15 +271,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 									{singlePieceAvg != null && <Text style={[styles.weightChipText, { color: colors.primary }]}>~ {singlePieceAvg.toFixed(2)} kg/piece</Text>}
 								</View>
 								{purchaseAllowed && isActive && !isOutOfStock && (
-									<View style={styles.qtyControl}>
-										<TouchableOpacity onPress={decrement} style={styles.qtyBtn} activeOpacity={0.7}>
-											<MaterialIcons name="remove" size={16} color={themeColors.buttonText} />
-										</TouchableOpacity>
-										<Text style={styles.qtyValue}>{quantity}</Text>
-										<TouchableOpacity onPress={increment} style={styles.qtyBtn} activeOpacity={0.7}>
-											<MaterialIcons name="add" size={16} color={themeColors.buttonText} />
-										</TouchableOpacity>
-									</View>
+									<QuantityStepper value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
 								)}
 							</View>
 							{(item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
@@ -555,31 +547,7 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		marginTop: 8
 	},
-	qtyControl: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		backgroundColor: themeColors.background95,
-		borderRadius: 14,
-		borderWidth: 1.5,
-		borderColor: themeColors.primary,
-		padding: 3
-	},
-	qtyBtn: {
-		width: 32,
-		height: 32,
-		borderRadius: 10,
-		backgroundColor: themeColors.buttonText10,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	qtyValue: {
-		fontSize: 15,
-		fontWeight: '800',
-		color: themeColors.buttonText,
-		minWidth: 32,
-		textAlign: 'center',
-		marginHorizontal: 4
-	},
+
 	actionsColumn: {
 		alignItems: 'flex-end',
 		gap: 4
