@@ -17,7 +17,7 @@ export default function HomeLayout() {
 	const insets = useSafeAreaInsets()
 	useBackButton()
 	const isAuthenticated = !!user
-	const isDashboardVisible = isAuthenticated && user?.role === 'business_owner'
+	const isDashboardVisible = isAuthenticated
 	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0)
 	const barWidth = activeTabsCount * 56
 

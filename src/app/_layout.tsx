@@ -149,17 +149,10 @@ function RootLayoutContent() {
 	}
 
 	const isAuthenticated = !!user
-	const isBusinessOwner = user?.role === 'business_owner'
 	const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
 
 	if (isRestrictedRoute) {
-		if (pathname.startsWith('/dashboard')) {
-			if (!isAuthenticated) {
-				return <Redirect href="/auth" />
-			} else if (!isBusinessOwner) {
-				return <Redirect href="/feed" />
-			}
-		} else if (!isAuthenticated) {
+		if (!isAuthenticated) {
 			return <Redirect href="/auth" />
 		}
 	}
