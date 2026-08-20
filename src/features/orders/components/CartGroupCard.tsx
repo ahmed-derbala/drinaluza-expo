@@ -7,7 +7,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { FeedItem } from '@/features/feed/feed.interface'
 
 export type CartItem = FeedItem & { quantity: number }
@@ -89,7 +89,7 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 										}
 									}}
 								>
-									<SmartImage source={img} style={styles.productThumb} entityType="product" />
+									<SmartMediaView media={img} style={styles.productThumb} />
 								</TouchableOpacity>
 								<View style={styles.itemDetails}>
 									<View style={styles.itemHeader}>

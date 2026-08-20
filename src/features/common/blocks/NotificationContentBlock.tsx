@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 
 const IMAGE_SIZE = 40
 const TITLE_NUMBER_OF_LINES = 1
@@ -26,7 +26,7 @@ export default function NotificationContentBlock({ imageUrl, title, content }: N
 
 	return (
 		<View style={styles.container}>
-			{imageUrl ? <SmartImage source={imageUrl} entityType="user" style={styles.image} containerStyle={[styles.imageContainer, { backgroundColor: colors.surface }]} /> : null}
+			{imageUrl ? <SmartMediaView media={imageUrl} style={styles.image} containerStyle={[styles.imageContainer, { backgroundColor: colors.surface }]} /> : null}
 
 			<View style={styles.textContainer}>
 				{typeof title === 'string' ? (

@@ -4,7 +4,7 @@ trigger: always_on
 
 # general rules
 
-## backend (./drinaluza-expressjs)
+## backend (./drinaluza-expressjs/)
 - do not edit the backend project 
 - you can read only the backend project
 

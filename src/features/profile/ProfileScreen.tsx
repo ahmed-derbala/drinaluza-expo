@@ -17,7 +17,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@/core/smart-media'
 import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
@@ -29,7 +29,6 @@ import { CenteredModal } from '@/core/smart-modal'
 import { requestBusiness } from '@/features/businesses/business.api'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import { uploadFile } from '@/core/file'
 import { log } from '@/core/log'
 
 import { UserData } from '@/features/profile/profile.interface'
@@ -65,7 +64,6 @@ export default function ProfileScreen() {
 			data.basicInfos.birthDate = new Date(data.basicInfos.birthDate)
 		}
 		setUserData(data)
-		setImageError(false)
 	}, [])
 
 	const [editMode, setEditMode] = useState({
@@ -84,8 +82,6 @@ export default function ProfileScreen() {
 	const [showSwitchAccountModal, setShowSwitchAccountModal] = useState(false)
 	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [businessLoading, setBusinessLoading] = useState(false)
-	const [uploadingPhoto, setUploadingPhoto] = useState(false)
-	const [showUrlInput, setShowUrlInput] = useState(false)
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
 
@@ -150,9 +146,6 @@ export default function ProfileScreen() {
 						}
 					}
 					break
-				case 'photo':
-					payload = { media: userData.media }
-					break
 				default: {
 					const locationPayloadFull: any = userData.location?.sharingEnabled !== false ? { ...userData.location } : null
 					if (locationPayloadFull && 'coordinates' in locationPayloadFull && !locationPayloadFull.geo) {
@@ -191,9 +184,6 @@ export default function ProfileScreen() {
 			}
 			if (sectionKey) {
 				setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
-				if (sectionKey === 'photo') {
-					setShowUrlInput(false)
-				}
 			}
 			showAlert(translate('success', 'Success'), translate('profile_updated', 'Profile updated successfully!'))
 			await refreshUser()
@@ -209,116 +199,25 @@ export default function ProfileScreen() {
 			if (cachedProfile) {
 				applyProfileToState(cachedProfile)
 			}
-			if (section === 'photo') {
-				setShowUrlInput(false)
-			}
 		}
 		setEditMode((prev) => ({ ...prev, [section]: value }))
 	}
 
-	const handlePastePhoto = async () => {
-		const text = await Clipboard.getStringAsync()
-		if (text) {
-			updatePhotoUrl(text)
-		}
-	}
-
-	const handleUploadPhoto = async () => {
-		try {
-			// Try to dynamically import expo-document-picker
-			let DocumentPicker: any
-			try {
-				DocumentPicker = require('expo-document-picker')
-			} catch (e) {
-				showAlert('Error', 'expo-document-picker is not installed. Install it to enable photo upload.')
-				return
-			}
-
-			const result = await DocumentPicker.getDocumentAsync({
-				type: ['image/*'],
-				copyToCacheDirectory: true
-			})
-
-			if (result.canceled) {
-				return
-			}
-
-			const file = result.assets[0]
-			if (!file) {
-				return
-			}
-
-			setUploadingPhoto(true)
-
-			const uploadResult = await uploadFile({
-				uri: file.uri,
-				name: file.name,
-				type: file.mimeType || 'image/jpeg',
-				fileType: 'image',
-				fileObj: file, // Pass the actual file object for web
-				onProgress: (progress) => {}
-			})
-
-			if (uploadResult.success && uploadResult.file) {
-				// Update the local state with the full file object returned by the upload API
-				setUserData((prev) => {
-					if (!prev) return null
-					return {
-						...prev,
-						media: {
-							...prev.media,
-							thumbnail: uploadResult.file
-						}
-					}
-				})
-				showAlert('Success', 'Photo uploaded successfully!')
-
-				// We need a slight delay to ensure the state is updated before saveUserData is called,
-				// or we can pass the specific payload to saveUserData or updateMyProfile directly.
-				// Since saveUserData reads from `userData`, and setState is asynchronous, we will call the API directly here for the photo update.
-				try {
-					const updatedMedia = {
-						...(userData?.media || {}),
-						thumbnail: uploadResult.file
-					}
-					const res = await updateMyProfile({ media: updatedMedia })
-					if (res?.data) {
-						applyProfileToState(res.data as UserData)
-					}
-					setEditMode((prev) => ({ ...prev, photo: false }))
-					await refreshUser()
-				} catch (e) {}
-			} else if (uploadResult.success && uploadResult.fileUrl) {
-				// Fallback if file object is not available but url is
-				updatePhotoUrl(uploadResult.fileUrl)
-				showAlert('Success', 'Photo uploaded successfully!')
-				await saveUserData('photo')
-			} else {
-				showAlert('Error', uploadResult.error || 'Failed to upload photo')
-			}
-		} catch (error: any) {
-			showAlert('Error', error.message || 'Failed to upload photo')
-		} finally {
-			setUploadingPhoto(false)
-		}
-	}
-
-	const updatePhotoUrl = (url: string) => {
+	const handleThumbnailChange = async (thumbnail: MediaFile | null) => {
 		if (!userData) return
-		setUserData((prev) => {
-			if (!prev) return null
-			return {
-				...prev,
-				media: {
-					...prev.media,
-					thumbnail: {
-						...(prev.media?.thumbnail || {}),
-						url
-					}
-				}
+		const updatedMedia = { ...userData.media, thumbnail: thumbnail ?? undefined }
+		setUserData((prev) => (prev ? { ...prev, media: updatedMedia } : prev))
+		try {
+			const res = await updateMyProfile({ media: updatedMedia } as any)
+			if (res?.data) {
+				applyProfileToState(res.data as UserData)
 			}
-		})
-		setImageError(false)
+			setEditMode((prev) => ({ ...prev, photo: false }))
+			await refreshUser()
+			showAlert('Success', 'Photo updated successfully!')
+		} catch (error: any) {
+			showAlert('Error', error.response?.data?.message || 'Failed to update photo')
+		}
 	}
 
 	const updateField = (field: string, value: any, section?: keyof UserData) => {
@@ -462,7 +361,7 @@ export default function ProfileScreen() {
 
 						<View style={styles.profileCardContent}>
 							<View style={styles.photoContainer}>
-								<SmartImage source={userData.media?.thumbnail?.url} style={styles.profilePhoto} resizeMode="cover" entityType="user" enableFullscreenPreview={true} />
+								<SmartMediaView media={userData.media?.thumbnail?.url} style={styles.profilePhoto} resizeMode="cover" enableFullscreenPreview={true} />
 								<IconButton
 									icon={editMode.photo ? 'close' : 'camera'}
 									label={editMode.photo ? translate('cancel', 'Cancel') : translate('change_profile_photo', 'Change profile photo')}
@@ -473,57 +372,14 @@ export default function ProfileScreen() {
 							</View>
 
 							{editMode.photo && (
-								<View style={styles.photoActionsPanel}>
-									<IconButton
-										icon="cloud-upload-outline"
-										label={uploadingPhoto ? translate('uploading', 'Uploading...') : translate('upload_image', 'Upload Image')}
-										onPress={handleUploadPhoto}
-										disabled={uploadingPhoto}
-										loading={uploadingPhoto}
-										style={{ backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }}
-									/>
-									<IconButton
-										icon="link-outline"
-										label={showUrlInput ? translate('hide_url', 'Hide URL') : translate('enter_url', 'Enter URL')}
-										onPress={() => setShowUrlInput(!showUrlInput)}
-										style={{ backgroundColor: colors.border + '15', borderColor: colors.border + '30' }}
-									/>
-								</View>
-							)}
-
-							{editMode.photo && showUrlInput && (
-								<View style={styles.urlInputGroup}>
-									<Text style={styles.inputLabel}>{translate('photo_url', 'Photo URL')}</Text>
-									<View style={[styles.socialInputContainer, { borderColor: colors.primary + '40', backgroundColor: colors.background }]}>
-										<TextInput
-											style={[styles.socialInput, { fontSize: 13 }]}
-											value={userData.media?.thumbnail?.url || ''}
-											onChangeText={updatePhotoUrl}
-											placeholder="https://example.com/photo.jpg"
-											placeholderTextColor={colors.textTertiary}
-											selectTextOnFocus
-										/>
-										<IconButton
-											icon="clipboard-outline"
-											label={translate('paste', 'Paste')}
-											onPress={handlePastePhoto}
-											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }}
-										/>
-										<IconButton
-											icon="save-outline"
-											label={translate('save', 'Save')}
-											onPress={() => saveUserData('photo')}
-											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20', backgroundColor: colors.primary + '10' }}
-										/>
-										<IconButton
-											icon="close-outline"
-											label={translate('cancel', 'Cancel')}
-											onPress={() => toggleEdit('photo', false)}
-											variant="danger"
-											style={{ borderLeftWidth: 1, borderRightWidth: 0, borderLeftColor: colors.border + '20' }}
-										/>
-									</View>
-								</View>
+								<SmartMediaThumbnailBlock
+									thumbnail={userData.media?.thumbnail?.url ? { _id: 'thumb', url: userData.media.thumbnail.url } : null}
+									targetModelName="users"
+									targetModelId={userData._id}
+									mediaType="image"
+									onChange={handleThumbnailChange}
+									enableFullscreenPreview={false}
+								/>
 							)}
 
 							<Text style={styles.profileFullName}>{localize(userData.name) || 'User'}</Text>
@@ -1218,34 +1074,6 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			alignItems: 'center',
 			borderWidth: 3,
 			borderColor: colors.background
-		},
-		photoActionsPanel: {
-			flexDirection: 'row',
-			justifyContent: 'center',
-			gap: 12,
-			width: '100%',
-			marginBottom: 16,
-			paddingHorizontal: 20
-		},
-		photoPanelButton: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			justifyContent: 'center',
-			gap: 8,
-			flex: 1,
-			paddingVertical: 10,
-			borderRadius: 12,
-			borderWidth: 1,
-			minHeight: 40
-		},
-		photoPanelButtonText: {
-			fontSize: 13,
-			fontWeight: '600'
-		},
-		urlInputGroup: {
-			width: '100%',
-			marginBottom: 16,
-			paddingHorizontal: 20
 		},
 		profileFullName: {
 			fontSize: 22,

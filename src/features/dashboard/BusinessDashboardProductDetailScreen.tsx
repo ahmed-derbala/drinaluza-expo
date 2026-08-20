@@ -15,11 +15,10 @@ import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import ErrorState from '@/features/common/ErrorState'
 import Spinner from '@/features/common/Spinner'
 import { SmartHeader } from '@/core/smart-header'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView, SmartMediaGalleryCard, deleteMediaFile } from '@/core/smart-media'
 import StateBadge from '@/features/common/StateBadge'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
-import { uploadFile } from '@/core/file'
 import { parseError } from '@/core/helpers/errorHandler'
 import { LinearGradient } from 'expo-linear-gradient'
 
@@ -63,7 +62,7 @@ export default function BusinessDashboardProductDetailScreen() {
 	const [stockQuantity, setStockQuantity] = useState('0')
 	const [minThreshold, setMinThreshold] = useState('5')
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
-	const [uploadingPhoto, setUploadingPhoto] = useState(false)
+	const [removedFiles, setRemovedFiles] = useState<FileRef[]>([])
 
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
@@ -344,87 +343,20 @@ export default function BusinessDashboardProductDetailScreen() {
 		setEditMode((prev) => ({ ...prev, specs: false }))
 	}
 
-	const handleUploadPhoto = async () => {
-		try {
-			let DocumentPicker: any
-			try {
-				DocumentPicker = require('expo-document-picker')
-			} catch (e) {
-				toast.show({ title: translate('error', 'Error'), content: translate('err_no_doc_picker', 'Document picker is not available.'), borderColor: colors.error })
-				return
-			}
-
-			const remainingSlots = 5 - uploadedGallery.length
-			if (remainingSlots <= 0) {
-				toast.show({ title: translate('limit_reached', 'Limit Reached'), content: translate('err_max_photos', 'You can upload up to 5 photos.'), borderColor: colors.warning })
-				return
-			}
-
-			const result = await DocumentPicker.getDocumentAsync({
-				type: ['image/*'],
-				copyToCacheDirectory: true,
-				multiple: true
-			})
-
-			if (result.canceled) return
-
-			const assets = result.assets || []
-			if (assets.length === 0) return
-
-			let filesToUpload = assets.slice(0, remainingSlots)
-			if (assets.length > remainingSlots) {
-				toast.show({
-					title: translate('limit_notice', 'Limit Notice'),
-					content: translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)),
-					borderColor: colors.warning
-				})
-			}
-
-			setUploadingPhoto(true)
-			const uploadedFiles: FileRef[] = []
-
-			for (const file of filesToUpload) {
-				const uploadResult = await uploadFile({
-					uri: file.uri,
-					name: file.name,
-					type: file.mimeType || 'image/jpeg',
-					fileType: 'image',
-					fileObj: file
-				})
-
-				if (uploadResult.success && (uploadResult.file || uploadResult.fileUrl)) {
-					const fileData = uploadResult.file
-					const newFile: FileRef = {
-						_id: uploadResult.fileId || fileData?._id || '',
-						name: fileData?.name || file.name,
-						extension: fileData?.extension || file.name.substring(file.name.lastIndexOf('.')),
-						url: uploadResult.fileUrl || fileData?.url || '',
-						encoding: fileData?.encoding,
-						mimetype: fileData?.mimetype || file.mimeType || 'image/jpeg',
-						size: fileData?.size || file.size,
-						updatedAt: fileData?.updatedAt || new Date().toISOString(),
-						createdAt: fileData?.createdAt || new Date().toISOString()
-					}
-					uploadedFiles.push(newFile)
-				} else {
-					toast.show({ title: translate('error', 'Error'), content: (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`, borderColor: colors.error })
-				}
-			}
-
-			if (uploadedFiles.length > 0) {
-				setUploadedGallery((prev) => [...prev, ...uploadedFiles])
-				toast.show({ title: translate('success', 'Success'), content: translate('photo_uploaded', 'Photos uploaded successfully!'), borderColor: colors.success })
-			}
-		} catch (error: any) {
-			toast.show({ title: translate('error', 'Error'), content: error.message || translate('failed_to_upload', 'Failed to upload photo'), borderColor: colors.error })
-		} finally {
-			setUploadingPhoto(false)
+	const handleRemoveGalleryItem = (item: FileRef) => {
+		setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))
+		if (item._id && !item._id.startsWith('pending-')) {
+			setRemovedFiles((prev) => [...prev, item])
 		}
 	}
 
 	const saveGallery = async () => {
 		try {
 			setSaving(true)
+			if (removedFiles.length > 0) {
+				await Promise.allSettled(removedFiles.map((file) => deleteMediaFile(file._id!)))
+				setRemovedFiles([])
+			}
 			const res = await updateProduct(productSlug!, {
 				media: {
 					gallery: uploadedGallery.filter((img) => img._id !== 'thumb' && img._id !== 'thumbnail')
@@ -445,6 +377,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		if (product) {
 			setUploadedGallery(product.media?.gallery || [])
 		}
+		setRemovedFiles([])
 		setEditMode((prev) => ({ ...prev, gallery: false }))
 	}
 
@@ -525,7 +458,7 @@ export default function BusinessDashboardProductDetailScreen() {
 						<LinearGradient colors={[`${colors.primary}15`, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
 						<View style={styles.heroContent}>
 							<View style={styles.avatarWrapper}>
-								<SmartImage source={imageUrl} style={styles.avatarImage} entityType="product" />
+								<SmartMediaView media={imageUrl} style={styles.avatarImage} />
 							</View>
 							<View style={styles.heroInfoText}>
 								<Text style={styles.heroTitle}>{displayTitle}</Text>
@@ -569,18 +502,24 @@ export default function BusinessDashboardProductDetailScreen() {
 
 						{/* Gallery Card */}
 						<View style={styles.sectionCard}>
-							<ProductGallerySection
-								editable={editMode.gallery && canEditProduct}
-								gallery={uploadedGallery}
-								colors={colors}
-								translate={translate}
-								onUploadPress={handleUploadPhoto}
-								onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))}
-								uploading={uploadingPhoto}
-								onEditPress={canEditProduct ? () => setEditMode((prev) => ({ ...prev, gallery: true })) : undefined}
-								onSavePress={saveGallery}
-								onCancelPress={cancelGallery}
-							/>
+							{canEditProduct ? (
+								<SmartMediaGalleryCard
+									title={translate('gallery', 'Gallery')}
+									gallery={uploadedGallery}
+									targetModelName="products"
+									targetModelId={product._id}
+									mediaType="image"
+									mode={editMode.gallery ? 'edit' : 'editable'}
+									onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
+									onSave={saveGallery}
+									onCancel={cancelGallery}
+									onChange={(next) => setUploadedGallery(next)}
+									onRemove={handleRemoveGalleryItem}
+									loading={saving}
+								/>
+							) : (
+								<ProductGallerySection editable={false} gallery={uploadedGallery} colors={colors} translate={translate} />
+							)}
 						</View>
 
 						{/* Pricing Card */}

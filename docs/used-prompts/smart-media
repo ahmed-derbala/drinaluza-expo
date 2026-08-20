@@ -1,6 +1,153 @@
-# smart media
-- SmartMedia (core/smart-media) handles all media (image, video) features (upload, download, delete,view, play, pause, gallery, carousel)
+- remove src/core/SmartImageViewer/
+- remove src/core/file/
+# smart-media
+- SmartMedia (core/smart-media) handles all media (image, video) features (upload, download, delete, view, play, pause, resume)
 - every feature should be on its own file or function
+- use default packages like expo-image and expo-video
+- these constants are defined in backend:
+export const ALLOWED_IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.webp','.heic','.heif']
+export const ALLOWED_IMAGE_MIME_TYPES = ['image/jpg','image/jpeg','image/png', 'image/webp', 'image/heic','image/heif']
 
-## smart media upload
-- 
+export const ALLOWED_VIDEO_EXTENSIONS = ['.mp4', ,'.webm','.mov']
+export const ALLOWED_VIDEO_MIME_TYPES = ['video/mp4', 'video/webm', 'video/quicktime']
+
+export const ALLOWED_EXTENSIONS = [...ALLOWED_IMAGE_EXTENSIONS,...ALLOWED_VIDEO_EXTENSIONS]
+export const ALLOWED_MIME_TYPES = [...ALLOWED_IMAGE_MIME_TYPES,...ALLOWED_VIDEO_MIME_TYPES]
+
+export const MAX_FILE_SIZE = 20 * 1024 * 1024 // 20MB
+export const MAX_FILE_COUNT = 5
+
+
+## smart-media-upload
+- thumbnail :(body formdata, single file) is for user profile image, product thumbnail, business logo, ...    
+- gallery :(body formdata, multiple files) is for product gallery, business gallery, ...
+- targetModelName: (body formdata, text) users, products, businesses, default-products
+- targetModelId: (body formdata, text) user._id, product._id, business._id
+- despite MAX_FILE_COUNT = 5 media.gallery can have more than 5 files, disable upload when  gallery.length > 5 but always display all gallery files 
+- use POST /api/files/upload to uplaod files
+example responce:
+{
+    "level": "verbose",
+    "status": 200,
+    "message": "Files uploaded successfully",
+    "data": [
+        {
+            "user": {
+                "_id": "6a7a5cd885c06243ab2e3e21",
+                "slug": "ahmed",
+                "name": {
+                    "en": "Ahmed Derbala",
+                    "tn_latn": "Ahmed Derbala",
+                    "tn_arab": "Ahmed Derbala"
+                },
+                "role": "business_owner"
+            },
+            "originalname": "crab.jpg",
+            "url": "https://res.cloudinary.com/dyhvqubig/image/upload/v1786822272/uploads/syuu5sifhufjfp2mqurr.jpg",
+            "mimetype": "image/jpeg",
+            "size": 89129,
+            "targetModels": [
+                {
+                    "targetModelName": "users",
+                    "targetModelId": "6a7a5cd985c06243ab2e3e42",
+                    "targetModelMediaField": "thumbnail"
+                }
+            ],
+            "_id": "6a80be81d22dd047d8e23d81",
+            "createdAt": "2026-08-15T19:31:13.736Z",
+            "updatedAt": "2026-08-15T19:31:13.736Z",
+        },
+        {
+            "user": {
+                "_id": "6a7a5cd885c06243ab2e3e21",
+                "slug": "ahmed",
+                "name": {
+                    "en": "Ahmed Derbala",
+                    "tn_latn": "Ahmed Derbala",
+                    "tn_arab": "Ahmed Derbala"
+                },
+                "role": "business_owner"
+            },
+            "originalname": "dar_lhout_jbeniana.jpg",
+            "url": "https://res.cloudinary.com/dyhvqubig/image/upload/v1786822271/uploads/wwicjkod9qrykozljzr5.jpg",
+            "mimetype": "image/jpeg",
+            "size": 101075,
+            "targetModels": [
+                {
+                    "targetModelName": "users",
+                    "targetModelId": "6a7a5cd985c06243ab2e3e42",
+                    "targetModelMediaField": "gallery"
+                }
+            ],
+            "_id": "6a80be81d22dd047d8e23d82",
+            "createdAt": "2026-08-15T19:31:13.739Z",
+            "updatedAt": "2026-08-15T19:31:13.739Z",
+        },
+        {
+            "user": {
+                "_id": "6a7a5cd885c06243ab2e3e21",
+                "slug": "ahmed",
+                "name": {
+                    "en": "Ahmed Derbala",
+                    "tn_latn": "Ahmed Derbala",
+                    "tn_arab": "Ahmed Derbala"
+                },
+                "role": "business_owner"
+            },
+            "originalname": "drayen_ellouza_logo.jpg",
+            "url": "https://res.cloudinary.com/dyhvqubig/image/upload/v1786822273/uploads/d7hbiqluh0lyksjgcini.jpg",
+            "mimetype": "image/jpeg",
+            "size": 158473,
+            "targetModels": [
+                {
+                    "targetModelName": "users",
+                    "targetModelId": "6a7a5cd985c06243ab2e3e42",
+                    "targetModelMediaField": "gallery"
+                }
+            ],
+            "_id": "6a80be81d22dd047d8e23d83",
+            "createdAt": "2026-08-15T19:31:13.743Z",
+            "updatedAt": "2026-08-15T19:31:13.743Z",
+        }
+    ]
+}
+
+
+## smart-media-view
+- models like users, products, businesses have .media field . example
+  "media": {
+    "gallery": [File],
+    "thumbnail": File
+}   
+- use url field to display or play the media file
+- show Spinner when loading
+- show assets/images/no_media.png if no file
+- use core/cache/ for caching
+
+## smart-media-delete
+- use the api DELETE /api/files/:fileId
+example responce
+{
+    "level": "verbose",
+    "status": 200,
+    "message": "file deleted",
+    "data": null
+}
+
+## smart-media-carousel
+- display media.thumbnail plus media.gallery
+
+## smart-media-gallery-card
+- an editable gallery card based on BaseCard
+
+## smart-media-thumbnail-block
+- display media.thumbnail with an upload button
+- media thumbnail block can be used in:
+    - profile screen (edit profile photo)
+    - create and edit business screens
+    - create and edit product screens
+- it supports:
+    - upload file
+    - copy current file url
+    - paste a valid url
+    - remove current file

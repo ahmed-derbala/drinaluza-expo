@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWind
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
 import { toast } from '@/features/common/Toast'
@@ -51,7 +51,7 @@ const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDec
 
 	return (
 		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.info }]}>
-			<SmartImage source={getImageUrl()} style={styles.productImage} entityType="product" />
+			<SmartMediaView media={getImageUrl()} style={styles.productImage} />
 			<View style={styles.productDetails}>
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
 					{localize(product.product.name)}

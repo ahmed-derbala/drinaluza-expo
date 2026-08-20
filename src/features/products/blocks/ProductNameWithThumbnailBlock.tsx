@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { MaterialIcons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 
@@ -34,7 +34,7 @@ export function ProductNameWithThumbnailBlock({ name, imageUrl, onPress, thumbna
 		>
 			<View style={[styles.thumbnailWrap, { width: thumbnailSize, height: thumbnailSize, borderRadius: radius }]}>
 				{imageUrl ? (
-					<SmartImage source={imageUrl} style={[styles.thumbnailImg, { borderRadius: radius }]} resizeMode="cover" entityType="product" />
+					<SmartMediaView media={imageUrl} style={[styles.thumbnailImg, { borderRadius: radius }]} resizeMode="cover" />
 				) : (
 					<View style={[styles.fallbackIconWrap, { borderRadius: radius }]}>
 						<MaterialIcons name="shopping-bag" size={thumbnailSize * 0.5} color={themeColors.primary} />

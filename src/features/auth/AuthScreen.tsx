@@ -11,7 +11,7 @@ import { clearMemoryCache } from '@/core/cache'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import Spinner from '@/features/common/Spinner'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import { EyeButton } from '@/features/common/buttons/EyeButton'
 import { SmartHeader } from '@/core/smart-header'
@@ -350,7 +350,7 @@ const AuthForm = React.memo(
 									<View key={account.slug} style={[S.accountRow, isActive && S.accountRowActive]}>
 										<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to ${account.slug}`}>
 											<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
-												<SmartImage source={account.photoUrl} style={S.accountAvatarImg} entityType="user" />
+												<SmartMediaView media={account.photoUrl} style={S.accountAvatarImg} />
 											</View>
 											<View style={S.accountInfo}>
 												<Text style={[S.accountSlug, isActive && S.accountSlugActive]} numberOfLines={1}>

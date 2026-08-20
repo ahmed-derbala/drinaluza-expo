@@ -26,7 +26,7 @@ import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabe
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, themeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
@@ -63,7 +63,7 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 			onPress={handlePress}
 		>
 			<View style={styles.productImageContainer}>
-				<SmartImage source={imageUrl} style={styles.productImage} resizeMode="cover" entityType="product" />
+				<SmartMediaView media={imageUrl} style={styles.productImage} resizeMode="cover" />
 				{isOutOfStock && (
 					<View style={[styles.outOfStockBadge, { backgroundColor: colors.error + '25', borderColor: colors.error + '40' }]}>
 						<Text style={[styles.outOfStockText, { color: colors.error }]}>{translate('out_of_stock', 'Out of Stock')}</Text>
@@ -280,7 +280,7 @@ export default function BusinessDetailsScreen() {
 
 					<View style={styles.infoCardContent}>
 						<View style={styles.logoContainer}>
-							<SmartImage source={business.media?.thumbnail?.url} style={styles.businessLogo} resizeMode="cover" entityType="business" enableFullscreenPreview={true} />
+							<SmartMediaView media={business.media?.thumbnail?.url} style={styles.businessLogo} resizeMode="cover" enableFullscreenPreview={true} />
 						</View>
 
 						<View style={styles.brandingHeader}>
@@ -324,7 +324,7 @@ export default function BusinessDetailsScreen() {
 									activeOpacity={0.7}
 								>
 									{ownerPhoto ? (
-										<SmartImage source={ownerPhoto} style={styles.ownerAvatar} resizeMode="cover" entityType="user" />
+										<SmartMediaView media={ownerPhoto} style={styles.ownerAvatar} resizeMode="cover" />
 									) : (
 										<View style={[styles.ownerAvatarFallback, { backgroundColor: colors.primary + '15' }]}>
 											<Ionicons name="person" size={16} color={colors.primary} />

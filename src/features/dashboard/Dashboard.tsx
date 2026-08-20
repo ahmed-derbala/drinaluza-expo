@@ -12,7 +12,7 @@ import { useTheme } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { useDashboardProfiles } from './useDashboardProfiles'
 import { useBusinessDashboard } from './useBusinessDashboard'
 import { getBusinessCustomers } from '@/features/businesses/businesses.api'
@@ -206,7 +206,7 @@ const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardPro
 										]}
 									>
 										{thumb ? (
-											<SmartImage source={thumb} style={styles.profileAvatar} entityType="business" />
+											<SmartMediaView media={thumb} style={styles.profileAvatar} />
 										) : (
 											<View style={[styles.profileAvatar, styles.profileAvatarFallback, { backgroundColor: `${colors.primary}20` }]}>
 												<MaterialIcons name={profile.kind === 'personal' ? 'person' : 'store'} size={20} color={colors.primary} />
@@ -341,7 +341,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 	return (
 		<>
 			<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-				<SmartImage source={business.media?.thumbnail?.url} style={styles.heroThumbnail} entityType="business" />
+				<SmartMediaView media={business.media?.thumbnail?.url} style={styles.heroThumbnail} />
 				<View style={styles.heroInfo}>
 					<View style={[styles.kindBadge, { backgroundColor: `${colors.primary}25` }]}>
 						<MaterialIcons name="store" size={14} color={colors.primary} />
@@ -400,7 +400,7 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 								onPress={() => router.push(`/dashboard/${business.slug}/sales?customerSlug=${customer.slug}` as never)}
 								style={[styles.customerChip, { backgroundColor: colors.background, borderColor: colors.border }]}
 							>
-								<SmartImage source={thumb} style={styles.customerAvatar} entityType="user" />
+								<SmartMediaView media={thumb} style={styles.customerAvatar} />
 								<View style={styles.customerChipText}>
 									<Text style={[styles.customerNameText, { color: colors.text }]} numberOfLines={2}>
 										{localize(customer.name)}
@@ -430,7 +430,6 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				rightItems={data.topProducts.viewed}
 				styles={styles}
 				colors={colors}
-				entityType="product"
 				emptyHint={translate('dashboard.no_products_yet', 'No product data yet')}
 			/>
 
@@ -442,7 +441,6 @@ const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, ref
 				rightItems={data.topCustomers.new}
 				styles={styles}
 				colors={colors}
-				entityType="user"
 				emptyHint={translate('dashboard.no_customers_yet', 'No customer data yet')}
 			/>
 		</>
@@ -503,11 +501,10 @@ type RankPairSectionProps = {
 	rightItems: DashboardRankItem[]
 	styles: ReturnType<typeof createStyles>
 	colors: ThemeColors
-	entityType: 'business' | 'product' | 'user'
 	emptyHint: string
 }
 
-const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, styles, colors, entityType, emptyHint }: RankPairSectionProps) => {
+const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, styles, colors, emptyHint }: RankPairSectionProps) => {
 	const { localize } = useUser()
 
 	const renderList = (items: DashboardRankItem[], listTitle: string) => (
@@ -519,16 +516,7 @@ const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, 
 				items
 					.slice(0, 5)
 					.map((item, index) => (
-						<RankRow
-							key={item._id || `${listTitle}-${index}`}
-							item={item}
-							index={index}
-							localize={localize}
-							styles={styles}
-							colors={colors}
-							entityType={entityType}
-							isLast={index === Math.min(items.length, 5) - 1}
-						/>
+						<RankRow key={item._id || `${listTitle}-${index}`} item={item} index={index} localize={localize} styles={styles} colors={colors} isLast={index === Math.min(items.length, 5) - 1} />
 					))
 			)}
 		</View>
@@ -550,11 +538,10 @@ type RankRowProps = {
 	localize: (name?: LocalizedName) => string
 	styles: ReturnType<typeof createStyles>
 	colors: ThemeColors
-	entityType: 'business' | 'product' | 'user'
 	isLast: boolean
 }
 
-const RankRow = ({ item, localize, styles, colors, entityType, isLast, index }: RankRowProps & { index?: number }) => {
+const RankRow = ({ item, localize, styles, colors, isLast, index }: RankRowProps & { index?: number }) => {
 	const label = item.name ? localize(item.name) : item.slug || '—'
 	const metric = item.count ?? item.views
 	const medal = index !== undefined && index < 3 ? MEDALS[index] : undefined
@@ -562,7 +549,7 @@ const RankRow = ({ item, localize, styles, colors, entityType, isLast, index }: 
 	return (
 		<View style={[styles.rankRow, { borderColor: `${colors.border}60` }, isLast && { borderBottomWidth: 0 }]}>
 			{medal ? <Text style={{ fontSize: 16, marginRight: -2 }}>{medal}</Text> : null}
-			<SmartImage source={item.media?.thumbnail?.url} style={styles.rankAvatar} entityType={entityType} />
+			<SmartMediaView media={item.media?.thumbnail?.url} style={styles.rankAvatar} />
 			<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
 				{label}
 			</Text>

@@ -12,13 +12,12 @@ import { getMyBusinesses } from '@/features/businesses/businesses.api'
 import { Business } from '@/features/businesses/businesses.interface'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView, SmartMediaThumbnailBlock, isDeferredMediaFile, uploadThumbnail, MAX_FILE_COUNT, pickMediaFiles, uploadGallery, type UploadMediaFile, type MediaFile } from '@/core/smart-media'
 import { toast } from '@/features/common/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { showAlert } from '@/core/helpers/popup'
 import { log } from '@/core/log'
-import { uploadFile } from '@/core/file'
 
 // Import the reusable section components
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
@@ -26,6 +25,8 @@ import ProductPricingSection from '@/features/products/common/ProductPricingSect
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
+
+type PickedFileRef = FileRef & { pickedFile?: UploadMediaFile }
 
 export default function CreateProductScreen() {
 	const { businessSlug, businessId } = useLocalSearchParams<{ businessSlug?: string; businessId?: string }>()
@@ -56,7 +57,8 @@ export default function CreateProductScreen() {
 	// Inventory
 	const [stockQuantity, setStockQuantity] = useState('100')
 	const [minThreshold, setMinThreshold] = useState('10')
-	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
+	const [uploadedGallery, setUploadedGallery] = useState<PickedFileRef[]>([])
+	const [thumbnail, setThumbnail] = useState<MediaFile | null>(null)
 
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
@@ -134,9 +136,7 @@ export default function CreateProductScreen() {
 		setProductNameEn(product.name?.en || '')
 		setProductNameTnLatn(product.name?.tn_latn || '')
 		setProductNameTnArab(product.name?.tn_arab || '')
-		if (product.media?.thumbnail?.url) {
-			setUploadedGallery([{ _id: 'thumb', url: product.media.thumbnail.url }])
-		}
+		setThumbnail(product.media?.thumbnail?.url ? { _id: 'thumb', url: product.media.thumbnail.url } : null)
 		setShowDefaultProducts(false)
 	}
 
@@ -146,73 +146,28 @@ export default function CreateProductScreen() {
 
 	const handleUploadPhoto = async () => {
 		try {
-			let DocumentPicker: any
-			try {
-				DocumentPicker = require('expo-document-picker')
-			} catch (e) {
-				showAlert(translate('error', 'Error'), translate('err_no_doc_picker', 'Document picker is not available.'))
-				return
-			}
-
-			const remainingSlots = 5 - uploadedGallery.length
+			const remainingSlots = Math.max(0, MAX_FILE_COUNT - uploadedGallery.length)
 			if (remainingSlots <= 0) {
 				showAlert(translate('limit_reached', 'Limit Reached'), translate('err_max_photos', 'You can upload up to 5 photos.'))
 				return
 			}
 
-			const result = await DocumentPicker.getDocumentAsync({
-				type: ['image/*'],
-				copyToCacheDirectory: true,
-				multiple: true
-			})
-
-			if (result.canceled) return
-
-			const assets = result.assets || []
-			if (assets.length === 0) return
-
-			let filesToUpload = assets.slice(0, remainingSlots)
-			if (assets.length > remainingSlots) {
-				showAlert(translate('limit_notice', 'Limit Notice'), translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)))
-			}
+			const picked = await pickMediaFiles({ mediaType: 'image', multiple: true, maxCount: remainingSlots })
+			if (picked.length === 0) return
 
 			setUploadingPhoto(true)
-			const uploadedFiles: FileRef[] = []
-
-			for (const file of filesToUpload) {
-				const uploadResult = await uploadFile({
-					uri: file.uri,
-					name: file.name,
-					type: file.mimeType || 'image/jpeg',
-					fileType: 'image',
-					fileObj: file
-				})
-
-				if (uploadResult.success && (uploadResult.file || uploadResult.fileUrl)) {
-					const fileData = uploadResult.file
-					const newFile: FileRef = {
-						_id: uploadResult.fileId || fileData?._id || '',
-						name: fileData?.name || file.name,
-						extension: fileData?.extension || file.name.substring(file.name.lastIndexOf('.')),
-						url: uploadResult.fileUrl || fileData?.url || '',
-						encoding: fileData?.encoding,
-						mimetype: fileData?.mimetype || file.mimeType || 'image/jpeg',
-						size: fileData?.size || file.size,
-						updatedAt: fileData?.updatedAt || new Date().toISOString(),
-						createdAt: fileData?.createdAt || new Date().toISOString()
-					}
-					uploadedFiles.push(newFile)
-				} else {
-					showAlert(translate('error', 'Error'), (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`)
-				}
-			}
-
-			if (uploadedFiles.length > 0) {
-				setUploadedGallery((prev) => [...prev, ...uploadedFiles])
-				showAlert(translate('success', 'Success'), translate('photo_uploaded', 'Photos uploaded successfully!'))
-			}
+			const entries: PickedFileRef[] = picked.map((file, index) => ({
+				_id: `pending-${Date.now()}-${index}`,
+				name: file.name,
+				extension: file.name.split('.').pop(),
+				url: file.uri,
+				mimetype: file.mimeType,
+				size: file.size,
+				pickedFile: file
+			}))
+			setUploadedGallery((prev) => [...prev, ...entries])
 		} catch (error: any) {
-			console.error('Error uploading photo:', error)
+			console.error('Error picking photos:', error)
 			showAlert(translate('error', 'Error'), error.message || translate('upload_failed', 'Failed to upload photo'))
 		} finally {
 			setUploadingPhoto(false)
@@ -293,8 +248,8 @@ export default function CreateProductScreen() {
 				stock: stockQuantity ? { quantity: parseInt(stockQuantity), minThreshold: parseInt(minThreshold) } : undefined,
 				availability: { startDate: new Date().toISOString(), endDate: null },
 				media: {
-					thumbnail: selectedDefaultProduct?.media?.thumbnail ? { url: selectedDefaultProduct.media.thumbnail.url } : undefined,
-					gallery: uploadedGallery.filter((img) => img._id !== 'thumb')
+					thumbnail: thumbnail && !isDeferredMediaFile(thumbnail) ? { url: thumbnail.url } : undefined,
+					gallery: uploadedGallery.filter((img) => !img.pickedFile)
 				},
 				specs: {
 					caliber,
@@ -310,8 +265,17 @@ export default function CreateProductScreen() {
 				state: { code: 'active' }
 			}
 
-			await createProduct(productData)
+			const created = await createProduct(productData)
 			log({ level: 'info', label: 'CreateProductScreen', message: 'Product created successfully', data: productData })
+
+			const pendingFiles = uploadedGallery.map((item) => item.pickedFile).filter((file): file is UploadMediaFile => Boolean(file))
+			if (pendingFiles.length > 0) {
+				await uploadGallery({ targetModelName: 'products', targetModelId: created.data._id, files: pendingFiles })
+			}
+			if (thumbnail && isDeferredMediaFile(thumbnail)) {
+				await uploadThumbnail({ targetModelName: 'products', targetModelId: created.data._id, file: thumbnail.pickedFile })
+			}
+
 			toast.show({ title: translate('success', 'Success'), content: translate('product_created_success', 'Product created successfully!'), borderColor: colors.success })
 			router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
 		} catch (error: any) {
@@ -372,7 +336,7 @@ export default function CreateProductScreen() {
 							</Text>
 							<TouchableOpacity style={[styles.pickerButton, selectedDefaultProduct && styles.pickerButtonActive]} onPress={() => setShowDefaultProducts(true)}>
 								<View style={[styles.pickerIcon, { backgroundColor: colors.primary + '15', overflow: 'hidden' }]}>
-									<SmartImage source={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" entityType="product" />
+									<SmartMediaView media={selectedDefaultProduct?.media?.thumbnail?.url} style={{ width: '100%', height: '100%' }} resizeMode="cover" />
 								</View>
 								<View style={{ flex: 1 }}>
 									<Text style={[styles.pickerText, selectedDefaultProduct && { color: colors.text }]}>
@@ -382,6 +346,12 @@ export default function CreateProductScreen() {
 								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
 							</TouchableOpacity>
 						</View>
+					</View>
+
+					{/* Thumbnail Card */}
+					<View style={styles.card}>
+						<Text style={styles.cardTitle}>{translate('thumbnail', 'Thumbnail')}</Text>
+						<SmartMediaThumbnailBlock thumbnail={thumbnail} targetModelName="products" mediaType="image" deferUpload onChange={setThumbnail} />
 					</View>
 
 					{/* Gallery Card */}
@@ -516,7 +486,7 @@ export default function CreateProductScreen() {
 				renderItem={(item, isSelected) => (
 					<View style={[styles.listItem, { borderBottomColor: colors.border }]}>
 						<View style={styles.listThumbContainer}>
-							<SmartImage source={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" entityType="product" />
+							<SmartMediaView media={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" />
 						</View>
 
 						{isSelected && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}

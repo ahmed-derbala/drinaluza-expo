@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, type StyleProp, type ViewStyle } from 'react-native'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { getCaliberIconSize, getCaliberFontSize, getHarvestIcon } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -148,7 +148,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		<View style={[styles.card, { backgroundColor: colors.background }, style]} testID={`feed-product-card-${item._id}`}>
 			{/* Background image */}
 			<View style={styles.bgImageContainer}>
-				<SmartImage source={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" entityType="product" />
+				<SmartMediaView media={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" />
 			</View>
 
 			{/* Gradient overlay for text readability */}
@@ -165,7 +165,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 				<View style={styles.bizRow}>
 					<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
 						{item.business?.media?.thumbnail?.url ? (
-							<SmartImage source={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" entityType="business" />
+							<SmartMediaView media={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" />
 						) : (
 							<View style={styles.bizAvatarFallback}>
 								<MaterialIcons name="store" size={14} color={themeColors.primary} />
@@ -316,7 +316,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 								activeOpacity={0.8}
 								style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : themeColors.buttonText30, opacity: index === activeImageIndex ? 1 : 0.6 }]}
 							>
-								<SmartImage source={url} style={styles.previewImg} resizeMode="cover" entityType="product" />
+								<SmartMediaView media={url} style={styles.previewImg} resizeMode="cover" />
 							</TouchableOpacity>
 						))}
 					</View>

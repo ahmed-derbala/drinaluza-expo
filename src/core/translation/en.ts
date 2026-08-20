@@ -228,5 +228,6 @@ export const en = {
 	download_android_apk: 'Download Android APK',
 	gear: 'Gear',
 	gear_trap: 'Trap',
-	gear_gillnet: 'Gillnet'
+	gear_gillnet: 'Gillnet',
+	thumbnail: 'Thumbnail'
 }

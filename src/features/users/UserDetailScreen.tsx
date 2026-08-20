@@ -9,7 +9,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useUserProfile } from './useUserProfile'
 import ErrorState from '@/features/common/ErrorState'
 import Spinner from '@/features/common/Spinner'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import QRCodeModal from '@/features/common/QRCodeModal'
@@ -88,7 +88,7 @@ export default function UserDetailScreen() {
 					<LinearGradient colors={[`${colors.primary}15`, 'transparent']} style={StyleSheet.absoluteFill} />
 
 					<View style={styles.avatarContainer}>
-						<SmartImage source={user.media?.thumbnail?.url} style={styles.avatar} entityType="user" />
+						<SmartMediaView media={user.media?.thumbnail?.url} style={styles.avatar} />
 						{user.state?.code === 'active' && <View style={[styles.activeBadge, { backgroundColor: colors.success, borderColor: colors.background }]} />}
 					</View>
 

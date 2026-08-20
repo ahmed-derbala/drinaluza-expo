@@ -17,7 +17,7 @@ import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 // ─── Breakpoints ────────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 		>
 			{/* Image */}
 			<View style={cardStyles.imageWrap}>
-				<SmartImage source={imageUrl} style={cardStyles.image} resizeMode="cover" entityType="product" />
+				<SmartMediaView media={imageUrl} style={cardStyles.image} resizeMode="cover" />
 				{/* Stock badge overlay */}
 				{(isOutOfStock || isLowStock) && (
 					<View style={[cardStyles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : themeColors.background25 }]}>

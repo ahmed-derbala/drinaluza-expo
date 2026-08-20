@@ -11,14 +11,13 @@ import { Ionicons } from '@expo/vector-icons'
 import AddressForm from '@/features/common/AddressForm'
 import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView, pickSingleMediaFile, uploadThumbnail } from '@/core/smart-media'
 import StateBadge from '@/features/common/StateBadge'
 import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
 import { SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
-import { uploadFile } from '@/core/file'
 
 export default function EditBusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
@@ -68,6 +67,7 @@ export default function EditBusinessScreen() {
 	const [sharingEnabled, setSharingEnabled] = useState(false)
 	const [businessState, setBusinessState] = useState('active')
 	const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
+	const [businessId, setBusinessId] = useState<string | null>(null)
 
 	useEffect(() => {
 		if (businessSlug) {
@@ -82,6 +82,7 @@ export default function EditBusinessScreen() {
 			const res = await getBusinessBySlug(businessSlug!)
 			const biz = res.data
 
+			setBusinessId(biz._id || null)
 			setNameEn(biz.name?.en || '')
 			setNameTnLatn(biz.name?.tn_latn || '')
 			setNameTnArab(biz.name?.tn_arab || '')
@@ -150,60 +151,18 @@ export default function EditBusinessScreen() {
 
 	const handleUploadPhoto = async () => {
 		try {
-			let DocumentPicker: any
-			try {
-				DocumentPicker = require('expo-document-picker')
-			} catch (e) {
-				toast.show({ title: 'Error', content: 'expo-document-picker is not installed. Install it to enable photo upload.', borderColor: colors.error })
+			if (!businessId) {
+				toast.show({ title: 'Error', content: 'Business id is missing. Please reload the screen.', borderColor: colors.error })
 				return
 			}
 
-			const result = await DocumentPicker.getDocumentAsync({
-				type: ['image/*'],
-				copyToCacheDirectory: true
-			})
-
-			if (result.canceled) {
-				return
-			}
-
-			const file = result.assets[0]
-			if (!file) {
-				return
-			}
+			const picked = await pickSingleMediaFile({ mediaType: 'image', multiple: false })
+			if (!picked) return
 
 			setUploadingPhoto(true)
-
-			const uploadResult = await uploadFile({
-				uri: file.uri,
-				name: file.name,
-				type: file.mimeType || 'image/jpeg',
-				fileType: 'image',
-				fileObj: file,
-				onProgress: (progress) => {}
-			})
-
-			if (uploadResult.success && uploadResult.file) {
-				await updateBusiness(businessSlug!, {
-					media: {
-						thumbnail: uploadResult.file
-					}
-				})
-				setThumbnailUrl(uploadResult.file.url)
-				toast.show({ title: 'Success', content: 'Business photo updated successfully!', borderColor: colors.success })
-			} else if (uploadResult.success && uploadResult.fileUrl) {
-				await updateBusiness(businessSlug!, {
-					media: {
-						thumbnail: {
-							url: uploadResult.fileUrl
-						}
-					}
-				})
-				setThumbnailUrl(uploadResult.fileUrl)
-				toast.show({ title: 'Success', content: 'Business photo updated successfully!', borderColor: colors.success })
-			} else {
-				toast.show({ title: 'Error', content: uploadResult.error || 'Failed to upload photo', borderColor: colors.error })
-			}
+			const file = await uploadThumbnail({ targetModelName: 'businesses', targetModelId: businessId, file: picked })
+			setThumbnailUrl(file.url)
+			toast.show({ title: 'Success', content: 'Business photo updated successfully!', borderColor: colors.success })
 		} catch (error: any) {
 			toast.show({ title: 'Error', content: error.message || 'Failed to upload photo', borderColor: colors.error })
 		} finally {
@@ -364,7 +323,7 @@ export default function EditBusinessScreen() {
 						<LinearGradient colors={[themeColors.primaryContainer20, themeColors.background0]} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
 						<View style={styles.heroContent}>
 							<TouchableOpacity style={styles.avatarWrapper} onPress={handleUploadPhoto} disabled={uploadingPhoto} activeOpacity={0.8}>
-								<SmartImage source={thumbnailUrl} style={styles.avatarImage} entityType="business" />
+								<SmartMediaView media={thumbnailUrl} style={styles.avatarImage} />
 								{uploadingPhoto ? (
 									<Spinner size="small" expand={false} style={{ padding: 0 }} />
 								) : (

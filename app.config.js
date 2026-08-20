@@ -67,6 +67,7 @@ export default {
             "expo-audio",
             "expo-sharing",
             "expo-image",
+            "expo-video",
             "expo-notifications",
             [
                 "expo-build-properties",

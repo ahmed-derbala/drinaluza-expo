@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, TextStyle, ViewStyle, ImageSt
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { Business } from './businesses.interface'
 import { useRouter } from 'expo-router'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -67,7 +67,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 		<TouchableOpacity style={styles.businessCard as ViewStyle} onPress={() => handleBusinessPress(business.slug)}>
 			{/* Business Image */}
 			<View style={styles.businessImageContainer as ViewStyle}>
-				<SmartImage source={business.media?.thumbnail?.url} style={styles.businessImage as ImageStyle} resizeMode="cover" entityType="business" />
+				<SmartMediaView media={business.media?.thumbnail?.url} style={styles.businessImage as ImageStyle} resizeMode="cover" />
 			</View>
 
 			<View style={styles.businessCardContent as ViewStyle}>

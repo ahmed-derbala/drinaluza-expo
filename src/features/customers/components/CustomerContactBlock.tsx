@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { formatAddress } from '@/core/helpers/maps'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
@@ -24,10 +24,9 @@ export function CustomerContactBlock({ customer, contactButtonSize = 36 }: Custo
 	return (
 		<View style={[styles.container, { borderBottomColor: colors.border }]}>
 			<View style={styles.info}>
-				<SmartImage
-					source={typeof customer.media?.thumbnail === 'string' ? customer.media.thumbnail : customer.media?.thumbnail?.url}
+				<SmartMediaView
+					media={typeof customer.media?.thumbnail === 'string' ? customer.media.thumbnail : customer.media?.thumbnail?.url}
 					style={[styles.avatar, { borderColor: colors.border }]}
-					entityType="user"
 					containerStyle={[styles.avatarContainer, { backgroundColor: colors.surface }]}
 				/>
 				<View style={styles.details}>

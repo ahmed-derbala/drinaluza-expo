@@ -14,7 +14,7 @@ import Spinner from '@/features/common/Spinner'
 import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { HeaderCreateProductButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { updateProduct } from '@/features/products/products.api'
 import { Product } from '@/features/businesses/businesses.interface'
@@ -179,7 +179,7 @@ export default function BusinessDashboardProductsScreen() {
 					<View style={cardStyles.mainRow}>
 						{/* Thumbnail */}
 						<View style={cardStyles.imageContainer}>
-							<SmartImage source={imageUrl} style={cardStyles.image} resizeMode="cover" entityType="product" />
+							<SmartMediaView media={imageUrl} style={cardStyles.image} resizeMode="cover" />
 						</View>
 
 						{/* Center info */}

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { useRouter } from 'expo-router'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { OrderItem } from '@/features/orders/orders.interface'
@@ -54,7 +54,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 						}
 					}}
 				>
-					<SmartImage source={businessImage} style={styles.avatar} entityType="business" />
+					<SmartMediaView media={businessImage} style={styles.avatar} />
 					<View style={styles.headerInfo}>
 						<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
 							{localize(item.business.name)}
@@ -83,7 +83,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 								}
 							}}
 						>
-							<SmartImage source={img} style={styles.productThumb} entityType="product" />
+							<SmartMediaView media={img} style={styles.productThumb} />
 							<View style={styles.productInfo}>
 								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
 									{localize(p.product.name)}

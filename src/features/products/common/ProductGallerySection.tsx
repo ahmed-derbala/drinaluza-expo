@@ -1,7 +1,7 @@
 import { themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView } from '@/core/smart-media'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { FileRef } from '@/features/products/products.type'
@@ -57,7 +57,7 @@ export default function ProductGallerySection({
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
 						{gallery.map((item, idx) => (
 							<View key={item._id || idx} style={styles.galleryItem}>
-								<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
+								<SmartMediaView media={item.url} style={styles.galleryImage} resizeMode="cover" />
 								{onRemovePress && (
 									<IconButton icon="close" label={translate('remove', 'Remove')} onPress={() => onRemovePress(item)} variant="danger" iconColor={themeColors.buttonText} style={styles.removeBadge} />
 								)}
@@ -87,7 +87,7 @@ export default function ProductGallerySection({
 								style={[styles.thumbnailContainer, { borderColor: isSelected ? colors.primary : colors.border }]}
 								activeOpacity={0.8}
 							>
-								<SmartImage source={item.url} style={styles.thumbnailImage} resizeMode="cover" entityType="product" />
+								<SmartMediaView media={item.url} style={styles.thumbnailImage} resizeMode="cover" />
 							</TouchableOpacity>
 						)
 					})}
@@ -107,7 +107,7 @@ export default function ProductGallerySection({
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
 					{gallery.map((item, idx) => (
 						<View key={item._id || idx} style={styles.galleryItem}>
-							<SmartImage source={item.url} style={styles.galleryImage} resizeMode="cover" entityType="product" />
+							<SmartMediaView media={item.url} style={styles.galleryImage} resizeMode="cover" />
 						</View>
 					))}
 					{gallery.length === 0 && <Text style={{ color: colors.textTertiary, fontStyle: 'italic', paddingVertical: 10 }}>{translate('no_images', 'No images in gallery')}</Text>}

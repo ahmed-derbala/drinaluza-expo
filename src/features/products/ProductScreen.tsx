@@ -25,13 +25,12 @@ import { EmailButton } from '@/features/common/buttons/EmailButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import SmartImage from '@/core/SmartImageViewer'
+import { SmartMediaView, SmartMediaGalleryCard, deleteMediaFile } from '@/core/smart-media'
 import { toast } from '@/features/common/Toast'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
-import { uploadFile } from '@/core/file'
 import { config } from '@/config'
 
 export default function ProductScreen() {
@@ -82,7 +81,7 @@ export default function ProductScreen() {
 
 	// Gallery
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
-	const [uploadingPhoto, setUploadingPhoto] = useState(false)
+	const [removedFiles, setRemovedFiles] = useState<FileRef[]>([])
 
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
@@ -323,83 +322,10 @@ export default function ProductScreen() {
 		setEditMode((prev) => ({ ...prev, stock: false }))
 	}
 
-	const handleUploadPhoto = async () => {
-		if (!canEditProduct) return
-		try {
-			let DocumentPicker: any
-			try {
-				DocumentPicker = require('expo-document-picker')
-			} catch (e) {
-				toast.show({ title: translate('error', 'Error'), content: translate('err_no_doc_picker', 'Document picker is not available.'), borderColor: colors.error })
-				return
-			}
-
-			const remainingSlots = 5 - uploadedGallery.length
-			if (remainingSlots <= 0) {
-				toast.show({ title: translate('limit_reached', 'Limit Reached'), content: translate('err_max_photos', 'You can upload up to 5 photos.'), borderColor: colors.warning })
-				return
-			}
-
-			const result = await DocumentPicker.getDocumentAsync({
-				type: ['image/*'],
-				copyToCacheDirectory: true,
-				multiple: true
-			})
-
-			if (result.canceled) return
-
-			const assets = result.assets || []
-			if (assets.length === 0) return
-
-			let filesToUpload = assets.slice(0, remainingSlots)
-			if (assets.length > remainingSlots) {
-				toast.show({
-					title: translate('limit_notice', 'Limit Notice'),
-					content: translate('err_max_photos_selected', 'Only the first {remaining} photos will be uploaded.').replace('{remaining}', String(remainingSlots)),
-					borderColor: colors.warning
-				})
-			}
-
-			setUploadingPhoto(true)
-			const uploadedFiles: FileRef[] = []
-
-			for (const file of filesToUpload) {
-				const uploadResult = await uploadFile({
-					uri: file.uri,
-					name: file.name,
-					type: file.mimeType || 'image/jpeg',
-					fileType: 'image',
-					fileObj: file
-				})
-
-				if (uploadResult.success && (uploadResult.file || uploadResult.fileUrl)) {
-					const fileData = uploadResult.file
-					const newFile: FileRef = {
-						_id: uploadResult.fileId || fileData?._id || '',
-						name: fileData?.name || file.name,
-						extension: fileData?.extension || file.name.substring(file.name.lastIndexOf('.')),
-						url: uploadResult.fileUrl || fileData?.url || '',
-						encoding: fileData?.encoding,
-						mimetype: fileData?.mimetype || file.mimeType || 'image/jpeg',
-						size: fileData?.size || file.size,
-						updatedAt: fileData?.updatedAt || new Date().toISOString(),
-						createdAt: fileData?.createdAt || new Date().toISOString()
-					}
-					uploadedFiles.push(newFile)
-				} else {
-					toast.show({ title: translate('error', 'Error'), content: (uploadResult.error || translate('upload_failed', 'Failed to upload photo')) + `: ${file.name}`, borderColor: colors.error })
-				}
-			}
-
-			if (uploadedFiles.length > 0) {
-				setUploadedGallery((prev) => [...prev, ...uploadedFiles])
-				toast.show({ title: translate('success', 'Success'), content: translate('photo_uploaded', 'Photos uploaded successfully!'), borderColor: colors.success })
-			}
-		} catch (error: any) {
-			console.error('Error uploading photo:', error)
-			toast.show({ title: translate('error', 'Error'), content: error.message || translate('failed_to_upload', 'Failed to upload photo'), borderColor: colors.error })
-		} finally {
-			setUploadingPhoto(false)
+	const handleRemoveGalleryItem = (item: FileRef) => {
+		setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))
+		if (item._id && !item._id.startsWith('pending-')) {
+			setRemovedFiles((prev) => [...prev, item])
 		}
 	}
 
@@ -407,6 +333,10 @@ export default function ProductScreen() {
 		if (!canEditProduct) return
 		try {
 			setSaving(true)
+			if (removedFiles.length > 0) {
+				await Promise.allSettled(removedFiles.map((file) => deleteMediaFile(file._id!)))
+				setRemovedFiles([])
+			}
 			const res = await updateProduct(productSlug!, {
 				media: {
 					gallery: uploadedGallery.filter((img) => img._id !== 'thumb' && img._id !== 'thumbnail')
@@ -429,6 +359,7 @@ export default function ProductScreen() {
 
 	const cancelGallery = () => {
 		if (product) syncProductToState(product)
+		setRemovedFiles([])
 		setEditMode((prev) => ({ ...prev, gallery: false }))
 	}
 
@@ -540,7 +471,7 @@ export default function ProductScreen() {
 		return (
 			<View style={styles.heroContainer}>
 				<View style={[styles.imageContainer, { height: imageHeight }]}>
-					<SmartImage source={currentUrl} style={styles.productImage} resizeMode="cover" entityType="product" enableFullscreenPreview={true} />
+					<SmartMediaView media={currentUrl} style={styles.productImage} resizeMode="cover" enableFullscreenPreview={true} />
 					{!isAvailable && (
 						<View style={styles.unavailableOverlay}>
 							<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
@@ -653,20 +584,27 @@ export default function ProductScreen() {
 		</View>
 	)
 
-	const renderGallerySection = () => (
-		<ProductGallerySection
-			editable={editMode.gallery && canEditProduct}
-			gallery={canEditProduct ? uploadedGallery : product.media?.gallery || []}
-			colors={colors}
-			translate={translate}
-			onUploadPress={handleUploadPhoto}
-			onRemovePress={(item) => setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))}
-			uploading={uploadingPhoto}
-			onEditPress={canEditProduct ? () => setEditMode((prev) => ({ ...prev, gallery: true })) : undefined}
-			onSavePress={saveGallery}
-			onCancelPress={cancelGallery}
-		/>
-	)
+	const renderGallerySection = () => {
+		if (!canEditProduct) {
+			return <ProductGallerySection editable={false} gallery={product.media?.gallery || []} colors={colors} translate={translate} />
+		}
+		return (
+			<SmartMediaGalleryCard
+				title={translate('gallery', 'Gallery')}
+				gallery={uploadedGallery}
+				targetModelName="products"
+				targetModelId={product._id}
+				mediaType="image"
+				mode={editMode.gallery ? 'edit' : 'editable'}
+				onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
+				onSave={saveGallery}
+				onCancel={cancelGallery}
+				onChange={(next) => setUploadedGallery(next)}
+				onRemove={handleRemoveGalleryItem}
+				loading={saving}
+			/>
+		)
+	}
 
 	const renderMetadata = () => {
 		const hasPhone = Boolean(product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber)
@@ -682,7 +620,7 @@ export default function ProductScreen() {
 						<TouchableOpacity onPress={handleBusinessNavPress} activeOpacity={0.75} style={styles.metaCardHeaderLeft}>
 							<View style={styles.metaCardTitleWrap}>
 								{product.business?.media?.thumbnail?.url ? (
-									<SmartImage source={product.business.media.thumbnail.url} style={styles.metaCardIconBg} entityType="business" />
+									<SmartMediaView media={product.business.media.thumbnail.url} style={styles.metaCardIconBg} />
 								) : (
 									<View style={[styles.metaCardIconBg, { backgroundColor: colors.primary + '15' }]}>
 										<MaterialIcons name="store" size={16} color={colors.primary} />
