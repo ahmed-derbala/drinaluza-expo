@@ -1,700 +1,428 @@
-import { config } from '@/config'
-import { themeColors, ThemeColors } from '@/core/theme'
-import { HeaderRefreshButton, HeaderQRCodeButton, SmartHeader } from '@/core/smart-header'
-import Spinner from '@/features/common/Spinner'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, RefreshControl, Platform, Dimensions } from 'react-native'
+import React, { useEffect, useMemo, useState } from 'react'
+import { View, Text, StyleSheet } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { LinearGradient } from 'expo-linear-gradient'
-import { useRouter, Tabs, Stack, useLocalSearchParams } from 'expo-router'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useRouter, Tabs } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
+import { useTheme, ThemeColors } from '@/core/theme'
 import ErrorState from '@/features/common/ErrorState'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
+import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 import { SmartMediaView } from '@/core/smart-media'
+import Spinner from '@/features/common/Spinner'
 import { useDashboardProfiles } from './useDashboardProfiles'
-import { useBusinessDashboard } from './useBusinessDashboard'
-import { getBusinessCustomers } from '@/features/businesses/businesses.api'
-import { isBusinessDashboard, DashboardData, DashboardProfile, DashboardRankItem, ProductStats, BusinessDashboard } from './dashboard.interface'
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import { DashboardProfile, isBusinessDashboard, sortDashboardProfiles, ProductStats } from './dashboard.interface'
 
-import QRCodeModal from '@/features/common/QRCodeModal'
+const PERSONAL_TAB = 'personal'
 
-const { width } = Dimensions.get('window')
-const MEDALS = ['🥇', '🥈', '🥉']
-
-type SelectedProfile = {
-	kind: 'personal' | 'business'
-	slug?: string
-	profileId: string
-}
-
-type DashboardProps = {
-	profileKind?: 'personal' | 'business'
-	businessSlug?: string
-}
-
-const Dashboard = ({ profileKind, businessSlug: propBusinessSlug }: DashboardProps = {}) => {
+const Dashboard = () => {
 	const { colors } = useTheme()
-	const styles = useMemo(() => createStyles(colors), [colors])
 	const { localize, translate, user } = useUser()
 	const router = useRouter()
-	const { onScroll } = useScrollHandler()
 	const insets = useSafeAreaInsets()
-	const { businessSlug: routeBusinessSlug } = useLocalSearchParams<{ businessSlug?: string }>()
-	const businessSlug = propBusinessSlug || routeBusinessSlug
+	const { onScroll } = useScrollHandler()
+	const styles = useMemo(() => createStyles(colors), [colors])
 
-	const [showQRCode, setShowQRCode] = useState(false)
+	const { data: profilesResponse, isInitialLoading, isRefreshing, isOffline, refresh: refreshProfiles } = useDashboardProfiles()
 
-	const { data: profilesResponse, isInitialLoading: profilesLoading, isRefreshing: profilesRefreshing, isOffline: profilesOffline, refresh: refreshProfiles } = useDashboardProfiles()
-	const profiles = (profilesResponse?.data?.filter((p) => p.kind === 'business') as DashboardProfile[]) || []
+	const profiles = useMemo(() => sortDashboardProfiles(profilesResponse?.data || [], localize), [profilesResponse, localize])
+	const personalProfile = useMemo(() => profiles.find((p) => p.kind === 'personal') || null, [profiles])
+	const businessProfiles = useMemo(() => profiles.filter((p): p is Extract<DashboardProfile, { kind: 'business' }> => isBusinessDashboard(p)), [profiles])
 
-	const targetSlug = useMemo(() => {
-		if (businessSlug) return businessSlug
-		if (profiles.length > 0 && profiles[0].slug) return profiles[0].slug
-		return undefined
-	}, [businessSlug, profiles])
-
-	const {
-		data: dashboardResponse,
-		isInitialLoading: dashboardLoading,
-		isRefreshing: dashboardRefreshing,
-		isOffline: dashboardOffline,
-		refresh: refreshDashboard
-	} = useBusinessDashboard({ businessSlug: targetSlug })
-	const dashboardData = dashboardResponse?.data ?? null
-
-	const isInitialLoading = profilesLoading || dashboardLoading
-	const isRefreshing = profilesRefreshing || dashboardRefreshing
-	const isOffline = profilesOffline && dashboardOffline
-
-	const resolveSelectedFromData = useCallback((data: BusinessDashboard, list: DashboardProfile[]): SelectedProfile => {
-		const match = list.find((p: DashboardProfile) => p.kind === 'business' && p.slug === data.business.slug) || list.find((p: DashboardProfile) => p.kind === 'business')
-		return {
-			kind: 'business',
-			slug: data.business.slug,
-			profileId: match?._id || data._id
+	const tabOptions = useMemo<FilterTabOption[]>(() => {
+		const options: FilterTabOption[] = []
+		if (personalProfile) {
+			options.push({ value: PERSONAL_TAB, label: localize(personalProfile.user.name) || translate('dashboard.personal', 'Personal'), iconName: 'person-outline' })
 		}
-	}, [])
+		businessProfiles.forEach((profile) => {
+			options.push({ value: `business:${profile._id}`, label: localize(profile.business.name), iconName: 'storefront-outline' })
+		})
+		return options
+	}, [personalProfile, businessProfiles, localize, translate])
 
-	const selectedProfile = useMemo<SelectedProfile | null>(() => {
-		if (!dashboardData || !isBusinessDashboard(dashboardData)) return null
-		return resolveSelectedFromData(dashboardData, profiles)
-	}, [dashboardData, profiles, resolveSelectedFromData])
+	const defaultTab = useMemo(() => {
+		if (personalProfile) return PERSONAL_TAB
+		if (businessProfiles.length > 0) return `business:${businessProfiles[0]._id}`
+		return ''
+	}, [personalProfile, businessProfiles])
 
-	const showProfileSwitcher = profiles.length > 1
+	const [selectedTab, setSelectedTab] = useState<string>('')
 
-	const onRefresh = useCallback(() => {
-		refreshProfiles()
-		refreshDashboard()
-	}, [refreshProfiles, refreshDashboard])
+	useEffect(() => {
+		setSelectedTab((prev) => {
+			const stillValid = prev === PERSONAL_TAB ? !!personalProfile : businessProfiles.some((p) => `business:${p._id}` === prev)
+			return stillValid ? prev : defaultTab
+		})
+	}, [defaultTab, personalProfile, businessProfiles])
 
-	const headerActions = useMemo(() => {
-		if (!dashboardData || !isBusinessDashboard(dashboardData)) {
-			return [<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />]
-		}
+	const counts = useMemo(() => {
+		const map: Record<string, number> = {}
+		businessProfiles.forEach((profile) => {
+			map[`business:${profile._id}`] = profile.products?.count ?? 0
+		})
+		return map
+	}, [businessProfiles])
 
-		const business = dashboardData.business
-		const actions: any[] = []
-		actions.push(<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />)
-		actions.push(<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />)
-		return actions
-	}, [dashboardData, isRefreshing, onRefresh])
+	const selectedProfile = useMemo(() => {
+		if (selectedTab === PERSONAL_TAB) return personalProfile
+		return businessProfiles.find((p) => `business:${p._id}` === selectedTab) || null
+	}, [selectedTab, personalProfile, businessProfiles])
 
-	const handleSelectProfile = useCallback(
-		(profile: DashboardProfile) => {
-			if (!selectedProfile || profile._id === selectedProfile.profileId) return
-
-			if (profile.kind === 'business' && profile.slug) {
-				// Navigating to a business profile dashboard in tab view
-				router.replace(`/dashboard?businessSlug=${profile.slug}` as never)
-			} else {
-				// Navigating to personal dashboard
-				router.replace(`/dashboard` as never)
-			}
-		},
-		[selectedProfile, router]
+	const headerActions = useMemo(
+		() => [
+			<HeaderRefreshButton
+				key="refresh"
+				onRefresh={() => {
+					refreshProfiles()
+				}}
+				isRefreshing={isRefreshing}
+				isOffline={isOffline}
+			/>
+		],
+		[refreshProfiles, isRefreshing, isOffline]
 	)
 
-	const getProfileLabel = (profile: DashboardProfile) => localize(profile.name)
-
-	const getProfileThumbnail = (profile: DashboardProfile) => profile.media?.thumbnail?.url
+	const handlePressProfile = (profile: DashboardProfile) => {
+		if (profile.kind === 'personal') {
+			router.push('/dashboard/personal/')
+		} else if (profile.business?.slug) {
+			router.push(`/dashboard/${profile.business.slug}/`)
+		}
+	}
 
 	if (isInitialLoading) {
 		return <Spinner />
 	}
 
-	if (!profilesLoading && !dashboardLoading && !targetSlug && profiles.length === 0) {
+	if (isOffline && profiles.length === 0) {
 		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Tabs.Screen
-					options={{
-						title: translate('dashboard', 'Dashboard'),
-						headerLeft: () => null
-					}}
-				/>
-				<ErrorState />
-			</View>
-		)
-	}
-
-	if (isOffline && !dashboardData) {
-		return (
-			<View style={[styles.container, { backgroundColor: colors.background }]}>
-				<Tabs.Screen
-					options={{
-						title: translate('dashboard', 'Dashboard'),
-						headerLeft: () => null,
-						headerRight: () => (
-							<View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-								<HeaderRefreshButton onRefresh={onRefresh} isRefreshing={isRefreshing} />
-							</View>
-						)
-					}}
-				/>
+			<View style={styles.container}>
+				<Tabs.Screen options={{ title: translate('dashboard', 'Dashboard'), headerLeft: () => null, headerActions: headerActions } as any} />
 				<ErrorState />
 			</View>
 		)
 	}
 
 	return (
-		<View style={[styles.container, { backgroundColor: colors.background }]}>
+		<View style={styles.container}>
 			<Tabs.Screen
 				options={
 					{
 						title: translate('dashboard', 'Dashboard'),
 						subtitle: user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back'),
 						headerLeft: () => null,
-						headerActions: headerActions
-					} as any
-				}
-			/>
-			<Stack.Screen
-				options={
-					{
-						headerActions: headerActions
+						headerActions: headerActions,
+						headerBottom: <FilterTabs value={selectedTab} options={tabOptions} onChange={setSelectedTab} counts={counts} loading={isRefreshing || isInitialLoading} resetKey="dashboard-profiles" />,
+						headerBottomHeight: 48
 					} as any
 				}
 			/>
 
-			<SmartHeader.ScrollView
-				contentContainerStyle={[styles.scrollContent, { paddingBottom: 90 + insets.bottom }]}
-				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-				showsVerticalScrollIndicator={false}
-				onScroll={onScroll}
-				scrollEventThrottle={16}
-			>
-				{showProfileSwitcher && (
-					<View style={styles.section}>
-						<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{translate('dashboard.switch_profile', 'Switch profile')}</Text>
-						<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.profileRow}>
-							{profiles.map((profile) => {
-								const active = selectedProfile?.profileId === profile._id
-								const thumb = getProfileThumbnail(profile)
-								return (
-									<TouchableOpacity
-										key={profile._id}
-										activeOpacity={0.85}
-										onPress={() => handleSelectProfile(profile)}
-										style={[
-											styles.profileChip,
-											{
-												backgroundColor: active ? colors.primaryContainer : colors.surface,
-												borderColor: active ? colors.primary : colors.border
-											}
-										]}
-									>
-										{thumb ? (
-											<SmartMediaView media={thumb} style={styles.profileAvatar} />
-										) : (
-											<View style={[styles.profileAvatar, styles.profileAvatarFallback, { backgroundColor: `${colors.primary}20` }]}>
-												<MaterialIcons name={profile.kind === 'personal' ? 'person' : 'store'} size={20} color={colors.primary} />
-											</View>
-										)}
-										<View style={styles.profileChipText}>
-											<Text style={[styles.profileKind, { color: colors.textTertiary }]} numberOfLines={1}>
-												{profile.kind === 'personal' ? translate('dashboard.personal', 'Personal') : translate('dashboard.business', 'Business')}
-											</Text>
-											<Text style={[styles.profileName, { color: colors.text }]} numberOfLines={2}>
-												{getProfileLabel(profile)}
-											</Text>
-										</View>
-										{active && <View style={[styles.activeDot, { backgroundColor: colors.primary }]} />}
-									</TouchableOpacity>
-								)
-							})}
-						</ScrollView>
+			<SmartHeader.ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 + insets.bottom }]} showsVerticalScrollIndicator={false} onScroll={onScroll} scrollEventThrottle={16}>
+				{profiles.length === 0 ? (
+					<View style={styles.emptyWrap}>
+						<View style={[styles.emptyIcon, { backgroundColor: `${colors.primary}15` }]}>
+							<Ionicons name="albums-outline" size={40} color={colors.textTertiary} />
+						</View>
+						<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('dashboard.no_profiles', 'No dashboard profiles found.')}</Text>
 					</View>
-				)}
-
-				{profiles.length === 0 && !isInitialLoading && !isRefreshing && (
-					<View style={[styles.centered, { marginTop: 40 }]}>
-						<Text style={{ color: colors.textSecondary }}>{translate('dashboard.no_business_profiles', 'No business profiles found.')}</Text>
-					</View>
-				)}
-
-				{dashboardData && isBusinessDashboard(dashboardData) && (
-					<BusinessDashboardContent data={dashboardData} styles={styles} colors={colors} router={router} onRefresh={onRefresh} refreshing={isRefreshing} />
+				) : !selectedProfile ? null : selectedProfile.kind === 'personal' ? (
+					<PersonalProfileCard profile={selectedProfile} colors={colors} styles={styles} onPress={() => handlePressProfile(selectedProfile)} />
+				) : (
+					<BusinessProfileCard profile={selectedProfile} colors={colors} styles={styles} onPress={() => handlePressProfile(selectedProfile)} />
 				)}
 			</SmartHeader.ScrollView>
-			{dashboardData && isBusinessDashboard(dashboardData) && (
-				<QRCodeModal
-					visible={showQRCode}
-					onClose={() => setShowQRCode(false)}
-					value={`${config.frontend.url}/b/${dashboardData.business.slug}`}
-					title={localize(dashboardData.business.name)}
-					subtitle={`${dashboardData.business.slug}`}
-					filenamePrefix={`business_${dashboardData.business.slug}`}
-				/>
-			)}
 		</View>
 	)
 }
 
-// --- Business dashboard ---
+// --- Profile cards (based on BaseCard) ---
 
-type ContentProps = {
-	data: import('./dashboard.interface').BusinessDashboard
-	styles: ReturnType<typeof createStyles>
+const PersonalProfileCard = ({
+	profile,
+	colors,
+	styles,
+	onPress
+}: {
+	profile: Extract<DashboardProfile, { kind: 'personal' }>
 	colors: ThemeColors
-	router: ReturnType<typeof useRouter>
-	onRefresh: () => void
-	refreshing: boolean
-}
-
-const BusinessDashboardContent = ({ data, styles, colors, router, onRefresh, refreshing }: ContentProps) => {
+	styles: ReturnType<typeof createStyles>
+	onPress: () => void
+}) => {
 	const { localize, translate } = useUser()
-	const business = data.business
-
-	const [customers, setCustomers] = useState<import('../businesses/businesses.interface').BusinessCustomerDoc[]>([])
-	const [loadingCustomers, setLoadingCustomers] = useState(true)
-
-	useEffect(() => {
-		const fetchCustomers = async () => {
-			try {
-				setLoadingCustomers(true)
-				const res = await getBusinessCustomers(business.slug)
-				setCustomers(res.data?.docs || [])
-			} catch (err) {
-				console.error('Failed to load business customers:', err)
-			} finally {
-				setLoadingCustomers(false)
-			}
-		}
-		if (business.slug) {
-			fetchCustomers()
-		}
-	}, [business.slug])
-
-	const managementActions = useMemo(
-		() => [
-			{
-				label: translate('dashboard.management', 'Management'),
-				icon: <MaterialIcons name="store" size={22} color={colors.primary} />,
-				color: colors.primary,
-				onPress: () => router.push('/business/my-businesses' as never)
-			},
-			{
-				label: translate('sales', 'Sales'),
-				icon: <MaterialIcons name="receipt-long" size={22} color={colors.info} />,
-				color: colors.info,
-				onPress: () => router.push(`/dashboard/${business.slug}/sales` as never)
-			},
-			{
-				label: translate('create_product', 'Create Product'),
-				icon: <MaterialIcons name="add-circle-outline" size={22} color={colors.warning} />,
-				color: colors.warning,
-				onPress: () => router.push(`/dashboard/${business.slug}/create-product?source=dashboard` as never)
-			},
-			{
-				label: translate('edit_business', 'Edit Business'),
-				icon: <MaterialIcons name="edit" size={22} color={themeColors.primary} />,
-				color: themeColors.primary,
-				onPress: () => router.push(`/dashboard/${business.slug}/edit` as never)
-			}
-		],
-		[business._id, business.slug, colors, router, translate]
-	)
-
-	const productStats: { key: keyof ProductStats; label: string; icon: React.ReactNode; accent: string }[] = [
-		{
-			key: 'count',
-			label: translate('dashboard.products_total', 'Products'),
-			icon: <MaterialIcons name="inventory-2" size={22} color={colors.primary} />,
-			accent: colors.primary
-		},
-		{
-			key: 'lowStock',
-			label: translate('dashboard.low_stock', 'Low stock'),
-			icon: <MaterialIcons name="warning-amber" size={22} color={colors.warning} />,
-			accent: colors.warning
-		},
-		{
-			key: 'outOfStock',
-			label: translate('dashboard.out_of_stock', 'Out of stock'),
-			icon: <MaterialIcons name="remove-shopping-cart" size={22} color={colors.error} />,
-			accent: colors.error
-		}
-	]
+	const user = profile.user
 
 	return (
-		<>
-			<LinearGradient colors={[colors.primaryContainer, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
-				<SmartMediaView media={business.media?.thumbnail?.url} style={styles.heroThumbnail} />
-				<View style={styles.heroInfo}>
-					<View style={[styles.kindBadge, { backgroundColor: `${colors.primary}25` }]}>
-						<MaterialIcons name="store" size={14} color={colors.primary} />
-						<Text style={[styles.kindBadgeText, { color: colors.primary }]}>{translate('dashboard.business', 'Business')}</Text>
+		<BaseCard onPress={onPress} activeOpacity={0.85} style={styles.card}>
+			<View style={styles.cardHeader}>
+				<View style={styles.cardHeaderLeft}>
+					<View style={[styles.cardAvatar, styles.cardAvatarFallback, { backgroundColor: `${colors.primary}15` }]}>
+						<Ionicons name="person-outline" size={26} color={colors.primary} />
 					</View>
-					<Text style={[styles.heroTitle, { color: colors.text }]}>{localize(business.name)}</Text>
-					<Text style={[styles.heroSubtitle, { color: colors.textSecondary }]}>{business.slug}</Text>
-					{business.owner && (
-						<Text style={[styles.heroMeta, { color: colors.textTertiary }]}>
-							{translate('business_owner', 'Owner')}: {localize(business.owner.name)}
+					<View style={styles.cardHeaderText}>
+						<Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+							{localize(user.name)}
 						</Text>
-					)}
+						<Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+							@{user.slug}
+						</Text>
+					</View>
 				</View>
-			</LinearGradient>
+				<View style={[styles.kindBadge, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]}>
+					<Ionicons name="person-outline" size={12} color={colors.primary} />
+					<Text style={[styles.kindBadgeText, { color: colors.primary }]}>{translate('dashboard.personal', 'Personal')}</Text>
+				</View>
+			</View>
 
-			<SectionTitle title={translate('dashboard.inventory', 'Inventory')} colors={colors} />
 			<View style={styles.statsRow}>
-				{productStats.map((stat) => (
-					<StatCard
-						key={stat.key}
-						title={stat.label}
-						value={data.products[stat.key]}
-						icon={stat.icon}
-						accent={stat.accent}
-						styles={styles}
-						colors={colors}
-						onPress={() => router.push(`/dashboard/${business.slug}/products` as never)}
-					/>
-				))}
+				<StatPill
+					icon="storefront-outline"
+					label={translate('dashboard.top_businesses_frequent', 'Frequent')}
+					value={profile.topBusinesses?.frequent?.length ?? 0}
+					accent={colors.info}
+					colors={colors}
+					styles={styles}
+				/>
+				<StatPill
+					icon="sparkles-outline"
+					label={translate('dashboard.top_businesses_new', 'New')}
+					value={profile.topBusinesses?.new?.length ?? 0}
+					accent={colors.success}
+					colors={colors}
+					styles={styles}
+				/>
 			</View>
 
-			<SectionTitle title={translate('dashboard.management', 'Management')} colors={colors} />
-			<View style={styles.actionsGrid}>
-				{managementActions.map((action) => (
-					<QuickAction key={action.label} {...action} styles={styles} colors={colors} />
-				))}
+			<View style={styles.cardFooter}>
+				<Text style={[styles.cardCta, { color: colors.primary }]}>{translate('dashboard.open_personal', 'Open personal dashboard')}</Text>
+				<Ionicons name="chevron-forward" size={16} color={colors.primary} />
 			</View>
-
-			<SectionTitle title={translate('dashboard.customers', 'Customers')} colors={colors} />
-			{loadingCustomers ? (
-				<Spinner size="small" expand={false} />
-			) : customers.length === 0 ? (
-				<View style={[styles.centered, { paddingVertical: 20, backgroundColor: colors.background, borderRadius: 16 }]}>
-					<Ionicons name="people-outline" size={32} color={colors.textTertiary} style={{ opacity: 0.5, marginBottom: 8 }} />
-					<Text style={{ color: colors.textSecondary, fontSize: 13 }}>{translate('dashboard.no_customers', 'No customers found yet.')}</Text>
-				</View>
-			) : (
-				<ScrollView horizontal showsHorizontalScrollIndicator={Platform.OS === 'web'} contentContainerStyle={styles.customersRow}>
-					{customers.map((doc) => {
-						const customer = doc.customer
-						const thumb = customer.media?.thumbnail?.url
-						return (
-							<TouchableOpacity
-								key={doc._id}
-								activeOpacity={0.85}
-								onPress={() => router.push(`/dashboard/${business.slug}/sales?customerSlug=${customer.slug}` as never)}
-								style={[styles.customerChip, { backgroundColor: colors.background, borderColor: colors.border }]}
-							>
-								<SmartMediaView media={thumb} style={styles.customerAvatar} />
-								<View style={styles.customerChipText}>
-									<Text style={[styles.customerNameText, { color: colors.text }]} numberOfLines={2}>
-										{localize(customer.name)}
-									</Text>
-									<Text style={[styles.customerSlugText, { color: colors.textSecondary }]} numberOfLines={2}>
-										{customer.slug}
-									</Text>
-									{customer.address?.city && (
-										<Text style={[styles.customerCityText, { color: colors.textTertiary }]} numberOfLines={1}>
-											{customer.address.city}
-										</Text>
-									)}
-								</View>
-							</TouchableOpacity>
-						)
-					})}
-				</ScrollView>
-			)}
-
-			<SectionTitle title={translate('dashboard.insights', 'Insights')} colors={colors} />
-
-			<RankPairSection
-				title={translate('dashboard.top_products', 'Top products')}
-				leftTitle={translate('dashboard.top_selling', 'Best selling')}
-				rightTitle={translate('dashboard.top_viewed', 'Most viewed')}
-				leftItems={data.topProducts.selling}
-				rightItems={data.topProducts.viewed}
-				styles={styles}
-				colors={colors}
-				emptyHint={translate('dashboard.no_products_yet', 'No product data yet')}
-			/>
-
-			<RankPairSection
-				title={translate('dashboard.top_customers', 'Top customers')}
-				leftTitle={translate('dashboard.top_customers_frequent', 'Frequent')}
-				rightTitle={translate('dashboard.top_customers_new', 'New')}
-				leftItems={data.topCustomers.frequent}
-				rightItems={data.topCustomers.new}
-				styles={styles}
-				colors={colors}
-				emptyHint={translate('dashboard.no_customers_yet', 'No customer data yet')}
-			/>
-		</>
+		</BaseCard>
 	)
 }
 
-// --- Shared UI pieces ---
+const BusinessProfileCard = ({
+	profile,
+	colors,
+	styles,
+	onPress
+}: {
+	profile: Extract<DashboardProfile, { kind: 'business' }>
+	colors: ThemeColors
+	styles: ReturnType<typeof createStyles>
+	onPress: () => void
+}) => {
+	const { localize, translate } = useUser()
+	const business = profile.business
+	const stats: { key: keyof ProductStats; label: string; icon: keyof typeof Ionicons.glyphMap; accent: string }[] = [
+		{ key: 'count', label: translate('dashboard.products_total', 'Products'), icon: 'cube-outline', accent: colors.primary },
+		{ key: 'lowStock', label: translate('dashboard.low_stock', 'Low stock'), icon: 'warning-outline', accent: colors.warning },
+		{ key: 'outOfStock', label: translate('dashboard.out_of_stock', 'Out of stock'), icon: 'remove-circle-outline', accent: colors.error }
+	]
+	const city = business.address?.city || business.address?.region
 
-const SectionTitle = ({ title, colors }: { title: string; colors: ThemeColors }) => (
-	<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginTop: 10 }}>
-		<View style={{ width: 4, height: 22, borderRadius: 2, backgroundColor: colors.primary }} />
-		<Text style={{ fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.5, flex: 1 }}>{title}</Text>
+	return (
+		<BaseCard onPress={onPress} activeOpacity={0.85} style={styles.card}>
+			<View style={styles.cardHeader}>
+				<View style={styles.cardHeaderLeft}>
+					<SmartMediaView media={business.media?.thumbnail?.url} style={styles.cardAvatar} resizeMode="cover" />
+					<View style={styles.cardHeaderText}>
+						<Text style={[styles.cardTitle, { color: colors.text }]} numberOfLines={1}>
+							{localize(business.name)}
+						</Text>
+						<Text style={[styles.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>
+							@{business.slug}
+						</Text>
+					</View>
+				</View>
+				<View style={[styles.kindBadge, { backgroundColor: `${colors.primary}15`, borderColor: `${colors.primary}30` }]}>
+					<Ionicons name="storefront-outline" size={12} color={colors.primary} />
+					<Text style={[styles.kindBadgeText, { color: colors.primary }]}>{translate('dashboard.business', 'Business')}</Text>
+				</View>
+			</View>
+
+			{city ? (
+				<View style={styles.cardMetaRow}>
+					<Ionicons name="location-outline" size={14} color={colors.textTertiary} />
+					<Text style={[styles.cardMetaText, { color: colors.textTertiary }]} numberOfLines={1}>
+						{city}
+					</Text>
+				</View>
+			) : null}
+
+			<View style={styles.statsRow}>
+				{stats.map((stat) => (
+					<StatPill key={stat.key} icon={stat.icon} label={stat.label} value={profile.products?.[stat.key] ?? 0} accent={stat.accent} colors={colors} styles={styles} />
+				))}
+			</View>
+
+			<View style={styles.cardFooter}>
+				<Text style={[styles.cardCta, { color: colors.primary }]}>{translate('dashboard.open_business', 'Open business dashboard')}</Text>
+				<Ionicons name="chevron-forward" size={16} color={colors.primary} />
+			</View>
+		</BaseCard>
+	)
+}
+
+const StatPill = ({
+	icon,
+	label,
+	value,
+	accent,
+	colors,
+	styles
+}: {
+	icon: keyof typeof Ionicons.glyphMap
+	label: string
+	value: number
+	accent: string
+	colors: ThemeColors
+	styles: ReturnType<typeof createStyles>
+}) => (
+	<View style={[styles.statPill, { backgroundColor: `${accent}12`, borderColor: `${accent}25` }]}>
+		<Ionicons name={icon} size={14} color={accent} />
+		<Text style={[styles.statPillValue, { color: accent }]}>{value}</Text>
+		<Text style={[styles.statPillLabel, { color: colors.textSecondary }]} numberOfLines={1}>
+			{label}
+		</Text>
 	</View>
 )
 
-type StatCardProps = {
-	title: string
-	value: number
-	icon: React.ReactNode
-	accent: string
-	styles: ReturnType<typeof createStyles>
-	colors: ThemeColors
-	onPress?: () => void
-}
-
-const StatCard = ({ title, value, icon, accent, styles, colors, onPress }: StatCardProps) => (
-	<TouchableOpacity activeOpacity={0.85} onPress={onPress} style={[styles.statCard, { borderColor: `${accent}40`, backgroundColor: colors.background }]}>
-		<LinearGradient colors={[`${accent}15`, `${accent}05`, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-		<View style={[styles.statIcon, { backgroundColor: `${accent}20` }]}>{icon}</View>
-		<Text style={[styles.statValue, { color: accent }]}>{value}</Text>
-		<Text style={[styles.statLabel, { color: colors.textSecondary }]}>{title}</Text>
-	</TouchableOpacity>
-)
-
-type QuickActionProps = {
-	label: string
-	icon: React.ReactNode
-	color: string
-	onPress: () => void
-	styles: ReturnType<typeof createStyles>
-	colors: ThemeColors
-}
-
-const QuickAction = ({ label, icon, color, onPress, styles, colors }: QuickActionProps) => (
-	<TouchableOpacity activeOpacity={0.8} onPress={onPress} style={[styles.quickAction, { backgroundColor: colors.surface, borderColor: `${color}20` }]}>
-		<View style={[styles.quickActionIcon, { backgroundColor: `${color}15` }]}>{icon}</View>
-		<Text style={[styles.quickActionLabel, { color: colors.text }]} numberOfLines={2}>
-			{label}
-		</Text>
-	</TouchableOpacity>
-)
-
-type RankPairSectionProps = {
-	title: string
-	leftTitle: string
-	rightTitle: string
-	leftItems: DashboardRankItem[]
-	rightItems: DashboardRankItem[]
-	styles: ReturnType<typeof createStyles>
-	colors: ThemeColors
-	emptyHint: string
-}
-
-const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, styles, colors, emptyHint }: RankPairSectionProps) => {
-	const { localize } = useUser()
-
-	const renderList = (items: DashboardRankItem[], listTitle: string) => (
-		<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.info }]}>
-			<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{listTitle}</Text>
-			{items.length === 0 ? (
-				<Text style={[styles.rankEmpty, { color: colors.textTertiary }]}>{emptyHint}</Text>
-			) : (
-				items
-					.slice(0, 5)
-					.map((item, index) => (
-						<RankRow key={item._id || `${listTitle}-${index}`} item={item} index={index} localize={localize} styles={styles} colors={colors} isLast={index === Math.min(items.length, 5) - 1} />
-					))
-			)}
-		</View>
-	)
-
-	return (
-		<View style={styles.section}>
-			<Text style={[styles.sectionLabel, { color: colors.textSecondary }]}>{title}</Text>
-			<View style={styles.rankPairRow}>
-				{renderList(leftItems, leftTitle)}
-				{renderList(rightItems, rightTitle)}
-			</View>
-		</View>
-	)
-}
-
-type RankRowProps = {
-	item: DashboardRankItem
-	localize: (name?: LocalizedName) => string
-	styles: ReturnType<typeof createStyles>
-	colors: ThemeColors
-	isLast: boolean
-}
-
-const RankRow = ({ item, localize, styles, colors, isLast, index }: RankRowProps & { index?: number }) => {
-	const label = item.name ? localize(item.name) : item.slug || '—'
-	const metric = item.count ?? item.views
-	const medal = index !== undefined && index < 3 ? MEDALS[index] : undefined
-
-	return (
-		<View style={[styles.rankRow, { borderColor: `${colors.border}60` }, isLast && { borderBottomWidth: 0 }]}>
-			{medal ? <Text style={{ fontSize: 16, marginRight: -2 }}>{medal}</Text> : null}
-			<SmartMediaView media={item.media?.thumbnail?.url} style={styles.rankAvatar} />
-			<Text style={[styles.rankName, { color: colors.text }]} numberOfLines={1}>
-				{label}
-			</Text>
-			{metric !== undefined && (
-				<View style={[styles.rankMetric, { backgroundColor: `${colors.primary}15` }]}>
-					<Text style={[styles.rankMetricText, { color: colors.primary }]}>{metric}</Text>
-				</View>
-			)}
-		</View>
-	)
-}
-
 const createStyles = (colors: ThemeColors) =>
 	StyleSheet.create({
-		container: { flex: 1 },
-		centered: { justifyContent: 'center', alignItems: 'center' },
-		scrollContent: { paddingHorizontal: 16, paddingBottom: 90, paddingTop: 12, gap: 6 },
-		section: { marginBottom: 24 },
-		sectionLabel: { fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 1.2, marginBottom: 12 },
-		profileRow: { gap: 10, paddingRight: 8 },
-		profileChip: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			paddingVertical: 12,
-			paddingHorizontal: 14,
-			borderRadius: 20,
-			borderWidth: 1.5,
-			gap: 12,
-			maxWidth: width * 0.72,
-			position: 'relative'
-		},
-		profileAvatar: { width: 44, height: 44, borderRadius: 14 },
-		profileAvatarFallback: { justifyContent: 'center', alignItems: 'center' },
-		profileChipText: { flex: 1, minWidth: 0 },
-		profileKind: { fontSize: 9, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 1 },
-		profileName: { fontSize: 15, fontWeight: '700', marginTop: 3, letterSpacing: -0.2 },
-		activeDot: { position: 'absolute', top: 10, right: 10, width: 8, height: 8, borderRadius: 4 },
-		switchingBanner: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 10, marginBottom: 4, borderRadius: 12, backgroundColor: `${colors.primary}08` },
-		switchingText: { fontSize: 13, fontWeight: '500' },
-		heroCard: {
-			borderRadius: 28,
-			padding: 24,
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 18,
-			borderWidth: 1,
-			borderColor: `${colors.primary}15`,
-			marginBottom: 12
-		},
-		heroThumbnail: { width: 80, height: 80, borderRadius: 22, borderWidth: 2, borderColor: `${colors.primary}30` },
-		heroInfo: { flex: 1 },
-		heroIconWrap: { width: 60, height: 60, borderRadius: 18, justifyContent: 'center', alignItems: 'center' },
-		kindBadge: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			alignSelf: 'flex-start',
-			gap: 5,
-			paddingHorizontal: 10,
-			paddingVertical: 5,
-			borderRadius: 10,
-			marginBottom: 10
-		},
-		kindBadgeText: { fontSize: 9, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' },
-		heroTitle: { fontSize: 24, fontWeight: '800', letterSpacing: -0.6 },
-		heroSubtitle: { fontSize: 14, fontWeight: '500', marginTop: 4, letterSpacing: 0.2 },
-		heroMeta: { fontSize: 12, marginTop: 8, fontWeight: '500' },
-		statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 12 },
-		statCard: {
+		container: {
 			flex: 1,
-			minWidth: 100,
-			borderRadius: 22,
-			padding: 18,
-			borderWidth: 1.5,
-			overflow: 'hidden'
+			backgroundColor: colors.background
 		},
-		statIcon: { width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', marginBottom: 12 },
-		statValue: { fontSize: 30, fontWeight: '800', letterSpacing: -1.5 },
-		statLabel: { fontSize: 11, fontWeight: '700', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-		actionsGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-		quickAction: {
-			width: (width - 42) / 2,
-			borderRadius: 22,
-			borderWidth: 1,
-			padding: 18,
+		scrollContent: {
+			paddingBottom: 24
+		},
+		emptyWrap: {
+			paddingTop: 40,
+			paddingHorizontal: 24,
 			alignItems: 'center',
 			gap: 12
 		},
-		quickActionIcon: { width: 52, height: 52, borderRadius: 16, justifyContent: 'center', alignItems: 'center' },
-		quickActionLabel: { fontSize: 13, fontWeight: '700', textAlign: 'center', letterSpacing: -0.2 },
-		rankPairRow: { flexDirection: 'row', gap: 10 },
-		rankPanel: {
-			flex: 1,
-			borderRadius: 22,
-			borderWidth: 1,
-			padding: 16,
-			minHeight: 140
+		emptyIcon: {
+			width: 80,
+			height: 80,
+			borderRadius: 24,
+			alignItems: 'center',
+			justifyContent: 'center'
 		},
-		rankPanelTitle: { fontSize: 14, fontWeight: '800', marginBottom: 12, letterSpacing: -0.2 },
-		rankEmpty: { fontSize: 12, lineHeight: 20, paddingVertical: 10, fontStyle: 'italic' },
-		rankRow: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderBottomWidth: 1 },
-		rankAvatar: { width: 36, height: 36, borderRadius: 10 },
-		rankName: { flex: 1, fontSize: 13, fontWeight: '600', letterSpacing: -0.1 },
-		rankMetric: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
-		rankMetricText: { fontSize: 11, fontWeight: '800' },
-		headerIconBtn: {
-			padding: 4,
-			justifyContent: 'center',
-			alignItems: 'center'
+		emptyText: {
+			fontSize: 14,
+			fontWeight: '500',
+			textAlign: 'center'
 		},
-		customersRow: {
-			gap: 12,
-			paddingRight: 16
+		card: {
+			marginHorizontal: 16,
+			marginTop: 16
 		},
-		customerChip: {
+		cardHeader: {
 			flexDirection: 'row',
 			alignItems: 'center',
-			paddingVertical: 10,
-			paddingHorizontal: 12,
+			justifyContent: 'space-between',
+			gap: 12,
+			marginBottom: 14
+		},
+		cardHeaderLeft: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			flex: 1,
+			minWidth: 0,
+			gap: 12
+		},
+		cardAvatar: {
+			width: 52,
+			height: 52,
 			borderRadius: 16,
 			borderWidth: 1,
-			gap: 10,
-			width: 200
+			borderColor: `${colors.primary}30`,
+			backgroundColor: colors.surface
 		},
-		customerAvatar: {
-			width: 40,
-			height: 40,
-			borderRadius: 20
+		cardAvatarFallback: {
+			alignItems: 'center',
+			justifyContent: 'center',
+			borderWidth: 0
 		},
-		customerChipText: {
+		cardHeaderText: {
 			flex: 1,
 			minWidth: 0
 		},
-		customerNameText: {
+		cardTitle: {
+			fontSize: 17,
+			fontWeight: '700',
+			letterSpacing: -0.3
+		},
+		cardSubtitle: {
 			fontSize: 13,
-			fontWeight: '700'
-		},
-		customerSlugText: {
-			fontSize: 11,
-			fontWeight: '500',
-			marginTop: 1
-		},
-		customerCityText: {
-			fontSize: 10,
 			fontWeight: '500',
 			marginTop: 2
+		},
+		kindBadge: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 4,
+			paddingHorizontal: 8,
+			paddingVertical: 4,
+			borderRadius: 8,
+			borderWidth: 1
+		},
+		kindBadgeText: {
+			fontSize: 9,
+			fontWeight: '800',
+			letterSpacing: 0.6,
+			textTransform: 'uppercase'
+		},
+		cardMetaRow: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 6,
+			marginBottom: 12
+		},
+		cardMetaText: {
+			fontSize: 12,
+			fontWeight: '500',
+			flex: 1
+		},
+		statsRow: {
+			flexDirection: 'row',
+			flexWrap: 'wrap',
+			gap: 8,
+			marginBottom: 14
+		},
+		statPill: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			gap: 5,
+			paddingHorizontal: 10,
+			paddingVertical: 6,
+			borderRadius: 10,
+			borderWidth: 1
+		},
+		statPillValue: {
+			fontSize: 13,
+			fontWeight: '800'
+		},
+		statPillLabel: {
+			fontSize: 11,
+			fontWeight: '600',
+			maxWidth: 90
+		},
+		cardFooter: {
+			flexDirection: 'row',
+			alignItems: 'center',
+			justifyContent: 'space-between',
+			paddingTop: 12,
+			borderTopWidth: StyleSheet.hairlineWidth,
+			borderTopColor: `${colors.border}80`
+		},
+		cardCta: {
+			fontSize: 13,
+			fontWeight: '700'
 		}
 	})
 

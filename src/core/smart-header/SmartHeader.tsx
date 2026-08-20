@@ -83,10 +83,15 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	const resolvedBottomHeight = headerBottomHeight ?? options?.headerBottomHeight ?? 0
 	const headerHeight = 56 + insets.top + resolvedBottomHeight
 
-	// Keep layout context headerHeight state updated
+	// Keep layout context headerHeight state updated — only when this header's own screen is focused.
+	// Mounted-but-inactive headers (e.g. other tabs that keep a headerBottom) must not overwrite the
+	// height entry of the currently displayed screen, otherwise scroll content gets a wrong paddingTop.
 	useEffect(() => {
-		setHeaderHeight(headerHeight, pathname)
-	}, [headerHeight, setHeaderHeight, pathname])
+		const isFocused = typeof navigation?.isFocused === 'function' ? navigation.isFocused() : true
+		if (isFocused) {
+			setHeaderHeight(headerHeight, pathname)
+		}
+	}, [headerHeight, setHeaderHeight, pathname, navigation])
 
 	// Ensure header and tab bar are visible on route changes to prevent hidden headers carrying over from previous screen scrolls
 	useEffect(() => {

@@ -9,6 +9,7 @@ import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
 import { getToken } from '@/core/storage'
 import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
+import { DashboardProfile } from '@/features/dashboard/dashboard.interface'
 import { PRIORITY_COLORS, Priority } from '@/features/common/PriorityBadge'
 import { getNotificationTemplateColor } from '@/features/notifications/notifications.constant'
 
@@ -51,9 +52,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 				customOnPress = async () => {
 					try {
 						const profilesRes = await getDashboardProfiles()
-						const profileList = profilesRes.data?.filter((p: any) => p.kind === 'business') || []
-						if (profileList.length > 0 && profileList[0].slug) {
-							router.push(`/dashboard/${profileList[0].slug}/sales` as any)
+						const profileList = (profilesRes.data || []).filter((p): p is Extract<DashboardProfile, { kind: 'business' }> => p.kind === 'business')
+						if (profileList.length > 0 && profileList[0].business?.slug) {
+							router.push(`/dashboard/${profileList[0].business.slug}/sales` as any)
 						} else {
 							router.push('/' as any)
 						}

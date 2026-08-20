@@ -77,7 +77,6 @@ export const tn_latn = {
 	'dashboard.pending': 'Pending',
 	'dashboard.completed': 'Completed',
 	'dashboard.welcome': 'Marhba bik',
-	'dashboard.quick_actions': 'Hajet fissa3',
 	'dashboard.recent_purchases': 'Purchases Jdod',
 	'dashboard.view_all': 'Chouf el Kol',
 	'dashboard.no_purchases': 'Mezelt ma chrit chay',

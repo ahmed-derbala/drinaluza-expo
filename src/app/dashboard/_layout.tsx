@@ -16,6 +16,7 @@ export default function DashboardLayout() {
 			}}
 		>
 			<Stack.Screen name="[businessSlug]/index" />
+			<Stack.Screen name="personal/index" />
 			<Stack.Screen name="[businessSlug]/edit" />
 			<Stack.Screen name="[businessSlug]/sales" />
 			<Stack.Screen name="[businessSlug]/sales/[saleId]" />

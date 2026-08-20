@@ -77,7 +77,6 @@ export const tn_arab = {
 	'dashboard.pending': 'في الانتظار',
 	'dashboard.completed': 'كملت',
 	'dashboard.welcome': 'مرحبا بيك',
-	'dashboard.quick_actions': 'أعمال سريعة',
 	'dashboard.recent_purchases': 'آخر المشتريات',
 	'dashboard.view_all': 'عرض الكل',
 	'dashboard.no_purchases': 'مازلت ما شريت شيء',

@@ -1,18 +1,6 @@
 import { LocalizedName } from '@/features/businesses/businesses.interface'
 
-type DashboardProfileKind = 'personal' | 'business'
-
-export type DashboardProfile = {
-	_id: string
-	slug?: string
-	name: LocalizedName
-	role?: string
-	kind: DashboardProfileKind
-	media?: {
-		thumbnail?: { url: string }
-		_id?: string
-	}
-}
+export type DashboardProfileKind = 'personal' | 'business'
 
 type DashboardUserRef = {
 	_id: string
@@ -26,9 +14,30 @@ export type DashboardBusinessRef = {
 	owner?: DashboardUserRef
 	name: LocalizedName
 	slug: string
+	address?: {
+		street?: string
+		city?: string
+		region?: string
+		postalCode?: string
+		country?: string
+	}
+	location?: {
+		geo?: {
+			type: 'Point'
+			coordinates: [number, number]
+		}
+		sharingEnabled?: boolean
+		[key: string]: unknown
+	}
 	media?: {
 		thumbnail?: { url: string }
 		_id?: string
+	}
+	contact?: {
+		phone?: { fullNumber?: string }
+		email?: string
+		whatsapp?: string
+		[key: string]: unknown
 	}
 	qrcode?: {
 		_id?: string
@@ -76,6 +85,9 @@ export type PersonalDashboard = {
 
 export type DashboardData = BusinessDashboard | PersonalDashboard
 
+/** A dashboard profile as returned by GET /api/dashboard/profiles. */
+export type DashboardProfile = BusinessDashboard | PersonalDashboard
+
 export type DashboardProfilesResponse = {
 	status: number
 	data: DashboardProfile[]
@@ -88,3 +100,12 @@ export type DashboardResponse = {
 
 export const isBusinessDashboard = (data: DashboardData): data is BusinessDashboard => data.kind === 'business'
 export const isPersonalDashboard = (data: DashboardData): data is PersonalDashboard => data.kind === 'personal'
+
+/** Sort profiles deterministically: personal first, then businesses alphabetically by name. */
+export const sortDashboardProfiles = (profiles: DashboardProfile[], localize: (name?: LocalizedName) => string): DashboardProfile[] =>
+	[...profiles].sort((a, b) => {
+		if (a.kind !== b.kind) return a.kind === 'personal' ? -1 : 1
+		const nameA = a.kind === 'business' ? localize(a.business.name) : localize(a.user.name)
+		const nameB = b.kind === 'business' ? localize(b.business.name) : localize(b.user.name)
+		return nameA.localeCompare(nameB)
+	})

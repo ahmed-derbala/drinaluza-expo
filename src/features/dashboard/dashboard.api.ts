@@ -6,11 +6,6 @@ export const getDashboardProfiles = async (): Promise<DashboardProfilesResponse>
 	return response.data
 }
 
-export const getDashboard = async (): Promise<DashboardResponse> => {
-	const response = await getApiClient().get('/dashboard')
-	return response.data
-}
-
 export const getBusinessDashboard = async (businessSlug: string): Promise<DashboardResponse> => {
 	const response = await getApiClient().get(`/dashboard/business/${businessSlug}`)
 	return response.data

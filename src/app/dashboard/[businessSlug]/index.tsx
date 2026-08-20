@@ -1,9 +1,9 @@
 import React from 'react'
 import { useLocalSearchParams } from 'expo-router'
-import Dashboard from '@/features/dashboard/Dashboard'
+import BusinessDashboardScreen from '@/features/dashboard/BusinessDashboardScreen'
 
 export default function BusinessDashboardRoute() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	if (!businessSlug) return null
-	return <Dashboard key={businessSlug} profileKind="business" businessSlug={businessSlug} />
+	return <BusinessDashboardScreen key={businessSlug} businessSlug={businessSlug} />
 }
