@@ -7,7 +7,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { useTheme, ThemeColors } from '@/core/theme'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { SmartMediaView } from '@/core/smart-media'
@@ -38,8 +38,8 @@ const PersonalDashboardScreen = () => {
 	if (isOffline && !dashboardData) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: translate('dashboard.personal', 'Personal'), headerActions: headerActions } as any} />
-				<ErrorState />
+				<Stack.Screen options={{ title: translate('error', 'Error'), headerActions: headerActions } as any} />
+				<ErrorBlock />
 			</View>
 		)
 	}
@@ -47,8 +47,8 @@ const PersonalDashboardScreen = () => {
 	if (!dashboardData || !isPersonalDashboard(dashboardData)) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: translate('dashboard.personal', 'Personal'), headerActions: headerActions } as any} />
-				<ErrorState />
+				<Stack.Screen options={{ title: translate('error', 'Error'), headerActions: headerActions } as any} />
+				<ErrorBlock />
 			</View>
 		)
 	}

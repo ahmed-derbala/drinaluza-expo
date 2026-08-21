@@ -1,4 +1,6 @@
 import { Linking, Platform } from 'react-native'
+import { formatAddress, getStreetString } from '@/features/common/address'
+import type { Address, LocalizedName } from '@/features/common/address'
 
 export type LocationLike =
 	| {
@@ -9,16 +11,8 @@ export type LocationLike =
 	| null
 	| undefined
 
-export type AddressLike =
-	| {
-			street?: string
-			city?: string
-			state?: string
-			region?: string
-			country?: string
-	  }
-	| null
-	| undefined
+export type { Address, LocalizedName }
+export { formatAddress, getStreetString }
 
 /** Returns [longitude, latitude] from either nested or legacy location shapes. */
 export function getGeoCoordinates(location: LocationLike): [number, number] | null {
@@ -27,12 +21,6 @@ export function getGeoCoordinates(location: LocationLike): [number, number] | nu
 	const [lng, lat] = coords
 	if (!Number.isFinite(lng) || !Number.isFinite(lat)) return null
 	return [lng, lat]
-}
-
-export function formatAddress(address: AddressLike): string | null {
-	if (!address) return null
-	const parts = [address.street, address.city, address.region, address.country].filter(Boolean)
-	return parts.length > 0 ? parts.join(', ') : null
 }
 
 function buildCoordinatesDirectionsUrl(lat: number, lng: number): string {
@@ -57,7 +45,7 @@ function buildAddressDirectionsUrl(address: string): string {
 }
 
 /** Opens turn-by-turn directions, preferring GPS coordinates over a text address. */
-export function openDirections(location: LocationLike, address?: AddressLike): boolean {
+export function openDirections(location: LocationLike, address?: Address | null | undefined): boolean {
 	const coords = getGeoCoordinates(location)
 	if (coords) {
 		const [lng, lat] = coords
@@ -74,6 +62,6 @@ export function openDirections(location: LocationLike, address?: AddressLike): b
 	return false
 }
 
-export function hasDirectionsTarget(location: LocationLike, address?: AddressLike): boolean {
+export function hasDirectionsTarget(location: LocationLike, address?: Address | null | undefined): boolean {
 	return !!getGeoCoordinates(location) || !!formatAddress(address)
 }

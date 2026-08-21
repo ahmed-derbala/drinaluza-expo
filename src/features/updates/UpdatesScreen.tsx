@@ -2,13 +2,12 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, Text, View, TouchableOpacity, Platform, Alert, useWindowDimensions, Share } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Sharing from 'expo-sharing'
-import { useTheme, ThemeColors } from '@/core/theme'
+import { useTheme, ThemeColors, themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { SmartHeader } from '@/core/smart-header'
 import { config } from '@/config'
 import { useUpdates } from './useUpdates'
 import { isVersionGreater } from './UpdatesContext'
-import { hexToRgba } from '@/core/helpers/colors'
 import { InstallButton } from '@/features/common/buttons/InstallButton'
 import { DownloadButton } from '@/features/common/buttons/DownloadButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
@@ -239,13 +238,72 @@ const InfoCard = ({ icon, iconElement, label, value, color, active, activeBorder
 		style={[
 			styles.infoCard,
 			{
-				backgroundColor: active ? hexToRgba(color, 0.06) : colors.background,
-				borderColor: active ? activeBorderColor || hexToRgba(color, 0.3) : colors.border
+				backgroundColor: active
+					? color === themeColors.primary
+						? themeColors.primary06
+						: color === themeColors.info
+							? themeColors.info06
+							: color === themeColors.success
+								? themeColors.success06
+								: color === themeColors.warning
+									? themeColors.warning06
+									: color === themeColors.error
+										? themeColors.error06
+										: color === themeColors.textTertiary
+											? themeColors.textTertiary06
+											: color === themeColors.textSecondary
+												? themeColors.textSecondary06
+												: color + '0F'
+					: colors.background,
+				borderColor: active
+					? activeBorderColor ||
+						(color === themeColors.primary
+							? themeColors.primary30
+							: color === themeColors.info
+								? themeColors.info30
+								: color === themeColors.success
+									? themeColors.success30
+									: color === themeColors.warning
+										? themeColors.warning30
+										: color === themeColors.error
+											? themeColors.error30
+											: color === themeColors.textTertiary
+												? themeColors.textTertiary30
+												: color === themeColors.textSecondary
+													? themeColors.textSecondary30
+													: color + '4D')
+					: colors.border
 			}
 		]}
 	>
 		<View style={styles.infoCardTopRow}>
-			{iconElement ?? <View style={[styles.infoIcon, { backgroundColor: hexToRgba(color, 0.12) }]}>{icon ? <Ionicons name={icon} size={22} color={color} /> : null}</View>}
+			{iconElement ?? (
+				<View
+					style={[
+						styles.infoIcon,
+						{
+							backgroundColor:
+								color === themeColors.primary
+									? themeColors.primary12
+									: color === themeColors.info
+										? themeColors.info12
+										: color === themeColors.success
+											? themeColors.success12
+											: color === themeColors.warning
+												? themeColors.warning12
+												: color === themeColors.error
+													? themeColors.error12
+													: color === themeColors.textTertiary
+														? themeColors.textTertiary12
+														: color === themeColors.textSecondary
+															? themeColors.textSecondary12
+															: color + '1F'
+						}
+					]}
+				>
+					{icon ? <Ionicons name={icon} size={22} color={color} /> : null}
+				</View>
+			)}
 			<View style={styles.infoText}>
 				<View style={styles.infoTextRow}>
 					{label ? <Text style={[styles.infoLabel, { color: colors.textTertiary }]}>{label}</Text> : null}
@@ -444,19 +502,19 @@ export default function UpdatesScreen() {
 		() =>
 			latestRelease ? (
 				<View style={styles.badgeColumn}>
-					<View style={[styles.infoBadge, { backgroundColor: hexToRgba(colors.info, 0.12) }]}>
+					<View style={[styles.infoBadge, { backgroundColor: themeColors.info12 }]}>
 						<Ionicons name="calendar-outline" size={10} color={colors.info} />
 						<Text style={[styles.infoBadgeText, { color: colors.info }]} numberOfLines={1} adjustsFontSizeToFit>
 							{formatDate(latestRelease.published_at)}
 						</Text>
 					</View>
-					<View style={[styles.infoBadge, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
+					<View style={[styles.infoBadge, { backgroundColor: themeColors.primary12 }]}>
 						<Ionicons name="cube-outline" size={10} color={colors.primary} />
 						<Text style={[styles.infoBadgeText, { color: colors.primary }]} numberOfLines={1} adjustsFontSizeToFit>
 							{formatBytes(latestRelease.size)}
 						</Text>
 					</View>
-					<View style={[styles.infoBadge, { backgroundColor: hexToRgba(colors.success, 0.12) }]}>
+					<View style={[styles.infoBadge, { backgroundColor: themeColors.success12 }]}>
 						<Ionicons name="download-outline" size={10} color={colors.success} />
 						<Text style={[styles.infoBadgeText, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit>
 							{latestRelease.download_count}
@@ -565,7 +623,7 @@ export default function UpdatesScreen() {
 							{sortedApks.map((apk) => (
 								<View key={apk.filename} style={[styles.apkCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 									<View style={styles.apkLeft}>
-										<View style={[styles.apkIcon, { backgroundColor: hexToRgba(colors.primary, 0.12) }]}>
+										<View style={[styles.apkIcon, { backgroundColor: themeColors.primary12 }]}>
 											<Ionicons name="logo-android" size={18} color={colors.primary} />
 										</View>
 										<View style={styles.apkText}>

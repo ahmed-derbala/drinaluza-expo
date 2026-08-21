@@ -1,3 +1,5 @@
+import type { LocalizedName, Address } from '@/features/common/address'
+
 interface UserLocation {
 	geo?: {
 		type: 'Point'
@@ -11,13 +13,6 @@ interface UserLocation {
 	sharingEnabled: boolean
 	createdAt?: string
 	updatedAt?: string
-}
-
-interface UserAddress {
-	street?: string
-	city?: string
-	region?: string
-	country?: string
 }
 
 interface UserContact {
@@ -44,14 +39,10 @@ interface UserState {
 export interface UserProfile {
 	_id: string
 	slug: string
-	name: {
-		en: string
-		tn_latn?: string
-		tn_arab?: string
-	}
+	name: LocalizedName
 	role: string
 	contact?: UserContact
-	address?: UserAddress
+	address?: Address
 	media?: {
 		thumbnail?: {
 			url: string

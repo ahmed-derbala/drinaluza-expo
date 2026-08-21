@@ -1,14 +1,15 @@
 import { useMemo } from 'react'
 import { IconButton } from './IconButton'
 import { themeColors } from '@/core/theme'
-import { hasDirectionsTarget, openDirections, type LocationLike, type AddressLike } from '@/core/helpers/maps'
+import { hasDirectionsTarget, openDirections, type LocationLike } from '@/core/helpers/maps'
+import type { Address } from '@/features/common/address'
 import { translate } from '@/core/translation'
 
 export interface DirectionsButtonProps {
 	/** GPS location. */
 	location?: LocationLike
 	/** Structured address fallback when GPS coordinates are unavailable. */
-	address?: AddressLike
+	address?: Address | null | undefined
 	/** Optional accessibility label. Defaults to "Open Directions". */
 	label?: string
 	/** Optional button size. */

@@ -6,7 +6,7 @@ import { useRouter, Stack, useNavigation, useFocusEffect, useLocalSearchParams }
 import { useTheme } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { useUser, useLayout } from '@/core/contexts'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useNotifications } from './useNotifications'
@@ -172,8 +172,8 @@ export default function NotificationsScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader navigation={navigation} title={translate('notifications_title', 'Notifications')} back={navigation.canGoBack() ? { title: 'Back' } : undefined} />
-				<ErrorState />
+				<SmartHeader navigation={navigation} title={translate('error', 'Error')} back={navigation.canGoBack() ? { title: 'Back' } : undefined} />
+				<ErrorBlock />
 			</View>
 		)
 	}

@@ -1,4 +1,5 @@
-import { LocalizedName, ProductSpecs } from '@/features/businesses/businesses.interface'
+import type { LocalizedName, Address } from '@/features/common/address'
+import type { ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface RatingBreakdown {
 	1: number
@@ -22,15 +23,6 @@ interface BusinessOwner {
 	updatedAt: string
 }
 
-interface BusinessAddress {
-	street: string
-	city: string
-	region?: string
-	state?: string
-	postalCode?: string
-	country: string
-}
-
 interface BusinessLocation {
 	geo?: {
 		type: 'Point'
@@ -50,7 +42,7 @@ interface FeedBusiness {
 	name: LocalizedName
 	slug: string
 	owner: BusinessOwner
-	address: BusinessAddress
+	address: Address
 	location: BusinessLocation
 	media?: {
 		thumbnail?: {
@@ -164,7 +156,7 @@ export interface FeedItem {
 		website?: string
 	}
 	role?: string
-	address?: BusinessAddress
+	address?: Address
 	location?: BusinessLocation
 	businesses?: string[]
 	rating?: Rating
@@ -188,7 +180,7 @@ export interface ProductFeedItem extends FeedItem {
 export interface UserFeedItem extends FeedItem {
 	name: LocalizedName
 	role: string
-	address: BusinessAddress
+	address: Address
 	state: {
 		code: string
 		updatedAt: string

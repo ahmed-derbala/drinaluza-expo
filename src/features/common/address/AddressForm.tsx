@@ -3,21 +3,21 @@ import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { Ionicons } from '@expo/vector-icons'
+import type { LocalizedName } from './address.interface'
+import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 
 export interface AddressFormProps {
-	street: string
-	setStreet: (val: string) => void
+	street: LocalizedName
+	setStreet: (val: LocalizedName) => void
 	city: string
 	setCity: (val: string) => void
 	region: string
 	setRegion: (val: string) => void
-	postalCode: string
-	setPostalCode: (val: string) => void
 	country: string
 	setCountry: (val: string) => void
 }
 
-export default function AddressForm({ street, setStreet, city, setCity, region, setRegion, postalCode, setPostalCode, country, setCountry }: AddressFormProps) {
+export default function AddressForm({ street, setStreet, city, setCity, region, setRegion, country, setCountry }: AddressFormProps) {
 	const { colors } = useTheme()
 	const { translate } = useUser()
 	const [focusedField, setFocusedField] = useState<string | null>(null)
@@ -63,17 +63,34 @@ export default function AddressForm({ street, setStreet, city, setCity, region, 
 		)
 	}
 
+	const streetObj = street || { en: '', tn_latn: '', tn_arab: '' }
+
 	return (
 		<View style={styles.container}>
-			{renderField(translate('street', 'Street Address'), street, setStreet, translate('street_placeholder', 'e.g., Rue de la Paix'), 'home-outline', 'street')}
+			<View style={styles.inputGroup}>
+				<Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{translate('street', 'Street Address')}</Text>
+				<View style={{ gap: 8 }}>
+					<LocalizedFormInput value={streetObj.en || ''} onChangeText={(val) => setStreet({ ...streetObj, en: val })} lang="en" placeholder={translate('street_placeholder_en', 'e.g., 123 Main St')} />
+					<LocalizedFormInput
+						value={streetObj.tn_latn || ''}
+						onChangeText={(val) => setStreet({ ...streetObj, tn_latn: val })}
+						lang="tn_latn"
+						placeholder={translate('street_placeholder_tn_latn', 'e.g., Rue de la Paix')}
+					/>
+					<LocalizedFormInput
+						value={streetObj.tn_arab || ''}
+						onChangeText={(val) => setStreet({ ...streetObj, tn_arab: val })}
+						lang="tn_arab"
+						placeholder={translate('street_placeholder_tn_arab', 'e.g., شارع السلام')}
+					/>
+				</View>
+			</View>
 			<View style={styles.row}>
 				<View style={styles.col}>{renderField(translate('city', 'City'), city, setCity, translate('city_placeholder', 'e.g., Ellouza'), 'business-outline', 'city')}</View>
 				<View style={styles.gap} />
 				<View style={styles.col}>{renderField(translate('region', 'Region'), region, setRegion, translate('region_placeholder', 'e.g., Sfax'), 'map-outline', 'region')}</View>
 			</View>
 			<View style={styles.row}>
-				<View style={styles.col}>{renderField(translate('postal_code', 'Postal Code'), postalCode, setPostalCode, '3016', 'navigate-outline', 'postalCode', 'numeric')}</View>
-				<View style={styles.gap} />
 				<View style={styles.col}>{renderField(translate('country', 'Country'), country, setCountry, translate('country_placeholder', 'e.g., Tunisia'), 'earth-outline', 'country')}</View>
 			</View>
 		</View>

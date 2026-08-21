@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { ErrorBoundaryFallback } from '@/core/error/ErrorBoundaryFallback'
 
 export default function HomeLayout() {
 	const { colors } = useTheme()
@@ -159,6 +160,10 @@ export default function HomeLayout() {
 			</Tabs>
 		</View>
 	)
+}
+
+export function ErrorBoundary({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+	return <ErrorBoundaryFallback error={error} retry={retry} label="(home)ErrorBoundary" />
 }
 
 const styles = StyleSheet.create({

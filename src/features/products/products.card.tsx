@@ -15,6 +15,7 @@ import { QuantityStepper } from '@/features/common/QuantityStepper'
 import ProductNameWithThumbnailBlock from './blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
+import { formatAddress } from '@/features/common/address'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -146,9 +147,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 
 	const isSmall = width < 500
 
-	// Build address line from structured address fields
-	const addr = item.business?.address
-	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
+	const addressLine = formatAddress(item.business?.address, localize)
 
 	return (
 		<Pressable

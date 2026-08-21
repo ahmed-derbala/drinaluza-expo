@@ -25,9 +25,10 @@ import { ProductType } from '@/features/products/products.type'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, themeColors } from '@/core/theme'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
+import { formatAddress } from '@/features/common/address'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 
@@ -226,9 +227,10 @@ export default function BusinessDetailsScreen() {
 	if (isOffline && !business) {
 		return (
 			<View style={styles.container}>
-				<Stack.Screen options={{ title: displayTitle }} />
+				<Stack.Screen options={{ title: translate('error', 'Error') }} />
+				<SmartHeader title={translate('error', 'Error')} fallbackRoute="/(home)/feed" />
 				<View style={[styles.errorContainer, { backgroundColor: colors.background }]}>
-					<ErrorState />
+					<ErrorBlock />
 				</View>
 			</View>
 		)
@@ -245,13 +247,7 @@ export default function BusinessDetailsScreen() {
 		)
 	}
 
-	// Build address string
-	const addressParts = []
-	if (business.address?.street) addressParts.push(business.address.street)
-	if (business.address?.city) addressParts.push(business.address.city)
-	if (business.address?.region) addressParts.push(business.address.region)
-	if (business.address?.country) addressParts.push(business.address.country)
-	const fullAddress = addressParts.join(', ')
+	const fullAddress = formatAddress(business.address, localize)
 
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>

@@ -8,7 +8,7 @@ import { Product } from '@/features/businesses/businesses.interface'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, themeColors } from '@/core/theme'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { Stack } from 'expo-router'
@@ -590,7 +590,7 @@ export default function BusinessProductsScreen() {
 				keyboardShouldPersistTaps="handled"
 				ListEmptyComponent={
 					isOffline ? (
-						<ErrorState />
+						<ErrorBlock />
 					) : !isInitialLoading ? (
 						<EmptyState
 							onActionPress={

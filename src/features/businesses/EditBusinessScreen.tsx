@@ -4,11 +4,12 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import ErrorState from '@/features/common/ErrorState'
+import type { LocalizedName } from '@/features/common/address'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { toast } from '@/features/common/Toast'
 import { Ionicons } from '@expo/vector-icons'
-import AddressForm from '@/features/common/AddressForm'
+import { AddressForm } from '@/features/common/address'
 import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SmartMediaView, pickSingleMediaFile, uploadThumbnail } from '@/core/smart-media'
@@ -23,7 +24,7 @@ export default function EditBusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
-	const { translate } = useUser()
+	const { translate, localize } = useUser()
 	const { width } = useWindowDimensions()
 
 	const [loading, setLoading] = useState(true)
@@ -46,11 +47,10 @@ export default function EditBusinessScreen() {
 	const [nameTnArab, setNameTnArab] = useState('')
 	const [description, setDescription] = useState('')
 
-	const [street, setStreet] = useState('')
+	const [street, setStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [city, setCity] = useState('')
 	const [region, setRegion] = useState('')
 	const [country, setCountry] = useState('')
-	const [postalCode, setPostalCode] = useState('')
 
 	const [phoneCountry, setPhoneCountry] = useState('216')
 	const [phoneLocal, setPhoneLocal] = useState('')
@@ -88,11 +88,15 @@ export default function EditBusinessScreen() {
 			setNameTnArab(biz.name?.tn_arab || '')
 			setDescription(biz.description || '')
 
-			setStreet(biz.address?.street || '')
+			const s = biz.address?.street as unknown as LocalizedName | undefined
+			if (s) {
+				setStreet({ en: s.en || '', tn_latn: s.tn_latn || '', tn_arab: s.tn_arab || '' })
+			} else {
+				setStreet({ en: '', tn_latn: '', tn_arab: '' })
+			}
 			setCity(biz.address?.city || '')
 			setRegion(biz.address?.region || '')
 			setCountry(biz.address?.country || '')
-			setPostalCode(biz.address?.postalCode || '')
 
 			setPhoneCountry(biz.contact?.phone?.countryCode || '216')
 			setPhoneLocal(biz.contact?.phone?.localNumber || '')
@@ -177,11 +181,12 @@ export default function EditBusinessScreen() {
 		}
 		try {
 			setSaving(true)
+			const enName = nameEn.trim()
 			await updateBusiness(businessSlug!, {
 				name: {
-					en: nameEn.trim(),
-					tn_latn: nameTnLatn.trim() || undefined,
-					tn_arab: nameTnArab.trim() || undefined
+					en: enName,
+					tn_latn: nameTnLatn.trim() || enName,
+					tn_arab: nameTnArab.trim() || enName
 				}
 			})
 			toast.show({ title: 'Success', content: translate('business_names_updated', 'Business names updated successfully'), borderColor: colors.success })
@@ -266,15 +271,22 @@ export default function EditBusinessScreen() {
 	}
 
 	const saveAddress = async () => {
+		if (!street.en.trim()) {
+			toast.show({ title: translate('error', 'Error'), content: translate('street_required', 'Street (English) is required'), borderColor: colors.error })
+			return
+		}
 		try {
 			setSaving(true)
 			await updateBusiness(businessSlug!, {
 				address: {
-					street: street.trim(),
-					city: city.trim(),
-					region: region.trim(),
-					country: country.trim(),
-					postalCode: postalCode.trim()
+					street: {
+						en: street.en.trim(),
+						tn_latn: street.tn_latn?.trim() || street.en.trim(),
+						tn_arab: street.tn_arab?.trim() || street.en.trim()
+					},
+					city: city.trim() || 'Ellouza',
+					region: region.trim() || 'Sfax',
+					country: country.trim() || 'Tunisia'
 				}
 			})
 			toast.show({ title: 'Success', content: translate('business_address_updated', 'Business address updated successfully'), borderColor: colors.success })
@@ -305,8 +317,8 @@ export default function EditBusinessScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader title={translate('edit_business', 'Edit Business')} fallbackRoute="/dashboard" />
-				<ErrorState onRetry={loadBusiness} />
+				<SmartHeader title={translate('error', 'Error')} fallbackRoute="/dashboard" />
+				<ErrorBlock onRetry={loadBusiness} />
 			</View>
 		)
 	}
@@ -680,25 +692,13 @@ export default function EditBusinessScreen() {
 							onCancel={() => cancelEdit('address')}
 						>
 							{editMode.address ? (
-								<AddressForm
-									street={street}
-									setStreet={setStreet}
-									city={city}
-									setCity={setCity}
-									region={region}
-									setRegion={setRegion}
-									postalCode={postalCode}
-									setPostalCode={setPostalCode}
-									country={country}
-									setCountry={setCountry}
-								/>
+								<AddressForm street={street} setStreet={setStreet} city={city} setCity={setCity} region={region} setRegion={setRegion} country={country} setCountry={setCountry} />
 							) : (
 								<View style={{ gap: 12 }}>
-									<SectionRow label={translate('street', 'Street')} value={street || '—'} icon="location" />
+									<SectionRow label={translate('street', 'Street')} value={localize(street) || '—'} icon="location" />
 									<SectionRow label={translate('city', 'City')} value={city || '—'} icon="business" />
 									<SectionRow label={translate('region', 'Region')} value={region || '—'} icon="map" />
 									<SectionRow label={translate('country', 'Country')} value={country || '—'} icon="globe" />
-									<SectionRow label={translate('postal_code', 'Postal Code')} value={postalCode || '—'} icon="mail-unread" />
 								</View>
 							)}
 						</EditableSection>

@@ -7,19 +7,20 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
 import { ProductType, FileRef } from '@/features/products/products.type'
+import type { LocalizedName } from '@/features/common/address'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { SmartHeader } from '@/core/smart-header'
 import { SmartMediaView, SmartMediaGalleryCard, deleteMediaFile } from '@/core/smart-media'
 import StateBadge from '@/features/common/StateBadge'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
-import { parseError } from '@/core/helpers/errorHandler'
+import { parseError } from '@/core/error/errorHandler'
 import { LinearGradient } from 'expo-linear-gradient'
 
 export default function BusinessDashboardProductDetailScreen() {
@@ -66,10 +67,9 @@ export default function BusinessDashboardProductDetailScreen() {
 
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
-	const [originStreet, setOriginStreet] = useState('')
+	const [originStreet, setOriginStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
-	const [originPostalCode, setOriginPostalCode] = useState('3016')
 	const [originCountry, setOriginCountry] = useState('Tunisia')
 	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
 
@@ -101,10 +101,17 @@ export default function BusinessDashboardProductDetailScreen() {
 
 		setCaliber((prod.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
 		setHarvest(prod.specs?.harvest || 'farm')
-		setOriginStreet(prod.specs?.origin?.street || '')
+		setOriginStreet(
+			prod.specs?.origin?.street
+				? {
+						en: (prod.specs.origin.street as LocalizedName).en || '',
+						tn_latn: (prod.specs.origin.street as LocalizedName).tn_latn || '',
+						tn_arab: (prod.specs.origin.street as LocalizedName).tn_arab || ''
+					}
+				: { en: '', tn_latn: '', tn_arab: '' }
+		)
 		setOriginCity(prod.specs?.origin?.city || 'Ellouza')
 		setOriginRegion(prod.specs?.origin?.region || 'Sfax')
-		setOriginPostalCode(prod.specs?.origin?.postalCode || '3016')
 		setOriginCountry(prod.specs?.origin?.country || 'Tunisia')
 		setGear(prod.specs?.gear)
 	}
@@ -154,11 +161,12 @@ export default function BusinessDashboardProductDetailScreen() {
 		}
 		try {
 			setSaving(true)
+			const enName = nameEn.trim()
 			const res = await updateProduct(productSlug!, {
 				name: {
-					en: nameEn.trim(),
-					tn_latn: nameTnLatn.trim() || undefined,
-					tn_arab: nameTnArab.trim() || undefined
+					en: enName,
+					tn_latn: nameTnLatn.trim() || enName,
+					tn_arab: nameTnArab.trim() || enName
 				}
 			})
 			setProduct(res.data)
@@ -310,11 +318,16 @@ export default function BusinessDashboardProductDetailScreen() {
 					harvest,
 					gear,
 					origin: {
-						street: originStreet.trim() || undefined,
-						city: originCity.trim() || undefined,
-						region: originRegion.trim() || undefined,
-						postalCode: originPostalCode.trim() || undefined,
-						country: originCountry.trim() || undefined
+						street: originStreet.en.trim()
+							? {
+									en: originStreet.en.trim(),
+									tn_latn: originStreet.tn_latn?.trim() || originStreet.en.trim(),
+									tn_arab: originStreet.tn_arab?.trim() || originStreet.en.trim()
+								}
+							: undefined,
+						city: originCity.trim() || 'Ellouza',
+						region: originRegion.trim() || 'Sfax',
+						country: originCountry.trim() || 'Tunisia'
 					}
 				}
 			})
@@ -333,10 +346,10 @@ export default function BusinessDashboardProductDetailScreen() {
 		if (product) {
 			setCaliber((product.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
 			setHarvest(product.specs?.harvest || 'farm')
-			setOriginStreet(product.specs?.origin?.street || '')
+			const s = product.specs?.origin?.street as unknown as LocalizedName | undefined
+			setOriginStreet(s ? { en: s.en || '', tn_latn: s.tn_latn || '', tn_arab: s.tn_arab || '' } : { en: '', tn_latn: '', tn_arab: '' })
 			setOriginCity(product.specs?.origin?.city || 'Ellouza')
 			setOriginRegion(product.specs?.origin?.region || 'Sfax')
-			setOriginPostalCode(product.specs?.origin?.postalCode || '3016')
 			setOriginCountry(product.specs?.origin?.country || 'Tunisia')
 			setGear(product.specs?.gear)
 		}
@@ -426,8 +439,8 @@ export default function BusinessDashboardProductDetailScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader fallbackRoute={`/dashboard/${businessSlug}/products`} />
-				<ErrorState onRetry={error?.type === 'network' ? undefined : () => loadProduct()} />
+				<SmartHeader title={translate('error', 'Error')} fallbackRoute={`/dashboard/${businessSlug}/products`} />
+				<ErrorBlock onRetry={() => loadProduct()} />
 			</View>
 		)
 	}
@@ -592,8 +605,6 @@ export default function BusinessDashboardProductDetailScreen() {
 							setOriginCity={setOriginCity}
 							originRegion={originRegion}
 							setOriginRegion={setOriginRegion}
-							originPostalCode={originPostalCode}
-							setOriginPostalCode={setOriginPostalCode}
 							originCountry={originCountry}
 							setOriginCountry={setOriginCountry}
 							gear={gear}

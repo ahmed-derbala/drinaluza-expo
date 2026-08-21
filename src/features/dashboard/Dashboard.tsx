@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Tabs } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, ThemeColors } from '@/core/theme'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
@@ -99,8 +99,8 @@ const Dashboard = () => {
 	if (isOffline && profiles.length === 0) {
 		return (
 			<View style={styles.container}>
-				<Tabs.Screen options={{ title: translate('dashboard', 'Dashboard'), headerLeft: () => null, headerActions: headerActions } as any} />
-				<ErrorState />
+				<Tabs.Screen options={{ title: translate('error', 'Error'), headerLeft: () => null, headerActions: headerActions } as any} />
+				<ErrorBlock />
 			</View>
 		)
 	}

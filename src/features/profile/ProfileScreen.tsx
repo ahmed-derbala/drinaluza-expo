@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
 
-import AddressForm from '@/features/common/AddressForm'
+import { AddressForm } from '@/features/common/address'
 import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
 import DateTimePicker from '@react-native-community/datetimepicker'
@@ -14,7 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { useTheme, themeColors } from '@/core/theme'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
 import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@/core/smart-media'
@@ -292,8 +292,8 @@ export default function ProfileScreen() {
 			setBusinessLoading(true)
 			const nameData: LocalizedName = {
 				en: businessName.en.trim(),
-				tn_latn: businessName.tn_latn?.trim() || undefined,
-				tn_arab: businessName.tn_arab?.trim() || undefined
+				tn_latn: businessName.tn_latn?.trim() || businessName.en.trim(),
+				tn_arab: businessName.tn_arab?.trim() || businessName.en.trim()
 			}
 			await requestBusiness(nameData)
 			setShowBusinessModal(false)
@@ -335,8 +335,8 @@ export default function ProfileScreen() {
 	if (isOffline && !userData) {
 		return (
 			<View style={styles.container}>
-				<Tabs.Screen options={{ title: 'Profile', headerLeft: () => null }} />
-				<ErrorState />
+				<Tabs.Screen options={{ title: translate('error', 'Error'), headerLeft: () => null }} />
+				<ErrorBlock />
 			</View>
 		)
 	}
@@ -507,27 +507,20 @@ export default function ProfileScreen() {
 					>
 						{editMode.address ? (
 							<AddressForm
-								street={userData.address?.street || ''}
+								street={userData.address?.street || { en: '', tn_latn: '', tn_arab: '' }}
 								setStreet={(val) => updateField('street', val, 'address')}
 								city={userData.address?.city || ''}
 								setCity={(val) => updateField('city', val, 'address')}
 								region={userData.address?.region || ''}
 								setRegion={(val) => updateField('region', val, 'address')}
-								postalCode={userData.address?.postalCode || ''}
-								setPostalCode={(val) => updateField('postalCode', val, 'address')}
 								country={userData.address?.country || ''}
 								setCountry={(val) => updateField('country', val, 'address')}
 							/>
 						) : (
 							<>
-								{userData?.address?.street && <SectionRow label="Street" value={userData.address.street} icon="home" iconColor={colors.primary} />}
-								{(userData?.address?.city || userData?.address?.region || userData?.address?.postalCode) && (
-									<SectionRow
-										label="City/Region/Postal Code"
-										value={[userData?.address?.city, userData?.address?.region, userData?.address?.postalCode].filter(Boolean).join(', ') || 'Not set'}
-										icon="business"
-										iconColor={colors.primary}
-									/>
+								{userData?.address?.street && <SectionRow label="Street" value={localize(userData.address.street) || '—'} icon="home" iconColor={colors.primary} />}
+								{(userData?.address?.city || userData?.address?.region) && (
+									<SectionRow label="City/Region" value={[userData?.address?.city, userData?.address?.region].filter(Boolean).join(', ') || 'Not set'} icon="business" iconColor={colors.primary} />
 								)}
 								{userData?.address?.country && <SectionRow label="Country" value={userData.address.country} icon="earth" iconColor={colors.primary} />}
 								{!userData?.address?.street && !userData?.address?.city && !userData?.address?.region && !userData?.address?.country && (

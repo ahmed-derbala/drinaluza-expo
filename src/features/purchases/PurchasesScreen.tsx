@@ -8,7 +8,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import { useBackButton } from '@/core/hooks/useBackButton'
 
 import { useUser } from '@/core/contexts'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/orders/orders-statuses'
 import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
@@ -321,7 +321,7 @@ export default function PurchasesScreen() {
 			/>
 
 			{isOffline && displayData.length === 0 ? (
-				<ErrorState />
+				<ErrorBlock />
 			) : isInitialLoading ? (
 				<Spinner />
 			) : (

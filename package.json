@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.60.14",
+  "version": "1.60.16",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -29,7 +29,7 @@
     "eas:build-prod-locally": "dotenv -e .env -- env NODE_ENV=production eas build -p android --profile production --local --output=./builds/${npm_package_name}-${npm_package_version}.apk",
     "eas:build-dev-locally": "dotenv -e .env -- env NODE_ENV=local eas build -p android --profile development --local --output=./builds/${npm_package_name}-${npm_package_version}-dev.apk",
     "build:apk-prod": "npm run env:prod && npm run eas:build-prod-locally && npm run releases:apk && npm run env:local && npm run ver",
-    "build:apk-dev": "npm run env:local && npm run eas:build-dev-locally && npm run env:local && npm run ver",
+    "build:apk-dev": "npm run env:local && npm run eas:build-dev-locally && npm run ver",
     "build:web": "npm run clean:prod && NODE_ENV=production expo export -p web",
     "start": "expo start",
     "start:local": "npm run env:local && APP_ENV=development expo start",
@@ -97,6 +97,7 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.17",
+    "expo-dev-client": "^57.0.14",
     "typescript": "~6.0.3"
   }
 }

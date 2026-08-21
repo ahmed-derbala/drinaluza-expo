@@ -5,7 +5,7 @@ import { useWindowDimensions } from 'react-native'
 import { StyleSheet, View, TouchableOpacity, RefreshControl, Linking, ViewStyle, ImageStyle, Platform } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
 import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import { SmartMediaView } from '@/core/smart-media'
 import Spinner from '@/features/common/Spinner'
@@ -594,7 +594,7 @@ export default function BusinessesListScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (isOffline) {
-			return <ErrorState />
+			return <ErrorBlock />
 		}
 		return <EmptyState style={styles.emptyContainer as ViewStyle} />
 	}, [isOffline])

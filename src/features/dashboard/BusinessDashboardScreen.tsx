@@ -7,7 +7,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ThemeColors, useTheme } from '@/core/theme'
 import { HeaderCreateProductButton, HeaderQRCodeButton, HeaderRefreshButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { SmartMediaView } from '@/core/smart-media'
@@ -63,8 +63,8 @@ const BusinessDashboardScreen = ({ businessSlug }: BusinessDashboardScreenProps)
 	if (isOffline && !dashboardData) {
 		return (
 			<View style={styles.container}>
-				<Tabs.Screen options={{ title: translate('dashboard', 'Dashboard'), headerLeft: () => null, headerActions: headerActions } as any} />
-				<ErrorState />
+				<Tabs.Screen options={{ title: translate('error', 'Error'), headerLeft: () => null, headerActions: headerActions } as any} />
+				<ErrorBlock />
 			</View>
 		)
 	}
@@ -72,8 +72,8 @@ const BusinessDashboardScreen = ({ businessSlug }: BusinessDashboardScreenProps)
 	if (!dashboardData || !isBusinessDashboard(dashboardData)) {
 		return (
 			<View style={styles.container}>
-				<Tabs.Screen options={{ title: translate('dashboard', 'Dashboard'), headerLeft: () => null, headerActions: headerActions } as any} />
-				<ErrorState />
+				<Tabs.Screen options={{ title: translate('error', 'Error'), headerLeft: () => null, headerActions: headerActions } as any} />
+				<ErrorBlock />
 			</View>
 		)
 	}

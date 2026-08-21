@@ -1,4 +1,6 @@
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import type { LocalizedName, Address } from '@/features/common/address'
+
+export type { Address } from '@/features/common/address'
 
 export interface Phone {
 	fullNumber?: string
@@ -28,14 +30,6 @@ interface Media {
 	thumbnail?: {
 		url: string
 	}
-}
-
-export interface Address {
-	street?: string
-	city?: string
-	region?: string
-	postalCode?: string
-	country?: string
 }
 
 export interface Location {

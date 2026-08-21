@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { SmartMediaView } from '@/core/smart-media'
-import { formatAddress } from '@/core/helpers/maps'
+import { formatAddress } from '@/features/common/address'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { EmailButton } from '@/features/common/buttons/EmailButton'
@@ -19,7 +19,7 @@ interface CustomerContactBlockProps {
 export function CustomerContactBlock({ customer, contactButtonSize = 36 }: CustomerContactBlockProps) {
 	const { colors } = useTheme()
 	const { localize } = useUser()
-	const address = formatAddress(customer.address)
+	const address = formatAddress(customer.address, localize)
 
 	return (
 		<View style={[styles.container, { borderBottomColor: colors.border }]}>

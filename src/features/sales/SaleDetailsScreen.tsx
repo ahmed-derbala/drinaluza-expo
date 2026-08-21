@@ -10,7 +10,7 @@ import { HeaderSalesButton } from '@/core/smart-header/buttons'
 import { getSaleById, Sale } from './sales.api'
 import SaleCard from './SaleCard'
 import Spinner from '@/features/common/Spinner'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 
 export default function SaleDetailsScreen() {
 	const { businessSlug, saleId } = useLocalSearchParams<{ businessSlug: string; saleId: string }>()
@@ -65,8 +65,9 @@ export default function SaleDetailsScreen() {
 	if (error || !sale) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
-				<Stack.Screen options={{ title: translate('sale_details', 'Sale Details') }} />
-				<ErrorState onRetry={() => fetchSale(true)} />
+				<Stack.Screen options={{ title: translate('error', 'Error') }} />
+				<SmartHeader title={translate('error', 'Error')} fallbackRoute={`/dashboard/${businessSlug}/sales` as any} />
+				<ErrorBlock onRetry={() => fetchSale(true)} />
 			</View>
 		)
 	}

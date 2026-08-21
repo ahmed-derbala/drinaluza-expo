@@ -2,7 +2,7 @@ import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestCo
 import { router } from 'expo-router'
 import { secureGetItem, secureRemoveItem } from '@/core/storage'
 import { config } from '@/config'
-import { logError } from '@/core/helpers/errorHandler'
+import { logError } from '@/core/error/errorHandler'
 import { log } from '@/core/log'
 import { ConnectionService } from '@/core/connection'
 

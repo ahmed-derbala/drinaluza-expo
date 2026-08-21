@@ -5,8 +5,10 @@ import { Ionicons } from '@expo/vector-icons'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
-import AddressForm from '@/features/common/AddressForm'
+import { AddressForm, formatAddress } from '@/features/common/address'
 import { GearIcon } from './GearIcons'
+import { useUser } from '@/core/contexts/UserContext'
+import type { LocalizedName, Address } from '@/features/common/address'
 
 export interface ProductSpecsSectionProps {
 	editable: boolean
@@ -17,14 +19,12 @@ export interface ProductSpecsSectionProps {
 	setCaliber?: (val: 1 | 2 | 3 | 4 | 5) => void
 	harvest?: 'wild' | 'farm'
 	setHarvest?: (val: 'wild' | 'farm') => void
-	originStreet?: string
-	setOriginStreet?: (val: string) => void
+	originStreet?: LocalizedName
+	setOriginStreet?: (val: LocalizedName) => void
 	originCity?: string
 	setOriginCity?: (val: string) => void
 	originRegion?: string
 	setOriginRegion?: (val: string) => void
-	originPostalCode?: string
-	setOriginPostalCode?: (val: string) => void
 	originCountry?: string
 	setOriginCountry?: (val: string) => void
 	gear?: 'trap' | 'gillnet'
@@ -34,13 +34,7 @@ export interface ProductSpecsSectionProps {
 		caliber?: number
 		harvest?: 'wild' | 'farm'
 		gear?: 'trap' | 'gillnet'
-		origin?: {
-			street?: string
-			city?: string
-			region?: string
-			postalCode?: string
-			country?: string
-		}
+		origin?: Address
 	} | null
 	onEdit?: () => void
 	onSavePress?: () => void
@@ -55,14 +49,12 @@ export default function ProductSpecsSection({
 	setCaliber,
 	harvest = 'farm',
 	setHarvest,
-	originStreet = '',
+	originStreet,
 	setOriginStreet,
 	originCity = 'Ellouza',
 	setOriginCity,
 	originRegion = 'Sfax',
 	setOriginRegion,
-	originPostalCode = '3016',
-	setOriginPostalCode,
 	originCountry = 'Tunisia',
 	setOriginCountry,
 	gear,
@@ -73,6 +65,8 @@ export default function ProductSpecsSection({
 	onCancelPress
 }: ProductSpecsSectionProps) {
 	const styles = createStyles(colors)
+	const { localize } = useUser()
+	const streetValue = (originStreet as any) || { en: '', tn_latn: '', tn_arab: '' }
 
 	if (editable) {
 		return (
@@ -158,14 +152,12 @@ export default function ProductSpecsSection({
 				<Text style={[styles.fieldLabel, { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 8, marginBottom: 12 }]}>{translate('origin_address', 'Origin Address')}</Text>
 
 				<AddressForm
-					street={originStreet}
+					street={streetValue}
 					setStreet={setOriginStreet || (() => {})}
 					city={originCity}
 					setCity={setOriginCity || (() => {})}
 					region={originRegion}
 					setRegion={setOriginRegion || (() => {})}
-					postalCode={originPostalCode}
-					setPostalCode={setOriginPostalCode || (() => {})}
 					country={originCountry}
 					setCountry={setOriginCountry || (() => {})}
 				/>
@@ -253,7 +245,7 @@ export default function ProductSpecsSection({
 				<View style={[styles.specDetailRow, { borderBottomWidth: 0 }]}>
 					<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('origin', 'Origin')}</Text>
 					<Text style={[styles.originValue, { color: colors.text }]} numberOfLines={2}>
-						{[specs.origin.street, specs.origin.city, specs.origin.region, specs.origin.country].filter(Boolean).join(', ')}
+						{formatAddress(specs.origin, localize) || '—'}
 					</Text>
 				</View>
 			)}

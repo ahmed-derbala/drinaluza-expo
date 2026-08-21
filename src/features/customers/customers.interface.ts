@@ -1,18 +1,11 @@
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import type { LocalizedName, Address } from '@/features/common/address'
 
 export interface Customer {
 	_id: string
 	role: string
 	slug: string
 	name: LocalizedName
-	address?: {
-		street?: string
-		city?: string
-		state?: string
-		region?: string
-		country?: string
-		postalCode?: string
-	}
+	address?: Address
 	location?: {
 		geo?: { type: 'Point'; coordinates: [number, number] }
 		accuracy?: number

@@ -10,13 +10,15 @@ import { useLayout } from '@/core/contexts/LayoutContext'
 import { updateProduct } from '@/features/products/products.api'
 import { useProductBySlug } from './useProductBySlug'
 import { ProductType, FileRef } from '@/features/products/products.type'
+import type { LocalizedName } from '@/features/common/address'
+import { formatAddress } from '@/features/common/address'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
-import { parseError } from '@/core/helpers/errorHandler'
-import ErrorState from '@/features/common/ErrorState'
+import { parseError } from '@/core/error/errorHandler'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
@@ -86,10 +88,9 @@ export default function ProductScreen() {
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
-	const [originStreet, setOriginStreet] = useState('')
+	const [originStreet, setOriginStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [originCity, setOriginCity] = useState('')
 	const [originRegion, setOriginRegion] = useState('')
-	const [originPostalCode, setOriginPostalCode] = useState('')
 	const [originCountry, setOriginCountry] = useState('')
 	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
 
@@ -117,10 +118,17 @@ export default function ProductScreen() {
 		setUploadedGallery(prod.media?.gallery || [])
 		setCaliber((prod.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
 		setHarvest(prod.specs?.harvest || 'farm')
-		setOriginStreet(prod.specs?.origin?.street || '')
+		setOriginStreet(
+			prod.specs?.origin?.street
+				? {
+						en: (prod.specs.origin.street as LocalizedName).en || '',
+						tn_latn: (prod.specs.origin.street as LocalizedName).tn_latn || '',
+						tn_arab: (prod.specs.origin.street as LocalizedName).tn_arab || ''
+					}
+				: { en: '', tn_latn: '', tn_arab: '' }
+		)
 		setOriginCity(prod.specs?.origin?.city || '')
 		setOriginRegion(prod.specs?.origin?.region || '')
-		setOriginPostalCode(prod.specs?.origin?.postalCode || '')
 		setOriginCountry(prod.specs?.origin?.country || '')
 		setGear(prod.specs?.gear)
 	}, [])
@@ -206,11 +214,12 @@ export default function ProductScreen() {
 		if (!canEditProduct) return
 		try {
 			setSaving(true)
+			const enName = nameEn.trim() || product?.name?.en || ''
 			const res = await updateProduct(productSlug!, {
 				name: {
-					en: nameEn.trim() || product?.name?.en || '',
-					tn_latn: nameTnLatn.trim() || undefined,
-					tn_arab: nameTnArab.trim() || undefined
+					en: enName,
+					tn_latn: nameTnLatn.trim() || enName,
+					tn_arab: nameTnArab.trim() || enName
 				}
 			})
 			if (productResponse) {
@@ -373,11 +382,16 @@ export default function ProductScreen() {
 					harvest,
 					gear,
 					origin: {
-						street: originStreet.trim() || undefined,
-						city: originCity.trim() || undefined,
-						region: originRegion.trim() || undefined,
-						postalCode: originPostalCode.trim() || undefined,
-						country: originCountry.trim() || undefined
+						street: originStreet.en.trim()
+							? {
+									en: originStreet.en.trim(),
+									tn_latn: originStreet.tn_latn?.trim() || originStreet.en.trim(),
+									tn_arab: originStreet.tn_arab?.trim() || originStreet.en.trim()
+								}
+							: undefined,
+						city: originCity.trim() || 'Ellouza',
+						region: originRegion.trim() || 'Sfax',
+						country: originCountry.trim() || 'Tunisia'
 					}
 				}
 			})
@@ -441,8 +455,9 @@ export default function ProductScreen() {
 	if (!product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
-				<Stack.Screen options={{ title: displayTitle, subtitle: productSlug } as any} />
-				<ErrorState />
+				<Stack.Screen options={{ title: translate('error', 'Error'), subtitle: productSlug } as any} />
+				<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" />
+				<ErrorBlock onRetry={refresh} />
 			</View>
 		)
 	}
@@ -646,7 +661,7 @@ export default function ProductScreen() {
 						<Text style={[styles.metaCardName, { color: colors.text }]}>{localize(product.business?.name)}</Text>
 						{product.business?.address && (
 							<Text style={[styles.metaCardSub, { color: colors.textSecondary }]}>
-								{product.business.address.city}, {product.business.address.country}
+								{formatAddress(product.business.address, localize) || [product.business.address.city, product.business.address.country].filter(Boolean).join(', ')}
 							</Text>
 						)}
 					</TouchableOpacity>
@@ -701,8 +716,6 @@ export default function ProductScreen() {
 					setOriginCity={setOriginCity}
 					originRegion={originRegion}
 					setOriginRegion={setOriginRegion}
-					originPostalCode={originPostalCode}
-					setOriginPostalCode={setOriginPostalCode}
 					originCountry={originCountry}
 					setOriginCountry={setOriginCountry}
 					gear={gear}

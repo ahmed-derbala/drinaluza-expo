@@ -9,10 +9,10 @@ import useFeed from '@/features/feed/useFeed'
 
 import FeedProductCard from '@/features/feed/FeedProductCard'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import { toast } from '@/features/common/Toast'
-import { logError } from '@/core/helpers/errorHandler'
+import { logError } from '@/core/error/errorHandler'
 import { useUser } from '@/core/contexts'
 import { useTheme } from '@/core/theme'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
@@ -226,7 +226,7 @@ export default function FeedScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (isOffline && displayedItems.length === 0) {
-			return <ErrorState />
+			return <ErrorBlock />
 		}
 		return <EmptyState style={styles.emptyWrap} />
 	}, [isOffline, displayedItems.length])

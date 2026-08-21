@@ -1,8 +1,6 @@
-export type LocalizedName = {
-	en: string
-	tn_latn?: string
-	tn_arab?: string
-}
+import type { LocalizedName, Address } from '@/features/common/address'
+
+export type { LocalizedName, Address } from '@/features/common/address'
 
 type GeoPoint = {
 	geo?: {
@@ -69,13 +67,7 @@ export type Business = {
 	name: LocalizedName
 	slug: string
 	owner: Owner
-	address?: {
-		street: string
-		city: string
-		region: string
-		country: string
-		postalCode?: string
-	}
+	address?: Address
 	location?: GeoPoint
 	state?: BusinessState
 	media?: {
@@ -134,14 +126,7 @@ export interface ProductSpecs {
 	caliber: 1 | 2 | 3 | 4 | 5
 	harvest?: 'wild' | 'farm'
 	gear?: 'trap' | 'gillnet'
-	origin?: {
-		street?: string
-		city?: string
-		state?: string
-		region?: string
-		postalCode?: string
-		country?: string
-	}
+	origin?: Address
 }
 
 export interface Product {
@@ -236,13 +221,7 @@ export interface BusinessesResponse {
 
 export type CreateBusinessRequest = {
 	name: LocalizedName
-	address?: {
-		street: string
-		city: string
-		state: string
-		postalCode: string
-		country: string
-	}
+	address?: Address
 	location?: {
 		coordinates?: [number, number]
 	}
@@ -271,12 +250,7 @@ export interface BusinessCustomerDoc {
 		role: string
 		slug: string
 		name: LocalizedName
-		address?: {
-			street?: string
-			city: string
-			region: string
-			country: string
-		}
+		address?: Address
 		location?: GeoPoint
 		contact?: {
 			backupPhones?: any[]

@@ -13,10 +13,10 @@ import { useUser } from '@/core/contexts/UserContext'
 import { getItem, setItem, getToken } from '@/core/storage'
 import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import { log } from '@/core/log'
-import { logError, parseError } from '@/core/helpers/errorHandler'
+import { logError, parseError } from '@/core/error/errorHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { SmartHeader } from '@/core/smart-header'
 import { useLayout } from '@/core/contexts/LayoutContext'
@@ -320,7 +320,7 @@ export default function SearchScreen() {
 
 	const renderEmpty = useCallback(() => {
 		if (error) {
-			return <ErrorState onRetry={handleRefresh} />
+			return <ErrorBlock onRetry={handleRefresh} />
 		}
 		return <EmptyState style={styles.empty} />
 	}, [error, handleRefresh])

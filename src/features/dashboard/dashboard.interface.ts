@@ -1,4 +1,4 @@
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import type { LocalizedName, Address } from '@/features/common/address'
 
 export type DashboardProfileKind = 'personal' | 'business'
 
@@ -14,13 +14,7 @@ export type DashboardBusinessRef = {
 	owner?: DashboardUserRef
 	name: LocalizedName
 	slug: string
-	address?: {
-		street?: string
-		city?: string
-		region?: string
-		postalCode?: string
-		country?: string
-	}
+	address?: Address
 	location?: {
 		geo?: {
 			type: 'Point'

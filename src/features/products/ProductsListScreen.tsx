@@ -9,7 +9,7 @@ import { ProductFeedItem } from '@/features/feed/feed.interface'
 import ProductCard from '@/features/products/products.card'
 import { Stack } from 'expo-router'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
 import { useUser } from '@/core/contexts/UserContext'
@@ -132,7 +132,7 @@ export default function ProductsListScreen() {
 		if (isOffline) {
 			return (
 				<View style={styles.emptyContainer}>
-					<ErrorState />
+					<ErrorBlock />
 				</View>
 			)
 		}

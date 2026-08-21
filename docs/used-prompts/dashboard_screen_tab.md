@@ -66,7 +66,6 @@ example response:
                     "city": "Sfax",
                     "region": "Sfax",
                     "country": "Tunisia",
-                    "postalCode": "3016"
                 },
                 "location": {
                     "geo": {

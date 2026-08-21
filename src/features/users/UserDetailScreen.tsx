@@ -7,12 +7,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { useUser } from '@/core/contexts/UserContext'
 import { useUserProfile } from './useUserProfile'
-import ErrorState from '@/features/common/ErrorState'
+import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { SmartMediaView } from '@/core/smart-media'
 import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import QRCodeModal from '@/features/common/QRCodeModal'
+import { getStreetString } from '@/features/common/address'
 
 export default function UserDetailScreen() {
 	const { userSlug, name: initialNameParam } = useLocalSearchParams<{ userSlug: string; name?: string }>()
@@ -63,8 +64,8 @@ export default function UserDetailScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
 				<Stack.Screen options={{ headerShown: false }} />
-				<SmartHeader title={displayTitle} />
-				<ErrorState onRetry={isOffline ? undefined : () => refresh()} />
+				<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" />
+				<ErrorBlock onRetry={() => refresh()} />
 			</View>
 		)
 	}
@@ -156,7 +157,7 @@ export default function UserDetailScreen() {
 						</View>
 
 						<View style={styles.addressContainer}>
-							{user.address.street && <Text style={[styles.addressText, { color: colors.text }]}>{user.address.street}</Text>}
+							{user.address.street && <Text style={[styles.addressText, { color: colors.text }]}>{getStreetString(user.address.street, localize)}</Text>}
 							{(user.address.city || user.address.region || user.address.country) && (
 								<Text style={[styles.addressTextSecondary, { color: colors.textSecondary }]}>{[user.address.city, user.address.region, user.address.country].filter(Boolean).join(', ')}</Text>
 							)}

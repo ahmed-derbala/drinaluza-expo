@@ -55,10 +55,12 @@ import { BackendConnectionProvider } from '@/core/connection'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 import { UpdatesProvider } from '@/features/updates/UpdatesContext'
-import { ErrorBoundary } from '@/core/helpers/ErrorBoundary'
 import { AppThemeProvider, useTheme, themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
+import ErrorBlock from '@/core/error/ErrorBlock'
+import { log } from '@/core/log'
+import { SafeAreaView } from 'react-native-safe-area-context'
 
 // Module-level flag — survives component remounts (e.g. user switch)
 let startupCheckPerformed = false
@@ -158,7 +160,7 @@ function RootLayoutContent() {
 	}
 
 	return (
-		<ErrorBoundary>
+		<>
 			<SmartModal
 				visible={!!webUpdateModal}
 				onClose={closeWebUpdateModal}
@@ -199,7 +201,34 @@ function RootLayoutContent() {
 				<Stack.Screen name="purchases" options={{ headerShown: false }} />
 				<Stack.Screen name="notifications" options={{ headerShown: false }} />
 			</Stack>
-		</ErrorBoundary>
+		</>
+	)
+}
+
+export function ErrorBoundary({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
+	log({ level: 'error', label: 'RootErrorBoundary', message: error?.message || 'Unhandled navigation error', error, data: { digest: (error as any)?.digest } })
+
+	// Use static themeColors to avoid dependency on AppThemeProvider which may be the error source.
+	// SmartHeader inside relies on LayoutProvider/AppThemeProvider; wrap with providers again for fallback.
+	return (
+		<SafeAreaProvider>
+			<AppThemeProvider>
+				<UpdatesProvider>
+					<SmartKebabMenuProvider>
+						<ToastProvider>
+							<LayoutProvider>
+								<SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}>
+									<View style={{ flex: 1, backgroundColor: themeColors.background }}>
+										<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" />
+										<ErrorBlock error={error} onRetry={retry} />
+									</View>
+								</SafeAreaView>
+							</LayoutProvider>
+						</ToastProvider>
+					</SmartKebabMenuProvider>
+				</UpdatesProvider>
+			</AppThemeProvider>
+		</SafeAreaProvider>
 	)
 }
 

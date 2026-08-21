@@ -1,6 +1,7 @@
 import { getApiClient } from '@/core/api'
-import { parseError } from '@/core/helpers/errorHandler'
+import { parseError } from '@/core/error/errorHandler'
 import { Customer } from '@/features/customers/customers.interface'
+import type { Address, LocalizedName } from '@/features/common/address'
 
 const apiClient = getApiClient()
 
@@ -42,11 +43,7 @@ interface SaleProduct {
 	_id?: string
 	product: {
 		_id: string
-		name: {
-			en: string
-			tn_latn?: string
-			tn_arab?: string
-		}
+		name: LocalizedName
 		media?: {
 			thumbnail?: {
 				url: string
@@ -56,11 +53,7 @@ interface SaleProduct {
 		defaultProduct?: {
 			_id: string
 			slug: string
-			name: {
-				en: string
-				tn_latn?: string
-				tn_arab?: string
-			}
+			name: LocalizedName
 			media?: {
 				thumbnail?: {
 					url: string
@@ -100,16 +93,9 @@ export interface Sale {
 	_id: string
 	business: {
 		_id: string
-		name: {
-			en: string
-		}
+		name: LocalizedName
 		slug: string
-		address?: {
-			street: string
-			city: string
-			state: string
-			country: string
-		}
+		address?: Address
 		location?: {
 			geo?: { type: 'Point'; coordinates: [number, number] }
 			accuracy?: number
@@ -123,15 +109,11 @@ export interface Sale {
 		owner?: {
 			_id: string
 			slug: string
-			name: {
-				en: string
-			}
+			name: LocalizedName
 			business?: {
 				_id: string
 				slug: string
-				name: {
-					en: string
-				}
+				name: LocalizedName
 			}
 		}
 		createdAt?: string

@@ -1,4 +1,5 @@
-import { LocalizedName, ProductSpecs } from '@/features/businesses/businesses.interface'
+import type { LocalizedName, Address } from '@/features/common/address'
+import type { ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface RatingBreakdown {
 	1: number
@@ -39,11 +40,7 @@ export type ProductType = {
 			name: LocalizedName
 			updatedAt: string
 		}
-		address: {
-			street: string
-			city: string
-			country: string
-		}
+		address: Address
 		location: {
 			type: string
 			coordinates: number[]

@@ -1,4 +1,5 @@
-import { LocalizedName, ProductSpecs } from '@/features/businesses/businesses.interface'
+import type { LocalizedName, Address } from '@/features/common/address'
+import type { ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface Product {
 	_id: string
@@ -66,12 +67,7 @@ export interface OrderItem {
 				}
 			}
 		}
-		address?: {
-			street: string
-			city: string
-			state?: string
-			country: string
-		}
+		address?: Address
 		location?: {
 			geo?: { type: 'Point'; coordinates: number[] }
 			accuracy?: number
@@ -95,12 +91,7 @@ export interface OrderItem {
 		_id: string
 		slug: string
 		name: string | LocalizedName
-		address?: {
-			street: string
-			city: string
-			state?: string
-			country: string
-		}
+		address?: Address
 		location?: {
 			geo?: { type: 'Point'; coordinates: number[] }
 			accuracy?: number

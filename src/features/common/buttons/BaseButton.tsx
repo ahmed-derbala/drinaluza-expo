@@ -1,8 +1,7 @@
 import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, ThemeColors } from '@/core/theme'
-import { hexToRgba } from '@/core/helpers/colors'
+import { useTheme, ThemeColors, themeColors } from '@/core/theme'
 import Spinner from '@/features/common/Spinner'
 
 export type ButtonVariant = 'primary' | 'success' | 'warning' | 'info' | 'secondary' | 'danger'
@@ -77,9 +76,49 @@ export function BaseButton({
 	const useOutline = outline || isDanger
 	const outlineColor = accentColor ?? (isDanger ? colors.error : colors.textSecondary)
 
-	const backgroundColor = disabled ? colors.surfaceVariant : useOutline ? hexToRgba(outlineColor, 0.1) : accentColor ? accentColor : colors.surface
+	const backgroundColor = disabled
+		? colors.surfaceVariant
+		: useOutline
+			? outlineColor === themeColors.primary
+				? themeColors.primary10
+				: outlineColor === themeColors.success
+					? themeColors.success10
+					: outlineColor === themeColors.warning
+						? themeColors.warning10
+						: outlineColor === themeColors.info
+							? themeColors.info10
+							: outlineColor === themeColors.error
+								? themeColors.error10
+								: outlineColor === themeColors.textSecondary
+									? themeColors.textSecondary10
+									: outlineColor === themeColors.textTertiary
+										? themeColors.textTertiary10
+										: outlineColor + '1A'
+			: accentColor
+				? accentColor
+				: colors.surface
 
-	const borderColor = disabled ? colors.surfaceVariant : useOutline ? hexToRgba(outlineColor, 0.25) : accentColor ? accentColor : colors.border
+	const borderColor = disabled
+		? colors.surfaceVariant
+		: useOutline
+			? outlineColor === themeColors.primary
+				? themeColors.primary25
+				: outlineColor === themeColors.success
+					? themeColors.success25
+					: outlineColor === themeColors.warning
+						? themeColors.warning25
+						: outlineColor === themeColors.info
+							? themeColors.info25
+							: outlineColor === themeColors.error
+								? themeColors.error25
+								: outlineColor === themeColors.textSecondary
+									? themeColors.textSecondary25
+									: outlineColor === themeColors.textTertiary
+										? themeColors.textTertiary25
+										: outlineColor + '40'
+			: accentColor
+				? accentColor
+				: colors.border
 
 	const resolvedIconColor = iconColorOverride ?? (disabled ? colors.textTertiary : useOutline ? outlineColor : accentColor ? colors.buttonText : colors.textSecondary)
 

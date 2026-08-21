@@ -13,6 +13,7 @@ import { Business } from '@/features/businesses/businesses.interface'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import { SmartMediaView, SmartMediaThumbnailBlock, isDeferredMediaFile, uploadThumbnail, MAX_FILE_COUNT, pickMediaFiles, uploadGallery, type UploadMediaFile, type MediaFile } from '@/core/smart-media'
+import type { LocalizedName } from '@/features/common/address'
 import { toast } from '@/features/common/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
@@ -63,10 +64,9 @@ export default function CreateProductScreen() {
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
-	const [originStreet, setOriginStreet] = useState('')
+	const [originStreet, setOriginStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
-	const [originPostalCode, setOriginPostalCode] = useState('3016')
 	const [originCountry, setOriginCountry] = useState('Tunisia')
 
 	// Picker / UI loading states
@@ -223,13 +223,14 @@ export default function CreateProductScreen() {
 
 		try {
 			setSaving(true)
+			const enName = productNameEn.trim()
 			const productData: any = {
 				business: { slug: selectedBusiness.slug, _id: selectedBusiness._id },
 				defaultProduct: { slug: selectedDefaultProduct.slug, _id: selectedDefaultProduct._id },
 				name: {
-					en: productNameEn.trim(),
-					tn_latn: productNameTnLatn.trim() || undefined,
-					tn_arab: productNameTnArab.trim() || undefined
+					en: enName,
+					tn_latn: productNameTnLatn.trim() || enName,
+					tn_arab: productNameTnArab.trim() || enName
 				},
 				price: { total: { tnd: parseFloat(priceTND) } },
 				unit: {
@@ -255,11 +256,16 @@ export default function CreateProductScreen() {
 					caliber,
 					harvest,
 					origin: {
-						street: originStreet.trim() || undefined,
-						city: originCity.trim() || undefined,
-						region: originRegion.trim() || undefined,
-						postalCode: originPostalCode.trim() || undefined,
-						country: originCountry.trim() || undefined
+						street: originStreet.en.trim()
+							? {
+									en: originStreet.en.trim(),
+									tn_latn: originStreet.tn_latn?.trim() || originStreet.en.trim(),
+									tn_arab: originStreet.tn_arab?.trim() || originStreet.en.trim()
+								}
+							: undefined,
+						city: originCity.trim() || 'Ellouza',
+						region: originRegion.trim() || 'Sfax',
+						country: originCountry.trim() || 'Tunisia'
 					}
 				},
 				state: { code: 'active' }
@@ -430,8 +436,6 @@ export default function CreateProductScreen() {
 						setOriginCity={setOriginCity}
 						originRegion={originRegion}
 						setOriginRegion={setOriginRegion}
-						originPostalCode={originPostalCode}
-						setOriginPostalCode={setOriginPostalCode}
 						originCountry={originCountry}
 						setOriginCountry={setOriginCountry}
 					/>

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from '
 import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheReadResult } from '@/core/cache'
 import { BackendState, useBackendConnection } from '@/core/connection'
 import { log } from '@/core/log'
-import { parseError } from '@/core/helpers/errorHandler'
+import { parseError } from '@/core/error/errorHandler'
 
 const pendingFetches = new Map<string, Promise<unknown>>()
 

@@ -6,6 +6,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { SmartMediaView } from '@/core/smart-media'
 import { Business } from './businesses.interface'
 import { useRouter } from 'expo-router'
+import { formatAddress } from '@/features/common/address'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
@@ -35,13 +36,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeigh
 
 	const isCompact = windowHeight < 550
 
-	// Build address string
-	const addressParts = []
-	if (business.address?.street) addressParts.push(business.address.street)
-	if (business.address?.city) addressParts.push(business.address.city)
-	if (business.address?.region) addressParts.push(business.address.region)
-	if (business.address?.country) addressParts.push(business.address.country)
-	const fullAddress = addressParts.join(', ')
+	const fullAddress = formatAddress(business.address, localize)
 
 	const businessName = localize(business.name) || translate('unnamed_business', 'Unnamed Business')
 	const ownerSlug = business.owner?.slug || 'owner'

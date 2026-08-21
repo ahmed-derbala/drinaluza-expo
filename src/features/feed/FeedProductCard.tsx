@@ -15,6 +15,7 @@ import { QuantityStepper } from '@/features/common/QuantityStepper'
 import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
+import BusinessBlock from '@/features/businesses/BusinessBlock'
 
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
@@ -141,9 +142,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 
 	const isSmall = width < 500
 
-	const addr = item.business?.address
-	const addressLine = addr ? [addr.street, addr.city, addr.region].filter(Boolean).join(', ') : null
-
 	return (
 		<View style={[styles.card, { backgroundColor: colors.background }, style]} testID={`feed-product-card-${item._id}`}>
 			{/* Background image */}
@@ -161,38 +159,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 
 			{/* Top content */}
 			<View style={styles.topContent}>
-				{/* ── Business header ── */}
-				<View style={styles.bizRow}>
-					<TouchableOpacity onPress={handleBusinessPress} style={styles.bizLeft} activeOpacity={0.75}>
-						{item.business?.media?.thumbnail?.url ? (
-							<SmartMediaView media={item.business.media.thumbnail.url} style={styles.bizAvatar} resizeMode="cover" />
-						) : (
-							<View style={styles.bizAvatarFallback}>
-								<MaterialIcons name="store" size={14} color={themeColors.primary} />
-							</View>
-						)}
-						<View style={styles.bizInfo}>
-							<Text style={styles.bizName} numberOfLines={2}>
-								{localize(item.business?.name)}
-							</Text>
-							{item.business?.slug ? (
-								<Text style={styles.bizSlug} numberOfLines={2}>
-									{item.business.slug}
-								</Text>
-							) : null}
-						</View>
-					</TouchableOpacity>
-				</View>
-
-				{/* Address */}
-				{addressLine ? (
-					<View style={styles.addressRow}>
-						<Ionicons name="location-outline" size={11} color={themeColors.buttonText40} />
-						<Text style={styles.bizAddress} numberOfLines={1}>
-							{addressLine}
-						</Text>
-					</View>
-				) : null}
+				<BusinessBlock business={item.business} onPress={handleBusinessPress} />
 			</View>
 
 			{/* Stock overlay */}
@@ -339,65 +306,11 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		minHeight: 340
 	},
-	bizRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 10,
-		paddingTop: 8,
-		paddingBottom: 2
-	},
 	contactButtonsSide: {
 		position: 'absolute',
 		right: 8,
 		top: 12,
 		zIndex: 10
-	},
-	bizLeft: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-		flex: 1,
-		minWidth: 0
-	},
-	bizInfo: {
-		flex: 1,
-		minWidth: 0
-	},
-	bizAvatar: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		backgroundColor: themeColors.buttonText5
-	},
-	bizAvatarFallback: {
-		width: 32,
-		height: 32,
-		borderRadius: 16,
-		backgroundColor: themeColors.primaryContainer,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	bizName: {
-		fontSize: 13,
-		fontWeight: '700',
-		color: themeColors.buttonText,
-		textAlign: 'left'
-	},
-	bizSlug: {
-		fontSize: 10,
-		color: themeColors.buttonText40
-	},
-	addressRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4,
-		paddingHorizontal: 10,
-		paddingBottom: 4
-	},
-	bizAddress: {
-		flex: 1,
-		fontSize: 11,
-		color: themeColors.buttonText40
 	},
 	bgImageContainer: {
 		position: 'absolute',

@@ -11,11 +11,11 @@ import { IconButton } from '@/features/common/buttons/IconButton'
 import { updateMyProfile } from '@/features/auth/auth.api'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { EditableSection } from '@/features/common/sections/EditableSection'
-import AddressForm from '@/features/common/AddressForm'
+import { AddressForm } from '@/features/common/address'
 import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
-import type { UserData } from '@/features/profile/profile.interface'
-import type { Address, Contact, Location } from '@/features/profile/profile.interface'
+import type { UserData, Contact, Location } from '@/features/profile/profile.interface'
+import type { Address } from '@/features/common/address'
 import type { BusinessCartGroup } from '@/features/purchases/hooks/useCart'
 
 interface FormState {
@@ -34,7 +34,7 @@ interface CheckoutConfirmationModalProps {
 }
 
 const buildInitialForm = (user: UserData | null): FormState => ({
-	address: user?.address || {},
+	address: user?.address || { city: 'Ellouza', region: 'Sfax', country: 'Tunisia' },
 	contact: {
 		phone: user?.contact?.phone || user?.phone,
 		backupPhones: user?.contact?.backupPhones || user?.backupPhones || [],
@@ -179,14 +179,12 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 
 			<EditableSection title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
 				<AddressForm
-					street={form.address.street || ''}
+					street={form.address.street || { en: '', tn_latn: '', tn_arab: '' }}
 					setStreet={(value) => updateAddress({ ...form.address, street: value })}
 					city={form.address.city || ''}
 					setCity={(value) => updateAddress({ ...form.address, city: value })}
 					region={form.address.region || ''}
 					setRegion={(value) => updateAddress({ ...form.address, region: value })}
-					postalCode={form.address.postalCode || ''}
-					setPostalCode={(value) => updateAddress({ ...form.address, postalCode: value })}
 					country={form.address.country || ''}
 					setCountry={(value) => updateAddress({ ...form.address, country: value })}
 				/>
