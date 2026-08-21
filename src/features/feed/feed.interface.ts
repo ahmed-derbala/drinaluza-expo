@@ -1,4 +1,4 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 import type { ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface RatingBreakdown {
@@ -19,7 +19,7 @@ interface Rating {
 interface BusinessOwner {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	updatedAt: string
 }
 
@@ -39,7 +39,7 @@ interface BusinessLocation {
 
 interface FeedBusiness {
 	_id: string
-	name: LocalizedName
+	name: MultiLang
 	slug: string
 	owner: BusinessOwner
 	address: Address
@@ -107,7 +107,7 @@ export interface FeedItem {
 	_id: string
 	feedId?: string
 	business?: FeedBusiness
-	name?: LocalizedName
+	name?: MultiLang
 	price?: Price
 	unit?: Unit
 	state?: {
@@ -132,7 +132,7 @@ export interface FeedItem {
 	defaultProduct?: {
 		_id: string
 		slug: string
-		name: LocalizedName
+		name: MultiLang
 		updatedAt: string
 		media?: {
 			thumbnail: {
@@ -165,7 +165,7 @@ export interface FeedItem {
 
 export interface ProductFeedItem extends FeedItem {
 	business: FeedBusiness
-	name: LocalizedName
+	name: MultiLang
 	price: Price
 	unit: Unit
 	state: {
@@ -178,7 +178,7 @@ export interface ProductFeedItem extends FeedItem {
 }
 
 export interface UserFeedItem extends FeedItem {
-	name: LocalizedName
+	name: MultiLang
 	role: string
 	address: Address
 	state: {

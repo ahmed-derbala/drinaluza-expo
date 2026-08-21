@@ -4,7 +4,7 @@ import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import type { LocalizedName } from '@/features/common/address'
+import type { MultiLang } from '@/features/common/address'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { toast } from '@/features/common/Toast'
@@ -14,11 +14,12 @@ import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SmartMediaView, pickSingleMediaFile, uploadThumbnail } from '@/core/smart-media'
 import StateBadge from '@/features/common/StateBadge'
-import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
+import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
 import { SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
-import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
+import { SectionRow } from '@/features/common/sections/SectionRow'
 
 export default function EditBusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
@@ -47,7 +48,7 @@ export default function EditBusinessScreen() {
 	const [nameTnArab, setNameTnArab] = useState('')
 	const [description, setDescription] = useState('')
 
-	const [street, setStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
+	const [street, setStreet] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [city, setCity] = useState('')
 	const [region, setRegion] = useState('')
 	const [country, setCountry] = useState('')
@@ -88,7 +89,7 @@ export default function EditBusinessScreen() {
 			setNameTnArab(biz.name?.tn_arab || '')
 			setDescription(biz.description || '')
 
-			const s = biz.address?.street as unknown as LocalizedName | undefined
+			const s = biz.address?.street as unknown as MultiLang | undefined
 			if (s) {
 				setStreet({ en: s.en || '', tn_latn: s.tn_latn || '', tn_arab: s.tn_arab || '' })
 			} else {
@@ -357,7 +358,7 @@ export default function EditBusinessScreen() {
 
 					<View style={styles.tabContent}>
 						{/* Translations Card */}
-						<MultiLingualSection
+						<MultiLingualCard
 							title={translate('name', 'Name')}
 							name={{ en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab }}
 							isEditing={editMode.names}
@@ -372,9 +373,9 @@ export default function EditBusinessScreen() {
 						/>
 
 						{/* Description Card */}
-						<EditableSection
+						<BaseCard
 							title={translate('about_business', 'About Business')}
-							isEditing={editMode.about}
+							mode={editMode.about ? 'edit' : 'editable'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, about: true }))}
 							onSave={saveAbout}
 							onCancel={() => cancelEdit('about')}
@@ -399,12 +400,12 @@ export default function EditBusinessScreen() {
 							) : (
 								<Text style={[styles.descriptionText, { color: description ? colors.text : colors.textTertiary }]}>{description || translate('no_description', 'No description provided yet.')}</Text>
 							)}
-						</EditableSection>
+						</BaseCard>
 
 						{/* Contact Info Card */}
-						<EditableSection
+						<BaseCard
 							title={translate('contact', 'Contact Info')}
-							isEditing={editMode.contact}
+							mode={editMode.contact ? 'edit' : 'editable'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, contact: true }))}
 							onSave={saveContact}
 							onCancel={() => cancelEdit('contact')}
@@ -546,12 +547,12 @@ export default function EditBusinessScreen() {
 									<SectionRow label="Email" value={email || '—'} icon="mail" />
 								</View>
 							)}
-						</EditableSection>
+						</BaseCard>
 
 						{/* Coordinates Card */}
-						<EditableSection
+						<BaseCard
 							title={translate('coordinates', 'Coordinates')}
-							isEditing={editMode.coordinates}
+							mode={editMode.coordinates ? 'edit' : 'editable'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
 							onSave={saveCoordinates}
 							onCancel={() => cancelEdit('coordinates')}
@@ -681,12 +682,12 @@ export default function EditBusinessScreen() {
 									/>
 								</View>
 							)}
-						</EditableSection>
+						</BaseCard>
 
 						{/* Address Card */}
-						<EditableSection
+						<BaseCard
 							title={translate('address', 'Address')}
-							isEditing={editMode.address}
+							mode={editMode.address ? 'edit' : 'editable'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, address: true }))}
 							onSave={saveAddress}
 							onCancel={() => cancelEdit('address')}
@@ -701,7 +702,7 @@ export default function EditBusinessScreen() {
 									<SectionRow label={translate('country', 'Country')} value={country || '—'} icon="globe" />
 								</View>
 							)}
-						</EditableSection>
+						</BaseCard>
 					</View>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>

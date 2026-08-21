@@ -1,4 +1,4 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
 interface UserLocation {
 	geo?: {
@@ -39,7 +39,7 @@ interface UserState {
 export interface UserProfile {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	role: string
 	contact?: UserContact
 	address?: Address

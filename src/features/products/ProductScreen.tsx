@@ -10,7 +10,7 @@ import { useLayout } from '@/core/contexts/LayoutContext'
 import { updateProduct } from '@/features/products/products.api'
 import { useProductBySlug } from './useProductBySlug'
 import { ProductType, FileRef } from '@/features/products/products.type'
-import type { LocalizedName } from '@/features/common/address'
+import type { MultiLang } from '@/features/common/address'
 import { formatAddress } from '@/features/common/address'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
@@ -88,7 +88,7 @@ export default function ProductScreen() {
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
-	const [originStreet, setOriginStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
+	const [originStreet, setOriginStreet] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [originCity, setOriginCity] = useState('')
 	const [originRegion, setOriginRegion] = useState('')
 	const [originCountry, setOriginCountry] = useState('')
@@ -121,9 +121,9 @@ export default function ProductScreen() {
 		setOriginStreet(
 			prod.specs?.origin?.street
 				? {
-						en: (prod.specs.origin.street as LocalizedName).en || '',
-						tn_latn: (prod.specs.origin.street as LocalizedName).tn_latn || '',
-						tn_arab: (prod.specs.origin.street as LocalizedName).tn_arab || ''
+						en: (prod.specs.origin.street as MultiLang).en || '',
+						tn_latn: (prod.specs.origin.street as MultiLang).tn_latn || '',
+						tn_arab: (prod.specs.origin.street as MultiLang).tn_arab || ''
 					}
 				: { en: '', tn_latn: '', tn_arab: '' }
 		)

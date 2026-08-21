@@ -15,14 +15,15 @@ import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
 import { useTheme, themeColors } from '@/core/theme'
 import ErrorBlock from '@/core/error/ErrorBlock'
-import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
+import { SectionRow } from '@/features/common/sections/SectionRow'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
 import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@/core/smart-media'
 import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
-import { MultiLingualSection } from '@/features/common/languages/MultiLingualSection'
+import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
 import Spinner from '@/features/common/Spinner'
 import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
 import { CenteredModal } from '@/core/smart-modal'
@@ -32,7 +33,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { log } from '@/core/log'
 
 import { UserData } from '@/features/profile/profile.interface'
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import { MultiLang } from '@/features/businesses/businesses.interface'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { SOCIAL_PLATFORMS } from '@/core/constants/settings'
 
@@ -80,7 +81,7 @@ export default function ProfileScreen() {
 	const [imageError, setImageError] = useState(false)
 	const [showBusinessModal, setShowBusinessModal] = useState(false)
 	const [showSwitchAccountModal, setShowSwitchAccountModal] = useState(false)
-	const [businessName, setBusinessName] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
+	const [businessName, setBusinessName] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [businessLoading, setBusinessLoading] = useState(false)
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
@@ -279,7 +280,7 @@ export default function ProfileScreen() {
 		setShowBusinessModal(true)
 	}
 
-	const updateBusinessName = (field: keyof LocalizedName, value: string) => {
+	const updateBusinessName = (field: keyof MultiLang, value: string) => {
 		setBusinessName((prev) => ({ ...prev, [field]: value }))
 	}
 
@@ -290,7 +291,7 @@ export default function ProfileScreen() {
 		}
 		try {
 			setBusinessLoading(true)
-			const nameData: LocalizedName = {
+			const nameData: MultiLang = {
 				en: businessName.en.trim(),
 				tn_latn: businessName.tn_latn?.trim() || businessName.en.trim(),
 				tn_arab: businessName.tn_arab?.trim() || businessName.en.trim()
@@ -424,7 +425,7 @@ export default function ProfileScreen() {
 						</View>
 					</View>
 
-					<MultiLingualSection
+					<MultiLingualCard
 						name={userData.name}
 						isEditing={editMode.name}
 						onEdit={() => toggleEdit('name', true)}
@@ -433,9 +434,9 @@ export default function ProfileScreen() {
 						onChange={(lang, value) => updateField(lang, value, 'name')}
 					/>
 
-					<EditableSection
+					<BaseCard
 						title="👤 Basic Information"
-						isEditing={editMode.basic}
+						mode={editMode.basic ? 'edit' : 'editable'}
 						onEdit={() => toggleEdit('basic', true)}
 						onSave={() => saveUserData('basic')}
 						onCancel={() => toggleEdit('basic', false)}
@@ -496,11 +497,11 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</EditableSection>
+					</BaseCard>
 
-					<EditableSection
+					<BaseCard
 						title="📍 Address"
-						isEditing={editMode.address}
+						mode={editMode.address ? 'edit' : 'editable'}
 						onEdit={() => toggleEdit('address', true)}
 						onSave={() => saveUserData('address')}
 						onCancel={() => toggleEdit('address', false)}
@@ -528,11 +529,11 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</EditableSection>
+					</BaseCard>
 
-					<EditableSection
+					<BaseCard
 						title="📍 Location"
-						isEditing={editMode.location}
+						mode={editMode.location ? 'edit' : 'editable'}
 						onEdit={() => toggleEdit('location', true)}
 						onSave={() => saveUserData('location')}
 						onCancel={() => toggleEdit('location', false)}
@@ -581,11 +582,11 @@ export default function ProfileScreen() {
 								{!getGeoCoordinates(userData.location) && <Text style={{ fontStyle: 'italic', color: colors.textTertiary, padding: 8 }}>No location information set.</Text>}
 							</>
 						)}
-					</EditableSection>
+					</BaseCard>
 
-					<EditableSection
+					<BaseCard
 						title="🌐 Social Media"
-						isEditing={editMode.social}
+						mode={editMode.social ? 'edit' : 'editable'}
 						onEdit={() => toggleEdit('social', true)}
 						onSave={() => saveUserData('social')}
 						onCancel={() => toggleEdit('social', false)}
@@ -660,11 +661,11 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</EditableSection>
+					</BaseCard>
 
-					<EditableSection
+					<BaseCard
 						title="📞 Contact Information"
-						isEditing={editMode.phone}
+						mode={editMode.phone ? 'edit' : 'editable'}
 						onEdit={() => toggleEdit('phone', true)}
 						onSave={() => saveUserData('phone')}
 						onCancel={() => toggleEdit('phone', false)}
@@ -738,11 +739,11 @@ export default function ProfileScreen() {
 								)}
 							</>
 						)}
-					</EditableSection>
+					</BaseCard>
 
-					<EditableSection
+					<BaseCard
 						title={'⚙️ ' + translate('settings', 'Account Settings')}
-						isEditing={editMode.settings}
+						mode={editMode.settings ? 'edit' : 'editable'}
 						onEdit={() => toggleEdit('settings', true)}
 						onSave={() => saveUserData('settings')}
 						onCancel={() => toggleEdit('settings', false)}
@@ -832,7 +833,7 @@ export default function ProfileScreen() {
 								/>
 							</>
 						)}
-					</EditableSection>
+					</BaseCard>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
 

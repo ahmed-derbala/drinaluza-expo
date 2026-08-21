@@ -1,6 +1,6 @@
 import { Linking, Platform } from 'react-native'
 import { formatAddress, getStreetString } from '@/features/common/address'
-import type { Address, LocalizedName } from '@/features/common/address'
+import type { Address, MultiLang } from '@/features/common/address'
 
 export type LocationLike =
 	| {
@@ -11,7 +11,7 @@ export type LocationLike =
 	| null
 	| undefined
 
-export type { Address, LocalizedName }
+export type { Address, MultiLang }
 export { formatAddress, getStreetString }
 
 /** Returns [longitude, latitude] from either nested or legacy location shapes. */

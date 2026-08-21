@@ -1,4 +1,4 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 import type { ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface RatingBreakdown {
@@ -32,12 +32,12 @@ export type ProductType = {
 	_id: string
 	business: {
 		_id: string
-		name: LocalizedName
+		name: MultiLang
 		slug: string
 		owner: {
 			_id: string
 			slug: string
-			name: LocalizedName
+			name: MultiLang
 			updatedAt: string
 		}
 		address: Address
@@ -67,7 +67,7 @@ export type ProductType = {
 	defaultProduct?: {
 		_id: string
 		slug: string
-		name: LocalizedName
+		name: MultiLang
 		updatedAt: string
 		media?: {
 			thumbnail: {
@@ -81,7 +81,7 @@ export type ProductType = {
 		}
 		gallery?: FileRef[]
 	}
-	name: LocalizedName
+	name: MultiLang
 	price: {
 		total: {
 			tnd: number

@@ -5,7 +5,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import ElapsedTimeBadge from '@/features/common/ElapsedTimeBadge'
 import PriorityBadge from '@/features/common/PriorityBadge'
-import NotificationContentBlock from '@/features/common/blocks/NotificationContentBlock'
+import NotificationContentBlock from '@/features/notifications/NotificationContentBlock'
 import { getNotificationTemplateColor } from '../notifications.constant'
 import { NotificationItem } from '../notifications.interface'
 

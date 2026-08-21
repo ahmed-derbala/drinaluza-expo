@@ -1,18 +1,18 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
 export type DashboardProfileKind = 'personal' | 'business'
 
 type DashboardUserRef = {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	role: string
 }
 
 export type DashboardBusinessRef = {
 	_id: string
 	owner?: DashboardUserRef
-	name: LocalizedName
+	name: MultiLang
 	slug: string
 	address?: Address
 	location?: {
@@ -48,7 +48,7 @@ export type ProductStats = {
 
 export type DashboardRankItem = {
 	_id?: string
-	name?: LocalizedName
+	name?: MultiLang
 	slug?: string
 	count?: number
 	views?: number
@@ -96,7 +96,7 @@ export const isBusinessDashboard = (data: DashboardData): data is BusinessDashbo
 export const isPersonalDashboard = (data: DashboardData): data is PersonalDashboard => data.kind === 'personal'
 
 /** Sort profiles deterministically: personal first, then businesses alphabetically by name. */
-export const sortDashboardProfiles = (profiles: DashboardProfile[], localize: (name?: LocalizedName) => string): DashboardProfile[] =>
+export const sortDashboardProfiles = (profiles: DashboardProfile[], localize: (name?: MultiLang) => string): DashboardProfile[] =>
 	[...profiles].sort((a, b) => {
 		if (a.kind !== b.kind) return a.kind === 'personal' ? -1 : 1
 		const nameA = a.kind === 'business' ? localize(a.business.name) : localize(a.user.name)

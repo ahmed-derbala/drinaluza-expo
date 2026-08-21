@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import MultiLingualInput from '@/features/common/languages/MultiLingualInput'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { EditableSection } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 
 export interface ProductNamesSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -53,9 +53,9 @@ export default function ProductNamesSection({
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<EditableSection title={translate('names', 'Names')} isEditing={isEditing} onSave={isEditing ? onSavePress : undefined} onCancel={isEditing ? onCancelPress : undefined}>
+			<BaseCard title={translate('names', 'Names')} mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress}>
 				<MultiLingualInput nameEn={nameEn} setNameEn={setNameEn} nameTnLatn={nameTnLatn} setNameTnLatn={setNameTnLatn} nameTnArab={nameTnArab} setNameTnArab={setNameTnArab} />
-			</EditableSection>
+			</BaseCard>
 		)
 	}
 

@@ -1,10 +1,10 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 import type { ProductSpecs } from '@/features/businesses/businesses.interface'
 
 interface Product {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	price: {
 		total: {
 			tnd: number
@@ -50,17 +50,17 @@ export interface OrderItem {
 	_id: string
 	business: {
 		_id: string
-		name: LocalizedName
+		name: MultiLang
 		slug?: string
 		owner?: {
 			_id: string
 			slug: string
-			name: LocalizedName
+			name: MultiLang
 			updatedAt: string
 			business?: {
 				_id: string
 				slug: string
-				name: LocalizedName
+				name: MultiLang
 				state: {
 					code: string
 					updatedAt: string
@@ -90,7 +90,7 @@ export interface OrderItem {
 	customer: {
 		_id: string
 		slug: string
-		name: string | LocalizedName
+		name: string | MultiLang
 		address?: Address
 		location?: {
 			geo?: { type: 'Point'; coordinates: number[] }

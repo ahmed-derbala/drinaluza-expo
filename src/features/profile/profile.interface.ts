@@ -1,4 +1,4 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
 export type { Address } from '@/features/common/address'
 
@@ -76,7 +76,7 @@ export interface Contact {
 export interface UserData {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	email?: string // Deprecated - use contact.email
 	role: string
 	isActive?: boolean

@@ -13,7 +13,7 @@ import { Business } from '@/features/businesses/businesses.interface'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import { SmartMediaView, SmartMediaThumbnailBlock, isDeferredMediaFile, uploadThumbnail, MAX_FILE_COUNT, pickMediaFiles, uploadGallery, type UploadMediaFile, type MediaFile } from '@/core/smart-media'
-import type { LocalizedName } from '@/features/common/address'
+import type { MultiLang } from '@/features/common/address'
 import { toast } from '@/features/common/Toast'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
@@ -64,7 +64,7 @@ export default function CreateProductScreen() {
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
-	const [originStreet, setOriginStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
+	const [originStreet, setOriginStreet] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
 	const [originCountry, setOriginCountry] = useState('Tunisia')

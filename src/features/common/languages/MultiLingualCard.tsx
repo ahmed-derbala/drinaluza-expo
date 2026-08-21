@@ -2,14 +2,15 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import { EditableSection, SectionRow } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
+import { SectionRow } from '@/features/common/sections/SectionRow'
 import MultiLingualInput from './MultiLingualInput'
 import { LanguageIcon } from './LanguageIcon'
 import type { LanguageCode } from './languages.constants'
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import type { MultiLang } from './languages.types'
 
-interface MultiLingualSectionProps {
-	name?: LocalizedName
+interface MultiLingualCardProps {
+	name?: MultiLang
 	isEditing: boolean
 	onEdit: () => void
 	onSave: () => void
@@ -18,12 +19,12 @@ interface MultiLingualSectionProps {
 	title?: React.ReactNode
 }
 
-export function MultiLingualSection({ name, isEditing, onEdit, onSave, onCancel, onChange, title }: MultiLingualSectionProps) {
+export function MultiLingualCard({ name, isEditing, onEdit, onSave, onCancel, onChange, title }: MultiLingualCardProps) {
 	const { colors } = useTheme()
 	const { translate } = useUser()
 
 	return (
-		<EditableSection title={title ?? translate('name', 'Name')} iconName="language" isEditing={isEditing} onEdit={onEdit} onSave={onSave} onCancel={onCancel}>
+		<BaseCard title={title ?? translate('name', 'Name')} iconName="language" mode={isEditing ? 'edit' : 'editable'} onEdit={onEdit} onSave={onSave} onCancel={onCancel}>
 			{isEditing ? (
 				<MultiLingualInput
 					nameEn={name?.en || ''}
@@ -68,7 +69,7 @@ export function MultiLingualSection({ name, isEditing, onEdit, onSave, onCancel,
 					{!name?.en && !name?.tn_arab && !name?.tn_latn && <Text style={[styles.empty, { color: colors.textTertiary }]}>{translate('no_name_info', 'No name information set.')}</Text>}
 				</>
 			)}
-		</EditableSection>
+		</BaseCard>
 	)
 }
 
@@ -88,4 +89,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default MultiLingualSection
+export default MultiLingualCard

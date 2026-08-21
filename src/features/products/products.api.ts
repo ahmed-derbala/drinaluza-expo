@@ -1,6 +1,6 @@
 import { getApiClient } from '@/core/api'
 import { setCacheItem } from '@/core/cache'
-import { LocalizedName, ProductSpecs } from '@/features/businesses/businesses.interface'
+import { MultiLang, ProductSpecs } from '@/features/businesses/businesses.interface'
 import { ProductType, FileRef } from './products.type'
 
 export interface CreateProductRequest {
@@ -12,7 +12,7 @@ export interface CreateProductRequest {
 		slug: string
 		_id: string
 	}
-	name: LocalizedName
+	name: MultiLang
 	price: {
 		total: {
 			tnd: number

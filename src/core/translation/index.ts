@@ -32,21 +32,3 @@ export const translate = (key: string, defaultText?: string, lang?: string): str
 	const text = translations[targetLang]?.[key] || translations['en']?.[key]
 	return text || defaultText || key
 }
-
-/**
- * Localizes a dynamic name object that comes from the backend.
- * The backend object has the form { en: string, tn_latn?: string, tn_arab?: string }
- */
-export const localizeName = (name?: any, contentLang?: string): string => {
-	if (!name) return ''
-
-	const lang = contentLang || currentAppLang
-
-	// Try to get exactly requested language
-	if (name[lang]) {
-		return name[lang]
-	}
-
-	// Fallbacks
-	return name['en'] || ''
-}

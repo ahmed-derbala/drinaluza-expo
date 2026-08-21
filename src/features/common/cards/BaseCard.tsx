@@ -1,5 +1,6 @@
 import React from 'react'
-import { StyleSheet, View, TouchableOpacity, Text, type StyleProp, type ViewStyle } from 'react-native'
+import { StyleSheet, View, TouchableOpacity, Text, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
@@ -35,12 +36,20 @@ export interface BaseCardProps {
 	activeOpacity?: number
 	/** Optional container style override. */
 	style?: StyleProp<ViewStyle>
+	/** Content container style override. */
+	contentStyle?: StyleProp<ViewStyle>
 	/** Optional test ID. */
 	testID?: string
 	/** Card interaction mode. 'view' is read-only, 'editable' shows an edit trigger, 'edit' shows save/cancel. Defaults to 'view'. */
 	mode?: 'view' | 'edit' | 'editable'
-	/** Optional title displayed in the header for 'edit' or 'editable' modes. */
+	/** Optional title displayed in the header. */
 	title?: React.ReactNode
+	/** Optional title style. */
+	titleStyle?: StyleProp<TextStyle>
+	/** Optional icon name displayed before title (Ionicons). */
+	iconName?: string
+	/** Extra content rendered in the header, before edit/save/cancel controls. */
+	headerRight?: React.ReactNode
 	/** Edit action for 'editable' mode. */
 	onEdit?: () => void
 	/** Save action for 'edit' mode. */
@@ -69,9 +78,13 @@ export function BaseCard({
 	disabled = false,
 	activeOpacity = 0.2,
 	style,
+	contentStyle,
 	testID,
 	mode = 'view',
 	title,
+	titleStyle,
+	iconName,
+	headerRight,
 	onEdit,
 	onSave,
 	onCancel,
@@ -102,7 +115,7 @@ export function BaseCard({
 
 	const isEdit = currentMode === 'edit'
 	const isEditable = currentMode === 'editable'
-	const showHeader = isEdit || isEditable
+	const showHeader = !!title || !!iconName || !!headerRight || isEdit || isEditable
 
 	const handleEdit = () => {
 		onEdit?.()
@@ -119,10 +132,16 @@ export function BaseCard({
 		setCurrentMode('editable')
 	}
 
+	const titleContent = title ? typeof title === 'string' ? <Text style={[styles.title, { color: colors.text }, titleStyle as any]}>{title}</Text> : title : null
+
 	const header = showHeader ? (
 		<View style={styles.header}>
-			<View style={styles.titleRow}>{title ? typeof title === 'string' ? <Text style={[styles.title, { color: colors.text }]}>{title}</Text> : title : null}</View>
+			<View style={styles.titleRow}>
+				{iconName ? <Ionicons name={iconName as any} size={18} color={colors.primary} style={styles.titleIcon} /> : null}
+				{titleContent}
+			</View>
 			<View style={styles.actions}>
+				{headerRight}
 				{isEditable ? <IconButton icon="create-outline" label="Edit" onPress={handleEdit} style={styles.iconButton} /> : null}
 				{isEdit ? (
 					<>
@@ -137,7 +156,7 @@ export function BaseCard({
 	const cardContent = (
 		<>
 			{header}
-			<View style={styles.content}>{children}</View>
+			<View style={[styles.content, contentStyle]}>{children}</View>
 		</>
 	)
 
@@ -167,8 +186,13 @@ const styles = StyleSheet.create({
 		marginBottom: 12
 	},
 	titleRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
 		flex: 1,
 		marginRight: 12
+	},
+	titleIcon: {
+		marginRight: 8
 	},
 	title: {
 		fontSize: 16,

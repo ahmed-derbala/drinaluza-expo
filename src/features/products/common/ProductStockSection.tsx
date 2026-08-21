@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { EditableSection } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 
 export interface ProductStockSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -43,7 +43,7 @@ export default function ProductStockSection({
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<EditableSection title={translate('inventory', 'Inventory')} isEditing={isEditing} onSave={isEditing ? onSavePress : undefined} onCancel={isEditing ? onCancelPress : undefined}>
+			<BaseCard title={translate('inventory', 'Inventory')} mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress}>
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>
@@ -59,7 +59,7 @@ export default function ProductStockSection({
 						</View>
 					</View>
 				</View>
-			</EditableSection>
+			</BaseCard>
 		)
 	}
 

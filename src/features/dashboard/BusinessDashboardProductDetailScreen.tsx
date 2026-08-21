@@ -7,7 +7,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
 import { ProductType, FileRef } from '@/features/products/products.type'
-import type { LocalizedName } from '@/features/common/address'
+import type { MultiLang } from '@/features/common/address'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
@@ -67,7 +67,7 @@ export default function BusinessDashboardProductDetailScreen() {
 
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
-	const [originStreet, setOriginStreet] = useState<LocalizedName>({ en: '', tn_latn: '', tn_arab: '' })
+	const [originStreet, setOriginStreet] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
 	const [originCountry, setOriginCountry] = useState('Tunisia')
@@ -104,9 +104,9 @@ export default function BusinessDashboardProductDetailScreen() {
 		setOriginStreet(
 			prod.specs?.origin?.street
 				? {
-						en: (prod.specs.origin.street as LocalizedName).en || '',
-						tn_latn: (prod.specs.origin.street as LocalizedName).tn_latn || '',
-						tn_arab: (prod.specs.origin.street as LocalizedName).tn_arab || ''
+						en: (prod.specs.origin.street as MultiLang).en || '',
+						tn_latn: (prod.specs.origin.street as MultiLang).tn_latn || '',
+						tn_arab: (prod.specs.origin.street as MultiLang).tn_arab || ''
 					}
 				: { en: '', tn_latn: '', tn_arab: '' }
 		)
@@ -346,7 +346,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		if (product) {
 			setCaliber((product.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
 			setHarvest(product.specs?.harvest || 'farm')
-			const s = product.specs?.origin?.street as unknown as LocalizedName | undefined
+			const s = product.specs?.origin?.street as unknown as MultiLang | undefined
 			setOriginStreet(s ? { en: s.en || '', tn_latn: s.tn_latn || '', tn_arab: s.tn_arab || '' } : { en: '', tn_latn: '', tn_arab: '' })
 			setOriginCity(product.specs?.origin?.city || 'Ellouza')
 			setOriginRegion(product.specs?.origin?.region || 'Sfax')

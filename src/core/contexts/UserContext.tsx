@@ -2,8 +2,9 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import { getItem, setItem } from '@/core/storage'
 import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
 import { UserData } from '@/features/profile/profile.interface'
-import { LocalizedName } from '@/features/businesses/businesses.interface'
-import { translate as translateHelper, setGlobalAppLang, localizeName } from '@/core/translation'
+import { MultiLang } from '@/features/businesses/businesses.interface'
+import { translate as translateHelper, setGlobalAppLang } from '@/core/translation'
+import { getStringFromMultiLang, setGlobalContentLang } from '@/features/common/languages/languages.helpers'
 import { log } from '@/core/log'
 
 interface UserContextType {
@@ -13,7 +14,7 @@ interface UserContextType {
 	appLang: string
 	contentLang: string
 	currency: string
-	localize: (name?: LocalizedName) => string
+	localize: (name?: MultiLang) => string
 	translate: (key: string, defaultText?: string) => string
 	formatPrice: (price: any) => string
 	setAppLang: (lang: string) => void
@@ -121,10 +122,14 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 	const contentLang = user?.settings?.language?.content || guestSettings.contentLang
 	const currency = user?.settings?.currency || guestSettings.currency
 
-	// Sync global language for non-React components
+	// Sync global languages for non-React callers (single source of truth lives in common/languages)
 	useEffect(() => {
 		setGlobalAppLang(appLang)
 	}, [appLang])
+
+	useEffect(() => {
+		setGlobalContentLang(contentLang)
+	}, [contentLang])
 
 	const translate = useCallback(
 		(key: string, defaultText?: string): string => {
@@ -134,8 +139,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 	)
 
 	const localize = useCallback(
-		(name?: LocalizedName): string => {
-			return localizeName(name, contentLang)
+		(name?: MultiLang): string => {
+			return getStringFromMultiLang(name, contentLang)
 		},
 		[contentLang]
 	)

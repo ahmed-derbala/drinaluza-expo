@@ -1,11 +1,9 @@
-export type LocalizedName = {
-	en: string
-	tn_latn: string
-	tn_arab: string
-}
+import type { MultiLang } from '@/features/common/languages/languages.types'
+
+export type { MultiLang } from '@/features/common/languages/languages.types'
 
 export interface Address {
-	street?: LocalizedName
+	street?: MultiLang
 	city: string
 	region: string
 	country: string

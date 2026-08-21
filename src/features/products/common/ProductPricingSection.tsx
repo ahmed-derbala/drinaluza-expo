@@ -2,7 +2,7 @@ import { themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'
-import { EditableSection } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 
 export interface ProductPricingSectionProps {
 	variant: 'view' | 'edit' | 'create'
@@ -78,7 +78,7 @@ export default function ProductPricingSection({
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<EditableSection title={translate('pricing_units', 'Pricing & Units')} isEditing={isEditing} onSave={isEditing ? onSavePress : undefined} onCancel={isEditing ? onCancelPress : undefined}>
+			<BaseCard title={translate('pricing_units', 'Pricing & Units')} mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress}>
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('price_tnd', 'Price (TND)')} *</Text>
@@ -148,7 +148,7 @@ export default function ProductPricingSection({
 						</View>
 					</View>
 				</View>
-			</EditableSection>
+			</BaseCard>
 		)
 	}
 

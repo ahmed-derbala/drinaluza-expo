@@ -19,7 +19,7 @@ import QRCodeModal from '@/features/common/QRCodeModal'
 import { useBusinessDashboard } from './useBusinessDashboard'
 import { getBusinessCustomers } from '@/features/businesses/businesses.api'
 import { isBusinessDashboard, BusinessDashboard, DashboardRankItem, ProductStats } from './dashboard.interface'
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import { MultiLang } from '@/features/businesses/businesses.interface'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -401,7 +401,7 @@ const RankPairSection = ({ title, leftTitle, rightTitle, leftItems, rightItems, 
 
 type RankRowProps = {
 	item: DashboardRankItem
-	localize: (name?: LocalizedName) => string
+	localize: (name?: MultiLang) => string
 	styles: ReturnType<typeof createStyles>
 	colors: ThemeColors
 	isLast: boolean

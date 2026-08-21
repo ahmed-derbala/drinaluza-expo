@@ -8,7 +8,7 @@ import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { AddressForm, formatAddress } from '@/features/common/address'
 import { GearIcon } from './GearIcons'
 import { useUser } from '@/core/contexts/UserContext'
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
 export interface ProductSpecsSectionProps {
 	editable: boolean
@@ -19,8 +19,8 @@ export interface ProductSpecsSectionProps {
 	setCaliber?: (val: 1 | 2 | 3 | 4 | 5) => void
 	harvest?: 'wild' | 'farm'
 	setHarvest?: (val: 'wild' | 'farm') => void
-	originStreet?: LocalizedName
-	setOriginStreet?: (val: LocalizedName) => void
+	originStreet?: MultiLang
+	setOriginStreet?: (val: MultiLang) => void
 	originCity?: string
 	setOriginCity?: (val: string) => void
 	originRegion?: string

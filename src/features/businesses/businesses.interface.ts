@@ -1,6 +1,6 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
-export type { LocalizedName, Address } from '@/features/common/address'
+export type { MultiLang, Address } from '@/features/common/address'
 
 type GeoPoint = {
 	geo?: {
@@ -21,7 +21,7 @@ type GeoPoint = {
 type Owner = {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	updatedAt?: string
 }
 
@@ -64,7 +64,7 @@ type BusinessState = {
 
 export type Business = {
 	_id: string
-	name: LocalizedName
+	name: MultiLang
 	slug: string
 	owner: Owner
 	address?: Address
@@ -132,7 +132,7 @@ export interface ProductSpecs {
 export interface Product {
 	_id: string
 	business: Business
-	name: LocalizedName
+	name: MultiLang
 	price: {
 		total: {
 			tnd: number
@@ -177,7 +177,7 @@ export interface Product {
 	defaultProduct?: {
 		_id: string
 		slug: string
-		name: LocalizedName
+		name: MultiLang
 		updatedAt: string
 		media?: {
 			thumbnail?: {
@@ -220,7 +220,7 @@ export interface BusinessesResponse {
 }
 
 export type CreateBusinessRequest = {
-	name: LocalizedName
+	name: MultiLang
 	address?: Address
 	location?: {
 		coordinates?: [number, number]
@@ -249,7 +249,7 @@ export interface BusinessCustomerDoc {
 		_id: string
 		role: string
 		slug: string
-		name: LocalizedName
+		name: MultiLang
 		address?: Address
 		location?: GeoPoint
 		contact?: {

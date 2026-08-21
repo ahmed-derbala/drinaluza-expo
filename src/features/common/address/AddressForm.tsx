@@ -3,12 +3,12 @@ import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { Ionicons } from '@expo/vector-icons'
-import type { LocalizedName } from './address.interface'
+import type { MultiLang } from './address.interface'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 
 export interface AddressFormProps {
-	street: LocalizedName
-	setStreet: (val: LocalizedName) => void
+	street: MultiLang
+	setStreet: (val: MultiLang) => void
 	city: string
 	setCity: (val: string) => void
 	region: string

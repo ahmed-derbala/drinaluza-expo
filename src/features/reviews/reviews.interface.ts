@@ -1,9 +1,9 @@
-import { LocalizedName } from '@/features/businesses/businesses.interface'
+import { MultiLang } from '@/features/businesses/businesses.interface'
 
 interface ReviewAuthor {
 	_id: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 }
 
 export interface Review {

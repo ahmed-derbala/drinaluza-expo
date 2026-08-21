@@ -1,10 +1,10 @@
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
 export interface Customer {
 	_id: string
 	role: string
 	slug: string
-	name: LocalizedName
+	name: MultiLang
 	address?: Address
 	location?: {
 		geo?: { type: 'Point'; coordinates: [number, number] }

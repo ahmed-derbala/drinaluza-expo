@@ -5,10 +5,10 @@ import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
 import { themeColors } from '@/core/theme'
 import { getStreetString } from '@/features/common/address'
-import type { LocalizedName, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@/features/common/address'
 
 export type BusinessBlockBusiness = {
-	name: LocalizedName
+	name: MultiLang
 	slug: string
 	media?: {
 		thumbnail?: {

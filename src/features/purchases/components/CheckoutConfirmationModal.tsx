@@ -10,7 +10,7 @@ import { EyeButton } from '@/features/common/buttons/EyeButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { updateMyProfile } from '@/features/auth/auth.api'
 import { useMyProfile } from '@/features/profile/useMyProfile'
-import { EditableSection } from '@/features/common/sections/EditableSection'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 import { AddressForm } from '@/features/common/address'
 import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
@@ -177,7 +177,7 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 		>
 			{isSaving && <Spinner size="small" expand={false} style={styles.loader} />}
 
-			<EditableSection title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
+			<BaseCard title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
 				<AddressForm
 					street={form.address.street || { en: '', tn_latn: '', tn_arab: '' }}
 					setStreet={(value) => updateAddress({ ...form.address, street: value })}
@@ -188,15 +188,15 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 					country={form.address.country || ''}
 					setCountry={(value) => updateAddress({ ...form.address, country: value })}
 				/>
-			</EditableSection>
+			</BaseCard>
 
-			<EditableSection title={translate('contact_info', 'Contact Information')} iconName="call-outline" style={styles.section}>
+			<BaseCard title={translate('contact_info', 'Contact Information')} iconName="call-outline" style={styles.section}>
 				<ContactForm phone={form.contact.phone} backupPhones={form.contact.backupPhones} email={form.contact.email} whatsapp={form.contact.whatsapp} onChange={updateContact} />
-			</EditableSection>
+			</BaseCard>
 
-			<EditableSection title={translate('location', 'Location')} iconName="navigate-outline" style={styles.section}>
+			<BaseCard title={translate('location', 'Location')} iconName="navigate-outline" style={styles.section}>
 				<LocationForm location={form.location} onChange={updateLocation} />
-			</EditableSection>
+			</BaseCard>
 		</CenteredModal>
 	)
 }
