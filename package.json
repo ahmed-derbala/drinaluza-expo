@@ -41,7 +41,7 @@
     "i:prod": "NODE_ENV=production npm i --omit=dev",
     "i:check": "echo y | expo install --check",
     "fix": "npm run env:local && npm run i:check && expo-doctor",
-    "rm:local": "rm -rf builds logs dist android ios .expo node_modules package-lock.json",
+    "rm:local": "rm -rf ~/.eas builds logs dist android ios .expo node_modules package-lock.json",
     "rm:prod": "rm -rf builds logs dist android ios .expo node_modules package-lock.json",
     "clean": "npm run rm:local && npm run i",
     "clean:prod": "npm run rm:prod && npm run i:prod",
