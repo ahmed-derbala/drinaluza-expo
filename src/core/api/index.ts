@@ -43,18 +43,30 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 			return response
 		},
 		async (error: AxiosError) => {
-			if (error.response) {
+			const status = error.response?.status
+			const isNetworkError = !error.response
+			const isRateLimited = status === 429
+
+			// Report API success/failure appropriately
+			if (error.response && !isRateLimited) {
 				ConnectionService.reportApiSuccess()
 			} else {
+				// Network errors or rate limiting (429) should be reported as failures
 				ConnectionService.reportApiFailure(error)
 			}
 
 			// Log error details in development mode, but avoid noise for expected
-			// transient conditions (offline backend, timeouts, rate limiting).
-			const status = error.response?.status
-			const isNetworkError = !error.response
-			const isRateLimited = status === 429
-			if (!isNetworkError && !isRateLimited && status !== 401 && status !== 404 && status !== 409) {
+			// transient conditions (offline backend, timeouts).
+
+			// Log 429 errors specifically for debugging rate limiting issues
+			if (isRateLimited) {
+				log({
+					level: 'warn',
+					label: 'api',
+					message: `Rate limited (429) - URL: ${error.config?.url || 'unknown'}, Method: ${error.config?.method || 'unknown'}`,
+					error: error
+				})
+			} else if (!isNetworkError && status !== 401 && status !== 404 && status !== 409) {
 				logError(error, 'API Request')
 			}
 

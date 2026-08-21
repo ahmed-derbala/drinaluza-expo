@@ -84,7 +84,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		const playbackOverlay = useMemo(() => {
 			if (nativeControls || hasError) return null
 			return (
-				<View style={styles.overlay} pointerEvents="box-none">
+				<View style={[styles.overlay, { pointerEvents: 'box-none' }]}>
 					<PlaybackButton playing={playing} onPress={toggle} />
 				</View>
 			)
@@ -102,7 +102,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			<View style={[styles.container, style]} testID={testID} accessibilityLabel={accessibilityLabel}>
 				<VideoView player={player} style={StyleSheet.absoluteFill} contentFit={contentFit} nativeControls={nativeControls} allowsPictureInPicture={false} />
 				{isLoading && (
-					<View style={styles.loadingOverlay} pointerEvents="none">
+					<View style={[styles.loadingOverlay, { pointerEvents: 'none' }]}>
 						<Spinner size="small" expand={false} />
 					</View>
 				)}

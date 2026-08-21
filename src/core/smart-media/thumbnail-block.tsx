@@ -182,7 +182,7 @@ const SmartMediaThumbnailBlockComponent = ({
 			<View style={styles.media}>
 				<SmartMediaView media={thumbnail} contentFit={contentFit} style={StyleSheet.absoluteFill} enableFullscreenPreview={enableFullscreenPreview} accessibilityLabel="Media thumbnail" />
 				{loading && (
-					<View style={styles.loadingOverlay} pointerEvents="none">
+					<View style={[styles.loadingOverlay, { pointerEvents: 'none' }]}>
 						<Spinner size="small" expand={false} />
 					</View>
 				)}

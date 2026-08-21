@@ -6,6 +6,22 @@ import { log } from '@/core/log'
 import { getItem, setItem, removeItem } from '@/core/storage'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
 
+// Verify file against existence and expected size bounds
+const verifyFileIntegrity = async (fileUri: string, expectedSize: number): Promise<{ ok: boolean; reason?: string }> => {
+	try {
+		const info: any = await FileSystem.getInfoAsync(fileUri)
+		const size = info?.size ?? 0
+		if (!info.exists) return { ok: false, reason: 'file not found' }
+		if (size < 1024 * 1024) return { ok: false, reason: `size ${size} <1MB` }
+		if (expectedSize > 0 && size < expectedSize * 0.95) return { ok: false, reason: `size ${size}/${expectedSize} <95%` }
+		if (expectedSize > 0 && size > expectedSize * 1.05) return { ok: false, reason: `size ${size}/${expectedSize} >105%` }
+		return { ok: true }
+	} catch (err) {
+		log({ level: 'warn', label: 'UpdatesContext', message: 'File integrity verification failed', error: err })
+		return { ok: false, reason: 'verification error' }
+	}
+}
+
 export const UpdatesContext = createContext<UpdatesContextProps | undefined>(undefined)
 
 const UPDATES_FOLDER = FileSystem.documentDirectory + 'updates/'
@@ -19,7 +35,7 @@ const ensureUpdatesFolder = async () => {
 			await FileSystem.makeDirectoryAsync(UPDATES_FOLDER, { intermediates: true })
 		}
 	} catch (err) {
-		console.warn('[UpdatesContext] Failed to create updates folder:', err)
+		log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to create updates folder', error: err })
 	}
 }
 
@@ -46,8 +62,8 @@ export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> =
 			latest_version: latestVersion,
 			size: apkAsset ? apkAsset.size : 0,
 			download_count: apkAsset ? apkAsset.download_count : 0,
-			changelog: data.body || '',
-			download_url: apkAsset ? apkAsset.browser_download_url : ''
+			download_url: apkAsset ? apkAsset.browser_download_url : '',
+			digest: apkAsset?.digest || null
 		}
 	} catch (err) {
 		clearTimeout(id)
@@ -129,7 +145,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			setDeviceFreeStorage(freeSpace)
 			return apks
 		} catch (err) {
-			console.warn('[UpdatesContext] Failed to scan cached APKs:', err)
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to scan cached APKs', error: err })
 			return []
 		}
 	}, [])
@@ -145,7 +161,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				}
 			}
 		} catch (err) {
-			console.warn('[UpdatesContext] Pruning older cached releases failed:', err)
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Pruning older cached releases failed', error: err })
 		}
 	}, [])
 
@@ -159,53 +175,67 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 			if (Platform.OS !== 'web') {
 				await refreshApkList()
-				// Run a proactive cleanup of stale APK cache files (disabled to show all downloaded APKs)
-				// await pruneOldApks(result.latest_version)
 			}
 			return result
 		} catch (err: any) {
-			console.warn('[UpdatesContext] Update check encountered network/timeout error:', err)
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Update check encountered network/timeout error', error: err })
 			setError(err?.message || 'Failed to check for updates.')
 			setIsChecking(false)
 			return null
 		}
-	}, [refreshApkList, pruneOldApks])
+	}, [refreshApkList])
 
-	// Install Android APK
-	const installApk = useCallback(async (fileUri: string) => {
-		if (Platform.OS !== 'android') return
-		log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
-		try {
-			const contentUri = await FileSystem.getContentUriAsync(fileUri)
-			const { startActivityAsync } = require('expo-intent-launcher')
-
+	// Install Android APK — validates file integrity first to avoid "parsing the package" error
+	const installApk = useCallback(
+		async (fileUri: string) => {
+			if (Platform.OS !== 'android') return
+			log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
 			try {
-				// 1. Try modern ACTION_VIEW with MIME type (universal file opener)
-				await startActivityAsync('android.intent.action.VIEW', {
-					data: contentUri,
-					flags: 1, // Intent.FLAG_GRANT_READ_URI_PERMISSION
-					type: 'application/vnd.android.package-archive'
-				})
-			} catch (viewErr) {
-				log({ level: 'warn', label: 'UpdatesContext', message: 'ACTION_VIEW failed, trying legacy ACTION_INSTALL_PACKAGE fallback', error: viewErr })
+				const match = fileUri.match(/drinaluza-(.+)\.apk/)
+				const version = match ? match[1] : null
+				const isLatest = version && latestReleaseRef.current && version === latestReleaseRef.current.latest_version
+				const expectedSize = isLatest ? latestReleaseRef.current!.size : 0
+				const verify = await verifyFileIntegrity(fileUri, expectedSize)
+				if (!verify.ok) {
+					await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {})
+					await refreshApkList()
+					throw new Error(`APK corrupted (${verify.reason}). Deleted — please download again.`)
+				}
 
-				// 2. Fall back to legacy ACTION_INSTALL_PACKAGE
-				await startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
-					data: contentUri,
-					flags: 1 // Intent.FLAG_GRANT_READ_URI_PERMISSION
-				})
+				const contentUri = await FileSystem.getContentUriAsync(fileUri)
+				const { startActivityAsync } = require('expo-intent-launcher')
+
+				try {
+					// 1. Try modern ACTION_VIEW with MIME type (universal file opener)
+					await startActivityAsync('android.intent.action.VIEW', {
+						data: contentUri,
+						flags: 1, // Intent.FLAG_GRANT_READ_URI_PERMISSION
+						type: 'application/vnd.android.package-archive'
+					})
+				} catch (viewErr) {
+					log({ level: 'warn', label: 'UpdatesContext', message: 'ACTION_VIEW failed, trying legacy ACTION_INSTALL_PACKAGE fallback', error: viewErr })
+
+					// 2. Fall back to legacy ACTION_INSTALL_PACKAGE
+					await startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
+						data: contentUri,
+						flags: 1 // Intent.FLAG_GRANT_READ_URI_PERMISSION
+					})
+				}
+			} catch (err: any) {
+				log({ level: 'error', label: 'UpdatesContext', message: 'Android package installation failed', error: err })
+
+				Alert.alert(
+					'Installation Failed',
+					err?.message?.includes('corrupted') || err?.message?.includes('incomplete') || err?.message?.includes('not found')
+						? err.message
+						: 'Could not launch the Android package installer. Please ensure you have allowed this app to install unknown apps in your device settings.\n\nError: ' + (err?.message || err),
+					[{ text: 'OK' }]
+				)
+				throw new Error(err?.message || 'Failed to launch the Android package installer. Please verify permissions.')
 			}
-		} catch (err: any) {
-			log({ level: 'error', label: 'UpdatesContext', message: 'Android package installation failed', error: err })
-
-			Alert.alert(
-				'Installation Failed',
-				'Could not launch the Android package installer. Please ensure you have allowed this app to install unknown apps in your device settings.\n\nError: ' + (err?.message || err),
-				[{ text: 'OK' }]
-			)
-			throw new Error('Failed to launch the Android package installer. Please verify permissions.')
-		}
-	}, [])
+		},
+		[refreshApkList]
+	)
 
 	// Delete downloaded APK
 	const deleteApk = useCallback(
@@ -215,7 +245,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				await FileSystem.deleteAsync(fileUri, { idempotent: true })
 				await refreshApkList()
 			} catch (err) {
-				console.warn('[UpdatesContext] Deleting local APK cache failed:', err)
+				log({ level: 'warn', label: 'UpdatesContext', message: 'Deleting local APK cache failed', error: err })
 			}
 		},
 		[refreshApkList]
@@ -224,6 +254,15 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Download APK
 	const downloadUpdate = useCallback(async (): Promise<string | null> => {
 		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
+			return null
+		}
+
+		// Check free storage space before downloading
+		const freeSpace = await FileSystem.getFreeDiskStorageAsync()
+		setDeviceFreeStorage(freeSpace)
+		const minRequiredBytes = Math.max(latestRelease.size, (config.updates.minFreeStorageGB || 0.1) * 1024 * 1024 * 1024)
+		if (freeSpace < minRequiredBytes) {
+			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to download and install this update.')
 			return null
 		}
 
@@ -265,6 +304,16 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 
 			if (downloadResult && downloadResult.uri) {
+				if ((downloadResult as any).status && (downloadResult as any).status !== 200) {
+					await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {})
+					throw new Error(`Download failed with HTTP ${(downloadResult as any).status}. Please retry.`)
+				}
+				const verify = await verifyFileIntegrity(downloadResult.uri, latestRelease.size)
+				if (!verify.ok) {
+					await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {})
+					throw new Error(`Download corrupted (${verify.reason}). Please retry.`)
+				}
+
 				setIsDownloading(false)
 				setDownloadProgress(1)
 				await removeItem('download_resume_data')
@@ -300,10 +349,10 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			await removeItem('download_status')
 			// Clean up temp file on failure
 			await FileSystem.deleteAsync(tempFileUri, { idempotent: true }).catch(() => {})
-			console.error('[UpdatesContext] File download error:', err)
+			log({ level: 'error', label: 'UpdatesContext', message: 'File download error', error: err })
 			throw err
 		}
-	}, [latestRelease, refreshApkList, pruneOldApks, installApk])
+	}, [latestRelease, refreshApkList, installApk])
 
 	// Pause Download
 	const pauseDownload = useCallback(async () => {
@@ -322,7 +371,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				}
 				log({ level: 'info', label: 'UpdatesContext', message: 'Download paused' })
 			} catch (err) {
-				console.error('[UpdatesContext] Failed to pause download:', err)
+				log({ level: 'error', label: 'UpdatesContext', message: 'Failed to pause download', error: err })
 			} finally {
 				isPausingRef.current = false
 			}
@@ -332,6 +381,15 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Resume Download
 	const resumeDownload = useCallback(async (): Promise<string | null> => {
 		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
+			return null
+		}
+
+		// Check free storage space before resuming
+		const freeSpace = await FileSystem.getFreeDiskStorageAsync()
+		setDeviceFreeStorage(freeSpace)
+		const minRequiredBytes = Math.max(latestRelease.size, (config.updates.minFreeStorageGB || 0.1) * 1024 * 1024 * 1024)
+		if (freeSpace < minRequiredBytes) {
+			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to resume this update.')
 			return null
 		}
 
@@ -380,6 +438,16 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 
 			if (downloadResult && downloadResult.uri) {
+				if ((downloadResult as any).status && (downloadResult as any).status !== 200) {
+					await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {})
+					throw new Error(`Resume failed with HTTP ${(downloadResult as any).status}. Please retry.`)
+				}
+				const verify = await verifyFileIntegrity(downloadResult.uri, latestRelease.size)
+				if (!verify.ok) {
+					await FileSystem.deleteAsync(downloadResult.uri, { idempotent: true }).catch(() => {})
+					throw new Error(`Resume corrupted (${verify.reason}). Please retry.`)
+				}
+
 				setIsDownloading(false)
 				setDownloadProgress(1)
 				resumeDataRef.current = null
@@ -398,13 +466,20 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			} else {
 				throw new Error('Resume download completed with empty or invalid result.')
 			}
-		} catch (err) {
+		} catch (err: any) {
 			if (isPausingRef.current) {
 				setIsDownloading(false)
 				return null
 			}
 			if (isCancellingRef.current) {
 				return null
+			}
+			// If resume data is corrupted (common after kill), discard temp and allow fresh download
+			const msg = String(err?.message || '')
+			if (msg.includes('resume') || msg.includes('Resume')) {
+				resumeDataRef.current = null
+				await removeItem('download_resume_data').catch(() => {})
+				await FileSystem.deleteAsync(tempFileUri, { idempotent: true }).catch(() => {})
 			}
 			setIsDownloading(false)
 			setIsPaused(false)
@@ -413,7 +488,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			await removeItem('download_resume_data')
 			await removeItem('download_progress')
 			await removeItem('download_status')
-			console.error('[UpdatesContext] File resume download error:', err)
+			log({ level: 'error', label: 'UpdatesContext', message: 'File resume download error', error: err })
 			throw err
 		}
 	}, [latestRelease, refreshApkList, installApk])
@@ -482,7 +557,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				try {
 					activeDownloadRef.current.cancelAsync()
 				} catch (e) {
-					console.warn('[UpdatesContext] Failed to cancel active download on unmount:', e)
+					log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to cancel active download on unmount', error: e })
 				}
 			}
 		}
@@ -510,9 +585,21 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			for (const file of files) {
 				const filePath = UPDATES_FOLDER + file
 
-				// 1. Handle .tmp files (incomplete downloads)
+				// 1. Handle .tmp files (incomplete downloads) — also validate even when paused, to avoid resuming corrupted truncated file after kill
 				if (file.endsWith('.tmp')) {
 					if (isPausedStatus) {
+						try {
+							const info: any = await FileSystem.getInfoAsync(filePath)
+							if (!info.exists || (info.size || 0) < 1024) {
+								log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting empty .tmp ${file} despite paused status` })
+								await FileSystem.deleteAsync(filePath, { idempotent: true })
+								// Clear stale resume data if tmp was deleted
+								await removeItem('download_resume_data')
+								await removeItem('download_progress')
+								await removeItem('download_status')
+							}
+						} catch {}
+						// Keep valid paused tmp for resume
 						continue
 					} else {
 						log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting incomplete/interrupted download file ${file}` })
@@ -537,10 +624,11 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					continue
 				}
 
-				// 4. Check file integrity (non-zero size)
-				const fileInfo = await FileSystem.getInfoAsync(filePath)
-				if (!fileInfo.exists || (fileInfo.size || 0) === 0) {
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting empty/corrupted APK ${file}` })
+				// 4. Check file integrity (APKs must be >1MB; smaller means truncated/killed download that was incorrectly promoted)
+				const fileInfo: any = await FileSystem.getInfoAsync(filePath)
+				const apkSize = fileInfo.size || 0
+				if (!fileInfo.exists || apkSize === 0 || apkSize < 1024 * 1024) {
+					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting empty/corrupted APK ${file} size=${apkSize}` })
 					await FileSystem.deleteAsync(filePath, { idempotent: true })
 					continue
 				}
@@ -584,7 +672,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					}
 				}
 			} catch (e) {
-				console.warn('[UpdatesContext] Failed to load saved download resume data:', e)
+				log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to load saved download resume data', error: e })
 			}
 		}
 		init()

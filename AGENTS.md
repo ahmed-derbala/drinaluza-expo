@@ -8,6 +8,11 @@ trigger: always_on
 - do not edit the backend project 
 - you can read only the backend project
 
+## UI
+### 1. cards
+- all cards must be based on BaseCard
+- never hardcode colors, spacing, radius, etc, use the core/theme/ instead
+
 ## cleanup
 Improve code quality, maintainability, consistency, and bundle size without changing application behavior.
 

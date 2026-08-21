@@ -1,4 +1,7 @@
 export * from './types'
 export * from './UpdatesContext'
 export * from './useUpdates'
+export * from './CurrentVersionCard'
+export * from './LatestReleaseCard'
+export * from './ApkCard'
 export { default as UpdatesScreen } from './UpdatesScreen'

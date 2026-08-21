@@ -4,8 +4,8 @@ export interface UpdateCheckResult {
 	latest_version: string
 	size: number
 	download_count: number
-	changelog: string
 	download_url: string
+	digest: string | null // e.g. "sha256:3abcfd..." from GitHub assets[].digest
 }
 
 export interface CachedApkMetadata {
@@ -14,6 +14,7 @@ export interface CachedApkMetadata {
 	version: string
 	size: number
 	isInstallable: boolean
+	digest?: string | null
 }
 
 export interface UpdatesContextProps {

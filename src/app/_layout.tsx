@@ -132,7 +132,7 @@ function RootLayoutContent() {
 					router.replace('/updates')
 				}
 			} catch (e) {
-				console.warn('[StartupGate] Startup check failed:', e)
+				log({ level: 'warn', label: 'StartupGate', message: 'Startup check failed', error: e })
 			}
 		}
 

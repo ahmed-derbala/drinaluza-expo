@@ -92,12 +92,9 @@ on web:
   - on web: do not check for updates when app starts
 
 - if there is no previous screen, the back button opens /feed
-- keep only the latest version apk file
-- when app starts prevent rendering home screen before update check completes
 - Update check must have timeout protection, use config.TIMEOUT_MS
 - Handle offline/network failure gracefully
 - If update check fails:
   - continue to app normally
-
 - Use proper async cancellation and cleanup to avoid memory leaks.
 

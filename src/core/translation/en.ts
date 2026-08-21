@@ -18,6 +18,7 @@ export const en = {
 	error: 'Error',
 	refresh: 'Refresh',
 	download: 'Download',
+	installed: 'Installed',
 	hello: 'Hello',
 	welcome_back: 'Welcome back 👋',
 	no_products: 'No products found',
