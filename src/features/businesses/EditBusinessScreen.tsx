@@ -20,6 +20,8 @@ import { IconButton } from '@/features/common/buttons/IconButton'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { SectionRow } from '@/features/common/sections/SectionRow'
+import { log } from '@/core/log'
+import { parseError } from '@/core/error/errorHandler'
 
 export default function EditBusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
@@ -169,7 +171,10 @@ export default function EditBusinessScreen() {
 			setThumbnailUrl(file.url)
 			toast.show({ title: 'Success', content: 'Business photo updated successfully!', borderColor: colors.success })
 		} catch (error: any) {
-			toast.show({ title: 'Error', content: error.message || 'Failed to upload photo', borderColor: colors.error })
+			const parsedError = parseError(error)
+			const errorMessage = parsedError.message || error.message || 'Failed to upload photo'
+			log({ level: 'error', label: 'EditBusinessScreen', message: 'Photo upload failed', error })
+			toast.show({ title: 'Error', content: errorMessage, borderColor: colors.error })
 		} finally {
 			setUploadingPhoto(false)
 		}

@@ -19,6 +19,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { showAlert } from '@/core/helpers/popup'
 import { log } from '@/core/log'
+import { parseError } from '@/core/error/errorHandler'
 
 // Import the reusable section components
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
@@ -276,17 +277,35 @@ export default function CreateProductScreen() {
 
 			const pendingFiles = uploadedGallery.map((item) => item.pickedFile).filter((file): file is UploadMediaFile => Boolean(file))
 			if (pendingFiles.length > 0) {
-				await uploadGallery({ targetModelName: 'products', targetModelId: created.data._id, files: pendingFiles })
+				try {
+					await uploadGallery({ targetModelName: 'products', targetModelId: created.data._id, files: pendingFiles })
+				} catch (uploadError: any) {
+					log({ level: 'error', label: 'CreateProductScreen', message: 'Gallery upload failed after product creation', error: uploadError })
+					const parsedError = parseError(uploadError)
+					const errorMessage = parsedError.message || uploadError.message || 'Failed to upload gallery images'
+					showAlert(translate('error', 'Error'), `${translate('product_created_success', 'Product created successfully!')}, but ${errorMessage}`)
+					// Don't throw - product was created successfully, just media upload failed
+				}
 			}
 			if (thumbnail && isDeferredMediaFile(thumbnail)) {
-				await uploadThumbnail({ targetModelName: 'products', targetModelId: created.data._id, file: thumbnail.pickedFile })
+				try {
+					await uploadThumbnail({ targetModelName: 'products', targetModelId: created.data._id, file: thumbnail.pickedFile })
+				} catch (uploadError: any) {
+					log({ level: 'error', label: 'CreateProductScreen', message: 'Thumbnail upload failed after product creation', error: uploadError })
+					const parsedError = parseError(uploadError)
+					const errorMessage = parsedError.message || uploadError.message || 'Failed to upload thumbnail'
+					showAlert(translate('error', 'Error'), `${translate('product_created_success', 'Product created successfully!')}, but ${errorMessage}`)
+					// Don't throw - product was created successfully, just media upload failed
+				}
 			}
 
 			toast.show({ title: translate('success', 'Success'), content: translate('product_created_success', 'Product created successfully!'), borderColor: colors.success })
 			router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
 		} catch (error: any) {
 			console.error('Failed to create product:', error)
-			showAlert(translate('error', 'Error'), error?.response?.data?.message || translate('err_create_failed', 'Failed to create product. Please try again.'))
+			const parsedError = parseError(error)
+			const errorMessage = parsedError.message || error?.response?.data?.message || translate('err_create_failed', 'Failed to create product. Please try again.')
+			showAlert(translate('error', 'Error'), errorMessage)
 		} finally {
 			setSaving(false)
 		}

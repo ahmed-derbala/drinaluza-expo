@@ -8,8 +8,10 @@
  */
 
 import React, { useCallback, useState } from 'react'
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native'
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle, Alert } from 'react-native'
 import { themeColors } from '@/core/theme'
+import { log } from '@/core/log'
+import { parseError } from '@/core/error/errorHandler'
 import { BaseCard, type CardSize } from '@/features/common/cards/BaseCard'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
@@ -83,6 +85,33 @@ const SmartMediaGalleryCardComponent = ({
 				onChange?.([...gallery, ...files])
 				onUpload?.(files)
 			}
+		} catch (error: any) {
+			const parsedError = parseError(error)
+			const errorMessage = parsedError.message || error.message || 'Failed to upload gallery files'
+			const canRetry = parsedError.canRetry !== false
+
+			log({
+				level: 'error',
+				label: 'smart-media',
+				message: 'Gallery upload failed in UI',
+				error,
+				data: {
+					fileCount: picked.length,
+					fileNames: picked.map((f) => f.name),
+					canRetry
+				}
+			})
+
+			Alert.alert(
+				'Upload Failed',
+				errorMessage,
+				canRetry
+					? [
+							{ text: 'Cancel', style: 'cancel' },
+							{ text: 'Retry', onPress: () => handleUpload() }
+						]
+					: [{ text: 'OK', style: 'default' }]
+			)
 		} finally {
 			setInternalUploading(false)
 		}

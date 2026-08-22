@@ -14,6 +14,8 @@
 import { Platform } from 'react-native'
 import { getApiClient } from '@/core/api'
 import { log } from '@/core/log'
+import { parseError } from '@/core/error/errorHandler'
+import { ConnectionService } from '@/core/connection'
 import { MAX_FILE_COUNT, type TargetModelName } from './constants'
 import type { MediaFile } from './types'
 import type { PickedMediaFile } from './picker'
@@ -41,11 +43,14 @@ const appendFileToFormData = (formData: FormData, fieldName: 'thumbnail' | 'gall
 		const webFile = file.file || file.uri
 		formData.append(fieldName, webFile as unknown as Blob)
 	} else {
-		formData.append(fieldName, {
+		// On React Native, we need to use the file URI directly
+		// Create a proper file object for React Native
+		const fileObject = {
 			uri: file.uri,
 			name: file.name,
 			type: file.mimeType
-		} as unknown as Blob)
+		}
+		formData.append(fieldName, fileObject as any)
 	}
 }
 
@@ -63,16 +68,49 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 		throw new Error(`uploadMedia supports up to ${MAX_FILE_COUNT} gallery files per request`)
 	}
 
+	// Check backend connection status before attempting upload
+	const backendState = ConnectionService.getBackendState()
+	if (backendState === 'offline') {
+		const error = new Error('Cannot upload: backend is offline')
+		log({
+			level: 'error',
+			label: 'smart-media',
+			message: 'Upload aborted - backend is offline',
+			data: { targetModelName, targetModelId, backendState }
+		})
+		throw error
+	}
+
 	const formData = new FormData()
 	formData.append('targetModelName', targetModelName)
 	formData.append('targetModelId', targetModelId)
 	if (thumbnail) appendFileToFormData(formData, 'thumbnail', thumbnail)
 	filesToUpload.forEach((file) => appendFileToFormData(formData, 'gallery', file))
 
+	// Log FormData contents for debugging
+	log({
+		level: 'info',
+		label: 'smart-media',
+		message: 'Attempting upload',
+		data: {
+			targetModelName,
+			targetModelId,
+			fileCount: filesToUpload.length + (thumbnail ? 1 : 0),
+			hasThumbnail: !!thumbnail,
+			backendState,
+			// Don't log actual file data to avoid large logs
+			fileNames: filesToUpload.map((f) => f.name),
+			thumbnailName: thumbnail?.name
+		}
+	})
+
 	let response
 	try {
 		response = await getApiClient().post('/files/upload', formData, {
-			headers: { 'Content-Type': 'multipart/form-data' },
+			// Don't set Content-Type - let React Native handle it with proper boundary
+			headers: {},
+			// Override the default transformRequest to preserve FormData
+			transformRequest: [(data) => data],
 			onUploadProgress: (event) => {
 				if (onProgress && event.total) {
 					onProgress(Math.round((event.loaded * 100) / event.total))
@@ -80,12 +118,49 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 			}
 		})
 	} catch (error) {
-		log({ level: 'error', label: 'smart-media', message: 'Upload failed', error })
-		throw error
+		const parsedError = parseError(error)
+
+		log({
+			level: 'error',
+			label: 'smart-media',
+			message: 'Upload failed',
+			error,
+			data: {
+				targetModelName,
+				targetModelId,
+				fileCount: filesToUpload.length + (thumbnail ? 1 : 0),
+				hasThumbnail: !!thumbnail,
+				backendState,
+				parsedError
+			}
+		})
+
+		// Provide user-friendly error message, especially for network errors
+		let errorMessage = parsedError.message || error.message || 'Network error'
+		if (parsedError.type === 'network') {
+			errorMessage = 'Network connection failed. Please check your internet connection and try again.'
+		}
+
+		// Provide more context in the error message
+		const enhancedError = new Error(`Upload failed: ${errorMessage}`)
+		// @ts-ignore - Attach additional error info
+		enhancedError.originalError = error
+		// @ts-ignore - Attach parsed error info
+		enhancedError.parsedError = parsedError
+		// @ts-ignore - Attach retry capability
+		enhancedError.canRetry = parsedError.canRetry
+
+		throw enhancedError
 	}
 
 	const data = response.data?.data
 	if (!Array.isArray(data)) {
+		log({
+			level: 'error',
+			label: 'smart-media',
+			message: 'Unexpected upload response format',
+			data: { response: response.data }
+		})
 		throw new Error('Unexpected upload response')
 	}
 	return { files: data as MediaFile[] }
@@ -94,13 +169,38 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 /** Upload a single thumbnail file and return the created file. */
 export const uploadThumbnail = async (options: Omit<UploadMediaOptions, 'gallery' | 'thumbnail'> & { file: UploadMediaFile }): Promise<MediaFile> => {
 	const { file, ...rest } = options
-	const { files } = await uploadMedia({ ...rest, thumbnail: file })
-	return files[0]
+	try {
+		const { files } = await uploadMedia({ ...rest, thumbnail: file })
+		return files[0]
+	} catch (error) {
+		log({
+			level: 'error',
+			label: 'smart-media',
+			message: 'Thumbnail upload failed',
+			error,
+			data: { fileName: file.name, fileSize: file.size }
+		})
+		throw error
+	}
 }
 
 /** Upload several gallery files and return the created files. */
 export const uploadGallery = async (options: Omit<UploadMediaOptions, 'thumbnail' | 'gallery'> & { files: UploadMediaFile[] }): Promise<MediaFile[]> => {
 	const { files, ...rest } = options
-	const { files: uploaded } = await uploadMedia({ ...rest, gallery: files })
-	return uploaded
+	try {
+		const { files: uploaded } = await uploadMedia({ ...rest, gallery: files })
+		return uploaded
+	} catch (error) {
+		log({
+			level: 'error',
+			label: 'smart-media',
+			message: 'Gallery upload failed',
+			error,
+			data: {
+				fileCount: files.length,
+				fileNames: files.map((f) => f.name)
+			}
+		})
+		throw error
+	}
 }

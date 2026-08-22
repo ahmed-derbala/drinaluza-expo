@@ -10,10 +10,11 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { StyleSheet, TextInput, View, type StyleProp, type ViewStyle } from 'react-native'
+import { StyleSheet, TextInput, View, type StyleProp, type ViewStyle, Alert } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import { themeColors } from '@/core/theme'
 import { log } from '@/core/log'
+import { parseError } from '@/core/error/errorHandler'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
 import { type TargetModelName } from './constants'
@@ -128,10 +129,34 @@ const SmartMediaThumbnailBlockComponent = ({
 		try {
 			if (!targetModelId) {
 				log({ level: 'error', label: 'smart-media', message: 'uploadThumbnail requires a targetModelId (or deferUpload)' })
+				Alert.alert('Upload Error', 'Missing target model ID. Please try again.')
 				return
 			}
 			const file = await uploadThumbnail({ targetModelName, targetModelId, file: picked })
 			onChange?.(file)
+		} catch (error: any) {
+			const parsedError = parseError(error)
+			const errorMessage = parsedError.message || error.message || 'Failed to upload file'
+			const canRetry = parsedError.canRetry !== false
+
+			log({
+				level: 'error',
+				label: 'smart-media',
+				message: 'Thumbnail upload failed in UI',
+				error,
+				data: { fileName: picked.name, canRetry }
+			})
+
+			Alert.alert(
+				'Upload Failed',
+				errorMessage,
+				canRetry
+					? [
+							{ text: 'Cancel', style: 'cancel' },
+							{ text: 'Retry', onPress: () => handleUpload() }
+						]
+					: [{ text: 'OK', style: 'default' }]
+			)
 		} finally {
 			setInternalLoading(false)
 		}
