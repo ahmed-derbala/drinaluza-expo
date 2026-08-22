@@ -18,15 +18,10 @@ const styles = StyleSheet.create({
 	card: {
 		flex: 1,
 		flexDirection: 'column',
-		gap: 14,
+		gap: 20,
 		padding: 16,
 		borderRadius: 20,
-		minHeight: 0,
-		...Platform.select({
-			web: {
-				position: 'relative'
-			} as any
-		})
+		minHeight: 0
 	},
 	topRow: {
 		flexDirection: 'row',
@@ -35,11 +30,21 @@ const styles = StyleSheet.create({
 	},
 	textContainer: {
 		flex: 1,
-		gap: 4
+		minWidth: 0,
+		flexShrink: 1,
+		gap: 6
+	},
+	versionRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 8,
+		flexWrap: 'wrap'
 	},
 	value: {
 		fontSize: 16,
-		fontWeight: '700'
+		fontWeight: '700',
+		flexShrink: 1,
+		minWidth: 0
 	},
 	badgeColumn: {
 		flexDirection: 'row',
@@ -67,12 +72,7 @@ const styles = StyleSheet.create({
 		borderWidth: 1,
 		...Platform.select({
 			web: {
-				cursor: 'pointer',
-				appearance: 'none',
-				WebkitAppearance: 'none',
-				padding: 0,
-				margin: 0,
-				display: 'flex'
+				cursor: 'pointer'
 			} as any
 		})
 	},
@@ -83,32 +83,40 @@ const styles = StyleSheet.create({
 		justifyContent: 'flex-end',
 		flexWrap: 'wrap',
 		gap: 12,
+		marginTop: 10,
 		...Platform.select({
 			web: {
-				position: 'absolute',
-				bottom: 16,
-				right: 16,
-				width: 'auto'
+				paddingBottom: 50
 			} as any
 		})
 	},
 	progressPanel: {
-		gap: 12
+		gap: 12,
+		minHeight: 30,
+		marginTop: 10
 	},
 	progressMeta: {
 		flexDirection: 'row',
 		justifyContent: 'flex-start',
 		alignItems: 'center',
-		gap: 10
+		gap: 10,
+		flexWrap: 'wrap'
 	},
 	progressText: {
 		marginRight: 4,
 		fontSize: 13,
-		fontWeight: '700'
+		fontWeight: '700',
+		flexShrink: 1,
+		minWidth: 44,
+		textAlign: 'left'
 	},
 	progressBadges: {
 		flexDirection: 'row',
-		gap: 10
+		alignItems: 'center',
+		gap: 10,
+		flexWrap: 'wrap',
+		flex: 1,
+		minWidth: 0
 	},
 	progressBadge: {
 		flexDirection: 'row',
@@ -118,13 +126,14 @@ const styles = StyleSheet.create({
 		paddingHorizontal: 8,
 		paddingVertical: 6,
 		borderRadius: 10,
-		width: 100,
-		height: 30
+		width: 90,
+		height: 30,
+		flexShrink: 0
 	},
 	progressBadgeText: {
-		flex: 1,
 		fontSize: 12,
-		fontWeight: '600'
+		fontWeight: '600',
+		flexShrink: 1
 	}
 })
 
@@ -250,22 +259,18 @@ export const LatestReleaseCard: React.FC = () => {
 				<View style={styles.badgeColumn}>
 					<View style={[styles.infoBadge, { backgroundColor: themeColors.info12 }]}>
 						<Ionicons name="calendar-outline" size={10} color={colors.info} />
-						<Text style={[styles.infoBadgeText, { color: colors.info }]} numberOfLines={1} adjustsFontSizeToFit>
+						<Text style={[styles.infoBadgeText, { color: colors.info }]} numberOfLines={1}>
 							{formatDate(latestRelease.published_at)}
 						</Text>
 					</View>
-					<View style={[styles.infoBadge, { backgroundColor: themeColors.primary12 }]}>
-						<Ionicons name="cube-outline" size={10} color={colors.primary} />
-						<Text style={[styles.infoBadgeText, { color: colors.primary }]} numberOfLines={1} adjustsFontSizeToFit>
-							{formatBytes(latestRelease.size)}
-						</Text>
-					</View>
-					{isAndroid && deviceFreeStorage > 0 && <FreeStorageBadge bytes={deviceFreeStorage} />}
-					<View style={[styles.infoBadge, { backgroundColor: themeColors.success12 }]}>
-						<Ionicons name="download-outline" size={10} color={colors.success} />
-						<Text style={[styles.infoBadgeText, { color: colors.success }]} numberOfLines={1} adjustsFontSizeToFit>
-							{latestRelease.download_count}
-						</Text>
+					<View style={styles.badgeColumn}>
+						<View style={[styles.infoBadge, { backgroundColor: themeColors.primary12 }]}>
+							<Ionicons name="cube-outline" size={10} color={colors.primary} />
+							<Text style={[styles.infoBadgeText, { color: colors.primary }]} numberOfLines={1}>
+								{formatBytes(latestRelease.size)}
+							</Text>
+						</View>
+						{isAndroid && deviceFreeStorage > 0 && <FreeStorageBadge bytes={deviceFreeStorage} />}
 					</View>
 				</View>
 			) : undefined,
@@ -293,9 +298,19 @@ export const LatestReleaseCard: React.FC = () => {
 					/>
 				)}
 				<View style={styles.textContainer}>
-					<Text style={[styles.value, { color: valueColor }]} numberOfLines={1}>
-						{latestRelease ? `v${latestRelease.latest_version}` : '—'}
-					</Text>
+					<View style={styles.versionRow}>
+						<Text style={[styles.value, { color: valueColor }]} numberOfLines={1}>
+							{latestRelease ? `v${latestRelease.latest_version}` : '—'}
+						</Text>
+						{latestRelease && (
+							<View style={[styles.infoBadge, { backgroundColor: themeColors.success12 }]}>
+								<Ionicons name="download-outline" size={10} color={colors.success} />
+								<Text style={[styles.infoBadgeText, { color: colors.success }]} numberOfLines={1}>
+									{latestRelease.download_count}
+								</Text>
+							</View>
+						)}
+					</View>
 					{releaseBadges}
 				</View>
 			</View>
@@ -326,12 +341,12 @@ export const LatestReleaseCard: React.FC = () => {
 
 			<View style={styles.actionBar}>
 				{isWeb ? (
-					<CopyUrlButton url={latestRelease?.download_url} style={styles.actionButton} />
+					<CopyUrlButton url={latestRelease?.download_url} size={50} style={styles.actionButton} />
 				) : (
 					<>
-						<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} style={styles.actionButton} />
-						<CopyUrlButton url={latestRelease?.download_url} style={styles.actionButton} />
-						<ShareButton label={translate('share_url', 'Share Link')} onPress={handleShareUrl} disabled={!latestRelease?.download_url} style={styles.actionButton} />
+						<CancelButton onPress={cancelDownload} disabled={!isDownloading && !isPaused} size={50} style={styles.actionButton} />
+						<CopyUrlButton url={latestRelease?.download_url} size={50} style={styles.actionButton} />
+						<ShareButton label={translate('share_url', 'Share Link')} onPress={handleShareUrl} disabled={!latestRelease?.download_url} size={50} style={styles.actionButton} />
 					</>
 				)}
 			</View>

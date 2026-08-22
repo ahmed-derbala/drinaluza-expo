@@ -9,8 +9,12 @@ trigger: always_on
 - you can read only the backend project
 
 ## UI
+
 ### 1. cards
 - all cards must be based on BaseCard
+- a card must be implemented on its own file
+
+### theme
 - never hardcode colors, spacing, radius, etc, use the core/theme/ instead
 
 ## cleanup

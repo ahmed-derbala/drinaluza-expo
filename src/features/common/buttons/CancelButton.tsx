@@ -9,8 +9,9 @@ export interface CancelButtonProps {
 	loading?: boolean
 	style?: StyleProp<ViewStyle>
 	label?: string
+	size?: number
 }
 
-export function CancelButton({ onPress, disabled = false, loading = false, style, label = translate('cancel', 'Cancel') }: CancelButtonProps) {
-	return <IconButton icon="close-outline" label={label} onPress={onPress} disabled={disabled} loading={loading} variant="danger" style={style} />
+export function CancelButton({ onPress, disabled = false, loading = false, style, label = translate('cancel', 'Cancel'), size }: CancelButtonProps) {
+	return <IconButton icon="close-outline" label={label} onPress={onPress} disabled={disabled} loading={loading} variant="danger" style={style} size={size} />
 }
