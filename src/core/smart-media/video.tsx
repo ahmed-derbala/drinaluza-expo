@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons'
 import Spinner from '@/features/common/Spinner'
 import { themeColors } from '@/core/theme'
 
-export type VideoContentFit = 'contain' | 'cover' | 'fill'
+export type VideoContentFit = 'cover' | 'contain' | 'fill'
 
 export interface SmartVideoPlayerProps {
 	source: string
@@ -71,7 +71,7 @@ const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () =>
 )
 
 const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoPlayerProps>(
-	({ source, style, contentFit = 'contain', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError }, ref) => {
+	({ source, style, contentFit = 'cover', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError }, ref) => {
 		const player = useVideoPlayer(source, (instance) => {
 			instance.loop = loop
 			// Mute feed videos (no controls) to allow autoplay on web/iOS
@@ -151,7 +151,10 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 				if (!controls) {
 					player.muted = true
 				}
-				player.play()
+				const playPromise: any = player.play()
+				if (playPromise && typeof playPromise.catch === 'function') {
+					playPromise.catch(() => {})
+				}
 			} catch {}
 		}, [autoPlay, status, controls, player])
 
@@ -182,7 +185,8 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 
 		const play = useCallback(() => {
 			try {
-				player.play()
+				const p: any = player.play()
+				if (p && typeof p.catch === 'function') p.catch(() => {})
 			} catch {}
 		}, [player])
 
@@ -194,7 +198,8 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 
 		const resume = useCallback(() => {
 			try {
-				player.play()
+				const p: any = player.play()
+				if (p && typeof p.catch === 'function') p.catch(() => {})
 			} catch {}
 		}, [player])
 
@@ -203,7 +208,8 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 				if (player.playing) {
 					player.pause()
 				} else {
-					player.play()
+					const p: any = player.play()
+					if (p && typeof p.catch === 'function') p.catch(() => {})
 				}
 			} catch {}
 		}, [player])
@@ -233,7 +239,15 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		return (
 			<View style={[styles.container, style]} testID={testID} accessibilityLabel={accessibilityLabel}>
 				<VideoErrorBoundary key={source}>
-					<VideoView key={source} player={player} style={StyleSheet.absoluteFill} contentFit={contentFit} nativeControls={controls ? nativeControls : false} allowsPictureInPicture={false} />
+					<VideoView
+						surfaceType="textureView"
+						key={source}
+						player={player}
+						style={StyleSheet.absoluteFill}
+						contentFit={contentFit}
+						nativeControls={controls ? nativeControls : false}
+						allowsPictureInPicture={false}
+					/>
 				</VideoErrorBoundary>
 				{isLoading && (
 					<View style={[styles.loadingOverlay, { pointerEvents: 'none' }]}>

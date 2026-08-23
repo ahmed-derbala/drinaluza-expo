@@ -2,7 +2,6 @@ import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
-import { translate } from '@/core/translation'
 import { config } from '@/config'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { InstallButton } from '@/features/common/buttons/InstallButton'
@@ -105,11 +104,6 @@ export const ApkCard: React.FC<ApkCardProps> = ({ apk, onInstall, onDelete, onSh
 						<View style={[styles.badge, { backgroundColor: themeColors.surfaceVariant }]}>
 							<Text style={[styles.badgeText, { color: colors.textSecondary }]}>{formatBytes(apk.size)}</Text>
 						</View>
-						{isCurrentVersion && (
-							<View style={[styles.badge, { backgroundColor: themeColors.success12 }]}>
-								<Text style={[styles.badgeText, { color: colors.success }]}>{translate('installed', 'Installed')}</Text>
-							</View>
-						)}
 					</View>
 				</View>
 			</View>

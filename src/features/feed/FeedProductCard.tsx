@@ -17,7 +17,7 @@ import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNam
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
-import { VisibleIdsContext } from '@/features/feed/FeedScreen'
+import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext } from '@/features/feed/FeedVisibleContext'
 
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
@@ -32,7 +32,10 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const { handleBusinessPress, handleProductPress } = useProductCardPress(productFeedItem)
 	const { width } = useWindowDimensions()
 	const visibleIds = React.useContext(VisibleIdsContext)
+	const activeVideoId = React.useContext(ActiveVideoIdContext)
+	const setActiveVideoId = React.useContext(SetActiveVideoIdContext)
 	const isVisible = visibleIds.has(item._id || (item as any).slug)
+	const isActiveVideo = activeVideoId === (item._id || (item as any).slug)
 
 	const carouselMedia = useMemo<MediaField | null>(() => {
 		const rawMedia = (item as any).media as MediaField | null | undefined
@@ -55,6 +58,14 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		return thumbCount + galleryCount > 1
 	}, [carouselMedia])
 
+	const hasVideo = useMemo(() => {
+		if (!carouselMedia) return false
+		const thumbIsVideo = (carouselMedia.thumbnail as any)?.resource_type === 'video' || (carouselMedia.thumbnail as any)?.mimetype?.startsWith('video/')
+		const galleryHasVideo = Array.isArray(carouselMedia.gallery) && carouselMedia.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/'))
+		return thumbIsVideo || galleryHasVideo
+	}, [carouselMedia])
+
+	const carouselAutoPlay = hasVideo ? isActiveVideo : isVisible
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
@@ -115,7 +126,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 
 	return (
 		<View style={[styles.card, { backgroundColor: colors.background }, style]} testID={`feed-product-card-${item._id}`}>
-			{/* Background media — video is background of host card only (no controls, no fullscreen, no autoplay to avoid SurfaceView crash) */}
+			{/* Background media — video is background of host card only (no controls, no fullscreen) */}
 			<View style={styles.bgImageContainer} pointerEvents="box-none">
 				<SmartMediaCarousel
 					key={item._id}
@@ -130,8 +141,9 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 					stripContentStyle={styles.carouselStripContent}
 					controls={false}
 					enableFullscreenPreview={false}
-					autoPlay={false}
+					autoPlay={carouselAutoPlay}
 					isVisible={isVisible}
+					onIndexChange={() => setActiveVideoId(item._id || (item as any).slug)}
 				/>
 			</View>
 
@@ -170,8 +182,8 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 				</View>
 			)}
 
-			{/* Bottom content */}
-			<View style={[styles.bottomContent, hasMultipleMedia && styles.bottomContentWithThumbnails]}>
+			{/* Bottom content — reserve thumb strip height always to prevent shift when SmartMediaCarousel thumbs hide/show */}
+			<View style={[styles.bottomContent, styles.bottomContentWithThumbnails]}>
 				{/* ── Body ── */}
 				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 					<View style={styles.bodyTop}>
@@ -327,7 +339,8 @@ const styles = StyleSheet.create({
 	bottomContent: {
 		width: '100%',
 		justifyContent: 'flex-end',
-		zIndex: 1
+		zIndex: 1,
+		pointerEvents: 'box-none' as any
 	},
 	bottomContentWithThumbnails: {
 		paddingBottom: 56
@@ -362,7 +375,8 @@ const styles = StyleSheet.create({
 		letterSpacing: 0.5
 	},
 	body: {
-		justifyContent: 'space-between'
+		justifyContent: 'space-between',
+		pointerEvents: 'auto' as any
 	},
 	bodyTop: {
 		gap: 0

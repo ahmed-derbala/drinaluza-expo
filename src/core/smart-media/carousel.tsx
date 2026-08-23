@@ -16,7 +16,7 @@ import { getMediaUrl, isVideoMedia, type MediaField, type MediaFile } from './ty
 import SmartMediaView from './view'
 
 /** How long an image is displayed before auto-advancing. */
-const IMAGE_DISPLAY_MS = 4_000
+const IMAGE_DISPLAY_MS = 2_000
 
 export interface SmartMediaCarouselProps {
 	media?: MediaField | null
@@ -84,8 +84,9 @@ const SmartMediaCarouselComponent = ({
 }: SmartMediaCarouselProps) => {
 	const items = useMemo(() => collectItems(media), [media])
 	const [activeIndex, setActiveIndex] = useState(0)
+	const [manualPlayIndex, setManualPlayIndex] = useState<number | null>(null)
 
-	// Once a user manually selects a thumbnail, autoplay is permanently stopped.
+	// Once a user manually selects a thumbnail, autoplay is permanently stopped (except for the tapped video).
 	const autoPlayStoppedRef = useRef(false)
 	const canAutoPlay = autoPlay && !autoPlayStoppedRef.current
 	const canAdvance = canAutoPlay && items.length > 1
@@ -93,11 +94,14 @@ const SmartMediaCarouselComponent = ({
 	// Reset the active index when the media set changes.
 	useEffect(() => {
 		setActiveIndex(0)
+		setManualPlayIndex(null)
 		autoPlayStoppedRef.current = false
 	}, [media])
 
 	const activeItem = items[activeIndex] ?? null
 	const activeIsVideo = isVideoMedia(activeItem)
+	const shouldAutoPlayVideo = isVisible && activeIsVideo && (canAutoPlay || manualPlayIndex === activeIndex)
+	const shouldLoopSingleVideo = items.length === 1 && activeIsVideo
 
 	// Advance to the next item (wraps around).
 	const advanceToNext = useCallback(() => {
@@ -117,14 +121,20 @@ const SmartMediaCarouselComponent = ({
 		return () => clearTimeout(timer)
 	}, [canAdvance, activeIsVideo, activeIndex, advanceToNext])
 
-	// Manual thumbnail selection — stops autoplay permanently.
+	// Manual thumbnail selection — stops autoplay, but tapped media should still display/play.
 	const selectIndex = useCallback(
 		(index: number) => {
+			const tappedIsVideo = isVideoMedia(items[index])
+			if (tappedIsVideo) {
+				setManualPlayIndex(index)
+			} else {
+				setManualPlayIndex(null)
+			}
 			autoPlayStoppedRef.current = true
 			setActiveIndex(index)
 			onIndexChange?.(index)
 		},
-		[onIndexChange]
+		[onIndexChange, items]
 	)
 
 	if (items.length === 0) {
@@ -137,15 +147,16 @@ const SmartMediaCarouselComponent = ({
 
 	return (
 		<View style={[styles.container, overlayThumbnails && styles.containerOverlay, style]} accessibilityLabel={accessibilityLabel} pointerEvents={overlayThumbnails ? 'box-none' : 'auto'}>
-			<View style={[styles.preview, overlayThumbnails && styles.previewOverlay, previewStyle]} pointerEvents="none">
+			<View style={[styles.preview, overlayThumbnails && styles.previewOverlay, previewStyle]} pointerEvents={manualPlayIndex === activeIndex && activeIsVideo ? 'auto' : 'none'}>
 				<SmartMediaView
 					media={activeItem}
 					contentFit={contentFit}
 					style={StyleSheet.absoluteFill}
 					enableFullscreenPreview={enableFullscreenPreview}
-					autoPlay={isVisible && canAutoPlay && activeIsVideo}
+					autoPlay={shouldAutoPlayVideo}
+					loop={shouldLoopSingleVideo}
 					onPlaybackEnd={isVisible && canAdvance && activeIsVideo ? advanceToNext : undefined}
-					controls={controls}
+					controls={manualPlayIndex === activeIndex && activeIsVideo ? true : controls}
 					isVisible={isVisible}
 				/>
 			</View>
@@ -216,7 +227,8 @@ const styles = StyleSheet.create({
 		bottom: 8,
 		left: 0,
 		right: 0,
-		marginTop: 0
+		marginTop: 0,
+		zIndex: 2
 	},
 	stripContent: {
 		gap: 8,

@@ -21,8 +21,8 @@ import Spinner from '@/features/common/Spinner'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
-
-export const VisibleIdsContext = React.createContext<Set<string>>(new Set())
+import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext } from '@/features/feed/FeedVisibleContext'
+import { performVideoCacheStartupCleanup } from '@/core/smart-media/video-cache'
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -60,12 +60,35 @@ export default function FeedScreen() {
 	// ── Context ──
 	const { user, localize, translate } = useUser()
 
-	// ── Viewability — only autoplay videos for cards actually on screen (prevents bleed) ──
+	// ── Viewability — only autoplay ONE video at a time (most visible) to save CPU/battery
 	const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set())
-	const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ item: FeedItem }> }) => {
-		setVisibleIds(new Set(viewableItems.map((v) => v.item._id || (v.item as any).slug)))
-	}, [])
-	const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 50 }), [])
+	const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+	const onViewableItemsChanged = useCallback(
+		({ viewableItems }: { viewableItems: Array<{ item: FeedItem; isViewable: boolean }> }) => {
+			const ids = viewableItems.filter((v) => v.isViewable).map((v) => v.item._id || (v.item as any).slug)
+			setVisibleIds(new Set(ids))
+			// Only the most visible item (first in viewableItems, sorted by viewability) gets video playback
+			const firstVisibleWithMedia = viewableItems.find((v) => {
+				const m: any = v.item.media
+				const hasVideo =
+					m?.thumbnail?.resource_type === 'video' ||
+					m?.thumbnail?.mimetype?.startsWith('video/') ||
+					(Array.isArray(m?.gallery) && m.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/')))
+				return v.isViewable && hasVideo
+			})
+			if (firstVisibleWithMedia) {
+				setActiveVideoId(firstVisibleWithMedia.item._id || (firstVisibleWithMedia.item as any).slug)
+			} else if (ids.length === 0) {
+				setActiveVideoId(null)
+			} else if (viewableItems.length > 0) {
+				// If no visible item has video, keep previous or clear
+				const stillVisible = viewableItems.some((v) => (v.item._id || (v.item as any).slug) === activeVideoId)
+				if (!stillVisible) setActiveVideoId(null)
+			}
+		},
+		[activeVideoId]
+	)
+	const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 60, minimumViewTime: 300 }), [])
 
 	// ── Scroll position restoration (especially for web where the screen remounts) ──
 	const listRef = useRef<any>(null)
@@ -100,6 +123,15 @@ export default function FeedScreen() {
 		if (products.length > 0) {
 			// Mark first 3 items as visible by default so their videos autoplay without waiting for onViewableItemsChanged
 			setVisibleIds(new Set(products.slice(0, 3).map((p) => p._id || (p as any).slug)))
+			const firstWithVideo = products.slice(0, 3).find((p: any) => {
+				const m = p.media
+				return (
+					m?.thumbnail?.resource_type === 'video' ||
+					m?.thumbnail?.mimetype?.startsWith('video/') ||
+					(Array.isArray(m?.gallery) && m.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/')))
+				)
+			})
+			if (firstWithVideo) setActiveVideoId((firstWithVideo as any)._id || (firstWithVideo as any).slug)
 			enrichFeedContacts(products, (enriched) => {
 				setFeedItems(enriched)
 				setDisplayedItems(enriched)
@@ -143,6 +175,10 @@ export default function FeedScreen() {
 	)
 
 	// ── Effects ──
+	useEffect(() => {
+		performVideoCacheStartupCleanup().catch(() => {})
+	}, [])
+
 	useEffect(() => {
 		savedScrollOffsetRef.current = savedScrollOffsets.get(selectedFilter) || 0
 		loadCart()
@@ -268,26 +304,34 @@ export default function FeedScreen() {
 				<Spinner />
 			) : (
 				<VisibleIdsContext.Provider value={visibleIds}>
-					<SmartHeader.FlashList
-						ref={listRef}
-						style={{ backgroundColor: 'transparent' }}
-						data={displayedItems}
-						renderItem={renderItem}
-						numColumns={numColumns}
-						estimatedItemSize={380}
-						keyExtractor={(item: FeedItem) => item.slug || item._id}
-						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
-						ListEmptyComponent={renderEmpty}
-						refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
-						showsVerticalScrollIndicator={false}
-						keyboardShouldPersistTaps="handled"
-						onScroll={handleListScroll}
-						onEndReached={handleLoadMore}
-						onEndReachedThreshold={0.2}
-						onViewableItemsChanged={onViewableItemsChanged}
-						viewabilityConfig={viewabilityConfig}
-						ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
-					/>
+					<ActiveVideoIdContext.Provider value={activeVideoId}>
+						<SetActiveVideoIdContext.Provider value={setActiveVideoId}>
+							<SmartHeader.FlashList
+								ref={listRef}
+								style={{ backgroundColor: 'transparent' }}
+								data={displayedItems}
+								renderItem={renderItem}
+								numColumns={numColumns}
+								estimatedItemSize={380}
+								keyExtractor={(item: FeedItem) => item.slug || item._id}
+								contentContainerStyle={[
+									styles.listContent,
+									{ paddingHorizontal: padding, paddingBottom: 120 + insets.bottom },
+									displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
+								]}
+								ListEmptyComponent={renderEmpty}
+								refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+								showsVerticalScrollIndicator={false}
+								keyboardShouldPersistTaps="handled"
+								onScroll={handleListScroll}
+								onEndReached={handleLoadMore}
+								onEndReachedThreshold={0.2}
+								onViewableItemsChanged={onViewableItemsChanged}
+								viewabilityConfig={viewabilityConfig}
+								ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
+							/>
+						</SetActiveVideoIdContext.Provider>
+					</ActiveVideoIdContext.Provider>
 				</VisibleIdsContext.Provider>
 			)}
 
