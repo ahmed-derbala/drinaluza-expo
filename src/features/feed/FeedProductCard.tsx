@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, type StyleProp, type ViewStyle } from 'react-native'
-import { SmartMediaView } from '@/core/smart-media'
+import React, { useState, useMemo, useEffect } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, type StyleProp, type ViewStyle } from 'react-native'
+import { SmartMediaCarousel } from '@/core/smart-media'
+import type { MediaField } from '@/core/smart-media/types'
 import { getCaliberIconSize, getCaliberFontSize, getHarvestIcon } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -16,6 +17,7 @@ import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNam
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
+import { VisibleIdsContext } from '@/features/feed/FeedScreen'
 
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
@@ -29,43 +31,29 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const { colors } = useTheme()
 	const { handleBusinessPress, handleProductPress } = useProductCardPress(productFeedItem)
 	const { width } = useWindowDimensions()
-	const [activeImageIndex, setActiveImageIndex] = useState(0)
-	const [autoplayEnabled, setAutoplayEnabled] = useState(true)
+	const visibleIds = React.useContext(VisibleIdsContext)
+	const isVisible = visibleIds.has(item._id || (item as any).slug)
 
-	const images = useMemo(() => {
-		const list: string[] = []
-		if (item.media?.thumbnail?.url) {
-			list.push(item.media.thumbnail.url)
-		} else if (item.defaultProduct?.media?.thumbnail?.url) {
-			list.push(item.defaultProduct.media.thumbnail.url)
+	const carouselMedia = useMemo<MediaField | null>(() => {
+		const rawMedia = (item as any).media as MediaField | null | undefined
+		const hasThumb = !!(rawMedia?.thumbnail && (rawMedia.thumbnail as any).url)
+		const hasGallery = Array.isArray(rawMedia?.gallery) && rawMedia.gallery.length > 0
+		if (hasThumb || hasGallery) {
+			return rawMedia as MediaField
 		}
-		const gallery = (item as any).media?.gallery
-		if (gallery && Array.isArray(gallery)) {
-			gallery.forEach((g: any) => {
-				if (g.url && !list.includes(g.url)) {
-					list.push(g.url)
-				}
-			})
+		const fallbackThumb = (item as any).defaultProduct?.media?.thumbnail
+		if (fallbackThumb?.url) {
+			return { thumbnail: fallbackThumb, gallery: [] } as MediaField
 		}
-		return list
-	}, [item.media, item.defaultProduct])
+		return (rawMedia as MediaField) ?? null
+	}, [item])
 
-	const autoplayTimerRef = useRef<any>(null)
-
-	const startAutoplay = () => {
-		stopAutoplay()
-		if (!autoplayEnabled || images.length <= 1) return
-		autoplayTimerRef.current = setInterval(() => {
-			setActiveImageIndex((prevIndex) => (prevIndex + 1) % images.length)
-		}, 4000)
-	}
-
-	const stopAutoplay = () => {
-		if (autoplayTimerRef.current) {
-			clearInterval(autoplayTimerRef.current)
-			autoplayTimerRef.current = null
-		}
-	}
+	const hasMultipleMedia = useMemo(() => {
+		if (!carouselMedia) return false
+		const thumbCount = carouselMedia.thumbnail ? 1 : 0
+		const galleryCount = Array.isArray(carouselMedia.gallery) ? carouselMedia.gallery.length : 0
+		return thumbCount + galleryCount > 1
+	}, [carouselMedia])
 
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
@@ -73,25 +61,8 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const step = item.unit?.step || 1
 
 	useEffect(() => {
-		startAutoplay()
-		return () => stopAutoplay()
-	}, [images.length, autoplayEnabled])
-
-	useEffect(() => {
-		setActiveImageIndex(0)
-		setAutoplayEnabled(true)
-	}, [images])
-
-	useEffect(() => {
 		setQuantity(minQuantity)
 	}, [item._id, minQuantity])
-
-	const handlePreviewPress = (e: any, index: number) => {
-		e.stopPropagation?.()
-		stopAutoplay()
-		setAutoplayEnabled(false)
-		setActiveImageIndex(index)
-	}
 
 	const rating = item.rating?.average || 0
 	const ratingCount = item.rating?.count || 0
@@ -144,9 +115,24 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 
 	return (
 		<View style={[styles.card, { backgroundColor: colors.background }, style]} testID={`feed-product-card-${item._id}`}>
-			{/* Background image */}
-			<View style={styles.bgImageContainer}>
-				<SmartMediaView media={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" />
+			{/* Background media — video is background of host card only (no controls, no fullscreen, no autoplay to avoid SurfaceView crash) */}
+			<View style={styles.bgImageContainer} pointerEvents="box-none">
+				<SmartMediaCarousel
+					key={item._id}
+					media={carouselMedia}
+					style={StyleSheet.absoluteFill}
+					previewStyle={StyleSheet.absoluteFill}
+					contentFit="cover"
+					overlayThumbnails={hasMultipleMedia}
+					showThumbnails={hasMultipleMedia}
+					thumbnailStyle={styles.carouselThumb}
+					stripStyle={styles.carouselStrip}
+					stripContentStyle={styles.carouselStripContent}
+					controls={false}
+					enableFullscreenPreview={false}
+					autoPlay={false}
+					isVisible={isVisible}
+				/>
 			</View>
 
 			{/* Gradient overlay for text readability */}
@@ -185,7 +171,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 			)}
 
 			{/* Bottom content */}
-			<View style={styles.bottomContent}>
+			<View style={[styles.bottomContent, hasMultipleMedia && styles.bottomContentWithThumbnails]}>
 				{/* ── Body ── */}
 				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 					<View style={styles.bodyTop}>
@@ -272,22 +258,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 						</TouchableOpacity>
 					</View>
 				</View>
-
-				{/* Thumbnail previews */}
-				{images.length > 0 && (
-					<View style={styles.previewsContainer}>
-						{images.map((url, index) => (
-							<TouchableOpacity
-								key={index}
-								onPress={(e) => handlePreviewPress(e, index)}
-								activeOpacity={0.8}
-								style={[styles.previewThumb, { borderColor: index === activeImageIndex ? colors.primary : themeColors.buttonText30, opacity: index === activeImageIndex ? 1 : 0.6 }]}
-							>
-								<SmartMediaView media={url} style={styles.previewImg} resizeMode="cover" />
-							</TouchableOpacity>
-						))}
-					</View>
-				)}
 			</View>
 		</View>
 	)
@@ -299,12 +269,22 @@ export default FeedProductCard
 const styles = StyleSheet.create({
 	card: {
 		flex: 1,
+		position: 'relative',
 		borderRadius: 20,
 		borderWidth: 1,
 		borderColor: themeColors.primary,
 		overflow: 'hidden',
 		justifyContent: 'space-between',
-		minHeight: 340
+		minHeight: 340,
+		zIndex: 0,
+		...Platform.select({
+			web: {
+				overflow: 'hidden',
+				// Create stacking context so borderRadius correctly clips absolute VideoView on web
+				isolation: 'isolate' as any,
+				transform: 'translateZ(0)' as any
+			} as any
+		})
 	},
 	contactButtonsSide: {
 		position: 'absolute',
@@ -317,7 +297,17 @@ const styles = StyleSheet.create({
 		top: 0,
 		left: 0,
 		right: 0,
-		bottom: 0
+		bottom: 0,
+		overflow: 'hidden',
+		borderRadius: 20,
+		zIndex: 0,
+		...Platform.select({
+			web: {
+				overflow: 'hidden',
+				isolation: 'isolate' as any,
+				transform: 'translateZ(0)' as any
+			} as any
+		})
 	},
 	bgImage: {
 		width: '100%',
@@ -331,11 +321,16 @@ const styles = StyleSheet.create({
 		bottom: 0
 	},
 	topContent: {
-		width: '100%'
+		width: '100%',
+		zIndex: 1
 	},
 	bottomContent: {
 		width: '100%',
-		justifyContent: 'flex-end'
+		justifyContent: 'flex-end',
+		zIndex: 1
+	},
+	bottomContentWithThumbnails: {
+		paddingBottom: 56
 	},
 	productName: {
 		fontSize: 15,
@@ -478,16 +473,7 @@ const styles = StyleSheet.create({
 		fontSize: 10,
 		fontWeight: '600'
 	},
-	previewsContainer: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		gap: 6,
-		marginHorizontal: 10,
-		marginTop: 8,
-		marginBottom: 8,
-		minHeight: 40
-	},
-	previewThumb: {
+	carouselThumb: {
 		width: 40,
 		height: 40,
 		borderRadius: 8,
@@ -500,8 +486,12 @@ const styles = StyleSheet.create({
 			} as any
 		})
 	},
-	previewImg: {
-		width: '100%',
-		height: '100%'
+	carouselStrip: {
+		bottom: 8
+	},
+	carouselStripContent: {
+		gap: 6,
+		justifyContent: 'center',
+		paddingHorizontal: 10
 	}
 })

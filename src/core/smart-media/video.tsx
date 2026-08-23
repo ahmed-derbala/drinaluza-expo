@@ -2,7 +2,7 @@
  * SmartVideoPlayer — plays/pauses/resumes media video files using expo-video.
  */
 
-import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react'
+import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { useEventListener } from 'expo'
 import { VideoView, useVideoPlayer, type VideoPlayerStatus } from 'expo-video'
@@ -18,12 +18,18 @@ export interface SmartVideoPlayerProps {
 	contentFit?: VideoContentFit
 	/** Whether to use the native platform controls. Defaults to true. */
 	nativeControls?: boolean
+	/** Whether to show any controls (native + custom play button). Defaults to true. When false, no controls are rendered. */
+	controls?: boolean
 	/** Start playback automatically once ready. Defaults to false. */
 	autoPlay?: boolean
 	/** Loop the video. Defaults to false. */
 	loop?: boolean
 	accessibilityLabel?: string
 	testID?: string
+	/** Called when playback reaches the end. */
+	onPlaybackEnd?: () => void
+	/** Called when the player encounters an error. */
+	onError?: () => void
 }
 
 export interface SmartVideoPlayerHandle {
@@ -33,6 +39,31 @@ export interface SmartVideoPlayerHandle {
 	toggle: () => void
 }
 
+class VideoErrorBoundary extends React.Component<{ children: React.ReactNode; fallback?: React.ReactNode }, { hasError: boolean }> {
+	state = { hasError: false }
+	static getDerivedStateFromError() {
+		return { hasError: true }
+	}
+	componentDidCatch(error: any) {
+		// SurfaceVideoView shared-object errors are non-fatal — show fallback
+		if (String(error?.message || '').includes('Cannot use shared object') || String(error?.message || '').includes('player')) {
+			return
+		}
+	}
+	render() {
+		if (this.state.hasError) {
+			return (
+				(this.props.fallback as any) ?? (
+					<View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+						<Ionicons name="videocam-off-outline" size={32} color={themeColors.textTertiary} />
+					</View>
+				)
+			)
+		}
+		return this.props.children as any
+	}
+}
+
 const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () => void }) => (
 	<TouchableOpacity onPress={onPress} style={styles.playbackButton} accessibilityRole="button" accessibilityLabel={playing ? 'Pause video' : 'Play video'}>
 		<Ionicons name={playing ? 'pause' : 'play'} size={28} color={themeColors.buttonText} />
@@ -40,40 +71,141 @@ const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () =>
 )
 
 const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoPlayerProps>(
-	({ source, style, contentFit = 'contain', nativeControls = true, autoPlay = false, loop = false, accessibilityLabel, testID }, ref) => {
+	({ source, style, contentFit = 'contain', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError }, ref) => {
 		const player = useVideoPlayer(source, (instance) => {
 			instance.loop = loop
+			// Mute feed videos (no controls) to allow autoplay on web/iOS
+			if (!controls) {
+				try {
+					instance.muted = true
+				} catch {}
+			}
 		})
+
+		// Handle source changes via replaceAsync instead of recreating player (avoids SharedObject release race)
+		const prevSourceRef = React.useRef(source)
+		useEffect(() => {
+			if (prevSourceRef.current === source) return
+			prevSourceRef.current = source
+			let cancelled = false
+			const updateSource = async () => {
+				try {
+					if (cancelled || !isMountedRef.current) return
+					// Use replaceAsync for smooth source change without releasing SharedObject
+					if (typeof (player as any).replaceAsync === 'function') {
+						await (player as any).replaceAsync({ uri: source })
+					} else if (typeof (player as any).replace === 'function') {
+						;(player as any).replace({ uri: source })
+					}
+					if (!controls && isMountedRef.current) {
+						try {
+							player.muted = true
+						} catch {}
+					}
+					if (isMountedRef.current) {
+						player.loop = loop
+					}
+				} catch {}
+			}
+			updateSource()
+			return () => {
+				cancelled = true
+			}
+		}, [source, player, controls, loop])
 
 		const [status, setStatus] = useState<VideoPlayerStatus>(player.status ?? 'idle')
 		const [playing, setPlaying] = useState(autoPlay)
+		const isMountedRef = React.useRef(true)
+		useEffect(() => {
+			isMountedRef.current = true
+			return () => {
+				isMountedRef.current = false
+				try {
+					player.pause()
+				} catch {}
+			}
+		}, [player])
 
 		useEventListener(player, 'statusChange', ({ status: nextStatus }) => {
+			if (!isMountedRef.current) return
 			setStatus(nextStatus)
+			if (nextStatus === 'error') {
+				onError?.()
+			}
 		})
 
 		useEventListener(player, 'playingChange', ({ isPlaying }) => {
+			if (!isMountedRef.current) return
 			setPlaying(isPlaying)
 		})
 
+		useEventListener(player, 'playToEnd', () => {
+			if (!isMountedRef.current) return
+			onPlaybackEnd?.()
+		})
+
+		// Autoplay when ready — required for feed carousel (controls=false, muted)
+		useEffect(() => {
+			if (!autoPlay || status !== 'readyToPlay' || !isMountedRef.current) return
+			try {
+				if (!controls) {
+					player.muted = true
+				}
+				player.play()
+			} catch {}
+		}, [autoPlay, status, controls, player])
+
+		// Pause when autoPlay becomes false (card scrolled off-screen) — prevents bleed
+		useEffect(() => {
+			if (!autoPlay && isMountedRef.current) {
+				try {
+					if (player.playing) player.pause()
+				} catch {}
+			}
+		}, [autoPlay, player])
+
+		useEffect(() => {
+			try {
+				player.loop = loop
+			} catch {}
+		}, [player, loop])
+
+		useEffect(() => {
+			try {
+				if (!controls) {
+					player.muted = true
+				} else {
+					player.muted = false
+				}
+			} catch {}
+		}, [player, controls])
+
 		const play = useCallback(() => {
-			player.play()
+			try {
+				player.play()
+			} catch {}
 		}, [player])
 
 		const pause = useCallback(() => {
-			player.pause()
+			try {
+				player.pause()
+			} catch {}
 		}, [player])
 
 		const resume = useCallback(() => {
-			player.play()
+			try {
+				player.play()
+			} catch {}
 		}, [player])
 
 		const toggle = useCallback(() => {
-			if (player.playing) {
-				player.pause()
-			} else {
-				player.play()
-			}
+			try {
+				if (player.playing) {
+					player.pause()
+				} else {
+					player.play()
+				}
+			} catch {}
 		}, [player])
 
 		useImperativeHandle(ref, () => ({ play, pause, resume, toggle }), [play, pause, resume, toggle])
@@ -82,13 +214,13 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		const hasError = status === 'error'
 
 		const playbackOverlay = useMemo(() => {
-			if (nativeControls || hasError) return null
+			if (!controls || nativeControls || hasError) return null
 			return (
 				<View style={[styles.overlay, { pointerEvents: 'box-none' }]}>
 					<PlaybackButton playing={playing} onPress={toggle} />
 				</View>
 			)
-		}, [nativeControls, hasError, playing, toggle])
+		}, [controls, nativeControls, hasError, playing, toggle])
 
 		if (hasError) {
 			return (
@@ -100,7 +232,9 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 
 		return (
 			<View style={[styles.container, style]} testID={testID} accessibilityLabel={accessibilityLabel}>
-				<VideoView player={player} style={StyleSheet.absoluteFill} contentFit={contentFit} nativeControls={nativeControls} allowsPictureInPicture={false} />
+				<VideoErrorBoundary key={source}>
+					<VideoView key={source} player={player} style={StyleSheet.absoluteFill} contentFit={contentFit} nativeControls={controls ? nativeControls : false} allowsPictureInPicture={false} />
+				</VideoErrorBoundary>
 				{isLoading && (
 					<View style={[styles.loadingOverlay, { pointerEvents: 'none' }]}>
 						<Spinner size="small" expand={false} />

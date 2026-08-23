@@ -609,7 +609,7 @@ export default function ProductScreen() {
 				gallery={uploadedGallery}
 				targetModelName="products"
 				targetModelId={product._id}
-				mediaType="image"
+				mediaType="mixed"
 				mode={editMode.gallery ? 'edit' : 'editable'}
 				onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
 				onSave={saveGallery}

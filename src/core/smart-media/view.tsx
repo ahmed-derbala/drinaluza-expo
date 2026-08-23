@@ -8,15 +8,17 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { Modal, StyleSheet, TouchableOpacity, View } from 'react-native'
+import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
 import { cacheMediaFile } from './cache'
-import { getMediaType, getMediaUrl, type MediaSource, type SmartMediaStyleProps } from './types'
+import { getMediaType, getMediaUrl, getVideoUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
+import { getCachedVideoUri, prefetchVideoToCache } from './video-cache'
 
 const FALLBACK_IMAGE = require('../../../assets/images/no_media.png')
 
@@ -47,6 +49,14 @@ export interface SmartMediaViewProps extends SmartMediaStyleProps {
 	loop?: boolean
 	/** Use native video controls. Defaults to true. */
 	nativeControls?: boolean
+	/** Whether to show video controls (native + custom). Defaults to true. When false, no controls are rendered. */
+	controls?: boolean
+	/** Called when video playback ends (videos only). */
+	onPlaybackEnd?: () => void
+	/** When true, video will use playback_url (HLS) if available. Defaults to true. */
+	usePlaybackUrl?: boolean
+	/** When false, video will not be mounted (shows poster) to save memory/battery for off-screen cards. */
+	isVisible?: boolean
 }
 
 const SmartMediaViewComponent = ({
@@ -64,7 +74,11 @@ const SmartMediaViewComponent = ({
 	enableFullscreenPreview = false,
 	autoPlay = false,
 	loop = false,
-	nativeControls = true
+	nativeControls = true,
+	controls = true,
+	onPlaybackEnd,
+	usePlaybackUrl = true,
+	isVisible = true
 }: SmartMediaViewProps) => {
 	const [hasError, setHasError] = useState(false)
 	const [isLoaded, setIsLoaded] = useState(false)
@@ -73,10 +87,61 @@ const SmartMediaViewComponent = ({
 	const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const isMountedRef = useRef(true)
 
-	const url = getMediaUrl(media)
 	const mediaType = useMemo(() => getMediaType(media), [media])
 	const isVideo = mediaType === 'video'
+	const [useFallbackForVideo, setUseFallbackForVideo] = useState(false)
+	const [cachedVideoUri, setCachedVideoUri] = useState<string | null>(null)
+	const [isCacheChecked, setIsCacheChecked] = useState(false)
+
+	// Check for locally cached MP4 first — like UPDATES_FOLDER for APKs, VIDEOS_FOLDER for videos
+	// Only check when visible to avoid FileSystem thrash for off-screen cards
+	useEffect(() => {
+		if (!isVisible || !isVideo || typeof media !== 'object' || !media?._id) {
+			if (!isVideo) setIsCacheChecked(true)
+			// For video when not visible, keep previous cached value but mark checked to avoid spinner
+			if (!isVisible && isVideo) setIsCacheChecked(true)
+			return
+		}
+		let cancelled = false
+		setIsCacheChecked(false)
+		;(async () => {
+			const cached = await getCachedVideoUri(media as any)
+			if (!cancelled) {
+				setCachedVideoUri(cached)
+				setIsCacheChecked(true)
+			}
+		})()
+		return () => {
+			cancelled = true
+		}
+	}, [media, isVideo, isVisible])
+
+	// Prefetch the MP4 in background for next offline play (secure_url → VIDEOS_FOLDER) — only when visible
+	useEffect(() => {
+		if (!isVisible || !isVideo || typeof media !== 'object' || !media?._id || cachedVideoUri) return
+		const file: any = media
+		if (file.secure_url || file.url) {
+			prefetchVideoToCache(file)
+		}
+	}, [media, isVideo, isVisible, cachedVideoUri])
+
+	const url = useMemo(() => {
+		if (cachedVideoUri) return cachedVideoUri
+		if (!isVideo) return getMediaUrl(media)
+		// On web, HLS (.m3u8) is not natively supported in Chrome/Firefox — use MP4 directly
+		if (Platform.OS === 'web') return getMediaUrl(media)
+		if (!usePlaybackUrl) return getMediaUrl(media)
+		if (useFallbackForVideo) return getMediaUrl(media)
+		return getVideoUrl(media)
+	}, [media, isVideo, usePlaybackUrl, useFallbackForVideo, cachedVideoUri])
 	const sourceIsValid = Boolean(url)
+	const isCheckingCache = isVideo && !isCacheChecked
+
+	useEffect(() => {
+		setUseFallbackForVideo(false)
+		setCachedVideoUri(null)
+		setIsCacheChecked(false)
+	}, [media])
 
 	// Strip backgroundColor so the media surface never paints over its container.
 	const cleanedStyle = useMemo(() => {
@@ -171,16 +236,68 @@ const SmartMediaViewComponent = ({
 
 	const showFallback = !sourceIsValid || hasError
 
+	const handleVideoError = useCallback(() => {
+		if (!isVideo) return
+		// If HLS fails, try cached MP4 first, then fallback to mp4 remote
+		if (cachedVideoUri) return // already using cached, no further fallback
+		if (usePlaybackUrl && !useFallbackForVideo) {
+			const hasPlayback = typeof media === 'object' && media !== null && (media as any).playback_url
+			if (hasPlayback) {
+				setUseFallbackForVideo(true)
+				return
+			}
+		}
+		// If still failing and we have a cached file not yet tried, try it
+		if (typeof media === 'object' && media?._id) {
+			;(async () => {
+				const cached = await getCachedVideoUri(media as any)
+				if (cached) setCachedVideoUri(cached)
+			})()
+		}
+	}, [isVideo, usePlaybackUrl, useFallbackForVideo, media, cachedVideoUri])
+
+	const handlePress = useCallback(() => {
+		if (sourceIsValid && !showFallback && !isVideo) {
+			setIsPreviewOpen(true)
+		}
+	}, [sourceIsValid, showFallback, isVideo])
+
+	if (isCheckingCache) {
+		return (
+			<View style={[styles.image, cleanedStyle, dimensionStyle]}>
+				<Spinner size="small" expand={false} style={styles.loadingOverlay} />
+			</View>
+		)
+	}
+
+	// When video is off-screen or explicitly non-autoplaying background (feed), don't mount native player — show static poster to avoid SurfaceView SharedObject crash
+	if (isVideo && (!isVisible || (!controls && !autoPlay))) {
+		return (
+			<View style={[styles.image, cleanedStyle, dimensionStyle, { backgroundColor: themeColors.background }]}>
+				<Image source={FALLBACK_IMAGE} style={[styles.image, cleanedStyle, dimensionStyle]} contentFit="cover" cachePolicy="disk" />
+				<View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' }]}>
+					<View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 }}>
+						<Ionicons name="play" size={20} color="white" />
+					</View>
+				</View>
+			</View>
+		)
+	}
+
 	const imageElement = isVideo ? (
 		<SmartVideoPlayer
+			key={url as string}
 			source={url as string}
 			style={dimensionStyle as any}
 			contentFit={resolvedContentFit as any}
 			autoPlay={autoPlay}
 			loop={loop}
-			nativeControls={nativeControls}
+			nativeControls={controls ? nativeControls : false}
+			controls={controls}
 			accessibilityLabel={accessibilityLabel}
 			testID={testID}
+			onPlaybackEnd={onPlaybackEnd}
+			onError={handleVideoError}
 		/>
 	) : (
 		<>
@@ -201,12 +318,6 @@ const SmartMediaViewComponent = ({
 	)
 
 	const renderedElement = cleanedContainerStyle ? <View style={cleanedContainerStyle}>{imageElement}</View> : imageElement
-
-	const handlePress = useCallback(() => {
-		if (sourceIsValid && !showFallback && !isVideo) {
-			setIsPreviewOpen(true)
-		}
-	}, [sourceIsValid, showFallback, isVideo])
 
 	if (enableFullscreenPreview && sourceIsValid && !showFallback && !isVideo) {
 		return (

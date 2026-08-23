@@ -1,38 +1,65 @@
 /**
- * SmartMediaCarousel — displays `media.thumbnail` plus `media.gallery`
+ * SmartMediaCarousel — displays `media.gallery` when not empty, otherwise `media.thumbnail`,
  * in a selectable, horizontally swipeable strip with a main preview.
+ *
+ * Auto-play behaviour (enabled by default when there are multiple items):
+ * - Images are shown for IMAGE_DISPLAY_MS (4 s) then the carousel advances.
+ * - Videos play to completion, then the carousel advances.
+ * - Tapping any thumbnail permanently stops auto-play for the carousel instance.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollView, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
+import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
-import { getMediaUrl, type MediaField, type MediaFile } from './types'
+import { getMediaUrl, isVideoMedia, type MediaField, type MediaFile } from './types'
 import SmartMediaView from './view'
+
+/** How long an image is displayed before auto-advancing. */
+const IMAGE_DISPLAY_MS = 4_000
 
 export interface SmartMediaCarouselProps {
 	media?: MediaField | null
 	style?: StyleProp<ViewStyle>
+	/** Override style for the main preview area. Use to customise aspect ratio or sizing. */
+	previewStyle?: StyleProp<ViewStyle>
 	/** Content fit for the main preview and thumbnails. Defaults to 'cover'. */
 	contentFit?: 'cover' | 'contain' | 'fill'
 	/** Whether to show the thumbnail strip. Defaults to true. */
 	showThumbnails?: boolean
-	/** Auto-advance interval in milliseconds (0 disables it). Defaults to 0. */
-	autoAdvanceMs?: number
+	/** Enable automatic slideshow (images 4 s, videos until end). Defaults to true. */
+	autoPlay?: boolean
 	/** Called whenever the active item changes. */
 	onIndexChange?: (index: number) => void
 	/** Whether the main preview opens the fullscreen lightbox. Defaults to true. */
 	enableFullscreenPreview?: boolean
 	accessibilityLabel?: string
+	/** When true, thumbnails overlay the preview at the bottom (useful for background cards). */
+	overlayThumbnails?: boolean
+	/** Custom style for the thumbnail strip container. */
+	stripStyle?: StyleProp<ViewStyle>
+	/** Custom content container style for the thumbnail strip. */
+	stripContentStyle?: StyleProp<ViewStyle>
+	/** Custom style for each thumbnail. */
+	thumbnailStyle?: StyleProp<ViewStyle>
+	/** Custom style for the active thumbnail. */
+	thumbnailActiveStyle?: StyleProp<ViewStyle>
+	/** Whether to show video controls (native + custom play button). Defaults to true. */
+	controls?: boolean
+	/** Whether the carousel is currently visible on screen. When false, videos are not mounted. */
+	isVisible?: boolean
 }
 
 const collectItems = (media?: MediaField | null): MediaFile[] => {
 	if (!media) return []
 	const items: MediaFile[] = []
-	if (media.thumbnail && getMediaUrl(media.thumbnail)) items.push(media.thumbnail)
-	if (Array.isArray(media.gallery)) {
-		for (const file of media.gallery) {
+	const hasValidGallery = Array.isArray(media.gallery) && media.gallery.some((file) => !!getMediaUrl(file as any))
+	if (hasValidGallery) {
+		for (const file of media.gallery as MediaFile[]) {
 			if (getMediaUrl(file)) items.push(file)
 		}
+	} else if (media.thumbnail && getMediaUrl(media.thumbnail)) {
+		items.push(media.thumbnail)
 	}
 	return items
 }
@@ -40,37 +67,60 @@ const collectItems = (media?: MediaField | null): MediaFile[] => {
 const SmartMediaCarouselComponent = ({
 	media,
 	style,
+	previewStyle,
 	contentFit = 'cover',
 	showThumbnails = true,
-	autoAdvanceMs = 0,
+	autoPlay = true,
 	onIndexChange,
 	enableFullscreenPreview = true,
-	accessibilityLabel
+	accessibilityLabel,
+	overlayThumbnails = false,
+	stripStyle,
+	stripContentStyle,
+	thumbnailStyle,
+	thumbnailActiveStyle,
+	controls = true,
+	isVisible = true
 }: SmartMediaCarouselProps) => {
 	const items = useMemo(() => collectItems(media), [media])
 	const [activeIndex, setActiveIndex] = useState(0)
 
+	// Once a user manually selects a thumbnail, autoplay is permanently stopped.
+	const autoPlayStoppedRef = useRef(false)
+	const canAutoPlay = autoPlay && !autoPlayStoppedRef.current
+	const canAdvance = canAutoPlay && items.length > 1
+
 	// Reset the active index when the media set changes.
 	useEffect(() => {
 		setActiveIndex(0)
+		autoPlayStoppedRef.current = false
 	}, [media])
 
 	const activeItem = items[activeIndex] ?? null
+	const activeIsVideo = isVideoMedia(activeItem)
 
+	// Advance to the next item (wraps around).
+	const advanceToNext = useCallback(() => {
+		if (autoPlayStoppedRef.current) return
+		if (items.length <= 1) return
+		setActiveIndex((current) => {
+			const next = (current + 1) % items.length
+			onIndexChange?.(next)
+			return next
+		})
+	}, [items.length, onIndexChange])
+
+	// Image auto-advance: show for IMAGE_DISPLAY_MS then move on.
 	useEffect(() => {
-		if (autoAdvanceMs <= 0 || items.length <= 1) return
-		const timer = setInterval(() => {
-			setActiveIndex((current) => {
-				const next = (current + 1) % items.length
-				onIndexChange?.(next)
-				return next
-			})
-		}, autoAdvanceMs)
-		return () => clearInterval(timer)
-	}, [autoAdvanceMs, items.length, onIndexChange])
+		if (!canAdvance || activeIsVideo) return
+		const timer = setTimeout(advanceToNext, IMAGE_DISPLAY_MS)
+		return () => clearTimeout(timer)
+	}, [canAdvance, activeIsVideo, activeIndex, advanceToNext])
 
+	// Manual thumbnail selection — stops autoplay permanently.
 	const selectIndex = useCallback(
 		(index: number) => {
+			autoPlayStoppedRef.current = true
 			setActiveIndex(index)
 			onIndexChange?.(index)
 		},
@@ -86,24 +136,45 @@ const SmartMediaCarouselComponent = ({
 	}
 
 	return (
-		<View style={[styles.container, style]} accessibilityLabel={accessibilityLabel}>
-			<View style={styles.preview}>
-				<SmartMediaView media={activeItem} contentFit={contentFit} style={StyleSheet.absoluteFill} enableFullscreenPreview={enableFullscreenPreview} autoPlay={false} />
+		<View style={[styles.container, overlayThumbnails && styles.containerOverlay, style]} accessibilityLabel={accessibilityLabel} pointerEvents={overlayThumbnails ? 'box-none' : 'auto'}>
+			<View style={[styles.preview, overlayThumbnails && styles.previewOverlay, previewStyle]} pointerEvents="none">
+				<SmartMediaView
+					media={activeItem}
+					contentFit={contentFit}
+					style={StyleSheet.absoluteFill}
+					enableFullscreenPreview={enableFullscreenPreview}
+					autoPlay={isVisible && canAutoPlay && activeIsVideo}
+					onPlaybackEnd={isVisible && canAdvance && activeIsVideo ? advanceToNext : undefined}
+					controls={controls}
+					isVisible={isVisible}
+				/>
 			</View>
 
 			{showThumbnails && items.length > 1 && (
-				<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip} contentContainerStyle={styles.stripContent}>
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					style={[styles.strip, overlayThumbnails && styles.stripOverlay, stripStyle]}
+					contentContainerStyle={[styles.stripContent, overlayThumbnails && styles.stripContentOverlay, stripContentStyle]}
+				>
 					{items.map((item, index) => {
 						const isActive = index === activeIndex
+						const isThumbVideo = isVideoMedia(item)
 						return (
 							<TouchableOpacity
-								key={item._id || index}
+								key={(item as any)._id || index}
 								onPress={() => selectIndex(index)}
-								style={[styles.thumbnail, isActive && styles.thumbnailActive]}
+								style={[styles.thumbnail, thumbnailStyle, isActive && styles.thumbnailActive, isActive && thumbnailActiveStyle]}
 								accessibilityRole="button"
-								accessibilityLabel={item.name || `Media ${index + 1}`}
+								accessibilityLabel={(item as any).name || (item as any).originalname || `Media ${index + 1}`}
 							>
-								<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} />
+								{isThumbVideo ? (
+									<View style={[StyleSheet.absoluteFill, styles.videoThumbPlaceholder]}>
+										<Ionicons name="play-circle" size={24} color={themeColors.background} style={styles.videoThumbIcon} />
+									</View>
+								) : (
+									<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} usePlaybackUrl={false} controls={false} />
+								)}
 							</TouchableOpacity>
 						)
 					})}
@@ -118,17 +189,42 @@ const styles = StyleSheet.create({
 		width: '100%',
 		overflow: 'hidden'
 	},
+	containerOverlay: {
+		flex: 1,
+		overflow: 'hidden',
+		borderRadius: 20
+	},
 	preview: {
 		width: '100%',
 		aspectRatio: 1,
-		backgroundColor: themeColors.background
+		backgroundColor: themeColors.background,
+		overflow: 'hidden'
+	},
+	previewOverlay: {
+		flex: 1,
+		aspectRatio: undefined,
+		width: '100%',
+		height: '100%',
+		overflow: 'hidden',
+		borderRadius: 20
 	},
 	strip: {
 		marginTop: 8
 	},
+	stripOverlay: {
+		position: 'absolute',
+		bottom: 8,
+		left: 0,
+		right: 0,
+		marginTop: 0
+	},
 	stripContent: {
 		gap: 8,
 		paddingHorizontal: 2
+	},
+	stripContentOverlay: {
+		justifyContent: 'center',
+		paddingHorizontal: 10
 	},
 	thumbnail: {
 		width: 56,
@@ -140,6 +236,14 @@ const styles = StyleSheet.create({
 	},
 	thumbnailActive: {
 		borderColor: themeColors.primary
+	},
+	videoThumbPlaceholder: {
+		justifyContent: 'center',
+		alignItems: 'center',
+		backgroundColor: themeColors.background25
+	},
+	videoThumbIcon: {
+		opacity: 0.9
 	}
 })
 

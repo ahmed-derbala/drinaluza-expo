@@ -32,12 +32,15 @@ export interface TargetModel {
 export interface MediaFile {
 	_id: string
 	user?: UserRef
+	originalname?: string
 	url: string
 	secure_url?: string
-	originalname?: string
+	playback_url?: string
+	duration?: number
 	mimetype?: string
 	size?: number
 	asset_id?: string
+	public_id?: string
 	width?: number
 	height?: number
 	format?: string
@@ -76,6 +79,32 @@ export const getMediaUrl = (media: MediaSource): string | null => {
 	return null
 }
 
+/** Extract the playback URL for video (prefers HLS playback_url when available). */
+export const getVideoUrl = (media: MediaSource): string | null => {
+	if (typeof media === 'string') return getMediaUrl(media)
+	if (media && typeof media === 'object') {
+		const file = media as MediaFile
+		if (file.playback_url && typeof file.playback_url === 'string' && file.playback_url.trim().length > 0) {
+			return file.playback_url.trim()
+		}
+		// If no explicit playback_url, try to construct HLS URL from Cloudinary secure_url for videos
+		// This enables immediate HLS playback even before backend populates the field
+		const isVideo = getMediaType(media) === 'video'
+		const baseUrl = file.secure_url || file.url
+		if (isVideo && baseUrl && baseUrl.includes('/video/upload/') && !baseUrl.includes('/sp_auto/')) {
+			try {
+				const urlObj = new URL(baseUrl)
+				urlObj.pathname = urlObj.pathname.replace('/video/upload/', '/video/upload/sp_auto/')
+				urlObj.pathname = urlObj.pathname.replace(/\.[^/.]+$/, '.m3u8')
+				return urlObj.toString()
+			} catch {
+				return baseUrl.replace('/video/upload/', '/video/upload/sp_auto/').replace(/\.[^/.]+(\?.*)?$/, '.m3u8$1')
+			}
+		}
+	}
+	return getMediaUrl(media)
+}
+
 const getPathExtension = (value: string): string => {
 	try {
 		const path = value.split('?')[0]
@@ -94,14 +123,15 @@ export const getMediaType = (media: MediaSource): MediaType | null => {
 		if (resourceType === 'video') return 'video'
 		if (resourceType === 'image') return 'image'
 
-		// Fallback to mimetype
+		// Fallback to mimetype — also handle HLS mime types
 		const mime = (media.mimetype || '').toLowerCase()
 		if (mime.startsWith('video/')) return 'video'
 		if (mime.startsWith('image/')) return 'image'
+		if (mime === 'application/x-mpegurl' || mime === 'application/vnd.apple.mpegurl') return 'video'
 
-		// Fallback to extension from format field or URL
-		const url = media.secure_url || media.url
-		const extension = media.format ? media.format.toLowerCase() : getPathExtension(url)
+		// Fallback to extension from format field, playback_url or URL
+		const urlForExt = (media as MediaFile).playback_url || media.secure_url || media.url
+		const extension = media.format ? media.format.toLowerCase() : getPathExtension(urlForExt || '')
 		if (ALLOWED_VIDEO_EXTENSIONS.includes(extension as (typeof ALLOWED_VIDEO_EXTENSIONS)[number])) return 'video'
 		return 'image'
 	}

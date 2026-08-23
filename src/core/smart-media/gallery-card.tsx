@@ -87,31 +87,46 @@ const SmartMediaGalleryCardComponent = ({
 			}
 		} catch (error: any) {
 			const parsedError = parseError(error)
-			const errorMessage = parsedError.message || error.message || 'Failed to upload gallery files'
+			// Use the enhanced message from upload.ts if available (e.g. video timeout / Cloudinary 499 with HLS hint)
+			const rawMessage = (error as any)?.message || parsedError.message || error.message || 'Failed to upload gallery files'
+			const isVideo = picked.some((f) => f.mimeType?.startsWith('video/'))
+			const isCloudinaryLimitError = parsedError.statusCode === 499 || rawMessage.toLowerCase().includes('cloudinary') || rawMessage.includes('499')
+			const isVideoTimeout = (parsedError.type === 'timeout' || (parsedError.type === 'network' && isVideo) || isCloudinaryLimitError) && isVideo
+			const errorMessage = rawMessage
 			const canRetry = parsedError.canRetry !== false
 
 			log({
 				level: 'error',
 				label: 'smart-media',
-				message: 'Gallery upload failed in UI',
+				message: isVideoTimeout ? 'Gallery upload timeout/Cloudinary limit — likely HLS processing' : 'Gallery upload failed in UI',
 				error,
 				data: {
 					fileCount: picked.length,
 					fileNames: picked.map((f) => f.name),
-					canRetry
+					canRetry,
+					isVideoTimeout,
+					isCloudinaryLimitError,
+					statusCode: (parsedError as any).statusCode
 				}
 			})
 
-			Alert.alert(
-				'Upload Failed',
-				errorMessage,
-				canRetry
-					? [
-							{ text: 'Cancel', style: 'cancel' },
-							{ text: 'Retry', onPress: () => handleUpload() }
-						]
-					: [{ text: 'OK', style: 'default' }]
-			)
+			if (isVideoTimeout || isCloudinaryLimitError) {
+				Alert.alert(isCloudinaryLimitError ? 'Media Service Limit' : 'Upload Processing', errorMessage, [
+					{ text: 'OK', style: 'cancel' },
+					{ text: 'Retry', onPress: () => handleUpload() }
+				])
+			} else {
+				Alert.alert(
+					'Upload Failed',
+					errorMessage,
+					canRetry
+						? [
+								{ text: 'Cancel', style: 'cancel' },
+								{ text: 'Retry', onPress: () => handleUpload() }
+							]
+						: [{ text: 'OK', style: 'default' }]
+				)
+			}
 		} finally {
 			setInternalUploading(false)
 		}

@@ -16,7 +16,7 @@ import { getApiClient } from '@/core/api'
 import { log } from '@/core/log'
 import { parseError } from '@/core/error/errorHandler'
 import { ConnectionService } from '@/core/connection'
-import { MAX_FILE_COUNT, type TargetModelName } from './constants'
+import { MAX_FILE_COUNT, UPLOAD_TIMEOUT_IMAGE_MS, UPLOAD_TIMEOUT_VIDEO_MS, type TargetModelName } from './constants'
 import type { MediaFile } from './types'
 import type { PickedMediaFile } from './picker'
 
@@ -87,6 +87,14 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 	if (thumbnail) appendFileToFormData(formData, 'thumbnail', thumbnail)
 	filesToUpload.forEach((file) => appendFileToFormData(formData, 'gallery', file))
 
+	const allFilesForTimeout = [...(thumbnail ? [thumbnail] : []), ...filesToUpload]
+	const isVideoUpload = allFilesForTimeout.some((f) => f.mimeType?.startsWith('video/') || /\.(mp4|webm|mov|m3u8)$/i.test(f.name))
+	const hasLargeFile = allFilesForTimeout.some((f) => (f.size || 0) > 20 * 1024 * 1024)
+	let timeout = isVideoUpload ? UPLOAD_TIMEOUT_VIDEO_MS : UPLOAD_TIMEOUT_IMAGE_MS
+	if (hasLargeFile && !isVideoUpload) timeout = UPLOAD_TIMEOUT_VIDEO_MS
+	// Allow extra time for HLS transcoding (sp_auto) which happens server-side after bytes are received
+	if (isVideoUpload) timeout = Math.max(timeout, 300_000)
+
 	// Log FormData contents for debugging
 	log({
 		level: 'info',
@@ -98,6 +106,8 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 			fileCount: filesToUpload.length + (thumbnail ? 1 : 0),
 			hasThumbnail: !!thumbnail,
 			backendState,
+			isVideoUpload,
+			timeout,
 			// Don't log actual file data to avoid large logs
 			fileNames: filesToUpload.map((f) => f.name),
 			thumbnailName: thumbnail?.name
@@ -109,6 +119,7 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 		response = await getApiClient().post('/files/upload', formData, {
 			// Don't set Content-Type - let React Native handle it with proper boundary
 			headers: {},
+			timeout,
 			// Override the default transformRequest to preserve FormData
 			transformRequest: [(data) => data],
 			onUploadProgress: (event) => {
@@ -131,14 +142,27 @@ export const uploadMedia = async ({ targetModelName, targetModelId, thumbnail, g
 				fileCount: filesToUpload.length + (thumbnail ? 1 : 0),
 				hasThumbnail: !!thumbnail,
 				backendState,
+				isVideoUpload,
+				timeout,
 				parsedError
 			}
 		})
 
-		// Provide user-friendly error message, especially for network errors
-		let errorMessage = parsedError.message || error.message || 'Network error'
+		// Provide user-friendly error message, especially for network/timeout/cloudinary errors
+		let errorMessage = parsedError.message || (error as any)?.message || 'Network error'
 		if (parsedError.type === 'network') {
-			errorMessage = 'Network connection failed. Please check your internet connection and try again.'
+			errorMessage = isVideoUpload
+				? 'Media upload failed to reach the server (Cloudinary free plan limit or timeout). The service may be temporarily unavailable — try a smaller file or try again in a few minutes.'
+				: 'Network connection failed. Please check your internet connection and try again.'
+		} else if (parsedError.type === 'timeout') {
+			errorMessage = isVideoUpload
+				? 'Video upload is taking longer than expected (large file + HLS transcoding sp_auto). The file was likely saved on the server and is generating its playback stream. Please wait 10–20 seconds and refresh the gallery. If it does not appear, tap Retry.'
+				: parsedError.message
+		}
+		// Surface Cloudinary 499 details when available
+		if ((parsedError as any).statusCode === 499) {
+			errorMessage =
+				'Media service timeout (Cloudinary free plan limit, http 499). Please try a smaller file, or wait a few minutes and retry. Your file may still be processing in the background — refresh the gallery shortly.'
 		}
 
 		// Provide more context in the error message

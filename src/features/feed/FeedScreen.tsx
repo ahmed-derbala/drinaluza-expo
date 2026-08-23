@@ -22,6 +22,8 @@ import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
 
+export const VisibleIdsContext = React.createContext<Set<string>>(new Set())
+
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
 
@@ -58,6 +60,13 @@ export default function FeedScreen() {
 	// ── Context ──
 	const { user, localize, translate } = useUser()
 
+	// ── Viewability — only autoplay videos for cards actually on screen (prevents bleed) ──
+	const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set())
+	const onViewableItemsChanged = useCallback(({ viewableItems }: { viewableItems: Array<{ item: FeedItem }> }) => {
+		setVisibleIds(new Set(viewableItems.map((v) => v.item._id || (v.item as any).slug)))
+	}, [])
+	const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 50 }), [])
+
 	// ── Scroll position restoration (especially for web where the screen remounts) ──
 	const listRef = useRef<any>(null)
 	const savedScrollOffsetRef = useRef(0)
@@ -89,6 +98,8 @@ export default function FeedScreen() {
 		setFeedItems(products)
 		setDisplayedItems(products)
 		if (products.length > 0) {
+			// Mark first 3 items as visible by default so their videos autoplay without waiting for onViewableItemsChanged
+			setVisibleIds(new Set(products.slice(0, 3).map((p) => p._id || (p as any).slug)))
 			enrichFeedContacts(products, (enriched) => {
 				setFeedItems(enriched)
 				setDisplayedItems(enriched)
@@ -256,24 +267,28 @@ export default function FeedScreen() {
 			{isInitialLoading || (isRefreshing && displayedItems.length === 0) ? (
 				<Spinner />
 			) : (
-				<SmartHeader.FlashList
-					ref={listRef}
-					style={{ backgroundColor: 'transparent' }}
-					data={displayedItems}
-					renderItem={renderItem}
-					numColumns={numColumns}
-					estimatedItemSize={260}
-					keyExtractor={(item: FeedItem) => item.slug || item._id}
-					contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
-					ListEmptyComponent={renderEmpty}
-					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
-					showsVerticalScrollIndicator={false}
-					keyboardShouldPersistTaps="handled"
-					onScroll={handleListScroll}
-					onEndReached={handleLoadMore}
-					onEndReachedThreshold={0.2}
-					ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
-				/>
+				<VisibleIdsContext.Provider value={visibleIds}>
+					<SmartHeader.FlashList
+						ref={listRef}
+						style={{ backgroundColor: 'transparent' }}
+						data={displayedItems}
+						renderItem={renderItem}
+						numColumns={numColumns}
+						estimatedItemSize={380}
+						keyExtractor={(item: FeedItem) => item.slug || item._id}
+						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
+						ListEmptyComponent={renderEmpty}
+						refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+						showsVerticalScrollIndicator={false}
+						keyboardShouldPersistTaps="handled"
+						onScroll={handleListScroll}
+						onEndReached={handleLoadMore}
+						onEndReachedThreshold={0.2}
+						onViewableItemsChanged={onViewableItemsChanged}
+						viewabilityConfig={viewabilityConfig}
+						ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
+					/>
+				</VisibleIdsContext.Provider>
 			)}
 
 			<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
