@@ -87,8 +87,9 @@ const SmartMediaCarouselComponent = ({
 	const [manualPlayIndex, setManualPlayIndex] = useState<number | null>(null)
 
 	// Once a user manually selects a thumbnail, autoplay is permanently stopped (except for the tapped video).
+	// Auto-play/advance is strictly limited to the focused+visible card — non-focused cards never autoplay or auto-advance.
 	const autoPlayStoppedRef = useRef(false)
-	const canAutoPlay = autoPlay && !autoPlayStoppedRef.current
+	const canAutoPlay = autoPlay && isVisible && !autoPlayStoppedRef.current
 	const canAdvance = canAutoPlay && items.length > 1
 
 	// Reset the active index when the media set changes.
@@ -100,8 +101,8 @@ const SmartMediaCarouselComponent = ({
 
 	const activeItem = items[activeIndex] ?? null
 	const activeIsVideo = isVideoMedia(activeItem)
-	const shouldAutoPlayVideo = isVisible && activeIsVideo && (canAutoPlay || manualPlayIndex === activeIndex)
-	const shouldLoopSingleVideo = items.length === 1 && activeIsVideo
+	const shouldAutoPlayVideo = activeIsVideo && (canAutoPlay || (isVisible && manualPlayIndex === activeIndex))
+	const shouldLoopSingleVideo = items.length === 1 && activeIsVideo && canAutoPlay
 
 	// Advance to the next item (wraps around).
 	const advanceToNext = useCallback(() => {

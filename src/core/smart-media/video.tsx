@@ -30,6 +30,8 @@ export interface SmartVideoPlayerProps {
 	onPlaybackEnd?: () => void
 	/** Called when the player encounters an error. */
 	onError?: () => void
+	/** Called when playing state changes (for first-frame tracking). */
+	onPlayingChange?: (isPlaying: boolean) => void
 }
 
 export interface SmartVideoPlayerHandle {
@@ -71,11 +73,11 @@ const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () =>
 )
 
 const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoPlayerProps>(
-	({ source, style, contentFit = 'cover', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError }, ref) => {
+	({ source, style, contentFit = 'contain', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError, onPlayingChange }, ref) => {
 		const player = useVideoPlayer(source, (instance) => {
 			instance.loop = loop
-			// Mute feed videos (no controls) to allow autoplay on web/iOS
-			if (!controls) {
+			// Mute to allow autoplay on web/iOS (autoPlay with sound is blocked)
+			if (!controls || autoPlay) {
 				try {
 					instance.muted = true
 				} catch {}
@@ -137,6 +139,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		useEventListener(player, 'playingChange', ({ isPlaying }) => {
 			if (!isMountedRef.current) return
 			setPlaying(isPlaying)
+			onPlayingChange?.(isPlaying)
 		})
 
 		useEventListener(player, 'playToEnd', () => {
@@ -144,19 +147,18 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			onPlaybackEnd?.()
 		})
 
-		// Autoplay when ready — required for feed carousel (controls=false, muted)
+		// Autoplay when ready — required for feed carousel (controls=false, muted) — must be muted on web for autoplay
 		useEffect(() => {
 			if (!autoPlay || status !== 'readyToPlay' || !isMountedRef.current) return
 			try {
-				if (!controls) {
-					player.muted = true
-				}
+				// Always mute for autoplay to satisfy web/iOS autoplay policies
+				player.muted = true
 				const playPromise: any = player.play()
 				if (playPromise && typeof playPromise.catch === 'function') {
 					playPromise.catch(() => {})
 				}
 			} catch {}
-		}, [autoPlay, status, controls, player])
+		}, [autoPlay, status, player])
 
 		// Pause when autoPlay becomes false (card scrolled off-screen) — prevents bleed
 		useEffect(() => {

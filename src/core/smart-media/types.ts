@@ -146,6 +146,30 @@ export const isVideoMedia = (media: MediaSource): boolean => getMediaType(media)
 
 export const isImageMedia = (media: MediaSource): boolean => getMediaType(media) === 'image'
 
+/** Get a poster image URL for a video (first frame) — uses Cloudinary so_0 transformation if available */
+export const getVideoPosterUrl = (media: MediaSource): string | null => {
+	if (typeof media === 'string') return null
+	if (!media || typeof media !== 'object') return null
+	const file = media as MediaFile
+	// Try to construct poster from secure_url: …/video/upload/…/file.mp4 → …/video/upload/so_0/…/file.jpg
+	const baseUrl = file.secure_url || file.url
+	if (baseUrl && baseUrl.includes('/video/upload/')) {
+		try {
+			const urlObj = new URL(baseUrl)
+			// Insert so_0 (seek to 0s) and change extension to jpg for poster
+			if (!urlObj.pathname.includes('/so_0/')) {
+				urlObj.pathname = urlObj.pathname.replace('/video/upload/', '/video/upload/so_0/')
+			}
+			urlObj.pathname = urlObj.pathname.replace(/\.[^/.]+$/, '.jpg')
+			return urlObj.toString()
+		} catch {
+			return baseUrl.replace('/video/upload/', '/video/upload/so_0/').replace(/\.[^/.]+(\?.*)?$/, '.jpg$1')
+		}
+	}
+	// Fallback to regular media url (may be an image thumbnail if backend provides it)
+	return getMediaUrl(media)
+}
+
 /** Legacy resizeMode alias used by the former SmartImageViewer. */
 export type LegacyResizeMode = 'cover' | 'contain' | 'stretch' | 'center'
 

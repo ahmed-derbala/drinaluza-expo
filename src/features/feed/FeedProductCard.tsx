@@ -17,7 +17,7 @@ import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNam
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext } from '@/features/feed/FeedVisibleContext'
+import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext } from '@/features/feed/FeedVisibleContext'
 
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
@@ -34,8 +34,10 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const visibleIds = React.useContext(VisibleIdsContext)
 	const activeVideoId = React.useContext(ActiveVideoIdContext)
 	const setActiveVideoId = React.useContext(SetActiveVideoIdContext)
+	const focusedId = React.useContext(FocusedIdContext)
 	const isVisible = visibleIds.has(item._id || (item as any).slug)
 	const isActiveVideo = activeVideoId === (item._id || (item as any).slug)
+	const isFocused = focusedId === (item._id || (item as any).slug)
 
 	const carouselMedia = useMemo<MediaField | null>(() => {
 		const rawMedia = (item as any).media as MediaField | null | undefined
@@ -65,7 +67,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		return thumbIsVideo || galleryHasVideo
 	}, [carouselMedia])
 
-	const carouselAutoPlay = hasVideo ? isActiveVideo : isVisible
+	const carouselAutoPlay = isFocused
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
@@ -125,7 +127,10 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const isSmall = width < 500
 
 	return (
-		<View style={[styles.card, { backgroundColor: colors.background }, style]} testID={`feed-product-card-${item._id}`}>
+		<View
+			style={[styles.card, style, { backgroundColor: colors.background, borderColor: isFocused ? colors.focus : colors.border, borderWidth: isFocused ? 2 : 1 }]}
+			testID={`feed-product-card-${item._id}`}
+		>
 			{/* Background media — video is background of host card only (no controls, no fullscreen) */}
 			<View style={styles.bgImageContainer} pointerEvents="box-none">
 				<SmartMediaCarousel
@@ -284,7 +289,7 @@ const styles = StyleSheet.create({
 		position: 'relative',
 		borderRadius: 20,
 		borderWidth: 1,
-		borderColor: themeColors.primary,
+		borderColor: themeColors.border,
 		overflow: 'hidden',
 		justifyContent: 'space-between',
 		minHeight: 340,

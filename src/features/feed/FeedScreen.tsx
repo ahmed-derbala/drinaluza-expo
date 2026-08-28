@@ -21,7 +21,7 @@ import Spinner from '@/features/common/Spinner'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext } from '@/features/feed/FeedVisibleContext'
+import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext } from '@/features/feed/FeedVisibleContext'
 import { performVideoCacheStartupCleanup } from '@/core/smart-media/video-cache'
 
 // ─── Component ──────────────────────────────────────────────────────────────────
@@ -60,14 +60,22 @@ export default function FeedScreen() {
 	// ── Context ──
 	const { user, localize, translate } = useUser()
 
-	// ── Viewability — only autoplay ONE video at a time (most visible) to save CPU/battery
+	// ── Viewability — only the in-focus card auto-advances (and only one video plays) to save CPU/battery
 	const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set())
 	const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
+	const [focusedId, setFocusedId] = useState<string | null>(null)
 	const onViewableItemsChanged = useCallback(
 		({ viewableItems }: { viewableItems: Array<{ item: FeedItem; isViewable: boolean }> }) => {
 			const ids = viewableItems.filter((v) => v.isViewable).map((v) => v.item._id || (v.item as any).slug)
 			setVisibleIds(new Set(ids))
-			// Only the most visible item (first in viewableItems, sorted by viewability) gets video playback
+			// In-focus card is the first viewable item (most visible, sorted by viewability) — only it auto-advances
+			const firstViewable = viewableItems.find((v) => v.isViewable)
+			if (firstViewable) {
+				setFocusedId(firstViewable.item._id || (firstViewable.item as any).slug)
+			} else if (ids.length === 0) {
+				setFocusedId(null)
+			}
+			// Only the most visible video card gets video playback
 			const firstVisibleWithMedia = viewableItems.find((v) => {
 				const m: any = v.item.media
 				const hasVideo =
@@ -81,7 +89,6 @@ export default function FeedScreen() {
 			} else if (ids.length === 0) {
 				setActiveVideoId(null)
 			} else if (viewableItems.length > 0) {
-				// If no visible item has video, keep previous or clear
 				const stillVisible = viewableItems.some((v) => (v.item._id || (v.item as any).slug) === activeVideoId)
 				if (!stillVisible) setActiveVideoId(null)
 			}
@@ -123,6 +130,7 @@ export default function FeedScreen() {
 		if (products.length > 0) {
 			// Mark first 3 items as visible by default so their videos autoplay without waiting for onViewableItemsChanged
 			setVisibleIds(new Set(products.slice(0, 3).map((p) => p._id || (p as any).slug)))
+			setFocusedId(products[0]?._id || (products[0] as any)?.slug || null)
 			const firstWithVideo = products.slice(0, 3).find((p: any) => {
 				const m = p.media
 				return (
@@ -306,30 +314,32 @@ export default function FeedScreen() {
 				<VisibleIdsContext.Provider value={visibleIds}>
 					<ActiveVideoIdContext.Provider value={activeVideoId}>
 						<SetActiveVideoIdContext.Provider value={setActiveVideoId}>
-							<SmartHeader.FlashList
-								ref={listRef}
-								style={{ backgroundColor: 'transparent' }}
-								data={displayedItems}
-								renderItem={renderItem}
-								numColumns={numColumns}
-								estimatedItemSize={380}
-								keyExtractor={(item: FeedItem) => item.slug || item._id}
-								contentContainerStyle={[
-									styles.listContent,
-									{ paddingHorizontal: padding, paddingBottom: 120 + insets.bottom },
-									displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
-								]}
-								ListEmptyComponent={renderEmpty}
-								refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
-								showsVerticalScrollIndicator={false}
-								keyboardShouldPersistTaps="handled"
-								onScroll={handleListScroll}
-								onEndReached={handleLoadMore}
-								onEndReachedThreshold={0.2}
-								onViewableItemsChanged={onViewableItemsChanged}
-								viewabilityConfig={viewabilityConfig}
-								ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
-							/>
+							<FocusedIdContext.Provider value={focusedId}>
+								<SmartHeader.FlashList
+									ref={listRef}
+									style={{ backgroundColor: 'transparent' }}
+									data={displayedItems}
+									renderItem={renderItem}
+									numColumns={numColumns}
+									estimatedItemSize={380}
+									keyExtractor={(item: FeedItem) => item.slug || item._id}
+									contentContainerStyle={[
+										styles.listContent,
+										{ paddingHorizontal: padding, paddingBottom: 120 + insets.bottom },
+										displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
+									]}
+									ListEmptyComponent={renderEmpty}
+									refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+									showsVerticalScrollIndicator={false}
+									keyboardShouldPersistTaps="handled"
+									onScroll={handleListScroll}
+									onEndReached={handleLoadMore}
+									onEndReachedThreshold={0.2}
+									onViewableItemsChanged={onViewableItemsChanged}
+									viewabilityConfig={viewabilityConfig}
+									ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
+								/>
+							</FocusedIdContext.Provider>
 						</SetActiveVideoIdContext.Provider>
 					</ActiveVideoIdContext.Provider>
 				</VisibleIdsContext.Provider>

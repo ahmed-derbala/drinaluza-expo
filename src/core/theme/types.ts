@@ -77,6 +77,16 @@ export interface ThemeColors {
 	warning12: string
 	warning25: string
 	warning30: string
+	focus: string
+	focus06: string
+	focus10: string
+	focus12: string
+	focus25: string
+	focus30: string
+	focusContainer: string
+	focusContainer20: string
+	focusContainer30: string
+	focusContainer40: string
 	whatsApp: string
 	whatsApp10: string
 }

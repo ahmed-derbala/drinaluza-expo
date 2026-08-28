@@ -20,10 +20,12 @@ export interface BaseCardProps {
 	children: React.ReactNode
 	/** Background color. Defaults to the theme background. */
 	backgroundColor?: string
-	/** Border color. Defaults to the theme border. */
+	/** Border color. Defaults to the theme border. When `focused` is true, uses the theme focus color (gold). */
 	borderColor?: string
 	/** Border width. Defaults to 1. */
 	borderWidth?: number
+	/** When true, card border uses the focus color (gold) to indicate focused/active state. */
+	focused?: boolean
 	/** Card size preset or custom padding value. Defaults to 'md'. */
 	size?: CardSize
 	/** Overflow behavior. Defaults to 'hidden'. */
@@ -72,6 +74,7 @@ export function BaseCard({
 	backgroundColor,
 	borderColor,
 	borderWidth = 1,
+	focused = false,
 	size = 'md',
 	overflow = 'hidden',
 	onPress,
@@ -94,7 +97,7 @@ export function BaseCard({
 	const { padding, minHeight } = resolveSize(size)
 	const borderRadius = BASE_CARD_RADIUS
 	const resolvedBackgroundColor = backgroundColor ?? colors.background
-	const resolvedBorderColor = borderColor ?? colors.border
+	const resolvedBorderColor = focused ? colors.focus : (borderColor ?? colors.border)
 
 	const computedStyle: ViewStyle = {
 		backgroundColor: resolvedBackgroundColor,

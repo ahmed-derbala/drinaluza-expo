@@ -77,6 +77,16 @@ export const themeColors: ThemeColors = {
 	warning12: '#F59E0B1F',
 	warning25: '#F59E0B40',
 	warning30: '#F59E0B4D',
+	focus: '#D4AF37',
+	focus06: '#D4AF370F',
+	focus10: '#D4AF371A',
+	focus12: '#D4AF371F',
+	focus25: '#D4AF3740',
+	focus30: '#D4AF374D',
+	focusContainer: '#D4AF3720',
+	focusContainer20: '#D4AF3733',
+	focusContainer30: '#D4AF374D',
+	focusContainer40: '#D4AF3766',
 	whatsApp: '#25D366',
 	whatsApp10: '#25D3661A'
 }

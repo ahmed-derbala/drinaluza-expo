@@ -16,7 +16,7 @@ import { themeColors } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
 import { cacheMediaFile } from './cache'
-import { getMediaType, getMediaUrl, getVideoUrl, type MediaSource, type SmartMediaStyleProps } from './types'
+import { getMediaType, getMediaUrl, getVideoPosterUrl, getVideoUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
 import { getCachedVideoUri, prefetchVideoToCache } from './video-cache'
 
@@ -92,6 +92,7 @@ const SmartMediaViewComponent = ({
 	const [useFallbackForVideo, setUseFallbackForVideo] = useState(false)
 	const [cachedVideoUri, setCachedVideoUri] = useState<string | null>(null)
 	const [isCacheChecked, setIsCacheChecked] = useState(false)
+	const [hasVideoStarted, setHasVideoStarted] = useState(false)
 
 	// Check for locally cached MP4 first — like UPDATES_FOLDER for APKs, VIDEOS_FOLDER for videos
 	// Only check when visible to avoid FileSystem thrash for off-screen cards
@@ -141,6 +142,7 @@ const SmartMediaViewComponent = ({
 		setUseFallbackForVideo(false)
 		setCachedVideoUri(null)
 		setIsCacheChecked(false)
+		setHasVideoStarted(false)
 	}, [media])
 
 	// Strip backgroundColor so the media surface never paints over its container.
@@ -236,6 +238,11 @@ const SmartMediaViewComponent = ({
 
 	const showFallback = !sourceIsValid || hasError
 
+	// Track if video has ever started (for first-frame poster and last-frame retention)
+	const handleVideoPlayingChange = useCallback((isPlaying: boolean) => {
+		if (isPlaying) setHasVideoStarted(true)
+	}, [])
+
 	const handleVideoError = useCallback(() => {
 		if (!isVideo) return
 		// If HLS fails, try cached MP4 first, then fallback to mp4 remote
@@ -262,6 +269,11 @@ const SmartMediaViewComponent = ({
 		}
 	}, [sourceIsValid, showFallback, isVideo])
 
+	// On web, HLS may need poster; on native, show first frame via poster until video starts, and keep last frame when paused (don't unmount)
+	// Must be before any early return to keep hook order stable
+	const videoPosterUrl = useMemo(() => (isVideo ? getVideoPosterUrl(media) : null), [media, isVideo])
+	const showVideoPoster = isVideo && !hasVideoStarted && !hasError && !!videoPosterUrl
+
 	if (isCheckingCache) {
 		return (
 			<View style={[styles.image, cleanedStyle, dimensionStyle]}>
@@ -270,35 +282,25 @@ const SmartMediaViewComponent = ({
 		)
 	}
 
-	// When video is off-screen or explicitly non-autoplaying background (feed), don't mount native player — show static poster to avoid SurfaceView SharedObject crash
-	if (isVideo && (!isVisible || (!controls && !autoPlay))) {
-		return (
-			<View style={[styles.image, cleanedStyle, dimensionStyle, { backgroundColor: themeColors.background }]}>
-				<Image source={FALLBACK_IMAGE} style={[styles.image, cleanedStyle, dimensionStyle]} contentFit="cover" cachePolicy="disk" />
-				<View style={[StyleSheet.absoluteFill, { justifyContent: 'center', alignItems: 'center', backgroundColor: 'rgba(0,0,0,0.15)' }]}>
-					<View style={{ backgroundColor: 'rgba(0,0,0,0.4)', borderRadius: 20, padding: 6 }}>
-						<Ionicons name="play" size={20} color="white" />
-					</View>
-				</View>
-			</View>
-		)
-	}
-
 	const imageElement = isVideo ? (
-		<SmartVideoPlayer
-			key={url as string}
-			source={url as string}
-			style={dimensionStyle as any}
-			contentFit={resolvedContentFit as any}
-			autoPlay={autoPlay}
-			loop={loop}
-			nativeControls={controls ? nativeControls : false}
-			controls={controls}
-			accessibilityLabel={accessibilityLabel}
-			testID={testID}
-			onPlaybackEnd={onPlaybackEnd}
-			onError={handleVideoError}
-		/>
+		<View style={[styles.image, dimensionStyle]}>
+			{showVideoPoster && <Image source={videoPosterUrl} style={[StyleSheet.absoluteFill, styles.image]} contentFit="cover" cachePolicy="disk" />}
+			<SmartVideoPlayer
+				key={url as string}
+				source={url as string}
+				style={StyleSheet.absoluteFill}
+				contentFit={resolvedContentFit as any}
+				autoPlay={autoPlay}
+				loop={loop}
+				nativeControls={controls ? nativeControls : false}
+				controls={controls}
+				accessibilityLabel={accessibilityLabel}
+				testID={testID}
+				onPlaybackEnd={onPlaybackEnd}
+				onError={handleVideoError}
+				onPlayingChange={setHasVideoStarted}
+			/>
+		</View>
 	) : (
 		<>
 			{!showFallback && !isLoaded && <Spinner size="small" expand={false} style={styles.loadingOverlay} />}
