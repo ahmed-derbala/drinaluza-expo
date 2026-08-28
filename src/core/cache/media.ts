@@ -1,9 +1,9 @@
 /**
- * Media cache helpers built on top of `core/cache`.
+ * Media metadata cache helpers.
  */
 
-import { getCacheItem, setCacheItem, invalidateCache } from '@/core/cache'
-import type { MediaFile } from './types'
+import { getCacheItem, setCacheItem, invalidateCache } from './index'
+import type { MediaFile } from '@/core/smart-media/types'
 
 const CACHE_TTL_MS = 5 * 60 * 1000
 

@@ -17,7 +17,7 @@ import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNam
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext } from '@/features/feed/FeedVisibleContext'
+import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
 
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
@@ -35,6 +35,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const activeVideoId = React.useContext(ActiveVideoIdContext)
 	const setActiveVideoId = React.useContext(SetActiveVideoIdContext)
 	const focusedId = React.useContext(FocusedIdContext)
+	const setFocusedId = React.useContext(SetFocusedIdContext)
 
 	// Memoize item ID to avoid repeated object property access
 	const itemId = useMemo(() => item._id || (item as any).slug, [item._id, (item as any).slug])
@@ -154,10 +155,25 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		[cartDisabled, addToCart, item, quantity]
 	)
 
+	// Focus card on mouse hover or finger touch
+	const handleFocusTrigger = useCallback(() => {
+		if (focusedId !== itemId) {
+			setFocusedId(itemId)
+		}
+		if (hasVideo && activeVideoId !== itemId) {
+			setActiveVideoId(itemId)
+		}
+	}, [focusedId, itemId, setFocusedId, hasVideo, activeVideoId, setActiveVideoId])
+
 	return (
 		<View
 			style={[styles.card, style, { backgroundColor: colors.background, borderColor: isFocused ? colors.focus : colors.border, borderWidth: isFocused ? 2 : 1 }]}
 			testID={`feed-product-card-${itemId}`}
+			onPointerEnter={handleFocusTrigger}
+			onPointerMove={handleFocusTrigger}
+			onTouchStart={handleFocusTrigger}
+			onPointerDown={handleFocusTrigger}
+			{...({ onMouseEnter: handleFocusTrigger } as any)}
 		>
 			{/* Background media — video is background of host card only (no controls, no fullscreen) */}
 			<View style={[styles.bgImageContainer, { pointerEvents: 'box-none' as any }]}>

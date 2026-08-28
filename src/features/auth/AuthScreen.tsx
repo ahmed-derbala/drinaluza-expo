@@ -5,8 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { format, formatDistanceToNow } from 'date-fns'
-import { clearAllStorage, getToken } from '@/core/storage'
-import { clearMemoryCache } from '@/core/cache'
+import { getToken } from '@/core/storage'
 
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -15,7 +14,6 @@ import { SmartMediaView } from '@/core/smart-media'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import { EyeButton } from '@/features/common/buttons/EyeButton'
 import { SmartHeader } from '@/core/smart-header'
-import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
@@ -742,35 +740,6 @@ export default function AuthScreen() {
 		},
 		[slug, translate, loadSavedAccounts]
 	)
-
-	const handleDestroyStorage = useCallback(() => {
-		showConfirm(translate('reset_app', 'Reset App'), translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'), async () => {
-			try {
-				setLoading(true)
-				await clearAllStorage()
-				clearMemoryCache()
-				await refreshUser()
-				await loadSavedAccounts()
-				setSlug('')
-				setPassword('')
-				toast.show({ title: translate('reset_success', 'App reset successfully.'), content: '', borderColor: themeColors.success })
-			} catch {
-				toast.show({ title: translate('error', 'Reset Failed'), content: translate('reset_failed', 'Failed to reset app.'), borderColor: themeColors.error })
-			} finally {
-				setLoading(false)
-			}
-		})
-	}, [translate, refreshUser, loadSavedAccounts])
-
-	useSmartKebabMenu([
-		{
-			key: 'reset-app',
-			label: translate('reset_app', 'Reset App'),
-			icon: 'trash-outline',
-			destructive: true,
-			onPress: handleDestroyStorage
-		}
-	])
 
 	return (
 		<View style={S.root}>

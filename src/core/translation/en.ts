@@ -234,5 +234,18 @@ export const en = {
 	gear: 'Gear',
 	gear_trap: 'Trap',
 	gear_gillnet: 'Gillnet',
-	thumbnail: 'Thumbnail'
+	thumbnail: 'Thumbnail',
+	cache_details: 'Cached Data Details',
+	api_cache: 'API & Data Cache',
+	video_cache: 'Video Cache',
+	total_cache_size: 'Total Cache Size',
+	cached_entries: 'Cached Entries',
+	cached_files: 'Cached Files',
+	clear_all_cache: 'Clear All Cache',
+	clear_api_cache: 'Clear API Cache',
+	clear_video_cache: 'Clear Video Cache',
+	cache_cleared: 'Cache cleared successfully',
+	clear_cache_confirm: 'Are you sure you want to clear all cached data?',
+	refresh_stats: 'Refresh Stats',
+	no_cache_data: 'No cached data found'
 }

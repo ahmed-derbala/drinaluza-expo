@@ -10,12 +10,18 @@ trigger: always_on
 
 ## UI
 
-### 1. cards
+### cards
 - all cards must be based on BaseCard
 - a card must be implemented on its own file
 
 ### theme
 - never hardcode colors, spacing, radius, etc, use the core/theme/ instead
+
+### buttons
+- all buttons must be based on IconButton (icon only) or TextButton (text only) or IconTextButton (icon + text)
+- a button should be on its own file
+
+
 
 ## cleanup
 Improve code quality, maintainability, consistency, and bundle size without changing application behavior.

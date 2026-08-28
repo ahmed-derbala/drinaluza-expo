@@ -33,7 +33,7 @@ export { downloadMediaFile }
 export type { DownloadMediaOptions }
 
 // Cache
-import { cacheMediaFile, getCachedMediaFile, invalidateMediaCache } from './cache'
+import { cacheMediaFile, getCachedMediaFile, invalidateMediaCache } from '@/core/cache'
 export { cacheMediaFile, getCachedMediaFile, invalidateMediaCache }
 
 // Components

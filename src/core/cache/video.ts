@@ -1,18 +1,20 @@
 /**
  * Video file cache — mirrors `UpdatesContext` APK caching but for played videos.
  *
- * Stores MP4s (via `secure_url`) under `FileSystem.documentDirectory + 'videos/'`
- * so a played video can be replayed offline without re-streaming HLS.
- * HLS `playback_url` (.m3u8) is not cached as a single file; we cache the MP4 fallback.
+ * Stores MP4s (via `secure_url`) under `FileSystem.cacheDirectory + 'videos/'`
+ * so a played video can be replayed offline via the system cache. HLS
+ * `playback_url` (.m3u8) is not cached as a single file; we cache the MP4 fallback.
+ * Using `cacheDirectory` (purgeable temp) instead of `documentDirectory` keeps
+ * videos together with `expo-image` cache and allows OS to reclaim space.
  */
 
 import { Platform } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import { log } from '@/core/log'
 import { getItem, setItem, removeItem } from '@/core/storage'
-import type { MediaFile } from './types'
+import type { MediaFile } from '@/core/smart-media/types'
 
-const VIDEOS_FOLDER = (FileSystem.documentDirectory || '') + 'videos/'
+const VIDEOS_FOLDER = (FileSystem.cacheDirectory || '') + 'videos/'
 
 const getResumeKey = (fileId: string) => `video:resume:${fileId}`
 const getProgressKey = (fileId: string) => `video:progress:${fileId}`

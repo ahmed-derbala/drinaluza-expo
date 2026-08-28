@@ -2,41 +2,56 @@ import React from 'react'
 import { type StyleProp, type ViewStyle, type TextStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { BaseButton, type ButtonVariant } from './BaseButton'
 
-export interface TextButtonProps {
-	/** Visible text. */
+export interface IconTextButtonProps {
+	icon: any
+	iconType?: 'ionicons' | 'material'
 	text: string
-	/** Optional accessibility label. Falls back to {@link text}. */
 	label?: string
-	/** Press handler. */
 	onPress: (event?: any) => void
-	/** Whether the button is disabled. */
 	disabled?: boolean
-	/** Whether the button is in a loading state. */
 	loading?: boolean
-	/** Visual variant. */
 	variant?: ButtonVariant
-	/** Button size (affects minimum height). */
+	outline?: boolean
+	iconColor?: string
 	size?: number
-	/** Optional container style override. */
+	textPosition?: 'right' | 'bottom'
 	style?: StyleProp<ViewStyle>
-	/** Optional text style override. */
 	textStyle?: StyleProp<TextStyle>
-	/** Optional accessibility role. */
 	accessibilityRole?: AccessibilityRole
-	/** Optional accessibility state. */
 	accessibilityState?: AccessibilityState
 }
 
-export function TextButton({ text, label, onPress, disabled = false, loading = false, variant = 'primary', size, style, textStyle, accessibilityRole, accessibilityState }: TextButtonProps) {
+export function IconTextButton({
+	icon,
+	iconType = 'ionicons',
+	text,
+	label,
+	onPress,
+	disabled = false,
+	loading = false,
+	variant = 'primary',
+	outline,
+	iconColor,
+	size,
+	textPosition = 'right',
+	style,
+	textStyle,
+	accessibilityRole,
+	accessibilityState
+}: IconTextButtonProps) {
 	return (
 		<BaseButton
-			label={label}
+			icon={icon}
+			iconType={iconType}
 			text={text}
-			textPosition="right"
+			textPosition={textPosition}
+			label={label}
 			onPress={onPress}
 			disabled={disabled}
 			loading={loading}
 			variant={variant}
+			outline={outline}
+			iconColor={iconColor}
 			size={size}
 			style={style}
 			textStyle={textStyle}
@@ -45,3 +60,5 @@ export function TextButton({ text, label, onPress, disabled = false, loading = f
 		/>
 	)
 }
+
+export default IconTextButton

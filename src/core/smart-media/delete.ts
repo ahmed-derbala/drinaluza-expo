@@ -6,7 +6,7 @@
 
 import { getApiClient } from '@/core/api'
 import { log } from '@/core/log'
-import { invalidateMediaCache } from './cache'
+import { invalidateMediaCache } from '@/core/cache'
 
 /** Delete a media file by its id. Resolves when the file was removed. */
 export const deleteMediaFile = async (fileId: string): Promise<void> => {

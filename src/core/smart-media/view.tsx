@@ -15,10 +15,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
-import { cacheMediaFile } from './cache'
+import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@/core/cache'
 import { getMediaType, getMediaUrl, getVideoPosterUrl, getVideoUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
-import { getCachedVideoUri, prefetchVideoToCache } from './video-cache'
 
 const FALLBACK_IMAGE = require('../../../assets/images/no_media.png')
 

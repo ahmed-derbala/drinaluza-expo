@@ -5,7 +5,7 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { useEventListener } from 'expo'
-import { VideoView, useVideoPlayer, type VideoPlayerStatus } from 'expo-video'
+import { VideoView, createVideoPlayer, type VideoPlayer, type VideoPlayerStatus } from 'expo-video'
 import { Ionicons } from '@expo/vector-icons'
 import Spinner from '@/features/common/Spinner'
 import { themeColors } from '@/core/theme'
@@ -76,22 +76,26 @@ const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () =>
 
 const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoPlayerProps>(
 	({ source, style, contentFit = 'contain', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError, onPlayingChange }, ref) => {
-		// Use a stable player instance across source changes to avoid native
-		// `TextureVideoView` prop race: changing `source` via `replaceAsync` keeps the
-		// same native `player` object, so `VideoView` never receives a released
-		// shared object ("Cannot use shared object that was already released").
-		const player = useVideoPlayer(null, (instance) => {
-			instance.loop = loop
+		// Use createVideoPlayer instead of useVideoPlayer to avoid useReleasingSharedObject
+		// prematurely releasing the native VideoPlayer during component unmount while
+		// Android TextureVideoView is still detaching in the native view hierarchy.
+		const player = useMemo(() => {
+			const instance = createVideoPlayer(source ? { uri: source } : null)
+			try {
+				instance.loop = loop
+			} catch {}
 			if (!controls || autoPlay) {
 				try {
 					instance.muted = true
 				} catch {}
 			}
-		})
+			return instance
+		}, [])
 
-		const [status, setStatus] = useState<VideoPlayerStatus>(player.status ?? 'idle')
+		const [status, setStatus] = useState<VideoPlayerStatus>(player?.status ?? 'idle')
 		const [playing, setPlaying] = useState(autoPlay)
 		const isMountedRef = React.useRef(true)
+		const prevSourceRef = React.useRef(source)
 
 		useEffect(() => {
 			isMountedRef.current = true
@@ -100,13 +104,22 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 				try {
 					if ((player as any)?.playing) player.pause()
 				} catch {}
+				// Defer release to allow native Android view teardown to complete cleanly
+				// and prevent "Cannot use shared object that was already released" crashes.
+				setTimeout(() => {
+					try {
+						if (typeof (player as any)?.release === 'function') {
+							player.release()
+						}
+					} catch {}
+				}, 1000)
 			}
 		}, [player])
 
-		// Load/replace source on the stable player. This is the only place the
-		// player's internal source changes — the `VideoView` `player` prop itself
-		// stays referentially stable, eliminating the Android recycling crash.
+		// Load/replace source on the stable player when source prop changes.
 		useEffect(() => {
+			if (prevSourceRef.current === source) return
+			prevSourceRef.current = source
 			if (!source) return
 			let cancelled = false
 			;(async () => {

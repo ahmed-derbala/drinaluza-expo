@@ -21,8 +21,8 @@ import Spinner from '@/features/common/Spinner'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext } from '@/features/feed/FeedVisibleContext'
-import { performVideoCacheStartupCleanup } from '@/core/smart-media/video-cache'
+import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
+import { performVideoCacheStartupCleanup } from '@/core/cache'
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -327,27 +327,33 @@ export default function FeedScreen() {
 					<ActiveVideoIdContext.Provider value={activeVideoId}>
 						<SetActiveVideoIdContext.Provider value={setActiveVideoId}>
 							<FocusedIdContext.Provider value={focusedId}>
-								<SmartHeader.FlashList
-									ref={listRef}
-									style={{ backgroundColor: 'transparent' }}
-									data={feedItems}
-									renderItem={renderItem}
-									numColumns={numColumns}
-									estimatedItemSize={380}
-									removeClippedSubviews={false}
-									keyExtractor={(item: FeedItem) => item.slug || item._id}
-									contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, feedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
-									ListEmptyComponent={renderEmpty}
-									refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
-									showsVerticalScrollIndicator={false}
-									keyboardShouldPersistTaps="handled"
-									onScroll={handleListScroll}
-									onEndReached={handleLoadMore}
-									onEndReachedThreshold={0.2}
-									onViewableItemsChanged={onViewableItemsChanged}
-									viewabilityConfig={viewabilityConfig}
-									ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
-								/>
+								<SetFocusedIdContext.Provider value={setFocusedId}>
+									<SmartHeader.FlashList
+										ref={listRef}
+										style={{ backgroundColor: 'transparent' }}
+										data={feedItems}
+										renderItem={renderItem}
+										numColumns={numColumns}
+										estimatedItemSize={380}
+										removeClippedSubviews={false}
+										keyExtractor={(item: FeedItem) => item.slug || item._id}
+										contentContainerStyle={[
+											styles.listContent,
+											{ paddingHorizontal: padding, paddingBottom: 120 + insets.bottom },
+											feedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
+										]}
+										ListEmptyComponent={renderEmpty}
+										refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+										showsVerticalScrollIndicator={false}
+										keyboardShouldPersistTaps="handled"
+										onScroll={handleListScroll}
+										onEndReached={handleLoadMore}
+										onEndReachedThreshold={0.2}
+										onViewableItemsChanged={onViewableItemsChanged}
+										viewabilityConfig={viewabilityConfig}
+										ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
+									/>
+								</SetFocusedIdContext.Provider>
 							</FocusedIdContext.Provider>
 						</SetActiveVideoIdContext.Provider>
 					</ActiveVideoIdContext.Provider>

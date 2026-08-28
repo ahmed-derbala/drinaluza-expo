@@ -152,12 +152,24 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 				document.body.removeChild(link)
 			} else {
 				const base64Data = base64Url.split(',')[1]
-				const fileUri = FileSystem.documentDirectory + filename
+				const baseDir = (FileSystem.cacheDirectory || FileSystem.documentDirectory || '') + 'qrcodes/'
+				try {
+					await FileSystem.makeDirectoryAsync(baseDir, { intermediates: true })
+				} catch {}
+				const fileUri = baseDir + filename
 				await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: FileSystem.EncodingType.Base64 })
-				if (await Sharing.isAvailableAsync()) {
-					await Sharing.shareAsync(fileUri)
-				} else {
-					Alert.alert(translate('success', 'Success'), 'File saved to: ' + fileUri)
+				try {
+					if (await Sharing.isAvailableAsync()) {
+						await Sharing.shareAsync(fileUri)
+					} else {
+						Alert.alert(translate('success', 'Success'), 'File saved to: ' + fileUri)
+						return
+					}
+				} finally {
+					// QR is tmp — keep cacheDirectory clean (CacheDetailsCard → Cache Directory/qrcodes)
+					try {
+						await FileSystem.deleteAsync(fileUri, { idempotent: true })
+					} catch {}
 				}
 			}
 		} catch (error) {

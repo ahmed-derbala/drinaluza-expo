@@ -198,6 +198,7 @@ function RootLayoutContent() {
 				<Stack.Screen name="users" options={{ headerShown: false }} />
 				<Stack.Screen name="about/index" options={{ headerShown: false }} />
 				<Stack.Screen name="updates/index" options={{ headerShown: false }} />
+				<Stack.Screen name="settings/index" options={{ headerShown: false }} />
 				<Stack.Screen name="purchases" options={{ headerShown: false }} />
 				<Stack.Screen name="notifications" options={{ headerShown: false }} />
 			</Stack>

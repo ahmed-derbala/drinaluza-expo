@@ -125,3 +125,11 @@ export const clearAllCache = async (): Promise<boolean> => {
 		return false
 	}
 }
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Sub-module exports
+// ───────────────────────────────────────────────────────────────────────────────
+
+export * from './useCacheFirst'
+export * from './media'
+export * from './video'
