@@ -48,7 +48,9 @@ class VideoErrorBoundary extends React.Component<{ children: React.ReactNode; fa
 	}
 	componentDidCatch(error: any) {
 		// SurfaceVideoView shared-object errors are non-fatal — show fallback
-		if (String(error?.message || '').includes('Cannot use shared object') || String(error?.message || '').includes('player')) {
+		const errorMessage = String(error?.message || '')
+		if (errorMessage.includes('Cannot use shared object') || errorMessage.includes('player') || errorMessage.includes('already released')) {
+			// Suppress these expected expo-video race condition errors
 			return
 		}
 	}
@@ -74,9 +76,12 @@ const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () =>
 
 const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoPlayerProps>(
 	({ source, style, contentFit = 'contain', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError, onPlayingChange }, ref) => {
-		const player = useVideoPlayer(source, (instance) => {
+		// Use a stable player instance across source changes to avoid native
+		// `TextureVideoView` prop race: changing `source` via `replaceAsync` keeps the
+		// same native `player` object, so `VideoView` never receives a released
+		// shared object ("Cannot use shared object that was already released").
+		const player = useVideoPlayer(null, (instance) => {
 			instance.loop = loop
-			// Mute to allow autoplay on web/iOS (autoPlay with sound is blocked)
 			if (!controls || autoPlay) {
 				try {
 					instance.muted = true
@@ -84,67 +89,72 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			}
 		})
 
-		// Handle source changes via replaceAsync instead of recreating player (avoids SharedObject release race)
-		const prevSourceRef = React.useRef(source)
-		useEffect(() => {
-			if (prevSourceRef.current === source) return
-			prevSourceRef.current = source
-			let cancelled = false
-			const updateSource = async () => {
-				try {
-					if (cancelled || !isMountedRef.current) return
-					// Use replaceAsync for smooth source change without releasing SharedObject
-					if (typeof (player as any).replaceAsync === 'function') {
-						await (player as any).replaceAsync({ uri: source })
-					} else if (typeof (player as any).replace === 'function') {
-						;(player as any).replace({ uri: source })
-					}
-					if (!controls && isMountedRef.current) {
-						try {
-							player.muted = true
-						} catch {}
-					}
-					if (isMountedRef.current) {
-						player.loop = loop
-					}
-				} catch {}
-			}
-			updateSource()
-			return () => {
-				cancelled = true
-			}
-		}, [source, player, controls, loop])
-
 		const [status, setStatus] = useState<VideoPlayerStatus>(player.status ?? 'idle')
 		const [playing, setPlaying] = useState(autoPlay)
 		const isMountedRef = React.useRef(true)
+
 		useEffect(() => {
 			isMountedRef.current = true
 			return () => {
 				isMountedRef.current = false
 				try {
-					player.pause()
+					if ((player as any)?.playing) player.pause()
 				} catch {}
 			}
 		}, [player])
 
+		// Load/replace source on the stable player. This is the only place the
+		// player's internal source changes — the `VideoView` `player` prop itself
+		// stays referentially stable, eliminating the Android recycling crash.
+		useEffect(() => {
+			if (!source) return
+			let cancelled = false
+			;(async () => {
+				try {
+					if (cancelled || !isMountedRef.current) return
+					const p: any = player as any
+					if (typeof p.replaceAsync === 'function') {
+						await p.replaceAsync({ uri: source })
+					} else if (typeof p.replace === 'function') {
+						p.replace({ uri: source })
+					}
+					if (cancelled || !isMountedRef.current) return
+					try {
+						player.loop = loop
+					} catch {}
+					try {
+						player.muted = !controls || autoPlay ? true : false
+					} catch {}
+				} catch {}
+			})()
+			return () => {
+				cancelled = true
+			}
+		}, [source, player, loop, controls, autoPlay])
+
 		useEventListener(player, 'statusChange', ({ status: nextStatus }) => {
 			if (!isMountedRef.current) return
-			setStatus(nextStatus)
-			if (nextStatus === 'error') {
-				onError?.()
-			}
+			try {
+				setStatus(nextStatus)
+				if (nextStatus === 'error') {
+					onError?.()
+				}
+			} catch {}
 		})
 
 		useEventListener(player, 'playingChange', ({ isPlaying }) => {
 			if (!isMountedRef.current) return
-			setPlaying(isPlaying)
-			onPlayingChange?.(isPlaying)
+			try {
+				setPlaying(isPlaying)
+				onPlayingChange?.(isPlaying)
+			} catch {}
 		})
 
 		useEventListener(player, 'playToEnd', () => {
 			if (!isMountedRef.current) return
-			onPlaybackEnd?.()
+			try {
+				onPlaybackEnd?.()
+			} catch {}
 		})
 
 		// Autoplay when ready — required for feed carousel (controls=false, muted) — must be muted on web for autoplay
@@ -160,11 +170,11 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			} catch {}
 		}, [autoPlay, status, player])
 
-		// Pause when autoPlay becomes false (card scrolled off-screen) — prevents bleed
+		// Pause when autoPlay becomes false (card scrolled off-screen or not focused) — prevents bleed
 		useEffect(() => {
 			if (!autoPlay && isMountedRef.current) {
 				try {
-					if (player.playing) player.pause()
+					if ((player as any)?.playing) player.pause()
 				} catch {}
 			}
 		}, [autoPlay, player])
@@ -207,7 +217,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 
 		const toggle = useCallback(() => {
 			try {
-				if (player.playing) {
+				if ((player as any)?.playing) {
 					player.pause()
 				} else {
 					const p: any = player.play()
@@ -239,11 +249,10 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		}
 
 		return (
-			<View style={[styles.container, style]} testID={testID} accessibilityLabel={accessibilityLabel}>
-				<VideoErrorBoundary key={source}>
+			<View style={[styles.container, style]} testID={testID} accessibilityLabel={accessibilityLabel} collapsable={false}>
+				<VideoErrorBoundary>
 					<VideoView
 						surfaceType="textureView"
-						key={source}
 						player={player}
 						style={StyleSheet.absoluteFill}
 						contentFit={contentFit}

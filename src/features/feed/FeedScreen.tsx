@@ -45,7 +45,6 @@ export default function FeedScreen() {
 
 	// ── Data state ──
 	const [feedItems, setFeedItems] = useState<FeedItem[]>([])
-	const [displayedItems, setDisplayedItems] = useState<FeedItem[]>([])
 	const [cart, setCart] = useState<CartItem[]>([])
 	const [isScannerVisible, setIsScannerVisible] = useState(false)
 	const [restorePending, setRestorePending] = useState(false)
@@ -64,36 +63,53 @@ export default function FeedScreen() {
 	const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set())
 	const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
 	const [focusedId, setFocusedId] = useState<string | null>(null)
+
+	// Helper function to check if item has video media - memoized to avoid recreation
+	const hasVideoMedia = useCallback((item: FeedItem): boolean => {
+		const m: any = item.media
+		return (
+			m?.thumbnail?.resource_type === 'video' ||
+			m?.thumbnail?.mimetype?.startsWith('video/') ||
+			(Array.isArray(m?.gallery) && m.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/')))
+		)
+	}, [])
+
+	// Helper function to get item ID - memoized to avoid recreation
+	const getItemId = useCallback((item: FeedItem): string => item._id || (item as any).slug, [])
+
 	const onViewableItemsChanged = useCallback(
 		({ viewableItems }: { viewableItems: Array<{ item: FeedItem; isViewable: boolean }> }) => {
-			const ids = viewableItems.filter((v) => v.isViewable).map((v) => v.item._id || (v.item as any).slug)
+			const viewable = viewableItems.filter((v) => v.isViewable)
+			const ids = viewable.map((v) => getItemId(v.item))
+
+			// Batch state updates to prevent multiple re-renders
+			let newFocusedId: string | null = null
+			let newActiveVideoId: string | null = null
+
+			// In-focus card is the first viewable item
+			if (viewable.length > 0) {
+				newFocusedId = getItemId(viewable[0].item)
+				// Only the most visible video card gets video playback
+				const firstVisibleWithMedia = viewable.find((v) => v.isViewable && hasVideoMedia(v.item))
+				if (firstVisibleWithMedia) {
+					newActiveVideoId = getItemId(firstVisibleWithMedia.item)
+				}
+			}
+
+			// Check if previously active video is still visible
+			if (ids.length > 0 && activeVideoId) {
+				const stillVisible = viewable.some((v) => getItemId(v.item) === activeVideoId)
+				if (!stillVisible && newActiveVideoId === null) {
+					newActiveVideoId = null
+				}
+			}
+
+			// Batch update all states at once
 			setVisibleIds(new Set(ids))
-			// In-focus card is the first viewable item (most visible, sorted by viewability) — only it auto-advances
-			const firstViewable = viewableItems.find((v) => v.isViewable)
-			if (firstViewable) {
-				setFocusedId(firstViewable.item._id || (firstViewable.item as any).slug)
-			} else if (ids.length === 0) {
-				setFocusedId(null)
-			}
-			// Only the most visible video card gets video playback
-			const firstVisibleWithMedia = viewableItems.find((v) => {
-				const m: any = v.item.media
-				const hasVideo =
-					m?.thumbnail?.resource_type === 'video' ||
-					m?.thumbnail?.mimetype?.startsWith('video/') ||
-					(Array.isArray(m?.gallery) && m.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/')))
-				return v.isViewable && hasVideo
-			})
-			if (firstVisibleWithMedia) {
-				setActiveVideoId(firstVisibleWithMedia.item._id || (firstVisibleWithMedia.item as any).slug)
-			} else if (ids.length === 0) {
-				setActiveVideoId(null)
-			} else if (viewableItems.length > 0) {
-				const stillVisible = viewableItems.some((v) => (v.item._id || (v.item as any).slug) === activeVideoId)
-				if (!stillVisible) setActiveVideoId(null)
-			}
+			setFocusedId(newFocusedId)
+			setActiveVideoId(newActiveVideoId)
 		},
-		[activeVideoId]
+		[activeVideoId, hasVideoMedia, getItemId]
 	)
 	const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 60, minimumViewTime: 300 }), [])
 
@@ -126,7 +142,6 @@ export default function FeedScreen() {
 	useEffect(() => {
 		const products = feedItemsFromCache.filter(isProductCard)
 		setFeedItems(products)
-		setDisplayedItems(products)
 		if (products.length > 0) {
 			// Mark first 3 items as visible by default so their videos autoplay without waiting for onViewableItemsChanged
 			setVisibleIds(new Set(products.slice(0, 3).map((p) => p._id || (p as any).slug)))
@@ -142,7 +157,6 @@ export default function FeedScreen() {
 			if (firstWithVideo) setActiveVideoId((firstWithVideo as any)._id || (firstWithVideo as any).slug)
 			enrichFeedContacts(products, (enriched) => {
 				setFeedItems(enriched)
-				setDisplayedItems(enriched)
 			})
 		}
 	}, [feedItemsFromCache, isProductCard])
@@ -167,11 +181,9 @@ export default function FeedScreen() {
 					const updated = [...prev, ...productNewItems]
 					enrichFeedContacts(updated, (enriched) => {
 						setFeedItems(enriched)
-						setDisplayedItems(enriched)
 					})
 					return updated
 				})
-				setDisplayedItems((prev) => [...prev, ...productNewItems])
 			} catch (err) {
 				logError(err, 'fetchMoreFeed')
 				// Never clear cached feed because of a network failure.
@@ -202,7 +214,7 @@ export default function FeedScreen() {
 	)
 
 	useEffect(() => {
-		if (!isInitialLoading && displayedItems.length > 0 && restorePending) {
+		if (!isInitialLoading && feedItems.length > 0 && restorePending) {
 			setRestorePending(false)
 			const offset = savedScrollOffsets.get(selectedFilter) || 0
 			if (offset > 0) {
@@ -216,7 +228,7 @@ export default function FeedScreen() {
 				})
 			}
 		}
-	}, [isInitialLoading, displayedItems.length, selectedFilter, restorePending])
+	}, [isInitialLoading, feedItems.length, selectedFilter, restorePending])
 
 	// ── Refresh ──
 	const refreshData = useCallback(async () => {
@@ -280,11 +292,11 @@ export default function FeedScreen() {
 	)
 
 	const renderEmpty = useCallback(() => {
-		if (isOffline && displayedItems.length === 0) {
+		if (isOffline && feedItems.length === 0) {
 			return <ErrorBlock />
 		}
 		return <EmptyState style={styles.emptyWrap} />
-	}, [isOffline, displayedItems.length])
+	}, [isOffline, feedItems.length])
 
 	// ── Header Actions (reusable & zero layout shift) ──
 	const headerOptions = useMemo(
@@ -308,7 +320,7 @@ export default function FeedScreen() {
 		<View style={[styles.root, { backgroundColor: colors.background }]}>
 			<Tabs.Screen options={headerOptions as any} />
 
-			{isInitialLoading || (isRefreshing && displayedItems.length === 0) ? (
+			{isInitialLoading || (isRefreshing && feedItems.length === 0) ? (
 				<Spinner />
 			) : (
 				<VisibleIdsContext.Provider value={visibleIds}>
@@ -318,16 +330,13 @@ export default function FeedScreen() {
 								<SmartHeader.FlashList
 									ref={listRef}
 									style={{ backgroundColor: 'transparent' }}
-									data={displayedItems}
+									data={feedItems}
 									renderItem={renderItem}
 									numColumns={numColumns}
 									estimatedItemSize={380}
+									removeClippedSubviews={false}
 									keyExtractor={(item: FeedItem) => item.slug || item._id}
-									contentContainerStyle={[
-										styles.listContent,
-										{ paddingHorizontal: padding, paddingBottom: 120 + insets.bottom },
-										displayedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
-									]}
+									contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, feedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
 									ListEmptyComponent={renderEmpty}
 									refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
 									showsVerticalScrollIndicator={false}

@@ -89,8 +89,8 @@ const SmartMediaCarouselComponent = ({
 	// Once a user manually selects a thumbnail, autoplay is permanently stopped (except for the tapped video).
 	// Auto-play/advance is strictly limited to the focused+visible card — non-focused cards never autoplay or auto-advance.
 	const autoPlayStoppedRef = useRef(false)
-	const canAutoPlay = autoPlay && isVisible && !autoPlayStoppedRef.current
-	const canAdvance = canAutoPlay && items.length > 1
+	const canAutoPlay = useMemo(() => autoPlay && isVisible && !autoPlayStoppedRef.current, [autoPlay, isVisible])
+	const canAdvance = useMemo(() => canAutoPlay && items.length > 1, [canAutoPlay, items.length])
 
 	// Reset the active index when the media set changes.
 	useEffect(() => {
@@ -100,9 +100,9 @@ const SmartMediaCarouselComponent = ({
 	}, [media])
 
 	const activeItem = items[activeIndex] ?? null
-	const activeIsVideo = isVideoMedia(activeItem)
-	const shouldAutoPlayVideo = activeIsVideo && (canAutoPlay || (isVisible && manualPlayIndex === activeIndex))
-	const shouldLoopSingleVideo = items.length === 1 && activeIsVideo && canAutoPlay
+	const activeIsVideo = useMemo(() => isVideoMedia(activeItem), [activeItem])
+	const shouldAutoPlayVideo = useMemo(() => activeIsVideo && (canAutoPlay || (isVisible && manualPlayIndex === activeIndex)), [activeIsVideo, canAutoPlay, isVisible, manualPlayIndex])
+	const shouldLoopSingleVideo = useMemo(() => items.length === 1 && activeIsVideo && canAutoPlay, [items.length, activeIsVideo, canAutoPlay])
 
 	// Advance to the next item (wraps around).
 	const advanceToNext = useCallback(() => {
@@ -135,7 +135,7 @@ const SmartMediaCarouselComponent = ({
 			setActiveIndex(index)
 			onIndexChange?.(index)
 		},
-		[onIndexChange, items]
+		[onIndexChange]
 	)
 
 	if (items.length === 0) {
@@ -147,8 +147,8 @@ const SmartMediaCarouselComponent = ({
 	}
 
 	return (
-		<View style={[styles.container, overlayThumbnails && styles.containerOverlay, style]} accessibilityLabel={accessibilityLabel} pointerEvents={overlayThumbnails ? 'box-none' : 'auto'}>
-			<View style={[styles.preview, overlayThumbnails && styles.previewOverlay, previewStyle]} pointerEvents={manualPlayIndex === activeIndex && activeIsVideo ? 'auto' : 'none'}>
+		<View style={[styles.container, overlayThumbnails && styles.containerOverlay, style, { pointerEvents: overlayThumbnails ? 'box-none' : 'auto' }]} accessibilityLabel={accessibilityLabel}>
+			<View style={[styles.preview, overlayThumbnails && styles.previewOverlay, previewStyle, { pointerEvents: manualPlayIndex === activeIndex && activeIsVideo ? 'auto' : 'none' }]}>
 				<SmartMediaView
 					media={activeItem}
 					contentFit={contentFit}
@@ -185,7 +185,7 @@ const SmartMediaCarouselComponent = ({
 										<Ionicons name="play-circle" size={24} color={themeColors.background} style={styles.videoThumbIcon} />
 									</View>
 								) : (
-									<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} usePlaybackUrl={false} controls={false} />
+									<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} usePlaybackUrl={false} controls={false} isVisible={isVisible} />
 								)}
 							</TouchableOpacity>
 						)

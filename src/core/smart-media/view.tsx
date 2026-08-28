@@ -94,10 +94,13 @@ const SmartMediaViewComponent = ({
 	const [isCacheChecked, setIsCacheChecked] = useState(false)
 	const [hasVideoStarted, setHasVideoStarted] = useState(false)
 
+	// Cache media ID to avoid expensive string operations
+	const mediaId = useMemo(() => (typeof media === 'object' && media?._id ? media._id : null), [media])
+
 	// Check for locally cached MP4 first — like UPDATES_FOLDER for APKs, VIDEOS_FOLDER for videos
 	// Only check when visible to avoid FileSystem thrash for off-screen cards
 	useEffect(() => {
-		if (!isVisible || !isVideo || typeof media !== 'object' || !media?._id) {
+		if (!isVisible || !isVideo || !mediaId) {
 			if (!isVideo) setIsCacheChecked(true)
 			// For video when not visible, keep previous cached value but mark checked to avoid spinner
 			if (!isVisible && isVideo) setIsCacheChecked(true)
@@ -115,16 +118,16 @@ const SmartMediaViewComponent = ({
 		return () => {
 			cancelled = true
 		}
-	}, [media, isVideo, isVisible])
+	}, [mediaId, isVideo, isVisible])
 
 	// Prefetch the MP4 in background for next offline play (secure_url → VIDEOS_FOLDER) — only when visible
 	useEffect(() => {
-		if (!isVisible || !isVideo || typeof media !== 'object' || !media?._id || cachedVideoUri) return
+		if (!isVisible || !isVideo || !mediaId || cachedVideoUri) return
 		const file: any = media
 		if (file.secure_url || file.url) {
 			prefetchVideoToCache(file)
 		}
-	}, [media, isVideo, isVisible, cachedVideoUri])
+	}, [mediaId, isVideo, isVisible, cachedVideoUri, media])
 
 	const url = useMemo(() => {
 		if (cachedVideoUri) return cachedVideoUri
@@ -282,24 +285,33 @@ const SmartMediaViewComponent = ({
 		)
 	}
 
+	// Keep player mounted for all valid videos (even off-screen, paused) to
+	// avoid mount/unmount churn on scroll which triggers Android
+	// TextureVideoView shared-object race ("Cannot use shared object...").
+	// Visibility/focus only toggles autoPlay (play/pause) via stable player.
+	const shouldMountVideo = isVideo && sourceIsValid && !hasError
+
 	const imageElement = isVideo ? (
 		<View style={[styles.image, dimensionStyle]}>
 			{showVideoPoster && <Image source={videoPosterUrl} style={[StyleSheet.absoluteFill, styles.image]} contentFit="cover" cachePolicy="disk" />}
-			<SmartVideoPlayer
-				key={url as string}
-				source={url as string}
-				style={StyleSheet.absoluteFill}
-				contentFit={resolvedContentFit as any}
-				autoPlay={autoPlay}
-				loop={loop}
-				nativeControls={controls ? nativeControls : false}
-				controls={controls}
-				accessibilityLabel={accessibilityLabel}
-				testID={testID}
-				onPlaybackEnd={onPlaybackEnd}
-				onError={handleVideoError}
-				onPlayingChange={setHasVideoStarted}
-			/>
+			{shouldMountVideo ? (
+				<SmartVideoPlayer
+					source={url as string}
+					style={StyleSheet.absoluteFill}
+					contentFit={resolvedContentFit as any}
+					autoPlay={autoPlay}
+					loop={loop}
+					nativeControls={controls ? nativeControls : false}
+					controls={controls}
+					accessibilityLabel={accessibilityLabel}
+					testID={testID}
+					onPlaybackEnd={onPlaybackEnd}
+					onError={handleVideoError}
+					onPlayingChange={setHasVideoStarted}
+				/>
+			) : videoPosterUrl ? (
+				<Image source={videoPosterUrl} style={[StyleSheet.absoluteFill, styles.image]} contentFit="cover" cachePolicy="disk" />
+			) : null}
 		</View>
 	) : (
 		<>
