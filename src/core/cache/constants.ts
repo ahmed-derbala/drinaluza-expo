@@ -17,6 +17,9 @@ export const PROTECTED_STORAGE_KEYS = SECURE_KEYS
 
 export type ProtectedStorageKey = (typeof PROTECTED_STORAGE_KEYS)[number]
 
+// Memory cache max entries — evicts LRU when exceeded
+export const MEMORY_CACHE_MAX_ENTRIES = 1000
+
 // Video cache thresholds
 export const VIDEO_MIN_COMPLETE_BYTES = 100 * 1024 // 100 KB
 export const VIDEO_SIZE_TOLERANCE = 0.95 // accept 95% of expected size

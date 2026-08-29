@@ -71,7 +71,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		return thumbIsVideo || galleryHasVideo
 	}, [carouselMedia])
 
-	const carouselAutoPlay = isFocused
+	const carouselAutoPlay = isActiveVideo
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)

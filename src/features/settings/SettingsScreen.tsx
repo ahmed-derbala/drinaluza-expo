@@ -6,7 +6,6 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { SmartHeader } from '@/core/smart-header'
 import { CacheDetailsCard, type CacheDetailsCardHandle } from '@/core/cache/CacheDetailsCard'
 import { ResetAppCard } from './ResetAppCard'
-import { triggerGlobalRefresh } from '@/core/cache/useCacheFirst'
 
 export function SettingsScreen() {
 	const { colors } = useTheme()
@@ -20,7 +19,7 @@ export function SettingsScreen() {
 	const handleHeaderRefresh = useCallback(async () => {
 		setIsHeaderRefreshing(true)
 		try {
-			await Promise.all([cacheRef.current?.refresh?.(), triggerGlobalRefresh()])
+			await cacheRef.current?.refresh?.()
 		} finally {
 			setIsHeaderRefreshing(false)
 		}

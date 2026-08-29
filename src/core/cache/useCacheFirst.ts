@@ -155,71 +155,51 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 	}, [cacheKey, ttlMs])
 
 	const fetchFresh = useCallback(async (): Promise<T | undefined> => {
+		// Deduplicate concurrent requests for the same cache key
 		const existing = pendingFetches.get(cacheKey) as Promise<T | undefined> | undefined
 		if (existing) {
-			try {
-				const data = await existing
-				if (data !== undefined && isMountedRef.current) {
-					setFreshData(data)
-				}
-				return data
-			} catch {
-				// The original fetch failed; error state is handled by the initiator
-				return undefined
+			const data = await existing
+			if (data !== undefined && isMountedRef.current) {
+				setFreshData(data)
 			}
+			return data
 		}
-
-		let resolve!: (value: T | undefined) => void
-		const promise = new Promise<T | undefined>((res) => {
-			resolve = res
-		})
-		pendingFetches.set(cacheKey, promise)
 
 		if (isMountedRef.current) {
 			setIsRefreshing(true)
 		}
-		let result: T | undefined
-		let caughtError: unknown = null
-		try {
-			const data = await fetchFnRef.current()
-			if (isMountedRef.current) {
-				setFreshData(data)
-				setHasConnectionError(false)
-			}
-			await setCacheItem(cacheKey, data)
-			onSuccessRef.current?.(data)
-			result = data
-		} catch (error) {
-			caughtError = error
-			if (isMountedRef.current) {
-				const { type } = parseError(error)
-				setHasConnectionError(type === 'network' || type === 'timeout')
-			}
-			onErrorRef.current?.(error)
-		} finally {
-			if (caughtError) {
-				// Keep pending promise rejected so co-waiters know it failed,
-				// but resolve them gracefully via the early-return path above.
-				// We still need to clean up the map.
-				pendingFetches.delete(cacheKey)
-				// Resolve waiters with undefined rather than leaving them hanging
-				resolve(undefined)
-				if (isMountedRef.current) {
-					setIsRefreshing(false)
-				}
-				// Ensure we don't leak unhandled rejection — promise is already consumed via `existing` path only,
-				// so we resolve it instead of rejecting. But if we chose to reject, swallow it.
-				// No-op: we already resolved.
-			} else {
-				resolve(result)
-				pendingFetches.delete(cacheKey)
-				if (isMountedRef.current) {
-					setIsRefreshing(false)
-				}
-			}
-		}
 
-		return result
+		let result: T | undefined
+		const promise = new Promise<T | undefined>((resolve) => {
+			;(async () => {
+				try {
+					const data = await fetchFnRef.current()
+					if (isMountedRef.current) {
+						setFreshData(data)
+						setHasConnectionError(false)
+					}
+					await setCacheItem(cacheKey, data)
+					onSuccessRef.current?.(data)
+					result = data
+					resolve(data)
+				} catch (error) {
+					if (isMountedRef.current) {
+						const { type } = parseError(error)
+						setHasConnectionError(type === 'network' || type === 'timeout')
+					}
+					onErrorRef.current?.(error)
+					resolve(undefined)
+				} finally {
+					pendingFetches.delete(cacheKey)
+					if (isMountedRef.current) {
+						setIsRefreshing(false)
+					}
+				}
+			})()
+		})
+
+		pendingFetches.set(cacheKey, promise)
+		return promise
 	}, [cacheKey])
 
 	const refresh = useCallback(async () => {

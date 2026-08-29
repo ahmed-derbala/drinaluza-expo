@@ -8,7 +8,7 @@
 
 import { getItem, setItem, removeItem, multiRemove, getAllKeys } from '@/core/storage'
 import { log } from '@/core/log'
-import { DEFAULT_CACHE_TTL_MS, PROTECTED_STORAGE_KEYS } from './constants'
+import { DEFAULT_CACHE_TTL_MS, MEMORY_CACHE_MAX_ENTRIES, PROTECTED_STORAGE_KEYS } from './constants'
 
 export interface CacheEntry<T> {
 	data: T
@@ -23,7 +23,21 @@ export interface CacheReadResult<T> {
 
 // In-memory tier: avoids AsyncStorage round-trip for repeat reads within the
 // same app session (e.g. re-mounting a screen already visited).
+// Uses Map insertion order for LRU — get/delete+re-insert moves entry to end.
 const memoryCache = new Map<string, CacheEntry<unknown>>()
+
+/** Evict least-recently-used entries when cache exceeds max size. */
+const evictLRU = (): void => {
+	while (memoryCache.size > MEMORY_CACHE_MAX_ENTRIES) {
+		// First key is the least recently used
+		const oldest = memoryCache.keys().next().value
+		if (oldest !== undefined) {
+			memoryCache.delete(oldest)
+		} else {
+			break
+		}
+	}
+}
 
 /**
  * Store a value in cache with a cachedAt timestamp.
@@ -34,19 +48,31 @@ export const setCacheItem = async <T>(key: string, data: T): Promise<boolean> =>
 		data,
 		cachedAt: Date.now()
 	}
+	// Delete before set to move to end (most recently used)
+	memoryCache.delete(key)
 	memoryCache.set(key, entry as CacheEntry<unknown>)
+	evictLRU()
 	return await setItem(key, entry)
 }
 
 /**
  * Read a cached value. Always returns the cached data if present.
  * `isStale` is true when the entry is older than `ttlMs`.
+ * Accessing an item moves it to the most-recently-used position.
  */
 export const getCacheItem = async <T>(key: string, ttlMs: number = DEFAULT_CACHE_TTL_MS): Promise<CacheReadResult<T> | null> => {
 	const cached = memoryCache.get(key) as CacheEntry<T> | undefined
 	const entry = cached ?? (await getItem<CacheEntry<T>>(key))
 	if (!entry || entry.data === undefined) return null
-	if (!cached) memoryCache.set(key, entry as CacheEntry<unknown>)
+	if (!cached) {
+		// Promote from AsyncStorage into memory
+		memoryCache.set(key, entry as CacheEntry<unknown>)
+		evictLRU()
+	} else {
+		// Move to end (most recently used) by delete + re-insert
+		memoryCache.delete(key)
+		memoryCache.set(key, entry as CacheEntry<unknown>)
+	}
 	return {
 		data: entry.data,
 		cachedAt: entry.cachedAt,
@@ -82,6 +108,7 @@ export const invalidateCache = async (key: string): Promise<boolean> => {
 /**
  * Update a cached resource in-place without clearing the cachedAt timestamp.
  * Use this after local mutations so the UI stays consistent.
+ * Also moves the entry to most-recently-used position.
  */
 export const updateCacheItem = async <T>(key: string, updater: (current: T) => T): Promise<boolean> => {
 	const entry = (memoryCache.get(key) as CacheEntry<T> | undefined) ?? (await getItem<CacheEntry<T>>(key))
@@ -91,7 +118,9 @@ export const updateCacheItem = async <T>(key: string, updater: (current: T) => T
 			data: updater(entry.data),
 			cachedAt: entry.cachedAt
 		}
+		memoryCache.delete(key)
 		memoryCache.set(key, next as CacheEntry<unknown>)
+		evictLRU()
 		return await setItem(key, next)
 	} catch (error) {
 		log({

@@ -37,7 +37,7 @@ export const getDirectoryStats = async (dirUri: string): Promise<DirectoryStats>
 				const info: any = await FileSystem.getInfoAsync(entryUri, { size: true } as any)
 				if (!info.exists) continue
 				if (info.isDirectory) {
-					stack.push(entryUri.endsWith('/') ? `${entryUri}/` : `${entryUri}/`)
+					stack.push(entryUri.endsWith('/') ? entryUri : `${entryUri}/`)
 				} else {
 					count += 1
 					if (typeof info.size === 'number') bytes += info.size
@@ -78,7 +78,8 @@ export const clearDirectory = async (dirUri: string | null | undefined): Promise
 		const files = await FileSystem.readDirectoryAsync(dirUri)
 		for (const file of files) {
 			try {
-				await FileSystem.deleteAsync(dirUri + file, { idempotent: true })
+				const entryUri = dirUri.endsWith('/') ? dirUri + file : `${dirUri}/${file}`
+				await FileSystem.deleteAsync(entryUri, { idempotent: true })
 				removed += 1
 			} catch {}
 		}

@@ -161,6 +161,25 @@ export const getAllKeys = async (): Promise<string[]> => {
 	}
 }
 
+/**
+ * Get the estimated byte size of a stored value without parsing it.
+ * Returns 0 if the key doesn't exist or on error.
+ */
+export const getItemSize = async (key: string): Promise<number> => {
+	try {
+		const raw = await AsyncStorage.getItem(key)
+		if (raw === null) return 0
+		// Use Blob for accurate byte length (handles multi-byte chars)
+		if (typeof Blob !== 'undefined') {
+			return new Blob([raw]).size
+		}
+		// Fallback: approximate string byte length
+		return raw.length * 2
+	} catch {
+		return 0
+	}
+}
+
 // Token management shortcuts
 export const getToken = async (): Promise<string | null> => {
 	return await secureGetItem('authToken')

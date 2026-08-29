@@ -7,7 +7,7 @@ import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { toast } from '@/features/common/Toast'
 import { clearAllCache, isProtectedKey } from '@/core/cache/store'
-import { getAllKeys, getItem } from '@/core/storage'
+import { getAllKeys, getItemSize } from '@/core/storage'
 import { formatBytes } from '@/core/helpers/format'
 import { clearDirectory, getKnownDirectoryStats } from '@/core/cache/filesystem'
 
@@ -82,30 +82,19 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 	const scanCache = useCallback(async () => {
 		setLoading(true)
 		try {
-			// 1) API / Storage cache — parallel fetch of all values
+			// 1) API / Storage cache — parallel fetch of all key sizes
 			const apiPromise = (async (): Promise<Pick<CacheStats, 'apiCount' | 'apiBytes'>> => {
 				const allKeys = await getAllKeys()
 				const cacheKeys = allKeys.filter((key) => !isProtectedKey(key))
 				if (cacheKeys.length === 0) return { apiCount: 0, apiBytes: 0 }
 
-				const entries = await Promise.all(
-					cacheKeys.map(async (key) => {
-						try {
-							const val = await getItem(key)
-							if (val === null || val === undefined) return { exists: false, bytes: 0 }
-							const bytes = typeof val === 'string' ? val.length : JSON.stringify(val).length
-							return { exists: true, bytes }
-						} catch {
-							return { exists: false, bytes: 0 }
-						}
-					})
-				)
+				const sizes = await Promise.all(cacheKeys.map((key) => getItemSize(key)))
 				let apiCount = 0
 				let apiBytes = 0
-				for (const e of entries) {
-					if (e.exists) {
+				for (const size of sizes) {
+					if (size > 0) {
 						apiCount += 1
-						apiBytes += e.bytes
+						apiBytes += size
 					}
 				}
 				return { apiCount, apiBytes }
