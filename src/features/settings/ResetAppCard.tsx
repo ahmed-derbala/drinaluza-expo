@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BaseCard } from '@/features/common/cards/BaseCard'
@@ -8,13 +8,12 @@ import { translate } from '@/core/translation'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import { clearAllStorage } from '@/core/storage'
-import { clearMemoryCache } from '@/core/cache'
-import { clearVideoCache } from '@/core/cache/video'
+import { clearMemoryCache } from '@/core/cache/store'
+import { clearDirectory } from '@/core/cache/filesystem'
 import { useUser } from '@/core/contexts/UserContext'
 import { useRouter } from 'expo-router'
 import { log } from '@/core/log'
 import * as FileSystem from 'expo-file-system/legacy'
-import { Platform } from 'react-native'
 
 export function ResetAppCard() {
 	const { colors } = useTheme()
@@ -22,35 +21,15 @@ export function ResetAppCard() {
 	const router = useRouter()
 	const [loading, setLoading] = useState(false)
 
-	const handleReset = () => {
+	const handleReset = useCallback(() => {
 		showConfirm(translate('reset_app', 'Reset App'), translate('reset_app_confirm', 'Are you sure you want to reset the app? This will clear all data.'), async () => {
 			try {
 				setLoading(true)
 				await clearAllStorage()
 				clearMemoryCache()
-				try {
-					await clearVideoCache()
-				} catch {}
-				if (Platform.OS !== 'web' && FileSystem.cacheDirectory) {
-					try {
-						const files = await FileSystem.readDirectoryAsync(FileSystem.cacheDirectory)
-						for (const file of files) {
-							try {
-								await FileSystem.deleteAsync(FileSystem.cacheDirectory + file, { idempotent: true })
-							} catch {}
-						}
-					} catch {}
-				}
-				if (Platform.OS !== 'web' && FileSystem.documentDirectory) {
-					try {
-						const files = await FileSystem.readDirectoryAsync(FileSystem.documentDirectory)
-						for (const file of files) {
-							try {
-								await FileSystem.deleteAsync(FileSystem.documentDirectory + file, { idempotent: true })
-							} catch {}
-						}
-					} catch {}
-				}
+				// clearAllStorage already wipes AsyncStorage (including video resume keys),
+				// but we also need to wipe the filesystem caches
+				await Promise.all([clearDirectory(FileSystem.cacheDirectory), clearDirectory(FileSystem.documentDirectory)])
 				await refreshUser().catch(() => {})
 				toast.show({
 					title: translate('reset_success', 'App reset successfully.'),
@@ -69,7 +48,7 @@ export function ResetAppCard() {
 				setLoading(false)
 			}
 		})
-	}
+	}, [colors.error, colors.success, refreshUser, router])
 
 	return (
 		<BaseCard title={translate('reset_app', 'Reset App')} iconName="trash-outline" backgroundColor={colors.background} borderColor={colors.error + '30'} style={styles.card}>

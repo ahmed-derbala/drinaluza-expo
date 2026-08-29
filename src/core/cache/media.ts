@@ -2,12 +2,11 @@
  * Media metadata cache helpers.
  */
 
-import { getCacheItem, setCacheItem, invalidateCache } from './index'
+import { getCacheItem, setCacheItem, invalidateCache } from './store'
+import { MEDIA_CACHE_TTL_MS } from './constants'
 import type { MediaFile } from '@/core/smart-media/types'
 
-const CACHE_TTL_MS = 5 * 60 * 1000
-
-const mediaCacheKey = (fileId: string): string => `media:file:${fileId}`
+export const mediaCacheKey = (fileId: string): string => `media:file:${fileId}`
 
 /** Persist a media file (usually right after fetching or uploading it). */
 export const cacheMediaFile = async (file: MediaFile): Promise<boolean> => {
@@ -15,10 +14,10 @@ export const cacheMediaFile = async (file: MediaFile): Promise<boolean> => {
 	return await setCacheItem(mediaCacheKey(file._id), file)
 }
 
-/** Read a media file from the cache. Returns null when missing. */
+/** Read a media file from the cache. Returns null when missing or stale check not needed. */
 export const getCachedMediaFile = async (fileId: string): Promise<MediaFile | null> => {
 	if (!fileId) return null
-	const entry = await getCacheItem<MediaFile>(mediaCacheKey(fileId), CACHE_TTL_MS)
+	const entry = await getCacheItem<MediaFile>(mediaCacheKey(fileId), MEDIA_CACHE_TTL_MS)
 	return entry?.data ?? null
 }
 

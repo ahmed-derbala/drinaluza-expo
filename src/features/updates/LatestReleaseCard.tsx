@@ -13,6 +13,7 @@ import { ShareButton } from '@/features/common/buttons/ShareButton'
 import { CopyUrlButton } from '@/features/common/buttons/CopyUrlButton'
 import { useUpdates } from './useUpdates'
 import { isVersionGreater } from './UpdatesContext'
+import { formatBytes } from '@/core/helpers/format'
 
 const styles = StyleSheet.create({
 	card: {
@@ -136,14 +137,6 @@ const styles = StyleSheet.create({
 		flexShrink: 1
 	}
 })
-
-function formatBytes(bytes: number): string {
-	if (bytes <= 0) return '0 B'
-	const k = 1024
-	const sizes = ['B', 'KB', 'MB', 'GB']
-	const i = Math.floor(Math.log(bytes) / Math.log(k))
-	return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-}
 
 function formatDate(dateStr?: string): string {
 	if (!dateStr) return ''

@@ -4,7 +4,7 @@ import { Platform } from 'react-native'
 import { log } from '@/core/log'
 
 // List of all known secure keys used in the app
-const SECURE_KEYS = ['authToken', 'refreshToken', 'userData', 'user._id', 'user.slug', 'user.settings', 'saved_authentications', 'expoPushToken']
+export const SECURE_KEYS = ['authToken', 'refreshToken', 'userData', 'user._id', 'user.slug', 'user.settings', 'saved_authentications', 'expoPushToken'] as const
 
 // Secure storage functions
 export const secureSetItem = async (key: string, value: string): Promise<boolean> => {

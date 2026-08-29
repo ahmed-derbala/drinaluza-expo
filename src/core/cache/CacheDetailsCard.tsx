@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useImperativeHandle, forwardRef } from 'react'
+import React, { useCallback, useEffect, useState, useImperativeHandle, forwardRef, memo } from 'react'
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as FileSystem from 'expo-file-system/legacy'
@@ -6,8 +6,10 @@ import { BaseCard } from '@/features/common/cards/BaseCard'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { toast } from '@/features/common/Toast'
-import { clearAllCache } from '@/core/cache'
+import { clearAllCache, isProtectedKey } from '@/core/cache/store'
 import { getAllKeys, getItem } from '@/core/storage'
+import { formatBytes } from '@/core/helpers/format'
+import { clearDirectory, getKnownDirectoryStats } from '@/core/cache/filesystem'
 
 export interface CacheDetailsCardProps {
 	onCacheCleared?: () => void
@@ -17,122 +19,118 @@ export interface CacheDetailsCardHandle {
 	refresh: () => Promise<void>
 }
 
-const PROTECTED_KEYS = ['authToken', 'refreshToken', 'userData', 'user._id', 'user.slug', 'user.settings', 'saved_authentications', 'expoPushToken']
-
-const formatBytes = (bytes: number): string => {
-	if (!bytes || bytes <= 0) return '0 B'
-	const k = 1024
-	const sizes = ['B', 'KB', 'MB', 'GB']
-	const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1)
-	const val = bytes / Math.pow(k, i)
-	return `${val.toFixed(val >= 10 || i === 0 ? 0 : 1)} ${sizes[i]}`
+interface CacheStats {
+	apiCount: number
+	apiBytes: number
+	systemCount: number
+	systemBytes: number
+	docCount: number
+	docBytes: number
 }
+
+const INITIAL_STATS: CacheStats = {
+	apiCount: 0,
+	apiBytes: 0,
+	systemCount: 0,
+	systemBytes: 0,
+	docCount: 0,
+	docBytes: 0
+}
+
+interface CacheRowProps {
+	icon: keyof typeof Ionicons.glyphMap
+	iconColor: string
+	iconBg: string
+	title: string
+	subtitle: string
+	disabled: boolean
+	onClear: () => void
+	clearLabel: string
+	hideBorder?: boolean
+}
+
+const CacheRow = memo(function CacheRow({ icon, iconColor, iconBg, title, subtitle, disabled, onClear, clearLabel, hideBorder = false }: CacheRowProps) {
+	const { colors } = useTheme()
+	return (
+		<View style={[styles.cacheRow, { borderBottomColor: colors.border, borderBottomWidth: hideBorder ? 0 : 1 }]}>
+			<View style={[styles.iconWrapper, { backgroundColor: iconBg }]}>
+				<Ionicons name={icon} size={20} color={iconColor} />
+			</View>
+			<View style={styles.rowInfo}>
+				<Text style={[styles.rowTitle, { color: colors.text }]}>{title}</Text>
+				<Text style={[styles.rowSubtitle, { color: colors.textTertiary }]}>{subtitle}</Text>
+			</View>
+			<TouchableOpacity
+				style={[styles.clearRowBtn, { backgroundColor: colors.error + '18', opacity: disabled ? 0.5 : 1 }]}
+				onPress={onClear}
+				disabled={disabled}
+				accessibilityLabel={clearLabel}
+				accessibilityRole="button"
+			>
+				<Ionicons name="trash-outline" size={16} color={disabled ? colors.textTertiary : colors.error} />
+			</TouchableOpacity>
+		</View>
+	)
+})
 
 export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsCardProps>(function CacheDetailsCard({ onCacheCleared }: CacheDetailsCardProps, ref) {
 	const { colors } = useTheme()
 	const [loading, setLoading] = useState(true)
 	const [clearing, setClearing] = useState(false)
-	const [apiCount, setApiCount] = useState(0)
-	const [apiBytes, setApiBytes] = useState(0)
-	const [systemCount, setSystemCount] = useState(0)
-	const [systemBytes, setSystemBytes] = useState(0)
-	const [docCount, setDocCount] = useState(0)
-	const [docBytes, setDocBytes] = useState(0)
-
-	const getDirectoryStats = useCallback(async (dirUri: string): Promise<{ count: number; bytes: number }> => {
-		let count = 0
-		let bytes = 0
-		const stack: string[] = [dirUri]
-		while (stack.length > 0) {
-			const current = stack.pop()!
-			try {
-				const entries = await FileSystem.readDirectoryAsync(current)
-				for (const entry of entries) {
-					const entryUri = current.endsWith('/') ? current + entry : current + '/' + entry
-					try {
-						const info: any = await FileSystem.getInfoAsync(entryUri, { size: true } as any)
-						if (!info.exists) continue
-						if (info.isDirectory) {
-							stack.push(entryUri.endsWith('/') ? entryUri : entryUri + '/')
-						} else {
-							count++
-							if (info.size) bytes += info.size
-						}
-					} catch {}
-				}
-			} catch {}
-		}
-		return { count, bytes }
-	}, [])
+	const [stats, setStats] = useState<CacheStats>(INITIAL_STATS)
 
 	const scanCache = useCallback(async () => {
 		setLoading(true)
 		try {
-			// 1. Scan API / Storage cache
-			let totalApiBytes = 0
-			let count = 0
-			const allKeys = await getAllKeys()
-			const cacheKeys = allKeys.filter((key) => !PROTECTED_KEYS.some((prefix) => key === prefix || key.startsWith(`${prefix}:`)))
+			// 1) API / Storage cache — parallel fetch of all values
+			const apiPromise = (async (): Promise<Pick<CacheStats, 'apiCount' | 'apiBytes'>> => {
+				const allKeys = await getAllKeys()
+				const cacheKeys = allKeys.filter((key) => !isProtectedKey(key))
+				if (cacheKeys.length === 0) return { apiCount: 0, apiBytes: 0 }
 
-			for (const key of cacheKeys) {
-				try {
-					const val = await getItem(key)
-					if (val !== null && val !== undefined) {
-						count++
-						totalApiBytes += typeof val === 'string' ? val.length : JSON.stringify(val).length
+				const entries = await Promise.all(
+					cacheKeys.map(async (key) => {
+						try {
+							const val = await getItem(key)
+							if (val === null || val === undefined) return { exists: false, bytes: 0 }
+							const bytes = typeof val === 'string' ? val.length : JSON.stringify(val).length
+							return { exists: true, bytes }
+						} catch {
+							return { exists: false, bytes: 0 }
+						}
+					})
+				)
+				let apiCount = 0
+				let apiBytes = 0
+				for (const e of entries) {
+					if (e.exists) {
+						apiCount += 1
+						apiBytes += e.bytes
 					}
-				} catch {}
-			}
-			setApiCount(count)
-			setApiBytes(totalApiBytes)
-
-			// 2. Scan entire cacheDirectory (expo-image, tmp, etc.) — on native only
-			if (Platform.OS !== 'web' && FileSystem.cacheDirectory) {
-				try {
-					const info = await FileSystem.getInfoAsync(FileSystem.cacheDirectory)
-					if (info.exists) {
-						const stats = await getDirectoryStats(FileSystem.cacheDirectory)
-						setSystemCount(stats.count)
-						setSystemBytes(stats.bytes)
-					} else {
-						setSystemCount(0)
-						setSystemBytes(0)
-					}
-				} catch {
-					setSystemCount(0)
-					setSystemBytes(0)
 				}
-			} else {
-				setSystemCount(0)
-				setSystemBytes(0)
-			}
+				return { apiCount, apiBytes }
+			})()
 
-			// 3. Scan entire documentDirectory (app files, videos, updates, QR tmp) — on native only
-			if (Platform.OS !== 'web' && FileSystem.documentDirectory) {
-				try {
-					const info = await FileSystem.getInfoAsync(FileSystem.documentDirectory)
-					if (info.exists) {
-						const stats = await getDirectoryStats(FileSystem.documentDirectory)
-						setDocCount(stats.count)
-						setDocBytes(stats.bytes)
-					} else {
-						setDocCount(0)
-						setDocBytes(0)
-					}
-				} catch {
-					setDocCount(0)
-					setDocBytes(0)
-				}
-			} else {
-				setDocCount(0)
-				setDocBytes(0)
-			}
+			// 2) System + Document directories — run in parallel (each already handles web/missing)
+			const systemPromise = getKnownDirectoryStats(FileSystem.cacheDirectory)
+			const docPromise = getKnownDirectoryStats(FileSystem.documentDirectory)
+
+			const [apiStats, systemStats, docStats] = await Promise.all([apiPromise, systemPromise, docPromise])
+
+			setStats({
+				apiCount: apiStats.apiCount,
+				apiBytes: apiStats.apiBytes,
+				systemCount: systemStats.count,
+				systemBytes: systemStats.bytes,
+				docCount: docStats.count,
+				docBytes: docStats.bytes
+			})
 		} catch {
-			// silent fallback
+			// silent fallback — keep previous stats
 		} finally {
 			setLoading(false)
 		}
-	}, [getDirectoryStats])
+	}, [])
 
 	useEffect(() => {
 		scanCache()
@@ -140,99 +138,70 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 
 	useImperativeHandle(ref, () => ({ refresh: scanCache }), [scanCache])
 
-	const handleClearApiCache = async () => {
-		setClearing(true)
-		try {
-			await clearAllCache()
-			toast.show({
-				title: translate('success', 'Success'),
-				content: translate('cache_cleared', 'Cache cleared successfully'),
-				borderColor: colors.success
-			})
-			await scanCache()
-			onCacheCleared?.()
-		} catch {
-			toast.show({
-				title: translate('error', 'Error'),
-				content: 'Failed to clear API cache',
-				borderColor: colors.error
-			})
-		} finally {
-			setClearing(false)
-		}
-	}
-
-	const handleClearSystemCache = async () => {
-		setClearing(true)
-		try {
-			if (Platform.OS !== 'web' && FileSystem.cacheDirectory) {
-				const cacheDir = FileSystem.cacheDirectory
-				try {
-					const files = await FileSystem.readDirectoryAsync(cacheDir)
-					for (const file of files) {
-						try {
-							await FileSystem.deleteAsync(cacheDir + file, { idempotent: true })
-						} catch {}
-					}
-				} catch {}
+	const withClearing = useCallback(
+		async (action: () => Promise<void>, onSuccess: () => void, onError: string) => {
+			setClearing(true)
+			try {
+				await action()
+				toast.show({
+					title: translate('success', 'Success'),
+					content: translate('cache_cleared', 'Cache cleared successfully'),
+					borderColor: colors.success
+				})
+				await scanCache()
+				onSuccess?.()
+			} catch {
+				toast.show({
+					title: translate('error', 'Error'),
+					content: onError,
+					borderColor: colors.error
+				})
+			} finally {
+				setClearing(false)
 			}
-			toast.show({
-				title: translate('success', 'Success'),
-				content: translate('cache_cleared', 'Cache cleared successfully'),
-				borderColor: colors.success
-			})
-			await scanCache()
-			onCacheCleared?.()
-		} catch {
-			toast.show({
-				title: translate('error', 'Error'),
-				content: 'Failed to clear system cache',
-				borderColor: colors.error
-			})
-		} finally {
-			setClearing(false)
-		}
-	}
+		},
+		[colors.error, colors.success, scanCache]
+	)
 
-	const handleClearDocument = async () => {
-		setClearing(true)
-		try {
-			if (Platform.OS !== 'web' && FileSystem.documentDirectory) {
-				const docDir = FileSystem.documentDirectory
-				try {
-					const files = await FileSystem.readDirectoryAsync(docDir)
-					for (const file of files) {
-						try {
-							await FileSystem.deleteAsync(docDir + file, { idempotent: true })
-						} catch {}
-					}
-				} catch {}
-			}
-			toast.show({
-				title: translate('success', 'Success'),
-				content: translate('cache_cleared', 'Cache cleared successfully'),
-				borderColor: colors.success
-			})
-			await scanCache()
-			onCacheCleared?.()
-		} catch {
-			toast.show({
-				title: translate('error', 'Error'),
-				content: 'Failed to clear documents',
-				borderColor: colors.error
-			})
-		} finally {
-			setClearing(false)
-		}
-	}
+	const handleClearApiCache = useCallback(async () => {
+		await withClearing(
+			() => clearAllCache().then(() => {}),
+			() => onCacheCleared?.(),
+			'Failed to clear API cache'
+		)
+	}, [withClearing, onCacheCleared])
 
-	const totalBytes = apiBytes + systemBytes + docBytes
-	const totalItems = apiCount + systemCount + docCount
+	const handleClearSystemCache = useCallback(async () => {
+		await withClearing(
+			async () => {
+				if (Platform.OS !== 'web' && FileSystem.cacheDirectory) {
+					await clearDirectory(FileSystem.cacheDirectory)
+				}
+			},
+			() => onCacheCleared?.(),
+			'Failed to clear system cache'
+		)
+	}, [withClearing, onCacheCleared])
+
+	const handleClearDocument = useCallback(async () => {
+		await withClearing(
+			async () => {
+				if (Platform.OS !== 'web' && FileSystem.documentDirectory) {
+					await clearDirectory(FileSystem.documentDirectory)
+				}
+			},
+			() => onCacheCleared?.(),
+			'Failed to clear documents'
+		)
+	}, [withClearing, onCacheCleared])
+
+	const totalBytes = stats.apiBytes + stats.systemBytes + stats.docBytes
+	const totalItems = stats.apiCount + stats.systemCount + stats.docCount
+	const busy = loading || clearing
 
 	return (
 		<BaseCard title={translate('cache_details', 'Cached Data Details')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
 			<View style={styles.container}>
-				{/* Total summary banner */}
 				<View style={[styles.summaryBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
 					<View style={styles.summaryLeft}>
 						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{translate('total_cache_size', 'Total Cache Size')}</Text>
@@ -245,70 +214,38 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 					</View>
 				</View>
 
-				{/* Breakdown items */}
 				<View style={styles.breakdownList}>
-					{/* API & Data Cache */}
-					<View style={[styles.cacheRow, { borderBottomColor: colors.border }]}>
-						<View style={[styles.iconWrapper, { backgroundColor: colors.primary + '18' }]}>
-							<Ionicons name="documents-outline" size={20} color={colors.primary} />
-						</View>
-						<View style={styles.rowInfo}>
-							<Text style={[styles.rowTitle, { color: colors.text }]}>{translate('api_cache', 'API & Data Cache')}</Text>
-							<Text style={[styles.rowSubtitle, { color: colors.textTertiary }]}>
-								{apiCount} {translate('cached_entries', 'Cached Entries')} • {formatBytes(apiBytes)}
-							</Text>
-						</View>
-						<TouchableOpacity
-							style={[styles.clearRowBtn, { backgroundColor: colors.error + '18' }]}
-							onPress={handleClearApiCache}
-							disabled={loading || clearing || apiCount === 0}
-							accessibilityLabel={translate('clear_api_cache', 'Clear API Cache')}
-						>
-							<Ionicons name="trash-outline" size={16} color={apiCount > 0 ? colors.error : colors.textTertiary} />
-						</TouchableOpacity>
-					</View>
-
-					{/* Cache Directory (FileSystem.cacheDirectory — entire) */}
-					<View style={[styles.cacheRow, { borderBottomColor: colors.border }]}>
-						<View style={[styles.iconWrapper, { backgroundColor: colors.warning + '18' }]}>
-							<Ionicons name="folder-open-outline" size={20} color={colors.warning} />
-						</View>
-						<View style={styles.rowInfo}>
-							<Text style={[styles.rowTitle, { color: colors.text }]}>{translate('cache_directory', 'Cache Directory')}</Text>
-							<Text style={[styles.rowSubtitle, { color: colors.textTertiary }]}>
-								{systemCount} {translate('cached_files', 'Cached Files')} • {formatBytes(systemBytes)}
-							</Text>
-						</View>
-						<TouchableOpacity
-							style={[styles.clearRowBtn, { backgroundColor: colors.error + '18' }]}
-							onPress={handleClearSystemCache}
-							disabled={loading || clearing || systemCount === 0}
-							accessibilityLabel={translate('clear_system_cache', 'Clear Cache Directory')}
-						>
-							<Ionicons name="trash-outline" size={16} color={systemCount > 0 ? colors.error : colors.textTertiary} />
-						</TouchableOpacity>
-					</View>
-
-					{/* Document Directory (FileSystem.documentDirectory — entire) */}
-					<View style={styles.cacheRow}>
-						<View style={[styles.iconWrapper, { backgroundColor: colors.success + '18' }]}>
-							<Ionicons name="document-text-outline" size={20} color={colors.success} />
-						</View>
-						<View style={styles.rowInfo}>
-							<Text style={[styles.rowTitle, { color: colors.text }]}>{translate('document_directory', 'Document Directory')}</Text>
-							<Text style={[styles.rowSubtitle, { color: colors.textTertiary }]}>
-								{docCount} {translate('cached_files', 'Cached Files')} • {formatBytes(docBytes)}
-							</Text>
-						</View>
-						<TouchableOpacity
-							style={[styles.clearRowBtn, { backgroundColor: colors.error + '18' }]}
-							onPress={handleClearDocument}
-							disabled={loading || clearing || docCount === 0}
-							accessibilityLabel={translate('clear_document_cache', 'Clear Document Directory')}
-						>
-							<Ionicons name="trash-outline" size={16} color={docCount > 0 ? colors.error : colors.textTertiary} />
-						</TouchableOpacity>
-					</View>
+					<CacheRow
+						icon="documents-outline"
+						iconColor={colors.primary}
+						iconBg={colors.primary + '18'}
+						title={translate('api_cache', 'API & Data Cache')}
+						subtitle={`${stats.apiCount} ${translate('cached_entries', 'Cached Entries')} • ${formatBytes(stats.apiBytes)}`}
+						disabled={busy || stats.apiCount === 0}
+						onClear={handleClearApiCache}
+						clearLabel={translate('clear_api_cache', 'Clear API Cache')}
+					/>
+					<CacheRow
+						icon="folder-open-outline"
+						iconColor={colors.warning}
+						iconBg={colors.warning + '18'}
+						title={translate('cache_directory', 'Cache Directory')}
+						subtitle={`${stats.systemCount} ${translate('cached_files', 'Cached Files')} • ${formatBytes(stats.systemBytes)}`}
+						disabled={busy || stats.systemCount === 0}
+						onClear={handleClearSystemCache}
+						clearLabel={translate('clear_system_cache', 'Clear Cache Directory')}
+					/>
+					<CacheRow
+						icon="document-text-outline"
+						iconColor={colors.success}
+						iconBg={colors.success + '18'}
+						title={translate('document_directory', 'Document Directory')}
+						subtitle={`${stats.docCount} ${translate('cached_files', 'Cached Files')} • ${formatBytes(stats.docBytes)}`}
+						disabled={busy || stats.docCount === 0}
+						onClear={handleClearDocument}
+						clearLabel={translate('clear_document_cache', 'Clear Document Directory')}
+						hideBorder
+					/>
 				</View>
 			</View>
 		</BaseCard>
