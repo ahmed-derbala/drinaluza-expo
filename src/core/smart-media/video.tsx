@@ -3,12 +3,43 @@
  */
 
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react'
-import { StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
+import { Platform, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { useEventListener } from 'expo'
 import { VideoView, createVideoPlayer, type VideoPlayer, type VideoPlayerStatus } from 'expo-video'
 import { Ionicons } from '@expo/vector-icons'
 import Spinner from '@/features/common/Spinner'
 import { themeColors } from '@/core/theme'
+
+// ── Web: suppress noisy AbortError from interrupted play() ─────────────────
+// On web, HTMLMediaElement.play() rejects with AbortError when pause() or
+// a new load (replace) interrupts it (rapid scroll in feed). This is expected
+// and should not surface as "Web ERROR". Filter it globally once.
+if (Platform.OS === 'web' && typeof window !== 'undefined' && !(window as any).__videoAbortHandlerInstalled) {
+	;(window as any).__videoAbortHandlerInstalled = true
+	window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+		const reason: any = (event as any).reason
+		const msg = String(reason?.message || reason || '')
+		const name = String(reason?.name || '')
+		if (name === 'AbortError' || msg.includes('interrupted') || msg.includes('play() request was interrupted')) {
+			event.preventDefault()
+		}
+	})
+	// Also filter console.error spam from expo-video's web impl
+	const origError = console.error
+	console.error = (...args: any[]) => {
+		const first = String(args[0] ?? '')
+		if (first.includes('AbortError') || first.includes('play() request was interrupted') || first.includes('interrupted by a call to pause') || first.includes('interrupted by a new load')) {
+			return
+		}
+		origError(...args)
+	}
+}
+
+const isAbortError = (e: any): boolean => {
+	const name = String(e?.name || '')
+	const msg = String(e?.message || e || '')
+	return name === 'AbortError' || msg.includes('interrupted') || msg.includes('play() request was interrupted')
+}
 
 export type VideoContentFit = 'cover' | 'contain' | 'fill'
 
@@ -96,13 +127,53 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		const [playing, setPlaying] = useState(autoPlay)
 		const isMountedRef = React.useRef(true)
 		const prevSourceRef = React.useRef(source)
+		const pendingPlayRef = React.useRef<Promise<any> | null>(null)
+
+		const safePlay = useCallback(() => {
+			try {
+				const p: any = player.play()
+				if (p && typeof p.catch === 'function') {
+					pendingPlayRef.current = p
+					p.catch((e: any) => {
+						if (!isAbortError(e)) {
+							// Non-abort errors are real — keep default handling
+						}
+					}).finally(() => {
+						if (pendingPlayRef.current === p) pendingPlayRef.current = null
+					})
+				}
+			} catch (e: any) {
+				if (!isAbortError(e)) throw e
+			}
+		}, [player])
+
+		const safePause = useCallback(() => {
+			try {
+				const pending = pendingPlayRef.current
+				if (pending) {
+					pending
+						.catch(() => {})
+						.finally(() => {
+							try {
+								if (isMountedRef.current && (player as any)?.playing) player.pause()
+							} catch {}
+						})
+					// Also attempt immediate pause as fallback for native where pending is null
+					try {
+						if ((player as any)?.playing) player.pause()
+					} catch {}
+				} else {
+					if ((player as any)?.playing) player.pause()
+				}
+			} catch {}
+		}, [player])
 
 		useEffect(() => {
 			isMountedRef.current = true
 			return () => {
 				isMountedRef.current = false
 				try {
-					if ((player as any)?.playing) player.pause()
+					safePause()
 				} catch {}
 				// Defer release to allow native Android view teardown to complete cleanly
 				// and prevent "Cannot use shared object that was already released" crashes.
@@ -114,7 +185,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 					} catch {}
 				}, 1000)
 			}
-		}, [player])
+		}, [player, safePause])
 
 		// Load/replace source on the stable player when source prop changes.
 		useEffect(() => {
@@ -124,6 +195,14 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			let cancelled = false
 			;(async () => {
 				try {
+					if (cancelled || !isMountedRef.current) return
+					// Pause any pending play before a new load — prevents
+					// "interrupted by a new load request" AbortError on web.
+					try {
+						safePause()
+						// Give the pending play promise a tick to settle
+						await new Promise((r) => setTimeout(r, 0))
+					} catch {}
 					if (cancelled || !isMountedRef.current) return
 					const p: any = player as any
 					if (typeof p.replaceAsync === 'function') {
@@ -143,7 +222,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			return () => {
 				cancelled = true
 			}
-		}, [source, player, loop, controls, autoPlay])
+		}, [source, player, loop, controls, autoPlay, safePause])
 
 		useEventListener(player, 'statusChange', ({ status: nextStatus }) => {
 			if (!isMountedRef.current) return
@@ -176,21 +255,18 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			try {
 				// Always mute for autoplay to satisfy web/iOS autoplay policies
 				player.muted = true
-				const playPromise: any = player.play()
-				if (playPromise && typeof playPromise.catch === 'function') {
-					playPromise.catch(() => {})
-				}
+				safePlay()
 			} catch {}
-		}, [autoPlay, status, player])
+		}, [autoPlay, status, player, safePlay])
 
 		// Pause when autoPlay becomes false (card scrolled off-screen or not focused) — prevents bleed
+		// Uses safePause which waits for any pending play() promise to settle first,
+		// avoiding "play() request was interrupted by a call to pause()" on web.
 		useEffect(() => {
 			if (!autoPlay && isMountedRef.current) {
-				try {
-					if ((player as any)?.playing) player.pause()
-				} catch {}
+				safePause()
 			}
-		}, [autoPlay, player])
+		}, [autoPlay, player, safePause])
 
 		useEffect(() => {
 			try {
@@ -209,40 +285,47 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 		}, [player, controls])
 
 		const play = useCallback(() => {
-			try {
-				const p: any = player.play()
-				if (p && typeof p.catch === 'function') p.catch(() => {})
-			} catch {}
-		}, [player])
+			safePlay()
+		}, [safePlay])
 
 		const pause = useCallback(() => {
-			try {
-				player.pause()
-			} catch {}
-		}, [player])
+			safePause()
+		}, [safePause])
 
 		const resume = useCallback(() => {
-			try {
-				const p: any = player.play()
-				if (p && typeof p.catch === 'function') p.catch(() => {})
-			} catch {}
-		}, [player])
+			safePlay()
+		}, [safePlay])
 
 		const toggle = useCallback(() => {
 			try {
 				if ((player as any)?.playing) {
-					player.pause()
+					safePause()
 				} else {
-					const p: any = player.play()
-					if (p && typeof p.catch === 'function') p.catch(() => {})
+					safePlay()
 				}
 			} catch {}
-		}, [player])
+		}, [safePause, safePlay])
 
 		useImperativeHandle(ref, () => ({ play, pause, resume, toggle }), [play, pause, resume, toggle])
 
-		const isLoading = status === 'loading' || status === 'idle'
-		const hasError = status === 'error'
+		const [loadTimedOut, setLoadTimedOut] = useState(false)
+		useEffect(() => {
+			const loading = status === 'loading' || status === 'idle'
+			if (!loading) {
+				setLoadTimedOut(false)
+				return
+			}
+			const timer = setTimeout(() => {
+				setLoadTimedOut(true)
+				try {
+					onError?.()
+				} catch {}
+			}, 12_000)
+			return () => clearTimeout(timer)
+		}, [status, onError])
+
+		const isLoading = (status === 'loading' || status === 'idle') && !loadTimedOut
+		const hasError = status === 'error' || loadTimedOut
 
 		const playbackOverlay = useMemo(() => {
 			if (!controls || nativeControls || hasError) return null

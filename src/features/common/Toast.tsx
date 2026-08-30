@@ -61,9 +61,20 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 			try {
 				if (player) {
-					player.play()
+					const p: any = player.play?.()
+					if (p && typeof p.catch === 'function') {
+						p.catch((e: any) => {
+							const name = String(e?.name || '')
+							const msg = String(e?.message || e || '')
+							if (name === 'AbortError' || msg.includes('interrupted')) return
+							console.error('Failed to play toast sound:', e)
+						})
+					}
 				}
-			} catch (error) {
+			} catch (error: any) {
+				const name = String(error?.name || '')
+				const msg = String(error?.message || error || '')
+				if (name === 'AbortError' || msg.includes('interrupted')) return
 				console.error('Failed to play toast sound:', error)
 			}
 

@@ -60,6 +60,7 @@ import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import { log } from '@/core/log'
+import { deferStartup } from '@/core/helpers/defer'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 // Module-level flag — survives component remounts (e.g. user switch)
@@ -136,7 +137,12 @@ function RootLayoutContent() {
 			}
 		}
 
-		performStartupCheck()
+		// Defer update check so feed paints first — cached feed has priority
+		// Low priority: 2500ms after idle, avoids blocking initial navigation & cache read
+		const cancel = deferStartup.low(() => {
+			performStartupCheck()
+		})
+		return cancel
 	}, [checkForUpdates, refreshApkList, router])
 
 	const closeWebUpdateModal = async () => {
@@ -146,14 +152,15 @@ function RootLayoutContent() {
 		setWebUpdateModal(null)
 	}
 
-	if (loading) {
-		return <Spinner />
-	}
-
 	const isAuthenticated = !!user
 	const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
 
+	// Prioritize feed display: only block restricted routes while user is still loading.
+	// Public routes (/feed, /search, /auth, etc.) render immediately with cached data.
 	if (isRestrictedRoute) {
+		if (loading) {
+			return <Spinner />
+		}
 		if (!isAuthenticated) {
 			return <Redirect href="/auth" />
 		}

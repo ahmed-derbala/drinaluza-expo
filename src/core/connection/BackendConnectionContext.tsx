@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { ConnectionService, BackendState } from './ConnectionService'
+import { deferStartup } from '@/core/helpers/defer'
 
 interface BackendConnectionContextType {
 	backendState: BackendState
@@ -19,14 +20,22 @@ export const BackendConnectionProvider: React.FC<{ children: React.ReactNode }> 
 	const [backendState, setBackendState] = useState<BackendState>(ConnectionService.getBackendState())
 
 	useEffect(() => {
-		// Only ever runs on the client (effects don't run during web static
-		// prerendering), so this is the safe place to open the public socket.
-		ConnectionService.init()
-
+		// Subscribe immediately so state updates are not missed, but defer
+		// opening the public socket until after feed paints.
 		const unsubscribe = ConnectionService.subscribe((nextState) => {
 			setBackendState(nextState)
 		})
-		return unsubscribe
+
+		// Defer WebSocket handshake — not needed for cached feed render
+		const cancel = deferStartup.normal(() => {
+			// Only ever runs on the client (effects don't run during web static prerendering)
+			ConnectionService.init()
+		})
+
+		return () => {
+			cancel()
+			unsubscribe()
+		}
 	}, [])
 
 	const value = useMemo(

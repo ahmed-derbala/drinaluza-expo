@@ -39,9 +39,9 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 
 	// Memoize item ID to avoid repeated object property access
 	const itemId = useMemo(() => item._id || (item as any).slug, [item._id, (item as any).slug])
-	const isVisible = useMemo(() => visibleIds.has(itemId), [visibleIds, itemId])
-	const isActiveVideo = useMemo(() => activeVideoId === itemId, [activeVideoId, itemId])
 	const isFocused = useMemo(() => focusedId === itemId, [focusedId, itemId])
+	const isVisible = useMemo(() => visibleIds.has(itemId) || isFocused, [visibleIds, itemId, isFocused])
+	const isActiveVideo = useMemo(() => activeVideoId === itemId, [activeVideoId, itemId])
 
 	const carouselMedia = useMemo<MediaField | null>(() => {
 		const rawMedia = (item as any).media as MediaField | null | undefined
@@ -71,7 +71,10 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		return thumbIsVideo || galleryHasVideo
 	}, [carouselMedia])
 
-	const carouselAutoPlay = isActiveVideo
+	// Only the focused card should auto-play / auto-advance. Using isFocused
+	// ensures a card that loses focus immediately stops its carousel timer
+	// and its video is paused via autoPlay:false → safePause.
+	const carouselAutoPlay = isFocused
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
@@ -155,7 +158,8 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		[cartDisabled, addToCart, item, quantity]
 	)
 
-	// Focus card on mouse hover or finger touch
+	// Focus card on hover/touch — only the focused card should autoplay/advance.
+	// Keep activeVideoId in sync with focused for video cards so only one plays.
 	const handleFocusTrigger = useCallback(() => {
 		if (focusedId !== itemId) {
 			setFocusedId(itemId)
@@ -170,10 +174,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 			style={[styles.card, style, { backgroundColor: colors.background, borderColor: isFocused ? colors.focus : colors.border, borderWidth: isFocused ? 2 : 1 }]}
 			testID={`feed-product-card-${itemId}`}
 			onPointerEnter={handleFocusTrigger}
-			onPointerMove={handleFocusTrigger}
 			onTouchStart={handleFocusTrigger}
-			onPointerDown={handleFocusTrigger}
-			{...({ onMouseEnter: handleFocusTrigger } as any)}
 		>
 			{/* Background media — video is background of host card only (no controls, no fullscreen) */}
 			<View style={[styles.bgImageContainer, { pointerEvents: 'box-none' as any }]}>

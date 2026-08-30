@@ -6,7 +6,6 @@ import { Platform } from 'react-native'
 import * as FileSystem from 'expo-file-system/legacy'
 import { log } from '@/core/log'
 import type { MediaFile } from '@/core/smart-media/types'
-import { VIDEO_MIN_COMPLETE_BYTES, VIDEO_SIZE_TOLERANCE } from './constants'
 import { ensureDirectory } from './filesystem'
 
 export const VIDEOS_FOLDER = (FileSystem.cacheDirectory || '') + 'videos/'
@@ -20,11 +19,11 @@ export const ensureVideosFolder = async (): Promise<void> => {
 export const sanitizeBaseName = (value: string): string => value.replace(/[^a-zA-Z0-9._-]/g, '_')
 
 export const getVideoFileName = (file: MediaFile): string => {
-	const ext = file.format ? file.format.toLowerCase().replace(/^\./, '') : 'mp4'
+	// Always cache as .mp4 from secure_url — same URL used for play and cache.
 	const rawBase = file._id || file.public_id || file.originalname || 'video'
 	const withoutExt = rawBase.includes('.') && !file._id ? rawBase.replace(/\.[^/.]+$/, '') : rawBase
 	const safeBase = sanitizeBaseName(withoutExt)
-	return `${safeBase}.${ext}`
+	return `${safeBase}.mp4`
 }
 
 export interface FileInfo {
@@ -43,15 +42,11 @@ export const getFileInfo = async (uri: string): Promise<FileInfo | null> => {
 	}
 }
 
-export const isCacheCompleteBySize = async (fileUri: string, expectedSize?: number): Promise<boolean> => {
+export const isCacheCompleteBySize = async (fileUri: string, _expectedSize?: number): Promise<boolean> => {
+	// Size checks removed per product requirement — only existence matters.
+	// .tmp is only deleted when resume fails (see video-download.ts).
 	const info = await getFileInfo(fileUri)
-	if (!info?.exists) return false
-	const size = info.size ?? 0
-	if (size < VIDEO_MIN_COMPLETE_BYTES) return false
-	if (expectedSize && expectedSize > 0) {
-		return size >= expectedSize * VIDEO_SIZE_TOLERANCE
-	}
-	return true
+	return !!info?.exists
 }
 
 export const getCachedVideoUri = async (file: MediaFile): Promise<string | null> => {
@@ -60,11 +55,21 @@ export const getCachedVideoUri = async (file: MediaFile): Promise<string | null>
 	try {
 		const fileName = getVideoFileName(file)
 		const fileUri = VIDEOS_FOLDER + fileName
-		if (await isCacheCompleteBySize(fileUri, file.size)) {
-			return fileUri
-		}
 		const info = await getFileInfo(fileUri)
-		if (info?.exists) await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {})
+		if (!info?.exists) return null
+		// Guard against truncated/corrupt files left by an interrupted
+		// download that was incorrectly moved or by a previous buggy cache
+		// that stored tiny files. Such files cause expo-video to stay in
+		// `loading` forever (spinner indefinite) because the decoder never
+		// reaches ready nor error.
+		if (typeof info.size === 'number' && info.size < 100 * 1024) {
+			log({ level: 'warn', label: 'video-cache', message: 'Cached video too small, treating as miss', data: { fileUri, size: info.size } })
+			try {
+				await FileSystem.deleteAsync(fileUri, { idempotent: true })
+			} catch {}
+			return null
+		}
+		if (info?.exists) return fileUri
 		return null
 	} catch (err) {
 		log({ level: 'warn', label: 'video-cache', message: 'Failed to check cached video', error: err })

@@ -22,7 +22,7 @@ import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
 import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
-import { performVideoCacheStartupCleanup } from '@/core/cache'
+import { markFeedReady } from '@/core/helpers/defer'
 
 // ─── Component ──────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -82,25 +82,17 @@ export default function FeedScreen() {
 			const viewable = viewableItems.filter((v) => v.isViewable)
 			const ids = viewable.map((v) => getItemId(v.item))
 
-			// Batch state updates to prevent multiple re-renders
+			// Only the focused card should auto-play / auto-advance.
+			// When a card loses focus, its carousel must stop and its video must pause
+			// (handled by autoPlay:false → safePause in SmartVideoPlayer).
 			let newFocusedId: string | null = null
 			let newActiveVideoId: string | null = null
 
-			// In-focus card is the first viewable item
 			if (viewable.length > 0) {
-				newFocusedId = getItemId(viewable[0].item)
-				// Only the most visible video card gets video playback
-				const firstVisibleWithMedia = viewable.find((v) => v.isViewable && hasVideoMedia(v.item))
-				if (firstVisibleWithMedia) {
-					newActiveVideoId = getItemId(firstVisibleWithMedia.item)
-				}
-			}
-
-			// Check if previously active video is still visible
-			if (ids.length > 0 && activeVideoId) {
-				const stillVisible = viewable.some((v) => getItemId(v.item) === activeVideoId)
-				if (!stillVisible && newActiveVideoId === null) {
-					newActiveVideoId = null
+				const focusedItem = viewable[0].item
+				newFocusedId = getItemId(focusedItem)
+				if (hasVideoMedia(focusedItem)) {
+					newActiveVideoId = newFocusedId
 				}
 			}
 
@@ -109,7 +101,7 @@ export default function FeedScreen() {
 			setFocusedId(newFocusedId)
 			setActiveVideoId(newActiveVideoId)
 		},
-		[activeVideoId, hasVideoMedia, getItemId]
+		[hasVideoMedia, getItemId]
 	)
 	const viewabilityConfig = useMemo(() => ({ viewAreaCoveragePercentThreshold: 60, minimumViewTime: 300 }), [])
 
@@ -145,16 +137,14 @@ export default function FeedScreen() {
 		if (products.length > 0) {
 			// Mark first 3 items as visible by default so their videos autoplay without waiting for onViewableItemsChanged
 			setVisibleIds(new Set(products.slice(0, 3).map((p) => p._id || (p as any).slug)))
-			setFocusedId(products[0]?._id || (products[0] as any)?.slug || null)
-			const firstWithVideo = products.slice(0, 3).find((p: any) => {
-				const m = p.media
-				return (
-					m?.thumbnail?.resource_type === 'video' ||
-					m?.thumbnail?.mimetype?.startsWith('video/') ||
-					(Array.isArray(m?.gallery) && m.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/')))
-				)
-			})
-			if (firstWithVideo) setActiveVideoId((firstWithVideo as any)._id || (firstWithVideo as any).slug)
+			const firstId = products[0]?._id || (products[0] as any)?.slug || null
+			setFocusedId(firstId)
+			// Only the focused card should autoplay — not the first video among first 3
+			if (firstId && products[0] && hasVideoMedia(products[0] as any)) {
+				setActiveVideoId(firstId)
+			} else {
+				setActiveVideoId(null)
+			}
 			enrichFeedContacts(products, (enriched) => {
 				setFeedItems(enriched)
 			})
@@ -196,8 +186,13 @@ export default function FeedScreen() {
 
 	// ── Effects ──
 	useEffect(() => {
-		performVideoCacheStartupCleanup().catch(() => {})
-	}, [])
+		// Signal that the feed's cache read has finished and the list (or
+		// empty state) has painted. All startup work gated on this via
+		// `deferAfterFeedReady`/`deferStartup` will now be released.
+		if (!isInitialLoading) {
+			markFeedReady()
+		}
+	}, [isInitialLoading])
 
 	useEffect(() => {
 		savedScrollOffsetRef.current = savedScrollOffsets.get(selectedFilter) || 0
@@ -335,7 +330,7 @@ export default function FeedScreen() {
 										renderItem={renderItem}
 										numColumns={numColumns}
 										estimatedItemSize={380}
-										removeClippedSubviews={false}
+										removeClippedSubviews={true}
 										keyExtractor={(item: FeedItem) => item.slug || item._id}
 										contentContainerStyle={[
 											styles.listContent,

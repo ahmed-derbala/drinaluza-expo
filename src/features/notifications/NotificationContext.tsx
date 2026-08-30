@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { getNotifications } from './notifications.api'
 import { log } from '@/core/log'
+import { deferStartup } from '@/core/helpers/defer'
 import { useUser } from '@/core/contexts/UserContext'
 
 const BASE_REFRESH_COOLDOWN_MS = 5000
@@ -66,7 +67,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 	}, [])
 
 	useEffect(() => {
-		refreshNotificationCount()
+		// Defer notification count fetch — not needed for feed paint, and avoids
+		// competing with feed's getFeed for the token/network at startup
+		const cancel = deferStartup.normal(() => {
+			refreshNotificationCount()
+		})
+		return cancel
 	}, [refreshNotificationCount])
 
 	// Reset count immediately when user logs out / switches

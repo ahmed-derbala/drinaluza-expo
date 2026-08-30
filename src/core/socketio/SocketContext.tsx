@@ -7,6 +7,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { toast } from '@/features/common/Toast'
 import { log } from '@/core/log'
+import { deferStartup } from '@/core/helpers/defer'
 import { getToken } from '@/core/storage'
 import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
 import { DashboardProfile } from '@/features/dashboard/dashboard.interface'
@@ -91,10 +92,14 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			currentSocket.on('new_notification', handleNewNotification)
 		}
 
-		setup()
+		// Defer private socket handshake — not critical for feed paint
+		const cancelDefer = deferStartup.normal(() => {
+			if (!cancelled) setup()
+		})
 
 		return () => {
 			cancelled = true
+			cancelDefer()
 			if (currentSocket) {
 				log({ level: 'info', label: 'socket', message: 'Cleaning up notification listener' })
 				currentSocket.off('new_notification', handleNewNotification)

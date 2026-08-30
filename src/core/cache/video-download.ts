@@ -47,8 +47,6 @@ export const cacheVideoFile = async (file: MediaFile, onProgress?: (p: number) =
 			if (await isCacheCompleteBySize(fileUri, file.size)) {
 				return fileUri
 			}
-			const staleInfo = await getFileInfo(fileUri)
-			if (staleInfo?.exists) await FileSystem.deleteAsync(fileUri, { idempotent: true }).catch(() => {})
 
 			const url = file.secure_url || file.url
 			if (!url) return null
@@ -89,52 +87,45 @@ export const cacheVideoFile = async (file: MediaFile, onProgress?: (p: number) =
 				}
 			}
 
-			let downloadResumable: FileSystem.DownloadResumable
-			if (resumeData) {
-				downloadResumable = FileSystem.createDownloadResumable(url, tmpUri, {}, progressCallback, resumeData)
-			} else {
-				downloadResumable = FileSystem.createDownloadResumable(url, tmpUri, {}, progressCallback)
-			}
-			activeDownloads.set(fileId, downloadResumable)
-
-			const result = resumeData ? await downloadResumable.resumeAsync() : await downloadResumable.downloadAsync()
-			activeDownloads.delete(fileId)
-			await removeItem(getResumeKey(fileId)).catch(() => {})
-			await removeItem(getProgressKey(fileId)).catch(() => {})
-			lastProgressPersist.delete(fileId)
-
-			if (!result?.uri) {
-				await FileSystem.deleteAsync(tmpUri, { idempotent: true }).catch(() => {})
-				return null
-			}
-			const status = (result as unknown as { status?: number }).status
-			if (status && status !== 200 && status !== 206) {
-				await FileSystem.deleteAsync(result.uri, { idempotent: true }).catch(() => {})
-				return null
-			}
-			if (!(await isCacheCompleteBySize(result.uri, file.size))) {
-				if (status === 206) {
+			const doDownload = async (useResume: string | null): Promise<string | null> => {
+				const resumable = useResume ? FileSystem.createDownloadResumable(url, tmpUri, {}, progressCallback, useResume) : FileSystem.createDownloadResumable(url, tmpUri, {}, progressCallback)
+				activeDownloads.set(fileId, resumable)
+				try {
+					const result = useResume ? await resumable.resumeAsync() : await resumable.downloadAsync()
+					activeDownloads.delete(fileId)
+					if (!result?.uri) throw new Error('No uri in download result')
+					const status = (result as unknown as { status?: number }).status
+					if (status && status !== 200 && status !== 206) throw new Error(`Bad status ${status}`)
+					// Success — clear resume/progress and move to final location
+					await removeItem(getResumeKey(fileId)).catch(() => {})
+					await removeItem(getProgressKey(fileId)).catch(() => {})
+					lastProgressPersist.delete(fileId)
+					await FileSystem.moveAsync({ from: result.uri, to: fileUri }).catch(async () => fileUri)
+					log({ level: 'info', label: 'video-cache', message: 'Video cached', data: { fileId, uri: fileUri } })
+					return fileUri
+				} catch (e) {
+					activeDownloads.delete(fileId)
+					// Only delete .tmp when resume fails — per product requirement
+					if (useResume) {
+						log({ level: 'warn', label: 'video-cache', message: 'Resume failed, deleting .tmp and restarting fresh', error: e })
+						await FileSystem.deleteAsync(tmpUri, { idempotent: true }).catch(() => {})
+						await removeItem(getResumeKey(fileId)).catch(() => {})
+						await removeItem(getProgressKey(fileId)).catch(() => {})
+						lastProgressPersist.delete(fileId)
+						// Restart fresh download once
+						return doDownload(null)
+					}
+					// Fresh download failed — keep .tmp for next resume attempt (save resumeData if possible)
 					try {
-						const resume = await (downloadResumable as unknown as { pauseAsync?: () => Promise<{ resumeData?: string }> }).pauseAsync?.()
+						const resume = await (resumable as unknown as { pauseAsync?: () => Promise<{ resumeData?: string }> }).pauseAsync?.()
 						if (resume?.resumeData) await setItem(getResumeKey(fileId), resume.resumeData)
 					} catch {}
-				} else {
-					await FileSystem.deleteAsync(result.uri, { idempotent: true }).catch(() => {})
+					throw e
 				}
-				return null
 			}
-			await FileSystem.moveAsync({ from: result.uri, to: fileUri }).catch(async () => fileUri)
-			log({ level: 'info', label: 'video-cache', message: 'Video cached', data: { fileId, uri: fileUri } })
-			return fileUri
+
+			return await doDownload(resumeData)
 		} catch (err: unknown) {
-			try {
-				const dl = activeDownloads.get(fileId)
-				if (dl) {
-					const resume = await (dl as unknown as { pauseAsync?: () => Promise<{ resumeData?: string }> }).pauseAsync?.()
-					if (resume?.resumeData) await setItem(getResumeKey(fileId), resume.resumeData)
-					activeDownloads.delete(fileId)
-				}
-			} catch {}
 			lastProgressPersist.delete(fileId)
 			log({ level: 'warn', label: 'video-cache', message: 'Failed to cache video', error: err })
 			return null

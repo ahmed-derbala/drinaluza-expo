@@ -5,6 +5,7 @@ import { UserData } from '@/features/profile/profile.interface'
 import { MultiLang } from '@/features/businesses/businesses.interface'
 import { translate as translateHelper, setGlobalAppLang } from '@/core/translation'
 import { getStringFromMultiLang, setGlobalContentLang } from '@/features/common/languages/languages.helpers'
+import { deferStartup } from '@/core/helpers/defer'
 import { log } from '@/core/log'
 
 interface UserContextType {
@@ -56,7 +57,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 		currency: DEFAULT_CURRENCY
 	})
 
-	// Load guest settings from storage
+	// Load guest settings from storage — deferred to prioritize feed cache read
 	useEffect(() => {
 		const loadSettings = async () => {
 			try {
@@ -71,7 +72,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 				log({ level: 'error', label: 'UserContext', message: 'Failed to load guest settings', error: e })
 			}
 		}
-		loadSettings()
+		// Defer storage I/O so feed's cache-first read wins the AsyncStorage queue
+		const cancel = deferStartup.critical(() => {
+			loadSettings()
+		})
+		return cancel
 	}, [])
 
 	const setAppLang = useCallback(async (lang: string) => {
@@ -110,7 +115,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 	}, [])
 
 	useEffect(() => {
-		loadUser()
+		// Defer user/storage I/O so home feed paints with cached data first.
+		// Public routes (/feed) render immediately while this is pending;
+		// restricted routes still gate on `loading` below in _layout.
+		const cancel = deferStartup.critical(() => {
+			loadUser()
+		})
+		return cancel
 	}, [loadUser])
 
 	const refreshUser = useCallback(async () => {

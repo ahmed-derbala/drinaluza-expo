@@ -4,6 +4,7 @@ import * as FileSystem from 'expo-file-system/legacy'
 import { config } from '@/config'
 import { log } from '@/core/log'
 import { getItem, setItem, removeItem } from '@/core/storage'
+import { deferStartup } from '@/core/helpers/defer'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
 
 // Verify file against existence and expected size bounds
@@ -655,7 +656,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		}
 	}, [])
 
-	// Run startup cleanup then refresh APK list
+	// Run startup cleanup then refresh APK list — deferred to prioritize feed rendering
 	useEffect(() => {
 		const init = async () => {
 			await performStartupCleanup()
@@ -675,7 +676,11 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to load saved download resume data', error: e })
 			}
 		}
-		init()
+		// Defer heavy FileSystem scans until after feed paints (low priority)
+		const cancel = deferStartup.low(() => {
+			init()
+		})
+		return cancel
 	}, [performStartupCleanup, refreshApkList])
 
 	const contextValue = useMemo(

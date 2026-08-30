@@ -16,7 +16,7 @@ import { themeColors } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
 import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@/core/cache'
-import { getMediaType, getMediaUrl, getVideoPosterUrl, getVideoUrl, type MediaSource, type SmartMediaStyleProps } from './types'
+import { getMediaType, getMediaUrl, getVideoPosterUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
 
 const FALLBACK_IMAGE = require('../../../assets/images/no_media.png')
@@ -52,7 +52,7 @@ export interface SmartMediaViewProps extends SmartMediaStyleProps {
 	controls?: boolean
 	/** Called when video playback ends (videos only). */
 	onPlaybackEnd?: () => void
-	/** When true, video will use playback_url (HLS) if available. Defaults to true. */
+	/** @deprecated — playback_url never used, secure_url is used for both play and cache */
 	usePlaybackUrl?: boolean
 	/** When false, video will not be mounted (shows poster) to save memory/battery for off-screen cards. */
 	isVisible?: boolean
@@ -76,7 +76,7 @@ const SmartMediaViewComponent = ({
 	nativeControls = true,
 	controls = true,
 	onPlaybackEnd,
-	usePlaybackUrl = true,
+	usePlaybackUrl, // deprecated — ignored, secure_url always used
 	isVisible = true
 }: SmartMediaViewProps) => {
 	const [hasError, setHasError] = useState(false)
@@ -105,6 +105,12 @@ const SmartMediaViewComponent = ({
 			if (!isVisible && isVideo) setIsCacheChecked(true)
 			return
 		}
+		// Web has no FileSystem cache — skip async check entirely to avoid spinner flicker
+		if (Platform.OS === 'web') {
+			setCachedVideoUri(null)
+			setIsCacheChecked(true)
+			return
+		}
 		let cancelled = false
 		setIsCacheChecked(false)
 		;(async () => {
@@ -119,33 +125,36 @@ const SmartMediaViewComponent = ({
 		}
 	}, [mediaId, isVideo, isVisible])
 
-	// Prefetch the MP4 in background for next offline play (secure_url → VIDEOS_FOLDER) — only when visible
+	// Prefetch the MP4 in background for next offline play (secure_url → VIDEOS_FOLDER)
+	// Uses the SAME secure_url as playback, so we must NOT download twice in parallel
+	// (player streaming the same secure_url + FileSystem download). Dedupe:
+	// - activeDownloadPromises already dedupes FileSystem downloads
+	// - skip prefetch while the video is actively playing (autoPlay) — otherwise we'd have
+	//   two simultaneous GETs for the same secure_url (expo-video stream + FileSystem).
+	// Cache will happen when the card is visible but not auto-playing, or after playback ends.
 	useEffect(() => {
 		if (!isVisible || !isVideo || !mediaId || cachedVideoUri) return
+		if (autoPlay) return
 		const file: any = media
 		if (file.secure_url || file.url) {
 			prefetchVideoToCache(file)
 		}
-	}, [mediaId, isVideo, isVisible, cachedVideoUri, media])
+	}, [mediaId, isVideo, isVisible, cachedVideoUri, autoPlay, media])
+
+	const remoteUrl = useMemo(() => getMediaUrl(media), [media])
 
 	const url = useMemo(() => {
 		if (cachedVideoUri) return cachedVideoUri
-		if (!isVideo) return getMediaUrl(media)
-		// On web, HLS (.m3u8) is not natively supported in Chrome/Firefox — use MP4 directly
-		if (Platform.OS === 'web') return getMediaUrl(media)
-		if (!usePlaybackUrl) return getMediaUrl(media)
-		if (useFallbackForVideo) return getMediaUrl(media)
-		return getVideoUrl(media)
-	}, [media, isVideo, usePlaybackUrl, useFallbackForVideo, cachedVideoUri])
+		return remoteUrl
+	}, [cachedVideoUri, remoteUrl])
 	const sourceIsValid = Boolean(url)
 	const isCheckingCache = isVideo && !isCacheChecked
 
 	useEffect(() => {
 		setUseFallbackForVideo(false)
 		setCachedVideoUri(null)
-		setIsCacheChecked(false)
 		setHasVideoStarted(false)
-	}, [media])
+	}, [mediaId, remoteUrl])
 
 	// Strip backgroundColor so the media surface never paints over its container.
 	const cleanedStyle = useMemo(() => {
@@ -247,23 +256,28 @@ const SmartMediaViewComponent = ({
 
 	const handleVideoError = useCallback(() => {
 		if (!isVideo) return
-		// If HLS fails, try cached MP4 first, then fallback to mp4 remote
-		if (cachedVideoUri) return // already using cached, no further fallback
-		if (usePlaybackUrl && !useFallbackForVideo) {
-			const hasPlayback = typeof media === 'object' && media !== null && (media as any).playback_url
-			if (hasPlayback) {
-				setUseFallbackForVideo(true)
-				return
+		// If the cached local file failed (corrupt/truncated), clear it and
+		// retry with the remote secure_url. Uses same secure_url for both play
+		// and cache, so a single URL is never fetched twice in parallel.
+		if (cachedVideoUri) {
+			const badUri = cachedVideoUri
+			setCachedVideoUri(null)
+			if (Platform.OS !== 'web') {
+				import('expo-file-system/legacy').then((FS) => {
+					FS.deleteAsync(badUri, { idempotent: true }).catch(() => {})
+				})
 			}
+			setUseFallbackForVideo(false)
+			return
 		}
-		// If still failing and we have a cached file not yet tried, try it
+		// Remote secure_url failed — try cached file if now available, otherwise show fallback
 		if (typeof media === 'object' && media?._id) {
 			;(async () => {
 				const cached = await getCachedVideoUri(media as any)
 				if (cached) setCachedVideoUri(cached)
 			})()
 		}
-	}, [isVideo, usePlaybackUrl, useFallbackForVideo, media, cachedVideoUri])
+	}, [isVideo, media, cachedVideoUri])
 
 	const handlePress = useCallback(() => {
 		if (sourceIsValid && !showFallback && !isVideo) {
@@ -284,11 +298,13 @@ const SmartMediaViewComponent = ({
 		)
 	}
 
-	// Keep player mounted for all valid videos (even off-screen, paused) to
-	// avoid mount/unmount churn on scroll which triggers Android
-	// TextureVideoView shared-object race ("Cannot use shared object...").
-	// Visibility/focus only toggles autoPlay (play/pause) via stable player.
-	const shouldMountVideo = isVideo && sourceIsValid && !hasError
+	// Only mount the video player when the card is visible/focused.
+	// Off-screen players are unmounted to prevent memory/CPU degradation
+	// when scrolling many video cards (each createVideoPlayer holds native
+	// resources). isVisible is true for viewable + focused (see
+	// FeedProductCard). When a card loses focus/visibility, it unmounts,
+	// which triggers safePause + delayed release in SmartVideoPlayer.
+	const shouldMountVideo = isVideo && sourceIsValid && !hasError && isVisible
 
 	const imageElement = isVideo ? (
 		<View style={[styles.image, dimensionStyle]}>
