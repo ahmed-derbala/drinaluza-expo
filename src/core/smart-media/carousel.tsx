@@ -185,7 +185,7 @@ const SmartMediaCarouselComponent = ({
 										<Ionicons name="play-circle" size={24} color={themeColors.background} style={styles.videoThumbIcon} />
 									</View>
 								) : (
-									<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} usePlaybackUrl={false} controls={false} isVisible={isVisible} />
+									<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} controls={false} isVisible={isVisible} />
 								)}
 							</TouchableOpacity>
 						)

@@ -52,8 +52,6 @@ export interface SmartMediaViewProps extends SmartMediaStyleProps {
 	controls?: boolean
 	/** Called when video playback ends (videos only). */
 	onPlaybackEnd?: () => void
-	/** @deprecated — playback_url never used, secure_url is used for both play and cache */
-	usePlaybackUrl?: boolean
 	/** When false, video will not be mounted (shows poster) to save memory/battery for off-screen cards. */
 	isVisible?: boolean
 }
@@ -76,7 +74,6 @@ const SmartMediaViewComponent = ({
 	nativeControls = true,
 	controls = true,
 	onPlaybackEnd,
-	usePlaybackUrl, // deprecated — ignored, secure_url always used
 	isVisible = true
 }: SmartMediaViewProps) => {
 	const [hasError, setHasError] = useState(false)
@@ -88,7 +85,6 @@ const SmartMediaViewComponent = ({
 
 	const mediaType = useMemo(() => getMediaType(media), [media])
 	const isVideo = mediaType === 'video'
-	const [useFallbackForVideo, setUseFallbackForVideo] = useState(false)
 	const [cachedVideoUri, setCachedVideoUri] = useState<string | null>(null)
 	const [isCacheChecked, setIsCacheChecked] = useState(false)
 	const [hasVideoStarted, setHasVideoStarted] = useState(false)
@@ -151,7 +147,6 @@ const SmartMediaViewComponent = ({
 	const isCheckingCache = isVideo && !isCacheChecked
 
 	useEffect(() => {
-		setUseFallbackForVideo(false)
 		setCachedVideoUri(null)
 		setHasVideoStarted(false)
 	}, [mediaId, remoteUrl])
@@ -256,21 +251,16 @@ const SmartMediaViewComponent = ({
 
 	const handleVideoError = useCallback(() => {
 		if (!isVideo) return
-		// If the cached local file failed (corrupt/truncated), clear it and
-		// retry with the remote secure_url. Uses same secure_url for both play
-		// and cache, so a single URL is never fetched twice in parallel.
 		if (cachedVideoUri) {
 			const badUri = cachedVideoUri
 			setCachedVideoUri(null)
 			if (Platform.OS !== 'web') {
-				import('expo-file-system/legacy').then((FS) => {
-					FS.deleteAsync(badUri, { idempotent: true }).catch(() => {})
+				import('@/core/disk').then(({ deletePath }) => {
+					deletePath(badUri).catch(() => {})
 				})
 			}
-			setUseFallbackForVideo(false)
 			return
 		}
-		// Remote secure_url failed — try cached file if now available, otherwise show fallback
 		if (typeof media === 'object' && media?._id) {
 			;(async () => {
 				const cached = await getCachedVideoUri(media as any)

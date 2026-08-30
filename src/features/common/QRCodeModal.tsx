@@ -1,8 +1,8 @@
 import React, { useRef } from 'react'
 import { View, Text, StyleSheet, Modal, Platform, Alert, Share } from 'react-native'
 import * as Print from 'expo-print'
-import * as FileSystem from 'expo-file-system/legacy'
 import * as Sharing from 'expo-sharing'
+import { File, getQRCodesDirectory, ensureDirectory, writeBase64File, deletePath } from '@/core/disk'
 import * as Clipboard from 'expo-clipboard'
 import QRCode from 'react-native-qrcode-svg'
 import { useTheme, themeColors } from '@/core/theme'
@@ -152,12 +152,11 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 				document.body.removeChild(link)
 			} else {
 				const base64Data = base64Url.split(',')[1]
-				const baseDir = (FileSystem.cacheDirectory || FileSystem.documentDirectory || '') + 'qrcodes/'
-				try {
-					await FileSystem.makeDirectoryAsync(baseDir, { intermediates: true })
-				} catch {}
-				const fileUri = baseDir + filename
-				await FileSystem.writeAsStringAsync(fileUri, base64Data, { encoding: FileSystem.EncodingType.Base64 })
+				const qrcodesDir = getQRCodesDirectory()
+				await ensureDirectory(qrcodesDir)
+				const file = new File(qrcodesDir, filename)
+				await writeBase64File(file, base64Data)
+				const fileUri = file.uri
 				try {
 					if (await Sharing.isAvailableAsync()) {
 						await Sharing.shareAsync(fileUri)
@@ -168,7 +167,7 @@ export default function QRCodeModal({ visible, onClose, value, title, subtitle, 
 				} finally {
 					// QR is tmp — keep cacheDirectory clean (CacheDetailsCard → Cache Directory/qrcodes)
 					try {
-						await FileSystem.deleteAsync(fileUri, { idempotent: true })
+						await deletePath(file)
 					} catch {}
 				}
 			}

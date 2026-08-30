@@ -3,17 +3,16 @@
  */
 
 import { Platform } from 'react-native'
-import * as FileSystem from 'expo-file-system/legacy'
 import { log } from '@/core/log'
 import type { MediaFile } from '@/core/smart-media/types'
-import { ensureDirectory } from './filesystem'
+import { ensureDirectory, getVideosDirectory, getFileInfo as diskGetFileInfo, deletePath } from '@/core/disk'
 
-export const VIDEOS_FOLDER = (FileSystem.cacheDirectory || '') + 'videos/'
+export const VIDEOS_FOLDER = getVideosDirectory().uri + '/'
 export const VIDEOS_FOLDER_URI = VIDEOS_FOLDER
 
 export const ensureVideosFolder = async (): Promise<void> => {
 	if (Platform.OS === 'web') return
-	await ensureDirectory(VIDEOS_FOLDER)
+	await ensureDirectory(getVideosDirectory())
 }
 
 export const sanitizeBaseName = (value: string): string => value.replace(/[^a-zA-Z0-9._-]/g, '_')
@@ -35,8 +34,9 @@ export interface FileInfo {
 
 export const getFileInfo = async (uri: string): Promise<FileInfo | null> => {
 	try {
-		const info = (await FileSystem.getInfoAsync(uri, { size: true } as any)) as FileInfo & { exists: boolean }
-		return info
+		// Use disk layer (modern File) — accepts string uri
+		const info = await diskGetFileInfo(uri)
+		return info as FileInfo | null
 	} catch {
 		return null
 	}
@@ -65,7 +65,7 @@ export const getCachedVideoUri = async (file: MediaFile): Promise<string | null>
 		if (typeof info.size === 'number' && info.size < 100 * 1024) {
 			log({ level: 'warn', label: 'video-cache', message: 'Cached video too small, treating as miss', data: { fileUri, size: info.size } })
 			try {
-				await FileSystem.deleteAsync(fileUri, { idempotent: true })
+				await deletePath(fileUri)
 			} catch {}
 			return null
 		}

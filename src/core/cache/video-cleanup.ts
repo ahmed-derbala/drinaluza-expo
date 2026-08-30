@@ -6,14 +6,13 @@ import { Platform } from 'react-native'
 import { log } from '@/core/log'
 import { removeItem, getAllKeys } from '@/core/storage'
 import { VIDEO_RESUME_KEY_PREFIX, VIDEO_PROGRESS_KEY_PREFIX } from './constants'
-import { wipeAndRecreateDirectory } from './filesystem'
-import { VIDEOS_FOLDER } from './video-utils'
+import { wipeAndRecreateDirectory, getVideosDirectory } from '@/core/disk'
 import { resetDownloadState } from './video-download'
 
 export const clearVideoCache = async (): Promise<void> => {
 	if (Platform.OS === 'web') return
 	try {
-		await wipeAndRecreateDirectory(VIDEOS_FOLDER)
+		await wipeAndRecreateDirectory(getVideosDirectory())
 		try {
 			const allKeys = await getAllKeys()
 			const staleKeys = allKeys.filter((k) => k.startsWith(VIDEO_RESUME_KEY_PREFIX) || k.startsWith(VIDEO_PROGRESS_KEY_PREFIX))

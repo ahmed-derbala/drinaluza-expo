@@ -4,7 +4,6 @@
 
 export * from './store'
 export * from './constants'
-export * from './filesystem'
 export * from './media'
 export * from './video'
 export * from './video-utils'

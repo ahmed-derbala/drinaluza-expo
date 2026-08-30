@@ -9,11 +9,10 @@ import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import { clearAllStorage } from '@/core/storage'
 import { clearMemoryCache } from '@/core/cache/store'
-import { clearDirectory } from '@/core/cache/filesystem'
+import { clearDirectory, getCacheDirectory, getDocumentDirectory } from '@/core/disk'
 import { useUser } from '@/core/contexts/UserContext'
 import { useRouter } from 'expo-router'
 import { log } from '@/core/log'
-import * as FileSystem from 'expo-file-system/legacy'
 
 export function ResetAppCard() {
 	const { colors } = useTheme()
@@ -29,7 +28,7 @@ export function ResetAppCard() {
 				clearMemoryCache()
 				// clearAllStorage already wipes AsyncStorage (including video resume keys),
 				// but we also need to wipe the filesystem caches
-				await Promise.all([clearDirectory(FileSystem.cacheDirectory), clearDirectory(FileSystem.documentDirectory)])
+				await Promise.all([clearDirectory(getCacheDirectory()), clearDirectory(getDocumentDirectory())])
 				await refreshUser().catch(() => {})
 				toast.show({
 					title: translate('reset_success', 'App reset successfully.'),

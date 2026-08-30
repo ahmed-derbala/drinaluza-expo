@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useState, useImperativeHandle, forwardRef, memo } from 'react'
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import * as FileSystem from 'expo-file-system/legacy'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -9,7 +8,7 @@ import { toast } from '@/features/common/Toast'
 import { clearAllCache, isProtectedKey } from '@/core/cache/store'
 import { getAllKeys, getItemSize } from '@/core/storage'
 import { formatBytes } from '@/core/helpers/format'
-import { clearDirectory, getKnownDirectoryStats } from '@/core/cache/filesystem'
+import { clearDirectory, getDirectorySize, getCacheDirectory, getDocumentDirectory } from '@/core/disk'
 
 export interface CacheDetailsCardProps {
 	onCacheCleared?: () => void
@@ -100,19 +99,19 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 				return { apiCount, apiBytes }
 			})()
 
-			// 2) System + Document directories — run in parallel (each already handles web/missing)
-			const systemPromise = getKnownDirectoryStats(FileSystem.cacheDirectory)
-			const docPromise = getKnownDirectoryStats(FileSystem.documentDirectory)
+			// 2) System + Document directories — use fast directory size (O(1)) instead of per-file traversal
+			const systemBytesPromise = getDirectorySize(getCacheDirectory())
+			const docBytesPromise = getDirectorySize(getDocumentDirectory())
 
-			const [apiStats, systemStats, docStats] = await Promise.all([apiPromise, systemPromise, docPromise])
+			const [apiStats, systemBytes, docBytes] = await Promise.all([apiPromise, systemBytesPromise, docBytesPromise])
 
 			setStats({
 				apiCount: apiStats.apiCount,
 				apiBytes: apiStats.apiBytes,
-				systemCount: systemStats.count,
-				systemBytes: systemStats.bytes,
-				docCount: docStats.count,
-				docBytes: docStats.bytes
+				systemCount: 0,
+				systemBytes,
+				docCount: 0,
+				docBytes
 			})
 		} catch {
 			// silent fallback — keep previous stats
@@ -163,8 +162,8 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 	const handleClearSystemCache = useCallback(async () => {
 		await withClearing(
 			async () => {
-				if (Platform.OS !== 'web' && FileSystem.cacheDirectory) {
-					await clearDirectory(FileSystem.cacheDirectory)
+				if (Platform.OS !== 'web') {
+					await clearDirectory(getCacheDirectory())
 				}
 			},
 			() => onCacheCleared?.(),
@@ -175,8 +174,8 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 	const handleClearDocument = useCallback(async () => {
 		await withClearing(
 			async () => {
-				if (Platform.OS !== 'web' && FileSystem.documentDirectory) {
-					await clearDirectory(FileSystem.documentDirectory)
+				if (Platform.OS !== 'web') {
+					await clearDirectory(getDocumentDirectory())
 				}
 			},
 			() => onCacheCleared?.(),
@@ -219,8 +218,8 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 						iconColor={colors.warning}
 						iconBg={colors.warning + '18'}
 						title={translate('cache_directory', 'Cache Directory')}
-						subtitle={`${stats.systemCount} ${translate('cached_files', 'Cached Files')} • ${formatBytes(stats.systemBytes)}`}
-						disabled={busy || stats.systemCount === 0}
+						subtitle={formatBytes(stats.systemBytes)}
+						disabled={busy || stats.systemBytes === 0}
 						onClear={handleClearSystemCache}
 						clearLabel={translate('clear_system_cache', 'Clear Cache Directory')}
 					/>
@@ -229,8 +228,8 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 						iconColor={colors.success}
 						iconBg={colors.success + '18'}
 						title={translate('document_directory', 'Document Directory')}
-						subtitle={`${stats.docCount} ${translate('cached_files', 'Cached Files')} • ${formatBytes(stats.docBytes)}`}
-						disabled={busy || stats.docCount === 0}
+						subtitle={formatBytes(stats.docBytes)}
+						disabled={busy || stats.docBytes === 0}
 						onClear={handleClearDocument}
 						clearLabel={translate('clear_document_cache', 'Clear Document Directory')}
 						hideBorder

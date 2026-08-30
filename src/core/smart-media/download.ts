@@ -3,7 +3,7 @@
  */
 
 import { Platform } from 'react-native'
-import { File, Paths } from 'expo-file-system'
+import { File, getDocumentDirectory, downloadFile } from '@/core/disk'
 import { log } from '@/core/log'
 
 export interface DownloadMediaOptions {
@@ -39,9 +39,9 @@ export const downloadMediaFile = async ({ url, fileName }: DownloadMediaOptions)
 	}
 
 	try {
-		const destination = new File(Paths.document, resolveFileName(url, fileName))
-		const file = await File.downloadFileAsync(url, destination)
-		return file.uri
+		const destination = new File(getDocumentDirectory(), resolveFileName(url, fileName))
+		const file = await downloadFile(url, destination)
+		return file?.uri ?? null
 	} catch (error) {
 		log({ level: 'error', label: 'smart-media', message: 'Failed to download media file', error })
 		return null

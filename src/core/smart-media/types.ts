@@ -35,7 +35,6 @@ export interface MediaFile {
 	originalname?: string
 	url: string
 	secure_url?: string
-	playback_url?: string
 	duration?: number
 	mimetype?: string
 	size?: number
@@ -79,11 +78,6 @@ export const getMediaUrl = (media: MediaSource): string | null => {
 	return null
 }
 
-/** @deprecated — never use playback_url. Use getMediaUrl (secure_url) for both play and cache. */
-export const getVideoUrl = (media: MediaSource): string | null => {
-	return getMediaUrl(media)
-}
-
 const getPathExtension = (value: string): string => {
 	try {
 		const path = value.split('?')[0]
@@ -108,7 +102,7 @@ export const getMediaType = (media: MediaSource): MediaType | null => {
 		if (mime.startsWith('image/')) return 'image'
 		if (mime === 'application/x-mpegurl' || mime === 'application/vnd.apple.mpegurl') return 'video'
 
-		// Fallback to extension from format field or URL (never playback_url)
+		// Fallback to extension from format field or URL
 		const urlForExt = (media as MediaFile).secure_url || media.url
 		const extension = media.format ? media.format.toLowerCase() : getPathExtension(urlForExt || '')
 		if (ALLOWED_VIDEO_EXTENSIONS.includes(extension as (typeof ALLOWED_VIDEO_EXTENSIONS)[number])) return 'video'
