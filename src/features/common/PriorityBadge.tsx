@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { View, StyleSheet, StyleProp, ViewStyle, Animated } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'

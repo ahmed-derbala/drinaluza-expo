@@ -7,8 +7,71 @@
  */
 
 import { Platform } from 'react-native'
-import { Directory, File, Paths } from 'expo-file-system'
 import { log } from '@/core/log'
+import type { Directory as DirectoryType, File as FileType } from 'expo-file-system'
+
+let Directory: any
+let File: any
+let Paths: any
+if (Platform.OS !== 'web') {
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		const FS = require('expo-file-system')
+		Directory = FS.Directory
+		File = FS.File
+		Paths = FS.Paths
+	} catch {}
+}
+if (Platform.OS === 'web' || !Directory || !File || !Paths) {
+	// Web mock — expo-file-system not supported on web, avoid validatePath crash
+	class MockDirectory {
+		uri: string
+		exists = false
+		constructor(...args: any[]) {
+			this.uri = args.map((a) => String(a)).join('/')
+		}
+		create() {}
+		delete() {}
+		list(): any[] {
+			return []
+		}
+		info() {
+			return { exists: false, size: 0, uri: this.uri }
+		}
+		get size() {
+			return 0
+		}
+	}
+	class MockFile {
+		uri: string
+		exists = false
+		size = 0
+		constructor(...args: any[]) {
+			this.uri = args.map((a) => String(a)).join('/')
+		}
+		delete() {}
+		info() {
+			return { exists: false, size: 0, uri: this.uri }
+		}
+		write() {}
+		move() {
+			return Promise.resolve()
+		}
+		copy() {
+			return Promise.resolve()
+		}
+		static downloadFileAsync = async () => null as any
+	}
+	Directory = MockDirectory as any
+	File = MockFile as any
+	Paths = {
+		cache: new MockDirectory('file:///cache'),
+		document: new MockDirectory('file:///document'),
+		bundle: null,
+		availableDiskSpace: 0,
+		totalDiskSpace: 0
+	} as any
+}
 
 export interface DirectoryStats {
 	count: number
@@ -17,35 +80,81 @@ export interface DirectoryStats {
 
 // ── Directories ────────────────────────────────────────────────────────────
 
-export const getCacheDirectory = (): Directory => Paths.cache
-export const getDocumentDirectory = (): Directory => Paths.document
-export const getBundleDirectory = (): Directory | null => {
+export const getCacheDirectory = (): any | null => {
+	if (Platform.OS === 'web') return null as unknown as any
 	try {
-		return Paths.bundle as unknown as Directory
+		return Paths.cache
+	} catch {
+		return null as unknown as any
+	}
+}
+export const getDocumentDirectory = (): any | null => {
+	if (Platform.OS === 'web') return null as unknown as any
+	try {
+		return Paths.document
+	} catch {
+		return null as unknown as any
+	}
+}
+export const getBundleDirectory = (): any | null => {
+	if (Platform.OS === 'web') return null
+	try {
+		return Paths.bundle as unknown as any
 	} catch {
 		return null
 	}
 }
 
-export const getVideosDirectory = (): Directory => new Directory(Paths.cache, 'videos')
-export const getUpdatesDirectory = (): Directory => new Directory(Paths.document, 'updates')
-export const getQRCodesDirectory = (): Directory => new Directory(Paths.cache, 'qrcodes')
+export const getVideosDirectory = (): any | null => {
+	if (Platform.OS === 'web') return null as unknown as any
+	try {
+		return new Directory(Paths.cache, 'videos')
+	} catch {
+		return null as unknown as any
+	}
+}
+export const getUpdatesDirectory = (): any | null => {
+	if (Platform.OS === 'web') return null as unknown as any
+	try {
+		return new Directory(Paths.document, 'updates')
+	} catch {
+		return null as unknown as any
+	}
+}
+export const getQRCodesDirectory = (): any | null => {
+	if (Platform.OS === 'web') return null as unknown as any
+	try {
+		return new Directory(Paths.cache, 'qrcodes')
+	} catch {
+		return null as unknown as any
+	}
+}
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-const toDirectory = (target: string | Directory): Directory => {
+const toDirectory = (target: string | any): any => {
+	if (Platform.OS === 'web') return { exists: false, uri: String(target ?? ''), create: () => {}, delete: () => {}, list: () => [], info: () => ({ exists: false, size: 0 }) } as unknown as any
 	if (target instanceof Directory) return target
-	return new Directory(target)
+	try {
+		return new Directory(target as string)
+	} catch {
+		return { exists: false, uri: String(target ?? ''), create: () => {}, delete: () => {}, list: () => [], info: () => ({ exists: false, size: 0 }) } as unknown as any
+	}
 }
 
-const toFile = (target: string | File): File => {
+const toFile = (target: string | any): any => {
+	if (Platform.OS === 'web') return { exists: false, uri: String(target ?? ''), delete: () => {}, info: () => ({ exists: false, size: 0 }), size: 0 } as unknown as any
 	if (target instanceof File) return target
-	return new File(target)
+	try {
+		return new File(target as string)
+	} catch {
+		return { exists: false, uri: String(target ?? ''), delete: () => {}, info: () => ({ exists: false, size: 0 }), size: 0 } as unknown as any
+	}
 }
 
 // ── Ensure ─────────────────────────────────────────────────────────────────
 
-export const ensureDirectory = async (target: string | Directory): Promise<void> => {
+export const ensureDirectory = async (target: string | any): Promise<void> => {
 	if (Platform.OS === 'web') return
 	try {
 		const dir = toDirectory(target)
@@ -64,7 +173,7 @@ export const ensureDirectory = async (target: string | Directory): Promise<void>
  * Use for `Cache Directory` / `Document Directory` rows in `CacheDetailsCard`
  * for better performance vs `getDirectoryStats`.
  */
-export const getDirectorySize = async (target: string | Directory): Promise<number> => {
+export const getDirectorySize = async (target: string | any): Promise<number> => {
 	if (Platform.OS === 'web') return 0
 	try {
 		const dir = toDirectory(target)
@@ -83,17 +192,17 @@ export const getDirectorySize = async (target: string | Directory): Promise<numb
  * Accurate recursive stats (count + bytes) — traverses every entry.
  * Use only when file count is required.
  */
-export const getDirectoryStats = async (target: string | Directory): Promise<DirectoryStats> => {
+export const getDirectoryStats = async (target: string | any): Promise<DirectoryStats> => {
 	if (Platform.OS === 'web') return { count: 0, bytes: 0 }
 	try {
 		const root = toDirectory(target)
 		if (!root.exists) return { count: 0, bytes: 0 }
 		let count = 0
 		let bytes = 0
-		const stack: Directory[] = [root]
+		const stack: any[] = [root]
 		while (stack.length > 0) {
 			const current = stack.pop()!
-			let entries: (File | Directory)[]
+			let entries: (File | any)[]
 			try {
 				entries = current.list()
 			} catch {
@@ -106,7 +215,7 @@ export const getDirectoryStats = async (target: string | Directory): Promise<Dir
 					} else {
 						// File
 						count += 1
-						const f = entry as File
+						const f = entry as any
 						const sz = typeof f.size === 'number' ? f.size : 0
 						if (sz > 0) bytes += sz
 						else {
@@ -130,7 +239,7 @@ export const getDirectoryStats = async (target: string | Directory): Promise<Dir
  * bytes via single `size`, count via shallow `list().length` not recursive
  * to avoid O(n) bridge calls. If precise count needed, use `getDirectoryStats`.
  */
-export const getKnownDirectoryStats = async (target: string | Directory | null | undefined): Promise<DirectoryStats> => {
+export const getKnownDirectoryStats = async (target: string | any | null | undefined): Promise<DirectoryStats> => {
 	if (Platform.OS === 'web' || !target) return { count: 0, bytes: 0 }
 	try {
 		const dir = toDirectory(target as any)
@@ -167,7 +276,7 @@ export const getKnownDirectoryStats = async (target: string | Directory | null |
  * Optimized size-only for CacheDetailsCard — avoids recursive traversal entirely.
  * Returns 0 on web/missing.
  */
-export const getKnownDirectorySize = async (target: string | Directory | null | undefined): Promise<number> => {
+export const getKnownDirectorySize = async (target: string | any | null | undefined): Promise<number> => {
 	if (Platform.OS === 'web' || !target) return 0
 	try {
 		const dir = toDirectory(target as any)
@@ -181,7 +290,7 @@ export const getKnownDirectorySize = async (target: string | Directory | null | 
 
 // ── Clear / Delete ─────────────────────────────────────────────────────────
 
-export const clearDirectory = async (target: string | Directory | null | undefined): Promise<number> => {
+export const clearDirectory = async (target: string | any | null | undefined): Promise<number> => {
 	if (Platform.OS === 'web' || !target) return 0
 	try {
 		const dir = toDirectory(target as any)
@@ -201,7 +310,7 @@ export const clearDirectory = async (target: string | Directory | null | undefin
 	}
 }
 
-export const wipeAndRecreateDirectory = async (target: string | Directory | null | undefined): Promise<void> => {
+export const wipeAndRecreateDirectory = async (target: string | any | null | undefined): Promise<void> => {
 	if (Platform.OS === 'web' || !target) return
 	try {
 		const dir = toDirectory(target as any)
@@ -215,7 +324,7 @@ export const wipeAndRecreateDirectory = async (target: string | Directory | null
 	}
 }
 
-export const deleteFile = async (target: string | File): Promise<void> => {
+export const deleteFile = async (target: string | any): Promise<void> => {
 	if (Platform.OS === 'web') return
 	try {
 		const file = toFile(target)
@@ -223,7 +332,7 @@ export const deleteFile = async (target: string | File): Promise<void> => {
 	} catch {}
 }
 
-export const deletePath = async (target: string | File | Directory, options?: { idempotent?: boolean }): Promise<void> => {
+export const deletePath = async (target: string | any | any, options?: { idempotent?: boolean }): Promise<void> => {
 	if (Platform.OS === 'web') return
 	try {
 		if (target instanceof File) {
@@ -257,7 +366,7 @@ export interface FileInfo {
 	uri?: string
 }
 
-export const getFileInfo = async (target: string | File | Directory): Promise<FileInfo | null> => {
+export const getFileInfo = async (target: string | any | any): Promise<FileInfo | null> => {
 	if (Platform.OS === 'web') return null
 	try {
 		if (target instanceof File) {
@@ -284,7 +393,7 @@ export const getFileInfo = async (target: string | File | Directory): Promise<Fi
 	}
 }
 
-export const writeBase64File = async (target: string | File, base64: string): Promise<void> => {
+export const writeBase64File = async (target: string | any, base64: string): Promise<void> => {
 	if (Platform.OS === 'web') return
 	const file = toFile(target)
 	// Ensure parent exists
@@ -292,7 +401,7 @@ export const writeBase64File = async (target: string | File, base64: string): Pr
 		const parent = file.parentDirectory
 		if (!parent.exists) parent.create({ intermediates: true, idempotent: true })
 	} catch {}
-	// Modern API: File.write with encoding
+	// Modern API: any.write with encoding
 	try {
 		// @ts-ignore — encoding option varies by version
 		file.write(base64, { encoding: 'base64' })
@@ -305,7 +414,7 @@ export const writeBase64File = async (target: string | File, base64: string): Pr
 	}
 }
 
-export const moveFile = async (from: string | File, to: string | File): Promise<void> => {
+export const moveFile = async (from: string | any, to: string | any): Promise<void> => {
 	if (Platform.OS === 'web') return
 	try {
 		const src = toFile(from)
@@ -349,7 +458,7 @@ export const getTotalDiskStorage = async (): Promise<number> => {
 
 // ── Download ───────────────────────────────────────────────────────────────
 
-export const downloadFile = async (url: string, destination: File | Directory, options?: { idempotent?: boolean; headers?: Record<string, string> }): Promise<File | null> => {
+export const downloadFile = async (url: string, destination: any | any, options?: { idempotent?: boolean; headers?: Record<string, string> }): Promise<File | null> => {
 	if (Platform.OS === 'web') return null
 	try {
 		const dest = destination instanceof File || destination instanceof Directory ? destination : new File(destination as any)
@@ -361,7 +470,7 @@ export const downloadFile = async (url: string, destination: File | Directory, o
 	}
 }
 
-export const listDirectory = (target: string | Directory): (File | Directory)[] => {
+export const listDirectory = (target: string | any): (File | any)[] => {
 	if (Platform.OS === 'web') return []
 	try {
 		const dir = toDirectory(target)
@@ -372,8 +481,8 @@ export const listDirectory = (target: string | Directory): (File | Directory)[] 
 	}
 }
 
-export const listDirectoryNames = (target: string | Directory): string[] => {
-	return listDirectory(target).map((e) => (e instanceof Directory ? e.name : (e as File).name))
+export const listDirectoryNames = (target: string | any): string[] => {
+	return listDirectory(target).map((e) => (e instanceof Directory ? e.name : (e as any).name))
 }
 
 export const getContentUri = (fileUri: string): string => {
@@ -385,5 +494,5 @@ export const getContentUri = (fileUri: string): string => {
 	}
 }
 
-// Re-export modern primitives for advanced use
-export { Directory, File, Paths } from 'expo-file-system'
+// Re-export modern primitives for advanced use (web-safe)
+export { Directory, File, Paths }

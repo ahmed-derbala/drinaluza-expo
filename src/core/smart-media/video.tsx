@@ -5,7 +5,7 @@
 import React, { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useState } from 'react'
 import { Platform, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { useEventListener } from 'expo'
-import { VideoView, createVideoPlayer, type VideoPlayer, type VideoPlayerStatus } from 'expo-video'
+import { VideoView, createVideoPlayer, type VideoPlayerStatus } from 'expo-video'
 import { Ionicons } from '@expo/vector-icons'
 import Spinner from '@/features/common/Spinner'
 import { themeColors } from '@/core/theme'
@@ -55,6 +55,8 @@ export interface SmartVideoPlayerProps {
 	autoPlay?: boolean
 	/** Loop the video. Defaults to false. */
 	loop?: boolean
+	/** When true, video starts with sound on. Defaults to false (muted for autoplay). */
+	soundOn?: boolean
 	accessibilityLabel?: string
 	testID?: string
 	/** Called when playback reaches the end. */
@@ -106,7 +108,24 @@ const PlaybackButton = ({ playing, onPress }: { playing: boolean; onPress: () =>
 )
 
 const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoPlayerProps>(
-	({ source, style, contentFit = 'contain', nativeControls = true, controls = true, autoPlay = false, loop = false, accessibilityLabel, testID, onPlaybackEnd, onError, onPlayingChange }, ref) => {
+	(
+		{
+			source,
+			style,
+			contentFit = 'contain',
+			nativeControls = true,
+			controls = true,
+			autoPlay = false,
+			loop = false,
+			soundOn = false,
+			accessibilityLabel,
+			testID,
+			onPlaybackEnd,
+			onError,
+			onPlayingChange
+		},
+		ref
+	) => {
 		// Use createVideoPlayer instead of useVideoPlayer to avoid useReleasingSharedObject
 		// prematurely releasing the native VideoPlayer during component unmount while
 		// Android TextureVideoView is still detaching in the native view hierarchy.
@@ -115,11 +134,15 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			try {
 				instance.loop = loop
 			} catch {}
-			if (!controls || autoPlay) {
-				try {
+			try {
+				if (Platform.OS === 'web' && autoPlay && !soundOn) {
 					instance.muted = true
-				} catch {}
-			}
+				} else if (!soundOn) {
+					instance.muted = !controls || autoPlay ? true : false
+				} else {
+					instance.muted = false
+				}
+			} catch {}
 			return instance
 		}, [])
 
@@ -215,14 +238,20 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 						player.loop = loop
 					} catch {}
 					try {
-						player.muted = !controls || autoPlay ? true : false
+						if (Platform.OS === 'web' && autoPlay && !soundOn) {
+							player.muted = true
+						} else if (!soundOn) {
+							player.muted = !controls || autoPlay ? true : false
+						} else {
+							player.muted = false
+						}
 					} catch {}
 				} catch {}
 			})()
 			return () => {
 				cancelled = true
 			}
-		}, [source, player, loop, controls, autoPlay, safePause])
+		}, [source, player, loop, controls, autoPlay, soundOn, safePause])
 
 		useEventListener(player, 'statusChange', ({ status: nextStatus }) => {
 			if (!isMountedRef.current) return
@@ -249,15 +278,18 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 			} catch {}
 		})
 
-		// Autoplay when ready — required for feed carousel (controls=false, muted) — must be muted on web for autoplay
+		// Autoplay when ready — on web, muted only if soundOn is off (browser allows sound after user interaction)
 		useEffect(() => {
 			if (!autoPlay || status !== 'readyToPlay' || !isMountedRef.current) return
 			try {
-				// Always mute for autoplay to satisfy web/iOS autoplay policies
-				player.muted = true
+				if (Platform.OS === 'web' && !soundOn) {
+					player.muted = true
+				} else {
+					player.muted = !soundOn
+				}
 				safePlay()
 			} catch {}
-		}, [autoPlay, status, player, safePlay])
+		}, [autoPlay, status, player, safePlay, soundOn])
 
 		// Pause when autoPlay becomes false (card scrolled off-screen or not focused) — prevents bleed
 		// Uses safePause which waits for any pending play() promise to settle first,
@@ -276,13 +308,15 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 
 		useEffect(() => {
 			try {
-				if (!controls) {
+				if (Platform.OS === 'web' && autoPlay && !soundOn) {
 					player.muted = true
+				} else if (!soundOn) {
+					player.muted = !controls ? true : false
 				} else {
 					player.muted = false
 				}
 			} catch {}
-		}, [player, controls])
+		}, [player, controls, autoPlay, soundOn])
 
 		const play = useCallback(() => {
 			safePlay()

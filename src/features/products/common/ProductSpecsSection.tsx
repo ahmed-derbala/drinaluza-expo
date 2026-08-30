@@ -1,15 +1,13 @@
 import { themeColors } from '@/core/theme'
-import React from 'react'
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
+import { getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { AddressForm, formatAddress } from '@/features/common/address'
 import { GearIcon } from './GearIcons'
 import { useUser } from '@/core/contexts/UserContext'
 import type { MultiLang, Address } from '@/features/common/address'
-
 export interface ProductSpecsSectionProps {
 	editable: boolean
 	colors: any
@@ -40,7 +38,6 @@ export interface ProductSpecsSectionProps {
 	onSavePress?: () => void
 	onCancelPress?: () => void
 }
-
 export default function ProductSpecsSection({
 	editable,
 	colors,
@@ -67,7 +64,6 @@ export default function ProductSpecsSection({
 	const styles = createStyles(colors)
 	const { localize } = useUser()
 	const streetValue = (originStreet as any) || { en: '', tn_latn: '', tn_arab: '' }
-
 	if (editable) {
 		return (
 			<View style={styles.card}>
@@ -80,7 +76,6 @@ export default function ProductSpecsSection({
 						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={{ padding: 4 }} />}
 					</View>
 				</View>
-
 				{/* Caliber Selection */}
 				<View style={styles.fieldContainer}>
 					<Text style={styles.fieldLabel}>
@@ -113,7 +108,6 @@ export default function ProductSpecsSection({
 						))}
 					</View>
 				</View>
-
 				{/* Harvest Selection */}
 				<View style={styles.fieldContainer}>
 					<Text style={styles.fieldLabel}>{translate('harvest', 'Harvest')}</Text>
@@ -130,7 +124,6 @@ export default function ProductSpecsSection({
 						))}
 					</View>
 				</View>
-
 				{/* Gear Selection */}
 				<View style={styles.fieldContainer}>
 					<Text style={styles.fieldLabel}>{translate('gear', 'Gear')}</Text>
@@ -147,10 +140,8 @@ export default function ProductSpecsSection({
 						))}
 					</View>
 				</View>
-
 				{/* Origin Address Section */}
 				<Text style={[styles.fieldLabel, { fontSize: 15, fontWeight: '700', color: colors.text, marginTop: 8, marginBottom: 12 }]}>{translate('origin_address', 'Origin Address')}</Text>
-
 				<AddressForm
 					street={streetValue}
 					setStreet={setOriginStreet || (() => {})}
@@ -164,10 +155,8 @@ export default function ProductSpecsSection({
 			</View>
 		)
 	}
-
 	// Read-only specs card for detail page
 	if (!specs) return null
-
 	return (
 		<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			<View style={styles.metaCardHeader}>
@@ -179,7 +168,6 @@ export default function ProductSpecsSection({
 				</View>
 				{onEdit && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEdit} style={{ padding: 4 }} />}
 			</View>
-
 			{/* Caliber */}
 			<View style={styles.specDetailRow}>
 				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('caliber', 'Caliber')}</Text>
@@ -219,7 +207,6 @@ export default function ProductSpecsSection({
 					})}
 				</View>
 			</View>
-
 			{/* Harvest */}
 			<View style={styles.specDetailRow}>
 				<Text style={[styles.specDetailLabel, { color: colors.textSecondary }]}>{translate('harvest', 'Harvest')}</Text>
@@ -228,7 +215,6 @@ export default function ProductSpecsSection({
 					<Text style={[styles.harvestText, { color: colors.success }]}>{getHarvestLabel(specs.harvest || 'farm')}</Text>
 				</View>
 			</View>
-
 			{/* Gear */}
 			{specs.gear && (
 				<View style={styles.specDetailRow}>
@@ -239,7 +225,6 @@ export default function ProductSpecsSection({
 					</View>
 				</View>
 			)}
-
 			{/* Origin */}
 			{specs.origin && (
 				<View style={[styles.specDetailRow, { borderBottomWidth: 0 }]}>
@@ -252,7 +237,6 @@ export default function ProductSpecsSection({
 		</View>
 	)
 }
-
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		card: {

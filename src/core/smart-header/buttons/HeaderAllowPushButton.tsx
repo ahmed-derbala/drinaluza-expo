@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { Linking, Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { log } from '@/core/log'

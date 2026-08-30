@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, useWindowDimensions, Platform, RefreshControl } from 'react-native'
+import { useState, useEffect, useRef, useCallback } from 'react'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { useRouter } from 'expo-router'
 import { FlashList } from '@shopify/flash-list'
-
 const TypedFlashList = FlashList as any
-
-import { useTheme, themeColors } from '@/core/theme'
+import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { useUser } from '@/core/contexts/UserContext'
 import { getItem, setItem, getToken } from '@/core/storage'
@@ -24,19 +22,15 @@ import FeedProductCard from '@/features/feed/FeedProductCard'
 import { enrichFeedContacts } from '@/features/feed/feed.helpers'
 import { FeedItem } from '@/features/feed/feed.interface'
 import { searchApi } from './search.api'
-
 type CartItem = FeedItem & { quantity: number }
-
 export default function SearchScreen() {
 	const { colors } = useTheme()
 	const { headerHeight } = useLayout()
 	const router = useRouter()
 	const { localize } = useUser()
 	const insets = useSafeAreaInsets()
-
 	// Layout responsiveness
 	const { numColumns, gap, padding, itemWidth, isWeb } = useResponsiveGrid()
-
 	// Search states
 	const [query, setQuery] = useState('')
 	const [scopes, setScopes] = useState<string[]>(['products', 'users'])
@@ -45,22 +39,17 @@ export default function SearchScreen() {
 	const [loadingMore, setLoadingMore] = useState(false)
 	const [refreshing, setRefreshing] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
-
 	// Pagination states
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
-
 	// UI toggles
 	const [showFilters, setShowFilters] = useState(false)
 	const [showHistory, setShowHistory] = useState(false)
 	const [history, setHistory] = useState<string[]>([])
-
 	// Cart state
 	const [cart, setCart] = useState<CartItem[]>([])
-
 	const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 	const inputRef = useRef<TextInput | null>(null)
-
 	// Load search history and cart on mount
 	useEffect(() => {
 		const loadInitialData = async () => {
@@ -79,7 +68,6 @@ export default function SearchScreen() {
 		}
 		loadInitialData()
 	}, [])
-
 	// Determine kind of card based on item attributes (robust parsing helper)
 	const getCardKind = (item: any) => {
 		if (item.card?.kind) return item.card.kind
@@ -87,7 +75,6 @@ export default function SearchScreen() {
 		if (item.price || item.unit || item.stock || item.business) return 'product'
 		return 'product'
 	}
-
 	// Search execution logic
 	const executeSearch = useCallback(
 		async (searchQuery: string, currentScopes: string[], pageNum: number = 1, shouldAppend: boolean = false) => {
@@ -98,7 +85,6 @@ export default function SearchScreen() {
 				setRefreshing(false)
 				return
 			}
-
 			try {
 				if (pageNum === 1 && !refreshing) {
 					setLoading(true)
@@ -106,9 +92,7 @@ export default function SearchScreen() {
 					setLoadingMore(true)
 				}
 				setError(null)
-
 				const response = await searchApi(searchQuery, currentScopes, pageNum, 10)
-
 				// Extract docs based on various possible API designs
 				let fetchedDocs: any[] = []
 				if (response?.data) {
@@ -129,19 +113,16 @@ export default function SearchScreen() {
 						fetchedDocs = combined
 					}
 				}
-
 				// Map them to format expected by FeedProductCard
 				const mappedDocs = fetchedDocs.map((item) => ({
 					...item,
 					card: item.card || { kind: getCardKind(item) }
 				}))
-
 				if (mappedDocs.length < 10) {
 					setHasMore(false)
 				} else {
 					setHasMore(true)
 				}
-
 				if (shouldAppend) {
 					setResults((prev) => {
 						const updated = [...prev, ...mappedDocs]
@@ -152,7 +133,6 @@ export default function SearchScreen() {
 					setResults(mappedDocs)
 					enrichFeedContacts(mappedDocs, setResults)
 				}
-
 				// Add successful search query to history
 				if (searchQuery.trim().length > 0) {
 					setHistory((prev) => {
@@ -174,33 +154,28 @@ export default function SearchScreen() {
 		},
 		[refreshing]
 	)
-
 	// Watch query changes & trigger search after 1 second debounce
 	useEffect(() => {
 		if (debounceTimer.current) {
 			clearTimeout(debounceTimer.current)
 		}
-
 		if (!query.trim()) {
 			setResults([])
 			setPage(1)
 			setHasMore(false)
 			return
 		}
-
 		debounceTimer.current = setTimeout(() => {
 			setPage(1)
 			setHasMore(true)
 			executeSearch(query, scopes, 1, false)
 		}, 1000)
-
 		return () => {
 			if (debounceTimer.current) {
 				clearTimeout(debounceTimer.current)
 			}
 		}
 	}, [query, scopes, executeSearch])
-
 	// Submit search immediately (triggered by keyboard or history item click)
 	const triggerImmediateSearch = (targetQuery: string, targetScopes: string[] = scopes) => {
 		if (debounceTimer.current) {
@@ -210,14 +185,12 @@ export default function SearchScreen() {
 		setHasMore(true)
 		executeSearch(targetQuery, targetScopes, 1, false)
 	}
-
 	const handleRefresh = () => {
 		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
 		executeSearch(query, scopes, 1, false)
 	}
-
 	const handleLoadMore = () => {
 		if (hasMore && !loading && !loadingMore && !refreshing && query.trim()) {
 			const nextPage = page + 1
@@ -225,7 +198,6 @@ export default function SearchScreen() {
 			executeSearch(query, scopes, nextPage, true)
 		}
 	}
-
 	// Toggle scope selection
 	const toggleScope = (scope: string) => {
 		let newScopes = [...scopes]
@@ -242,7 +214,6 @@ export default function SearchScreen() {
 		}
 		setScopes(newScopes)
 	}
-
 	// Clear search query
 	const clearSearch = () => {
 		setQuery('')
@@ -255,14 +226,12 @@ export default function SearchScreen() {
 		}
 		inputRef.current?.focus()
 	}
-
 	// Clear whole search history
 	const clearHistory = async () => {
 		setHistory([])
 		await setItem('search_history', [])
 		toast.show({ title: 'Success', content: translate('clear_history', 'Search history cleared'), borderColor: colors.success })
 	}
-
 	// Handle adding to cart
 	const handleAddToCart = useCallback(
 		async (item: any, qty: number) => {
@@ -273,10 +242,8 @@ export default function SearchScreen() {
 					router.push('/auth')
 					return
 				}
-
 				const existingIdx = cart.findIndex((c) => c._id === item._id)
 				let newCart: CartItem[]
-
 				if (existingIdx > -1) {
 					newCart = [...cart]
 					newCart[existingIdx] = {
@@ -286,7 +253,6 @@ export default function SearchScreen() {
 				} else {
 					newCart = [...cart, { ...item, quantity: qty }]
 				}
-
 				setCart(newCart)
 				await setItem('cart', newCart)
 				toast.show({
@@ -302,13 +268,11 @@ export default function SearchScreen() {
 		},
 		[cart, localize, router, colors]
 	)
-
 	// List renderers
 	const renderFooter = useCallback(() => {
 		if (!loadingMore) return null
 		return <Spinner size="small" expand={false} />
 	}, [loadingMore])
-
 	const renderItem = useCallback(
 		({ item }: { item: any }) => (
 			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: gap }}>
@@ -317,18 +281,15 @@ export default function SearchScreen() {
 		),
 		[numColumns, handleAddToCart]
 	)
-
 	const renderEmpty = useCallback(() => {
 		if (error) {
 			return <ErrorBlock onRetry={handleRefresh} />
 		}
 		return <EmptyState style={styles.empty} />
 	}, [error, handleRefresh])
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background, paddingTop: headerHeight }]}>
 			<SmartHeader title={translate('search_title', 'Search')} fallbackRoute="/(home)/feed" />
-
 			{/* Search input container */}
 			<View style={[styles.searchBarContainer, { borderBottomColor: colors.border }]}>
 				<View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.inputBorder }]}>
@@ -371,7 +332,6 @@ export default function SearchScreen() {
 					</TouchableOpacity>
 				</View>
 			</View>
-
 			{/* Collapsible Filter Panel */}
 			{showFilters && (
 				<View style={[styles.panel, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
@@ -390,7 +350,6 @@ export default function SearchScreen() {
 								{translate('products', 'Products')}
 							</Text>
 						</TouchableOpacity>
-
 						<TouchableOpacity
 							style={[
 								styles.chip,
@@ -405,7 +364,6 @@ export default function SearchScreen() {
 					</View>
 				</View>
 			)}
-
 			{/* Collapsible History Panel */}
 			{showHistory && (
 				<View style={[styles.panel, { backgroundColor: colors.background, borderBottomColor: colors.border }]}>
@@ -440,7 +398,6 @@ export default function SearchScreen() {
 					)}
 				</View>
 			)}
-
 			{/* Main Results Container */}
 			<View style={styles.contentWrap}>
 				{loading && results.length === 0 ? (
@@ -469,7 +426,6 @@ export default function SearchScreen() {
 		</View>
 	)
 }
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1

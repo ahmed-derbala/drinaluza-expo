@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { IconButton } from '@/features/common/buttons/IconButton'

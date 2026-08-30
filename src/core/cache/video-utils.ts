@@ -7,7 +7,15 @@ import { log } from '@/core/log'
 import type { MediaFile } from '@/core/smart-media/types'
 import { ensureDirectory, getVideosDirectory, getFileInfo as diskGetFileInfo, deletePath } from '@/core/disk'
 
-export const VIDEOS_FOLDER = getVideosDirectory().uri + '/'
+export const VIDEOS_FOLDER = (() => {
+	if (Platform.OS === 'web') return ''
+	try {
+		const dir = getVideosDirectory()
+		return (dir as any)?.uri ? (dir as any).uri + '/' : ''
+	} catch {
+		return ''
+	}
+})()
 export const VIDEOS_FOLDER_URI = VIDEOS_FOLDER
 
 export const ensureVideosFolder = async (): Promise<void> => {

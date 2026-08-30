@@ -39,9 +39,9 @@ export const downloadMediaFile = async ({ url, fileName }: DownloadMediaOptions)
 	}
 
 	try {
-		const destination = new File(getDocumentDirectory(), resolveFileName(url, fileName))
-		const file = await downloadFile(url, destination)
-		return file?.uri ?? null
+		const destination = new File(getDocumentDirectory() as any, resolveFileName(url, fileName))
+		const file = await downloadFile(url, destination as any)
+		return (file as any)?.uri ?? null
 	} catch (error) {
 		log({ level: 'error', label: 'smart-media', message: 'Failed to download media file', error })
 		return null

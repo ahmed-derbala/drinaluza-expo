@@ -1,5 +1,5 @@
-import React, { useCallback, useMemo, useState } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, RefreshControl, ScrollView } from 'react-native'
+import { useCallback, useMemo } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -13,7 +13,6 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { SmartMediaView } from '@/core/smart-media'
 import { usePersonalDashboard } from './usePersonalDashboard'
 import { isPersonalDashboard, DashboardRankItem } from './dashboard.interface'
-
 const PersonalDashboardScreen = () => {
 	const { colors } = useTheme()
 	const styles = useMemo(() => createStyles(colors), [colors])
@@ -21,20 +20,15 @@ const PersonalDashboardScreen = () => {
 	const router = useRouter()
 	const { onScroll } = useScrollHandler()
 	const insets = useSafeAreaInsets()
-
 	const { data: dashboardResponse, isInitialLoading, isRefreshing, isOffline, refresh } = usePersonalDashboard()
 	const dashboardData = dashboardResponse?.data ?? null
-
 	const onRefresh = useCallback(() => {
 		refresh()
 	}, [refresh])
-
 	const headerActions = useMemo(() => [<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} isOffline={isOffline} />], [onRefresh, isRefreshing, isOffline])
-
 	if (isInitialLoading) {
 		return <Spinner />
 	}
-
 	if (isOffline && !dashboardData) {
 		return (
 			<View style={styles.container}>
@@ -43,7 +37,6 @@ const PersonalDashboardScreen = () => {
 			</View>
 		)
 	}
-
 	if (!dashboardData || !isPersonalDashboard(dashboardData)) {
 		return (
 			<View style={styles.container}>
@@ -52,9 +45,7 @@ const PersonalDashboardScreen = () => {
 			</View>
 		)
 	}
-
 	const personalUser = dashboardData.user
-
 	return (
 		<View style={styles.container}>
 			<Stack.Screen
@@ -66,7 +57,6 @@ const PersonalDashboardScreen = () => {
 					} as any
 				}
 			/>
-
 			<SmartHeader.ScrollView
 				contentContainerStyle={[styles.scrollContent, { paddingBottom: 90 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
@@ -92,9 +82,7 @@ const PersonalDashboardScreen = () => {
 						)}
 					</View>
 				</LinearGradient>
-
 				<SectionTitle title={translate('dashboard.top_businesses', 'Your businesses')} colors={colors} />
-
 				<RankPairSection
 					title={translate('dashboard.top_businesses_frequent', 'Most frequent')}
 					emptyHint={translate('dashboard.no_businesses_yet', 'No business activity yet')}
@@ -103,7 +91,6 @@ const PersonalDashboardScreen = () => {
 					colors={colors}
 					router={router}
 				/>
-
 				<RankPairSection
 					title={translate('dashboard.top_businesses_new', 'Newest')}
 					emptyHint={translate('dashboard.no_businesses_yet', 'No business activity yet')}
@@ -116,16 +103,13 @@ const PersonalDashboardScreen = () => {
 		</View>
 	)
 }
-
 // --- Shared UI pieces ---
-
 const SectionTitle = ({ title, colors }: { title: string; colors: ThemeColors }) => (
 	<View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14, marginTop: 10 }}>
 		<View style={{ width: 4, height: 22, borderRadius: 2, backgroundColor: colors.primary }} />
 		<Text style={{ fontSize: 19, fontWeight: '800', color: colors.text, letterSpacing: -0.5, flex: 1 }}>{title}</Text>
 	</View>
 )
-
 type RankPairSectionProps = {
 	title: string
 	emptyHint: string
@@ -134,10 +118,8 @@ type RankPairSectionProps = {
 	colors: ThemeColors
 	router: ReturnType<typeof useRouter>
 }
-
 const RankPairSection = ({ title, emptyHint, items, styles, colors, router }: RankPairSectionProps) => {
 	const { localize } = useUser()
-
 	if (items.length === 0) {
 		return (
 			<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.border, marginBottom: 14 }]}>
@@ -146,7 +128,6 @@ const RankPairSection = ({ title, emptyHint, items, styles, colors, router }: Ra
 			</View>
 		)
 	}
-
 	return (
 		<View style={[styles.rankPanel, { backgroundColor: colors.background, borderColor: colors.border, marginBottom: 14 }]}>
 			<Text style={[styles.rankPanelTitle, { color: colors.text }]}>{title}</Text>
@@ -184,7 +165,6 @@ const RankPairSection = ({ title, emptyHint, items, styles, colors, router }: Ra
 		</View>
 	)
 }
-
 const createStyles = (colors: ThemeColors) =>
 	StyleSheet.create({
 		container: { flex: 1, backgroundColor: colors.background },
@@ -239,5 +219,4 @@ const createStyles = (colors: ThemeColors) =>
 		rankMetric: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 10 },
 		rankMetricText: { fontSize: 11, fontWeight: '800' }
 	})
-
 export default PersonalDashboardScreen

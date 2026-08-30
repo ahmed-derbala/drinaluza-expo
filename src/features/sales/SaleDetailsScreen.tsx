@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 import { View, StyleSheet, RefreshControl } from 'react-native'
 import { useLocalSearchParams, Stack } from 'expo-router'
 import { useFocusEffect } from 'expo-router'

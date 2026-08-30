@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Platform, useWindowDimensions, KeyboardAvoidingView } from 'react-native'
 import { useRouter, useLocalSearchParams, Stack } from 'expo-router'
 import { getBusinessBySlug, updateBusiness } from '@/features/businesses/businesses.api'
@@ -22,20 +22,17 @@ import { BaseCard } from '@/features/common/cards/BaseCard'
 import { SectionRow } from '@/features/common/sections/SectionRow'
 import { log } from '@/core/log'
 import { parseError } from '@/core/error/errorHandler'
-
 export default function EditBusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { translate, localize } = useUser()
 	const { width } = useWindowDimensions()
-
 	const [loading, setLoading] = useState(true)
 	const [saving, setSaving] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 	const [focusedField, setFocusedField] = useState<string | null>(null)
 	const [uploadingPhoto, setUploadingPhoto] = useState(false)
-
 	const [editMode, setEditMode] = useState({
 		names: false,
 		about: false,
@@ -43,24 +40,20 @@ export default function EditBusinessScreen() {
 		coordinates: false,
 		address: false
 	})
-
 	// Form State
 	const [nameEn, setNameEn] = useState('')
 	const [nameTnLatn, setNameTnLatn] = useState('')
 	const [nameTnArab, setNameTnArab] = useState('')
 	const [description, setDescription] = useState('')
-
 	const [street, setStreet] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [city, setCity] = useState('')
 	const [region, setRegion] = useState('')
 	const [country, setCountry] = useState('')
-
 	const [phoneCountry, setPhoneCountry] = useState('216')
 	const [phoneLocal, setPhoneLocal] = useState('')
 	const [backupPhones, setBackupPhones] = useState<Array<{ countryCode: string; localNumber: string }>>([])
 	const [whatsapp, setWhatsapp] = useState('')
 	const [email, setEmail] = useState('')
-
 	const [longitude, setLongitude] = useState('')
 	const [latitude, setLatitude] = useState('')
 	const [accuracy, setAccuracy] = useState('5.0')
@@ -71,26 +64,22 @@ export default function EditBusinessScreen() {
 	const [businessState, setBusinessState] = useState('active')
 	const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
 	const [businessId, setBusinessId] = useState<string | null>(null)
-
 	useEffect(() => {
 		if (businessSlug) {
 			loadBusiness()
 		}
 	}, [businessSlug])
-
 	const loadBusiness = async () => {
 		try {
 			setLoading(true)
 			setError(null)
 			const res = await getBusinessBySlug(businessSlug!)
 			const biz = res.data
-
 			setBusinessId(biz._id || null)
 			setNameEn(biz.name?.en || '')
 			setNameTnLatn(biz.name?.tn_latn || '')
 			setNameTnArab(biz.name?.tn_arab || '')
 			setDescription(biz.description || '')
-
 			const s = biz.address?.street as unknown as MultiLang | undefined
 			if (s) {
 				setStreet({ en: s.en || '', tn_latn: s.tn_latn || '', tn_arab: s.tn_arab || '' })
@@ -100,7 +89,6 @@ export default function EditBusinessScreen() {
 			setCity(biz.address?.city || '')
 			setRegion(biz.address?.region || '')
 			setCountry(biz.address?.country || '')
-
 			setPhoneCountry(biz.contact?.phone?.countryCode || '216')
 			setPhoneLocal(biz.contact?.phone?.localNumber || '')
 			setBackupPhones(
@@ -111,7 +99,6 @@ export default function EditBusinessScreen() {
 			)
 			setWhatsapp(biz.contact?.whatsapp || '')
 			setEmail(biz.contact?.email || '')
-
 			const locationObj = biz.location
 			const coords = locationObj?.geo?.coordinates ?? (locationObj as any)?.coordinates
 			if (coords && coords.length === 2) {
@@ -134,7 +121,6 @@ export default function EditBusinessScreen() {
 			setLoading(false)
 		}
 	}
-
 	const handleGetCurrentLocation = async () => {
 		try {
 			const { status } = await Location.requestForegroundPermissionsAsync()
@@ -142,7 +128,6 @@ export default function EditBusinessScreen() {
 				toast.show({ title: 'Error', content: 'Permission to access location was denied', borderColor: colors.error })
 				return
 			}
-
 			const location = await Location.getCurrentPositionAsync({})
 			setLatitude(location.coords.latitude.toString())
 			setLongitude(location.coords.longitude.toString())
@@ -155,17 +140,14 @@ export default function EditBusinessScreen() {
 			toast.show({ title: 'Error', content: 'Failed to get current location', borderColor: colors.error })
 		}
 	}
-
 	const handleUploadPhoto = async () => {
 		try {
 			if (!businessId) {
 				toast.show({ title: 'Error', content: 'Business id is missing. Please reload the screen.', borderColor: colors.error })
 				return
 			}
-
 			const picked = await pickSingleMediaFile({ mediaType: 'image', multiple: false })
 			if (!picked) return
-
 			setUploadingPhoto(true)
 			const file = await uploadThumbnail({ targetModelName: 'businesses', targetModelId: businessId, file: picked })
 			setThumbnailUrl(file.url)
@@ -179,7 +161,6 @@ export default function EditBusinessScreen() {
 			setUploadingPhoto(false)
 		}
 	}
-
 	const saveNames = async () => {
 		if (!nameEn.trim()) {
 			toast.show({ title: 'Error', content: 'English name is required', borderColor: colors.error })
@@ -203,7 +184,6 @@ export default function EditBusinessScreen() {
 			setSaving(false)
 		}
 	}
-
 	const saveAbout = async () => {
 		try {
 			setSaving(true)
@@ -218,7 +198,6 @@ export default function EditBusinessScreen() {
 			setSaving(false)
 		}
 	}
-
 	const saveContact = async () => {
 		try {
 			setSaving(true)
@@ -248,7 +227,6 @@ export default function EditBusinessScreen() {
 			setSaving(false)
 		}
 	}
-
 	const saveCoordinates = async () => {
 		try {
 			setSaving(true)
@@ -275,7 +253,6 @@ export default function EditBusinessScreen() {
 			setSaving(false)
 		}
 	}
-
 	const saveAddress = async () => {
 		if (!street.en.trim()) {
 			toast.show({ title: translate('error', 'Error'), content: translate('street_required', 'Street (English) is required'), borderColor: colors.error })
@@ -303,14 +280,11 @@ export default function EditBusinessScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelEdit = (sectionKey: keyof typeof editMode) => {
 		setEditMode((prev) => ({ ...prev, [sectionKey]: false }))
 		loadBusiness()
 	}
-
 	const styles = useMemo(() => createStyles(colors, width), [colors, width])
-
 	if (loading) {
 		return (
 			<View style={[styles.container, styles.centered, { backgroundColor: colors.background }]}>
@@ -318,7 +292,6 @@ export default function EditBusinessScreen() {
 			</View>
 		)
 	}
-
 	if (error) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -328,12 +301,10 @@ export default function EditBusinessScreen() {
 			</View>
 		)
 	}
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen options={{ headerShown: false }} />
 			<SmartHeader title={translate('edit_business', 'Edit Business')} fallbackRoute="/dashboard" />
-
 			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<SmartHeader.ScrollView style={styles.form} contentContainerStyle={[styles.formContent, styles.grow]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
 					{/* Top Hero Banner */}
@@ -358,9 +329,7 @@ export default function EditBusinessScreen() {
 							</View>
 						</View>
 					</View>
-
 					{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
-
 					<View style={styles.tabContent}>
 						{/* Translations Card */}
 						<MultiLingualCard
@@ -376,7 +345,6 @@ export default function EditBusinessScreen() {
 								else setNameTnArab(value)
 							}}
 						/>
-
 						{/* Description Card */}
 						<BaseCard
 							title={translate('about_business', 'About Business')}
@@ -406,7 +374,6 @@ export default function EditBusinessScreen() {
 								<Text style={[styles.descriptionText, { color: description ? colors.text : colors.textTertiary }]}>{description || translate('no_description', 'No description provided yet.')}</Text>
 							)}
 						</BaseCard>
-
 						{/* Contact Info Card */}
 						<BaseCard
 							title={translate('contact', 'Contact Info')}
@@ -448,7 +415,6 @@ export default function EditBusinessScreen() {
 											</View>
 										</View>
 									</View>
-
 									{/* Backup Phones Section */}
 									<View style={{ marginTop: 8 }}>
 										<Text style={styles.inputLabel}>Backup Phones</Text>
@@ -506,7 +472,6 @@ export default function EditBusinessScreen() {
 											<Text style={[styles.addBackupText, { color: colors.primary }]}>Add Backup Phone</Text>
 										</TouchableOpacity>
 									</View>
-
 									<View style={styles.inputGroup}>
 										<Text style={styles.inputLabel}>WhatsApp</Text>
 										<View style={[styles.inputWrapper, focusedField === 'whatsapp' && styles.inputWrapperFocused]}>
@@ -523,7 +488,6 @@ export default function EditBusinessScreen() {
 											/>
 										</View>
 									</View>
-
 									<View style={styles.inputGroup}>
 										<Text style={styles.inputLabel}>Email</Text>
 										<View style={[styles.inputWrapper, focusedField === 'email' && styles.inputWrapperFocused]}>
@@ -553,7 +517,6 @@ export default function EditBusinessScreen() {
 								</View>
 							)}
 						</BaseCard>
-
 						{/* Coordinates Card */}
 						<BaseCard
 							title={translate('coordinates', 'Coordinates')}
@@ -597,7 +560,6 @@ export default function EditBusinessScreen() {
 											</View>
 										</View>
 									</View>
-
 									<View style={{ flexDirection: 'row', gap: 12 }}>
 										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
 											<Text style={styles.inputLabel}>Accuracy (m)</Text>
@@ -630,7 +592,6 @@ export default function EditBusinessScreen() {
 											</View>
 										</View>
 									</View>
-
 									<View style={{ flexDirection: 'row', gap: 12 }}>
 										<View style={[styles.inputGroup, { flex: 1, marginBottom: 0 }]}>
 											<Text style={styles.inputLabel}>Heading (°)</Text>
@@ -663,7 +624,6 @@ export default function EditBusinessScreen() {
 											</View>
 										</View>
 									</View>
-
 									<TouchableOpacity style={[styles.sharingCard, sharingEnabled && styles.sharingCardActive]} onPress={() => setSharingEnabled(!sharingEnabled)} activeOpacity={0.8}>
 										<View style={[styles.checkbox, sharingEnabled && styles.checkboxActive]}>{sharingEnabled && <Ionicons name="checkmark" size={16} color={themeColors.buttonText} />}</View>
 										<View style={{ flex: 1 }}>
@@ -688,7 +648,6 @@ export default function EditBusinessScreen() {
 								</View>
 							)}
 						</BaseCard>
-
 						{/* Address Card */}
 						<BaseCard
 							title={translate('address', 'Address')}
@@ -714,7 +673,6 @@ export default function EditBusinessScreen() {
 		</View>
 	)
 }
-
 const createStyles = (colors: any, width: number) =>
 	StyleSheet.create({
 		container: {

@@ -1,11 +1,9 @@
-import React, { useMemo, useCallback } from 'react'
-import { View, RefreshControl } from 'react-native'
-
+import React, { useMemo } from 'react'
+import { RefreshControl } from 'react-native'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import { useTheme } from '@/core/theme'
 import EmptyState from '@/features/common/EmptyState'
-
 interface OrderListProps<T> {
 	data: T[]
 	renderItem: ({ item, index }: any) => React.ReactElement
@@ -18,7 +16,6 @@ interface OrderListProps<T> {
 	ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null
 	contentContainerStyle?: any
 }
-
 export const OrderList = React.memo(function OrderList<T>({
 	data,
 	renderItem,
@@ -32,14 +29,11 @@ export const OrderList = React.memo(function OrderList<T>({
 	contentContainerStyle
 }: OrderListProps<T>) {
 	const { colors } = useTheme()
-
 	const footer = useMemo(() => {
 		if (!loadingMore) return null
 		return <Spinner size="small" expand={false} />
 	}, [loadingMore])
-
 	const empty = useMemo(() => <EmptyState style={styles.empty} />, [])
-
 	return (
 		<SmartHeader.FlashList
 			data={data}
@@ -58,7 +52,6 @@ export const OrderList = React.memo(function OrderList<T>({
 		/>
 	)
 }) as <T>(props: OrderListProps<T>) => React.ReactElement
-
 const styles = {
 	loadingMore: {
 		paddingVertical: 20,

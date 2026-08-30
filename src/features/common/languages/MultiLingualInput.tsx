@@ -1,4 +1,3 @@
-import React from 'react'
 import { View } from 'react-native'
 import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import { useUser } from '@/core/contexts/UserContext'

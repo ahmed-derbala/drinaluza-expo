@@ -1,4 +1,4 @@
-import React, { useSyncExternalStore, useCallback } from 'react'
+import { useSyncExternalStore, useCallback } from 'react'
 import { useTheme } from '@/core/theme'
 import { ConnectionService, BackendState } from '@/core/connection'
 import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/cache/useCacheFirst'

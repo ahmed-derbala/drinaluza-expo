@@ -1,4 +1,3 @@
-import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, ThemeColors, themeColors } from '@/core/theme'

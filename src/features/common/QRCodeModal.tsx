@@ -1,4 +1,4 @@
-import React, { useRef } from 'react'
+import { useRef } from 'react'
 import { View, Text, StyleSheet, Modal, Platform, Alert, Share } from 'react-native'
 import * as Print from 'expo-print'
 import * as Sharing from 'expo-sharing'

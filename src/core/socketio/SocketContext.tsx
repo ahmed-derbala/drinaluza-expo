@@ -1,4 +1,3 @@
-import { themeColors } from '@/core/theme'
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { Socket } from 'socket.io-client'
 import { useRouter } from 'expo-router'
@@ -13,19 +12,15 @@ import { getDashboardProfiles } from '@/features/dashboard/dashboard.api'
 import { DashboardProfile } from '@/features/dashboard/dashboard.interface'
 import { PRIORITY_COLORS, Priority } from '@/features/common/PriorityBadge'
 import { getNotificationTemplateColor } from '@/features/notifications/notifications.constant'
-
 interface SocketContextType {
 	socket: Socket | null
 }
-
 const SocketContext = createContext<SocketContextType | undefined>(undefined)
-
 export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const { user, localize } = useUser()
 	const { refreshNotificationCount } = useNotification()
 	const router = useRouter()
 	const [socket, setSocket] = useState<Socket | null>(ConnectionService.getPrivateSocket())
-
 	useEffect(() => {
 		// Only connect if user is logged in
 		if (!user?.slug) {
@@ -33,21 +28,16 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			setSocket(null)
 			return
 		}
-
 		let cancelled = false
 		let currentSocket: Socket | null = null
-
 		const handleNewNotification = async (data: any) => {
 			log({ level: 'info', label: 'socket', message: 'Received new notification', data })
-
 			const toastTitle = localize(data.title) || 'New notification'
 			const toastMessage = localize(data.content) || ''
 			const priorityColor = data.priority ? PRIORITY_COLORS[data.priority as Priority] : undefined
 			const templateColor = getNotificationTemplateColor(data.template?.slug)
-
 			let targetScreen = data.screen
 			let customOnPress: (() => void) | undefined
-
 			if (targetScreen === '/business/sales') {
 				targetScreen = undefined
 				customOnPress = async () => {
@@ -64,7 +54,6 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 					}
 				}
 			}
-
 			toast.show({
 				title: toastTitle,
 				content: toastMessage,
@@ -73,30 +62,23 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 				onPress: customOnPress,
 				borderColor: templateColor ?? priorityColor
 			})
-
 			// Refresh count
 			refreshNotificationCount()
 		}
-
 		const setup = async () => {
 			const token = await getToken()
 			if (cancelled || !token) return
-
 			log({ level: 'info', label: 'socket', message: `Initializing private socket for user: ${user.slug}` })
 			ConnectionService.connect(token)
-
 			currentSocket = ConnectionService.getPrivateSocket()
 			if (!currentSocket) return
-
 			setSocket(currentSocket)
 			currentSocket.on('new_notification', handleNewNotification)
 		}
-
 		// Defer private socket handshake — not critical for feed paint
 		const cancelDefer = deferStartup.normal(() => {
 			if (!cancelled) setup()
 		})
-
 		return () => {
 			cancelled = true
 			cancelDefer()
@@ -106,12 +88,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 			}
 		}
 	}, [user?.slug, refreshNotificationCount, router, localize])
-
 	const value = useMemo(() => ({ socket }), [socket])
-
 	return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>
 }
-
 const useSocket = () => {
 	const context = useContext(SocketContext)
 	if (context === undefined) {

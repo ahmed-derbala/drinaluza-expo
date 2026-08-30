@@ -18,13 +18,11 @@ import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
 import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
-
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
 	addToCart: (item: any, quantity: number) => void
 	style?: StyleProp<ViewStyle>
 }
-
 const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, style }: FeedProductCardProps) {
 	const productFeedItem = item as ProductFeedItem
 	const { localize, currency, formatPrice, translate } = useUser()
@@ -36,13 +34,11 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const setActiveVideoId = React.useContext(SetActiveVideoIdContext)
 	const focusedId = React.useContext(FocusedIdContext)
 	const setFocusedId = React.useContext(SetFocusedIdContext)
-
 	// Memoize item ID to avoid repeated object property access
 	const itemId = useMemo(() => item._id || (item as any).slug, [item._id, (item as any).slug])
 	const isFocused = useMemo(() => focusedId === itemId, [focusedId, itemId])
 	const isVisible = useMemo(() => visibleIds.has(itemId) || isFocused, [visibleIds, itemId, isFocused])
 	const isActiveVideo = useMemo(() => activeVideoId === itemId, [activeVideoId, itemId])
-
 	const carouselMedia = useMemo<MediaField | null>(() => {
 		const rawMedia = (item as any).media as MediaField | null | undefined
 		const hasThumb = !!(rawMedia?.thumbnail && (rawMedia.thumbnail as any).url)
@@ -56,21 +52,18 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		}
 		return (rawMedia as MediaField) ?? null
 	}, [item])
-
 	const hasMultipleMedia = useMemo(() => {
 		if (!carouselMedia) return false
 		const thumbCount = carouselMedia.thumbnail ? 1 : 0
 		const galleryCount = Array.isArray(carouselMedia.gallery) ? carouselMedia.gallery.length : 0
 		return thumbCount + galleryCount > 1
 	}, [carouselMedia])
-
 	const hasVideo = useMemo(() => {
 		if (!carouselMedia) return false
 		const thumbIsVideo = (carouselMedia.thumbnail as any)?.resource_type === 'video' || (carouselMedia.thumbnail as any)?.mimetype?.startsWith('video/')
 		const galleryHasVideo = Array.isArray(carouselMedia.gallery) && carouselMedia.gallery.some((f: any) => f.resource_type === 'video' || f.mimetype?.startsWith('video/'))
 		return thumbIsVideo || galleryHasVideo
 	}, [carouselMedia])
-
 	// Only the focused card should auto-play / auto-advance. Using isFocused
 	// ensures a card that loses focus immediately stops its carousel timer
 	// and its video is paused via autoPlay:false → safePause.
@@ -79,18 +72,14 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
 	const step = item.unit?.step || 1
-
 	useEffect(() => {
 		setQuantity(minQuantity)
 	}, [itemId, minQuantity])
-
 	const rating = item.rating?.average || 0
 	const ratingCount = item.rating?.count || 0
-
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 	const pricePerUnit = useMemo(() => unitPrice / (item.unit?.min || 1), [unitPrice, item.unit?.min])
-
 	const singlePiece = item.unit?.singlePiece
 	const singlePieceAvg = useMemo(() => {
 		if (!singlePiece) return undefined
@@ -98,9 +87,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		if (singlePiece.minWeightKg != null && singlePiece.maxWeightKg != null) return (singlePiece.minWeightKg + singlePiece.maxWeightKg) / 2
 		return undefined
 	}, [singlePiece])
-
 	const mainName = useMemo(() => localize(item.name), [item.name, localize])
-
 	const increment = useCallback(
 		(e: any) => {
 			e.stopPropagation?.()
@@ -111,7 +98,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		},
 		[step, maxQuantity]
 	)
-
 	const decrement = useCallback(
 		(e: any) => {
 			e.stopPropagation?.()
@@ -122,7 +108,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		},
 		[step, minQuantity]
 	)
-
 	const stockQty = item.stock?.quantity || 0
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0
@@ -130,23 +115,18 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const isActive = item.state ? item.state.code === 'active' : (item as any).isActive !== false
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
 	const cartDisabled = !purchaseAllowed || !isActive || isOutOfStock
-
 	const stockColor = isOutOfStock ? themeColors.error : isLowStock ? themeColors.warning : themeColors.success
 	const stockLabel = useMemo(
 		() => (isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')),
 		[isOutOfStock, isLowStock, translate]
 	)
 	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
-
 	const imageUrl = useMemo(() => item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url, [item.media?.thumbnail?.url, item.defaultProduct?.media?.thumbnail?.url])
-
 	const isSmall = useMemo(() => width < 500, [width])
-
 	// Memoize contact buttons existence check
 	const hasContactButtons = useMemo(() => {
 		return !!(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.website || item.business?.location || item.business?.address)
 	}, [item.business?.contact?.phone?.fullNumber, item.business?.contact?.whatsapp, item.business?.contact?.website, item.business?.location, item.business?.address])
-
 	// Memoize cart button press handler
 	const handleCartPress = useCallback(
 		(e: any) => {
@@ -157,7 +137,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		},
 		[cartDisabled, addToCart, item, quantity]
 	)
-
 	// Focus card on hover/touch — only the focused card should autoplay/advance.
 	// Keep activeVideoId in sync with focused for video cards so only one plays.
 	const handleFocusTrigger = useCallback(() => {
@@ -168,7 +147,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 			setActiveVideoId(itemId)
 		}
 	}, [focusedId, itemId, setFocusedId, hasVideo, activeVideoId, setActiveVideoId])
-
 	return (
 		<View
 			style={[styles.card, style, { backgroundColor: colors.background, borderColor: isFocused ? colors.focus : colors.border, borderWidth: isFocused ? 2 : 1 }]}
@@ -196,7 +174,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 					onIndexChange={() => setActiveVideoId(itemId)}
 				/>
 			</View>
-
 			{/* Gradient overlay for text readability */}
 			<LinearGradient
 				colors={[themeColors.background50, themeColors.background25, themeColors.background75]}
@@ -204,12 +181,10 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 				end={{ x: 0, y: 1 }}
 				style={[styles.bgOverlay, { pointerEvents: 'none' }]}
 			/>
-
 			{/* Top content */}
 			<View style={styles.topContent}>
 				<BusinessBlock business={item.business} onPress={handleBusinessPress} />
 			</View>
-
 			{/* Stock overlay */}
 			{(isOutOfStock || isLowStock) && (
 				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : 'transparent', pointerEvents: 'none' }]}>
@@ -219,7 +194,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 					</View>
 				</View>
 			)}
-
 			{/* Contact buttons - right side */}
 			{hasContactButtons && (
 				<View style={styles.contactButtonsSide}>
@@ -231,14 +205,12 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 					</View>
 				</View>
 			)}
-
 			{/* Bottom content — reserve thumb strip height always to prevent shift when SmartMediaCarousel thumbs hide/show */}
 			<View style={[styles.bottomContent, styles.bottomContentWithThumbnails]}>
 				{/* ── Body ── */}
 				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 					<View style={styles.bodyTop}>
 						<ProductNameWithThumbnailBlock name={mainName} imageUrl={imageUrl} onPress={handleProductPress} />
-
 						{/* Rating — always rendered for stable layout */}
 						<View style={styles.ratingRow}>
 							{rating > 0 ? (
@@ -249,7 +221,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 								</>
 							) : null}
 						</View>
-
 						{/* Specs row: caliber + weight, then harvest/gear/origin */}
 						<View style={styles.specsStepperRow}>
 							<View style={styles.specsRowTop}>
@@ -292,7 +263,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 							)}
 						</View>
 					</View>
-
 					<View style={styles.bodyBottom}>
 						{/* Price bottom-left */}
 						<View style={styles.priceRow}>
@@ -303,7 +273,6 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 								{quantity === 1 ? `/ ${item.unit?.measure || translate('unit', 'unit')}` : `${quantity} ${item.unit?.measure || translate('unit', 'unit')}`}
 							</Text>
 						</View>
-
 						<TouchableOpacity
 							style={[styles.cartBtn, cartDisabled && styles.cartBtnDisabled]}
 							onPress={handleCartPress}
@@ -319,9 +288,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		</View>
 	)
 })
-
 export default FeedProductCard
-
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
@@ -484,7 +451,6 @@ const styles = StyleSheet.create({
 		fontWeight: '500',
 		color: themeColors.buttonText40
 	},
-
 	cartBtn: {
 		width: 36,
 		height: 36,

@@ -1,10 +1,11 @@
-import React, { useMemo, useRef, useCallback, useState } from 'react'
+import { useMemo, useRef, useCallback, useState } from 'react'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { SmartHeader } from '@/core/smart-header'
-import { CacheDetailsCard, type CacheDetailsCardHandle } from '@/core/cache/CacheDetailsCard'
+import { CacheDetailsCard, type CacheDetailsCardHandle } from '@/features/settings/CacheDetailsCard'
+import { MediaSettingsCard } from '@/features/settings/MediaSettingsCard'
 import { ResetAppCard } from './ResetAppCard'
 
 export function SettingsScreen() {
@@ -45,6 +46,9 @@ export function SettingsScreen() {
 
 				{/* Primary Card: Cached Data Details */}
 				<CacheDetailsCard ref={cacheRef} />
+
+				{/* Media Settings */}
+				<MediaSettingsCard />
 
 				{/* Danger Zone: Reset App */}
 				<ResetAppCard />

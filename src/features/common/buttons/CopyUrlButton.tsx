@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
 import { translate } from '@/core/translation'

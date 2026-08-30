@@ -1,6 +1,5 @@
 import { themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
-
 export const ORDER_STATUSES = {
 	PENDING_BUSINESS_CONFIRMATION: 'pending_business_confirmation', //active
 	PENDING_CUSTOMER_CONFIRMATION: 'pending_customer_confirmation', //active
@@ -13,7 +12,6 @@ export const ORDER_STATUSES = {
 	CANCELLED_BY_CUSTOMER: 'cancelled_by_customer', //cancelled
 	CANCELLED_BY_BUSINESS: 'cancelled_by_business' //cancelled
 }
-
 export const orderStatusColors = {
 	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: themeColors.warning, // Orange
 	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: themeColors.warning, // Deep Orange
@@ -26,7 +24,6 @@ export const orderStatusColors = {
 	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: themeColors.error, // Red
 	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: themeColors.error // Red
 }
-
 export const orderStatusLabels = {
 	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: translate('pending_businessconfirmation', 'Pending Confirmation'),
 	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: translate('pending_customer_confirmation', 'Pending Customer Confirmation'),
@@ -39,7 +36,6 @@ export const orderStatusLabels = {
 	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: translate('cancelled_by_customer', 'Cancelled'),
 	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: translate('cancelled_by_business', 'Cancelled by Business')
 }
-
 export const orderStatusIcons: Record<string, string> = {
 	all: 'list',
 	cart: 'cart-outline',
@@ -54,7 +50,6 @@ export const orderStatusIcons: Record<string, string> = {
 	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: 'close-circle-outline',
 	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: 'close-circle-outline'
 }
-
 // Get next valid statuses for progression
 const getNextValidStatuses = (currentStatus: string): string[] => {
 	switch (currentStatus) {

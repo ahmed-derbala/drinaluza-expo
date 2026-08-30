@@ -1,7 +1,5 @@
 import type { MultiLang, Address } from '@/features/common/address'
-
 export type { MultiLang, Address } from '@/features/common/address'
-
 type GeoPoint = {
 	geo?: {
 		type: 'Point'
@@ -17,14 +15,12 @@ type GeoPoint = {
 	createdAt?: string
 	updatedAt?: string
 }
-
 type Owner = {
 	_id: string
 	slug: string
 	name: MultiLang
 	updatedAt?: string
 }
-
 type Contact = {
 	phone: {
 		fullNumber: string
@@ -42,7 +38,6 @@ type Contact = {
 	email?: string
 	website?: string
 }
-
 type RatingBreakdown = {
 	1: number
 	2: number
@@ -50,18 +45,15 @@ type RatingBreakdown = {
 	4: number
 	5: number
 }
-
 type Rating = {
 	breakdown: RatingBreakdown
 	average: number
 	count: number
 	total: number
 }
-
 type BusinessState = {
 	code: string
 }
-
 export type Business = {
 	_id: string
 	name: MultiLang
@@ -91,7 +83,6 @@ export type Business = {
 		url: string
 	}
 }
-
 type Pagination = {
 	totalDocs: number
 	totalPages: number
@@ -103,12 +94,10 @@ type Pagination = {
 	prevPage: number | null
 	returnedDocsCount: number
 }
-
 type BusinessesData = {
 	pagination: Pagination
 	docs: Business[]
 }
-
 export type BusinessProductsResponse = {
 	status: number
 	data: {
@@ -121,14 +110,12 @@ export type BusinessProductsResponse = {
 		}
 	}
 }
-
 export interface ProductSpecs {
 	caliber: 1 | 2 | 3 | 4 | 5
 	harvest?: 'wild' | 'farm'
 	gear?: 'trap' | 'gillnet'
 	origin?: Address
 }
-
 export interface Product {
 	_id: string
 	business: Business
@@ -191,7 +178,6 @@ export interface Product {
 	specs?: ProductSpecs
 	__v?: number
 }
-
 export type BusinessResponse = {
 	status: number
 	data: Business
@@ -201,7 +187,6 @@ export type BusinessResponse = {
 		}
 	}
 }
-
 export interface BusinessesResponse {
 	status: number
 	data: {
@@ -218,7 +203,6 @@ export interface BusinessesResponse {
 	}
 	tid: string
 }
-
 export type CreateBusinessRequest = {
 	name: MultiLang
 	address?: Address
@@ -232,7 +216,6 @@ export type CreateBusinessRequest = {
 		}
 	}
 }
-
 export type CreateBusinessResponse = {
 	status: number
 	data: Business
@@ -242,7 +225,6 @@ export type CreateBusinessResponse = {
 		}
 	}
 }
-
 export interface BusinessCustomerDoc {
 	_id: string
 	customer: {
@@ -262,7 +244,6 @@ export interface BusinessCustomerDoc {
 		}
 	}
 }
-
 export interface BusinessCustomersResponse {
 	status: number
 	data: {

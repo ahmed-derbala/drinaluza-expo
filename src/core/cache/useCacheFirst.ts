@@ -4,16 +4,12 @@ import type { CacheReadResult } from './store'
 import { BackendState, useBackendConnection } from '@/core/connection'
 import { log } from '@/core/log'
 import { parseError } from '@/core/error/errorHandler'
-
 const pendingFetches = new Map<string, Promise<unknown>>()
-
 // ── Global refresh & status registry for useCacheFirst hooks ─────────
 type RefreshCallback = () => Promise<unknown>
 const activeRefreshers = new Set<RefreshCallback>()
-
 let activeRefreshingCount = 0
 const activeRefreshingListeners = new Set<() => void>()
-
 export const triggerGlobalRefresh = async (): Promise<void> => {
 	log({
 		level: 'info',
@@ -30,7 +26,6 @@ export const triggerGlobalRefresh = async (): Promise<void> => {
 	})
 	await Promise.all(promises)
 }
-
 export const useGlobalRefreshingState = (): boolean => {
 	return useSyncExternalStore(
 		(onStoreChange) => {
@@ -43,7 +38,6 @@ export const useGlobalRefreshingState = (): boolean => {
 		() => false
 	)
 }
-
 const updateRefreshingCount = (delta: number): void => {
 	activeRefreshingCount = Math.max(0, activeRefreshingCount + delta)
 	activeRefreshingListeners.forEach((listener) => {
@@ -54,7 +48,6 @@ const updateRefreshingCount = (delta: number): void => {
 		}
 	})
 }
-
 export interface UseCacheFirstOptions<T> {
 	/** Unique, deterministic cache key. */
 	cacheKey: string
@@ -77,7 +70,6 @@ export interface UseCacheFirstOptions<T> {
 	 */
 	skipFetchIfFresh?: boolean
 }
-
 export interface UseCacheFirstResult<T> {
 	/** Current data: cached first, then fresh after a successful fetch. */
 	data: T | null
@@ -99,7 +91,6 @@ export interface UseCacheFirstResult<T> {
 	/** Remove the cached entry. */
 	invalidateCache: () => Promise<boolean>
 }
-
 /**
  * Generic cache-first data hook.
  *
@@ -115,7 +106,6 @@ export interface UseCacheFirstResult<T> {
 export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirstResult<T> {
 	const { cacheKey, ttlMs, skipInitialFetch, skipFetchIfFresh } = options
 	const { backendState } = useBackendConnection()
-
 	// Stabilize fetchFn / callbacks via refs so the hook does not re-bootstrap
 	// on every render when callers pass inline functions.
 	const fetchFnRef = useRef(options.fetchFn)
@@ -126,21 +116,17 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		onSuccessRef.current = options.onSuccess
 		onErrorRef.current = options.onError
 	}, [options.fetchFn, options.onSuccess, options.onError])
-
 	const isMountedRef = useRef(true)
 	const prevBackendStateRef = useRef<BackendState>(backendState)
-
 	const [cacheResult, setCacheResult] = useState<CacheReadResult<T> | null>(null)
 	const [freshData, setFreshData] = useState<T | null>(null)
 	const [isInitialLoading, setIsInitialLoading] = useState<boolean>(!skipInitialFetch)
 	const [isRefreshing, setIsRefreshing] = useState<boolean>(false)
 	const [hasConnectionError, setHasConnectionError] = useState<boolean>(false)
-
 	const displayedData = freshData ?? cacheResult?.data ?? null
 	// Once freshData is present, the displayed data is not stale (just fetched)
 	const isStale = freshData !== null ? false : (cacheResult?.isStale ?? false)
 	const isOffline = backendState === 'offline' || hasConnectionError
-
 	const loadFromCache = useCallback(async () => {
 		try {
 			const cached = await getCacheItem<T>(cacheKey, ttlMs)
@@ -153,7 +139,6 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			return null
 		}
 	}, [cacheKey, ttlMs])
-
 	const fetchFresh = useCallback(async (): Promise<T | undefined> => {
 		// Deduplicate concurrent requests for the same cache key
 		const existing = pendingFetches.get(cacheKey) as Promise<T | undefined> | undefined
@@ -164,12 +149,9 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			}
 			return data
 		}
-
 		if (isMountedRef.current) {
 			setIsRefreshing(true)
 		}
-
-		let result: T | undefined
 		const promise = new Promise<T | undefined>((resolve) => {
 			;(async () => {
 				try {
@@ -180,7 +162,6 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 					}
 					await setCacheItem(cacheKey, data)
 					onSuccessRef.current?.(data)
-					result = data
 					resolve(data)
 				} catch (error) {
 					if (isMountedRef.current) {
@@ -197,15 +178,12 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 				}
 			})()
 		})
-
 		pendingFetches.set(cacheKey, promise)
 		return promise
 	}, [cacheKey])
-
 	const refresh = useCallback(async () => {
 		return await fetchFresh()
 	}, [fetchFresh])
-
 	const updateCache = useCallback(
 		async (data: T) => {
 			if (isMountedRef.current) {
@@ -215,7 +193,6 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		},
 		[cacheKey]
 	)
-
 	const invalidateCacheCb = useCallback(async () => {
 		if (isMountedRef.current) {
 			setCacheResult(null)
@@ -223,42 +200,34 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		}
 		return await removeCacheItem(cacheKey)
 	}, [cacheKey])
-
 	useEffect(() => {
 		isMountedRef.current = true
 		let cancelled = false
-
 		const bootstrap = async (): Promise<void> => {
 			// 1. Read cache first — this is fast (local storage)
 			const cached = await loadFromCache()
 			if (cancelled) return
-
 			// 2. If we have cached data, unblock the UI immediately.
 			const hasData = Boolean(cached?.data !== null && cached?.data !== undefined)
 			if (hasData) {
 				setIsInitialLoading(false)
 			}
-
 			// 3. Fire network fetch in the background.
 			const hasFreshCache = Boolean(cached && !cached.isStale)
 			if (!skipInitialFetch && backendState !== 'offline' && !(skipFetchIfFresh && hasFreshCache)) {
 				await fetchFresh()
 				if (cancelled) return
 			}
-
 			// 4. After network fetch completes (or was skipped), always unblock.
 			if (!cancelled) {
 				setIsInitialLoading(false)
 			}
 		}
-
 		// Show loading spinner only if there is no cached data yet (first ever load).
 		// cacheResult is null on first mount; subsequent mounts with warm memoryCache
 		// will have already set cacheResult, but bootstrap will still read and unblock quickly.
 		setIsInitialLoading(!skipInitialFetch)
-
 		bootstrap()
-
 		return () => {
 			cancelled = true
 			isMountedRef.current = false
@@ -266,17 +235,14 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		// Only re-bootstrap when cacheKey or the skip flags change — not on fetchFn identity
 		// nor backendState (offline->online is handled by the dedicated effect below).
 	}, [cacheKey, loadFromCache, fetchFresh, skipInitialFetch, skipFetchIfFresh])
-
 	// Auto-refresh when the backend transitions from offline/connecting to online.
 	useEffect(() => {
 		const previous = prevBackendStateRef.current
 		prevBackendStateRef.current = backendState
-
 		if (!skipInitialFetch && backendState === 'online' && previous !== 'online') {
 			fetchFresh()
 		}
 	}, [backendState, fetchFresh, skipInitialFetch])
-
 	// Register refresh callback globally.
 	// Hooks that opt out of automatic fetching (skipInitialFetch) must not be
 	// swept up by unrelated global/manual refresh triggers either.
@@ -287,7 +253,6 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			activeRefreshers.delete(refresh)
 		}
 	}, [refresh, skipInitialFetch])
-
 	// Synchronize loading/refreshing state globally
 	const isLoading = isInitialLoading || isRefreshing
 	useEffect(() => {
@@ -298,7 +263,6 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 			}
 		}
 	}, [isLoading])
-
 	return {
 		data: displayedData,
 		isInitialLoading,
@@ -310,5 +274,4 @@ export function useCacheFirst<T>(options: UseCacheFirstOptions<T>): UseCacheFirs
 		invalidateCache: invalidateCacheCb
 	}
 }
-
 export default useCacheFirst

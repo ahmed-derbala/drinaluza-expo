@@ -1,8 +1,8 @@
 import { config } from '@/config'
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, TextInput, Pressable, Switch, ScrollView, RefreshControl } from 'react-native'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, TextInput, Switch, ScrollView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter } from 'expo-router'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { useTheme, themeColors } from '@/core/theme'
@@ -11,7 +11,6 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
-import { showConfirm } from '@/core/helpers/popup'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { HeaderCreateProductButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
 import { SmartMediaView } from '@/core/smart-media'
@@ -21,10 +20,8 @@ import { Product } from '@/features/businesses/businesses.interface'
 import { LinearGradient } from 'expo-linear-gradient'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
-
 // Breakpoints for responsive grid layout
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
-
 export default function BusinessDashboardProductsScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const { colors } = useTheme()
@@ -32,7 +29,6 @@ export default function BusinessDashboardProductsScreen() {
 	const { localize, translate, currency, formatPrice } = useUser()
 	const { width, height } = useWindowDimensions()
 	const { onScroll } = useScrollHandler()
-
 	// State
 	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useBusinessProducts({ businessSlug })
 	const products = response?.data?.docs || []
@@ -40,42 +36,34 @@ export default function BusinessDashboardProductsScreen() {
 	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive' | 'lowStock' | 'outOfStock'>('all')
-
 	// Actions states
 	const [updatingSlugs, setUpdatingSlugs] = useState<Record<string, boolean>>({})
 	const [selectedProductForQR, setSelectedProductForQR] = useState<Product | null>(null)
-
 	// Responsive Columns Calculation
 	const isMobile = width < BP.tablet
 	const isTablet = width >= BP.tablet && width < BP.desktop
 	const isDesktop = width >= BP.desktop
 	const isWide = width >= BP.wide
-
 	const numColumns = useMemo(() => {
 		const availableWidth = isWide ? 1400 : isDesktop ? 1200 : isTablet ? 900 : width
 		const hPadding = isDesktop ? 32 : isTablet ? 24 : 16
 		return Math.max(1, Math.floor((availableWidth - hPadding * 2) / 320))
 	}, [width, isTablet, isDesktop, isWide])
-
 	const contentMaxWidth = useMemo(() => {
 		if (isWide) return 1400
 		if (isDesktop) return 1200
 		if (isTablet) return 900
 		return width
 	}, [width, isTablet, isDesktop, isWide])
-
 	const horizontalPadding = useMemo(() => {
 		if (isDesktop) return 32
 		if (isTablet) return 24
 		return 16
 	}, [isTablet, isDesktop])
-
 	const cardGap = 16
-
 	const handleRefresh = () => {
 		refresh()
 	}
-
 	// Filter metrics count
 	const counts = useMemo(() => {
 		const total = products.length
@@ -89,7 +77,6 @@ export default function BusinessDashboardProductsScreen() {
 		}).length
 		return { total, active, inactive, outOfStock, lowStock }
 	}, [products])
-
 	// Filter & Search logic
 	useEffect(() => {
 		let list = products
@@ -112,27 +99,22 @@ export default function BusinessDashboardProductsScreen() {
 		}
 		setFilteredProducts(list)
 	}, [searchText, products, activeFilter, localize])
-
 	// Toggle active/inactive state handler
 	const handleToggleActive = useCallback(
 		async (product: Product, currentActive: boolean) => {
 			const newActive = !currentActive
 			const productSlugVal = product.slug
-
 			// Set updating state
 			setUpdatingSlugs((prev) => ({ ...prev, [productSlugVal]: true }))
-
 			try {
 				await updateProduct(productSlugVal, {
 					state: { code: newActive ? 'active' : 'suspended' }
 				})
-
 				// Locally update cache
 				if (response) {
 					const updatedDocs = response.data.docs.map((p) => (p.slug === productSlugVal ? { ...p, state: { ...p.state, code: newActive ? 'active' : 'suspended' }, isActive: newActive } : p))
 					updateCache({ ...response, data: { ...response.data, docs: updatedDocs } })
 				}
-
 				toast.show({
 					title: translate('success', 'Success'),
 					content: `${localize(product.name)} ${newActive ? translate('activated', 'activated') : translate('deactivated', 'deactivated')}`,
@@ -150,7 +132,6 @@ export default function BusinessDashboardProductsScreen() {
 		},
 		[response, updateCache, localize, translate]
 	)
-
 	// ─── Render Card Component ──────────────────────────────────────────────────
 	const renderProductCard = useCallback(
 		({ item }: { item: Product }) => {
@@ -159,15 +140,12 @@ export default function BusinessDashboardProductsScreen() {
 			const minThreshold = item.stock?.minThreshold || 5
 			const isOutOfStock = stockQty === 0
 			const isLowStock = stockQty > 0 && stockQty <= minThreshold
-
 			const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
 			const stockTextLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
-
 			const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
 			// @ts-ignore
 			const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 			const isUpdating = updatingSlugs[item.slug] || false
-
 			return (
 				<TouchableOpacity
 					style={[cardStyles.card, { backgroundColor: colors.background, borderColor: colors.border }]}
@@ -175,24 +153,20 @@ export default function BusinessDashboardProductsScreen() {
 					activeOpacity={0.85}
 				>
 					{isUpdating && <Spinner size="small" expand={false} style={cardStyles.updatingOverlay} />}
-
 					<View style={cardStyles.mainRow}>
 						{/* Thumbnail */}
 						<View style={cardStyles.imageContainer}>
 							<SmartMediaView media={imageUrl} style={cardStyles.image} resizeMode="cover" />
 						</View>
-
 						{/* Center info */}
 						<View style={cardStyles.details}>
 							<Text style={[cardStyles.name, { color: colors.text }]} numberOfLines={2}>
 								{localize(item.name)}
 							</Text>
-
 							<View style={cardStyles.priceRow}>
 								<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice } })}</Text>
 								<Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>
 							</View>
-
 							{/* Specifications (Caliber & Origin) */}
 							{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest || item.specs?.gear) && (
 								<View style={cardStyles.specsCardRow}>
@@ -237,7 +211,6 @@ export default function BusinessDashboardProductsScreen() {
 									) : null}
 								</View>
 							)}
-
 							{/* Stock status pill */}
 							<View style={[cardStyles.stockPill, { backgroundColor: stockColor + '15', borderColor: stockColor + '30' }]}>
 								<View style={[cardStyles.stockDot, { backgroundColor: stockColor }]} />
@@ -246,7 +219,6 @@ export default function BusinessDashboardProductsScreen() {
 								</Text>
 							</View>
 						</View>
-
 						{/* Right section: Switch at top, Sales/QR icons at bottom */}
 						<View style={cardStyles.rightColumn}>
 							<View style={cardStyles.switchWrapper}>
@@ -279,7 +251,6 @@ export default function BusinessDashboardProductsScreen() {
 		},
 		[businessSlug, colors, currency, formatPrice, handleToggleActive, localize, router, setSelectedProductForQR, translate, updatingSlugs]
 	)
-
 	// Dynamic Header actions
 	const headerActionsConfig = useMemo(
 		() => [
@@ -288,7 +259,6 @@ export default function BusinessDashboardProductsScreen() {
 		],
 		[businessSlug, translate]
 	)
-
 	return (
 		<View style={[s.container, { backgroundColor: colors.background }]}>
 			<SmartHeader
@@ -298,7 +268,6 @@ export default function BusinessDashboardProductsScreen() {
 				headerActions={headerActionsConfig}
 				onBackPress={() => router.replace(`/dashboard?businessSlug=${businessSlug}` as any)}
 			/>
-
 			<SmartHeader.ScrollView
 				style={s.scrollView}
 				contentContainerStyle={s.scrollContent}
@@ -334,7 +303,6 @@ export default function BusinessDashboardProductsScreen() {
 						</LinearGradient>
 					</View>
 				)}
-
 				{/* Search Wrap */}
 				{!isInitialLoading && (
 					<View style={[s.searchWrap, { maxWidth: contentMaxWidth }]}>
@@ -357,7 +325,6 @@ export default function BusinessDashboardProductsScreen() {
 						</View>
 					</View>
 				)}
-
 				{/* Filter Row */}
 				{!isInitialLoading && products.length > 0 && (
 					<View style={[s.filtersWrap, { maxWidth: contentMaxWidth }]}>
@@ -370,7 +337,6 @@ export default function BusinessDashboardProductsScreen() {
 									{translate('all', 'All')} ({counts.total})
 								</Text>
 							</TouchableOpacity>
-
 							<TouchableOpacity
 								onPress={() => setActiveFilter('active')}
 								style={[
@@ -382,7 +348,6 @@ export default function BusinessDashboardProductsScreen() {
 									{translate('active_status', 'Active')} ({counts.active})
 								</Text>
 							</TouchableOpacity>
-
 							<TouchableOpacity
 								onPress={() => setActiveFilter('inactive')}
 								style={[
@@ -394,7 +359,6 @@ export default function BusinessDashboardProductsScreen() {
 									{translate('inactive_status', 'Hidden')} ({counts.inactive})
 								</Text>
 							</TouchableOpacity>
-
 							<TouchableOpacity
 								onPress={() => setActiveFilter('lowStock')}
 								style={[
@@ -406,7 +370,6 @@ export default function BusinessDashboardProductsScreen() {
 									{translate('low_stock', 'Low Stock')} ({counts.lowStock})
 								</Text>
 							</TouchableOpacity>
-
 							<TouchableOpacity
 								onPress={() => setActiveFilter('outOfStock')}
 								style={[
@@ -421,7 +384,6 @@ export default function BusinessDashboardProductsScreen() {
 						</ScrollView>
 					</View>
 				)}
-
 				{/* FlashList view container */}
 				<View style={[s.listContainer, { maxWidth: contentMaxWidth }]}>
 					{isInitialLoading && !isRefreshing ? (
@@ -448,7 +410,6 @@ export default function BusinessDashboardProductsScreen() {
 					)}
 				</View>
 			</SmartHeader.ScrollView>
-
 			{/* QR Modal integration */}
 			{selectedProductForQR && (
 				<QRCodeModal
@@ -463,7 +424,6 @@ export default function BusinessDashboardProductsScreen() {
 		</View>
 	)
 }
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
 	container: { flex: 1 },
@@ -584,7 +544,6 @@ const s = StyleSheet.create({
 		maxWidth: 300
 	}
 })
-
 const cardStyles = StyleSheet.create({
 	card: {
 		borderRadius: 18,

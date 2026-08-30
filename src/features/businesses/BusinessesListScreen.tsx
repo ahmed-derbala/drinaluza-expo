@@ -1,13 +1,11 @@
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
 import { useWindowDimensions } from 'react-native'
-import { StyleSheet, View, TouchableOpacity, RefreshControl, Linking, ViewStyle, ImageStyle, Platform } from 'react-native'
+import { StyleSheet, View, RefreshControl, ViewStyle } from 'react-native'
 import { useRouter, Stack } from 'expo-router'
-import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react'
+import { useCallback } from 'react'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
-import { SmartMediaView } from '@/core/smart-media'
 import Spinner from '@/features/common/Spinner'
 import { useBusinesses } from '@/features/businesses/useBusinesses'
 import { showPopup, showAlert } from '@/core/helpers/popup'
@@ -16,11 +14,8 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import BusinessCard from './BusinessCard'
 // Common themed styles removed as they're not needed
-
 // Responsive layout will be calculated inside the component
-
 // Mock data removed in favor of real API
-
 const createStyles = (
 	colors: any,
 	opts: {
@@ -444,7 +439,6 @@ const createStyles = (
 			padding: opts.isExtraSmall ? 16 : 24
 		}
 	})
-
 interface ResponsiveConfig {
 	numColumns: number
 	cardWidth: number
@@ -462,7 +456,6 @@ interface ResponsiveConfig {
 	isLargeScreen: boolean
 	isExtraLarge: boolean
 }
-
 const getResponsiveConfig = (width: number): ResponsiveConfig => {
 	// More granular breakpoints for better responsiveness
 	const isExtraSmall = width < 360
@@ -470,36 +463,27 @@ const getResponsiveConfig = (width: number): ResponsiveConfig => {
 	const isMediumScreen = width >= 480 && width < 768
 	const isLargeScreen = width >= 768 && width < 1024
 	const isExtraLarge = width >= 1024
-
 	// Dynamic container padding based on screen size
 	const containerPadding = isExtraSmall ? 8 : isSmallScreen ? 12 : isMediumScreen ? 16 : 20
 	const availableWidth = width - containerPadding * 2
-
 	// Responsive card sizing
 	const minCardWidth = isExtraSmall ? 160 : isSmallScreen ? 200 : isMediumScreen ? 240 : 280
 	const maxCardWidth = isExtraLarge ? 380 : isLargeScreen ? 340 : isMediumScreen ? 300 : 260
-
 	// Responsive gap between cards
 	const gap = isExtraSmall ? 8 : isSmallScreen ? 10 : isMediumScreen ? 12 : isLargeScreen ? 16 : 20
-
 	// Calculate optimal number of columns
 	let numColumns = Math.max(1, Math.floor(availableWidth / (minCardWidth + gap)))
-
 	// Limit maximum columns for better UX
 	numColumns = Math.min(numColumns, isExtraLarge ? 5 : isLargeScreen ? 4 : isMediumScreen ? 3 : 2)
-
 	// Calculate card width to fill available space
 	const totalGapWidth = (numColumns - 1) * gap
 	const cardWidth = Math.min(maxCardWidth, (availableWidth - totalGapWidth) / numColumns)
-
 	// Responsive image height (maintain aspect ratio)
 	const imageHeight = Math.round(cardWidth * (isExtraSmall ? 0.65 : 0.6))
-
 	// Responsive font sizes
 	const fontSize = isExtraSmall ? 12 : isSmallScreen ? 13 : isMediumScreen ? 14 : isLargeScreen ? 15 : 16
 	const subtitleFontSize = fontSize - 1
 	const smallFontSize = fontSize - 2
-
 	return {
 		numColumns,
 		cardWidth,
@@ -518,7 +502,6 @@ const getResponsiveConfig = (width: number): ResponsiveConfig => {
 		isExtraLarge
 	}
 }
-
 export default function BusinessesListScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
@@ -526,7 +509,6 @@ export default function BusinessesListScreen() {
 	const businesses = response?.data?.docs || []
 	const { translate, localize } = useUser()
 	const { onScroll } = useScrollHandler()
-
 	const { width } = useWindowDimensions()
 	const responsiveConfig = getResponsiveConfig(width)
 	const {
@@ -546,7 +528,6 @@ export default function BusinessesListScreen() {
 		isLargeScreen,
 		isExtraLarge
 	} = responsiveConfig
-
 	const styles = createStyles(colors, {
 		cardWidth,
 		numColumns,
@@ -563,17 +544,13 @@ export default function BusinessesListScreen() {
 		isLargeScreen,
 		isExtraLarge
 	})
-
 	const handleRefresh = () => {
 		refresh()
 	}
-
 	const onRefresh = handleRefresh
-
 	const handleBusinessPress = (slug: string) => {
 		router.push(`/businesses/${slug}` as any)
 	}
-
 	const renderBusinessCard = useCallback(
 		({ item }: { item: Business }) => (
 			<View style={{ width: '100%', paddingHorizontal: numColumns > 1 ? gap / 2 : 0, marginBottom: gap }}>
@@ -591,19 +568,16 @@ export default function BusinessesListScreen() {
 		),
 		[numColumns, cardWidth, imageHeight, showExtended, isExtraSmall, fontSize, subtitleFontSize, smallFontSize, gap]
 	)
-
 	const renderEmpty = useCallback(() => {
 		if (isOffline) {
 			return <ErrorBlock />
 		}
 		return <EmptyState style={styles.emptyContainer as ViewStyle} />
 	}, [isOffline])
-
 	// Handle loading state
 	if (isInitialLoading) {
 		return <Spinner />
 	}
-
 	// Main render
 	return (
 		<View style={styles.container as ViewStyle}>

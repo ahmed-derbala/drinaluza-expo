@@ -1,32 +1,27 @@
-import React, { useMemo, useState } from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Linking, useWindowDimensions, Platform } from 'react-native'
+import React, { useMemo } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Linking, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import { IconButton } from '@/features/common/buttons/IconButton'
-
 import { useTheme, themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { SmartHeader } from '@/core/smart-header'
-
 export default function AboutScreen() {
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
 	const maxWidth = 600
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
-
 	const styles = useMemo(() => createStyles(colors), [colors])
-
 	const SettingSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
 		<View style={styles.section}>
 			<Text style={styles.sectionTitle}>{title}</Text>
 			<View style={styles.sectionContent}>{children}</View>
 		</View>
 	)
-
 	const SettingItem = ({
 		icon,
 		title,
@@ -50,7 +45,6 @@ export default function AboutScreen() {
 				toast.show({ title: 'Success', content: translate('copied_to_clipboard', 'Copied to clipboard!'), borderColor: themeColors.success })
 			}
 		}
-
 		return (
 			<TouchableOpacity style={styles.item} onPress={onPress} disabled={type === 'none'} activeOpacity={type === 'none' ? 1 : 0.7}>
 				<View style={[styles.iconContainer, { backgroundColor: (color || colors.primary) + '20' }]}>
@@ -77,11 +71,9 @@ export default function AboutScreen() {
 			</TouchableOpacity>
 		)
 	}
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<SmartHeader title={translate('about', 'About')} fallbackRoute="/(home)/feed" />
-
 			<SmartHeader.ScrollView
 				style={styles.scrollView}
 				contentContainerStyle={[styles.contentContainer, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
@@ -89,7 +81,6 @@ export default function AboutScreen() {
 				scrollEventThrottle={16}
 			>
 				<View style={{ height: 16 }} />
-
 				<SettingSection title={translate('social_media', 'Social Media')}>
 					<SettingItem
 						icon="logo-facebook"
@@ -116,7 +107,6 @@ export default function AboutScreen() {
 						color={themeColors.tiktok}
 					/>
 				</SettingSection>
-
 				<SettingSection title={translate('contact', 'Contact')}>
 					<SettingItem
 						icon="mail"
@@ -127,7 +117,6 @@ export default function AboutScreen() {
 						color={themeColors.google}
 					/>
 				</SettingSection>
-
 				<SettingSection title={translate('downloads', 'Downloads')}>
 					<SettingItem
 						icon="globe-outline"
@@ -146,7 +135,6 @@ export default function AboutScreen() {
 						color={colors.text}
 					/>
 				</SettingSection>
-
 				<SettingSection title={translate('developer', 'Developer')}>
 					<SettingItem
 						icon="logo-linkedin"
@@ -157,7 +145,6 @@ export default function AboutScreen() {
 						color={themeColors.info}
 					/>
 				</SettingSection>
-
 				<View style={styles.footer}>
 					<View style={styles.versionBadge}>
 						<Text style={styles.versionText}>
@@ -171,7 +158,6 @@ export default function AboutScreen() {
 		</View>
 	)
 }
-
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {

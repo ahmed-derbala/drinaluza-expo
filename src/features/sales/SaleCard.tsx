@@ -1,7 +1,7 @@
 import { useTheme, themeColors } from '@/core/theme'
 import React from 'react'
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native'
-import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { MaterialIcons } from '@expo/vector-icons'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
 import { SmartMediaView } from '@/core/smart-media'
@@ -15,12 +15,10 @@ import { BaseCard } from '@/features/common/cards/BaseCard'
 import { CustomerContactBlock } from '@/features/customers/components/CustomerContactBlock'
 import SaleIdBadge from './SaleIdBadge'
 import SaleStatusBadge from './SaleStatusBadge'
-
 interface SaleCardProps {
 	sale: Sale
 	onStatusUpdate?: () => void
 }
-
 interface ProductItemProps {
 	product: Sale['products'][0]
 	quantity: number
@@ -29,17 +27,13 @@ interface ProductItemProps {
 	onIncrement: () => void
 	onDecrement: () => void
 }
-
 const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDecrement }: ProductItemProps) => {
 	const { colors } = useTheme()
 	const { localize, formatPrice, translate } = useUser()
-
 	const getImageUrl = () => {
 		return product.product.media?.thumbnail?.url || product.product.defaultProduct?.media?.thumbnail?.url || null
 	}
-
 	const unitMeasure = product.product.unit?.measure || translate('unit', 'unit')
-
 	const lineTotal = React.useMemo(() => {
 		const unit: any = product.product.price?.total || {}
 		const total: any = {}
@@ -48,7 +42,6 @@ const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDec
 		if (unit.usd != null) total.usd = unit.usd * quantity
 		return { total }
 	}, [product.product.price?.total, quantity])
-
 	return (
 		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.info }]}>
 			<SmartMediaView media={getImageUrl()} style={styles.productImage} />
@@ -82,7 +75,6 @@ const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDec
 		</View>
 	)
 }
-
 const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const { colors } = useTheme()
 	const { localize, formatPrice, translate } = useUser()
@@ -92,9 +84,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const isDesktop = width >= 1024
 	const [updating, setUpdating] = React.useState(false)
 	const [currentStatus, setCurrentStatus] = React.useState(sale.status)
-
 	const isPending = currentStatus === statuses.PENDING_BUSINESS_CONFIRMATION
-
 	const initialQuantities = React.useMemo(
 		() =>
 			sale.products.reduce(
@@ -106,20 +96,15 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			),
 		[sale.products]
 	)
-
 	const [quantities, setQuantities] = React.useState<Record<string, number>>(() => initialQuantities)
-
 	React.useEffect(() => {
 		setQuantities(initialQuantities)
 	}, [initialQuantities])
-
 	const hasQuantityChanges = React.useMemo(() => sale.products.some((p) => quantities[p._id ?? p.product._id] !== p.quantity), [sale.products, quantities])
-
 	const getProductBounds = React.useCallback((p: Sale['products'][0]) => {
 		const unit = p.product.unit
 		return { min: unit?.min ?? 1, max: unit?.max ?? Infinity, step: unit?.step ?? 1 }
 	}, [])
-
 	const onIncrement = React.useCallback(
 		(p: Sale['products'][0]) => {
 			const id = p._id ?? p.product._id
@@ -133,7 +118,6 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		},
 		[getProductBounds]
 	)
-
 	const onDecrement = React.useCallback(
 		(p: Sale['products'][0]) => {
 			const id = p._id ?? p.product._id
@@ -147,7 +131,6 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		},
 		[getProductBounds]
 	)
-
 	const computedTotalPrice = React.useMemo(() => {
 		if (!hasQuantityChanges) return sale.price
 		const total: any = {}
@@ -160,13 +143,11 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		})
 		return { total }
 	}, [hasQuantityChanges, quantities, sale.price, sale.products])
-
 	const handleStatusUpdate = async (newStatus: string) => {
 		try {
 			setUpdating(true)
 			let payloadStatus = newStatus
 			let productsPayload: { _id: string; quantity: number }[] | undefined
-
 			if (newStatus === statuses.CONFIRMED_BY_BUSINESS && hasQuantityChanges) {
 				payloadStatus = statuses.PENDING_CUSTOMER_CONFIRMATION
 				productsPayload = sale.products.map((p) => ({
@@ -174,7 +155,6 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 					quantity: quantities[p._id ?? p.product._id] ?? p.quantity
 				}))
 			}
-
 			await updateSaleStatus(sale._id, payloadStatus, productsPayload)
 			setCurrentStatus(payloadStatus)
 			toast.show({ title: translate('success', 'Success'), content: translate('status_updated', 'Status updated successfully'), borderColor: themeColors.success })
@@ -185,10 +165,8 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			setUpdating(false)
 		}
 	}
-
 	const renderStatusActions = () => {
 		const actions = []
-
 		switch (currentStatus) {
 			case statuses.PENDING_BUSINESS_CONFIRMATION:
 				actions.push(
@@ -213,15 +191,12 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 				actions.push({ status: statuses.DELIVERED_TO_CUSTOMER, label: translate('mark_delivered', 'Delivered'), icon: 'checkmark-circle-outline', color: colors.success })
 				break
 		}
-
 		if (actions.length === 0) return null
-
 		const resolveVariant = (color: string) => {
 			if (color === colors.success) return 'success'
 			if (color === colors.info) return 'info'
 			return 'primary'
 		}
-
 		return (
 			<View style={[styles.actionsBar, { borderTopColor: colors.border }]}>
 				{actions.map((action) =>
@@ -242,7 +217,6 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			</View>
 		)
 	}
-
 	return (
 		<BaseCard style={styles.card} borderWidth={2} borderColor={colors.info} testID={`sale-card-${sale._id}`}>
 			{/* Header Section */}
@@ -258,10 +232,8 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 					<SaleIdBadge sale={sale} />
 				</View>
 			</View>
-
 			{/* Customer Section */}
 			<CustomerContactBlock customer={sale.customer} />
-
 			{/* Products Section - Scrollable */}
 			<View style={styles.productsContainer}>
 				<Text style={[styles.productsTitle, { color: colors.textSecondary }]}>
@@ -281,17 +253,14 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 					))}
 				</ScrollView>
 			</View>
-
 			<View style={[styles.footer, { borderTopColor: colors.border }]}>
 				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 				<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(computedTotalPrice)}</Text>
 			</View>
-
 			{renderStatusActions()}
 		</BaseCard>
 	)
 }
-
 const styles = StyleSheet.create({
 	card: {
 		marginBottom: 16,
@@ -435,5 +404,4 @@ const styles = StyleSheet.create({
 		textAlign: 'center'
 	}
 })
-
 export default React.memo(SaleCard)

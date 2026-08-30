@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, Pressable, type StyleProp, type ViewStyle } from 'react-native'
 import { SmartMediaView } from '@/core/smart-media'
-import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
+import { getCaliberIconSize, getCaliberFontSize, getHarvestIcon } from '@/features/products/products.helpers'
 import { GearIcon } from './common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
 import { ProductFeedItem } from '@/features/feed/feed.interface'
@@ -16,13 +16,11 @@ import ProductNameWithThumbnailBlock from './blocks/ProductNameWithThumbnailBloc
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import { formatAddress } from '@/features/common/address'
-
 type ProductCardProps = {
 	item: ProductFeedItem
 	addToCart: (item: ProductFeedItem, quantity: number) => void
 	style?: StyleProp<ViewStyle>
 }
-
 const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: ProductCardProps) {
 	const { localize, currency, formatPrice, translate } = useUser()
 	const { colors } = useTheme()
@@ -30,7 +28,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	const { width } = useWindowDimensions()
 	const [activeImageIndex, setActiveImageIndex] = useState(0)
 	const [autoplayEnabled, setAutoplayEnabled] = useState(true)
-
 	const images = useMemo(() => {
 		const list: string[] = []
 		if (item.media?.thumbnail?.url) {
@@ -48,9 +45,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 		}
 		return list
 	}, [item.media, item.defaultProduct])
-
 	const autoplayTimerRef = useRef<any>(null)
-
 	const startAutoplay = () => {
 		stopAutoplay()
 		if (!autoplayEnabled || images.length <= 1) return
@@ -58,33 +53,27 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 			setActiveImageIndex((prevIndex) => (prevIndex + 1) % images.length)
 		}, 4000)
 	}
-
 	const stopAutoplay = () => {
 		if (autoplayTimerRef.current) {
 			clearInterval(autoplayTimerRef.current)
 			autoplayTimerRef.current = null
 		}
 	}
-
 	const minQuantity = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
 	const step = item.unit?.step || 1
-
 	useEffect(() => {
 		startAutoplay()
 		return () => stopAutoplay()
 	}, [images.length, autoplayEnabled])
-
 	useEffect(() => {
 		setActiveImageIndex(0)
 		setAutoplayEnabled(true)
 	}, [images])
-
 	useEffect(() => {
 		setQuantity(minQuantity)
 	}, [item._id, minQuantity])
-
 	const handlePreviewPress = (e: any, index: number) => {
 		e.stopPropagation?.()
 		// User interacted (preview tap), stop autoplay permanently
@@ -92,14 +81,11 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 		setAutoplayEnabled(false)
 		setActiveImageIndex(index)
 	}
-
 	const rating = item.rating?.average || 0
 	const ratingCount = item.rating?.count || 0
-
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 	const pricePerUnit = unitPrice / (item.unit?.min || 1)
-
 	const singlePiece = item.unit?.singlePiece
 	const singlePieceAvg = useMemo(() => {
 		if (!singlePiece) return undefined
@@ -107,14 +93,12 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 		if (singlePiece.minWeightKg != null && singlePiece.maxWeightKg != null) return (singlePiece.minWeightKg + singlePiece.maxWeightKg) / 2
 		return undefined
 	}, [singlePiece])
-
 	const mainName = localize(item.name)
 	const secondaryNames = useMemo(() => {
 		if (!item.name) return []
 		const allNames = [item.name?.en, item.name?.tn_latn, item.name?.tn_arab].filter(Boolean) as string[]
 		return Array.from(new Set(allNames)).filter((n) => n !== mainName)
 	}, [item.name, mainName])
-
 	const increment = (e: any) => {
 		e.stopPropagation?.()
 		setQuantity((prev) => {
@@ -122,7 +106,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 			return next <= maxQuantity ? next : prev
 		})
 	}
-
 	const decrement = (e: any) => {
 		e.stopPropagation?.()
 		setQuantity((prev) => {
@@ -130,7 +113,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 			return next >= minQuantity ? next : minQuantity
 		})
 	}
-
 	const stockQty = item.stock?.quantity || 0
 	const minThreshold = item.stock?.minThreshold || 5
 	const isOutOfStock = stockQty === 0
@@ -138,17 +120,12 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
 	const purchaseAllowed = item.card?.purchase?.allowed !== false
 	const cartDisabled = !purchaseAllowed || !isActive || isOutOfStock
-
 	const stockColor = isOutOfStock ? themeColors.error : isLowStock ? themeColors.warning : themeColors.success
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
-
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
-
 	const isSmall = width < 500
-
 	const addressLine = formatAddress(item.business?.address, localize)
-
 	return (
 		<Pressable
 			style={[styles.card, { backgroundColor: colors.background }, style]}
@@ -160,7 +137,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 			<View style={styles.bgImageContainer}>
 				<SmartMediaView media={images.length > 1 ? images[activeImageIndex] : imageUrl} style={styles.bgImage} resizeMode="cover" />
 			</View>
-
 			{/* Gradient overlay for text readability */}
 			<LinearGradient
 				colors={[themeColors.background50, themeColors.background25, themeColors.background75]}
@@ -168,7 +144,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 				end={{ x: 0, y: 1 }}
 				style={[styles.bgOverlay, { pointerEvents: 'none' }]}
 			/>
-
 			{/* Top content */}
 			<View style={styles.topContent}>
 				{/* ── Business header ── */}
@@ -193,7 +168,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 						</View>
 					</TouchableOpacity>
 				</View>
-
 				{/* Address */}
 				{addressLine ? (
 					<View style={styles.addressRow}>
@@ -204,7 +178,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 					</View>
 				) : null}
 			</View>
-
 			{/* Stock overlay */}
 			{(isOutOfStock || isLowStock) && (
 				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : 'transparent', pointerEvents: 'none' }]}>
@@ -214,7 +187,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 					</View>
 				</View>
 			)}
-
 			{/* Contact buttons - right side */}
 			{(item.business?.contact?.phone?.fullNumber || item.business?.contact?.whatsapp || item.business?.contact?.website || item.business?.location || item.business?.address) && (
 				<View style={styles.contactButtonsSide}>
@@ -226,14 +198,12 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 					</View>
 				</View>
 			)}
-
 			{/* Bottom content */}
 			<View style={styles.bottomContent}>
 				{/* ── Body ── */}
 				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
 					<View style={styles.bodyTop}>
 						<ProductNameWithThumbnailBlock name={mainName} imageUrl={imageUrl} onPress={handleProductPress} />
-
 						{/* Rating — always rendered for stable layout */}
 						<View style={styles.ratingRow}>
 							{rating > 0 ? (
@@ -244,7 +214,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 								</>
 							) : null}
 						</View>
-
 						{/* Specs row: caliber + weight, then harvest/gear/origin */}
 						<View style={styles.specsStepperRow}>
 							<View style={styles.specsRowTop}>
@@ -287,7 +256,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 							)}
 						</View>
 					</View>
-
 					<View style={styles.bodyBottom}>
 						{/* Price bottom-left */}
 						<View style={styles.priceRow}>
@@ -298,7 +266,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 								{quantity === 1 ? `/ ${item.unit?.measure || translate('unit', 'unit')}` : `${quantity} ${item.unit?.measure || translate('unit', 'unit')}`}
 							</Text>
 						</View>
-
 						<TouchableOpacity
 							style={[styles.cartBtn, cartDisabled && styles.cartBtnDisabled]}
 							onPress={(e) => {
@@ -315,7 +282,6 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 						</TouchableOpacity>
 					</View>
 				</View>
-
 				{/* Thumbnail previews */}
 				{images.length > 1 && (
 					<View style={styles.previewsContainer}>
@@ -335,9 +301,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 		</Pressable>
 	)
 })
-
 export default ProductCard
-
 // ─── Styles ─────────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
@@ -546,7 +510,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		marginTop: 8
 	},
-
 	actionsColumn: {
 		alignItems: 'flex-end',
 		gap: 4

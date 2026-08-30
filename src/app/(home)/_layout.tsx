@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react'
+import { useEffect } from 'react'
 import { Tabs, usePathname, useRouter } from 'expo-router'
-import { View, Platform, StyleSheet, TouchableOpacity, Text } from 'react-native'
+import { View, StyleSheet, TouchableOpacity, Text } from 'react-native'
 import { useLayout, useUser, TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@/core/contexts'
 import { useTheme, themeColors } from '@/core/theme'
 import { Ionicons } from '@expo/vector-icons'
@@ -8,7 +8,6 @@ import { useBackButton } from '@/core/hooks/useBackButton'
 import { SmartHeader } from '@/core/smart-header'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { ErrorBoundaryFallback } from '@/core/error/ErrorBoundaryFallback'
-
 export default function HomeLayout() {
 	const { colors } = useTheme()
 	const { isTabBarVisible, setTabBarVisible } = useLayout()
@@ -21,11 +20,9 @@ export default function HomeLayout() {
 	const isDashboardVisible = isAuthenticated
 	const activeTabsCount = 2 + (isDashboardVisible ? 1 : 0)
 	const barWidth = activeTabsCount * 56
-
 	useEffect(() => {
 		setTabBarVisible(true)
 	}, [pathname, setTabBarVisible])
-
 	return (
 		<View style={styles.container}>
 			<Tabs
@@ -58,29 +55,23 @@ export default function HomeLayout() {
 								{state.routes.map((route: any, index: number) => {
 									const { options } = descriptors[route.key]
 									const isFocused = state.index === index
-
 									if (options.isVisible === false) return null
-
 									const onPress = () => {
 										if (route.name === 'profile' && !isAuthenticated) {
 											router.push('/auth')
 											return
 										}
-
 										const event = navigation.emit({
 											type: 'tabPress',
 											target: route.key,
 											canPreventDefault: true
 										})
-
 										if (!isFocused && !event.defaultPrevented) {
 											navigation.navigate(route.name, route.params)
 										}
 									}
-
 									const color = isFocused ? colors.primary : colors.textTertiary
 									const icon = options.tabBarIcon ? options.tabBarIcon({ focused: isFocused, color }) : null
-
 									return (
 										<TouchableOpacity
 											key={route.key}
@@ -161,11 +152,9 @@ export default function HomeLayout() {
 		</View>
 	)
 }
-
 export function ErrorBoundary({ error, retry }: { error: Error & { digest?: string }; retry: () => void }) {
 	return <ErrorBoundaryFallback error={error} retry={retry} label="(home)ErrorBoundary" />
 }
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1

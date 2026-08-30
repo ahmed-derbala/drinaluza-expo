@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import ErrorBlock from '@/core/error/ErrorBlock'

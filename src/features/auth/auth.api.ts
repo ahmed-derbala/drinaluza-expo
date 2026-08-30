@@ -1,10 +1,8 @@
 import { getApiClient } from '@/core/api'
-import { Platform } from 'react-native'
 import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@/core/storage'
 import { setCacheItem, clearMemoryCache } from '@/core/cache'
 import { log } from '@/core/log'
 import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
-
 // Default settings
 const defaultAuthSettings = {
 	tokenStorageKey: 'authToken',
@@ -12,7 +10,6 @@ const defaultAuthSettings = {
 	enableAutoSignOut: false,
 	sessionTimeout: 30 * 60 * 1000 // 30 minutes
 }
-
 // Helper to set user data
 const setUserData = async (user: any): Promise<boolean> => {
 	try {
@@ -33,14 +30,11 @@ const setUserData = async (user: any): Promise<boolean> => {
 		return false
 	}
 }
-
 // Session timer
 type Timer = ReturnType<typeof setTimeout>
 let sessionTimer: Timer | null = null
-
 // Saved authentications management
 const SAVED_AUTHS_KEY = 'saved_authentications'
-
 export interface SavedAuth {
 	slug: string
 	token: string
@@ -50,20 +44,16 @@ export interface SavedAuth {
 	role?: string
 	needPassword?: boolean
 }
-
 export const getSavedAuthentications = async (): Promise<SavedAuth[]> => {
 	const saved = await secureGetItem(SAVED_AUTHS_KEY)
 	return saved ? JSON.parse(saved) : []
 }
-
 export const saveAuthentication = async (slug: string, token: string, user?: any, needPassword?: boolean) => {
 	const saved = await getSavedAuthentications()
 	const filtered = saved.filter((a) => a.slug !== slug)
-
 	const photoUrl = user?.media?.thumbnail?.url || user?.photoUrl || ''
 	const displayName = user?.name || slug // Keep the full name object if present
 	const role = user?.role || 'customer'
-
 	const updated: SavedAuth[] = [
 		{
 			slug,
@@ -78,7 +68,6 @@ export const saveAuthentication = async (slug: string, token: string, user?: any
 	]
 	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
 }
-
 export const updateSavedAuthUser = async (slug: string, updates: { name?: any; photoUrl?: string; role?: string }) => {
 	try {
 		const saved = await getSavedAuthentications()
@@ -100,12 +89,10 @@ export const updateSavedAuthUser = async (slug: string, updates: { name?: any; p
 		log({ level: 'error', label: 'auth.api', message: 'Failed to update saved auth user details', error })
 	}
 }
-
 export const deleteSavedAuthentication = async (slug: string) => {
 	const saved = await getSavedAuthentications()
 	const account = saved.find((a) => a.slug === slug)
 	const token = account?.token
-
 	if (token) {
 		try {
 			const apiClient = getApiClient()
@@ -125,18 +112,15 @@ export const deleteSavedAuthentication = async (slug: string) => {
 			})
 		}
 	}
-
 	const updated = saved.filter((a) => a.slug !== slug)
 	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
 }
-
 const startSessionTimer = (callback: () => void, timeout: number): Timer => {
 	if (sessionTimer) clearTimeout(sessionTimer)
 	const timer = setTimeout(callback, timeout)
 	sessionTimer = timer
 	return timer
 }
-
 // Token expiration check
 const isTokenExpired = (token: string): boolean => {
 	try {
@@ -152,7 +136,6 @@ const isTokenExpired = (token: string): boolean => {
 		return true
 	}
 }
-
 interface AuthResponse {
 	data: {
 		token: string
@@ -168,7 +151,6 @@ interface AuthResponse {
 	}
 	[key: string]: any
 }
-
 interface SignInResponse {
 	status: number
 	data: {
@@ -188,7 +170,6 @@ interface SignInResponse {
 		headers: Record<string, string>
 	}
 }
-
 export const signIn = async (slug: string, password: string, saveAccount?: boolean, needPassword?: boolean): Promise<SignInResponse> => {
 	try {
 		log({
@@ -197,11 +178,9 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 			message: 'Calling signin API',
 			data: { slug }
 		})
-
 		const apiClient = getApiClient()
 		// Endpoint: /auth/signin
 		const response = await apiClient.post<SignInResponse>('/auth/signin', { slug, password })
-
 		log({
 			level: 'debug',
 			label: 'auth.api',
@@ -212,7 +191,6 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 				hasUser: !!response.data?.data?.user
 			}
 		})
-
 		if (!response.data?.data?.token) {
 			log({
 				level: 'error',
@@ -222,18 +200,14 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 			})
 			throw new Error('No authentication token received from server')
 		}
-
 		const { token, user } = response.data.data
-
 		// Store token and user data
 		await Promise.all([setToken(token), setUserData(user), ...(saveAccount ? [saveAuthentication(user.slug, token, user, needPassword)] : [])])
-
 		log({
 			level: 'info',
 			label: 'auth.api',
 			message: 'Authentication data stored successfully'
 		})
-
 		// Expo push notification
 		try {
 			const expoPushToken = await registerForExpoPush()
@@ -255,7 +229,6 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 				error: pushErr
 			})
 		}
-
 		// Start session timer if auto-signout is enabled
 		if (defaultAuthSettings.enableAutoSignOut) {
 			if (sessionTimer) {
@@ -270,7 +243,6 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 				signOut()
 			}, defaultAuthSettings.sessionTimeout)
 		}
-
 		return response.data
 	} catch (error: any) {
 		const status = error.response?.status
@@ -291,7 +263,6 @@ export const signIn = async (slug: string, password: string, saveAccount?: boole
 		throw error
 	}
 }
-
 export const signUp = async (slug: string, password: string, userData: Partial<AuthResponse['data']['user']> = {}, saveAccount?: boolean, needPassword?: boolean): Promise<AuthResponse> => {
 	try {
 		const apiClient = getApiClient()
@@ -300,26 +271,21 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 			password,
 			...userData
 		})
-
 		if (response.data?.data?.token) {
 			const token = response.data.data.token
 			await setToken(token)
-
 			if (response.data.data.refreshToken) {
 				await secureSetItem('refreshToken', response.data.data.refreshToken)
 			}
-
 			if (response.data.data.user) {
 				const user = response.data.data.user
 				await secureSetItem('userData', JSON.stringify(user))
 				await secureSetItem('user._id', user._id)
 				await secureSetItem('user.slug', user.slug)
-
 				// Save account to saved authenticity list if requested
 				if (saveAccount) {
 					await saveAuthentication(user.slug, token, user, needPassword)
 				}
-
 				// Start session timer if auto-signout is enabled
 				if (defaultAuthSettings.enableAutoSignOut) {
 					if (sessionTimer) clearTimeout(sessionTimer)
@@ -327,7 +293,6 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 				}
 			}
 		}
-
 		return response.data
 	} catch (error) {
 		log({
@@ -339,7 +304,6 @@ export const signUp = async (slug: string, password: string, userData: Partial<A
 		throw error
 	}
 }
-
 export const signInWithToken = async (token: string): Promise<boolean> => {
 	try {
 		await setToken(token)
@@ -348,7 +312,6 @@ export const signInWithToken = async (token: string): Promise<boolean> => {
 				skipAuthRedirect: 'true'
 			}
 		})
-
 		if (profileResponse && profileResponse.data) {
 			await setUserData(profileResponse.data)
 			return true
@@ -365,14 +328,12 @@ export const signInWithToken = async (token: string): Promise<boolean> => {
 		return false
 	}
 }
-
 export const signOut = async (): Promise<boolean> => {
 	try {
 		if (sessionTimer) {
 			clearTimeout(sessionTimer)
 			sessionTimer = null
 		}
-
 		// Try to call the server signout endpoint if internet is available
 		try {
 			const token = await getToken()
@@ -395,7 +356,6 @@ export const signOut = async (): Promise<boolean> => {
 				error
 			})
 		}
-
 		// Clear all auth-related data
 		await Promise.all([
 			removeToken(),
@@ -409,7 +369,6 @@ export const signOut = async (): Promise<boolean> => {
 			secureRemoveItem('user._id'),
 			secureRemoveItem('user.slug')
 		])
-
 		return true
 	} catch (error) {
 		log({
@@ -421,17 +380,14 @@ export const signOut = async (): Promise<boolean> => {
 		return false
 	}
 }
-
 export const switchUser = async (): Promise<boolean> => {
 	try {
 		if (sessionTimer) {
 			clearTimeout(sessionTimer)
 			sessionTimer = null
 		}
-
 		await clearStorageExceptSavedAuths()
 		clearMemoryCache()
-
 		return true
 	} catch (error) {
 		log({
@@ -443,7 +399,6 @@ export const switchUser = async (): Promise<boolean> => {
 		return false
 	}
 }
-
 // Get current cached user data
 export const getCurrentUser = async (): Promise<any> => {
 	try {
@@ -459,19 +414,16 @@ export const getCurrentUser = async (): Promise<any> => {
 		return null
 	}
 }
-
 // Simple check if user is authenticated (token exists)
 export const checkAuth = async (): Promise<boolean> => {
 	const token = await getToken()
 	return !!token
 }
-
 // Get current full profile from API
 export const getMyProfile = async (config?: any) => {
 	const response = await getApiClient().get('/users/my-profile', config)
 	return response.data
 }
-
 // Update profile
 export const updateMyProfile = async (data: any) => {
 	const response = await getApiClient().patch('/users/my-profile', data)

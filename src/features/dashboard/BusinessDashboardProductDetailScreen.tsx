@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, ScrollView, KeyboardAvoidingView, RefreshControl } from 'react-native'
+import { useState, useEffect, useCallback, useMemo } from 'react'
+import { View, Text, StyleSheet, Platform, KeyboardAvoidingView, RefreshControl } from 'react-native'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
+import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
@@ -11,32 +10,29 @@ import type { MultiLang } from '@/features/common/address'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
-import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { SmartHeader } from '@/core/smart-header'
-import { SmartMediaView, SmartMediaGalleryCard, deleteMediaFile } from '@/core/smart-media'
+import { SmartMediaView, deleteMediaFile } from '@/core/smart-media'
+import { CarouselCard } from '@/core/smart-media/carousel-card'
 import StateBadge from '@/features/common/StateBadge'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
 import { parseError } from '@/core/error/errorHandler'
 import { LinearGradient } from 'expo-linear-gradient'
-
 export default function BusinessDashboardProductDetailScreen() {
 	const { productSlug, businessSlug } = useLocalSearchParams<{ productSlug: string; businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { translate, localize, currency, formatPrice } = useUser()
 	const { setTabBarVisible } = useLayout()
-
 	const [product, setProduct] = useState<ProductType | null>(null)
 	const [viewer, setViewer] = useState<{ canEdit?: boolean; canCreate?: boolean } | null>(null)
 	const [loading, setLoading] = useState(true)
 	const [refreshing, setRefreshing] = useState(false)
 	const [saving, setSaving] = useState(false)
 	const [error, setError] = useState<{ title: string; message: string; type: string } | null>(null)
-
 	// Section Edit Modes
 	const [editMode, setEditMode] = useState({
 		names: false,
@@ -45,12 +41,10 @@ export default function BusinessDashboardProductDetailScreen() {
 		specs: false,
 		gallery: false
 	})
-
 	// Form States
 	const [nameEn, setNameEn] = useState('')
 	const [nameTnLatn, setNameTnLatn] = useState('')
 	const [nameTnArab, setNameTnArab] = useState('')
-
 	const [priceTND, setPriceTND] = useState('')
 	const [unit, setUnit] = useState('kg')
 	const [minUnit, setMinUnit] = useState('1')
@@ -59,12 +53,10 @@ export default function BusinessDashboardProductDetailScreen() {
 	const [singlePieceMinWeightKg, setSinglePieceMinWeightKg] = useState('')
 	const [singlePieceAvgWeightKg, setSinglePieceAvgWeightKg] = useState('')
 	const [singlePieceMaxWeightKg, setSinglePieceMaxWeightKg] = useState('')
-
 	const [stockQuantity, setStockQuantity] = useState('0')
 	const [minThreshold, setMinThreshold] = useState('5')
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
 	const [removedFiles, setRemovedFiles] = useState<FileRef[]>([])
-
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
 	const [originStreet, setOriginStreet] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
@@ -72,7 +64,6 @@ export default function BusinessDashboardProductDetailScreen() {
 	const [originRegion, setOriginRegion] = useState('Sfax')
 	const [originCountry, setOriginCountry] = useState('Tunisia')
 	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
-
 	// Hide bottom tab bar
 	useEffect(() => {
 		setTabBarVisible(false)
@@ -80,12 +71,10 @@ export default function BusinessDashboardProductDetailScreen() {
 			setTabBarVisible(true)
 		}
 	}, [setTabBarVisible])
-
 	const syncProductToState = (prod: ProductType) => {
 		setNameEn(prod.name?.en || '')
 		setNameTnLatn(prod.name?.tn_latn || '')
 		setNameTnArab(prod.name?.tn_arab || '')
-
 		setPriceTND(prod.price?.total?.tnd?.toString() || '')
 		setUnit(prod.unit?.measure || 'kg')
 		setMinUnit(prod.unit?.min?.toString() || '1')
@@ -94,11 +83,9 @@ export default function BusinessDashboardProductDetailScreen() {
 		setSinglePieceMinWeightKg(prod.unit?.singlePiece?.minWeightKg?.toString() || '')
 		setSinglePieceAvgWeightKg(prod.unit?.singlePiece?.avgWeightKg?.toString() || '')
 		setSinglePieceMaxWeightKg(prod.unit?.singlePiece?.maxWeightKg?.toString() || '')
-
 		setStockQuantity(prod.stock?.quantity?.toString() || '0')
 		setMinThreshold(prod.stock?.minThreshold?.toString() || '5')
 		setUploadedGallery(prod.media?.gallery || [])
-
 		setCaliber((prod.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
 		setHarvest(prod.specs?.harvest || 'farm')
 		setOriginStreet(
@@ -115,15 +102,12 @@ export default function BusinessDashboardProductDetailScreen() {
 		setOriginCountry(prod.specs?.origin?.country || 'Tunisia')
 		setGear(prod.specs?.gear)
 	}
-
 	const loadProduct = useCallback(
 		async (isRefresh = false) => {
 			if (!productSlug) return
-
 			try {
 				if (!isRefresh) setLoading(true)
 				setError(null)
-
 				const response = await getProductBySlug(productSlug)
 				setProduct(response.data)
 				setViewer(response.viewer || null)
@@ -142,18 +126,14 @@ export default function BusinessDashboardProductDetailScreen() {
 		},
 		[productSlug]
 	)
-
 	useEffect(() => {
 		loadProduct()
 	}, [loadProduct])
-
 	const handleRefresh = () => {
 		setRefreshing(true)
 		loadProduct(true)
 	}
-
 	// ─── Save Actions ─────────────────────────────────────────────────────────────
-
 	const saveNames = async () => {
 		if (!nameEn.trim()) {
 			toast.show({ title: translate('error', 'Error'), content: translate('err_enter_product_name', 'Please enter a product name (English)'), borderColor: colors.error })
@@ -179,7 +159,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelNames = () => {
 		if (product) {
 			setNameEn(product.name?.en || '')
@@ -188,7 +167,6 @@ export default function BusinessDashboardProductDetailScreen() {
 		}
 		setEditMode((prev) => ({ ...prev, names: false }))
 	}
-
 	const savePricing = async () => {
 		const price = parseFloat(priceTND)
 		if (isNaN(price) || price <= 0) {
@@ -214,7 +192,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_unit_step', 'Unit step must be greater than 0'), borderColor: colors.error })
 			return
 		}
-
 		const minW = singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : NaN
 		const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
 		const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
@@ -226,7 +203,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_weight_range', 'Max weight ≥ avg weight ≥ min weight'), borderColor: colors.error })
 			return
 		}
-
 		try {
 			setSaving(true)
 			const res = await updateProduct(productSlug!, {
@@ -255,7 +231,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelPricing = () => {
 		if (product) {
 			setPriceTND(product.price?.total?.tnd?.toString() || '')
@@ -269,7 +244,6 @@ export default function BusinessDashboardProductDetailScreen() {
 		}
 		setEditMode((prev) => ({ ...prev, pricing: false }))
 	}
-
 	const saveStock = async () => {
 		const qty = parseInt(stockQuantity)
 		if (isNaN(qty) || qty < 0) {
@@ -281,7 +255,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			toast.show({ title: translate('validation_error', 'Validation Error'), content: translate('err_min_threshold', 'Please enter a valid threshold'), borderColor: colors.error })
 			return
 		}
-
 		try {
 			setSaving(true)
 			const res = await updateProduct(productSlug!, {
@@ -300,7 +273,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelStock = () => {
 		if (product) {
 			setStockQuantity(product.stock?.quantity?.toString() || '0')
@@ -308,7 +280,6 @@ export default function BusinessDashboardProductDetailScreen() {
 		}
 		setEditMode((prev) => ({ ...prev, stock: false }))
 	}
-
 	const saveSpecs = async () => {
 		try {
 			setSaving(true)
@@ -341,7 +312,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelSpecs = () => {
 		if (product) {
 			setCaliber((product.specs?.caliber as 1 | 2 | 3 | 4 | 5) || 3)
@@ -355,14 +325,12 @@ export default function BusinessDashboardProductDetailScreen() {
 		}
 		setEditMode((prev) => ({ ...prev, specs: false }))
 	}
-
 	const handleRemoveGalleryItem = (item: FileRef) => {
 		setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))
 		if (item._id && !item._id.startsWith('pending-')) {
 			setRemovedFiles((prev) => [...prev, item])
 		}
 	}
-
 	const saveGallery = async () => {
 		try {
 			setSaving(true)
@@ -385,7 +353,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelGallery = () => {
 		if (product) {
 			setUploadedGallery(product.media?.gallery || [])
@@ -393,7 +360,6 @@ export default function BusinessDashboardProductDetailScreen() {
 		setRemovedFiles([])
 		setEditMode((prev) => ({ ...prev, gallery: false }))
 	}
-
 	const handleToggleState = async () => {
 		if (!product) return
 		const currentState = product.state?.code || 'active'
@@ -420,11 +386,8 @@ export default function BusinessDashboardProductDetailScreen() {
 			setSaving(false)
 		}
 	}
-
 	// ─── Layout Styles ─────────────────────────────────────────────────────────────
-
 	const styles = useMemo(() => createStyles(colors), [colors])
-
 	if (loading) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -434,7 +397,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			</View>
 		)
 	}
-
 	if (error || !product) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -444,18 +406,15 @@ export default function BusinessDashboardProductDetailScreen() {
 			</View>
 		)
 	}
-
 	const displayTitle = localize(product.name)
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
 	const productState = product.state?.code || 'active'
 	const isProductActive = productState === 'active'
 	const canEditProduct = viewer ? viewer.canEdit === true : true
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen options={{ headerShown: false }} />
 			<SmartHeader title={displayTitle} fallbackRoute={`/dashboard/${businessSlug}/products` as any} />
-
 			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<SmartHeader.ScrollView
 					style={styles.form}
@@ -465,7 +424,6 @@ export default function BusinessDashboardProductDetailScreen() {
 					showsVerticalScrollIndicator={false}
 				>
 					{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
-
 					{/* Hero Banner Header */}
 					<View style={styles.heroBanner}>
 						<LinearGradient colors={[`${colors.primary}15`, 'transparent']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={StyleSheet.absoluteFill} />
@@ -488,7 +446,6 @@ export default function BusinessDashboardProductDetailScreen() {
 							</View>
 						</View>
 					</View>
-
 					{/* Responsive Layout */}
 					<View style={styles.responsiveLayoutContainer}>
 						{/* Names Card */}
@@ -512,29 +469,33 @@ export default function BusinessDashboardProductDetailScreen() {
 								onCancelPress={cancelNames}
 							/>
 						</View>
-
-						{/* Gallery Card */}
+						{/* Gallery Card — replaced by CarouselCard */}
 						<View style={styles.sectionCard}>
-							{canEditProduct ? (
-								<SmartMediaGalleryCard
-									title={translate('gallery', 'Gallery')}
-									gallery={uploadedGallery}
-									targetModelName="products"
-									targetModelId={product._id}
-									mediaType="image"
-									mode={editMode.gallery ? 'edit' : 'editable'}
-									onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
-									onSave={saveGallery}
-									onCancel={cancelGallery}
-									onChange={(next) => setUploadedGallery(next)}
-									onRemove={handleRemoveGalleryItem}
-									loading={saving}
-								/>
-							) : (
-								<ProductGallerySection editable={false} gallery={uploadedGallery} colors={colors} translate={translate} />
-							)}
+							<CarouselCard
+								media={
+									{
+										thumbnail: null as any,
+										gallery: [(product as any).media?.thumbnail, ...uploadedGallery].filter((f: any) => f && (f.url || f.secure_url)) as any
+									} as any
+								}
+								targetModelName="products"
+								targetModelId={product._id}
+								title={translate('gallery', 'Gallery')}
+								mode={canEditProduct ? (editMode.gallery ? 'edit' : 'editable') : 'view'}
+								mediaType="mixed"
+								onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
+								onSave={saveGallery}
+								onCancel={cancelGallery}
+								onChange={(next) => {
+									// next includes thumbnail + gallery; strip thumbnail back to gallery-only for API
+									const thumbId = (product as any).media?.thumbnail?._id
+									const filtered = (next as any[]).filter((f: any) => f._id !== thumbId && f._id !== 'thumbnail')
+									setUploadedGallery(filtered as any)
+								}}
+								onRemove={handleRemoveGalleryItem}
+								loading={saving}
+							/>
 						</View>
-
 						{/* Pricing Card */}
 						<View style={styles.sectionCard}>
 							<ProductPricingSection
@@ -570,7 +531,6 @@ export default function BusinessDashboardProductDetailScreen() {
 								onCancelPress={cancelPricing}
 							/>
 						</View>
-
 						{/* Stock Card */}
 						<View style={styles.sectionCard}>
 							<ProductStockSection
@@ -589,7 +549,6 @@ export default function BusinessDashboardProductDetailScreen() {
 								onCancelPress={cancelStock}
 							/>
 						</View>
-
 						{/* Specifications Card */}
 						<ProductSpecsSection
 							editable={editMode.specs && canEditProduct}
@@ -620,7 +579,6 @@ export default function BusinessDashboardProductDetailScreen() {
 		</View>
 	)
 }
-
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {

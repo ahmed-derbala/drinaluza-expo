@@ -1,17 +1,14 @@
 import { getApiClient } from '@/core/api'
 import { OrderResponse } from './orders.interface'
-
 export const getPurchases = async (status?: string): Promise<OrderResponse> => {
 	const url = status ? `/purchases?status=${status}` : '/purchases'
 	const response = await getApiClient().get(url)
 	return response.data
 }
-
 const cancelPurchaseAPI = async ({ purchaseId }: { purchaseId: string }) => {
 	const response = await getApiClient().delete(`/purchases/${purchaseId}`)
 	return response.data
 }
-
 const getSales = async (page: number = 1, limit: number = 10, status?: string): Promise<OrderResponse> => {
 	let url = `/sales?page=${page}&limit=${limit}`
 	if (status) {
@@ -20,7 +17,6 @@ const getSales = async (page: number = 1, limit: number = 10, status?: string): 
 	const response = await getApiClient().get(url)
 	return response.data
 }
-
 export const createPurchase = async ({ products, business }: { products: { product: any; quantity: number }[]; business: any }) => {
 	const body = {
 		products,
@@ -29,17 +25,14 @@ export const createPurchase = async ({ products, business }: { products: { produ
 	const response = await getApiClient().post('/purchases', body)
 	return response.data
 }
-
 export const updatePurchaseStatus = async ({ purchaseId, status }: { purchaseId: string; status: string }) => {
 	const response = await getApiClient().patch(`/purchases/${purchaseId}`, { status })
 	return response.data
 }
-
 const updateSaleStatus = async ({ saleId, status }: { saleId: string; status: string }) => {
 	const response = await getApiClient().patch(`/sales/${saleId}`, { status })
 	return response.data
 }
-
 const getSale = async (saleId: string) => {
 	const response = await getApiClient().get(`/sales/${saleId}`)
 	return response.data

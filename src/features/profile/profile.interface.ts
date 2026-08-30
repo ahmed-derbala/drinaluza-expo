@@ -1,37 +1,30 @@
 import type { MultiLang, Address } from '@/features/common/address'
-
 export type { Address } from '@/features/common/address'
-
 export interface Phone {
 	fullNumber?: string
 	countryCode?: string
 	shortNumber?: string
 	localNumber?: string
 }
-
 interface BasicInfos {
 	birthDate: Date | string | null
 	biography?: string
 }
-
 interface SocialMediaPlatform {
 	url?: string
 	username?: string
 }
-
 interface SocialMedia {
 	facebook?: SocialMediaPlatform
 	messenger?: SocialMediaPlatform
 	instagram?: SocialMediaPlatform
 	whatsapp?: SocialMediaPlatform
 }
-
 interface Media {
 	thumbnail?: {
 		url: string
 	}
 }
-
 export interface Location {
 	geo?: {
 		type: 'Point'
@@ -46,7 +39,6 @@ export interface Location {
 	createdAt?: string
 	updatedAt?: string
 }
-
 interface UserSettings {
 	language: {
 		app?: string
@@ -59,12 +51,10 @@ interface UserSettings {
 		}
 	}
 }
-
 interface UserState {
 	code: string
 	updatedAt: string
 }
-
 export interface Contact {
 	phone?: Phone
 	backupPhones?: Phone[]
@@ -72,7 +62,6 @@ export interface Contact {
 	email?: string
 	website?: string
 }
-
 export interface UserData {
 	_id: string
 	slug: string
@@ -93,6 +82,5 @@ export interface UserData {
 	createdAt: string
 	updatedAt: string
 }
-
 // Export alias for backward compatibility
 type User = UserData

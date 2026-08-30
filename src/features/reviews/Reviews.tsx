@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
@@ -9,13 +9,11 @@ import RatingStars from '@/features/common/RatingStars'
 import Spinner from '@/features/common/Spinner'
 import EmptyState from '@/features/common/EmptyState'
 import { IconButton } from '@/features/common/buttons/IconButton'
-
 type ReviewSectionProps = {
 	targetResource: 'businesses' | 'products' | 'users'
 	targetId: string
 	targetName?: string
 }
-
 export default function ReviewSection({ targetResource, targetId, targetName }: ReviewSectionProps) {
 	const { colors } = useTheme()
 	const { localize, translate, user } = useUser()
@@ -32,7 +30,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 		limit: 10,
 		hasNextPage: false
 	})
-
 	const loadReviews = useCallback(
 		async (page: number = 1) => {
 			try {
@@ -48,21 +45,17 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 		},
 		[targetResource, targetId]
 	)
-
 	useEffect(() => {
 		loadReviews()
 	}, [loadReviews])
-
 	const handleStarPress = (stars: number) => {
 		setNewReview({ ...newReview, stars })
 	}
-
 	const handleSubmitReview = async () => {
 		if (!newReview.comment.trim()) {
 			Alert.alert(translate('error', 'Error'), translate('please_enter_comment', 'Please enter a comment'))
 			return
 		}
-
 		try {
 			setSubmitting(true)
 			await createReview(targetResource, targetId, newReview, isAnonymous)
@@ -82,9 +75,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 			setSubmitting(false)
 		}
 	}
-
 	const renderStars = (stars: number, interactive: boolean = false) => <RatingStars rating={stars} size={interactive ? 28 : 16} interactive={interactive} onRatingChange={handleStarPress} />
-
 	const renderReviewItem = (review: Review) => (
 		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.background, borderColor: colors.info }]}>
 			<View style={styles.reviewHeader}>
@@ -104,9 +95,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 			<Text style={[styles.reviewComment, { color: colors.text }]}>{review.comment}</Text>
 		</View>
 	)
-
 	const averageRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.stars, 0) / reviews.length : 0
-
 	return (
 		<View style={styles.container}>
 			{/* Header */}
@@ -130,7 +119,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					style={styles.addButton}
 				/>
 			</View>
-
 			{/* Add Review Form */}
 			{showAddReview && (
 				<View style={[styles.addReviewForm, { backgroundColor: colors.background, borderColor: colors.info }]}>
@@ -139,7 +127,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 						{targetName && ` for ${targetName}`}
 					</Text>
 					<View style={styles.starsWrapper}>{renderStars(newReview.stars, true)}</View>
-
 					{/* Anonymous Toggle */}
 					<TouchableOpacity style={styles.anonymousToggle} onPress={() => setIsAnonymous(!isAnonymous)} activeOpacity={0.7}>
 						<View style={[styles.toggleTrack, { backgroundColor: isAnonymous ? colors.primary : colors.surfaceVariant }]}>
@@ -147,7 +134,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 						</View>
 						<Text style={[styles.toggleLabel, { color: colors.text }]}>{translate('post_anonymously', 'Post anonymously')}</Text>
 					</TouchableOpacity>
-
 					<TextInput
 						style={[styles.commentInput, { backgroundColor: colors.surface, color: colors.text, borderColor: colors.border }]}
 						placeholder={translate('your_comment', 'Your comment')}
@@ -166,7 +152,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					)}
 				</View>
 			)}
-
 			{/* Reviews List */}
 			{loading ? (
 				<Spinner style={styles.loadingContainer} />
@@ -185,7 +170,6 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 		</View>
 	)
 }
-
 const styles = StyleSheet.create({
 	container: {
 		marginTop: 24

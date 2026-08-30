@@ -1,4 +1,3 @@
-import React from 'react'
 import { StyleSheet, View, Text, StyleProp, ViewStyle } from 'react-native'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme, themeColors } from '@/core/theme'

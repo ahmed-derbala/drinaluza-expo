@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, useWindowDimensions, KeyboardAvoidingView, Keyboard, findNodeHandle } from 'react-native'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, useWindowDimensions, KeyboardAvoidingView, Keyboard } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { format, formatDistanceToNow } from 'date-fns'
 import { getToken } from '@/core/storage'
-
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import Spinner from '@/features/common/Spinner'
@@ -14,21 +13,17 @@ import { SmartMediaView } from '@/core/smart-media'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
 import { EyeButton } from '@/features/common/buttons/EyeButton'
 import { SmartHeader } from '@/core/smart-header'
-
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import { config } from '@/config'
 import { log } from '@/core/log'
-
 import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, signInWithToken, switchUser, SavedAuth } from './auth.api'
 import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
-
 // ─── Static stylesheet — defined ONCE at module level, never recreated ────────
 const S = StyleSheet.create({
 	root: { flex: 1, backgroundColor: themeColors.background },
 	flex: { flex: 1 },
 	scrollContent: { flexGrow: 1 },
-
 	desktopGrid: { flex: 1, flexDirection: 'row', minHeight: '100%' as any },
 	brandPane: {
 		flex: 1,
@@ -65,10 +60,8 @@ const S = StyleSheet.create({
 	featureDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: themeColors.primary },
 	featureText: { fontSize: 14, color: themeColors.textSecondary, fontWeight: '500' },
 	formPane: { flex: 1, justifyContent: 'center', backgroundColor: themeColors.background },
-
 	formContainer: { padding: 24 },
 	formContainerTablet: { padding: 48, maxWidth: 480, alignSelf: 'center' as const, width: 480 },
-
 	mobileHeader: { marginBottom: 32 },
 	mobileLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 28 },
 	mobileIconBox: {
@@ -84,7 +77,6 @@ const S = StyleSheet.create({
 	mobileBrandName: { fontSize: 12, fontWeight: '900', color: themeColors.primary, letterSpacing: 2.5, textTransform: 'uppercase' },
 	mobileTitle: { fontSize: 34, fontWeight: '800', color: themeColors.text, lineHeight: 40, marginBottom: 6 },
 	mobileSub: { fontSize: 15, color: themeColors.textTertiary, lineHeight: 20 },
-
 	langSection: { marginBottom: 20 },
 	langRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
 	langChip: {
@@ -99,7 +91,6 @@ const S = StyleSheet.create({
 		backgroundColor: 'transparent'
 	},
 	langChipActive: { borderColor: themeColors.primary, backgroundColor: themeColors.primaryContainer },
-
 	accountsSection: { marginBottom: 20 },
 	sectionLabel: {
 		fontSize: 11,
@@ -164,9 +155,7 @@ const S = StyleSheet.create({
 		alignItems: 'center',
 		justifyContent: 'center'
 	},
-
 	divider: { height: StyleSheet.hairlineWidth, backgroundColor: themeColors.textTertiary, marginBottom: 24 },
-
 	fieldGroup: { marginBottom: 16 },
 	fieldLabel: {
 		fontSize: 12,
@@ -196,7 +185,6 @@ const S = StyleSheet.create({
 	eyeBtn: { padding: 6 },
 	errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
 	errorText: { fontSize: 12, color: themeColors.error, fontWeight: '500', flex: 1 },
-
 	toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
 	toggleBox: {
 		width: 18,
@@ -210,7 +198,6 @@ const S = StyleSheet.create({
 	},
 	toggleBoxActive: { backgroundColor: themeColors.primary, borderColor: themeColors.primary },
 	toggleLabel: { fontSize: 13, color: themeColors.textTertiary, fontWeight: '500', flex: 1 },
-
 	ctaBtn: {
 		height: 52,
 		borderRadius: 13,
@@ -221,7 +208,6 @@ const S = StyleSheet.create({
 	},
 	ctaBtnText: { fontSize: 16, fontWeight: '700', color: themeColors.buttonText, letterSpacing: 0.2 }
 })
-
 // ─── Types for AuthForm props ─────────────────────────────────────────────────
 interface AuthFormProps {
 	isTablet: boolean
@@ -254,7 +240,6 @@ interface AuthFormProps {
 	handleSelectSavedAccount: (account: SavedAuth) => void
 	handleRemoveSavedAccount: (slug: string) => void
 }
-
 const formatLastAccess = (dateStr?: string) => {
 	if (!dateStr) return ''
 	try {
@@ -265,7 +250,6 @@ const formatLastAccess = (dateStr?: string) => {
 		return ''
 	}
 }
-
 // ─── AuthForm — standalone component, never re-created on parent render ───────
 const AuthForm = React.memo(
 	({
@@ -315,7 +299,6 @@ const AuthForm = React.memo(
 						<Text style={S.mobileSub}>{translate('auth_subtitle', 'Sign in to your business account.')}</Text>
 					</View>
 				)}
-
 				{/* Language selector */}
 				<View style={S.langSection}>
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.langRow} keyboardShouldPersistTaps="handled">
@@ -336,7 +319,6 @@ const AuthForm = React.memo(
 						})}
 					</ScrollView>
 				</View>
-
 				{/* Saved accounts chip strip */}
 				{savedAccounts.length > 0 && (
 					<View style={S.accountsSection}>
@@ -368,9 +350,7 @@ const AuthForm = React.memo(
 						</View>
 					</View>
 				)}
-
 				<View style={S.divider} />
-
 				{/* Username */}
 				<View style={S.fieldGroup}>
 					<Text style={S.fieldLabel}>{translate('username', 'Username')}</Text>
@@ -403,13 +383,11 @@ const AuthForm = React.memo(
 						</View>
 					)}
 				</View>
-
 				{/* Save account toggle */}
 				<TouchableOpacity style={S.toggleRow} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.75} accessibilityRole="checkbox" accessibilityState={{ checked: saveAccount }}>
 					<View style={[S.toggleBox, saveAccount && S.toggleBoxActive]}>{saveAccount && <Ionicons name="checkmark" size={12} color={themeColors.buttonText} />}</View>
 					<Text style={S.toggleLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
 				</TouchableOpacity>
-
 				{/* Password */}
 				<View style={S.fieldGroup}>
 					<Text style={S.fieldLabel}>{translate('password', 'Password')}</Text>
@@ -437,7 +415,6 @@ const AuthForm = React.memo(
 						/>
 					</View>
 				</View>
-
 				{/* Require password on switch */}
 				<View style={S.toggleRow}>
 					<TouchableOpacity
@@ -452,7 +429,6 @@ const AuthForm = React.memo(
 					</TouchableOpacity>
 					<EyeButton visible={showPassword} onPress={() => setShowPassword(!showPassword)} iconColor={isPasswordFocused ? themeColors.primary : themeColors.textTertiary} style={S.eyeBtn} />
 				</View>
-
 				{/* CTA */}
 				{loading ? (
 					<Spinner size="small" expand={false} />
@@ -462,15 +438,12 @@ const AuthForm = React.memo(
 						<Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>
 					</TouchableOpacity>
 				)}
-
 				<View style={{ height: 32 }} />
 			</>
 		)
 	}
 )
-
 AuthForm.displayName = 'AuthForm'
-
 // ─── BrandPane — static left panel for tablet/desktop ────────────────────────
 const BrandPane = React.memo(({ translate }: { translate: (k: string, d: string) => string }) => (
 	<View style={S.brandPane}>
@@ -493,9 +466,7 @@ const BrandPane = React.memo(({ translate }: { translate: (k: string, d: string)
 		</View>
 	</View>
 ))
-
 BrandPane.displayName = 'BrandPane'
-
 // ─── AuthScreen ───────────────────────────────────────────────────────────────
 export default function AuthScreen() {
 	const router = useRouter()
@@ -503,7 +474,6 @@ export default function AuthScreen() {
 	const { width } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 	const { appLang, setAppLang, translate, refreshUser, localize, user } = useUser()
-
 	const [savedAccounts, setSavedAccounts] = useState<SavedAuth[]>([])
 	const [slug, setSlug] = useState('')
 	const [password, setPassword] = useState('')
@@ -519,9 +489,7 @@ export default function AuthScreen() {
 	const slugInputRef = useRef<TextInput>(null)
 	const scrollViewRef = useRef<ScrollView>(null)
 	const contentRef = useRef<View>(null)
-
 	const [keyboardHeight, setKeyboardHeight] = useState(0)
-
 	const scrollToInput = useCallback((inputRef: React.RefObject<TextInput | null>) => {
 		if (!scrollViewRef.current || !contentRef.current || !inputRef.current) return
 		setTimeout(
@@ -537,17 +505,14 @@ export default function AuthScreen() {
 			Platform.OS === 'android' ? 150 : 100
 		)
 	}, [])
-
 	useEffect(() => {
 		const showSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow', (e) => setKeyboardHeight(e.endCoordinates.height))
 		const hideSubscription = Keyboard.addListener(Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide', () => setKeyboardHeight(0))
-
 		return () => {
 			showSubscription.remove()
 			hideSubscription.remove()
 		}
 	}, [])
-
 	useEffect(() => {
 		const checkAuthAndRedirect = async () => {
 			if (user) {
@@ -562,17 +527,13 @@ export default function AuthScreen() {
 		}
 		checkAuthAndRedirect()
 	}, [user, router, refreshUser])
-
 	const isTablet = width >= 768
-
 	// Stable: only changes when insets.top changes (safe area, not keyboard)
 	const headerH = useMemo(() => 56 + insets.top, [insets.top])
 	const scrollContentStyle = useMemo(() => [S.scrollContent, { paddingTop: headerH }], [headerH])
-
 	const focusPasswordField = useCallback(() => {
 		setTimeout(() => passwordInputRef.current?.focus(), Platform.OS === 'android' ? 200 : 100)
 	}, [])
-
 	const loadSavedAccounts = useCallback(async () => {
 		try {
 			const accounts = await getSavedAuthentications()
@@ -581,11 +542,9 @@ export default function AuthScreen() {
 			log({ level: 'error', label: 'AuthScreen', message: 'Failed to load saved accounts', error: err })
 		}
 	}, [])
-
 	useEffect(() => {
 		loadSavedAccounts()
 	}, [loadSavedAccounts])
-
 	const handleSlugChange = useCallback(
 		(text: string) => {
 			const sanitized = text.toLowerCase().replace(/[^a-z0-9-]/g, '')
@@ -596,7 +555,6 @@ export default function AuthScreen() {
 		},
 		[translate]
 	)
-
 	const validateSlug = useCallback(
 		(val: string): boolean => {
 			if (val.length < 1) {
@@ -620,7 +578,6 @@ export default function AuthScreen() {
 		},
 		[translate]
 	)
-
 	const handleSignInSubmit = useCallback(async () => {
 		if (!validateSlug(slug)) {
 			toast.show({ title: translate('invalid_request_title', 'Validation Error'), content: slugError || translate('username_invalid_chars'), borderColor: themeColors.error })
@@ -675,7 +632,6 @@ export default function AuthScreen() {
 			setLoading(false)
 		}
 	}, [slug, password, saveAccount, needPassword, slugError, validateSlug, translate, refreshUser, router, focusPasswordField])
-
 	const handleSelectSavedAccount = useCallback(
 		async (account: SavedAuth) => {
 			if (loadingRef.current) return
@@ -717,7 +673,6 @@ export default function AuthScreen() {
 		},
 		[translate, colors.primary, refreshUser, router, focusPasswordField]
 	)
-
 	const handleRemoveSavedAccount = useCallback(
 		(slugToRemove: string) => {
 			showConfirm(
@@ -740,11 +695,9 @@ export default function AuthScreen() {
 		},
 		[slug, translate, loadSavedAccounts]
 	)
-
 	return (
 		<View style={S.root}>
 			<SmartHeader title={translate('auth_title', 'Drinaluza')} fallbackRoute="/feed" />
-
 			<KeyboardAvoidingView style={S.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={Platform.OS === 'ios' ? headerH : 0}>
 				<ScrollView ref={scrollViewRef} style={S.flex} contentContainerStyle={scrollContentStyle} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
 					<View ref={contentRef} style={{ width: '100%', flexGrow: 1 }}>

@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, Platform, ScrollView } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, AppState } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
+import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
@@ -15,9 +15,7 @@ import { formatAddress } from '@/features/common/address'
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
-import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
-import { parseError } from '@/core/error/errorHandler'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -27,14 +25,13 @@ import { EmailButton } from '@/features/common/buttons/EmailButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import { SmartMediaView, SmartMediaGalleryCard, deleteMediaFile } from '@/core/smart-media'
+import { SmartMediaView, deleteMediaFile } from '@/core/smart-media'
+import { CarouselCard } from '@/core/smart-media/carousel-card'
 import { toast } from '@/features/common/Toast'
-import { LinearGradient } from 'expo-linear-gradient'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { config } from '@/config'
-
 export default function ProductScreen() {
 	const { productSlug } = useLocalSearchParams<{ productSlug: string }>()
 	const router = useRouter()
@@ -44,7 +41,20 @@ export default function ProductScreen() {
 	const { setTabBarVisible } = useLayout()
 	const { width, height } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
-
+	const [isScreenFocused, setIsScreenFocused] = useState(true)
+	useFocusEffect(
+		useCallback(() => {
+			setIsScreenFocused(true)
+			return () => setIsScreenFocused(false)
+		}, [])
+	)
+	useEffect(() => {
+		const sub = AppState.addEventListener('change', (next) => {
+			if (next !== 'active') setIsScreenFocused(false)
+			else setIsScreenFocused(true)
+		})
+		return () => sub.remove()
+	}, [])
 	const { data: productResponse, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useProductBySlug({ productSlug })
 	const product = productResponse?.data ?? null
 	const viewer = productResponse?.viewer ?? null
@@ -53,7 +63,6 @@ export default function ProductScreen() {
 	const [quantity, setQuantity] = useState(1)
 	const [showQRCode, setShowQRCode] = useState(false)
 	const [saving, setSaving] = useState(false)
-
 	const [editMode, setEditMode] = useState({
 		names: false,
 		pricing: false,
@@ -61,12 +70,20 @@ export default function ProductScreen() {
 		gallery: false,
 		specs: false
 	})
-
+	const carouselMedia = useMemo(() => {
+		if (!product) return null
+		const rawMedia = (product as any).media as any
+		const hasThumb = !!(rawMedia?.thumbnail && (rawMedia.thumbnail as any).url)
+		const hasGallery = Array.isArray(rawMedia?.gallery) && rawMedia.gallery.length > 0
+		if (hasThumb || hasGallery) return rawMedia
+		const fallbackThumb = (product as any).defaultProduct?.media?.thumbnail
+		if (fallbackThumb?.url) return { thumbnail: fallbackThumb, gallery: [] } as any
+		return (rawMedia as any) ?? null
+	}, [product])
 	// Names
 	const [nameEn, setNameEn] = useState('')
 	const [nameTnLatn, setNameTnLatn] = useState('')
 	const [nameTnArab, setNameTnArab] = useState('')
-
 	// Pricing
 	const [priceTND, setPriceTND] = useState('')
 	const [unit, setUnit] = useState('kg')
@@ -76,15 +93,12 @@ export default function ProductScreen() {
 	const [singlePieceMinWeightKg, setSinglePieceMinWeightKg] = useState('')
 	const [singlePieceAvgWeightKg, setSinglePieceAvgWeightKg] = useState('')
 	const [singlePieceMaxWeightKg, setSinglePieceMaxWeightKg] = useState('')
-
 	// Stock
 	const [stockQuantity, setStockQuantity] = useState('0')
 	const [minThreshold, setMinThreshold] = useState('10')
-
 	// Gallery
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
 	const [removedFiles, setRemovedFiles] = useState<FileRef[]>([])
-
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
@@ -93,14 +107,9 @@ export default function ProductScreen() {
 	const [originRegion, setOriginRegion] = useState('')
 	const [originCountry, setOriginCountry] = useState('')
 	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
-
 	const displayTitle = product ? localize(product.name) : ''
-
-	const isLandscape = width > height
 	const isLargeScreen = width > 800 && height > 600
-	const imageHeight = isLandscape ? (isLargeScreen ? 420 : 220) : 420
 	const canEditProduct = viewer ? viewer.canEdit === true : false
-
 	const syncProductToState = useCallback((prod: ProductType) => {
 		setNameEn(prod.name?.en || '')
 		setNameTnLatn(prod.name?.tn_latn || '')
@@ -132,13 +141,11 @@ export default function ProductScreen() {
 		setOriginCountry(prod.specs?.origin?.country || '')
 		setGear(prod.specs?.gear)
 	}, [])
-
 	useEffect(() => {
 		if (product?.unit?.min) {
 			setQuantity(product.unit.min)
 		}
 	}, [product])
-
 	const increment = () => {
 		if (!product) return
 		const step = product.unit?.step || 1
@@ -149,7 +156,6 @@ export default function ProductScreen() {
 			return next <= maxQuantity && next <= stockQty ? next : prev
 		})
 	}
-
 	const decrement = () => {
 		if (!product) return
 		const step = product.unit?.step || 1
@@ -159,7 +165,6 @@ export default function ProductScreen() {
 			return next >= minQty ? next : minQty
 		})
 	}
-
 	const handleAddToCart = async () => {
 		if (!product) return
 		try {
@@ -177,39 +182,31 @@ export default function ProductScreen() {
 			toast.show({ title: 'Error', content: translate('cart_failed_to_add', 'Failed to add to cart'), borderColor: themeColors.error })
 		}
 	}
-
 	const loadCart = async () => {
 		try {
 			const saved = await getItem<any[]>('cart')
 			if (saved) setCart(saved)
 		} catch {}
 	}
-
 	useEffect(() => {
 		setTabBarVisible(false)
 		return () => {
 			setTabBarVisible(true)
 		}
 	}, [setTabBarVisible])
-
 	useEffect(() => {
 		if (product) {
 			syncProductToState(product)
-			setActiveImage(null)
 		}
 	}, [product, syncProductToState])
-
 	const handleRefresh = () => {
 		refresh()
 		loadCart()
 	}
-
 	useEffect(() => {
 		loadCart()
 	}, [])
-
 	// ─── Save Actions ─────────────────────────────────────────────────────────────
-
 	const saveNames = async () => {
 		if (!canEditProduct) return
 		try {
@@ -236,17 +233,14 @@ export default function ProductScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelNames = () => {
 		if (product) syncProductToState(product)
 		setEditMode((prev) => ({ ...prev, names: false }))
 	}
-
 	const savePricing = async () => {
 		if (!canEditProduct) return
 		try {
 			setSaving(true)
-
 			const minW = singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : NaN
 			const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
 			const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
@@ -260,7 +254,6 @@ export default function ProductScreen() {
 				setSaving(false)
 				return
 			}
-
 			const res = await updateProduct(productSlug!, {
 				price: {
 					total: {
@@ -295,12 +288,10 @@ export default function ProductScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelPricing = () => {
 		if (product) syncProductToState(product)
 		setEditMode((prev) => ({ ...prev, pricing: false }))
 	}
-
 	const saveStock = async () => {
 		if (!canEditProduct) return
 		try {
@@ -325,19 +316,16 @@ export default function ProductScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelStock = () => {
 		if (product) syncProductToState(product)
 		setEditMode((prev) => ({ ...prev, stock: false }))
 	}
-
 	const handleRemoveGalleryItem = (item: FileRef) => {
 		setUploadedGallery((prev) => prev.filter((img) => img._id !== item._id))
 		if (item._id && !item._id.startsWith('pending-')) {
 			setRemovedFiles((prev) => [...prev, item])
 		}
 	}
-
 	const saveGallery = async () => {
 		if (!canEditProduct) return
 		try {
@@ -365,13 +353,11 @@ export default function ProductScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelGallery = () => {
 		if (product) syncProductToState(product)
 		setRemovedFiles([])
 		setEditMode((prev) => ({ ...prev, gallery: false }))
 	}
-
 	const saveSpecs = async () => {
 		if (!canEditProduct) return
 		try {
@@ -409,40 +395,36 @@ export default function ProductScreen() {
 			setSaving(false)
 		}
 	}
-
 	const cancelSpecs = () => {
 		if (product) syncProductToState(product)
 		setEditMode((prev) => ({ ...prev, specs: false }))
 	}
-
 	const handleBusinessNavPress = () => {
 		if (product?.business?.slug) {
 			router.push(`/businesses/${product.business.slug}` as any)
 		}
 	}
-
 	const headerActions = useMemo(
 		() => [<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />],
 		[handleRefresh, isRefreshing]
 	)
-
 	const combinedGallery = useMemo(() => {
 		if (!product) return []
-		const list: any[] = []
-		const thumbUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
-		if (thumbUrl) {
-			list.push({ _id: 'thumbnail', url: thumbUrl })
+		const list: FileRef[] = []
+		const thumb = (product as any).media?.thumbnail as FileRef | undefined
+		const fallbackThumb = (product as any).defaultProduct?.media?.thumbnail as FileRef | undefined
+		const thumbToUse = thumb || fallbackThumb
+		if (thumbToUse && (thumbToUse.url || (thumbToUse as any).secure_url)) {
+			list.push(thumbToUse)
 		}
 		if (product.media?.gallery) {
 			product.media.gallery.forEach((item) => {
-				if (item.url !== thumbUrl) {
-					list.push(item)
-				}
+				const isDuplicate = item._id === thumbToUse?._id || (item.url === thumbToUse?.url && (item as any).secure_url === (thumbToUse as any)?.secure_url)
+				if (!isDuplicate) list.push(item)
 			})
 		}
 		return list
 	}, [product])
-
 	if (isInitialLoading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -451,7 +433,6 @@ export default function ProductScreen() {
 			</View>
 		)
 	}
-
 	if (!product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -461,56 +442,28 @@ export default function ProductScreen() {
 			</View>
 		)
 	}
-
-	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
 	const priceTotal = product.price.total
 	const unitPrice = (priceTotal[currency as keyof typeof priceTotal] as number | null | undefined) || priceTotal.tnd || 0
 	const isAvailable = product.stock.quantity > 0 && product.state?.code === 'active'
-	const stockQty = product.stock?.quantity || 0
-	const stockMinThreshold = product.stock?.minThreshold || 5
-	const isLowStock = stockQty > 0 && stockQty <= stockMinThreshold
-	const isOutOfStock = stockQty === 0
-	const productState = product.state?.code || 'active'
-	const isProductActive = productState === 'active'
-
-	const getStockStatus = () => {
-		if (isOutOfStock) return { color: colors.error, bgColor: colors.error + '12', label: translate('out_of_stock', 'Out of Stock'), icon: 'alert-circle' as const }
-		if (isLowStock) return { color: colors.warning, bgColor: colors.warning + '12', label: translate('low_stock', 'Low Stock'), icon: 'warning' as const }
-		return { color: colors.success, bgColor: colors.success + '12', label: translate('in_stock', 'In Stock'), icon: 'checkmark-circle' as const }
-	}
-	const stockStatus = getStockStatus()
-
-	const renderHero = () => {
-		const currentUrl = activeImage || (combinedGallery.length > 0 ? combinedGallery[0].url : null)
-
-		return (
-			<View style={styles.heroContainer}>
-				<View style={[styles.imageContainer, { height: imageHeight }]}>
-					<SmartMediaView media={currentUrl} style={styles.productImage} resizeMode="cover" enableFullscreenPreview={true} />
-					{!isAvailable && (
-						<View style={styles.unavailableOverlay}>
-							<Text style={styles.unavailableText}>{product.state?.code !== 'active' ? translate('unavailable', 'Unavailable') : translate('out_of_stock', 'Out of Stock')}</Text>
-						</View>
-					)}
-					<LinearGradient colors={['transparent', themeColors.background95]} style={styles.imageGradient}>
-						<View style={[styles.stockBadge, { backgroundColor: stockStatus.bgColor, borderColor: stockStatus.color + '40' }]}>
-							<View style={[styles.stockDot, { backgroundColor: stockStatus.color }]} />
-							<Text style={[styles.stockText, { color: stockStatus.color }]}>{stockStatus.label}</Text>
-						</View>
-					</LinearGradient>
-				</View>
-
-				{combinedGallery.length > 1 && (
-					<ProductGallerySection editable={false} gallery={combinedGallery} colors={colors} translate={translate} activeImage={currentUrl} onThumbnailPress={(url) => setActiveImage(url)} />
-				)}
-			</View>
-		)
-	}
-
+	const renderMediaCarousel = () => (
+		<CarouselCard
+			media={carouselMedia as any}
+			targetModelName="products"
+			targetModelId={product._id}
+			title={translate('media', 'Media')}
+			mode={canEditProduct ? (editMode.gallery ? 'edit' : 'editable') : 'view'}
+			onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
+			onSave={saveGallery}
+			onCancel={cancelGallery}
+			onChange={(next) => setUploadedGallery(next as any)}
+			onRemove={handleRemoveGalleryItem}
+			loading={saving}
+			isVisible={isScreenFocused}
+		/>
+	)
 	const renderInfoCard = () => (
 		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
-
 			<ProductNamesSection
 				variant={editMode.names ? 'edit' : 'view'}
 				colors={colors}
@@ -528,7 +481,6 @@ export default function ProductScreen() {
 				onSavePress={saveNames}
 				onCancelPress={cancelNames}
 			/>
-
 			<ProductPricingSection
 				variant={editMode.pricing ? 'edit' : 'view'}
 				colors={colors}
@@ -561,7 +513,6 @@ export default function ProductScreen() {
 				onSavePress={savePricing}
 				onCancelPress={cancelPricing}
 			/>
-
 			<ProductStockSection
 				variant={editMode.stock ? 'edit' : 'view'}
 				colors={colors}
@@ -577,57 +528,30 @@ export default function ProductScreen() {
 				onSavePress={saveStock}
 				onCancelPress={cancelStock}
 			/>
-
 			{isAvailable && (
 				<View style={[styles.checkoutPanel, { borderTopColor: colors.border }]}>
 					<View style={styles.checkoutTotalCol}>
 						<Text style={[styles.checkoutTotalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 						<Text style={[styles.checkoutTotalPrice, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
 					</View>
-
 					<View style={styles.checkoutActionsCol}>
 						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
 							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} style={styles.stepperBtn} />
 							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
 							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} style={styles.stepperBtn} />
 						</View>
-
 						<IconButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" />
 					</View>
 				</View>
 			)}
 		</View>
 	)
-
-	const renderGallerySection = () => {
-		if (!canEditProduct) {
-			return <ProductGallerySection editable={false} gallery={product.media?.gallery || []} colors={colors} translate={translate} />
-		}
-		return (
-			<SmartMediaGalleryCard
-				title={translate('gallery', 'Gallery')}
-				gallery={uploadedGallery}
-				targetModelName="products"
-				targetModelId={product._id}
-				mediaType="mixed"
-				mode={editMode.gallery ? 'edit' : 'editable'}
-				onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
-				onSave={saveGallery}
-				onCancel={cancelGallery}
-				onChange={(next) => setUploadedGallery(next)}
-				onRemove={handleRemoveGalleryItem}
-				loading={saving}
-			/>
-		)
-	}
-
 	const renderMetadata = () => {
 		const hasPhone = Boolean(product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber)
 		const hasWhatsApp = Boolean(product?.business?.contact?.whatsapp || product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber)
 		const hasEmail = Boolean(product?.business?.contact?.email)
 		const hasWebsite = Boolean(product?.business?.contact?.website)
 		const hasDirections = Boolean(product?.business?.location?.coordinates?.length || product?.business?.address)
-
 		return (
 			<View style={styles.metadataContainer}>
 				<View style={[styles.metaCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
@@ -666,7 +590,6 @@ export default function ProductScreen() {
 						)}
 					</TouchableOpacity>
 				</View>
-
 				{product.defaultProduct && (
 					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<View style={styles.metaCardHeader}>
@@ -680,7 +603,6 @@ export default function ProductScreen() {
 						<Text style={[styles.metaCardName, { color: colors.text }]}>{localize(product.defaultProduct.name)}</Text>
 					</View>
 				)}
-
 				{product.availability && (
 					<View style={[styles.metaCardStatic, { backgroundColor: colors.background, borderColor: colors.border }]}>
 						<View style={styles.metaCardHeader}>
@@ -701,7 +623,6 @@ export default function ProductScreen() {
 						)}
 					</View>
 				)}
-
 				<ProductSpecsSection
 					editable={editMode.specs && canEditProduct}
 					colors={colors}
@@ -728,7 +649,6 @@ export default function ProductScreen() {
 			</View>
 		)
 	}
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
@@ -740,7 +660,6 @@ export default function ProductScreen() {
 					} as any
 				}
 			/>
-
 			<SmartHeader.ScrollView
 				style={styles.container}
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom }]}
@@ -753,8 +672,7 @@ export default function ProductScreen() {
 				{isLargeScreen ? (
 					<View style={styles.splitLayoutContainer}>
 						<View style={styles.leftColumn}>
-							{renderHero()}
-							{renderGallerySection()}
+							{renderMediaCarousel()}
 							{renderMetadata()}
 						</View>
 						<View style={styles.rightColumn}>
@@ -764,15 +682,13 @@ export default function ProductScreen() {
 					</View>
 				) : (
 					<View style={styles.mobileLayoutContainer}>
-						{renderHero()}
+						{renderMediaCarousel()}
 						{renderInfoCard()}
-						{renderGallerySection()}
 						{renderMetadata()}
 						{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 					</View>
 				)}
 			</SmartHeader.ScrollView>
-
 			{product && (
 				<QRCodeModal
 					visible={showQRCode}
@@ -786,7 +702,6 @@ export default function ProductScreen() {
 		</View>
 	)
 }
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1
@@ -814,62 +729,6 @@ const styles = StyleSheet.create({
 	mobileLayoutContainer: {
 		width: '100%',
 		gap: 16
-	},
-	heroContainer: {
-		width: '100%'
-	},
-	imageContainer: {
-		width: '100%',
-		borderRadius: 24,
-		overflow: 'hidden',
-		position: 'relative'
-	},
-	productImage: {
-		width: '100%',
-		height: '100%'
-	},
-	unavailableOverlay: {
-		...StyleSheet.absoluteFill,
-		backgroundColor: themeColors.background75,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	unavailableText: {
-		color: themeColors.error,
-		fontSize: 22,
-		fontWeight: '800',
-		textTransform: 'uppercase',
-		letterSpacing: 1.5
-	},
-	imageGradient: {
-		position: 'absolute',
-		bottom: 0,
-		left: 0,
-		right: 0,
-		height: 120,
-		justifyContent: 'flex-end',
-		padding: 20
-	},
-	stockBadge: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		paddingHorizontal: 12,
-		paddingVertical: 6,
-		borderRadius: 20,
-		alignSelf: 'flex-start',
-		borderWidth: 1
-	},
-	stockDot: {
-		width: 8,
-		height: 8,
-		borderRadius: 4,
-		marginRight: 6
-	},
-	stockText: {
-		fontSize: 12,
-		fontWeight: '700',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5
 	},
 	card: {
 		borderRadius: 24,

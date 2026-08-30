@@ -1,4 +1,3 @@
-import React from 'react'
 import SmartModal from './SmartModal'
 import type { SmartModalProps } from './types'
 

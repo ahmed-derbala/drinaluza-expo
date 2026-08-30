@@ -1,5 +1,5 @@
 import { config } from '@/config'
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Ionicons } from '@expo/vector-icons'

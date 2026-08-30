@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { StyleSheet, View, Platform, Alert, useWindowDimensions } from 'react-native'
 import * as Sharing from 'expo-sharing'
 import { useTheme } from '@/core/theme'

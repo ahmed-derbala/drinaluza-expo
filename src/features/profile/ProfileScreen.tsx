@@ -1,15 +1,14 @@
-import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image, Alert, Platform, useWindowDimensions, Linking, Modal, Animated, Easing, KeyboardAvoidingView } from 'react-native'
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, useWindowDimensions, Linking, Modal, KeyboardAvoidingView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
-
 import { AddressForm } from '@/features/common/address'
 import ContactForm from '@/features/common/ContactForm'
 import LocationForm from '@/features/common/LocationForm'
 import DateTimePicker from '@react-native-community/datetimepicker'
 import { useRouter, Tabs } from 'expo-router'
-import { Ionicons, MaterialIcons } from '@expo/vector-icons'
+import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import { updateMyProfile, switchUser } from '@/features/auth/auth.api'
 import { getGeoCoordinates, openDirections } from '@/core/helpers/maps'
@@ -22,21 +21,18 @@ import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@/core
 import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
-import LocalizedFormInput from '@/features/common/LocalizedFormInput'
 import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
 import Spinner from '@/features/common/Spinner'
-import { showPopup, showAlert, showConfirm } from '@/core/helpers/popup'
+import { showAlert } from '@/core/helpers/popup'
 import { CenteredModal } from '@/core/smart-modal'
 import { requestBusiness } from '@/features/businesses/business.api'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { log } from '@/core/log'
-
 import { UserData } from '@/features/profile/profile.interface'
 import { MultiLang } from '@/features/businesses/businesses.interface'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { SOCIAL_PLATFORMS } from '@/core/constants/settings'
-
 export default function ProfileScreen() {
 	const router = useRouter()
 	const { colors } = useTheme()
@@ -46,19 +42,14 @@ export default function ProfileScreen() {
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
 	const styles = createStyles(colors, isWideScreen, width)
-
 	const renderLangFlag = (code: string | undefined, fallback: string = translate('not_set', 'Not set')) => {
 		if (!LANGUAGES.find((l) => l.code === code)) return <Text style={{ color: colors.text }}>{fallback}</Text>
 		return <LanguageIcon code={code} />
 	}
-
 	const { onScroll } = useScrollHandler()
-
 	const [userData, setUserData] = useState<UserData | null>(null)
-
 	// ── Cache-first profile ──
 	const { profile: cachedProfile, isInitialLoading, isRefreshing, isOffline, refresh: refreshProfile } = useMyProfile()
-
 	const applyProfileToState = useCallback((profile: UserData) => {
 		const data = { ...profile }
 		if (data.basicInfos?.birthDate) {
@@ -66,7 +57,6 @@ export default function ProfileScreen() {
 		}
 		setUserData(data)
 	}, [])
-
 	const [editMode, setEditMode] = useState({
 		name: false,
 		basic: false,
@@ -85,20 +75,16 @@ export default function ProfileScreen() {
 	const [businessLoading, setBusinessLoading] = useState(false)
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
-
 	// Sync cached profile into editable state as soon as it is available.
 	useEffect(() => {
 		if (cachedProfile) {
 			applyProfileToState(cachedProfile)
 		}
 	}, [cachedProfile, applyProfileToState])
-
 	const saveUserData = async (sectionKey?: keyof typeof editMode) => {
 		if (!userData) return
-
 		try {
 			let payload: Record<string, any> = {}
-
 			switch (sectionKey) {
 				case 'name': {
 					const namePayload: Record<string, string> = {}
@@ -178,7 +164,6 @@ export default function ProfileScreen() {
 					}
 				}
 			}
-
 			const res = await updateMyProfile(payload)
 			if (res?.data) {
 				applyProfileToState(res.data as UserData)
@@ -193,7 +178,6 @@ export default function ProfileScreen() {
 			showAlert('Error', errorMessage)
 		}
 	}
-
 	const toggleEdit = (section: keyof typeof editMode, value: boolean) => {
 		if (!value) {
 			// If cancelling, revert to cached profile
@@ -203,7 +187,6 @@ export default function ProfileScreen() {
 		}
 		setEditMode((prev) => ({ ...prev, [section]: value }))
 	}
-
 	const handleThumbnailChange = async (thumbnail: MediaFile | null) => {
 		if (!userData) return
 		const updatedMedia = { ...userData.media, thumbnail: thumbnail ?? undefined }
@@ -220,13 +203,10 @@ export default function ProfileScreen() {
 			showAlert('Error', error.response?.data?.message || 'Failed to update photo')
 		}
 	}
-
 	const updateField = (field: string, value: any, section?: keyof UserData) => {
 		if (!userData) return
-
 		setUserData((prev) => {
 			if (!prev) return null
-
 			if (section) {
 				return {
 					...prev,
@@ -239,28 +219,23 @@ export default function ProfileScreen() {
 			return { ...prev, [field]: value }
 		})
 	}
-
 	// Helper functions to get phone/email with backward compatibility
 	const getPhone = (userData: any) => userData?.contact?.phone || userData?.phone
 	const getBackupPhones = (userData: any) => userData?.contact?.backupPhones || userData?.backupPhones || []
 	const getEmail = (userData: any) => userData?.contact?.email || userData?.email
-
 	const onDateChange = (event: any, selectedDate?: Date) => {
 		setShowDatePicker(Platform.OS === 'ios')
 		if (selectedDate) {
 			updateField('birthDate', selectedDate, 'basicInfos')
 		}
 	}
-
 	const formatDate = (date: Date | string | null | undefined) => {
 		if (!date) return 'Not set'
 		return new Date(date).toLocaleDateString()
 	}
-
 	const handleSwitchUser = () => {
 		setShowSwitchAccountModal(true)
 	}
-
 	const confirmSwitchUser = async () => {
 		try {
 			await switchUser()
@@ -274,16 +249,13 @@ export default function ProfileScreen() {
 			router.replace('/auth')
 		}
 	}
-
 	const handleRequestBusiness = () => {
 		setBusinessName({ en: '', tn_latn: '', tn_arab: '' })
 		setShowBusinessModal(true)
 	}
-
 	const updateBusinessName = (field: keyof MultiLang, value: string) => {
 		setBusinessName((prev) => ({ ...prev, [field]: value }))
 	}
-
 	const handleSubmitBusinessRequest = async () => {
 		if (!businessName.en.trim()) {
 			showAlert(translate('error', 'Error'), translate('business_name_required', 'Please enter a business name in English'))
@@ -306,7 +278,6 @@ export default function ProfileScreen() {
 			setBusinessLoading(false)
 		}
 	}
-
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (userData?.role === 'customer') {
@@ -315,7 +286,6 @@ export default function ProfileScreen() {
 		actions.push(
 			<HeaderSwitchUserButton key="switch-user" onPress={handleSwitchUser} iconColor={colors.text} backgroundColor={colors.text + '05'} label={translate('switch_user', 'Switch User Account')} />
 		)
-
 		actions.push(
 			<HeaderRefreshButton
 				key="refresh"
@@ -328,11 +298,9 @@ export default function ProfileScreen() {
 		)
 		return actions
 	}, [userData?.role, handleRequestBusiness, handleSwitchUser, refreshProfile, isRefreshing, isOffline, colors, translate])
-
 	if (isInitialLoading) {
 		return <Spinner />
 	}
-
 	if (isOffline && !userData) {
 		return (
 			<View style={styles.container}>
@@ -341,9 +309,7 @@ export default function ProfileScreen() {
 			</View>
 		)
 	}
-
 	if (!userData) return null
-
 	return (
 		<View style={styles.container}>
 			<Tabs.Screen options={{ title: translate('profile', 'Profile'), headerLeft: () => null, headerActions: headerActions } as any} />
@@ -359,7 +325,6 @@ export default function ProfileScreen() {
 					{/* Profile Header Card */}
 					<View style={styles.profileCard}>
 						<LinearGradient colors={[colors.primary, colors.primary + '10']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.profileBanner} />
-
 						<View style={styles.profileCardContent}>
 							<View style={styles.photoContainer}>
 								<SmartMediaView media={userData.media?.thumbnail?.url} style={styles.profilePhoto} resizeMode="cover" enableFullscreenPreview={true} />
@@ -371,7 +336,6 @@ export default function ProfileScreen() {
 									style={styles.changePhotoButton}
 								/>
 							</View>
-
 							{editMode.photo && (
 								<SmartMediaThumbnailBlock
 									thumbnail={userData.media?.thumbnail?.url ? { _id: 'thumb', url: userData.media.thumbnail.url } : null}
@@ -382,21 +346,16 @@ export default function ProfileScreen() {
 									enableFullscreenPreview={false}
 								/>
 							)}
-
 							<Text style={styles.profileFullName}>{localize(userData.name) || 'User'}</Text>
 							<Text style={styles.profileSlug}>{userData.slug}</Text>
-
 							{userData.basicInfos?.biography && (
 								<Text style={styles.profileBio} numberOfLines={2}>
 									{userData.basicInfos.biography}
 								</Text>
 							)}
-
 							{(() => {
 								const JoinYear = userData.createdAt ? new Date(userData.createdAt).getFullYear() : null
-
 								if (!JoinYear) return null
-
 								return (
 									<View style={styles.metaRow}>
 										<View style={styles.metaItem}>
@@ -406,7 +365,6 @@ export default function ProfileScreen() {
 									</View>
 								)
 							})()}
-
 							<View style={styles.roleStateContainer}>
 								<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
 									<Ionicons
@@ -424,7 +382,6 @@ export default function ProfileScreen() {
 							</View>
 						</View>
 					</View>
-
 					<MultiLingualCard
 						name={userData.name}
 						isEditing={editMode.name}
@@ -433,7 +390,6 @@ export default function ProfileScreen() {
 						onCancel={() => toggleEdit('name', false)}
 						onChange={(lang, value) => updateField(lang, value, 'name')}
 					/>
-
 					<BaseCard
 						title="👤 Basic Information"
 						mode={editMode.basic ? 'edit' : 'editable'}
@@ -498,7 +454,6 @@ export default function ProfileScreen() {
 							</>
 						)}
 					</BaseCard>
-
 					<BaseCard
 						title="📍 Address"
 						mode={editMode.address ? 'edit' : 'editable'}
@@ -530,7 +485,6 @@ export default function ProfileScreen() {
 							</>
 						)}
 					</BaseCard>
-
 					<BaseCard
 						title="📍 Location"
 						mode={editMode.location ? 'edit' : 'editable'}
@@ -583,7 +537,6 @@ export default function ProfileScreen() {
 							</>
 						)}
 					</BaseCard>
-
 					<BaseCard
 						title="🌐 Social Media"
 						mode={editMode.social ? 'edit' : 'editable'}
@@ -622,7 +575,6 @@ export default function ProfileScreen() {
 									const data = userData.socialMedia?.[platform.id as keyof typeof userData.socialMedia]
 									const username = data?.username || ''
 									if (!username) return null
-
 									// Construct URL from username for opening links
 									const constructUrl = (platformId: string, username: string) => {
 										if (platformId === 'facebook') {
@@ -632,9 +584,7 @@ export default function ProfileScreen() {
 										}
 										return username
 									}
-
 									const url = constructUrl(platform.id, username)
-
 									return (
 										<SectionRow
 											key={platform.id}
@@ -662,7 +612,6 @@ export default function ProfileScreen() {
 							</>
 						)}
 					</BaseCard>
-
 					<BaseCard
 						title="📞 Contact Information"
 						mode={editMode.phone ? 'edit' : 'editable'}
@@ -740,7 +689,6 @@ export default function ProfileScreen() {
 							</>
 						)}
 					</BaseCard>
-
 					<BaseCard
 						title={'⚙️ ' + translate('settings', 'Account Settings')}
 						mode={editMode.settings ? 'edit' : 'editable'}
@@ -836,7 +784,6 @@ export default function ProfileScreen() {
 					</BaseCard>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
-
 			{/* Business Name Modal */}
 			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => !businessLoading && setShowBusinessModal(false)}>
 				<View style={styles.modalOverlay}>
@@ -881,7 +828,6 @@ export default function ProfileScreen() {
 											/>
 										</View>
 									</View>
-
 									{/* Tunisian Latin (Optional) */}
 									<View style={styles.languageInputGroup}>
 										<View style={styles.inputLabelRow}>
@@ -906,7 +852,6 @@ export default function ProfileScreen() {
 											/>
 										</View>
 									</View>
-
 									{/* Tunisian Arabic (Optional) */}
 									<View style={styles.languageInputGroup}>
 										<View style={styles.inputLabelRow}>
@@ -949,7 +894,6 @@ export default function ProfileScreen() {
 					</KeyboardAvoidingView>
 				</View>
 			</Modal>
-
 			{/* Switch Account Modal */}
 			<CenteredModal
 				visible={showSwitchAccountModal}
@@ -967,7 +911,6 @@ export default function ProfileScreen() {
 		</View>
 	)
 }
-
 const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 	StyleSheet.create({
 		container: {
@@ -1386,7 +1329,6 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			color: colors.text,
 			textAlignVertical: 'center'
 		},
-
 		addressGrid: {
 			flexDirection: 'row',
 			flexWrap: 'wrap',

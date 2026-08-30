@@ -236,7 +236,8 @@ export const en = {
 	gear_gillnet: 'Gillnet',
 	thumbnail: 'Thumbnail',
 	cache_details: 'Cached Data Details',
-	api_cache: 'API & Data Cache',
+	api_cache: 'API Cache',
+	api_cache_desc: 'Cached API responses',
 	video_cache: 'Video Cache',
 	total_cache_size: 'Total Cache Size',
 	cached_entries: 'Cached Entries',
@@ -247,5 +248,12 @@ export const en = {
 	cache_cleared: 'Cache cleared successfully',
 	clear_cache_confirm: 'Are you sure you want to clear all cached data?',
 	refresh_stats: 'Refresh Stats',
-	no_cache_data: 'No cached data found'
+	no_cache_data: 'No cached data found',
+	media_settings: 'Media Settings',
+	media_auto_advance: 'Auto Advance',
+	media_auto_advance_desc: 'Automatically go to next media',
+	media_auto_play: 'Auto Play',
+	media_auto_play_desc: 'Videos start playing automatically',
+	media_sound_on: 'Sound On',
+	media_sound_on_desc: 'Videos start with sound'
 }

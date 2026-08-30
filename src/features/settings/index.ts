@@ -1,3 +1,4 @@
 export { SettingsScreen, default as SettingsScreenDefault } from './SettingsScreen'
-export { CacheDetailsCard } from '@/core/cache/CacheDetailsCard'
+export { CacheDetailsCard } from './CacheDetailsCard'
 export { ResetAppCard } from './ResetAppCard'
+export { MediaSettingsCard } from './MediaSettingsCard'

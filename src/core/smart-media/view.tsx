@@ -11,13 +11,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import Spinner from '@/features/common/Spinner'
 import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@/core/cache'
 import { getMediaType, getMediaUrl, getVideoPosterUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
+import { useMediaSettings } from '@/core/media-settings/MediaSettingsContext'
 
 const FALLBACK_IMAGE = require('../../../assets/images/no_media.png')
 
@@ -50,6 +50,8 @@ export interface SmartMediaViewProps extends SmartMediaStyleProps {
 	nativeControls?: boolean
 	/** Whether to show video controls (native + custom). Defaults to true. When false, no controls are rendered. */
 	controls?: boolean
+	/** When true, video starts with sound. Defaults to media settings. */
+	soundOn?: boolean
 	/** Called when video playback ends (videos only). */
 	onPlaybackEnd?: () => void
 	/** When false, video will not be mounted (shows poster) to save memory/battery for off-screen cards. */
@@ -73,6 +75,7 @@ const SmartMediaViewComponent = ({
 	loop = false,
 	nativeControls = true,
 	controls = true,
+	soundOn,
 	onPlaybackEnd,
 	isVisible = true
 }: SmartMediaViewProps) => {
@@ -85,6 +88,8 @@ const SmartMediaViewComponent = ({
 
 	const mediaType = useMemo(() => getMediaType(media), [media])
 	const isVideo = mediaType === 'video'
+	const { soundOn: settingsSoundOn } = useMediaSettings()
+	const effectiveSoundOn = soundOn ?? settingsSoundOn
 	const [cachedVideoUri, setCachedVideoUri] = useState<string | null>(null)
 	const [isCacheChecked, setIsCacheChecked] = useState(false)
 	const [hasVideoStarted, setHasVideoStarted] = useState(false)
@@ -244,11 +249,6 @@ const SmartMediaViewComponent = ({
 
 	const showFallback = !sourceIsValid || hasError
 
-	// Track if video has ever started (for first-frame poster and last-frame retention)
-	const handleVideoPlayingChange = useCallback((isPlaying: boolean) => {
-		if (isPlaying) setHasVideoStarted(true)
-	}, [])
-
 	const handleVideoError = useCallback(() => {
 		if (!isVideo) return
 		if (cachedVideoUri) {
@@ -306,6 +306,7 @@ const SmartMediaViewComponent = ({
 					contentFit={resolvedContentFit as any}
 					autoPlay={autoPlay}
 					loop={loop}
+					soundOn={effectiveSoundOn}
 					nativeControls={controls ? nativeControls : false}
 					controls={controls}
 					accessibilityLabel={accessibilityLabel}

@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
 import { SmartMediaView } from '@/core/smart-media'
 import { MaterialIcons } from '@expo/vector-icons'

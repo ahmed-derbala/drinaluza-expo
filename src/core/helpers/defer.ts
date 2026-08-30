@@ -1,4 +1,4 @@
-import { Platform, InteractionManager } from 'react-native'
+import { Platform } from 'react-native'
 
 /**
  * Defer a task until after the initial render / idle period.
@@ -29,9 +29,8 @@ export function deferTask(callback: () => void | Promise<void>, options?: { dela
 		}
 	}
 
-	// Native: run after interactions + extra delay
 	let timeoutId: ReturnType<typeof setTimeout> | null = null
-	let interactionHandle: { cancel?: () => void } | null = null
+	let idleId: number | null = null
 	let cancelled = false
 
 	const run = () => {
@@ -41,23 +40,24 @@ export function deferTask(callback: () => void | Promise<void>, options?: { dela
 		}, delay)
 	}
 
-	try {
-		// InteractionManager exists on native and web (no-op on web)
-		// eslint-disable-next-line @typescript-eslint/no-require-imports
-		if (InteractionManager && typeof InteractionManager.runAfterInteractions === 'function') {
-			interactionHandle = InteractionManager.runAfterInteractions(run)
-		} else {
+	const RIC = (globalThis as any).requestIdleCallback as ((cb: () => void, opts?: { timeout: number }) => number) | undefined
+	const CIC = (globalThis as any).cancelIdleCallback as ((id: number) => void) | undefined
+
+	if (typeof RIC === 'function') {
+		try {
+			idleId = RIC(run, { timeout })
+		} catch {
 			run()
 		}
-	} catch {
-		timeoutId = setTimeout(callback, delay)
+	} else {
+		run()
 	}
 
 	return () => {
 		cancelled = true
-		if (interactionHandle && typeof interactionHandle.cancel === 'function') {
+		if (idleId !== null && typeof CIC === 'function') {
 			try {
-				interactionHandle.cancel()
+				CIC(idleId)
 			} catch {}
 		}
 		if (timeoutId) clearTimeout(timeoutId)

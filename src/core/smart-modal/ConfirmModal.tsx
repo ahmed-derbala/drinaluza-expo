@@ -1,4 +1,3 @@
-import React from 'react'
 import CenteredModal from './CenteredModal'
 import type { SmartModalProps, SmartModalButton } from './types'
 

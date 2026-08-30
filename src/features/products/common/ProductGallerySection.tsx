@@ -1,5 +1,4 @@
 import { themeColors } from '@/core/theme'
-import React from 'react'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
 import { SmartMediaView } from '@/core/smart-media'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -57,7 +56,7 @@ export default function ProductGallerySection({
 					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
 						{gallery.map((item, idx) => (
 							<View key={item._id || idx} style={styles.galleryItem}>
-								<SmartMediaView media={item.url} style={styles.galleryImage} resizeMode="cover" />
+								<SmartMediaView media={item as any} style={styles.galleryImage} resizeMode="cover" />
 								{onRemovePress && (
 									<IconButton icon="close" label={translate('remove', 'Remove')} onPress={() => onRemovePress(item)} variant="danger" iconColor={themeColors.buttonText} style={styles.removeBadge} />
 								)}
@@ -79,15 +78,15 @@ export default function ProductGallerySection({
 			<View style={styles.galleryScrollContainer}>
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryRow}>
 					{gallery.map((item, index) => {
-						const isSelected = activeImage === item.url
+						const isSelected = activeImage === item.url || activeImage === (item as any).secure_url
 						return (
 							<TouchableOpacity
 								key={item._id || index}
-								onPress={() => onThumbnailPress && onThumbnailPress(item.url)}
+								onPress={() => onThumbnailPress && onThumbnailPress((item as any).secure_url || item.url)}
 								style={[styles.thumbnailContainer, { borderColor: isSelected ? colors.primary : colors.border }]}
 								activeOpacity={0.8}
 							>
-								<SmartMediaView media={item.url} style={styles.thumbnailImage} resizeMode="cover" />
+								<SmartMediaView media={item as any} style={styles.thumbnailImage} resizeMode="cover" />
 							</TouchableOpacity>
 						)
 					})}
@@ -107,7 +106,7 @@ export default function ProductGallerySection({
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.galleryScroll}>
 					{gallery.map((item, idx) => (
 						<View key={item._id || idx} style={styles.galleryItem}>
-							<SmartMediaView media={item.url} style={styles.galleryImage} resizeMode="cover" />
+							<SmartMediaView media={item as any} style={styles.galleryImage} resizeMode="cover" />
 						</View>
 					))}
 					{gallery.length === 0 && <Text style={{ color: colors.textTertiary, fontStyle: 'italic', paddingVertical: 10 }}>{translate('no_images', 'No images in gallery')}</Text>}

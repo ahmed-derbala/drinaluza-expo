@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'

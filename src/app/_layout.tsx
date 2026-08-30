@@ -1,5 +1,5 @@
 import { Stack, usePathname, Redirect, useRouter } from 'expo-router'
-import React, { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
 import { useUpdates, isVersionGreater, UpdateCheckResult } from '@/features/updates'
@@ -55,6 +55,7 @@ import { BackendConnectionProvider } from '@/core/connection'
 import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 import { UpdatesProvider } from '@/features/updates/UpdatesContext'
+import { MediaSettingsProvider } from '@/core/media-settings/MediaSettingsContext'
 import { AppThemeProvider, useTheme, themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
@@ -244,23 +245,25 @@ export default function RootLayout() {
 	return (
 		<SafeAreaProvider>
 			<AppThemeProvider>
-				<UpdatesProvider>
-					<SmartKebabMenuProvider>
-						<ToastProvider>
-							<UserProvider>
-								<NotificationProvider>
-									<BackendConnectionProvider>
-										<SocketProvider>
-											<LayoutProvider>
-												<RootLayoutContent />
-											</LayoutProvider>
-										</SocketProvider>
-									</BackendConnectionProvider>
-								</NotificationProvider>
-							</UserProvider>
-						</ToastProvider>
-					</SmartKebabMenuProvider>
-				</UpdatesProvider>
+				<MediaSettingsProvider>
+					<UpdatesProvider>
+						<SmartKebabMenuProvider>
+							<ToastProvider>
+								<UserProvider>
+									<NotificationProvider>
+										<BackendConnectionProvider>
+											<SocketProvider>
+												<LayoutProvider>
+													<RootLayoutContent />
+												</LayoutProvider>
+											</SocketProvider>
+										</BackendConnectionProvider>
+									</NotificationProvider>
+								</UserProvider>
+							</ToastProvider>
+						</SmartKebabMenuProvider>
+					</UpdatesProvider>
+				</MediaSettingsProvider>
 			</AppThemeProvider>
 		</SafeAreaProvider>
 	)

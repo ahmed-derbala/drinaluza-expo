@@ -1,11 +1,11 @@
 import { HeaderAllowPushButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter, Stack, useNavigation, useFocusEffect, useLocalSearchParams } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { useUser, useLayout } from '@/core/contexts'
+import { useUser } from '@/core/contexts'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
 import Spinner from '@/features/common/Spinner'
@@ -13,13 +13,10 @@ import { useNotifications } from './useNotifications'
 import { getNotifications, markNotificationSeen, NotificationFilter } from './notifications.api'
 import { NotificationItem } from './notifications.interface'
 import { NotificationCard } from './components/NotificationCard'
-
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { log } from '@/core/log'
 import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
-
 const isValidFilter = (value: string | undefined): value is NotificationFilter => value === 'all' || value === 'seen' || value === 'unseen'
-
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
 	const router = useRouter()
@@ -32,22 +29,18 @@ export default function NotificationsScreen() {
 	const page1Notifications = page1Response?.data?.docs ?? []
 	const [extraNotifications, setExtraNotifications] = useState<NotificationItem[]>([])
 	const notifications = useMemo(() => [...page1Notifications, ...extraNotifications], [page1Notifications, extraNotifications])
-
 	const [page, setPage] = useState(1)
 	const [hasMore, setHasMore] = useState(true)
 	const [permissionGranted, setPermissionGranted] = useState<boolean | null>(null)
 	const { translate } = useUser()
-
 	// Reset appended pages whenever page 1 cache refreshes
 	useEffect(() => {
 		setExtraNotifications([])
 		setPage(1)
 		setHasMore(true)
 	}, [page1Response])
-
 	const checkPermissions = useCallback(async () => {
 		if (Platform.OS === 'web') return
-
 		try {
 			const Notifications = require('expo-notifications')
 			const { status } = await Notifications.getPermissionsAsync()
@@ -56,13 +49,11 @@ export default function NotificationsScreen() {
 			console.warn('[NotificationsScreen] Failed to check permissions:', err)
 		}
 	}, [])
-
 	const loadMoreNotifications = useCallback(
 		async (nextPage: number) => {
 			try {
 				const response = await getNotifications(nextPage, 10, filter)
 				const newItems = response.data.docs || []
-
 				setExtraNotifications((prev) => [...prev, ...newItems])
 				setHasMore(response.data.pagination.hasNextPage)
 				setPage(nextPage)
@@ -72,19 +63,15 @@ export default function NotificationsScreen() {
 		},
 		[filter]
 	)
-
 	const onRefresh = useCallback(() => {
 		refresh()
 	}, [refresh])
-
 	const loadMore = useCallback(() => {
 		if (hasMore && !isInitialLoading && !isRefreshing) {
 			loadMoreNotifications(page + 1)
 		}
 	}, [hasMore, isInitialLoading, isRefreshing, loadMoreNotifications, page])
-
 	const lastFocusRefreshRef = useRef<number>(0)
-
 	useFocusEffect(
 		useCallback(() => {
 			const now = Date.now()
@@ -95,9 +82,7 @@ export default function NotificationsScreen() {
 			checkPermissions()
 		}, [refresh, checkPermissions])
 	)
-
 	const { decrementNotificationCount } = useNotification()
-
 	const handleNotificationPress = useCallback(
 		async (item: NotificationItem) => {
 			if (!item.seenAt) {
@@ -111,22 +96,18 @@ export default function NotificationsScreen() {
 						setExtraNotifications((prev) => prev.map(update))
 					}
 					decrementNotificationCount()
-
 					await markNotificationSeen(item._id)
 				} catch (error) {
 					log({ level: 'error', label: 'NotificationsScreen', message: 'Failed to mark notification as seen', error })
 				}
 			}
-
 			if (item.screen) {
 				router.push(item.screen as any)
 			}
 		},
 		[page1Response, page1Notifications, updateCache, setExtraNotifications, decrementNotificationCount, router]
 	)
-
 	const renderItem = useCallback(({ item }: { item: NotificationItem }) => <NotificationCard item={item} onPress={handleNotificationPress} />, [handleNotificationPress])
-
 	const filterOptions = useMemo<FilterTabOption[]>(
 		() => [
 			{ value: 'all', label: translate('all', 'All'), iconName: 'list' },
@@ -135,7 +116,6 @@ export default function NotificationsScreen() {
 		],
 		[translate]
 	)
-
 	const headerBottom = useMemo(
 		() => (
 			<FilterTabs
@@ -148,7 +128,6 @@ export default function NotificationsScreen() {
 		),
 		[filterOptions, filter, page1Response, isRefreshing]
 	)
-
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (permissionGranted === false) {
@@ -157,17 +136,14 @@ export default function NotificationsScreen() {
 		actions.push(<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={isRefreshing} />)
 		return actions
 	}, [permissionGranted, isRefreshing, translate, onRefresh, setPermissionGranted])
-
 	const renderEmpty = useCallback(() => {
 		if (isInitialLoading) return null
 		return <EmptyState style={styles.empty} />
 	}, [isInitialLoading])
-
 	const renderFooter = useCallback(() => {
 		if (!isInitialLoading || notifications.length === 0) return null
 		return <Spinner size="small" expand={false} />
 	}, [isInitialLoading, notifications.length])
-
 	if (isOffline && notifications.length === 0) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -177,7 +153,6 @@ export default function NotificationsScreen() {
 			</View>
 		)
 	}
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen options={{ headerShown: false }} />
@@ -189,7 +164,6 @@ export default function NotificationsScreen() {
 				headerBottom={headerBottom}
 				headerBottomHeight={52}
 			/>
-
 			<SmartHeader.FlashList
 				data={notifications}
 				renderItem={renderItem}
@@ -200,14 +174,12 @@ export default function NotificationsScreen() {
 				scrollEventThrottle={16}
 				onEndReached={loadMore}
 				onEndReachedThreshold={0.2}
-
 				ListEmptyComponent={renderEmpty}
 				ListFooterComponent={renderFooter}
 			/>
 		</View>
 	)
 }
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1

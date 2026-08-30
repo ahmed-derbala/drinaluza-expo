@@ -9,15 +9,12 @@ import { IconButton } from '@/features/common/buttons/IconButton'
 import { OrderItem } from '@/features/orders/orders.interface'
 import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
 import { OrderStepTracker } from '@/features/orders/components/OrderStepTracker'
-
 interface PurchaseCardProps {
 	item: OrderItem
 	onCancel?: (id: string) => void
 	onMarkReceived?: (id: string) => void
 }
-
 const ORDER_STEPS = ['Ordered', 'Confirmed', 'Transit', 'Delivered']
-
 function getStepIndex(status: string) {
 	if (status === 'pending_business_confirmation' || status === 'pending_customer_confirmation') return 0
 	if (status === 'confirmed_by_business') return 1
@@ -25,23 +22,18 @@ function getStepIndex(status: string) {
 	if (status === 'delivered_to_customer' || status === 'received_by_customer') return 3
 	return -1
 }
-
 export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, onMarkReceived }: PurchaseCardProps) {
 	const { colors } = useTheme()
 	const { localize, translate, formatPrice } = useUser()
 	const router = useRouter()
-
 	const statusColor = orderStatusColors[item.status] || colors.textSecondary
 	const statusLabel = orderStatusLabels[item.status as keyof typeof orderStatusLabels] || item.status
 	const stepIndex = getStepIndex(item.status)
-
 	const businessImage = item.business.media?.thumbnail?.url
 	const total = item.price?.total?.tnd ?? 0
 	const orderDate = new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-
 	const canCancel = item.status === 'pending_business_confirmation'
 	const canMarkReceived = item.status === 'delivered_to_customer'
-
 	return (
 		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			<View style={styles.header}>
@@ -66,9 +58,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 					<Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
 				</View>
 			</View>
-
 			<View style={[styles.divider, { backgroundColor: colors.border }]} />
-
 			<ScrollView style={styles.productList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
 				{item.products.map((p, idx) => {
 					const img = p.product.media?.thumbnail?.url || p.product.defaultProduct?.media?.thumbnail?.url
@@ -97,11 +87,8 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 					)
 				})}
 			</ScrollView>
-
 			<OrderStepTracker stepIndex={stepIndex} steps={ORDER_STEPS} />
-
 			<View style={[styles.divider, { backgroundColor: colors.border }]} />
-
 			<View style={styles.footer}>
 				<View>
 					<Text style={[styles.orderIdLabel, { color: colors.textSecondary }]}>{translate('order_id', 'Order ID')}</Text>
@@ -112,7 +99,6 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 					<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(item.price || { total: { tnd: 0 } })}</Text>
 				</View>
 			</View>
-
 			{(canCancel || canMarkReceived) && (
 				<View style={styles.actionsRow}>
 					{canCancel && <CancelButton onPress={() => onCancel?.(item._id)} />}
@@ -122,7 +108,6 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 		</View>
 	)
 })
-
 const styles = StyleSheet.create({
 	card: {
 		borderRadius: 28,

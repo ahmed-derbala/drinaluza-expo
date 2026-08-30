@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import { useCallback } from 'react'
 import { Platform, type StyleProp, type ViewStyle } from 'react-native'
 import { translate } from '@/core/translation'
 import { IconButton, type IconVariant } from './IconButton'

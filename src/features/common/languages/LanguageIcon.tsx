@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { getLanguageConfig } from './languages.constants'

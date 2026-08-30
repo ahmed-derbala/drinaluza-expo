@@ -1,4 +1,3 @@
-import React from 'react'
 import { HeaderIconButton } from './HeaderIconButton'
 
 export interface HeaderRequestBusinessButtonProps {

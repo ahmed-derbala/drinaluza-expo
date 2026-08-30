@@ -1,4 +1,3 @@
-import React from 'react'
 import { useRouter, usePathname } from 'expo-router'
 import { useNotification } from '@/features/notifications/NotificationContext'
 import { HeaderIconButton } from './HeaderIconButton'

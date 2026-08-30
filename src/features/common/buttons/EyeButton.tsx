@@ -1,4 +1,3 @@
-import React from 'react'
 import { type StyleProp, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { IconButton } from './IconButton'
 import { translate } from '@/core/translation'

@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 import { getMediaUrl, isVideoMedia, type MediaField, type MediaFile } from './types'
 import SmartMediaView from './view'
+import { useMediaSettings } from '@/core/media-settings/MediaSettingsContext'
 
 /** How long an image is displayed before auto-advancing. */
 const IMAGE_DISPLAY_MS = 2_000
@@ -89,8 +90,11 @@ const SmartMediaCarouselComponent = ({
 	// Once a user manually selects a thumbnail, autoplay is permanently stopped (except for the tapped video).
 	// Auto-play/advance is strictly limited to the focused+visible card — non-focused cards never autoplay or auto-advance.
 	const autoPlayStoppedRef = useRef(false)
-	const canAutoPlay = useMemo(() => autoPlay && isVisible && !autoPlayStoppedRef.current, [autoPlay, isVisible])
-	const canAdvance = useMemo(() => canAutoPlay && items.length > 1, [canAutoPlay, items.length])
+	const { autoAdvance: settingsAutoAdvance, autoPlay: settingsAutoPlay } = useMediaSettings()
+	const effectiveAutoPlay = autoPlay && settingsAutoPlay
+	const effectiveAutoAdvance = settingsAutoAdvance
+	const canAutoPlay = useMemo(() => effectiveAutoPlay && isVisible && !autoPlayStoppedRef.current, [effectiveAutoPlay, isVisible])
+	const canAdvance = useMemo(() => canAutoPlay && effectiveAutoAdvance && items.length > 1, [canAutoPlay, effectiveAutoAdvance, items.length])
 
 	// Reset the active index when the media set changes.
 	useEffect(() => {

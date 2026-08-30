@@ -46,8 +46,8 @@ export type { SmartVideoPlayerProps, SmartVideoPlayerHandle } from './video'
 export { SmartMediaCarousel, default as SmartMediaCarouselDefault } from './carousel'
 export type { SmartMediaCarouselProps } from './carousel'
 
-export { SmartMediaGalleryCard, default as SmartMediaGalleryCardDefault } from './gallery-card'
-export type { SmartMediaGalleryCardProps } from './gallery-card'
+export { CarouselCard, default as CarouselCardDefault } from './carousel-card'
+export type { CarouselCardProps } from './carousel-card'
 
 export { SmartMediaThumbnailBlock, isDeferredMediaFile, default as SmartMediaThumbnailBlockDefault } from './thumbnail-block'
 export type { SmartMediaThumbnailBlockProps, DeferredMediaFile } from './thumbnail-block'

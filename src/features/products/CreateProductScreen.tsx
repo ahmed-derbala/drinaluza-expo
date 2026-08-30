@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, Platform, TextInput, KeyboardAvoidingView } from 'react-native'
+import { useEffect, useState, useMemo } from 'react'
+import { View, Text, StyleSheet, TouchableOpacity, Platform, KeyboardAvoidingView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
@@ -20,16 +20,13 @@ import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { showAlert } from '@/core/helpers/popup'
 import { log } from '@/core/log'
 import { parseError } from '@/core/error/errorHandler'
-
 // Import the reusable section components
 import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
-
 type PickedFileRef = FileRef & { pickedFile?: UploadMediaFile }
-
 export default function CreateProductScreen() {
 	const { businessSlug, businessId } = useLocalSearchParams<{ businessSlug?: string; businessId?: string }>()
 	const router = useRouter()
@@ -38,14 +35,12 @@ export default function CreateProductScreen() {
 	const { onScroll } = useScrollHandler()
 	const { setTabBarVisible } = useLayout()
 	const insets = useSafeAreaInsets()
-
 	// Form States
 	const [selectedBusiness, setSelectedBusiness] = useState<Business | null>(null)
 	const [productNameEn, setProductNameEn] = useState('')
 	const [productNameTnLatn, setProductNameTnLatn] = useState('')
 	const [productNameTnArab, setProductNameTnArab] = useState('')
 	const [selectedDefaultProduct, setSelectedDefaultProduct] = useState<DefaultProduct | null>(null)
-
 	// Pricing
 	const [priceTND, setPriceTND] = useState('10')
 	const [unit, setUnit] = useState('kg')
@@ -55,13 +50,11 @@ export default function CreateProductScreen() {
 	const [singlePieceMinWeightKg, setSinglePieceMinWeightKg] = useState('')
 	const [singlePieceAvgWeightKg, setSinglePieceAvgWeightKg] = useState('')
 	const [singlePieceMaxWeightKg, setSinglePieceMaxWeightKg] = useState('')
-
 	// Inventory
 	const [stockQuantity, setStockQuantity] = useState('100')
 	const [minThreshold, setMinThreshold] = useState('10')
 	const [uploadedGallery, setUploadedGallery] = useState<PickedFileRef[]>([])
 	const [thumbnail, setThumbnail] = useState<MediaFile | null>(null)
-
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
 	const [harvest, setHarvest] = useState<'wild' | 'farm'>('farm')
@@ -69,7 +62,6 @@ export default function CreateProductScreen() {
 	const [originCity, setOriginCity] = useState('Ellouza')
 	const [originRegion, setOriginRegion] = useState('Sfax')
 	const [originCountry, setOriginCountry] = useState('Tunisia')
-
 	// Picker / UI loading states
 	const [businesses, setBusinesses] = useState<Business[]>([])
 	const [defaultProducts, setDefaultProducts] = useState<DefaultProduct[]>([])
@@ -80,7 +72,6 @@ export default function CreateProductScreen() {
 	const [showDefaultProducts, setShowDefaultProducts] = useState(false)
 	const [uploadingPhoto, setUploadingPhoto] = useState(false)
 	const [saving, setSaving] = useState(false)
-
 	// Hide bottom tab bar
 	useEffect(() => {
 		setTabBarVisible(false)
@@ -88,13 +79,11 @@ export default function CreateProductScreen() {
 			setTabBarVisible(true)
 		}
 	}, [setTabBarVisible])
-
 	// Load Businesses & Default Products
 	useEffect(() => {
 		loadBusinesses()
 		loadDefaultProducts()
 	}, [])
-
 	// Auto-select business if navigated with param
 	useEffect(() => {
 		if ((businessId || businessSlug) && businesses.length > 0 && !selectedBusiness) {
@@ -102,7 +91,6 @@ export default function CreateProductScreen() {
 			if (matched) setSelectedBusiness(matched)
 		}
 	}, [businessId, businessSlug, businesses, selectedBusiness])
-
 	const loadBusinesses = async () => {
 		try {
 			setLoadingBusinesses(true)
@@ -114,7 +102,6 @@ export default function CreateProductScreen() {
 			setLoadingBusinesses(false)
 		}
 	}
-
 	const loadDefaultProducts = async () => {
 		try {
 			setLoadingDefaults(true)
@@ -126,12 +113,10 @@ export default function CreateProductScreen() {
 			setLoadingDefaults(false)
 		}
 	}
-
 	const handleSelectBusiness = (business: Business) => {
 		setSelectedBusiness(business)
 		setShowBusinesses(false)
 	}
-
 	const handleSelectDefaultProduct = (product: DefaultProduct) => {
 		setSelectedDefaultProduct(product)
 		setProductNameEn(product.name?.en || '')
@@ -140,11 +125,9 @@ export default function CreateProductScreen() {
 		setThumbnail(product.media?.thumbnail?.url ? { _id: 'thumb', url: product.media.thumbnail.url } : null)
 		setShowDefaultProducts(false)
 	}
-
 	const filteredDefaultProducts = useMemo(() => {
 		return defaultProducts.filter((p) => (p.name?.en || '').toLowerCase().includes(searchQuery.toLowerCase()))
 	}, [defaultProducts, searchQuery])
-
 	const handleUploadPhoto = async () => {
 		try {
 			const remainingSlots = Math.max(0, MAX_FILE_COUNT - uploadedGallery.length)
@@ -152,10 +135,8 @@ export default function CreateProductScreen() {
 				showAlert(translate('limit_reached', 'Limit Reached'), translate('err_max_photos', 'You can upload up to 5 photos.'))
 				return
 			}
-
 			const picked = await pickMediaFiles({ mediaType: 'image', multiple: true, maxCount: remainingSlots })
 			if (picked.length === 0) return
-
 			setUploadingPhoto(true)
 			const entries: PickedFileRef[] = picked.map((file, index) => ({
 				_id: `pending-${Date.now()}-${index}`,
@@ -174,7 +155,6 @@ export default function CreateProductScreen() {
 			setUploadingPhoto(false)
 		}
 	}
-
 	const validateForm = () => {
 		if (!productNameEn.trim()) {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_enter_product_name', 'Please enter a product name (English)'))
@@ -204,7 +184,6 @@ export default function CreateProductScreen() {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_unit_step', 'Unit step must be greater than 0'))
 			return false
 		}
-
 		const minW = singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : NaN
 		const avgW = singlePieceAvgWeightKg ? parseFloat(singlePieceAvgWeightKg) : NaN
 		const maxW = singlePieceMaxWeightKg ? parseFloat(singlePieceMaxWeightKg) : NaN
@@ -218,10 +197,8 @@ export default function CreateProductScreen() {
 		}
 		return true
 	}
-
 	const handleCreateProduct = async () => {
 		if (!validateForm() || !selectedBusiness || !selectedDefaultProduct) return
-
 		try {
 			setSaving(true)
 			const enName = productNameEn.trim()
@@ -271,10 +248,8 @@ export default function CreateProductScreen() {
 				},
 				state: { code: 'active' }
 			}
-
 			const created = await createProduct(productData)
 			log({ level: 'info', label: 'CreateProductScreen', message: 'Product created successfully', data: productData })
-
 			const pendingFiles = uploadedGallery.map((item) => item.pickedFile).filter((file): file is UploadMediaFile => Boolean(file))
 			if (pendingFiles.length > 0) {
 				try {
@@ -298,7 +273,6 @@ export default function CreateProductScreen() {
 					// Don't throw - product was created successfully, just media upload failed
 				}
 			}
-
 			toast.show({ title: translate('success', 'Success'), content: translate('product_created_success', 'Product created successfully!'), borderColor: colors.success })
 			router.replace(`/dashboard/${selectedBusiness.slug}/products` as never)
 		} catch (error: any) {
@@ -310,9 +284,7 @@ export default function CreateProductScreen() {
 			setSaving(false)
 		}
 	}
-
 	const styles = createStyles(colors)
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
@@ -323,7 +295,6 @@ export default function CreateProductScreen() {
 					} as any
 				}
 			/>
-
 			<KeyboardAvoidingView style={styles.form} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
 				<SmartHeader.ScrollView
 					style={styles.form}
@@ -334,7 +305,6 @@ export default function CreateProductScreen() {
 					showsVerticalScrollIndicator={false}
 				>
 					{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
-
 					{/* Business & Category Picker */}
 					<View style={styles.card}>
 						<Text style={styles.cardTitle}>{translate('business_category', 'Business & Category')}</Text>
@@ -354,7 +324,6 @@ export default function CreateProductScreen() {
 								<Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
 							</TouchableOpacity>
 						</View>
-
 						<View style={styles.fieldContainer}>
 							<Text style={styles.fieldLabel}>
 								{translate('default_product', 'Default Product')} <Text style={styles.required}>*</Text>
@@ -372,13 +341,11 @@ export default function CreateProductScreen() {
 							</TouchableOpacity>
 						</View>
 					</View>
-
 					{/* Thumbnail Card */}
 					<View style={styles.card}>
 						<Text style={styles.cardTitle}>{translate('thumbnail', 'Thumbnail')}</Text>
 						<SmartMediaThumbnailBlock thumbnail={thumbnail} targetModelName="products" mediaType="image" deferUpload onChange={setThumbnail} />
 					</View>
-
 					{/* Gallery Card */}
 					<View style={styles.card}>
 						<Text style={styles.cardTitle}>{translate('gallery', 'Gallery')}</Text>
@@ -392,7 +359,6 @@ export default function CreateProductScreen() {
 							uploading={uploadingPhoto}
 						/>
 					</View>
-
 					{/* Name Section */}
 					<ProductNamesSection
 						variant="create"
@@ -405,7 +371,6 @@ export default function CreateProductScreen() {
 						nameTnArab={productNameTnArab}
 						setNameTnArab={setProductNameTnArab}
 					/>
-
 					{/* Pricing Section */}
 					<ProductPricingSection
 						variant="create"
@@ -428,7 +393,6 @@ export default function CreateProductScreen() {
 						singlePieceMaxWeightKg={singlePieceMaxWeightKg}
 						setSinglePieceMaxWeightKg={setSinglePieceMaxWeightKg}
 					/>
-
 					{/* Stock Section */}
 					<ProductStockSection
 						variant="create"
@@ -439,7 +403,6 @@ export default function CreateProductScreen() {
 						minThreshold={minThreshold}
 						setMinThreshold={setMinThreshold}
 					/>
-
 					{/* Specs Card */}
 					<ProductSpecsSection
 						editable={true}
@@ -458,7 +421,6 @@ export default function CreateProductScreen() {
 						originCountry={originCountry}
 						setOriginCountry={setOriginCountry}
 					/>
-
 					{/* Submit button */}
 					<View style={{ padding: 16, marginTop: 12 }}>
 						{saving ? (
@@ -472,7 +434,6 @@ export default function CreateProductScreen() {
 					</View>
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
-
 			{/* Businesses Picker Modal */}
 			<SearchableModalPicker
 				visible={showBusinesses}
@@ -493,7 +454,6 @@ export default function CreateProductScreen() {
 					</View>
 				)}
 			/>
-
 			{/* Default Products Picker Modal */}
 			<SearchableModalPicker
 				visible={showDefaultProducts}
@@ -511,7 +471,6 @@ export default function CreateProductScreen() {
 						<View style={styles.listThumbContainer}>
 							<SmartMediaView media={item.media?.thumbnail?.url} style={styles.listThumb} resizeMode="cover" />
 						</View>
-
 						{isSelected && <Ionicons name="checkmark-circle" size={24} color={colors.primary} />}
 					</View>
 				)}
@@ -519,7 +478,6 @@ export default function CreateProductScreen() {
 		</View>
 	)
 }
-
 const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {

@@ -1,4 +1,3 @@
-import React from 'react'
 import { StyleSheet, type StyleProp, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { BaseButton, type ButtonVariant } from './BaseButton'
 

@@ -2,7 +2,6 @@ import { getApiClient } from '@/core/api'
 import { setCacheItem } from '@/core/cache'
 import { BusinessesResponse, CreateBusinessRequest, CreateBusinessResponse, BusinessResponse, BusinessProductsResponse, BusinessCustomersResponse } from './businesses.interface'
 import { log } from '@/core/log'
-
 export const getMyBusinesses = async (): Promise<BusinessesResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses`)
@@ -17,7 +16,6 @@ export const getMyBusinesses = async (): Promise<BusinessesResponse> => {
 		throw error
 	}
 }
-
 export const getBusinesses = async (page: number = 1, limit: number = 100): Promise<BusinessesResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses?page=${page}&limit=${limit}`)
@@ -32,7 +30,6 @@ export const getBusinesses = async (page: number = 1, limit: number = 100): Prom
 		throw error
 	}
 }
-
 const createBusiness = async (businessData: CreateBusinessRequest): Promise<CreateBusinessResponse> => {
 	try {
 		log({
@@ -54,7 +51,6 @@ const createBusiness = async (businessData: CreateBusinessRequest): Promise<Crea
 		throw error
 	}
 }
-
 const getBusinessDetails = async (businessId: string): Promise<BusinessResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses/${businessId}`)
@@ -70,7 +66,6 @@ const getBusinessDetails = async (businessId: string): Promise<BusinessResponse>
 		throw error
 	}
 }
-
 const getMyBusinessBySlug = async (slug: string): Promise<BusinessResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses/${slug}`)
@@ -86,7 +81,6 @@ const getMyBusinessBySlug = async (slug: string): Promise<BusinessResponse> => {
 		throw error
 	}
 }
-
 const updateMyBusiness = async (businessSlug: string, businessData: Partial<BusinessResponse['data']>): Promise<BusinessResponse> => {
 	try {
 		log({
@@ -111,7 +105,6 @@ const updateMyBusiness = async (businessSlug: string, businessData: Partial<Busi
 		throw error
 	}
 }
-
 export const updateBusiness = async (businessSlug: string, businessData: any): Promise<BusinessResponse> => {
 	try {
 		log({
@@ -136,7 +129,6 @@ export const updateBusiness = async (businessSlug: string, businessData: any): P
 		throw error
 	}
 }
-
 export const getBusinessBySlug = async (slug: string): Promise<BusinessResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/${slug}`)
@@ -152,7 +144,6 @@ export const getBusinessBySlug = async (slug: string): Promise<BusinessResponse>
 		throw error
 	}
 }
-
 const getBusinessProducts = async (businessId: string): Promise<BusinessProductsResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses/${businessId}/products`)
@@ -168,7 +159,6 @@ const getBusinessProducts = async (businessId: string): Promise<BusinessProducts
 		throw error
 	}
 }
-
 export const getBusinessProductsBySlug = async (slug: string): Promise<BusinessProductsResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/${slug}/products`)
@@ -184,7 +174,6 @@ export const getBusinessProductsBySlug = async (slug: string): Promise<BusinessP
 		throw error
 	}
 }
-
 export const getBusinessCustomers = async (slug: string): Promise<BusinessCustomersResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/${slug}/customers`)

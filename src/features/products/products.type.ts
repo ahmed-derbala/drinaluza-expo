@@ -21,8 +21,14 @@ export interface FileRef {
 	name?: string
 	extension?: string
 	url: string
+	secure_url?: string
 	encoding?: string
 	mimetype?: string
+	resource_type?: string
+	public_id?: string
+	format?: string
+	width?: number
+	height?: number
 	size?: number
 	updatedAt?: string
 	createdAt?: string

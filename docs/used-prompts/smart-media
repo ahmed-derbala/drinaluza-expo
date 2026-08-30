@@ -137,9 +137,6 @@ example responce
 ## smart-media-carousel
 - display media.thumbnail plus media.gallery
 
-## smart-media-gallery-card
-- an editable gallery card based on BaseCard
-
 ## smart-media-thumbnail-block
 - display media.thumbnail with an upload button
 - media thumbnail block can be used in:

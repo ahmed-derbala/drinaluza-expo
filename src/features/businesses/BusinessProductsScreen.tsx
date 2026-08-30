@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, RefreshControl, useWindowDimensions, TouchableOpacity, Platform, TextInput, Pressable } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, useWindowDimensions, TouchableOpacity, TextInput, Pressable } from 'react-native'
 import { useLocalSearchParams, useRouter, usePathname } from 'expo-router'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
@@ -22,7 +22,6 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 // ─── Breakpoints ────────────────────────────────────────────────────────────
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
-
 // ─── Product Card ────────────────────────────────────────────────────────────
 type ProductCardProps = {
 	item: Product
@@ -36,7 +35,6 @@ type ProductCardProps = {
 	isDashboard: boolean
 	businessSlug?: string
 }
-
 const ProductCard = React.memo(function ProductCard({ item, colors, localize, formatPrice, currency, translate, onAddToCart, isWide, isDashboard, businessSlug }: ProductCardProps) {
 	const router = useRouter()
 	const imageUrl = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
@@ -45,18 +43,15 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 	const isOutOfStock = stockQty === 0
 	const isLowStock = stockQty > 0 && stockQty <= minThreshold
 	const isActive = item.state ? item.state.code === 'active' : item.isActive !== false
-
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
 	const minQty = item.unit?.min || 1
 	const maxQuantity = item.unit?.max || Infinity
 	const step = item.unit?.step || 1
 	const [quantity, setQuantity] = useState(minQty)
-
 	useEffect(() => {
 		setQuantity(minQty)
 	}, [minQty])
-
 	const increment = (e: any) => {
 		e.stopPropagation?.()
 		setQuantity((prev) => {
@@ -64,7 +59,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 			return next <= maxQuantity && next <= stockQty ? next : prev
 		})
 	}
-
 	const decrement = (e: any) => {
 		e.stopPropagation?.()
 		setQuantity((prev) => {
@@ -72,11 +66,9 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 			return next >= minQty ? next : minQty
 		})
 	}
-
 	const stockColor = isOutOfStock ? colors.error : isLowStock ? colors.warning : colors.success
 	const stockLabel = isOutOfStock ? translate('out_of_stock', 'Out of Stock') : isLowStock ? translate('low_stock', 'Low Stock') : translate('in_stock', 'In Stock')
 	const stockIcon: any = isOutOfStock ? 'remove-shopping-cart' : isLowStock ? 'warning-amber' : 'check-circle'
-
 	return (
 		<Pressable
 			style={({ pressed }) => [cardStyles.card, { backgroundColor: colors.background, borderColor: colors.info }, pressed && { opacity: 0.92, transform: [{ scale: 0.985 }] }]}
@@ -109,7 +101,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 					</View>
 				)}
 			</View>
-
 			{/* Body */}
 			<View style={cardStyles.body}>
 				<Text style={[cardStyles.name, { color: colors.text }]} numberOfLines={2}>
@@ -120,7 +111,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 						{item.name.tn_latn}
 					</Text>
 				)}
-
 				{/* Specifications (Caliber & Origin) */}
 				{(item.specs?.caliber || item.specs?.origin?.city || item.specs?.harvest || item.specs?.gear) && (
 					<View style={cardStyles.specsCardRow}>
@@ -165,13 +155,11 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 						) : null}
 					</View>
 				)}
-
 				{/* Price row */}
 				<View style={cardStyles.priceRow}>
 					<Text style={[cardStyles.price, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
 					{quantity === 1 && <Text style={[cardStyles.unit, { color: colors.textSecondary }]}>/ {item.unit?.measure || translate('unit', 'unit')}</Text>}
 				</View>
-
 				{/* Quantity & Actions (Bottom of Price) */}
 				{!isDashboard && isActive && !isOutOfStock && (
 					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, zIndex: 10 }}>
@@ -191,7 +179,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 						/>
 					</View>
 				)}
-
 				{/* Footer for extra info like stock */}
 				<View style={cardStyles.footer}>
 					<View style={[cardStyles.qtyBadge, { backgroundColor: colors.surfaceVariant }]}>
@@ -203,7 +190,6 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 		</Pressable>
 	)
 })
-
 const cardStyles = StyleSheet.create({
 	card: {
 		borderRadius: 20,
@@ -306,7 +292,6 @@ const cardStyles = StyleSheet.create({
 		fontWeight: '700'
 	}
 })
-
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 export default function BusinessProductsScreen() {
 	// FIX: read 'businessSlug' not 'businessId'
@@ -318,37 +303,30 @@ export default function BusinessProductsScreen() {
 	const { localize, translate, currency, formatPrice, user } = useUser()
 	const { width, height } = useWindowDimensions()
 	const { onScroll } = useScrollHandler()
-
 	// Responsive
 	const isTablet = width >= BP.tablet && width < BP.desktop
 	const isDesktop = width >= BP.desktop
 	const isWide = width >= BP.wide
-
 	const numColumns = useMemo(() => {
 		// Intelligently calculate columns to ensure cards have enough width for all UI elements
 		const availableWidth = isWide ? 1400 : isDesktop ? 1200 : isTablet ? 900 : width
 		const hPadding = isDesktop ? 32 : isTablet ? 24 : 16
-
 		// 175px minimum width ensures UI elements aren't cramped.
 		// On a 390px phone (iPhone 12), this gives 2 columns. On a 320px phone (SE), this gives 1 column.
 		return Math.max(1, Math.floor((availableWidth - hPadding * 2) / 175))
 	}, [width, isTablet, isDesktop, isWide])
-
 	const contentMaxWidth = useMemo(() => {
 		if (isWide) return 1400
 		if (isDesktop) return 1200
 		if (isTablet) return 900
 		return width
 	}, [width, isTablet, isDesktop, isWide])
-
 	const horizontalPadding = useMemo(() => {
 		if (isDesktop) return 32
 		if (isTablet) return 24
 		return 16
 	}, [isTablet, isDesktop])
-
 	const cardGap = useMemo(() => (isDesktop ? 18 : isTablet ? 14 : 10), [isTablet, isDesktop])
-
 	// State
 	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh } = useBusinessProducts({ businessSlug })
 	const products = response?.data?.docs || []
@@ -357,7 +335,6 @@ export default function BusinessProductsScreen() {
 	const [cart, setCart] = useState<any[]>([])
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all')
-
 	// Load cart
 	const loadCart = async () => {
 		try {
@@ -365,11 +342,9 @@ export default function BusinessProductsScreen() {
 			if (saved) setCart(saved)
 		} catch {}
 	}
-
 	useEffect(() => {
 		loadCart()
 	}, [])
-
 	useEffect(() => {
 		let list = products
 		if (searchText.trim()) {
@@ -387,7 +362,6 @@ export default function BusinessProductsScreen() {
 		if (activeFilter === 'outOfStock') list = list.filter((p) => (p.stock?.quantity || 0) === 0)
 		setFilteredProducts(list)
 	}, [products, searchText, activeFilter, localize])
-
 	// Add to cart
 	const handleAddToCart = useCallback(
 		async (item: Product, qty: number) => {
@@ -408,11 +382,9 @@ export default function BusinessProductsScreen() {
 		},
 		[cart, localize, translate, router]
 	)
-
 	const handleRefresh = () => {
 		refresh()
 	}
-
 	// Filter counts
 	const counts = useMemo(() => {
 		const outOfStock = products.filter((p) => (p.stock?.quantity || 0) === 0).length
@@ -424,7 +396,6 @@ export default function BusinessProductsScreen() {
 		const inStock = products.length - outOfStock - lowStock
 		return { all: products.length, inStock, lowStock, outOfStock }
 	}, [products])
-
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (isDashboard) {
@@ -435,14 +406,12 @@ export default function BusinessProductsScreen() {
 		actions.push(<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />)
 		return actions
 	}, [isDashboard, businessSlug, handleRefresh, isRefreshing, translate])
-
 	const filters: { key: typeof activeFilter; label: string; color: string; count: number }[] = [
 		{ key: 'all', label: translate('all', 'All'), color: colors.primary, count: counts.all },
 		{ key: 'inStock', label: translate('in_stock', 'In Stock'), color: colors.success, count: counts.inStock },
 		{ key: 'lowStock', label: translate('low_stock', 'Low Stock'), color: colors.warning, count: counts.lowStock },
 		{ key: 'outOfStock', label: translate('out_of_stock', 'Out of Stock'), color: colors.error, count: counts.outOfStock }
 	]
-
 	const renderFilterChip = useCallback(
 		({ item: f }: { item: any }) => {
 			const active = activeFilter === f.key
@@ -467,7 +436,6 @@ export default function BusinessProductsScreen() {
 		},
 		[activeFilter, colors, s, setActiveFilter]
 	)
-
 	// Render item
 	const renderItem = useCallback(
 		({ item }: { item: Product }) => {
@@ -495,7 +463,6 @@ export default function BusinessProductsScreen() {
 		},
 		[numColumns, cardGap, colors, localize, formatPrice, currency, translate, handleAddToCart, isWide, contentMaxWidth, horizontalPadding]
 	)
-
 	// ─── Loading ──────────────────────────────────────────────────────────────
 	if (isInitialLoading && !isRefreshing) {
 		return (
@@ -505,9 +472,7 @@ export default function BusinessProductsScreen() {
 			</View>
 		)
 	}
-
 	const headerTitle = businessName || translate('business_products', 'Products')
-
 	return (
 		<View style={[s.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
@@ -518,7 +483,6 @@ export default function BusinessProductsScreen() {
 					} as any
 				}
 			/>
-
 			{/* Search bar */}
 			{
 				<View style={[s.searchWrap, { maxWidth: contentMaxWidth, paddingHorizontal: horizontalPadding }]}>
@@ -541,7 +505,6 @@ export default function BusinessProductsScreen() {
 					</View>
 				</View>
 			}
-
 			{/* Filter chips */}
 			{products.length > 0 && (
 				<View style={s.filtersOuter}>
@@ -556,7 +519,6 @@ export default function BusinessProductsScreen() {
 					/>
 				</View>
 			)}
-
 			{/* Results count */}
 			{!isInitialLoading && filteredProducts.length > 0 && (
 				<View style={{ paddingHorizontal: horizontalPadding, paddingBottom: 8, maxWidth: contentMaxWidth, alignSelf: 'center', width: '100%' }}>
@@ -566,7 +528,6 @@ export default function BusinessProductsScreen() {
 					</Text>
 				</View>
 			)}
-
 			{/* Grid */}
 			<SmartHeader.FlashList
 				key={`grid-${numColumns}`}
@@ -605,7 +566,6 @@ export default function BusinessProductsScreen() {
 					) : null
 				}
 			/>
-
 			{isDashboard && (
 				<TouchableOpacity style={[s.fab, { backgroundColor: colors.primary }]} onPress={() => router.push(`/dashboard/${businessSlug}/create-product` as any)}>
 					<Ionicons name="add" size={28} color={colors.buttonText} />
@@ -614,7 +574,6 @@ export default function BusinessProductsScreen() {
 		</View>
 	)
 }
-
 // ─── Styles ───────────────────────────────────────────────────────────────────
 const s = StyleSheet.create({
 	container: { flex: 1 },

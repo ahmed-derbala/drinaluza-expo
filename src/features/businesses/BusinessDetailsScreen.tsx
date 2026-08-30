@@ -1,13 +1,12 @@
 import { config } from '@/config'
 import { HeaderRefreshButton, HeaderQRCodeButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, RefreshControl, Platform, ScrollView, Modal } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, RefreshControl } from 'react-native'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import StateBadge from '@/features/common/StateBadge'
-
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import QRCodeModal from '@/features/common/QRCodeModal'
@@ -20,7 +19,6 @@ import Spinner from '@/features/common/Spinner'
 import { useBusinessBySlug } from '@/features/businesses/useBusinessBySlug'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { getUserBySlug } from '@/features/users/users.api'
-import { Business } from '@/features/businesses/businesses.interface'
 import { ProductType } from '@/features/products/products.type'
 import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
 import { GearIcon } from '@/features/products/common/GearIcons'
@@ -31,7 +29,6 @@ import { useUser } from '@/core/contexts/UserContext'
 import { formatAddress } from '@/features/common/address'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
-
 // Product Card for inline display
 const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }: { product: ProductType; colors: any; localize: (obj: any) => string; cardWidth: number; styles: any }) => {
 	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
@@ -39,17 +36,14 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 	const isOutOfStock = stockQty === 0
 	const rating = product.rating?.average || 0
 	const ratingCount = product.rating?.count || 0
-
 	const { translate } = useUser()
 	const router = useRouter()
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
-
 	const handlePress = useCallback(() => {
 		if (product.slug && businessSlug) {
 			router.push(`/businesses/${businessSlug}/products/${product.slug}` as any)
 		}
 	}, [product.slug, businessSlug, router])
-
 	return (
 		<TouchableOpacity
 			style={[
@@ -75,13 +69,11 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
 					{localize(product.name)}
 				</Text>
-
 				<View style={styles.ratingAndPriceRow}>
 					<View style={styles.productPriceRow}>
 						<Text style={[styles.productPrice, { color: colors.primary }]}>{product.price?.total?.tnd?.toFixed(2) || '0.00'}</Text>
 						<Text style={[styles.productCurrency, { color: colors.primary }]}> TND</Text>
 					</View>
-
 					{rating > 0 ? (
 						<View style={styles.ratingRow}>
 							<Ionicons name="star" size={12} color={themeColors.warning} />
@@ -89,11 +81,9 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 						</View>
 					) : null}
 				</View>
-
 				<Text style={[styles.productUnit, { color: colors.textTertiary }]}>
 					{translate('per_unit', 'per')} {product.unit?.measure || 'unit'}
 				</Text>
-
 				{/* Specifications (Caliber & Origin) */}
 				{(product.specs?.caliber || product.specs?.origin?.city || product.specs?.harvest || product.specs?.gear) && (
 					<View style={styles.specsCardRow}>
@@ -150,7 +140,6 @@ const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }
 		</TouchableOpacity>
 	)
 })
-
 export default function BusinessDetailsScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
@@ -160,31 +149,22 @@ export default function BusinessDetailsScreen() {
 	const insets = useSafeAreaInsets()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
-
 	const cardWidth = isWideScreen ? (Math.min(width, maxWidth) - 40 - 24) / 3 : (width - 40 - 12) / 2
-
 	const styles = useMemo(() => createStyles(colors, isWideScreen, width), [colors, isWideScreen, width])
-
 	const renderProductCard = useCallback(
 		({ item }: { item: ProductType }) => <ProductCard product={item} colors={colors} localize={localize} cardWidth={cardWidth} styles={styles} />,
 		[colors, localize, cardWidth, styles]
 	)
-
 	const { data: businessResponse, isInitialLoading: businessLoading, isRefreshing: businessRefreshing, isOffline: businessOffline, refresh: refreshBusiness } = useBusinessBySlug({ businessSlug })
 	const business = businessResponse?.data ?? null
-
 	const { data: productsResponse, isInitialLoading: productsLoading, isRefreshing: productsRefreshing, isOffline: productsOffline, refresh: refreshProducts } = useBusinessProducts({ businessSlug })
 	const products = (productsResponse?.data?.docs ?? []) as unknown as ProductType[]
-
 	const [ownerPhoto, setOwnerPhoto] = useState<string | null>(null)
 	const { onScroll } = useScrollHandler()
-
 	const isInitialLoading = businessLoading || productsLoading
 	const isRefreshing = businessRefreshing || productsRefreshing
 	const isOffline = businessOffline && productsOffline
-
 	const displayTitle = business ? localize(business.name) : ''
-
 	useEffect(() => {
 		if (!business?.owner?.slug) return
 		let cancelled = false
@@ -199,15 +179,12 @@ export default function BusinessDetailsScreen() {
 			cancelled = true
 		}
 	}, [business?.owner?.slug])
-
 	const handleRefresh = useCallback(() => {
 		refreshBusiness()
 		refreshProducts()
 	}, [refreshBusiness, refreshProducts])
-
 	// QR Code state
 	const [showQRCode, setShowQRCode] = useState(false)
-
 	if (isInitialLoading) {
 		return (
 			<View style={styles.container}>
@@ -223,7 +200,6 @@ export default function BusinessDetailsScreen() {
 			</View>
 		)
 	}
-
 	if (isOffline && !business) {
 		return (
 			<View style={styles.container}>
@@ -235,7 +211,6 @@ export default function BusinessDetailsScreen() {
 			</View>
 		)
 	}
-
 	if (!business) {
 		return (
 			<View style={styles.container}>
@@ -246,9 +221,7 @@ export default function BusinessDetailsScreen() {
 			</View>
 		)
 	}
-
 	const fullAddress = formatAddress(business.address, localize)
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
@@ -273,12 +246,10 @@ export default function BusinessDetailsScreen() {
 				{/* Business Info Card */}
 				<View style={[styles.infoCard, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					<LinearGradient colors={[colors.primary, colors.primary + '10']} start={{ x: 0, y: 0 }} end={{ x: 0, y: 1 }} style={styles.businessBanner} />
-
 					<View style={styles.infoCardContent}>
 						<View style={styles.logoContainer}>
 							<SmartMediaView media={business.media?.thumbnail?.url} style={styles.businessLogo} resizeMode="cover" enableFullscreenPreview={true} />
 						</View>
-
 						<View style={styles.brandingHeader}>
 							<View style={{ flex: 1, gap: 4 }}>
 								<Text style={[styles.businessName, { color: colors.text }]}>{localize(business.name)}</Text>
@@ -295,9 +266,7 @@ export default function BusinessDetailsScreen() {
 								) : null}
 							</View>
 						</View>
-
 						{business.description ? <Text style={[styles.businessDescription, { color: colors.textSecondary }]}>{business.description}</Text> : null}
-
 						{/* Quick Actions Row */}
 						<View style={[styles.quickActionsRow, { borderTopColor: colors.border + '30', borderBottomColor: colors.border + '30' }]}>
 							<PhoneButton phone={business.contact?.phone} size={50} />
@@ -306,7 +275,6 @@ export default function BusinessDetailsScreen() {
 							<WebsiteButton website={business.contact?.website} size={50} />
 							<DirectionsButton location={business.location} address={business.address} size={50} />
 						</View>
-
 						{/* Metadata Cards Grid */}
 						<View style={styles.infoCardGrid}>
 							{business.owner ? (
@@ -334,7 +302,6 @@ export default function BusinessDetailsScreen() {
 									</View>
 								</TouchableOpacity>
 							) : null}
-
 							{typeof business.deliveryRadiusKm === 'number' ? (
 								<View style={[styles.infoCardCol, { borderColor: colors.border + '40', backgroundColor: colors.background + '40' }]}>
 									<Ionicons name="bicycle" size={16} color={colors.primary} />
@@ -347,7 +314,6 @@ export default function BusinessDetailsScreen() {
 								</View>
 							) : null}
 						</View>
-
 						{business.address ? (
 							<View style={[styles.detailsSection, { borderTopWidth: 1, borderTopColor: colors.border + '20' }]}>
 								<Ionicons name="location-outline" size={16} color={colors.textSecondary} />
@@ -356,7 +322,6 @@ export default function BusinessDetailsScreen() {
 						) : null}
 					</View>
 				</View>
-
 				{/* Products Section */}
 				<View style={[styles.productsSection, { backgroundColor: colors.background, borderColor: colors.border }]}>
 					<View style={styles.productsSectionHeader}>
@@ -366,7 +331,6 @@ export default function BusinessDetailsScreen() {
 							<Text style={[styles.productsCountText, { color: colors.primary }]}>{products.length}</Text>
 						</View>
 					</View>
-
 					{products.length > 0 ? (
 						<FlashList
 							horizontal
@@ -385,11 +349,9 @@ export default function BusinessDetailsScreen() {
 						</View>
 					)}
 				</View>
-
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
 			</SmartHeader.ScrollView>
-
 			{/* QR Code Viewer Modal */}
 			{business && (
 				<QRCodeModal
@@ -404,7 +366,6 @@ export default function BusinessDetailsScreen() {
 		</View>
 	)
 }
-
 const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 	StyleSheet.create({
 		container: {
@@ -423,7 +384,6 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			padding: 20,
 			paddingBottom: 40
 		},
-
 		imageContainer: {
 			width: '100%',
 			height: 200,

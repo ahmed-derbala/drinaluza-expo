@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
-import { View, Text, TextInput, StyleSheet, Platform } from 'react-native'
+import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { useTheme, themeColors } from '@/core/theme'
 import { LanguageIcon } from '@/features/common/languages'
-
 export interface LocalizedFormInputProps {
 	/**
 	 * Form field label text.
@@ -37,13 +36,10 @@ export interface LocalizedFormInputProps {
 	 */
 	style?: object
 }
-
 const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, onChangeText, lang, placeholder, required = false, multiline = false, style }) => {
 	const { colors } = useTheme()
 	const [isFocused, setIsFocused] = useState(false)
-
 	const isRtl = lang === 'tn_arab'
-
 	return (
 		<View style={[styles.fieldContainer, style]}>
 			{label && (
@@ -51,7 +47,6 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 					{label} {required && <Text style={styles.required}>*</Text>}
 				</Text>
 			)}
-
 			<View
 				style={[
 					styles.inputBox,
@@ -66,7 +61,6 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 				<View style={[styles.badgeContainer, { backgroundColor: colors.text + '05', borderRightColor: colors.border + '20' }]}>
 					<LanguageIcon code={lang} size={18} />
 				</View>
-
 				{/* Input */}
 				<TextInput
 					style={[
@@ -93,7 +87,6 @@ const LocalizedFormInput: React.FC<LocalizedFormInputProps> = ({ label, value, o
 		</View>
 	)
 }
-
 const styles = StyleSheet.create({
 	fieldContainer: {
 		marginBottom: 16,
@@ -131,5 +124,4 @@ const styles = StyleSheet.create({
 		paddingVertical: 0
 	}
 })
-
 export default React.memo(LocalizedFormInput)

@@ -8,6 +8,10 @@ trigger: always_on
 - do not edit the backend project 
 - you can read only the backend project
 
+## read-only files and directories
+- package-lock.json
+- docs/used-prompts
+
 ## UI
 
 ### cards

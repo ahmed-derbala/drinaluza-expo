@@ -6,7 +6,6 @@ import { log } from '@/core/log'
 import { getItem, setItem, removeItem } from '@/core/storage'
 import { deferStartup } from '@/core/helpers/defer'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
-
 // Verify file against existence and expected size bounds
 const verifyFileIntegrity = async (fileUri: string, expectedSize: number): Promise<{ ok: boolean; reason?: string }> => {
 	try {
@@ -22,23 +21,26 @@ const verifyFileIntegrity = async (fileUri: string, expectedSize: number): Promi
 		return { ok: false, reason: 'verification error' }
 	}
 }
-
 export const UpdatesContext = createContext<UpdatesContextProps | undefined>(undefined)
-
-const getUpdatesFolder = (): Directory => getUpdatesDirectory()
-const UPDATES_FOLDER = getUpdatesDirectory().uri + '/'
-
+const getUpdatesFolder = (): any | null => getUpdatesDirectory()
+const UPDATES_FOLDER = (() => {
+	if (Platform.OS === 'web') return ''
+	try {
+		const dir = getUpdatesDirectory()
+		return (dir as any)?.uri ? (dir as any).uri + '/' : ''
+	} catch {
+		return ''
+	}
+})()
 // Helper: Ensure the updates directory exists
 const ensureUpdatesFolder = async () => {
 	if (Platform.OS === 'web') return
 	await ensureDirectory(getUpdatesFolder())
 }
-
 // Function that parses Github release response
 export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> => {
 	const controller = new AbortController()
 	const id = setTimeout(() => controller.abort(), config.api.timeout)
-
 	try {
 		const res = await fetch(url, { signal: controller.signal })
 		clearTimeout(id)
@@ -48,9 +50,7 @@ export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> =
 		const data = await res.json()
 		// Find standard APK asset
 		const apkAsset = data.assets?.find((asset: any) => asset.content_type === 'application/vnd.android.package-archive' || asset.name.endsWith('.apk'))
-
 		const latestVersion = data.tag_name ? data.tag_name.replace(/^v/, '') : ''
-
 		return {
 			name: data.name || '',
 			published_at: data.published_at || '',
@@ -65,7 +65,6 @@ export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> =
 		throw err
 	}
 }
-
 // Version comparator helper: returns true if v1 > v2
 export const isVersionGreater = (v1: string, v2: string): boolean => {
 	const p1 = v1.split('.').map(Number)
@@ -78,7 +77,6 @@ export const isVersionGreater = (v1: string, v2: string): boolean => {
 	}
 	return false
 }
-
 export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 	const [isChecking, setIsChecking] = useState(false)
 	const [latestRelease, setLatestRelease] = useState<UpdateCheckResult | null>(null)
@@ -87,7 +85,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const [isDownloading, setIsDownloading] = useState(false)
 	const [downloadedApks, setDownloadedApks] = useState<CachedApkMetadata[]>([])
 	const [deviceFreeStorage, setDeviceFreeStorage] = useState(0)
-
 	const activeDownloadRef = useRef<any | null>(null)
 	const [isPaused, setIsPaused] = useState(false)
 	const resumeDataRef = useRef<string | null>(null)
@@ -99,29 +96,24 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const latestReleaseRef = useRef(latestRelease)
 	const pauseDownloadRef = useRef<() => Promise<void>>(async () => {})
 	const resumeDownloadRef = useRef<() => Promise<string | null>>(async () => null)
-
 	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
 		if (Platform.OS === 'web') return []
 		try {
 			await ensureUpdatesFolder()
-			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as File).name : (e as Directory).name))
+			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
 			const apks: CachedApkMetadata[] = []
-
 			for (const file of files) {
 				if (file.endsWith('.apk')) {
 					const fileUri = UPDATES_FOLDER + file
 					const fileInfo = await getFileInfo(fileUri)
-
 					if (fileInfo?.exists) {
 						// Extract version from file name like drinaluza-1.16.2.apk
 						const match = file.match(/drinaluza-(.+)\.apk/)
 						const version = match ? match[1] : 'unknown'
 						const size = fileInfo.size || 0
-
 						// If file version is higher than active version, it is installable
 						const isInstallable = version !== 'unknown' && isVersionGreater(version, config.app.version)
-
 						apks.push({
 							filename: file,
 							fileUri,
@@ -132,9 +124,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					}
 				}
 			}
-
 			setDownloadedApks(apks)
-
 			// Get free space
 			const freeSpace = await getFreeDiskStorage()
 			setDeviceFreeStorage(freeSpace)
@@ -144,12 +134,11 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			return []
 		}
 	}, [])
-
 	// Self-healing cleaner: deletes older APK versions, keeping only the latest
 	const pruneOldApks = useCallback(async (latestVer: string) => {
 		if (Platform.OS === 'web') return
 		try {
-			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as File).name : (e as Directory).name))
+			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
 			for (const file of files) {
 				if (file.endsWith('.apk') && !file.includes(latestVer)) {
 					await deletePath(UPDATES_FOLDER + file)
@@ -159,7 +148,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			log({ level: 'warn', label: 'UpdatesContext', message: 'Pruning older cached releases failed', error: err })
 		}
 	}, [])
-
 	const checkForUpdates = useCallback(async (): Promise<UpdateCheckResult | null> => {
 		setIsChecking(true)
 		setError(null)
@@ -167,7 +155,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			const result = await checkUpdatesApi(config.updates.checkUrl)
 			setLatestRelease(result)
 			setIsChecking(false)
-
 			if (Platform.OS !== 'web') {
 				await refreshApkList()
 			}
@@ -179,7 +166,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			return null
 		}
 	}, [refreshApkList])
-
 	// Install Android APK — validates file integrity first to avoid "parsing the package" error
 	const installApk = useCallback(
 		async (fileUri: string) => {
@@ -196,10 +182,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					await refreshApkList()
 					throw new Error(`APK corrupted (${verify.reason}). Deleted — please download again.`)
 				}
-
 				const contentUri = getContentUri(fileUri)
 				const { startActivityAsync } = require('expo-intent-launcher')
-
 				try {
 					// 1. Try modern ACTION_VIEW with MIME type (universal file opener)
 					await startActivityAsync('android.intent.action.VIEW', {
@@ -209,7 +193,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					})
 				} catch (viewErr) {
 					log({ level: 'warn', label: 'UpdatesContext', message: 'ACTION_VIEW failed, trying legacy ACTION_INSTALL_PACKAGE fallback', error: viewErr })
-
 					// 2. Fall back to legacy ACTION_INSTALL_PACKAGE
 					await startActivityAsync('android.intent.action.INSTALL_PACKAGE', {
 						data: contentUri,
@@ -218,7 +201,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				}
 			} catch (err: any) {
 				log({ level: 'error', label: 'UpdatesContext', message: 'Android package installation failed', error: err })
-
 				Alert.alert(
 					'Installation Failed',
 					err?.message?.includes('corrupted') || err?.message?.includes('incomplete') || err?.message?.includes('not found')
@@ -231,7 +213,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		},
 		[refreshApkList]
 	)
-
 	// Delete downloaded APK
 	const deleteApk = useCallback(
 		async (fileUri: string) => {
@@ -245,13 +226,11 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		},
 		[refreshApkList]
 	)
-
 	// Download APK
 	const downloadUpdate = useCallback(async (): Promise<string | null> => {
 		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
 			return null
 		}
-
 		// Check free storage space before downloading
 		const freeSpace = await getFreeDiskStorage()
 		setDeviceFreeStorage(freeSpace)
@@ -260,7 +239,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to download and install this update.')
 			return null
 		}
-
 		setIsDownloading(true)
 		setIsPaused(false)
 		resumeDataRef.current = null
@@ -269,16 +247,13 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		await setItem('download_status', 'downloading')
 		setDownloadProgress(0)
 		await ensureUpdatesFolder()
-
 		const filename = `drinaluza-${latestRelease.latest_version}.apk`
 		const fileUri = UPDATES_FOLDER + filename
 		const tempFileUri = fileUri + '.tmp'
-
 		try {
 			// Clean any partial downloads of this exact version
 			await deletePath(tempFileUri)
 			await deletePath(fileUri)
-
 			const tmpFile = new File(tempFileUri)
 			const onProgress = (data: { bytesWritten: number; totalBytes: number }) => {
 				const progress = data.totalBytes > 0 ? data.bytesWritten / data.totalBytes : 0
@@ -286,7 +261,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 			const downloadResult = await File.downloadFileAsync(latestRelease.download_url, tmpFile, { idempotent: true, onProgress } as any)
 			activeDownloadRef.current = null
-
 			// Check if we are pausing or cancelling
 			if (isPausingRef.current) {
 				log({ level: 'info', label: 'UpdatesContext', message: 'downloadUpdate: download was paused, exiting early' })
@@ -296,22 +270,18 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				log({ level: 'info', label: 'UpdatesContext', message: 'downloadUpdate: download was cancelled, exiting early' })
 				return null
 			}
-
 			if (downloadResult && downloadResult.uri) {
 				const verify = await verifyFileIntegrity(downloadResult.uri, latestRelease.size)
 				if (!verify.ok) {
 					await deletePath(downloadResult.uri).catch(() => {})
 					throw new Error(`Download corrupted (${verify.reason}). Please retry.`)
 				}
-
 				setIsDownloading(false)
 				setDownloadProgress(1)
 				await removeItem('download_resume_data')
 				await removeItem('download_progress')
-
 				// Rename temp file to final .apk file on successful completion
 				await moveFile(downloadResult.uri, fileUri)
-
 				await refreshApkList()
 				// Automatically launch package installer when download is complete
 				await installApk(fileUri)
@@ -340,7 +310,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			throw err
 		}
 	}, [latestRelease, refreshApkList, installApk])
-
 	// Pause Download
 	const pauseDownload = useCallback(async () => {
 		if (activeDownloadRef.current && isDownloading && !isPaused) {
@@ -364,13 +333,11 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 		}
 	}, [isDownloading, isPaused, downloadProgress])
-
 	// Resume Download
 	const resumeDownload = useCallback(async (): Promise<string | null> => {
 		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
 			return null
 		}
-
 		// Check free storage space before resuming
 		const freeSpace = await getFreeDiskStorage()
 		setDeviceFreeStorage(freeSpace)
@@ -379,16 +346,13 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to resume this update.')
 			return null
 		}
-
 		setIsDownloading(true)
 		setIsPaused(false)
 		await setItem('download_status', 'downloading')
 		await ensureUpdatesFolder()
-
 		const filename = `drinaluza-${latestRelease.latest_version}.apk`
 		const fileUri = UPDATES_FOLDER + filename
 		const tempFileUri = fileUri + '.tmp'
-
 		try {
 			const tmpFile = new File(tempFileUri)
 			const onProgress = (data: { bytesWritten: number; totalBytes: number }) => {
@@ -397,7 +361,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 			const downloadResult = await File.downloadFileAsync(latestRelease.download_url, tmpFile, { idempotent: true, onProgress } as any)
 			activeDownloadRef.current = null
-
 			// Check if we are pausing or cancelling
 			if (isPausingRef.current) {
 				log({ level: 'info', label: 'UpdatesContext', message: 'resumeDownload: download was paused, exiting early' })
@@ -407,23 +370,19 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				log({ level: 'info', label: 'UpdatesContext', message: 'resumeDownload: download was cancelled, exiting early' })
 				return null
 			}
-
 			if (downloadResult && downloadResult.uri) {
 				const verify = await verifyFileIntegrity(downloadResult.uri, latestRelease.size)
 				if (!verify.ok) {
 					await deletePath(downloadResult.uri).catch(() => {})
 					throw new Error(`Resume corrupted (${verify.reason}). Please retry.`)
 				}
-
 				setIsDownloading(false)
 				setDownloadProgress(1)
 				resumeDataRef.current = null
 				await removeItem('download_resume_data')
 				await removeItem('download_progress')
 				await removeItem('download_status')
-
 				await moveFile(downloadResult.uri, fileUri)
-
 				await refreshApkList()
 				await installApk(fileUri)
 				return fileUri
@@ -449,7 +408,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			throw err
 		}
 	}, [latestRelease, refreshApkList, installApk])
-
 	// Sync refs for AppState handler
 	useEffect(() => {
 		isDownloadingRef.current = isDownloading
@@ -458,7 +416,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		pauseDownloadRef.current = pauseDownload
 		resumeDownloadRef.current = resumeDownload
 	}, [isDownloading, isPaused, latestRelease, pauseDownload, resumeDownload])
-
 	// Pause download when the app goes to background, resume when it comes back to foreground
 	useEffect(() => {
 		const handleAppStateChange = (nextAppState: AppStateStatus) => {
@@ -474,11 +431,9 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				}
 			}
 		}
-
 		const subscription = AppState.addEventListener('change', handleAppStateChange)
 		return () => subscription.remove()
 	}, [])
-
 	// Cancel Download completely
 	const cancelDownload = useCallback(async () => {
 		isCancellingRef.current = true
@@ -506,7 +461,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			isCancellingRef.current = false
 		}
 	}, [latestRelease])
-
 	// Cancel download on unmount to prevent resource memory leak
 	useEffect(() => {
 		return () => {
@@ -519,29 +473,23 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 		}
 	}, [])
-
 	// Startup cleanup: delete incomplete downloads, corrupted files, and keep only the highest version APK
 	const performStartupCleanup = useCallback(async () => {
 		if (Platform.OS === 'web') return
 		try {
 			await ensureUpdatesFolder()
-			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as File).name : (e as Directory).name))
-
+			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
 			const validApks: { filename: string; version: string }[] = []
-
 			const downloadStatus = await getItem<string>('download_status')
 			const savedResumeData = await getItem<any>('download_resume_data')
 			const isPausedStatus = downloadStatus === 'paused' || savedResumeData !== null
-
 			if (!isPausedStatus) {
 				await removeItem('download_resume_data')
 				await removeItem('download_progress')
 				await removeItem('download_status')
 			}
-
 			for (const file of files) {
 				const filePath = UPDATES_FOLDER + file
-
 				// 1. Handle .tmp files (incomplete downloads) — also validate even when paused, to avoid resuming corrupted truncated file after kill
 				if (file.endsWith('.tmp')) {
 					if (isPausedStatus) {
@@ -564,14 +512,12 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 						continue
 					}
 				}
-
 				// 2. Only process .apk files, delete anything else unexpected
 				if (!file.endsWith('.apk')) {
 					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting unexpected file ${file}` })
 					await deletePath(filePath)
 					continue
 				}
-
 				// 3. Parse version from filename (e.g. drinaluza-1.16.2.apk)
 				const match = file.match(/drinaluza-(.+)\.apk/)
 				if (!match || match[1] === 'unknown') {
@@ -580,7 +526,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					await deletePath(filePath)
 					continue
 				}
-
 				// 4. Check file integrity (APKs must be >1MB; smaller means truncated/killed download that was incorrectly promoted)
 				const info = await getFileInfo(filePath)
 				const apkSize = info?.size || 0
@@ -589,10 +534,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					await deletePath(filePath)
 					continue
 				}
-
 				validApks.push({ filename: file, version: match[1] })
 			}
-
 			// 5. Among valid APKs, keep only up to maxApkInstallersCount newest versions
 			const maxApkInstallersCount = config.updates.maxApkInstallersCount
 			if (validApks.length > 0) {
@@ -605,19 +548,16 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					await deletePath(UPDATES_FOLDER + apk.filename)
 				}
 			}
-
 			log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup complete. Kept ${validApks.length > 0 ? validApks[0].filename : 'no APKs'}.` })
 		} catch (err) {
 			log({ level: 'warn', label: 'UpdatesContext', message: 'Startup cleanup failed', error: err })
 		}
 	}, [])
-
 	// Run startup cleanup then refresh APK list — deferred to prioritize feed rendering
 	useEffect(() => {
 		const init = async () => {
 			await performStartupCleanup()
 			await refreshApkList()
-
 			try {
 				const savedResumeData = await getItem<any>('download_resume_data')
 				if (savedResumeData) {
@@ -638,7 +578,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		})
 		return cancel
 	}, [performStartupCleanup, refreshApkList])
-
 	const contextValue = useMemo(
 		() => ({
 			isChecking,
@@ -677,6 +616,5 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			refreshApkList
 		]
 	)
-
 	return <UpdatesContext.Provider value={contextValue}>{children}</UpdatesContext.Provider>
 }

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react'
+import { useState, useCallback } from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BaseCard } from '@/features/common/cards/BaseCard'

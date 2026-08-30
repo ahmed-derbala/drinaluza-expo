@@ -14,16 +14,13 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { getStreetString } from '@/features/common/address'
-
 export default function UserDetailScreen() {
 	const { userSlug, name: initialNameParam } = useLocalSearchParams<{ userSlug: string; name?: string }>()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
 	const insets = useSafeAreaInsets()
-
 	const { data: user, isInitialLoading, isRefreshing, isOffline, refresh } = useUserProfile({ userSlug })
 	const [showQRCode, setShowQRCode] = useState(false)
-
 	const initialName = useMemo(() => {
 		if (!initialNameParam) return null
 		try {
@@ -35,21 +32,16 @@ export default function UserDetailScreen() {
 			return initialNameParam
 		}
 	}, [initialNameParam, localize])
-
 	const displayTitle = user ? localize(user.name) : initialName || translate('user_profile', 'User Profile')
-
 	const handleRefresh = useCallback(() => {
 		refresh()
 	}, [refresh])
-
 	const handleCall = (phone: string) => {
 		Linking.openURL(`tel:${phone}`)
 	}
-
 	const handleEmail = (email: string) => {
 		Linking.openURL(`mailto:${email}`)
 	}
-
 	if (isInitialLoading && !user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -59,7 +51,6 @@ export default function UserDetailScreen() {
 			</View>
 		)
 	}
-
 	if (!user) {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background }]}>
@@ -69,7 +60,6 @@ export default function UserDetailScreen() {
 			</View>
 		)
 	}
-
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen options={{ headerShown: false }} />
@@ -78,7 +68,6 @@ export default function UserDetailScreen() {
 				headerActions={[<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />] as any[]}
 				fallbackRoute="/(home)/feed"
 			/>
-
 			<SmartHeader.ScrollView
 				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
@@ -87,18 +76,15 @@ export default function UserDetailScreen() {
 				{/* Profile Header Card */}
 				<View style={[styles.profileCard, { backgroundColor: colors.background, borderColor: themeColors.buttonText }]}>
 					<LinearGradient colors={[`${colors.primary}15`, 'transparent']} style={StyleSheet.absoluteFill} />
-
 					<View style={styles.avatarContainer}>
 						<SmartMediaView media={user.media?.thumbnail?.url} style={styles.avatar} />
 						{user.state?.code === 'active' && <View style={[styles.activeBadge, { backgroundColor: colors.success, borderColor: colors.background }]} />}
 					</View>
-
 					<Text style={[styles.nameText, { color: colors.text }]}>{localize(user.name)}</Text>
 					<View style={[styles.roleBadge, { backgroundColor: colors.primary + '20' }]}>
 						<Text style={[styles.roleText, { color: colors.primary }]}>{user.role.replace('_', ' ').toUpperCase()}</Text>
 					</View>
 				</View>
-
 				{/* Contact Information */}
 				{(user.contact?.phone || user.contact?.email || user.contact?.whatsapp) && (
 					<View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: themeColors.buttonText }]}>
@@ -106,7 +92,6 @@ export default function UserDetailScreen() {
 							<Ionicons name="call-outline" size={20} color={colors.primary} />
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('contact_info', 'Contact Information')}</Text>
 						</View>
-
 						{user.contact?.phone && (
 							<TouchableOpacity style={[styles.infoRow, { borderBottomColor: colors.border }]} onPress={() => handleCall(user.contact!.phone!.fullNumber)}>
 								<View style={styles.infoIconContainer}>
@@ -119,7 +104,6 @@ export default function UserDetailScreen() {
 								<Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
 							</TouchableOpacity>
 						)}
-
 						{user.contact?.whatsapp && (
 							<TouchableOpacity style={[styles.infoRow, { borderBottomColor: colors.border }]} onPress={() => Linking.openURL(`whatsapp://send?phone=${user.contact!.whatsapp}`)}>
 								<View style={styles.infoIconContainer}>
@@ -132,7 +116,6 @@ export default function UserDetailScreen() {
 								<Ionicons name="chevron-forward" size={16} color={colors.textTertiary} />
 							</TouchableOpacity>
 						)}
-
 						{user.contact?.email && (
 							<TouchableOpacity style={[styles.infoRow, { borderBottomWidth: 0 }]} onPress={() => handleEmail(user.contact!.email!)}>
 								<View style={styles.infoIconContainer}>
@@ -147,7 +130,6 @@ export default function UserDetailScreen() {
 						)}
 					</View>
 				)}
-
 				{/* Location / Address */}
 				{user.address && (
 					<View style={[styles.section, { backgroundColor: colors.surfaceVariant, borderColor: themeColors.buttonText }]}>
@@ -155,7 +137,6 @@ export default function UserDetailScreen() {
 							<Ionicons name="location-outline" size={20} color={colors.primary} />
 							<Text style={[styles.sectionTitle, { color: colors.text }]}>{translate('location', 'Location')}</Text>
 						</View>
-
 						<View style={styles.addressContainer}>
 							{user.address.street && <Text style={[styles.addressText, { color: colors.text }]}>{getStreetString(user.address.street, localize)}</Text>}
 							{(user.address.city || user.address.region || user.address.country) && (
@@ -165,7 +146,6 @@ export default function UserDetailScreen() {
 					</View>
 				)}
 			</SmartHeader.ScrollView>
-
 			{/* QR Code Viewer Modal */}
 			{user && (
 				<QRCodeModal
@@ -180,7 +160,6 @@ export default function UserDetailScreen() {
 		</View>
 	)
 }
-
 const styles = StyleSheet.create({
 	container: {
 		flex: 1

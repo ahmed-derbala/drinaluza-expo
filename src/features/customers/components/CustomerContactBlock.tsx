@@ -1,4 +1,3 @@
-import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'

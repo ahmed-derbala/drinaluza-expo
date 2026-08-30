@@ -1,12 +1,11 @@
-import React, { useCallback, useEffect, useState, useImperativeHandle, forwardRef, memo } from 'react'
+import { useCallback, useEffect, useState, useImperativeHandle, forwardRef, memo } from 'react'
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
 import { toast } from '@/features/common/Toast'
-import { clearAllCache, isProtectedKey } from '@/core/cache/store'
-import { getAllKeys, getItemSize } from '@/core/storage'
+import { clearAllCache } from '@/core/cache/store'
 import { formatBytes } from '@/core/helpers/format'
 import { clearDirectory, getDirectorySize, getCacheDirectory, getDocumentDirectory } from '@/core/disk'
 
@@ -19,21 +18,13 @@ export interface CacheDetailsCardHandle {
 }
 
 interface CacheStats {
-	apiCount: number
-	apiBytes: number
-	systemCount: number
-	systemBytes: number
-	docCount: number
-	docBytes: number
+	cacheDirectoryBytes: number
+	documentDirectoryBytes: number
 }
 
 const INITIAL_STATS: CacheStats = {
-	apiCount: 0,
-	apiBytes: 0,
-	systemCount: 0,
-	systemBytes: 0,
-	docCount: 0,
-	docBytes: 0
+	cacheDirectoryBytes: 0,
+	documentDirectoryBytes: 0
 }
 
 interface CacheRowProps {
@@ -81,37 +72,12 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 	const scanCache = useCallback(async () => {
 		setLoading(true)
 		try {
-			// 1) API / Storage cache — parallel fetch of all key sizes
-			const apiPromise = (async (): Promise<Pick<CacheStats, 'apiCount' | 'apiBytes'>> => {
-				const allKeys = await getAllKeys()
-				const cacheKeys = allKeys.filter((key) => !isProtectedKey(key))
-				if (cacheKeys.length === 0) return { apiCount: 0, apiBytes: 0 }
-
-				const sizes = await Promise.all(cacheKeys.map((key) => getItemSize(key)))
-				let apiCount = 0
-				let apiBytes = 0
-				for (const size of sizes) {
-					if (size > 0) {
-						apiCount += 1
-						apiBytes += size
-					}
-				}
-				return { apiCount, apiBytes }
-			})()
-
-			// 2) System + Document directories — use fast directory size (O(1)) instead of per-file traversal
-			const systemBytesPromise = getDirectorySize(getCacheDirectory())
-			const docBytesPromise = getDirectorySize(getDocumentDirectory())
-
-			const [apiStats, systemBytes, docBytes] = await Promise.all([apiPromise, systemBytesPromise, docBytesPromise])
+			// Cache + Document directories — fast O(1) directory.size
+			const [cacheDirectoryBytes, documentDirectoryBytes] = await Promise.all([getDirectorySize(getCacheDirectory()), getDirectorySize(getDocumentDirectory())])
 
 			setStats({
-				apiCount: apiStats.apiCount,
-				apiBytes: apiStats.apiBytes,
-				systemCount: 0,
-				systemBytes,
-				docCount: 0,
-				docBytes
+				cacheDirectoryBytes,
+				documentDirectoryBytes
 			})
 		} catch {
 			// silent fallback — keep previous stats
@@ -183,33 +149,19 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 		)
 	}, [withClearing, onCacheCleared])
 
-	const totalBytes = stats.apiBytes + stats.systemBytes + stats.docBytes
-	const totalItems = stats.apiCount + stats.systemCount + stats.docCount
 	const busy = loading || clearing
 
 	return (
 		<BaseCard title={translate('cache_details', 'Cached Data Details')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
 			<View style={styles.container}>
-				<View style={[styles.summaryBanner, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-					<View style={styles.summaryLeft}>
-						<Text style={[styles.summaryLabel, { color: colors.textSecondary }]}>{translate('total_cache_size', 'Total Cache Size')}</Text>
-						<Text style={[styles.summaryValue, { color: colors.text }]}>{formatBytes(totalBytes)}</Text>
-					</View>
-					<View style={[styles.badge, { backgroundColor: colors.primaryContainer }]}>
-						<Text style={[styles.badgeText, { color: colors.primary }]}>
-							{totalItems} {translate('cached_entries', 'Cached Entries')}
-						</Text>
-					</View>
-				</View>
-
 				<View style={styles.breakdownList}>
 					<CacheRow
 						icon="documents-outline"
 						iconColor={colors.primary}
 						iconBg={colors.primary + '18'}
-						title={translate('api_cache', 'API & Data Cache')}
-						subtitle={`${stats.apiCount} ${translate('cached_entries', 'Cached Entries')} • ${formatBytes(stats.apiBytes)}`}
-						disabled={busy || stats.apiCount === 0}
+						title={translate('api_cache', 'API Cache')}
+						subtitle={translate('api_cache_desc', 'Cached API responses')}
+						disabled={busy}
 						onClear={handleClearApiCache}
 						clearLabel={translate('clear_api_cache', 'Clear API Cache')}
 					/>
@@ -218,8 +170,8 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 						iconColor={colors.warning}
 						iconBg={colors.warning + '18'}
 						title={translate('cache_directory', 'Cache Directory')}
-						subtitle={formatBytes(stats.systemBytes)}
-						disabled={busy || stats.systemBytes === 0}
+						subtitle={formatBytes(stats.cacheDirectoryBytes)}
+						disabled={busy || stats.cacheDirectoryBytes === 0}
 						onClear={handleClearSystemCache}
 						clearLabel={translate('clear_system_cache', 'Clear Cache Directory')}
 					/>
@@ -228,8 +180,8 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 						iconColor={colors.success}
 						iconBg={colors.success + '18'}
 						title={translate('document_directory', 'Document Directory')}
-						subtitle={formatBytes(stats.docBytes)}
-						disabled={busy || stats.docBytes === 0}
+						subtitle={formatBytes(stats.documentDirectoryBytes)}
+						disabled={busy || stats.documentDirectoryBytes === 0}
 						onClear={handleClearDocument}
 						clearLabel={translate('clear_document_cache', 'Clear Document Directory')}
 						hideBorder
@@ -248,36 +200,6 @@ const styles = StyleSheet.create({
 	},
 	container: {
 		gap: 16
-	},
-	summaryBanner: {
-		flexDirection: 'row',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		padding: 14,
-		borderRadius: 12,
-		borderWidth: 1
-	},
-	summaryLeft: {
-		gap: 2
-	},
-	summaryLabel: {
-		fontSize: 12,
-		fontWeight: '500',
-		textTransform: 'uppercase',
-		letterSpacing: 0.5
-	},
-	summaryValue: {
-		fontSize: 20,
-		fontWeight: '700'
-	},
-	badge: {
-		paddingHorizontal: 10,
-		paddingVertical: 5,
-		borderRadius: 8
-	},
-	badgeText: {
-		fontSize: 12,
-		fontWeight: '600'
 	},
 	breakdownList: {
 		borderRadius: 12,
