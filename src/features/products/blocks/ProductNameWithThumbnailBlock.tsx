@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
+import { View, Text, StyleSheet, Pressable, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
 import { SmartMediaView } from '@/core/smart-media'
 import { MaterialIcons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
@@ -23,11 +23,10 @@ export interface ProductNameWithThumbnailBlockProps {
 export function ProductNameWithThumbnailBlock({ name, imageUrl, onPress, thumbnailSize = 32, style, textStyle, numberOfLines = 2 }: ProductNameWithThumbnailBlockProps) {
 	const radius = thumbnailSize / 2
 	return (
-		<TouchableOpacity
+		<Pressable
 			onPress={onPress}
-			activeOpacity={onPress ? 0.75 : 1}
 			disabled={!onPress}
-			style={[styles.container, style]}
+			style={({ pressed }) => [styles.container, style, { opacity: pressed && onPress ? 0.75 : 1 }]}
 			accessibilityRole={onPress ? 'button' : undefined}
 			accessibilityLabel={name}
 		>
@@ -43,7 +42,7 @@ export function ProductNameWithThumbnailBlock({ name, imageUrl, onPress, thumbna
 			<Text style={[styles.productName, textStyle]} numberOfLines={numberOfLines}>
 				{name}
 			</Text>
-		</TouchableOpacity>
+		</Pressable>
 	)
 }
 

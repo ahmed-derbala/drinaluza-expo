@@ -1,5 +1,5 @@
-import React from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextStyle, ViewStyle, ImageStyle, useWindowDimensions } from 'react-native'
+import React, { useMemo } from 'react'
+import { View, Text, StyleSheet, type StyleProp, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -12,214 +12,197 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 
 export interface BusinessCardProps {
 	business: Business
-	width: number
-	imageHeight: number
-	showExtended?: boolean
-	isExtraSmall?: boolean
-	fontSize?: number
-	subtitleFontSize?: number
-	smallFontSize?: number
+	style?: StyleProp<ViewStyle>
 }
 
-const BusinessCard: React.FC<BusinessCardProps> = ({ business, width, imageHeight, showExtended = false, isExtraSmall = false, fontSize = 14, subtitleFontSize = 13, smallFontSize = 12 }) => {
+const CARD_HEIGHT = 360
+const IMAGE_HEIGHT = 140
+
+const BusinessCard: React.FC<BusinessCardProps> = ({ business, style }) => {
 	const { colors } = useTheme()
 	const { translate, localize } = useUser()
 	const router = useRouter()
-	const { height: windowHeight } = useWindowDimensions()
 
-	const handleBusinessPress = (slug: string) => {
-		router.push(`/businesses/${slug}` as any)
+	const handleBusinessPress = () => {
+		router.push(`/businesses/${business.slug}` as any)
 	}
 
-	const isCompact = windowHeight < 550
-
-	const fullAddress = formatAddress(business.address, localize)
-
-	const businessName = localize(business.name) || translate('unnamed_business', 'Unnamed Business')
+	const fullAddress = useMemo(() => formatAddress(business.address, localize), [business.address, localize])
+	const businessName = useMemo(() => localize(business.name) || translate('unnamed_business', 'Unnamed Business'), [business.name, localize, translate])
 	const ownerSlug = business.owner?.slug || 'owner'
-	const ownerName = localize(business.owner?.name) || ''
+	const ownerName = useMemo(() => localize(business.owner?.name) || '', [business.owner?.name, localize])
 	const rating = business.rating?.average || 0
 	const ratingCount = business.rating?.count || 0
 
-	const styles = createStyles(colors, {
-		width,
-		imageHeight,
-		isExtraSmall,
-		fontSize,
-		subtitleFontSize,
-		smallFontSize,
-		windowHeight
-	})
-
-	const showRating = windowHeight >= 500 && rating > 0
-	const showOwner = windowHeight >= 460
-	const showAddress = windowHeight >= 520 && fullAddress
-
 	return (
-		<TouchableOpacity style={styles.businessCard as ViewStyle} onPress={() => handleBusinessPress(business.slug)}>
-			{/* Business Image */}
-			<View style={styles.businessImageContainer as ViewStyle}>
-				<SmartMediaView media={business.media?.thumbnail?.url} style={styles.businessImage as ImageStyle} resizeMode="cover" />
+		<BaseCard onPress={handleBusinessPress} style={[styles.card, style]} contentStyle={styles.cardContent} borderColor={colors.info} backgroundColor={colors.background}>
+			{/* Image — fixed height, no shift */}
+			<View style={styles.imageContainer}>
+				<SmartMediaView media={business.media?.thumbnail?.url} style={styles.image} contentFit="cover" />
 			</View>
 
-			<View style={styles.businessCardContent as ViewStyle}>
-				{/* Business Name and Owner */}
-				<View style={styles.businessHeader as ViewStyle}>
-					<Text style={styles.businessName as TextStyle} numberOfLines={2}>
+			{/* Content — flex 1, space-between, fixed heights for sub-sections */}
+			<View style={styles.content}>
+				{/* Header: name (2 lines, 44h) */}
+				<View style={styles.header}>
+					<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={2}>
 						{businessName}
 					</Text>
-					{showRating && (
-						<View style={styles.ratingContainer as ViewStyle}>
-							<Ionicons name="star" size={isExtraSmall ? 12 : 14} color={themeColors.warning} />
-							<Text style={styles.ratingText as TextStyle}>{rating.toFixed(1)}</Text>
-							<Text style={styles.ratingCount as TextStyle}>({ratingCount})</Text>
-						</View>
-					)}
-					{showOwner && showExtended && ownerName && (
-						<Text style={styles.businessOwnerLabel as TextStyle} numberOfLines={2}>
-							{ownerName}
-						</Text>
-					)}
-					{showOwner && (
-						<Text style={styles.ownerName as TextStyle} numberOfLines={2}>
-							{ownerSlug}
-						</Text>
+				</View>
+
+				{/* Rating — always 20h, placeholder when no rating */}
+				<View style={styles.ratingRow}>
+					{rating > 0 ? (
+						<>
+							<Ionicons name="star" size={14} color={themeColors.warning} />
+							<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+							<Text style={[styles.ratingCount, { color: colors.textSecondary }]}>({ratingCount})</Text>
+						</>
+					) : (
+						<View style={styles.ratingPlaceholder} />
 					)}
 				</View>
 
-				{/* Address */}
-				{showAddress ? (
-					<View style={styles.addressContainer as ViewStyle}>
-						<Ionicons name="location-outline" size={isExtraSmall ? 12 : 14} color={colors.textSecondary} />
-						<Text style={styles.addressText as TextStyle} numberOfLines={2}>
-							{fullAddress}
-						</Text>
-					</View>
-				) : null}
+				{/* Owner — always 18h */}
+				<View style={styles.ownerRow}>
+					<Text style={[styles.ownerName, { color: colors.textTertiary }]} numberOfLines={1}>
+						{ownerName || ownerSlug}
+					</Text>
+				</View>
 
-				{/* Contact & View Buttons */}
-				<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: isCompact ? 4 : isExtraSmall ? 8 : 12 }}>
-					<View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-						<PhoneButton phone={business.contact?.phone} size={44} />
-						<WhatsAppButton whatsapp={business.contact?.whatsapp} size={44} />
-						<WebsiteButton website={business.contact?.website} size={44} />
-						<DirectionsButton location={business.location} address={business.address} size={44} />
+				{/* Address — always 36h (2 lines), placeholder when missing */}
+				<View style={styles.addressRow}>
+					<Ionicons name="location-outline" size={12} color={colors.textSecondary} style={styles.addressIcon} />
+					<Text style={[styles.addressText, { color: colors.textSecondary }]} numberOfLines={2}>
+						{fullAddress || ' '}
+					</Text>
+				</View>
+
+				{/* Contact + View — fixed 48h, no shift */}
+				<View style={styles.footer}>
+					<View style={styles.contactRow}>
+						<PhoneButton phone={business.contact?.phone} size={36} />
+						<WhatsAppButton whatsapp={business.contact?.whatsapp} size={36} />
+						<WebsiteButton website={business.contact?.website} size={36} />
+						<DirectionsButton location={business.location} address={business.address} size={36} />
 					</View>
 					<IconButton
 						icon="storefront-outline"
 						label={translate('view_business', 'View Business')}
 						onPress={(e) => {
 							e.stopPropagation?.()
-							handleBusinessPress(business.slug)
+							handleBusinessPress()
 						}}
 						variant="primary"
+						size={36}
 					/>
 				</View>
 			</View>
-		</TouchableOpacity>
+		</BaseCard>
 	)
 }
 
-const createStyles = (
-	colors: any,
-	opts: {
-		width: number
-		imageHeight: number
-		isExtraSmall: boolean
-		fontSize: number
-		subtitleFontSize: number
-		smallFontSize: number
-		windowHeight: number
+const styles = StyleSheet.create({
+	card: {
+		height: CARD_HEIGHT,
+		minHeight: CARD_HEIGHT,
+		maxHeight: CARD_HEIGHT,
+		padding: 0,
+		overflow: 'hidden' as any,
+		borderWidth: 1.5,
+		borderRadius: 16
+	},
+	cardContent: {
+		flex: 1,
+		padding: 0
+	},
+	imageContainer: {
+		width: '100%',
+		height: IMAGE_HEIGHT,
+		backgroundColor: themeColors.buttonText5,
+		overflow: 'hidden'
+	},
+	image: {
+		width: '100%',
+		height: '100%'
+	},
+	content: {
+		flex: 1,
+		padding: 12,
+		justifyContent: 'space-between',
+		gap: 0
+	},
+	header: {
+		height: 44,
+		justifyContent: 'center'
+	},
+	businessName: {
+		fontSize: 15,
+		fontWeight: '700',
+		lineHeight: 20
+	},
+	ratingRow: {
+		height: 20,
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 4
+	},
+	ratingPlaceholder: {
+		height: 20
+	},
+	ratingText: {
+		fontSize: 12,
+		fontWeight: '600',
+		color: themeColors.warning
+	},
+	ratingCount: {
+		fontSize: 12,
+		marginLeft: 2
+	},
+	ownerRow: {
+		height: 18,
+		justifyContent: 'center'
+	},
+	ownerName: {
+		fontSize: 12,
+		fontWeight: '500',
+		lineHeight: 16
+	},
+	addressRow: {
+		height: 36,
+		flexDirection: 'row',
+		alignItems: 'flex-start',
+		gap: 6,
+		marginTop: 2
+	},
+	addressIcon: {
+		marginTop: 2
+	},
+	addressText: {
+		flex: 1,
+		fontSize: 12,
+		lineHeight: 16
+	},
+	footer: {
+		height: 48,
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'space-between',
+		gap: 8,
+		marginTop: 4,
+		paddingTop: 8,
+		borderTopWidth: 1,
+		borderTopColor: themeColors.buttonText10
+	},
+	contactRow: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		gap: 6
 	}
-) => {
-	const isCompact = opts.windowHeight < 550
-	const maxCardHeight = Math.max(180, opts.windowHeight - 140)
-	return StyleSheet.create({
-		businessCard: {
-			flex: 1,
-			margin: opts.isExtraSmall ? 4 : 6,
-			borderRadius: opts.isExtraSmall ? 12 : 16,
-			overflow: 'hidden',
-			backgroundColor: colors.background,
-			borderWidth: 1.5,
-			borderColor: colors.info,
-			width: opts.width - (opts.isExtraSmall ? 8 : 12),
-			maxWidth: opts.width - (opts.isExtraSmall ? 8 : 12),
-			minHeight: Math.min(opts.isExtraSmall ? 220 : 280, maxCardHeight),
-			maxHeight: maxCardHeight,
-			alignSelf: 'flex-start',
-			flexDirection: 'column',
-			justifyContent: 'space-between'
-		},
-		businessImageContainer: {
-			position: 'relative',
-			width: '100%',
-			height: Math.min(opts.imageHeight, opts.windowHeight * 0.18),
-			backgroundColor: themeColors.buttonText5
-		},
-		businessImage: {
-			width: '100%',
-			height: '100%'
-		},
-		businessCardContent: {
-			flex: 1,
-			padding: isCompact ? 8 : opts.isExtraSmall ? 10 : 16,
-			justifyContent: 'space-between'
-		},
-		businessHeader: {
-			marginBottom: isCompact ? 4 : opts.isExtraSmall ? 8 : 12
-		},
-		businessOwnerLabel: {
-			fontSize: opts.smallFontSize,
-			color: colors.textSecondary,
-			marginBottom: 2,
-			fontWeight: '500'
-		},
-		businessName: {
-			fontSize: opts.fontSize,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 4,
-			lineHeight: opts.fontSize * 1.2
-		},
-		ownerName: {
-			fontSize: opts.smallFontSize,
-			color: colors.textTertiary,
-			fontWeight: '500'
-		},
-		ratingContainer: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 8,
-			marginBottom: 8
-		},
-		ratingText: {
-			color: colors.text,
-			fontSize: 12,
-			fontWeight: '600'
-		},
-		ratingCount: {
-			color: colors.textSecondary,
-			fontSize: 12,
-			marginLeft: 4
-		},
-		addressContainer: {
-			flexDirection: 'row',
-			alignItems: 'flex-start',
-			marginTop: 8,
-			marginBottom: 12
-		},
-		addressText: {
-			flex: 1,
-			fontSize: opts.smallFontSize,
-			color: colors.textSecondary,
-			marginLeft: 8,
-			lineHeight: opts.smallFontSize * 1.3
-		}
-	})
-}
+})
 
 export default React.memo(BusinessCard)

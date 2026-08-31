@@ -1,5 +1,5 @@
 import React from 'react'
-import { StyleSheet, View, TouchableOpacity, Text, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
+import { StyleSheet, View, Pressable, Text, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
 import { IconButton } from '@/features/common/buttons/IconButton'
@@ -165,9 +165,9 @@ export function BaseCard({
 
 	if (onPress && !showHeader) {
 		return (
-			<TouchableOpacity onPress={onPress} disabled={disabled} activeOpacity={activeOpacity} style={cardStyles} testID={testID} accessibilityRole="button">
+			<Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [cardStyles, { opacity: pressed ? activeOpacity : 1 }]} testID={testID} accessibilityRole="button">
 				{cardContent}
-			</TouchableOpacity>
+			</Pressable>
 		)
 	}
 

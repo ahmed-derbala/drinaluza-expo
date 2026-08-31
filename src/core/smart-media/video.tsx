@@ -33,6 +33,17 @@ if (Platform.OS === 'web' && typeof window !== 'undefined' && !(window as any)._
 		}
 		origError(...args)
 	}
+	// Silence deprecated props.pointerEvents warning (RN Web) — we use style.pointerEvents
+	const origWarn = console.warn as any
+	if (!(origWarn as any).__patched) {
+		const patchedWarn = (...args: any[]) => {
+			const first = String(args[0] ?? '')
+			if (first.includes('props.pointerEvents is deprecated')) return
+			origWarn(...args)
+		}
+		;(patchedWarn as any).__patched = true
+		console.warn = patchedWarn
+	}
 }
 
 const isAbortError = (e: any): boolean => {

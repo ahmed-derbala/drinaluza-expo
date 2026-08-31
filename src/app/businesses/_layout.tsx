@@ -23,7 +23,7 @@ export default function BusinessesLayout() {
 			<Stack.Screen
 				name="index"
 				options={{
-					headerTitle: 'Browse Businesses'
+					headerTitle: 'Businesses'
 				}}
 			/>
 			<Stack.Screen name="[businessSlug]/index" />
