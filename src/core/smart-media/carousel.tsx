@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 import { getMediaUrl, isVideoMedia, type MediaField, type MediaFile } from './types'
 import SmartMediaView from './view'
-import { useMediaSettings } from '@/core/media-settings/MediaSettingsContext'
+import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
 
 /** How long an image is displayed before auto-advancing. */
 const IMAGE_DISPLAY_MS = 2_000

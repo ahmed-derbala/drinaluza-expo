@@ -10,7 +10,7 @@ export interface MediaSettings {
 const DEFAULTS: MediaSettings = {
 	autoAdvance: true,
 	autoPlay: true,
-	soundOn: false
+	soundOn: true
 }
 
 const STORAGE_KEY = 'mediaSettings'

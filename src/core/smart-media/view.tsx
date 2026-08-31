@@ -17,7 +17,7 @@ import Spinner from '@/features/common/Spinner'
 import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@/core/cache'
 import { getMediaType, getMediaUrl, getVideoPosterUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
-import { useMediaSettings } from '@/core/media-settings/MediaSettingsContext'
+import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
 
 const FALLBACK_IMAGE = require('../../../assets/images/no_media.png')
 
@@ -339,6 +339,7 @@ const SmartMediaViewComponent = ({
 
 	const renderedElement = cleanedContainerStyle ? <View style={cleanedContainerStyle}>{imageElement}</View> : imageElement
 
+	// Image fullscreen preview
 	if (enableFullscreenPreview && sourceIsValid && !showFallback && !isVideo) {
 		return (
 			<>

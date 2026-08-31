@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { useMediaSettings } from '@/core/media-settings/MediaSettingsContext'
+import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
 
 interface MediaSettingRowProps {
 	icon: keyof typeof Ionicons.glyphMap

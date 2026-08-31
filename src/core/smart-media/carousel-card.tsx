@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
@@ -13,7 +13,7 @@ import { pickMediaFiles, type PickMediaType } from '@/core/smart-media/picker'
 import { uploadGallery } from '@/core/smart-media/upload'
 import { getMediaUrl, getVideoPosterUrl, isVideoMedia, type MediaField, type MediaFile } from '@/core/smart-media/types'
 import SmartMediaView from '@/core/smart-media/view'
-import { useMediaSettings } from '@/core/media-settings/MediaSettingsContext'
+import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
 
 const IMAGE_DISPLAY_MS = 2_000
 
@@ -42,16 +42,68 @@ export interface CarouselCardProps {
 const collectItems = (media?: MediaField | null): MediaFile[] => {
 	if (!media) return []
 	const items: MediaFile[] = []
-	const hasValidGallery = Array.isArray(media.gallery) && media.gallery.some((file) => !!getMediaUrl(file as any))
+	const hasValidGallery = Array.isArray(media.gallery) && media.gallery.some((file) => !!getMediaUrl(file as MediaFile))
 	if (hasValidGallery) {
 		for (const file of media.gallery as MediaFile[]) {
 			if (getMediaUrl(file)) items.push(file)
 		}
-	} else if (media.thumbnail && getMediaUrl(media.thumbnail)) {
-		items.push(media.thumbnail)
+	} else if (media.thumbnail && getMediaUrl(media.thumbnail as MediaFile)) {
+		items.push(media.thumbnail as MediaFile)
 	}
 	return items
 }
+
+const VideoThumbPoster = React.memo(({ item, isVisible }: { item: MediaFile; isVisible: boolean }) => {
+	const poster = useMemo(() => getVideoPosterUrl(item as any), [item])
+	if (poster) {
+		return <Image source={poster} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" />
+	}
+	return null
+})
+VideoThumbPoster.displayName = 'VideoThumbPoster'
+
+const ThumbItem = React.memo(
+	({
+		item,
+		index,
+		isActive,
+		isVisible,
+		disabled,
+		isEditing,
+		onSelect,
+		onRemove
+	}: {
+		item: MediaFile
+		index: number
+		isActive: boolean
+		isVisible: boolean
+		disabled: boolean
+		isEditing: boolean
+		onSelect: (index: number) => void
+		onRemove: (file: MediaFile) => void
+	}) => {
+		const isThumbVideo = isVideoMedia(item as any)
+		const label = (item as any).name || (item as any).originalname || `Media ${index + 1}`
+		return (
+			<View style={[styles.thumbWrap, isActive && styles.thumbWrapActive]}>
+				<TouchableOpacity onPress={() => onSelect(index)} style={[styles.thumbnail, isActive && styles.thumbnailActive]} accessibilityRole="button" accessibilityLabel={label} disabled={disabled}>
+					{isThumbVideo ? (
+						<View style={[StyleSheet.absoluteFill, styles.videoThumbPlaceholder]}>
+							<VideoThumbPoster item={item} isVisible={isVisible} />
+							<View style={styles.videoThumbOverlay}>
+								<Ionicons name="play-circle" size={24} color={themeColors.buttonText} style={styles.videoThumbIcon} />
+							</View>
+						</View>
+					) : (
+						<SmartMediaView media={item as any} contentFit="cover" style={StyleSheet.absoluteFill} controls={false} isVisible={isVisible} />
+					)}
+				</TouchableOpacity>
+				{isEditing && <IconButton icon="close" label="Remove" onPress={() => onRemove(item)} variant="danger" iconColor={themeColors.buttonText} size={20} style={styles.removeBadge} />}
+			</View>
+		)
+	}
+)
+ThumbItem.displayName = 'ThumbItem'
 
 const CarouselCardComponent = ({
 	title = 'Media',
@@ -59,7 +111,7 @@ const CarouselCardComponent = ({
 	targetModelName,
 	targetModelId,
 	maxCount = MAX_FILE_COUNT,
-	mediaType = 'mixed' as any,
+	mediaType = 'mixed',
 	mode = 'view',
 	size = 'md',
 	style,
@@ -77,33 +129,38 @@ const CarouselCardComponent = ({
 	const items = useMemo(() => collectItems(media), [media])
 	const [activeIndex, setActiveIndex] = useState(0)
 	const [manualPlayIndex, setManualPlayIndex] = useState<number | null>(null)
+	const [hasInteracted, setHasInteracted] = useState(false)
 	const [internalUploading, setInternalUploading] = useState(false)
-	const uploading = internalUploading
 
-	const { autoAdvance: settingsAutoAdvance, autoPlay: settingsAutoPlay, soundOn } = useMediaSettings()
+	const { autoAdvance: settingsAutoAdvance, autoPlay: settingsAutoPlay } = useMediaSettings()
 	const effectiveAutoPlay = autoPlay && settingsAutoPlay
 	const effectiveAutoAdvance = settingsAutoAdvance
 
-	const autoPlayStoppedRef = useRef(false)
-	const canAutoPlay = useMemo(() => effectiveAutoPlay && isVisible && !autoPlayStoppedRef.current, [effectiveAutoPlay, isVisible])
+	const canAutoPlay = useMemo(() => effectiveAutoPlay && isVisible && !hasInteracted, [effectiveAutoPlay, isVisible, hasInteracted])
 	const canAdvance = useMemo(() => canAutoPlay && effectiveAutoAdvance && items.length > 1, [canAutoPlay, effectiveAutoAdvance, items.length])
 
 	useEffect(() => {
 		setActiveIndex(0)
 		setManualPlayIndex(null)
-		autoPlayStoppedRef.current = false
+		setHasInteracted(false)
 	}, [media])
 
+	useEffect(() => {
+		if (activeIndex >= items.length && items.length > 0) {
+			setActiveIndex(items.length - 1)
+		}
+	}, [items.length, activeIndex])
+
 	const activeItem = items[activeIndex] ?? null
-	const activeIsVideo = useMemo(() => isVideoMedia(activeItem), [activeItem])
-	const shouldAutoPlayVideo = useMemo(() => activeIsVideo && (canAutoPlay || (isVisible && manualPlayIndex === activeIndex)), [activeIsVideo, canAutoPlay, isVisible, manualPlayIndex])
+	const activeIsVideo = useMemo(() => isVideoMedia(activeItem as any), [activeItem])
+	const shouldAutoPlayVideo = useMemo(() => activeIsVideo && (canAutoPlay || (isVisible && manualPlayIndex === activeIndex)), [activeIsVideo, canAutoPlay, isVisible, manualPlayIndex, activeIndex])
 	const shouldLoopSingleVideo = useMemo(() => items.length === 1 && activeIsVideo && canAutoPlay, [items.length, activeIsVideo, canAutoPlay])
 
 	const advanceToNext = useCallback(() => {
-		if (autoPlayStoppedRef.current) return
+		if (hasInteracted) return
 		if (items.length <= 1) return
 		setActiveIndex((current) => (current + 1) % items.length)
-	}, [items.length])
+	}, [hasInteracted, items.length])
 
 	useEffect(() => {
 		if (!canAdvance || activeIsVideo) return
@@ -113,25 +170,21 @@ const CarouselCardComponent = ({
 
 	const selectIndex = useCallback(
 		(index: number) => {
-			const tappedIsVideo = isVideoMedia(items[index])
-			if (tappedIsVideo) {
-				setManualPlayIndex(index)
-			} else {
-				setManualPlayIndex(null)
-			}
-			autoPlayStoppedRef.current = true
+			const tappedIsVideo = isVideoMedia(items[index] as any)
+			setManualPlayIndex(tappedIsVideo ? index : null)
+			setHasInteracted(true)
 			setActiveIndex(index)
 		},
 		[items]
 	)
 
-	const uploadDisabled = uploading || !targetModelName || !targetModelId || items.length >= maxCount
+	const uploadDisabled = useMemo(() => internalUploading || !targetModelName || !targetModelId || items.length >= maxCount, [internalUploading, targetModelName, targetModelId, items.length, maxCount])
 	const isEditing = mode === 'edit'
 
 	const handleUpload = useCallback(async () => {
 		if (uploadDisabled || !targetModelName || !targetModelId) return
 		const remaining = Math.max(0, maxCount - items.length)
-		const picked = await pickMediaFiles({ mediaType: mediaType as any, multiple: true, maxCount: remaining })
+		const picked = await pickMediaFiles({ mediaType, multiple: true, maxCount: remaining })
 		if (picked.length === 0) return
 		setInternalUploading(true)
 		try {
@@ -174,22 +227,27 @@ const CarouselCardComponent = ({
 		(file: MediaFile) => {
 			if (onRemove) {
 				onRemove(file)
-			} else {
-				const next = items.filter((it) => it._id !== file._id)
-				onChange?.(next)
-				if (activeIndex >= next.length) {
-					setActiveIndex(Math.max(0, next.length - 1))
-				}
+				return
+			}
+			const next = items.filter((it) => it._id !== file._id)
+			onChange?.(next)
+			if (activeIndex >= next.length) {
+				setActiveIndex(Math.max(0, next.length - 1))
 			}
 		},
 		[items, activeIndex, onRemove, onChange]
 	)
 
-	const headerCount = (
-		<Text style={styles.count}>
-			{items.length}/{maxCount}
-		</Text>
+	const headerCount = useMemo(
+		() => (
+			<Text style={styles.count}>
+				{items.length}/{maxCount}
+			</Text>
+		),
+		[items.length, maxCount]
 	)
+
+	const showLimitHint = isEditing && items.length >= maxCount && !internalUploading
 
 	return (
 		<BaseCard
@@ -209,18 +267,16 @@ const CarouselCardComponent = ({
 			onCancel={onCancel}
 			loading={loading}
 		>
-			{/* Preview — tap to fullscreen */}
 			<View style={styles.preview}>
 				{activeItem ? (
 					<SmartMediaView
-						media={activeItem}
+						media={activeItem as any}
 						contentFit={contentFit}
-						style={StyleSheet.absoluteFill}
 						enableFullscreenPreview={mode !== 'edit'}
 						autoPlay={shouldAutoPlayVideo}
 						loop={shouldLoopSingleVideo}
 						onPlaybackEnd={isVisible && canAdvance && activeIsVideo ? advanceToNext : undefined}
-						controls={manualPlayIndex === activeIndex && activeIsVideo ? true : true}
+						controls
 						isVisible={isVisible}
 					/>
 				) : (
@@ -230,45 +286,35 @@ const CarouselCardComponent = ({
 				)}
 			</View>
 
-			{/* Thumbs — tap stops auto advance/play, except tapped video still plays */}
 			{items.length > 0 && (
 				<ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.strip} contentContainerStyle={styles.stripContent}>
-					{items.map((item, index) => {
-						const isActive = index === activeIndex
-						const isThumbVideo = isVideoMedia(item)
-						return (
-							<View key={(item as any)._id || index} style={[styles.thumbWrap, isActive && styles.thumbWrapActive]}>
-								<TouchableOpacity
-									onPress={() => selectIndex(index)}
-									style={[styles.thumbnail, isActive && styles.thumbnailActive]}
-									accessibilityRole="button"
-									accessibilityLabel={(item as any).name || (item as any).originalname || `Media ${index + 1}`}
-									disabled={isEditing && uploading}
-								>
-									{isThumbVideo ? (
-										<View style={[StyleSheet.absoluteFill, styles.videoThumbPlaceholder]}>
-											{(() => {
-												const poster = getVideoPosterUrl(item as any)
-												return poster ? <Image source={poster} style={StyleSheet.absoluteFill} contentFit="cover" cachePolicy="disk" /> : null
-											})()}
-											<View style={styles.videoThumbOverlay}>
-												<Ionicons name="play-circle" size={24} color={themeColors.buttonText} style={styles.videoThumbIcon} />
-											</View>
-										</View>
-									) : (
-										<SmartMediaView media={item} contentFit="cover" style={StyleSheet.absoluteFill} controls={false} isVisible={isVisible} />
-									)}
-								</TouchableOpacity>
-								{isEditing && <IconButton icon="close" label="Remove" onPress={() => handleRemove(item)} variant="danger" iconColor={themeColors.buttonText} size={20} style={styles.removeBadge} />}
-							</View>
-						)
-					})}
+					{items.map((item, index) => (
+						<ThumbItem
+							key={(item as any)._id || `idx-${index}`}
+							item={item}
+							index={index}
+							isActive={index === activeIndex}
+							isVisible={isVisible}
+							disabled={isEditing && internalUploading}
+							isEditing={isEditing}
+							onSelect={selectIndex}
+							onRemove={handleRemove}
+						/>
+					))}
 					{isEditing && (
-						<IconButton icon="camera-outline" label={uploading ? 'Uploading...' : 'Add media'} onPress={handleUpload} disabled={uploadDisabled} loading={uploading} size={56} style={styles.addThumb} />
+						<IconButton
+							icon="camera-outline"
+							label={internalUploading ? 'Uploading...' : 'Add media'}
+							onPress={handleUpload}
+							disabled={uploadDisabled}
+							loading={internalUploading}
+							size={56}
+							style={styles.addThumb}
+						/>
 					)}
 				</ScrollView>
 			)}
-			{isEditing && uploadDisabled && !uploading && items.length >= maxCount && <Text style={styles.limitHint}>Max {maxCount} files reached.</Text>}
+			{showLimitHint && <Text style={styles.limitHint}>Max {maxCount} files reached.</Text>}
 			{loading && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
 		</BaseCard>
 	)
@@ -293,11 +339,10 @@ const styles = StyleSheet.create({
 		color: themeColors.textSecondary
 	},
 	preview: {
-		width: '100%',
 		aspectRatio: 1,
-		backgroundColor: themeColors.background,
+		borderRadius: 12,
 		overflow: 'hidden',
-		borderRadius: 12
+		backgroundColor: themeColors.background
 	},
 	emptyPreview: {
 		justifyContent: 'center',
@@ -337,11 +382,11 @@ const styles = StyleSheet.create({
 		overflow: 'hidden'
 	},
 	videoThumbOverlay: {
-		...(StyleSheet.absoluteFill as object),
+		...StyleSheet.absoluteFill,
 		justifyContent: 'center',
 		alignItems: 'center',
 		backgroundColor: 'rgba(0,0,0,0.12)'
-	},
+	} as any,
 	videoThumbIcon: {
 		opacity: 0.95
 	},

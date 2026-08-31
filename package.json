@@ -1,6 +1,6 @@
 {
   "name": "drinaluza",
-  "version": "1.60.41",
+  "version": "1.60.42",
   "main": "expo-router/entry",
   "description": "Drinaluza, business manager app (mobile and web client)",
   "author": "Ahmed Derbala <derbala.ahmed531992@gmail.com>",
@@ -51,7 +51,8 @@
     "pushd": "npm run format && git add . && git commit -m",
     "postpushd": "git push && npm run build:apk-prod",
     "pull": "git pull origin main && npm run i && npm run dev",
-    "ncu": "npm-check-updates --peer -u"
+    "ncu": "npm-check-updates --peer -u",
+    "lint": "expo lint"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -99,6 +100,8 @@
   },
   "devDependencies": {
     "@types/react": "~19.2.18",
+    "eslint": "^9.0.0",
+    "eslint-config-expo": "~57.0.2",
     "expo-dev-client": "~57.0.16",
     "typescript": "~6.0.3"
   }
