@@ -19,7 +19,7 @@ import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
 import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 // ─── Breakpoints ────────────────────────────────────────────────────────────
 const BP = { mobile: 480, tablet: 768, desktop: 1024, wide: 1440 }
 // ─── Product Card ────────────────────────────────────────────────────────────

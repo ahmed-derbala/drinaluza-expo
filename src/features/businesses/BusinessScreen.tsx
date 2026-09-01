@@ -23,7 +23,7 @@ import ErrorBlock from '@/core/error/ErrorBlock'
 import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
 import { formatAddress } from '@/features/common/address'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import ReviewSection from '@/features/reviews/Reviews'
 import BusinessProductsCard from '@/features/businesses/BusinessProductsCard'
 export default function BusinessScreen() {

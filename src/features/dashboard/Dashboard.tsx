@@ -6,9 +6,9 @@ import { Ionicons } from '@expo/vector-icons'
 import { useTheme, ThemeColors } from '@/core/theme'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import { useUser } from '@/core/contexts/UserContext'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
-import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
+import { SmartTabs, SmartTabOption } from '@/core/smart-tabs'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { SmartMediaView } from '@/core/smart-media'
 import Spinner from '@/features/common/Spinner'
@@ -31,8 +31,8 @@ const Dashboard = () => {
 	const personalProfile = useMemo(() => profiles.find((p) => p.kind === 'personal') || null, [profiles])
 	const businessProfiles = useMemo(() => profiles.filter((p): p is Extract<DashboardProfile, { kind: 'business' }> => isBusinessDashboard(p)), [profiles])
 
-	const tabOptions = useMemo<FilterTabOption[]>(() => {
-		const options: FilterTabOption[] = []
+	const tabOptions = useMemo<SmartTabOption[]>(() => {
+		const options: SmartTabOption[] = []
 		if (personalProfile) {
 			options.push({ value: PERSONAL_TAB, label: localize(personalProfile.user.name) || translate('dashboard.personal', 'Personal'), iconName: 'person-outline' })
 		}
@@ -114,7 +114,7 @@ const Dashboard = () => {
 						subtitle: user ? `${translate('dashboard.welcome', 'Welcome back')}, ${localize(user.name)}` : translate('dashboard.welcome', 'Welcome back'),
 						headerLeft: () => null,
 						headerActions: headerActions,
-						headerBottom: <FilterTabs value={selectedTab} options={tabOptions} onChange={setSelectedTab} counts={counts} loading={isRefreshing || isInitialLoading} resetKey="dashboard-profiles" />,
+						headerBottom: <SmartTabs value={selectedTab} options={tabOptions} onChange={setSelectedTab} counts={counts} loading={isRefreshing || isInitialLoading} resetKey="dashboard-profiles" />,
 						headerBottomHeight: 48
 					} as any
 				}

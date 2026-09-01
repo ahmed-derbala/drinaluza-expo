@@ -11,14 +11,14 @@ import { useBackButton } from '@/core/hooks/useBackButton'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/orders/orders-statuses'
-import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
+import { SmartTabs, SmartTabOption } from '@/core/smart-tabs'
 import { OrderList } from '@/features/orders/components/OrderList'
 import SaleCard from './SaleCard'
 import { Sale } from './sales.api'
 import { usePaginatedSales } from './hooks/usePaginatedSales'
 import { useSalesCounts } from './hooks/useSalesCounts'
 
-const statusOptions: FilterTabOption[] = [
+const statusOptions: SmartTabOption[] = [
 	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
 	{
 		value: ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION,
@@ -166,7 +166,7 @@ export default function SalesScreen() {
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading }}
 				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading} />]}
 				headerBottom={
-					<FilterTabs
+					<SmartTabs
 						value={selectedStatus}
 						onChange={setSelectedStatus}
 						options={statusOptions}

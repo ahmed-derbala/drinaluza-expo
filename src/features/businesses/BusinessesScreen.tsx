@@ -9,7 +9,7 @@ import Spinner from '@/features/common/Spinner'
 import { useBusinesses } from '@/features/businesses/useBusinesses'
 import { Business } from '@/features/businesses/businesses.interface'
 import { useUser } from '@/core/contexts/UserContext'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import BusinessCard from './BusinessCard'
 

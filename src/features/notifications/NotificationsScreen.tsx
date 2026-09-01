@@ -15,7 +15,7 @@ import { NotificationItem } from './notifications.interface'
 import { NotificationCard } from './components/NotificationCard'
 import { useBackButton } from '@/core/hooks/useBackButton'
 import { log } from '@/core/log'
-import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
+import { SmartTabs, SmartTabOption } from '@/core/smart-tabs'
 const isValidFilter = (value: string | undefined): value is NotificationFilter => value === 'all' || value === 'seen' || value === 'unseen'
 export default function NotificationsScreen() {
 	const { colors } = useTheme()
@@ -108,7 +108,7 @@ export default function NotificationsScreen() {
 		[page1Response, page1Notifications, updateCache, setExtraNotifications, decrementNotificationCount, router]
 	)
 	const renderItem = useCallback(({ item }: { item: NotificationItem }) => <NotificationCard item={item} onPress={handleNotificationPress} />, [handleNotificationPress])
-	const filterOptions = useMemo<FilterTabOption[]>(
+	const filterOptions = useMemo<SmartTabOption[]>(
 		() => [
 			{ value: 'all', label: translate('all', 'All'), iconName: 'list' },
 			{ value: 'unseen', label: translate('unseen', 'Unseen'), iconName: 'mail-unread-outline' },
@@ -118,7 +118,7 @@ export default function NotificationsScreen() {
 	)
 	const headerBottom = useMemo(
 		() => (
-			<FilterTabs
+			<SmartTabs
 				value={filter}
 				options={filterOptions}
 				onChange={(value) => isValidFilter(value) && router.setParams({ filter: value })}

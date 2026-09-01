@@ -16,6 +16,8 @@ interface LayoutContextType {
 	setHeaderVisible: (visible: boolean) => void
 	headerHeight: number
 	setHeaderHeight: (height: number, routePath?: string) => void
+	isHeaderWithBottom: boolean
+	setHeaderWithBottom: (hasBottom: boolean) => void
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined)
@@ -24,6 +26,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 	const [isTabBarVisible, setTabBarVisible] = useState(true)
 	const [isSearchBarVisible, setSearchBarVisible] = useState(false)
 	const [isHeaderVisible, setHeaderVisible] = useState(true)
+	const [isHeaderWithBottom, setHeaderWithBottom] = useState(false)
 	const [headerHeights, setHeaderHeights] = useState<Record<string, number>>({})
 	const pathname = usePathname()
 	const insets = useSafeAreaInsets()
@@ -50,9 +53,11 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 			isHeaderVisible,
 			setHeaderVisible,
 			headerHeight: currentHeight,
-			setHeaderHeight
+			setHeaderHeight,
+			isHeaderWithBottom,
+			setHeaderWithBottom
 		}),
-		[isTabBarVisible, setTabBarVisible, isSearchBarVisible, setSearchBarVisible, isHeaderVisible, setHeaderVisible, currentHeight, setHeaderHeight]
+		[isTabBarVisible, setTabBarVisible, isSearchBarVisible, setSearchBarVisible, isHeaderVisible, setHeaderVisible, currentHeight, setHeaderHeight, isHeaderWithBottom, setHeaderWithBottom]
 	)
 
 	return <LayoutContext.Provider value={value}>{children}</LayoutContext.Provider>

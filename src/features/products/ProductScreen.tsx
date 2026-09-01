@@ -28,7 +28,7 @@ import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/sma
 import { SmartMediaView, deleteMediaFile } from '@/core/smart-media'
 import { CarouselCard } from '@/core/smart-media/carousel-card'
 import { toast } from '@/features/common/Toast'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import ReviewSection from '@/features/reviews/Reviews'
 import QRCodeModal from '@/features/common/QRCodeModal'
 import { config } from '@/config'

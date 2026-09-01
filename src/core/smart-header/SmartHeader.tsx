@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useMemo, useCallback } from 'react'
-import { StyleSheet, View, Platform, Animated, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
+import { StyleSheet, View, Platform, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
 import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
+import { scheduleOnUI } from 'react-native-worklets'
+import { useScrollHandler } from '@/core/scroll'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Href, usePathname } from 'expo-router'
 import { HeaderBackButton, HeaderIconButton, HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
@@ -70,7 +72,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	headerBottomHeight
 }) => {
 	const { colors } = useTheme()
-	const { isHeaderVisible, setHeaderVisible, setTabBarVisible, setHeaderHeight } = useLayout()
+	const { isHeaderVisible, setHeaderVisible, setTabBarVisible, setHeaderHeight, setHeaderWithBottom } = useLayout()
 	const insets = useSafeAreaInsets()
 	const pathname = usePathname()
 	const resolvedBottom = headerBottom ?? options?.headerBottom
@@ -85,16 +87,35 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 			setHeaderHeight(headerHeight, pathname)
 		}
 	}, [headerHeight, setHeaderHeight, pathname, navigation])
+	useEffect(() => {
+		const isFocused = typeof navigation?.isFocused === 'function' ? navigation.isFocused() : true
+		if (isFocused) {
+			setHeaderWithBottom(!!resolvedBottom)
+		}
+	}, [resolvedBottom, setHeaderWithBottom, navigation])
+	useEffect(() => {
+		return () => {
+			const isFocused = typeof navigation?.isFocused === 'function' ? navigation.isFocused() : true
+			if (isFocused) {
+				setHeaderWithBottom(false)
+			}
+		}
+	}, [navigation, setHeaderWithBottom])
 	// Ensure header and tab bar are visible on route changes to prevent hidden headers carrying over from previous screen scrolls
 	useEffect(() => {
 		setHeaderVisible(true)
 		setTabBarVisible(true)
 	}, [pathname, setHeaderVisible, setTabBarVisible])
-	const visibleAnim = useRef(new Animated.Value(1)).current
-	// Setup header hide/show instantly (no animation to prevent screen flickering/lag)
+	const headerTranslateY = useSharedValue(0)
+	const headerOpacity = useSharedValue(1)
 	useEffect(() => {
-		visibleAnim.setValue(isHeaderVisible ? 1 : 0)
-	}, [isHeaderVisible, visibleAnim])
+		headerTranslateY.value = withTiming(isHeaderVisible ? 0 : -headerHeight, { duration: 250 })
+		headerOpacity.value = withTiming(isHeaderVisible ? 1 : 0, { duration: 250 })
+	}, [isHeaderVisible, headerHeight, headerTranslateY, headerOpacity])
+	const animatedHeaderStyle = useAnimatedStyle(() => ({
+		transform: [{ translateY: headerTranslateY.value }],
+		opacity: headerOpacity.value
+	}))
 	const resolvedSubtitle = useMemo(() => subtitle ?? options?.subtitle, [subtitle, options?.subtitle])
 	// Resolve title
 	const resolvedTitle = useMemo(() => {
@@ -142,25 +163,16 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	// See `headerActionsConfig.tsx` for how these are merged with the default buttons.
 	const screenHeaderActions = useMemo(() => headerActions ?? options?.headerActions ?? [], [headerActions, options?.headerActions])
 	const titleSection = <HeaderTitle title={resolvedTitle} subtitle={resolvedSubtitle} />
-	const animatedOpacity = visibleAnim.interpolate({
-		inputRange: [0, 0.8, 1],
-		outputRange: [0, 0, 1]
-	})
-	const animatedTranslateY = visibleAnim.interpolate({
-		inputRange: [0, 1],
-		outputRange: [-headerHeight, 0]
-	})
 	return (
 		<Animated.View
 			style={[
 				styles.headerContainer,
 				{
 					height: headerHeight,
-					opacity: animatedOpacity,
-					transform: [{ translateY: animatedTranslateY }],
 					backgroundColor: colors.background,
 					overflow: isHeaderVisible ? 'visible' : 'hidden'
-				}
+				},
+				animatedHeaderStyle
 			]}
 		>
 			<View
@@ -192,15 +204,23 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 }
 SmartHeaderComponent.displayName = 'SmartHeader'
 // ----------------------------------------
-// 5. Reusable Scroll Wrappers that auto-hide the header and handle padding
+// 5. Reusable Scroll Wrappers that auto-hide the header and handle padding - Reanimated + Gesture-Handler enhanced
 // ----------------------------------------
+const ReanimatedFlashList =
+	Platform.OS === 'web' ? (ShopifyFlashList as unknown as typeof ShopifyFlashList) : (Animated.createAnimatedComponent(ShopifyFlashList) as unknown as typeof ShopifyFlashList)
+
 export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 	({ onScroll: customOnScroll, scrollEventThrottle = 16, contentContainerStyle, scrollIndicatorInsets, ...props }, ref) => {
 		const { onScroll } = useScrollHandler()
 		const { headerHeight } = useLayout()
 		const handleScroll = useCallback(
 			(event: any) => {
-				onScroll(event)
+				// Run header hide/show worklet on UI thread for 60fps, keep custom callback on JS
+				try {
+					scheduleOnUI(onScroll as any, event)
+				} catch {
+					;(onScroll as any)(event)
+				}
 				if (customOnScroll) {
 					customOnScroll(event)
 				}
@@ -208,9 +228,11 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 			[onScroll, customOnScroll]
 		)
 		const mergedContentContainerStyle = useMemo(() => {
-			const flattened = StyleSheet.flatten(contentContainerStyle) || {}
-			const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
-			return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
+			const flattened = StyleSheet.flatten(contentContainerStyle) as Record<string, unknown> | null
+			const base = (flattened as any) || {}
+			const customPaddingTop = typeof base.paddingTop === 'number' ? (base.paddingTop as number) : 0
+			// Flatten to single object — array causes web "CSSStyleDeclaration[0]" error in FlashList/ScrollView
+			return { ...base, paddingTop: headerHeight + customPaddingTop }
 		}, [headerHeight, contentContainerStyle])
 		const mergedScrollIndicatorInsets = useMemo(() => {
 			if (Platform.OS === 'web') return scrollIndicatorInsets
@@ -220,8 +242,8 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 			}
 		}, [headerHeight, scrollIndicatorInsets])
 		return (
-			<RNScrollView
-				ref={ref}
+			<Animated.ScrollView
+				ref={ref as any}
 				onScroll={handleScroll}
 				scrollEventThrottle={scrollEventThrottle}
 				contentContainerStyle={mergedContentContainerStyle}
@@ -237,7 +259,11 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 	const { headerHeight } = useLayout()
 	const handleScroll = useCallback(
 		(event: any) => {
-			onScroll(event)
+			try {
+				scheduleOnUI(onScroll as any, event)
+			} catch {
+				;(onScroll as any)(event)
+			}
 			if (customOnScroll) {
 				customOnScroll(event)
 			}
@@ -245,9 +271,10 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 		[onScroll, customOnScroll]
 	)
 	const mergedContentContainerStyle = useMemo(() => {
-		const flattened = StyleSheet.flatten(contentContainerStyle) || {}
-		const customPaddingTop = typeof flattened.paddingTop === 'number' ? flattened.paddingTop : 0
-		return [contentContainerStyle, { paddingTop: headerHeight + customPaddingTop }]
+		const flattened = StyleSheet.flatten(contentContainerStyle) as Record<string, unknown> | null
+		const base = (flattened as any) || {}
+		const customPaddingTop = typeof base.paddingTop === 'number' ? (base.paddingTop as number) : 0
+		return { ...base, paddingTop: headerHeight + customPaddingTop }
 	}, [headerHeight, contentContainerStyle])
 	const mergedScrollIndicatorInsets = useMemo(() => {
 		if (Platform.OS === 'web') return scrollIndicatorInsets
@@ -257,7 +284,7 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 		}
 	}, [headerHeight, scrollIndicatorInsets])
 	return (
-		<ShopifyFlashList
+		<ReanimatedFlashList
 			ref={ref}
 			onScroll={handleScroll}
 			scrollEventThrottle={scrollEventThrottle}

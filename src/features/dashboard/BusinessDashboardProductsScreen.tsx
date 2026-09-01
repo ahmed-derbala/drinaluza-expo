@@ -7,7 +7,7 @@ import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 const FlashList = ShopifyFlashList as any
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'

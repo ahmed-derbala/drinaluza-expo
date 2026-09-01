@@ -2,16 +2,14 @@ import { useMemo, useCallback, useState, useRef, useEffect } from 'react'
 import { View, StyleSheet } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, Stack, useNavigation, useLocalSearchParams, useRouter } from 'expo-router'
-
 import { HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { useTheme, themeColors } from '@/core/theme'
 import { useBackButton } from '@/core/hooks/useBackButton'
-
 import { useUser } from '@/core/contexts'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
 import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/orders/orders-statuses'
-import { FilterTabs, FilterTabOption } from '@/features/common/FilterTabs'
+import { SmartTabs, SmartTabOption } from '@/core/smart-tabs'
 import { OrderList } from '@/features/orders/components/OrderList'
 import { PurchaseCard } from './PurchaseCard'
 import { CartGroupCard, BusinessCartGroup } from '@/features/orders/components/CartGroupCard'
@@ -24,7 +22,7 @@ import CheckoutConfirmationModal from './components/CheckoutConfirmationModal'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 
-const statusOptions: FilterTabOption[] = [
+const statusOptions: SmartTabOption[] = [
 	{ value: 'cart', label: 'Cart', iconName: orderStatusIcons.cart },
 	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
 	{
@@ -302,13 +300,13 @@ export default function PurchasesScreen() {
 			<SmartHeader
 				navigation={navigation}
 				title={translate('purchases_title', 'Purchases')}
-				subtitle={itemCount > 0 ? `${itemCount} ${itemCount === 1 ? translate('item', 'item') : translate('items', 'items')}` : undefined}
+				subtitle={itemCount > 0 ? String(itemCount) : undefined}
 				back={navigation.canGoBack() ? { title: 'Back' } : undefined}
 				headerBottomHeight={52}
 				options={{ onRefresh: handleRefresh, isRefreshing: isRefreshing || countsLoading || isCheckingOut }}
 				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading || isCheckingOut} />]}
 				headerBottom={
-					<FilterTabs
+					<SmartTabs
 						value={selectedStatus}
 						onChange={setSelectedStatus}
 						options={statusOptions}

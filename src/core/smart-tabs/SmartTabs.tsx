@@ -1,20 +1,18 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { LayoutRectangle, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
-
 import { Ionicons } from '@expo/vector-icons'
 import Spinner from '@/features/common/Spinner'
-
 import { useTheme } from '@/core/theme'
 
-export interface FilterTabOption {
+export interface SmartTabOption {
 	value: string
 	label: string
 	iconName?: string
 }
 
-interface FilterTabsProps {
+interface SmartTabsProps {
 	value: string
-	options: FilterTabOption[]
+	options: SmartTabOption[]
 	onChange: (value: string) => void
 	counts?: Record<string, number>
 	activeCount?: number
@@ -23,7 +21,7 @@ interface FilterTabsProps {
 	testID?: string
 }
 
-export const FilterTabs = React.memo(function FilterTabs({ value, options, onChange, counts, activeCount, resetKey, loading, testID }: FilterTabsProps) {
+export const SmartTabs = React.memo(function SmartTabs({ value, options, onChange, counts, activeCount, resetKey, loading, testID }: SmartTabsProps) {
 	const { colors } = useTheme()
 	const scrollViewRef = useRef<ScrollView>(null)
 	const [containerWidth, setContainerWidth] = useState(0)

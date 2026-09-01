@@ -9,7 +9,7 @@ import { HeaderCreateProductButton, HeaderQRCodeButton, HeaderRefreshButton, Hea
 import Spinner from '@/features/common/Spinner'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import { useUser } from '@/core/contexts/UserContext'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import { SmartMediaView } from '@/core/smart-media'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { IconButton } from '@/features/common/buttons/IconButton'

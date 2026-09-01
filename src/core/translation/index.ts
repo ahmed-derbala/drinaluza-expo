@@ -1,7 +1,7 @@
 import { en } from './en'
 import { tn_latn } from './tn_latn'
 import { tn_arab } from './tn_arab'
-type LanguageCode = 'en' | 'tn_latn' | 'tn_arab'
+
 const translations: Record<string, Record<string, string>> = {
 	en,
 	tn_latn,
@@ -11,7 +11,6 @@ let currentAppLang = 'en'
 export const setGlobalAppLang = (lang: string) => {
 	currentAppLang = lang
 }
-const getGlobalAppLang = () => currentAppLang
 export const translate = (key: string, defaultText?: string, lang?: string): string => {
 	// e.g. "en-US" -> "en"
 	let targetLang = (lang || currentAppLang).split('-')[0].toLowerCase()

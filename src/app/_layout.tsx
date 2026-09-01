@@ -2,6 +2,7 @@ import { Stack, usePathname, Redirect, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, Platform, StyleSheet } from 'react-native'
+import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useUpdates, isVersionGreater, UpdateCheckResult } from '@/features/updates'
 import { config } from '@/config'
 import { getItem, setItem } from '@/core/storage'
@@ -243,28 +244,30 @@ export function ErrorBoundary({ error, retry }: { error: Error & { digest?: stri
 
 export default function RootLayout() {
 	return (
-		<SafeAreaProvider>
-			<AppThemeProvider>
-				<MediaSettingsProvider>
-					<UpdatesProvider>
-						<SmartKebabMenuProvider>
-							<ToastProvider>
-								<UserProvider>
-									<NotificationProvider>
-										<BackendConnectionProvider>
-											<SocketProvider>
-												<LayoutProvider>
-													<RootLayoutContent />
-												</LayoutProvider>
-											</SocketProvider>
-										</BackendConnectionProvider>
-									</NotificationProvider>
-								</UserProvider>
-							</ToastProvider>
-						</SmartKebabMenuProvider>
-					</UpdatesProvider>
-				</MediaSettingsProvider>
-			</AppThemeProvider>
-		</SafeAreaProvider>
+		<GestureHandlerRootView style={{ flex: 1 }}>
+			<SafeAreaProvider>
+				<AppThemeProvider>
+					<MediaSettingsProvider>
+						<UpdatesProvider>
+							<SmartKebabMenuProvider>
+								<ToastProvider>
+									<UserProvider>
+										<NotificationProvider>
+											<BackendConnectionProvider>
+												<SocketProvider>
+													<LayoutProvider>
+														<RootLayoutContent />
+													</LayoutProvider>
+												</SocketProvider>
+											</BackendConnectionProvider>
+										</NotificationProvider>
+									</UserProvider>
+								</ToastProvider>
+							</SmartKebabMenuProvider>
+						</UpdatesProvider>
+					</MediaSettingsProvider>
+				</AppThemeProvider>
+			</SafeAreaProvider>
+		</GestureHandlerRootView>
 	)
 }

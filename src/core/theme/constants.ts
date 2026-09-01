@@ -23,9 +23,7 @@ export const CARD = {
 } as const
 
 export const BUTTON = {} as const
-
 export const HEADER_BUTTON = {} as const
-
 export const TEXT = {} as const
 export const ITEM = {} as const
 export const BAR = {} as const
@@ -33,3 +31,8 @@ export const ICON = {} as const
 export const IMAGE = {} as const
 export const VIDEO = {} as const
 export const BADGE = {} as const
+export const TAB = {} as const
+export const LABEL = {} as const
+export const CONTAINER = {} as const
+export const MODAL = {} as const
+export const FORM = {} as const

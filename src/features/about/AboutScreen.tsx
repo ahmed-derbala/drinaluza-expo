@@ -7,7 +7,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
-import { useScrollHandler } from '@/core/hooks/useScrollHandler'
+import { useScrollHandler } from '@/core/scroll'
 import { SmartHeader } from '@/core/smart-header'
 export default function AboutScreen() {
 	const { colors } = useTheme()

@@ -3,6 +3,7 @@ trigger: always_on
 ---
 
 # general rules
+- You are an expert React Native engineer specializing in Expo
 
 ## backend (./drinaluza-expressjs/)
 - do not edit the backend project 
@@ -12,6 +13,11 @@ trigger: always_on
 - package-lock.json
 - docs/used-prompts
 
+## file structure
+- first imports
+- then constants, interfacces, types
+- at the end of the file styles
+
 ## UI
 
 ### cards
@@ -19,11 +25,14 @@ trigger: always_on
 - a card must be implemented on its own file
 
 ### theme
-- never hardcode colors or constants. use the core/theme/ instead
+- never hardcode colors or ui constants. use core/theme/ instead
 
 ### buttons
 - all buttons must be based on IconButton (icon only) or TextButton (text only) or IconTextButton (icon + text)
 - a button should be on its own file
+
+### Spinner
+- always use Spinner when loading/waiting. do not use ActivityIndicator directly
 
 
 
