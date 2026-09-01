@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useMemo, useCallback } from 'react'
 import { StyleSheet, View, Platform, ScrollView as RNScrollView, ScrollViewProps } from 'react-native'
 import { FlashList as ShopifyFlashList, FlashListProps } from '@shopify/flash-list'
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated'
-import { scheduleOnUI } from 'react-native-worklets'
 import { useScrollHandler } from '@/core/scroll'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Href, usePathname } from 'expo-router'
@@ -106,16 +105,20 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 		setHeaderVisible(true)
 		setTabBarVisible(true)
 	}, [pathname, setHeaderVisible, setTabBarVisible])
+	const isWebHeader = Platform.OS === 'web'
 	const headerTranslateY = useSharedValue(0)
 	const headerOpacity = useSharedValue(1)
 	useEffect(() => {
+		if (isWebHeader) return
 		headerTranslateY.value = withTiming(isHeaderVisible ? 0 : -headerHeight, { duration: 250 })
 		headerOpacity.value = withTiming(isHeaderVisible ? 1 : 0, { duration: 250 })
-	}, [isHeaderVisible, headerHeight, headerTranslateY, headerOpacity])
+	}, [isHeaderVisible, headerHeight, headerTranslateY, headerOpacity, isWebHeader])
 	const animatedHeaderStyle = useAnimatedStyle(() => ({
 		transform: [{ translateY: headerTranslateY.value }],
 		opacity: headerOpacity.value
 	}))
+	const HeaderView: any = isWebHeader ? View : Animated.View
+	const headerAnimatedStyle = isWebHeader ? { opacity: isHeaderVisible ? 1 : 0, transform: [{ translateY: isHeaderVisible ? 0 : -headerHeight }] as any } : animatedHeaderStyle
 	const resolvedSubtitle = useMemo(() => subtitle ?? options?.subtitle, [subtitle, options?.subtitle])
 	// Resolve title
 	const resolvedTitle = useMemo(() => {
@@ -164,7 +167,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 	const screenHeaderActions = useMemo(() => headerActions ?? options?.headerActions ?? [], [headerActions, options?.headerActions])
 	const titleSection = <HeaderTitle title={resolvedTitle} subtitle={resolvedSubtitle} />
 	return (
-		<Animated.View
+		<HeaderView
 			style={[
 				styles.headerContainer,
 				{
@@ -172,7 +175,7 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 					backgroundColor: colors.background,
 					overflow: isHeaderVisible ? 'visible' : 'hidden'
 				},
-				animatedHeaderStyle
+				headerAnimatedStyle as any
 			]}
 		>
 			<View
@@ -199,13 +202,14 @@ const SmartHeaderComponent: React.FC<SmartHeaderProps> = ({
 				{/* Custom Bottom Content (e.g. status filter bar in sales screen) */}
 				{resolvedBottom && <View style={{ height: resolvedBottomHeight, width: '100%' }}>{resolvedBottom}</View>}
 			</View>
-		</Animated.View>
+		</HeaderView>
 	)
 }
 SmartHeaderComponent.displayName = 'SmartHeader'
 // ----------------------------------------
 // 5. Reusable Scroll Wrappers that auto-hide the header and handle padding - Reanimated + Gesture-Handler enhanced
 // ----------------------------------------
+const ReanimatedScrollView: any = Platform.OS === 'web' ? RNScrollView : Animated.ScrollView
 const ReanimatedFlashList =
 	Platform.OS === 'web' ? (ShopifyFlashList as unknown as typeof ShopifyFlashList) : (Animated.createAnimatedComponent(ShopifyFlashList) as unknown as typeof ShopifyFlashList)
 
@@ -215,12 +219,7 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 		const { headerHeight } = useLayout()
 		const handleScroll = useCallback(
 			(event: any) => {
-				// Run header hide/show worklet on UI thread for 60fps, keep custom callback on JS
-				try {
-					scheduleOnUI(onScroll as any, event)
-				} catch {
-					;(onScroll as any)(event)
-				}
+				onScroll(event)
 				if (customOnScroll) {
 					customOnScroll(event)
 				}
@@ -242,7 +241,7 @@ export const SmartScrollView = React.forwardRef<RNScrollView, ScrollViewProps>(
 			}
 		}, [headerHeight, scrollIndicatorInsets])
 		return (
-			<Animated.ScrollView
+			<ReanimatedScrollView
 				ref={ref as any}
 				onScroll={handleScroll}
 				scrollEventThrottle={scrollEventThrottle}
@@ -259,11 +258,7 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 	const { headerHeight } = useLayout()
 	const handleScroll = useCallback(
 		(event: any) => {
-			try {
-				scheduleOnUI(onScroll as any, event)
-			} catch {
-				;(onScroll as any)(event)
-			}
+			onScroll(event)
 			if (customOnScroll) {
 				customOnScroll(event)
 			}

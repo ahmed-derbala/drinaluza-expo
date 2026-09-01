@@ -27,6 +27,7 @@ export interface CarouselCardProps {
 	mode?: 'view' | 'editable' | 'edit'
 	size?: CardSize
 	style?: StyleProp<ViewStyle>
+	previewHeight?: number
 	loading?: boolean
 	autoPlay?: boolean
 	isVisible?: boolean
@@ -115,6 +116,7 @@ const CarouselCardComponent = ({
 	mode = 'view',
 	size = 'md',
 	style,
+	previewHeight,
 	loading = false,
 	autoPlay = true,
 	isVisible = true,
@@ -267,7 +269,7 @@ const CarouselCardComponent = ({
 			onCancel={onCancel}
 			loading={loading}
 		>
-			<View style={styles.preview}>
+			<View style={[styles.preview, previewHeight ? ({ height: previewHeight, aspectRatio: undefined } as any) : null]}>
 				{activeItem ? (
 					<SmartMediaView
 						media={activeItem as any}

@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, type StyleProp, type ViewStyle } from 'react-native'
+import { View, Text, StyleSheet, useWindowDimensions, Platform, type StyleProp, type ViewStyle } from 'react-native'
 import { SmartMediaCarousel } from '@/core/smart-media'
 import type { MediaField } from '@/core/smart-media/types'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
@@ -15,6 +15,7 @@ import { AddToCartButton } from '@/features/common/buttons/AddToCartButton'
 import { QuantityStepper } from '@/features/common/QuantityStepper'
 import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
+import { CARD } from '@/core/theme/constants'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
 import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
@@ -253,22 +254,14 @@ export default FeedProductCard
 const styles = StyleSheet.create({
 	card: {
 		flex: 1,
+		height: '100%',
 		position: 'relative',
-		borderRadius: 20,
-		borderWidth: 1,
+		borderRadius: CARD.borderRadius,
+		borderWidth: CARD.borderWidth,
 		borderColor: themeColors.border,
 		overflow: 'hidden',
 		justifyContent: 'space-between',
-		minHeight: 340,
-		zIndex: 0,
-		...Platform.select({
-			web: {
-				overflow: 'hidden',
-				// Create stacking context so borderRadius correctly clips absolute VideoView on web
-				isolation: 'isolate' as any,
-				transform: 'translateZ(0)' as any
-			} as any
-		})
+		zIndex: 0
 	},
 	contactButtonsSide: {
 		position: 'absolute',
@@ -283,15 +276,8 @@ const styles = StyleSheet.create({
 		right: 0,
 		bottom: 0,
 		overflow: 'hidden',
-		borderRadius: 20,
-		zIndex: 0,
-		...Platform.select({
-			web: {
-				overflow: 'hidden',
-				isolation: 'isolate' as any,
-				transform: 'translateZ(0)' as any
-			} as any
-		})
+		borderRadius: CARD.borderRadius,
+		zIndex: 0
 	},
 	bgImage: {
 		width: '100%',

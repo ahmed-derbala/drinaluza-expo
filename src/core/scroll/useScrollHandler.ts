@@ -88,73 +88,56 @@ export const useScrollHandler = (
 	)
 
 	// Core logic as worklet — used by both native animated handler and web document listener
-	const handleOffsetWorklet = useCallback(
-		(y: number) => {
-			'use worklet'
-			if (enabledSV.value === 0) {
-				lastOffsetSV.value = y
-				return
+	const handleOffsetWorklet = (y: number) => {
+		'use worklet'
+		if (enabledSV.value === 0) {
+			lastOffsetSV.value = y
+			return
+		}
+		if (typeof y !== 'number' || !Number.isFinite(y)) {
+			lastOffsetSV.value = y
+			return
+		}
+		const now = performance.now()
+		if (y <= TOP_SNAP_OFFSET) {
+			if (isTabBarVisibleSV.value === 0 || isHeaderVisibleSV.value === 0) {
+				scheduleOnRN(showFromWorklet)
 			}
-			if (typeof y !== 'number' || !Number.isFinite(y)) {
-				lastOffsetSV.value = y
-				return
-			}
-			const now = performance.now()
-			if (y <= TOP_SNAP_OFFSET) {
+			accumulatedSV.value = 0
+			lastOffsetSV.value = y
+			lastDirectionSV.value = 0
+			return
+		}
+		const timeSince = now - lastToggleTimeSV.value
+		if (timeSince < debounceSV.value) {
+			lastOffsetSV.value = y
+			accumulatedSV.value = 0
+			return
+		}
+		const diff = y - lastOffsetSV.value
+		const dir = diff > 0 ? 1 : diff < 0 ? -1 : 0
+		if (dir !== 0 && dir !== lastDirectionSV.value) {
+			accumulatedSV.value = 0
+			lastDirectionSV.value = dir as 0 | 1 | -1
+		}
+		if (dir !== 0) accumulatedSV.value += Math.abs(diff)
+		if (timeSince >= debounceSV.value) {
+			if (lastDirectionSV.value === 1 && accumulatedSV.value >= thresholdSV.value) {
+				const hideHeader = isHeaderVisibleSV.value === 1 && isHeaderWithBottomSV.value === 0
+				const shouldHideTab = isTabBarVisibleSV.value === 1
+				if (shouldHideTab || hideHeader) {
+					scheduleOnRN(hideFromWorklet, hideHeader)
+					accumulatedSV.value = 0
+				}
+			} else if (lastDirectionSV.value === -1 && accumulatedSV.value >= upThresholdSV.value) {
 				if (isTabBarVisibleSV.value === 0 || isHeaderVisibleSV.value === 0) {
 					scheduleOnRN(showFromWorklet)
-				}
-				accumulatedSV.value = 0
-				lastOffsetSV.value = y
-				lastDirectionSV.value = 0
-				return
-			}
-			const timeSince = now - lastToggleTimeSV.value
-			if (timeSince < debounceSV.value) {
-				lastOffsetSV.value = y
-				accumulatedSV.value = 0
-				return
-			}
-			const diff = y - lastOffsetSV.value
-			const dir = diff > 0 ? 1 : diff < 0 ? -1 : 0
-			if (dir !== 0 && dir !== lastDirectionSV.value) {
-				accumulatedSV.value = 0
-				lastDirectionSV.value = dir as 0 | 1 | -1
-			}
-			if (dir !== 0) accumulatedSV.value += Math.abs(diff)
-			if (timeSince >= debounceSV.value) {
-				if (lastDirectionSV.value === 1 && accumulatedSV.value >= thresholdSV.value) {
-					const hideHeader = isHeaderVisibleSV.value === 1 && isHeaderWithBottomSV.value === 0
-					const shouldHideTab = isTabBarVisibleSV.value === 1
-					if (shouldHideTab || hideHeader) {
-						scheduleOnRN(hideFromWorklet, hideHeader)
-						accumulatedSV.value = 0
-					}
-				} else if (lastDirectionSV.value === -1 && accumulatedSV.value >= upThresholdSV.value) {
-					if (isTabBarVisibleSV.value === 0 || isHeaderVisibleSV.value === 0) {
-						scheduleOnRN(showFromWorklet)
-						accumulatedSV.value = 0
-					}
+					accumulatedSV.value = 0
 				}
 			}
-			lastOffsetSV.value = y
-		},
-		[
-			showFromWorklet,
-			hideFromWorklet,
-			lastOffsetSV,
-			accumulatedSV,
-			lastDirectionSV,
-			lastToggleTimeSV,
-			enabledSV,
-			isHeaderVisibleSV,
-			isTabBarVisibleSV,
-			isHeaderWithBottomSV,
-			thresholdSV,
-			debounceSV,
-			upThresholdSV
-		]
-	)
+		}
+		lastOffsetSV.value = y
+	}
 
 	const animatedScrollHandler = useAnimatedScrollHandler(
 		{
@@ -194,10 +177,19 @@ export const useScrollHandler = (
 		return () => document.removeEventListener('scroll', handleWebScroll, { capture: true } as EventListenerOptions)
 	}, [handleOffsetWorklet])
 
+	const onScroll = useCallback(
+		(event: any) => {
+			const y = event?.nativeEvent?.contentOffset?.y ?? event?.contentOffset?.y
+			if (!isValidOffset(y)) return
+			scheduleOnUI(handleOffsetWorklet, y as number)
+		},
+		[handleOffsetWorklet]
+	)
+
 	return {
 		/** Pass to Reanimated components (<AnimatedFlashList />, <Animated.ScrollView />) */
 		animatedScrollHandler,
 		/** Pass to standard components (<FlashList />, <ScrollView />, <FlatList />) */
-		onScroll: animatedScrollHandler as unknown as (event: any) => void
+		onScroll
 	}
 }

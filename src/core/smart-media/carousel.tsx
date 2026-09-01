@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollView, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
+import { CARD } from '@/core/theme/constants'
 import { getMediaUrl, isVideoMedia, type MediaField, type MediaFile } from './types'
 import SmartMediaView from './view'
 import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
@@ -139,7 +140,7 @@ const SmartMediaCarouselComponent = ({
 			setActiveIndex(index)
 			onIndexChange?.(index)
 		},
-		[onIndexChange]
+		[items, onIndexChange]
 	)
 
 	if (items.length === 0) {
@@ -206,9 +207,15 @@ const styles = StyleSheet.create({
 		overflow: 'hidden'
 	},
 	containerOverlay: {
-		flex: 1,
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
+		width: '100%',
+		height: '100%',
 		overflow: 'hidden',
-		borderRadius: 20
+		borderRadius: CARD.borderRadius
 	},
 	preview: {
 		width: '100%',
@@ -217,12 +224,16 @@ const styles = StyleSheet.create({
 		overflow: 'hidden'
 	},
 	previewOverlay: {
-		flex: 1,
-		aspectRatio: undefined,
+		position: 'absolute',
+		top: 0,
+		left: 0,
+		right: 0,
+		bottom: 0,
 		width: '100%',
 		height: '100%',
+		aspectRatio: undefined as any,
 		overflow: 'hidden',
-		borderRadius: 20
+		borderRadius: CARD.borderRadius
 	},
 	strip: {
 		marginTop: 8

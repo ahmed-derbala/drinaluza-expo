@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, AppState } from 'react-native'
+import { View, Text, StyleSheet, RefreshControl, TouchableOpacity, useWindowDimensions, AppState, Platform } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack, useFocusEffect } from 'expo-router'
 import { getItem, setItem } from '@/core/storage'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
+import { CARD, getCarouselPreviewHeight, getResponsiveCardHeight } from '@/core/theme/constants'
 import { useUser } from '@/core/contexts/UserContext'
 import { useLayout } from '@/core/contexts/LayoutContext'
+import { isWeb } from '@/core/platform'
 import { updateProduct } from '@/features/products/products.api'
 import { useProductBySlug } from './useProductBySlug'
 import { ProductType, FileRef } from '@/features/products/products.type'
@@ -38,7 +40,7 @@ export default function ProductScreen() {
 	const { colors } = useTheme()
 	const { localize, translate, currency, formatPrice, user } = useUser()
 	const { onScroll } = useScrollHandler()
-	const { setTabBarVisible } = useLayout()
+	const { setTabBarVisible, headerHeight } = useLayout()
 	const { width, height } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
 	const [isScreenFocused, setIsScreenFocused] = useState(true)
@@ -108,8 +110,17 @@ export default function ProductScreen() {
 	const [originCountry, setOriginCountry] = useState('')
 	const [gear, setGear] = useState<'trap' | 'gillnet' | undefined>(undefined)
 	const displayTitle = product ? localize(product.name) : ''
-	const isLargeScreen = width > 800 && height > 600
+	const isWide = width >= 900 || (width > height && width >= 700)
+	const isLargeScreen = isWide
 	const canEditProduct = viewer ? viewer.canEdit === true : false
+	const carouselMaxHeight = useMemo(() => {
+		if (!isLargeScreen) return undefined
+		return getResponsiveCardHeight(height, 56, insets.top, insets.bottom)
+	}, [isLargeScreen, height, insets.top, insets.bottom])
+	const carouselPreviewHeight = useMemo(() => {
+		if (!isLargeScreen || !carouselMaxHeight) return undefined
+		return getCarouselPreviewHeight(carouselMaxHeight)
+	}, [isLargeScreen, carouselMaxHeight])
 	const syncProductToState = useCallback((prod: ProductType) => {
 		setNameEn(prod.name?.en || '')
 		setNameTnLatn(prod.name?.tn_latn || '')
@@ -425,6 +436,28 @@ export default function ProductScreen() {
 		}
 		return list
 	}, [product])
+	const renderMediaCarousel = useCallback(() => {
+		if (!product) return null
+		return (
+			<CarouselCard
+				media={carouselMedia as any}
+				targetModelName="products"
+				targetModelId={product._id}
+				title={translate('media', 'Media')}
+				mode={canEditProduct ? (editMode.gallery ? 'edit' : 'editable') : 'view'}
+				onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
+				onSave={saveGallery}
+				onCancel={cancelGallery}
+				onChange={(next) => setUploadedGallery(next as any)}
+				onRemove={handleRemoveGalleryItem}
+				loading={saving}
+				isVisible={isScreenFocused}
+				style={isLargeScreen && carouselMaxHeight ? ({ maxHeight: carouselMaxHeight, height: carouselMaxHeight } as any) : undefined}
+				previewHeight={carouselPreviewHeight}
+			/>
+		)
+	}, [carouselMedia, product?._id, canEditProduct, editMode.gallery, saveGallery, cancelGallery, saving, isScreenFocused, isLargeScreen, carouselMaxHeight, carouselPreviewHeight, translate])
+
 	if (isInitialLoading && !product) {
 		return (
 			<View key={productSlug} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -445,22 +478,6 @@ export default function ProductScreen() {
 	const priceTotal = product.price.total
 	const unitPrice = (priceTotal[currency as keyof typeof priceTotal] as number | null | undefined) || priceTotal.tnd || 0
 	const isAvailable = product.stock.quantity > 0 && product.state?.code === 'active'
-	const renderMediaCarousel = () => (
-		<CarouselCard
-			media={carouselMedia as any}
-			targetModelName="products"
-			targetModelId={product._id}
-			title={translate('media', 'Media')}
-			mode={canEditProduct ? (editMode.gallery ? 'edit' : 'editable') : 'view'}
-			onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
-			onSave={saveGallery}
-			onCancel={cancelGallery}
-			onChange={(next) => setUploadedGallery(next as any)}
-			onRemove={handleRemoveGalleryItem}
-			loading={saving}
-			isVisible={isScreenFocused}
-		/>
-	)
 	const renderInfoCard = () => (
 		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
 			{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
@@ -655,35 +672,70 @@ export default function ProductScreen() {
 					} as any
 				}
 			/>
-			<SmartHeader.ScrollView
-				style={styles.container}
-				contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom }]}
-				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
-				onScroll={onScroll}
-				scrollEventThrottle={16}
-				keyboardShouldPersistTaps="handled"
-				showsVerticalScrollIndicator={false}
-			>
-				{isLargeScreen ? (
-					<View style={styles.splitLayoutContainer}>
-						<View style={styles.leftColumn}>
-							{renderMediaCarousel()}
-							{renderMetadata()}
+			{isLargeScreen ? (
+				isWeb ? (
+					<SmartHeader.ScrollView
+						style={styles.container}
+						contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom }]}
+						refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+						onScroll={onScroll}
+						scrollEventThrottle={16}
+						keyboardShouldPersistTaps="handled"
+						showsVerticalScrollIndicator={false}
+					>
+						<View style={styles.splitLayoutContainer}>
+							<View
+								style={[styles.leftColumn, { position: 'sticky' as any, top: headerHeight + 16, alignSelf: 'flex-start', height: 'fit-content' as any, maxHeight: carouselMaxHeight as any } as any]}
+							>
+								{renderMediaCarousel()}
+							</View>
+							<View style={styles.rightColumn}>
+								{renderInfoCard()}
+								{renderMetadata()}
+								{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
+							</View>
 						</View>
-						<View style={styles.rightColumn}>
-							{renderInfoCard()}
-							{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
-						</View>
-					</View>
+					</SmartHeader.ScrollView>
 				) : (
+					<View style={styles.splitFixedContainer}>
+						<View style={[styles.leftFixed, { paddingTop: headerHeight + 16, height: carouselMaxHeight as any, maxHeight: carouselMaxHeight as any }]}>
+							<View style={styles.leftFixedInner}>{renderMediaCarousel()}</View>
+						</View>
+						<SmartHeader.ScrollView
+							style={styles.rightScroll}
+							contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom, maxWidth: undefined, alignSelf: 'stretch', width: '100%' }]}
+							refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+							onScroll={onScroll}
+							scrollEventThrottle={16}
+							keyboardShouldPersistTaps="handled"
+							showsVerticalScrollIndicator={false}
+						>
+							<View style={styles.rightColumn}>
+								{renderInfoCard()}
+								{renderMetadata()}
+								{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
+							</View>
+						</SmartHeader.ScrollView>
+					</View>
+				)
+			) : (
+				<SmartHeader.ScrollView
+					style={styles.container}
+					contentContainerStyle={[styles.scrollContent, { paddingTop: 16, paddingBottom: 40 + insets.bottom }]}
+					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+					onScroll={onScroll}
+					scrollEventThrottle={16}
+					keyboardShouldPersistTaps="handled"
+					showsVerticalScrollIndicator={false}
+				>
 					<View style={styles.mobileLayoutContainer}>
 						{renderMediaCarousel()}
 						{renderInfoCard()}
 						{renderMetadata()}
 						{product._id && <ReviewSection targetResource="products" targetId={product._id} targetName={localize(product.name)} />}
 					</View>
-				)}
-			</SmartHeader.ScrollView>
+				</SmartHeader.ScrollView>
+			)}
 			{product && (
 				<QRCodeModal
 					visible={showQRCode}
@@ -712,6 +764,29 @@ const styles = StyleSheet.create({
 		width: '100%',
 		gap: 24,
 		marginTop: 8
+	},
+	splitFixedContainer: {
+		flex: 1,
+		flexDirection: 'row',
+		width: '100%',
+		maxWidth: 1200,
+		alignSelf: 'center',
+		gap: 24,
+		paddingHorizontal: 16,
+		paddingTop: 8
+	},
+	leftFixed: {
+		width: 380,
+		maxWidth: 480,
+		flex: 0.9,
+		alignSelf: 'flex-start'
+	},
+	leftFixedInner: {
+		width: '100%',
+		height: '100%'
+	},
+	rightScroll: {
+		flex: 1.1
 	},
 	leftColumn: {
 		flex: 1.1,

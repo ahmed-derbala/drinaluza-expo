@@ -157,6 +157,12 @@ function RootLayoutContent() {
 	const isAuthenticated = !!user
 	const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
 
+	useEffect(() => {
+		if (isRestrictedRoute && !loading && !isAuthenticated) {
+			router.replace('/auth')
+		}
+	}, [isRestrictedRoute, loading, isAuthenticated, router])
+
 	// Prioritize feed display: only block restricted routes while user is still loading.
 	// Public routes (/feed, /search, /auth, etc.) render immediately with cached data.
 	if (isRestrictedRoute) {
@@ -164,7 +170,7 @@ function RootLayoutContent() {
 			return <Spinner />
 		}
 		if (!isAuthenticated) {
-			return <Redirect href="/auth" />
+			return <Spinner />
 		}
 	}
 
