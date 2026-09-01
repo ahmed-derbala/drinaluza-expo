@@ -51,7 +51,8 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		alignItems: 'center',
 		gap: 8,
-		flex: 1
+		alignSelf: 'flex-start',
+		maxWidth: '100%'
 	},
 	thumbnailWrap: {
 		overflow: 'hidden',
@@ -77,7 +78,7 @@ const styles = StyleSheet.create({
 		fontWeight: '700',
 		color: themeColors.buttonText,
 		textAlign: 'left',
-		flex: 1,
+		flexShrink: 1,
 		lineHeight: 18,
 		includeFontPadding: false
 	}

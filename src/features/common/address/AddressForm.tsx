@@ -4,7 +4,7 @@ import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { Ionicons } from '@expo/vector-icons'
 import type { MultiLang } from './address.interface'
-import LocalizedFormInput from '@/features/common/LocalizedFormInput'
+import MultiLingualInput from '@/features/common/languages/MultiLingualInput'
 
 export interface AddressFormProps {
 	street: MultiLang
@@ -69,21 +69,18 @@ export default function AddressForm({ street, setStreet, city, setCity, region, 
 		<View style={styles.container}>
 			<View style={styles.inputGroup}>
 				<Text style={[styles.inputLabel, { color: colors.textSecondary }]}>{translate('street', 'Street Address')}</Text>
-				<View style={{ gap: 8 }}>
-					<LocalizedFormInput value={streetObj.en || ''} onChangeText={(val) => setStreet({ ...streetObj, en: val })} lang="en" placeholder={translate('street_placeholder_en', 'e.g., 123 Main St')} />
-					<LocalizedFormInput
-						value={streetObj.tn_latn || ''}
-						onChangeText={(val) => setStreet({ ...streetObj, tn_latn: val })}
-						lang="tn_latn"
-						placeholder={translate('street_placeholder_tn_latn', 'e.g., Rue de la Paix')}
-					/>
-					<LocalizedFormInput
-						value={streetObj.tn_arab || ''}
-						onChangeText={(val) => setStreet({ ...streetObj, tn_arab: val })}
-						lang="tn_arab"
-						placeholder={translate('street_placeholder_tn_arab', 'e.g., شارع السلام')}
-					/>
-				</View>
+				<MultiLingualInput
+					nameEn={streetObj.en || ''}
+					setNameEn={(val) => setStreet({ ...streetObj, en: val })}
+					nameTnLatn={streetObj.tn_latn || ''}
+					setNameTnLatn={(val) => setStreet({ ...streetObj, tn_latn: val })}
+					nameTnArab={streetObj.tn_arab || ''}
+					setNameTnArab={(val) => setStreet({ ...streetObj, tn_arab: val })}
+					placeholderEn={translate('street_placeholder_en', 'e.g., 123 Main St')}
+					placeholderTnLatn={translate('street_placeholder_tn_latn', 'e.g., Rue de la Paix')}
+					placeholderTnArab={translate('street_placeholder_tn_arab', 'e.g., شارع السلام')}
+					required={false}
+				/>
 			</View>
 			<View style={styles.row}>
 				<View style={styles.col}>{renderField(translate('city', 'City'), city, setCity, translate('city_placeholder', 'e.g., Ellouza'), 'business-outline', 'city')}</View>

@@ -7,7 +7,7 @@ import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
 import { ProductType, FileRef } from '@/features/products/products.type'
 import type { MultiLang } from '@/features/common/address'
-import ProductNamesSection from '@/features/products/common/ProductNamesSection'
+import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
@@ -450,23 +450,17 @@ export default function BusinessDashboardProductDetailScreen() {
 					<View style={styles.responsiveLayoutContainer}>
 						{/* Names Card */}
 						<View style={styles.sectionCard}>
-							<ProductNamesSection
-								variant={editMode.names ? 'edit' : 'view'}
-								colors={colors}
-								translate={translate}
-								nameEn={nameEn}
-								setNameEn={setNameEn}
-								nameTnLatn={nameTnLatn}
-								setNameTnLatn={setNameTnLatn}
-								nameTnArab={nameTnArab}
-								setNameTnArab={setNameTnArab}
-								productNameEn={product?.name?.en}
-								productNameTnLatn={product?.name?.tn_latn}
-								productNameTnArab={product?.name?.tn_arab}
-								canEdit={canEditProduct}
-								onEditPress={() => setEditMode((prev) => ({ ...prev, names: true }))}
-								onSavePress={saveNames}
-								onCancelPress={cancelNames}
+							<MultiLingualCard
+								name={editMode.names ? ({ en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab } as any) : (product?.name as any)}
+								isEditing={editMode.names}
+								onEdit={canEditProduct ? () => setEditMode((prev) => ({ ...prev, names: true })) : (undefined as any)}
+								onSave={saveNames}
+								onCancel={cancelNames}
+								onChange={(lang, value) => {
+									if (lang === 'en') setNameEn(value)
+									else if (lang === 'tn_latn') setNameTnLatn(value)
+									else if (lang === 'tn_arab') setNameTnArab(value)
+								}}
 							/>
 						</View>
 						{/* Gallery Card — replaced by CarouselCard */}

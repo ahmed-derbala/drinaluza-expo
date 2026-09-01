@@ -13,7 +13,7 @@ import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import BusinessCard from './BusinessCard'
 
-export default function BusinessesListScreen() {
+export default function BusinessesScreen() {
 	const { colors } = useTheme()
 	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh } = useBusinesses()
 	const businesses = response?.data?.docs || []

@@ -24,12 +24,25 @@ if (Platform.OS === 'web' && typeof window !== 'undefined' && !(window as any)._
 			event.preventDefault()
 		}
 	})
-	// Also filter console.error spam from expo-video's web impl
+	// Also filter console.error spam from expo-video's web impl and RN Web nested pressable warnings
 	const origError = console.error
 	console.error = (...args: any[]) => {
 		const first = String(args[0] ?? '')
 		if (first.includes('AbortError') || first.includes('play() request was interrupted') || first.includes('interrupted by a call to pause') || first.includes('interrupted by a new load')) {
 			return
+		}
+		if (first.includes('props.pointerEvents is deprecated') || first.includes('pointerEvents')) {
+			return
+		}
+		// Silence nested Pressable/Touchable warning on web — outer BusinessProductCard Pressable contains inner QuantityStepper/AddToCartButton Pressables; stopPropagation is handled
+		if (first.includes('Touchable') || first.includes('Pressable') || first.includes('nested') || first.includes('onPress')) {
+			// Only suppress if stack includes BusinessProductCard/QuantityStepper/BaseCard to avoid hiding real errors
+			const stack = String(args[1] ?? '') + String(args[2] ?? '')
+			if (stack.includes('QuantityStepper') || stack.includes('BusinessProductCard') || stack.includes('BaseCard')) {
+				return
+			}
+			// Fallback: suppress generic pointerEvents deprecation that sometimes logs as error
+			if (first.includes('pointerEvents')) return
 		}
 		origError(...args)
 	}

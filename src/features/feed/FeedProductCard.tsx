@@ -2,9 +2,8 @@ import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Platform, type StyleProp, type ViewStyle } from 'react-native'
 import { SmartMediaCarousel } from '@/core/smart-media'
 import type { MediaField } from '@/core/smart-media/types'
-import { getCaliberIconSize, getCaliberFontSize, getHarvestIcon } from '@/features/products/products.helpers'
-import { GearIcon } from '@/features/products/common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { ProductSpecsBlock } from '@/features/products/specs/ProductSpecsBlock'
 import { ProductFeedItem, FeedItem } from './feed.interface'
 import { useUser } from '@/core/contexts/UserContext'
 import { useProductCardPress } from '@/features/products/useProductCardPress'
@@ -12,6 +11,7 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
+import { AddToCartButton } from '@/features/common/buttons/AddToCartButton'
 import { QuantityStepper } from '@/features/common/QuantityStepper'
 import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
@@ -221,47 +221,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 								</>
 							) : null}
 						</View>
-						{/* Specs row: caliber + weight, then harvest/gear/origin */}
-						<View style={styles.specsStepperRow}>
-							<View style={styles.specsRowTop}>
-								<View style={styles.specsIconRow}>
-									{item.specs?.caliber ? (
-										<View style={{ justifyContent: 'center', alignItems: 'center' }}>
-											<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
-											<Text
-												style={{
-													position: 'absolute',
-													fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
-													fontWeight: 'bold',
-													color: themeColors.buttonText,
-													textAlign: 'center',
-													includeFontPadding: false,
-													textAlignVertical: 'center'
-												}}
-											>
-												{item.specs.caliber}
-											</Text>
-										</View>
-									) : null}
-									{singlePieceAvg != null && <Text style={[styles.weightChipText, { color: colors.primary }]}>~ {singlePieceAvg.toFixed(2)} kg/piece</Text>}
-								</View>
-								{purchaseAllowed && isActive && !isOutOfStock && (
-									<QuantityStepper value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
-								)}
-							</View>
-							{(item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
-								<View style={styles.specsRowBottom}>
-									{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
-									{item.specs?.gear ? <GearIcon type={item.specs.gear} size={14} color={colors.primary} /> : null}
-									{item.specs?.origin?.city ? (
-										<>
-											<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-											<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
-										</>
-									) : null}
-								</View>
-							)}
-						</View>
+						<ProductSpecsBlock specs={item.specs as any} singlePieceAvg={singlePieceAvg} variant="dark" />
 					</View>
 					<View style={styles.bodyBottom}>
 						{/* Price bottom-left */}
@@ -273,15 +233,15 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 								{quantity === 1 ? `/ ${item.unit?.measure || translate('unit', 'unit')}` : `${quantity} ${item.unit?.measure || translate('unit', 'unit')}`}
 							</Text>
 						</View>
-						<TouchableOpacity
-							style={[styles.cartBtn, cartDisabled && styles.cartBtnDisabled]}
-							onPress={handleCartPress}
-							activeOpacity={cartDisabled ? 1 : 0.8}
-							disabled={cartDisabled}
-							accessibilityLabel={translate('add_to_cart', 'Add to cart')}
-						>
-							<MaterialIcons name="add-shopping-cart" size={18} color={themeColors.buttonText} />
-						</TouchableOpacity>
+						<View style={styles.cartColumn}>
+							{/* Stepper just above add to cart button */}
+							{purchaseAllowed && isActive && !isOutOfStock && (
+								<View style={styles.stepperWrapper}>
+									<QuantityStepper value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
+								</View>
+							)}
+							<AddToCartButton disabled={cartDisabled} onPress={handleCartPress} accessibilityLabel={translate('add_to_cart', 'Add to cart')} />
+						</View>
 					</View>
 				</View>
 			</View>
@@ -400,6 +360,7 @@ const styles = StyleSheet.create({
 		gap: 8,
 		marginTop: 4
 	},
+	cartColumn: { flexDirection: 'column', alignItems: 'flex-end', gap: 4 },
 	bodyNormal: {
 		padding: 10
 	},
@@ -451,17 +412,7 @@ const styles = StyleSheet.create({
 		fontWeight: '500',
 		color: themeColors.buttonText40
 	},
-	cartBtn: {
-		width: 36,
-		height: 36,
-		borderRadius: 12,
-		backgroundColor: themeColors.primary,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	cartBtnDisabled: {
-		backgroundColor: themeColors.buttonText10
-	},
+	stepperWrapper: { alignSelf: 'flex-end' },
 	specsStepperRow: {
 		flexDirection: 'column',
 		justifyContent: 'center',

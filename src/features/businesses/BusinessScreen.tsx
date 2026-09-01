@@ -1,9 +1,7 @@
 import { config } from '@/config'
 import { HeaderRefreshButton, HeaderQRCodeButton, SmartHeader } from '@/core/smart-header'
 import React, { useEffect, useState, useCallback, useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, RefreshControl } from 'react-native'
-import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
-const FlashList = ShopifyFlashList as any
+import { View, Text, StyleSheet, TouchableOpacity, RefreshControl } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { LinearGradient } from 'expo-linear-gradient'
 import StateBadge from '@/features/common/StateBadge'
@@ -20,8 +18,6 @@ import { useBusinessBySlug } from '@/features/businesses/useBusinessBySlug'
 import { useBusinessProducts } from '@/features/businesses/useBusinessProducts'
 import { getUserBySlug } from '@/features/users/users.api'
 import { ProductType } from '@/features/products/products.type'
-import { getCaliberLabel, getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
-import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, themeColors } from '@/core/theme'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import { SmartMediaView } from '@/core/smart-media'
@@ -29,132 +25,14 @@ import { useUser } from '@/core/contexts/UserContext'
 import { formatAddress } from '@/features/common/address'
 import { useScrollHandler } from '@/core/hooks/useScrollHandler'
 import ReviewSection from '@/features/reviews/Reviews'
-// Product Card for inline display
-const ProductCard = React.memo(({ product, colors, localize, cardWidth, styles }: { product: ProductType; colors: any; localize: (obj: any) => string; cardWidth: number; styles: any }) => {
-	const imageUrl = product.media?.thumbnail?.url || product.defaultProduct?.media?.thumbnail?.url
-	const stockQty = product.stock?.quantity || 0
-	const isOutOfStock = stockQty === 0
-	const rating = product.rating?.average || 0
-	const ratingCount = product.rating?.count || 0
-	const { translate } = useUser()
-	const router = useRouter()
-	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
-	const handlePress = useCallback(() => {
-		if (product.slug && businessSlug) {
-			router.push(`/businesses/${businessSlug}/products/${product.slug}` as any)
-		}
-	}, [product.slug, businessSlug, router])
-	return (
-		<TouchableOpacity
-			style={[
-				styles.productCard,
-				{
-					backgroundColor: colors.background,
-					borderColor: colors.border,
-					width: cardWidth
-				}
-			]}
-			activeOpacity={0.8}
-			onPress={handlePress}
-		>
-			<View style={styles.productImageContainer}>
-				<SmartMediaView media={imageUrl} style={styles.productImage} resizeMode="cover" />
-				{isOutOfStock && (
-					<View style={[styles.outOfStockBadge, { backgroundColor: colors.error + '25', borderColor: colors.error + '40' }]}>
-						<Text style={[styles.outOfStockText, { color: colors.error }]}>{translate('out_of_stock', 'Out of Stock')}</Text>
-					</View>
-				)}
-			</View>
-			<View style={styles.productInfo}>
-				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-					{localize(product.name)}
-				</Text>
-				<View style={styles.ratingAndPriceRow}>
-					<View style={styles.productPriceRow}>
-						<Text style={[styles.productPrice, { color: colors.primary }]}>{product.price?.total?.tnd?.toFixed(2) || '0.00'}</Text>
-						<Text style={[styles.productCurrency, { color: colors.primary }]}> TND</Text>
-					</View>
-					{rating > 0 ? (
-						<View style={styles.ratingRow}>
-							<Ionicons name="star" size={12} color={themeColors.warning} />
-							<Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-						</View>
-					) : null}
-				</View>
-				<Text style={[styles.productUnit, { color: colors.textTertiary }]}>
-					{translate('per_unit', 'per')} {product.unit?.measure || 'unit'}
-				</Text>
-				{/* Specifications (Caliber & Origin) */}
-				{(product.specs?.caliber || product.specs?.origin?.city || product.specs?.harvest || product.specs?.gear) && (
-					<View style={styles.specsCardRow}>
-						{product.specs?.caliber ? (
-							<View style={[styles.caliberChip, { backgroundColor: colors.primary + '15' }]}>
-								<View style={{ justifyContent: 'center', alignItems: 'center' }}>
-									<Ionicons name="fish" size={getCaliberIconSize(product.specs.caliber, 'chip')} color={colors.primary} />
-									<Text
-										style={{
-											position: 'absolute',
-											fontSize: getCaliberFontSize(product.specs.caliber, 'chip'),
-											fontWeight: 'bold',
-											color: themeColors.buttonText,
-											textAlign: 'center',
-											includeFontPadding: false,
-											textAlignVertical: 'center'
-										}}
-									>
-										{product.specs.caliber}
-									</Text>
-								</View>
-								<Text style={[styles.caliberChipText, { color: colors.primary }]} numberOfLines={1}>
-									{getCaliberLabel(product.specs.caliber)}
-								</Text>
-							</View>
-						) : null}
-						{product.specs?.harvest ? (
-							<View style={[styles.harvestChip, { backgroundColor: colors.success + '15' }]}>
-								<Ionicons name={getHarvestIcon(product.specs?.harvest)} size={12} color={colors.success} />
-								<Text style={[styles.harvestChipText, { color: colors.success }]} numberOfLines={1}>
-									{getHarvestLabel(product.specs.harvest)}
-								</Text>
-							</View>
-						) : null}
-						{product.specs?.gear ? (
-							<View style={[styles.harvestChip, { backgroundColor: colors.primary + '15' }]}>
-								<GearIcon type={product.specs.gear} size={12} color={colors.primary} />
-								<Text style={[styles.harvestChipText, { color: colors.primary }]} numberOfLines={1}>
-									{getGearLabel(product.specs.gear)}
-								</Text>
-							</View>
-						) : null}
-						{product.specs?.origin?.city ? (
-							<View style={[styles.originChip, { backgroundColor: colors.border + '25', borderColor: colors.border + '40' }]}>
-								<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-								<Text style={[styles.originChipText, { color: colors.textSecondary }]} numberOfLines={1}>
-									{product.specs.origin.city}
-								</Text>
-							</View>
-						) : null}
-					</View>
-				)}
-			</View>
-		</TouchableOpacity>
-	)
-})
-export default function BusinessDetailsScreen() {
+import BusinessProductsCard from '@/features/businesses/BusinessProductsCard'
+export default function BusinessScreen() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()
 	const router = useRouter()
 	const { colors } = useTheme()
 	const { localize, translate } = useUser()
-	const { width } = useWindowDimensions()
 	const insets = useSafeAreaInsets()
-	const maxWidth = 800
-	const isWideScreen = width > maxWidth
-	const cardWidth = isWideScreen ? (Math.min(width, maxWidth) - 40 - 24) / 3 : (width - 40 - 12) / 2
-	const styles = useMemo(() => createStyles(colors, isWideScreen, width), [colors, isWideScreen, width])
-	const renderProductCard = useCallback(
-		({ item }: { item: ProductType }) => <ProductCard product={item} colors={colors} localize={localize} cardWidth={cardWidth} styles={styles} />,
-		[colors, localize, cardWidth, styles]
-	)
+	const styles = useMemo(() => createStyles(colors), [colors])
 	const { data: businessResponse, isInitialLoading: businessLoading, isRefreshing: businessRefreshing, isOffline: businessOffline, refresh: refreshBusiness } = useBusinessBySlug({ businessSlug })
 	const business = businessResponse?.data ?? null
 	const { data: productsResponse, isInitialLoading: productsLoading, isRefreshing: productsRefreshing, isOffline: productsOffline, refresh: refreshProducts } = useBusinessProducts({ businessSlug })
@@ -236,7 +114,7 @@ export default function BusinessDetailsScreen() {
 			/>
 			<SmartHeader.ScrollView
 				style={styles.container}
-				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }, isWideScreen && { maxWidth: maxWidth, alignSelf: 'center', width: '100%' }]}
+				contentContainerStyle={[styles.scrollContent, { paddingTop: 12, paddingBottom: 40 + insets.bottom }]}
 				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 				onScroll={onScroll}
 				scrollEventThrottle={16}
@@ -323,32 +201,7 @@ export default function BusinessDetailsScreen() {
 					</View>
 				</View>
 				{/* Products Section */}
-				<View style={[styles.productsSection, { backgroundColor: colors.background, borderColor: colors.border }]}>
-					<View style={styles.productsSectionHeader}>
-						<Ionicons name="fish-outline" size={20} color={colors.primary} />
-						<Text style={[styles.productsSectionTitle, { color: colors.text }]}>{translate('business_products', 'Products')}</Text>
-						<View style={[styles.productsCountBadge, { backgroundColor: colors.primary + '15' }]}>
-							<Text style={[styles.productsCountText, { color: colors.primary }]}>{products.length}</Text>
-						</View>
-					</View>
-					{products.length > 0 ? (
-						<FlashList
-							horizontal
-							showsHorizontalScrollIndicator={true}
-							data={products}
-							renderItem={renderProductCard}
-							keyExtractor={(item: ProductType) => item._id}
-							estimatedItemSize={cardWidth}
-							contentContainerStyle={styles.productsScrollContainer}
-							style={styles.productsScrollView}
-						/>
-					) : (
-						<View style={styles.emptyProducts}>
-							<Ionicons name="fish-outline" size={48} color={colors.textTertiary} />
-							<Text style={[styles.emptyText, { color: colors.textSecondary }]}>{translate('no_products_available', 'No products available')}</Text>
-						</View>
-					)}
-				</View>
+				<BusinessProductsCard products={products} />
 				{/* Reviews Section */}
 				{business && <ReviewSection targetResource="businesses" targetId={business._id} targetName={localize(business.name)} />}
 			</SmartHeader.ScrollView>
@@ -366,7 +219,7 @@ export default function BusinessDetailsScreen() {
 		</View>
 	)
 }
-const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
+const createStyles = (colors: any) =>
 	StyleSheet.create({
 		container: {
 			flex: 1
@@ -547,124 +400,6 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			flex: 1,
 			fontSize: 14,
 			lineHeight: 20
-		},
-		productsSection: {
-			borderRadius: 20,
-			padding: 20,
-			borderWidth: 1
-		},
-		productsSectionHeader: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			marginBottom: 16,
-			gap: 8
-		},
-		productsSectionTitle: {
-			fontSize: 18,
-			fontWeight: '700',
-			flex: 1
-		},
-		productsCountBadge: {
-			paddingHorizontal: 12,
-			paddingVertical: 4,
-			borderRadius: 12
-		},
-		productsCountText: {
-			fontSize: 14,
-			fontWeight: '700'
-		},
-		productsScrollView: {
-			width: '100%',
-			marginVertical: 4
-		},
-		productsScrollContainer: {
-			gap: 12,
-			paddingRight: 20,
-			paddingBottom: 8
-		},
-		productCard: {
-			borderRadius: 14,
-			borderWidth: 1,
-			overflow: 'hidden'
-		},
-		productImageContainer: {
-			width: '100%',
-			height: 120,
-			position: 'relative'
-		},
-		productImage: {
-			width: '100%',
-			height: '100%'
-		},
-		productInfo: {
-			padding: 12,
-			gap: 6
-		},
-		productName: {
-			fontSize: 14,
-			fontWeight: '600',
-			lineHeight: 18,
-			height: 36
-		},
-		ratingAndPriceRow: {
-			flexDirection: 'row',
-			justifyContent: 'space-between',
-			alignItems: 'center',
-			marginTop: 2
-		},
-		productPriceRow: {
-			flexDirection: 'row',
-			alignItems: 'baseline'
-		},
-		productPrice: {
-			fontSize: 16,
-			fontWeight: '800'
-		},
-		productCurrency: {
-			fontSize: 11,
-			fontWeight: '600'
-		},
-		ratingRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			gap: 3
-		},
-		ratingText: {
-			fontSize: 12,
-			fontWeight: '700',
-			color: themeColors.warning
-		},
-		ratingCount: {
-			fontSize: 11,
-			color: themeColors.textTertiary
-		},
-		productUnit: {
-			fontSize: 11,
-			fontWeight: '500'
-		},
-		outOfStockBadge: {
-			position: 'absolute',
-			top: 8,
-			left: 8,
-			paddingHorizontal: 8,
-			paddingVertical: 4,
-			borderRadius: 6,
-			borderWidth: 1
-		},
-		outOfStockText: {
-			fontSize: 9,
-			fontWeight: '800',
-			textTransform: 'uppercase',
-			letterSpacing: 0.5
-		},
-		emptyProducts: {
-			alignItems: 'center',
-			paddingVertical: 32,
-			gap: 12
-		},
-		emptyText: {
-			fontSize: 15,
-			fontWeight: '500'
 		},
 		errorText: {
 			fontSize: 16,

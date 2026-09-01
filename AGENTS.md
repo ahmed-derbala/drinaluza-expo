@@ -19,7 +19,7 @@ trigger: always_on
 - a card must be implemented on its own file
 
 ### theme
-- never hardcode colors, spacing, radius, etc, use the core/theme/ instead
+- never hardcode colors or constants. use the core/theme/ instead
 
 ### buttons
 - all buttons must be based on IconButton (icon only) or TextButton (text only) or IconTextButton (icon + text)
@@ -29,6 +29,9 @@ trigger: always_on
 
 ## cleanup
 Improve code quality, maintainability, consistency, and bundle size without changing application behavior.
+
+## refactoring
+- when an object name is changed, update the object name wherever it is used. dont use ```export const oldName = newName ```
 
 ### 1. Remove dead code
 

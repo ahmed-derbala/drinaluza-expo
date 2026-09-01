@@ -2,9 +2,11 @@ import React, { useState, useMemo, useCallback } from 'react'
 import { View, Text, StyleSheet, Pressable, useWindowDimensions, Platform, type StyleProp, type ViewStyle } from 'react-native'
 import { SmartMediaCarousel } from '@/core/smart-media'
 import type { MediaField } from '@/core/smart-media/types'
-import { getCaliberIconSize, getCaliberFontSize, getHarvestIcon } from '@/features/products/products.helpers'
-import { GearIcon } from '@/features/products/common/GearIcons'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
+import { CaliberChip } from '@/features/products/specs/CaliberChip'
+import { HarvestChip } from '@/features/products/specs/HarvestChip'
+import { GearChip } from '@/features/products/specs/GearChip'
+import { OriginChip } from '@/features/products/specs/OriginChip'
 import type { ProductFeedItem } from '@/features/feed/feed.interface'
 import { useUser } from '@/core/contexts/UserContext'
 import { useProductCardPress } from '@/features/products/useProductCardPress'
@@ -224,24 +226,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 								<View style={styles.specsStepperRow}>
 									<View style={styles.specsRowTop}>
 										<View style={styles.specsIconRow}>
-											{item.specs?.caliber ? (
-												<View style={{ justifyContent: 'center', alignItems: 'center' }}>
-													<Ionicons name="fish" size={getCaliberIconSize(item.specs.caliber, 'chip')} color={colors.primary} />
-													<Text
-														style={{
-															position: 'absolute',
-															fontSize: getCaliberFontSize(item.specs.caliber, 'chip'),
-															fontWeight: 'bold',
-															color: themeColors.buttonText,
-															textAlign: 'center',
-															includeFontPadding: false,
-															textAlignVertical: 'center'
-														}}
-													>
-														{item.specs.caliber}
-													</Text>
-												</View>
-											) : null}
+											{item.specs?.caliber ? <CaliberChip caliber={item.specs.caliber} variant="chip" /> : null}
 											{singlePieceAvg != null && <Text style={[styles.weightChipText, { color: colors.primary }]}>~ {singlePieceAvg.toFixed(2)} kg/piece</Text>}
 										</View>
 										{purchaseAllowed && isActive && !isOutOfStock && (
@@ -250,14 +235,9 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 									</View>
 									{(item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
 										<View style={styles.specsRowBottom}>
-											{item.specs?.harvest ? <Ionicons name={getHarvestIcon(item.specs.harvest)} size={14} color={colors.success} /> : null}
-											{item.specs?.gear ? <GearIcon type={item.specs.gear} size={14} color={colors.primary} /> : null}
-											{item.specs?.origin?.city ? (
-												<>
-													<Ionicons name="location-outline" size={10} color={colors.textSecondary} />
-													<Text style={[styles.originChipText, { color: colors.textSecondary }]}>{item.specs.origin.city}</Text>
-												</>
-											) : null}
+											<HarvestChip harvest={item.specs?.harvest} size={14} />
+											<GearChip gear={item.specs?.gear} size={14} />
+											<OriginChip city={item.specs?.origin?.city} />
 										</View>
 									)}
 								</View>

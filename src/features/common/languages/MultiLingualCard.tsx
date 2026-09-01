@@ -12,7 +12,7 @@ import type { MultiLang } from './languages.types'
 interface MultiLingualCardProps {
 	name?: MultiLang
 	isEditing: boolean
-	onEdit: () => void
+	onEdit?: () => void
 	onSave: () => void
 	onCancel: () => void
 	onChange: (lang: LanguageCode, value: string) => void
@@ -24,7 +24,7 @@ export function MultiLingualCard({ name, isEditing, onEdit, onSave, onCancel, on
 	const { translate } = useUser()
 
 	return (
-		<BaseCard title={title ?? translate('name', 'Name')} iconName="language" mode={isEditing ? 'edit' : 'editable'} onEdit={onEdit} onSave={onSave} onCancel={onCancel}>
+		<BaseCard title={title ?? translate('name', 'Name')} iconName="language" mode={isEditing ? 'edit' : onEdit ? 'editable' : 'view'} onEdit={onEdit} onSave={onSave} onCancel={onCancel}>
 			{isEditing ? (
 				<MultiLingualInput
 					nameEn={name?.en || ''}

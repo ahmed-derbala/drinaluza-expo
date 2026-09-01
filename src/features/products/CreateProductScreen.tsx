@@ -20,8 +20,10 @@ import SearchableModalPicker from '@/features/common/SearchableModalPicker'
 import { showAlert } from '@/core/helpers/popup'
 import { log } from '@/core/log'
 import { parseError } from '@/core/error/errorHandler'
+import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
+import MultiLingualInput from '@/features/common/languages/MultiLingualInput'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 // Import the reusable section components
-import ProductNamesSection from '@/features/products/common/ProductNamesSection'
 import ProductPricingSection from '@/features/products/common/ProductPricingSection'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
@@ -360,17 +362,16 @@ export default function CreateProductScreen() {
 						/>
 					</View>
 					{/* Name Section */}
-					<ProductNamesSection
-						variant="create"
-						colors={colors}
-						translate={translate}
-						nameEn={productNameEn}
-						setNameEn={setProductNameEn}
-						nameTnLatn={productNameTnLatn}
-						setNameTnLatn={setProductNameTnLatn}
-						nameTnArab={productNameTnArab}
-						setNameTnArab={setProductNameTnArab}
-					/>
+					<BaseCard title={translate('names', 'Names')}>
+						<MultiLingualInput
+							nameEn={productNameEn}
+							setNameEn={setProductNameEn}
+							nameTnLatn={productNameTnLatn}
+							setNameTnLatn={setProductNameTnLatn}
+							nameTnArab={productNameTnArab}
+							setNameTnArab={setProductNameTnArab}
+						/>
+					</BaseCard>
 					{/* Pricing Section */}
 					<ProductPricingSection
 						variant="create"
