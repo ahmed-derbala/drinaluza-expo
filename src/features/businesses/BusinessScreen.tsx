@@ -57,12 +57,16 @@ export default function BusinessScreen() {
 			cancelled = true
 		}
 	}, [business?.owner?.slug])
+	const [showQRCode, setShowQRCode] = useState(false)
 	const handleRefresh = useCallback(() => {
 		refreshBusiness()
 		refreshProducts()
 	}, [refreshBusiness, refreshProducts])
-	// QR Code state
-	const [showQRCode, setShowQRCode] = useState(false)
+	const handleShowQRCode = useCallback(() => setShowQRCode(true), [])
+	const headerActions = useMemo(
+		() => [<HeaderQRCodeButton key="qr-code" onPress={handleShowQRCode} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />],
+		[handleShowQRCode, handleRefresh, isRefreshing]
+	)
 	if (isInitialLoading) {
 		return (
 			<View style={styles.container}>
@@ -108,7 +112,7 @@ export default function BusinessScreen() {
 						title: displayTitle,
 						subtitle: `${business.slug}`,
 						fallbackRoute: '/(home)/feed',
-						headerActions: [<HeaderQRCodeButton key="qr-code" onPress={() => setShowQRCode(true)} />, <HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing} />]
+						headerActions: headerActions
 					} as any
 				}
 			/>

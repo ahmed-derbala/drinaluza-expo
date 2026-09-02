@@ -1,4 +1,4 @@
-import { useMemo, useCallback, useEffect } from 'react'
+import { useMemo, useCallback, useEffect, useRef } from 'react'
 import { View, StyleSheet, Text, TouchableOpacity } from 'react-native'
 import { useWindowDimensions } from 'react-native'
 import { useFocusEffect, useLocalSearchParams, Stack, useRouter, useNavigation } from 'expo-router'
@@ -87,6 +87,7 @@ export default function SalesScreen() {
 		productSlug,
 		status: selectedStatus
 	})
+	const hasFocusedRef = useRef(false)
 
 	useEffect(() => {
 		if (!businessSlug || !response) return
@@ -109,6 +110,10 @@ export default function SalesScreen() {
 
 	useFocusEffect(
 		useCallback(() => {
+			if (!hasFocusedRef.current) {
+				hasFocusedRef.current = true
+				return
+			}
 			if (selectedStatus === 'all') {
 				refresh().then((allData) => {
 					if (allData) refreshCounts(allData)

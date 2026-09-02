@@ -97,12 +97,13 @@ const SmartMediaCarouselComponent = ({
 	const canAutoPlay = useMemo(() => effectiveAutoPlay && isVisible && !autoPlayStoppedRef.current, [effectiveAutoPlay, isVisible])
 	const canAdvance = useMemo(() => canAutoPlay && effectiveAutoAdvance && items.length > 1, [canAutoPlay, effectiveAutoAdvance, items.length])
 
-	// Reset the active index when the media set changes.
+	// Reset the active index only when the underlying media set actually changes (avoid reset on parent re-render)
+	const mediaKey = useMemo(() => items.map((f: any) => f._id || f.url || '').join('|'), [items])
 	useEffect(() => {
 		setActiveIndex(0)
 		setManualPlayIndex(null)
 		autoPlayStoppedRef.current = false
-	}, [media])
+	}, [mediaKey])
 
 	const activeItem = items[activeIndex] ?? null
 	const activeIsVideo = useMemo(() => isVideoMedia(activeItem), [activeItem])

@@ -1,6 +1,7 @@
 import { config } from '@/config'
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, TextInput, Switch, ScrollView, RefreshControl } from 'react-native'
+import React from 'react'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
@@ -33,7 +34,6 @@ export default function BusinessDashboardProductsScreen() {
 	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh, updateCache } = useBusinessProducts({ businessSlug })
 	const products = response?.data?.docs || []
 	const businessName = products.length > 0 && products[0].business?.name ? localize(products[0].business.name) : ''
-	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'active' | 'inactive' | 'lowStock' | 'outOfStock'>('all')
 	// Actions states
@@ -61,9 +61,9 @@ export default function BusinessDashboardProductsScreen() {
 		return 16
 	}, [isTablet, isDesktop])
 	const cardGap = 16
-	const handleRefresh = () => {
+	const handleRefresh = useCallback(() => {
 		refresh()
-	}
+	}, [refresh])
 	// Filter metrics count
 	const counts = useMemo(() => {
 		const total = products.length
@@ -78,7 +78,7 @@ export default function BusinessDashboardProductsScreen() {
 		return { total, active, inactive, outOfStock, lowStock }
 	}, [products])
 	// Filter & Search logic
-	useEffect(() => {
+	const filteredProducts = useMemo(() => {
 		let list = products
 		if (searchText.trim()) {
 			const q = searchText.toLowerCase()
@@ -97,7 +97,7 @@ export default function BusinessDashboardProductsScreen() {
 		} else if (activeFilter === 'outOfStock') {
 			list = list.filter((p) => (p.stock?.quantity || 0) === 0)
 		}
-		setFilteredProducts(list)
+		return list
 	}, [searchText, products, activeFilter, localize])
 	// Toggle active/inactive state handler
 	const handleToggleActive = useCallback(
@@ -259,22 +259,9 @@ export default function BusinessDashboardProductsScreen() {
 		],
 		[businessSlug, translate]
 	)
-	return (
-		<View style={[s.container, { backgroundColor: colors.background }]}>
-			<SmartHeader
-				title={businessName ? `${businessName} Dashboard` : translate('dashboard_title', 'Dashboard')}
-				subtitle={translate('manage_inventory', 'Manage Products & Stock')}
-				fallbackRoute={`/dashboard?businessSlug=${businessSlug}` as any}
-				headerActions={headerActionsConfig}
-				onBackPress={() => router.replace(`/dashboard?businessSlug=${businessSlug}` as any)}
-			/>
-			<SmartHeader.ScrollView
-				style={s.scrollView}
-				contentContainerStyle={s.scrollContent}
-				keyboardShouldPersistTaps="handled"
-				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-			>
+	const listHeaderComponent = useCallback(
+		() => (
+			<View style={{ alignItems: 'center', width: '100%' }}>
 				{/* Top stats summary banner */}
 				{!isInitialLoading && (
 					<View style={[s.statsContainer, { maxWidth: contentMaxWidth }]}>
@@ -384,32 +371,51 @@ export default function BusinessDashboardProductsScreen() {
 						</ScrollView>
 					</View>
 				)}
-				{/* FlashList view container */}
-				<View style={[s.listContainer, { maxWidth: contentMaxWidth }]}>
-					{isInitialLoading && !isRefreshing ? (
-						<Spinner />
-					) : filteredProducts.length === 0 ? (
-						<View style={s.emptyWrap}>
-							<Ionicons name="cube-outline" size={64} color={colors.textTertiary} />
-							<Text style={[s.emptyTitle, { color: colors.text }]}>{searchText ? translate('no_search_results', 'No matches found') : translate('no_products', 'No products found')}</Text>
-							<Text style={[s.emptySubtitle, { color: colors.textSecondary }]}>
-								{searchText
-									? translate('try_another_query', 'Try searching for a different keyword.')
-									: translate('start_by_adding_product', 'Tap the + button to add products to your business catalog.')}
-							</Text>
-						</View>
-					) : (
-						<FlashList
-							data={filteredProducts}
-							renderItem={renderProductCard}
-							numColumns={numColumns}
-							keyExtractor={(item: Product) => item._id}
-							estimatedItemSize={220}
-							contentContainerStyle={s.listScrollContent}
-						/>
-					)}
+			</View>
+		),
+		[isInitialLoading, contentMaxWidth, colors, counts, translate, searchText, products.length, activeFilter]
+	)
+
+	const listEmptyComponent = useCallback(() => {
+		if (isInitialLoading && !isRefreshing) return null
+		return (
+			<View style={s.emptyWrap}>
+				<Ionicons name="cube-outline" size={64} color={colors.textTertiary} />
+				<Text style={[s.emptyTitle, { color: colors.text }]}>{searchText ? translate('no_search_results', 'No matches found') : translate('no_products', 'No products found')}</Text>
+				<Text style={[s.emptySubtitle, { color: colors.textSecondary }]}>
+					{searchText ? translate('try_another_query', 'Try searching for a different keyword.') : translate('start_by_adding_product', 'Tap the + button to add products to your business catalog.')}
+				</Text>
+			</View>
+		)
+	}, [isInitialLoading, isRefreshing, colors, searchText, translate])
+
+	return (
+		<View style={[s.container, { backgroundColor: colors.background }]}>
+			<SmartHeader
+				title={businessName ? `${businessName} Dashboard` : translate('dashboard_title', 'Dashboard')}
+				subtitle={translate('manage_inventory', 'Manage Products & Stock')}
+				fallbackRoute={`/dashboard?businessSlug=${businessSlug}` as any}
+				headerActions={headerActionsConfig}
+				onBackPress={() => router.replace(`/dashboard?businessSlug=${businessSlug}` as any)}
+			/>
+			{isInitialLoading && !isRefreshing ? (
+				<View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: 80 }}>
+					<Spinner />
 				</View>
-			</SmartHeader.ScrollView>
+			) : (
+				<SmartHeader.FlashList
+					data={filteredProducts}
+					renderItem={renderProductCard}
+					numColumns={numColumns}
+					keyExtractor={(item: Product) => item._id}
+					estimatedItemSize={220}
+					contentContainerStyle={[s.listScrollContent, { paddingHorizontal: 16 }]}
+					ListHeaderComponent={listHeaderComponent}
+					ListEmptyComponent={listEmptyComponent}
+					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+					keyboardShouldPersistTaps="handled"
+				/>
+			)}
 			{/* QR Modal integration */}
 			{selectedProductForQR && (
 				<QRCodeModal

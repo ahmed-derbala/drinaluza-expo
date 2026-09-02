@@ -75,85 +75,85 @@ export default function SearchScreen() {
 		if (item.price || item.unit || item.stock || item.business) return 'product'
 		return 'product'
 	}
+	// Use ref to avoid refreshing dep causing debounce loop
+	const refreshingRef = useRef(refreshing)
+	refreshingRef.current = refreshing
 	// Search execution logic
-	const executeSearch = useCallback(
-		async (searchQuery: string, currentScopes: string[], pageNum: number = 1, shouldAppend: boolean = false) => {
-			if (!searchQuery.trim()) {
-				setResults([])
-				setLoading(false)
-				setLoadingMore(false)
-				setRefreshing(false)
-				return
+	const executeSearch = useCallback(async (searchQuery: string, currentScopes: string[], pageNum: number = 1, shouldAppend: boolean = false) => {
+		if (!searchQuery.trim()) {
+			setResults([])
+			setLoading(false)
+			setLoadingMore(false)
+			setRefreshing(false)
+			return
+		}
+		try {
+			if (pageNum === 1 && !refreshingRef.current) {
+				setLoading(true)
+			} else if (pageNum > 1) {
+				setLoadingMore(true)
 			}
-			try {
-				if (pageNum === 1 && !refreshing) {
-					setLoading(true)
-				} else if (pageNum > 1) {
-					setLoadingMore(true)
-				}
-				setError(null)
-				const response = await searchApi(searchQuery, currentScopes, pageNum, 10)
-				// Extract docs based on various possible API designs
-				let fetchedDocs: any[] = []
-				if (response?.data) {
-					const data = response.data
-					if (Array.isArray(data.docs)) {
-						fetchedDocs = data.docs
-					} else {
-						// Grouped response formats parsing
-						let combined: any[] = []
-						if (data.products) {
-							const pDocs = Array.isArray(data.products) ? data.products : Array.isArray(data.products.docs) ? data.products.docs : []
-							combined = [...combined, ...pDocs]
-						}
-						if (data.users) {
-							const uDocs = Array.isArray(data.users) ? data.users : Array.isArray(data.users.docs) ? data.users.docs : []
-							combined = [...combined, ...uDocs]
-						}
-						fetchedDocs = combined
+			setError(null)
+			const response = await searchApi(searchQuery, currentScopes, pageNum, 10)
+			// Extract docs based on various possible API designs
+			let fetchedDocs: any[] = []
+			if (response?.data) {
+				const data = response.data
+				if (Array.isArray(data.docs)) {
+					fetchedDocs = data.docs
+				} else {
+					// Grouped response formats parsing
+					let combined: any[] = []
+					if (data.products) {
+						const pDocs = Array.isArray(data.products) ? data.products : Array.isArray(data.products.docs) ? data.products.docs : []
+						combined = [...combined, ...pDocs]
 					}
+					if (data.users) {
+						const uDocs = Array.isArray(data.users) ? data.users : Array.isArray(data.users.docs) ? data.users.docs : []
+						combined = [...combined, ...uDocs]
+					}
+					fetchedDocs = combined
 				}
-				// Map them to format expected by FeedProductCard
-				const mappedDocs = fetchedDocs.map((item) => ({
-					...item,
-					card: item.card || { kind: getCardKind(item) }
-				}))
-				if (mappedDocs.length < 10) {
-					setHasMore(false)
-				} else {
-					setHasMore(true)
-				}
-				if (shouldAppend) {
-					setResults((prev) => {
-						const updated = [...prev, ...mappedDocs]
-						enrichFeedContacts(updated, setResults)
-						return updated
-					})
-				} else {
-					setResults(mappedDocs)
-					enrichFeedContacts(mappedDocs, setResults)
-				}
-				// Add successful search query to history
-				if (searchQuery.trim().length > 0) {
-					setHistory((prev) => {
-						const cleaned = prev.filter((h) => h.toLowerCase() !== searchQuery.toLowerCase())
-						const newHistory = [searchQuery, ...cleaned].slice(0, 10)
-						setItem('search_history', newHistory)
-						return newHistory
-					})
-				}
-			} catch (err) {
-				logError(err, 'executeSearch')
-				const parsed = parseError(err)
-				setError({ title: parsed.title, message: parsed.message, type: parsed.type })
-			} finally {
-				setLoading(false)
-				setLoadingMore(false)
-				setRefreshing(false)
 			}
-		},
-		[refreshing]
-	)
+			// Map them to format expected by FeedProductCard
+			const mappedDocs = fetchedDocs.map((item) => ({
+				...item,
+				card: item.card || { kind: getCardKind(item) }
+			}))
+			if (mappedDocs.length < 10) {
+				setHasMore(false)
+			} else {
+				setHasMore(true)
+			}
+			if (shouldAppend) {
+				setResults((prev) => {
+					const updated = [...prev, ...mappedDocs]
+					enrichFeedContacts(updated, setResults)
+					return updated
+				})
+			} else {
+				setResults(mappedDocs)
+				enrichFeedContacts(mappedDocs, setResults)
+			}
+			// Add successful search query to history
+			if (searchQuery.trim().length > 0) {
+				setHistory((prev) => {
+					const cleaned = prev.filter((h) => h.toLowerCase() !== searchQuery.toLowerCase())
+					const newHistory = [searchQuery, ...cleaned].slice(0, 10)
+					setItem('search_history', newHistory)
+					return newHistory
+				})
+			}
+		} catch (err) {
+			logError(err, 'executeSearch')
+			const parsed = parseError(err)
+			setError({ title: parsed.title, message: parsed.message, type: parsed.type })
+		} finally {
+			setLoading(false)
+			setLoadingMore(false)
+			setRefreshing(false)
+		}
+	}, [])
 	// Watch query changes & trigger search after 1 second debounce
 	useEffect(() => {
 		if (debounceTimer.current) {
@@ -177,20 +177,23 @@ export default function SearchScreen() {
 		}
 	}, [query, scopes, executeSearch])
 	// Submit search immediately (triggered by keyboard or history item click)
-	const triggerImmediateSearch = (targetQuery: string, targetScopes: string[] = scopes) => {
-		if (debounceTimer.current) {
-			clearTimeout(debounceTimer.current)
-		}
-		setPage(1)
-		setHasMore(true)
-		executeSearch(targetQuery, targetScopes, 1, false)
-	}
-	const handleRefresh = () => {
+	const triggerImmediateSearch = useCallback(
+		(targetQuery: string, targetScopes: string[] = scopes) => {
+			if (debounceTimer.current) {
+				clearTimeout(debounceTimer.current)
+			}
+			setPage(1)
+			setHasMore(true)
+			executeSearch(targetQuery, targetScopes, 1, false)
+		},
+		[scopes, executeSearch]
+	)
+	const handleRefresh = useCallback(() => {
 		setRefreshing(true)
 		setPage(1)
 		setHasMore(true)
 		executeSearch(query, scopes, 1, false)
-	}
+	}, [query, scopes, executeSearch])
 	const handleLoadMore = () => {
 		if (hasMore && !loading && !loadingMore && !refreshing && query.trim()) {
 			const nextPage = page + 1
@@ -198,24 +201,22 @@ export default function SearchScreen() {
 			executeSearch(query, scopes, nextPage, true)
 		}
 	}
-	// Toggle scope selection
-	const toggleScope = (scope: string) => {
-		let newScopes = [...scopes]
-		if (newScopes.includes(scope)) {
-			// Require at least one scope to be active
-			if (newScopes.length > 1) {
-				newScopes = newScopes.filter((s) => s !== scope)
-			} else {
-				toast.show({ title: 'Info', content: 'At least one scope must be selected', borderColor: colors.warning })
-				return
-			}
-		} else {
-			newScopes.push(scope)
-		}
-		setScopes(newScopes)
-	}
+	// Toggle scope selection — memoized to prevent header re-renders
+	const toggleScope = useCallback(
+		(scope: string) => {
+			setScopes((prev) => {
+				if (prev.includes(scope)) {
+					if (prev.length > 1) return prev.filter((s) => s !== scope)
+					toast.show({ title: 'Info', content: 'At least one scope must be selected', borderColor: colors.warning })
+					return prev
+				}
+				return [...prev, scope]
+			})
+		},
+		[colors.warning]
+	)
 	// Clear search query
-	const clearSearch = () => {
+	const clearSearch = useCallback(() => {
 		setQuery('')
 		setResults([])
 		setPage(1)
@@ -225,36 +226,41 @@ export default function SearchScreen() {
 			clearTimeout(debounceTimer.current)
 		}
 		inputRef.current?.focus()
-	}
+	}, [])
 	// Clear whole search history
 	const clearHistory = async () => {
 		setHistory([])
 		await setItem('search_history', [])
 		toast.show({ title: 'Success', content: translate('clear_history', 'Search history cleared'), borderColor: colors.success })
 	}
-	// Handle adding to cart
+	// Handle adding to cart — uses functional update to avoid renderItem churn from cart dep
 	const handleAddToCart = useCallback(
 		async (item: any, qty: number) => {
 			try {
 				const token = await getToken()
 				if (!token) {
 					toast.show({ title: 'Info', content: 'Please log in to add items to cart', borderColor: colors.info })
-					router.push('/auth')
+					router.push('/auth' as any)
 					return
 				}
-				const existingIdx = cart.findIndex((c) => c._id === item._id)
-				let newCart: CartItem[]
-				if (existingIdx > -1) {
-					newCart = [...cart]
-					newCart[existingIdx] = {
-						...newCart[existingIdx],
-						quantity: newCart[existingIdx].quantity + qty
+				// Use functional update to avoid depending on cart array identity
+				let newCartSnapshot: CartItem[] = []
+				setCart((prev) => {
+					const existingIdx = prev.findIndex((c) => c._id === item._id)
+					let next: CartItem[]
+					if (existingIdx > -1) {
+						next = [...prev]
+						next[existingIdx] = { ...next[existingIdx], quantity: next[existingIdx].quantity + qty }
+					} else {
+						next = [...prev, { ...item, quantity: qty }]
 					}
-				} else {
-					newCart = [...cart, { ...item, quantity: qty }]
-				}
-				setCart(newCart)
-				await setItem('cart', newCart)
+					newCartSnapshot = next
+					return next
+				})
+				// Persist after state computed — defer to next tick to ensure snapshot is set
+				setTimeout(async () => {
+					if (newCartSnapshot.length) await setItem('cart', newCartSnapshot)
+				}, 0)
 				toast.show({
 					title: 'Success',
 					content: `${localize(item.name) || 'Product'} added to cart`,
@@ -266,7 +272,7 @@ export default function SearchScreen() {
 				toast.show({ title: 'Error', content: 'Failed to add to cart', borderColor: colors.error })
 			}
 		},
-		[cart, localize, router, colors]
+		[localize, router, colors]
 	)
 	// List renderers
 	const renderFooter = useCallback(() => {
@@ -408,7 +414,7 @@ export default function SearchScreen() {
 					<TypedFlashList
 						data={results}
 						renderItem={renderItem}
-						keyExtractor={(item: any) => item._id}
+						keyExtractor={(item: any) => `${item.card?.kind || getCardKind(item)}-${item._id || item.slug}`}
 						estimatedItemSize={220}
 						numColumns={numColumns}
 						contentContainerStyle={{
@@ -420,6 +426,8 @@ export default function SearchScreen() {
 						onEndReachedThreshold={0.5}
 						refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
 						ListFooterComponent={renderFooter}
+						removeClippedSubviews
+						drawDistance={250}
 					/>
 				)}
 			</View>

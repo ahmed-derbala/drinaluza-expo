@@ -41,7 +41,7 @@ export default function ProfileScreen() {
 	const insets = useSafeAreaInsets()
 	const maxWidth = 800
 	const isWideScreen = width > maxWidth
-	const styles = createStyles(colors, isWideScreen, width)
+	const styles = useMemo(() => createStyles(colors, isWideScreen, width), [colors, isWideScreen, width])
 	const renderLangFlag = (code: string | undefined, fallback: string = translate('not_set', 'Not set')) => {
 		if (!LANGUAGES.find((l) => l.code === code)) return <Text style={{ color: colors.text }}>{fallback}</Text>
 		return <LanguageIcon code={code} />
@@ -75,11 +75,14 @@ export default function ProfileScreen() {
 	const [businessLoading, setBusinessLoading] = useState(false)
 	const tnLatnInputRef = useRef<TextInput>(null)
 	const tnArabInputRef = useRef<TextInput>(null)
-	// Sync cached profile into editable state as soon as it is available.
+	// Sync cached profile into editable state — avoid resetting while user is editing.
+	const isEditingRef = useRef(editMode)
+	isEditingRef.current = editMode
 	useEffect(() => {
-		if (cachedProfile) {
-			applyProfileToState(cachedProfile)
-		}
+		if (!cachedProfile) return
+		const isEditing = Object.values(isEditingRef.current).some(Boolean)
+		if (isEditing) return
+		applyProfileToState(cachedProfile)
 	}, [cachedProfile, applyProfileToState])
 	const saveUserData = async (sectionKey?: keyof typeof editMode) => {
 		if (!userData) return
@@ -233,26 +236,26 @@ export default function ProfileScreen() {
 		if (!date) return 'Not set'
 		return new Date(date).toLocaleDateString()
 	}
-	const handleSwitchUser = () => {
+	const handleSwitchUser = useCallback(() => {
 		setShowSwitchAccountModal(true)
-	}
-	const confirmSwitchUser = async () => {
+	}, [])
+	const confirmSwitchUser = useCallback(async () => {
 		try {
 			await switchUser()
 			await refreshUser()
 			setShowSwitchAccountModal(false)
-			router.replace('/auth')
+			router.replace('/auth' as any)
 		} catch (error) {
 			log({ level: 'error', label: 'profile', message: 'Switch user failed', error })
 			await refreshUser()
 			setShowSwitchAccountModal(false)
-			router.replace('/auth')
+			router.replace('/auth' as any)
 		}
-	}
-	const handleRequestBusiness = () => {
+	}, [refreshUser, router])
+	const handleRequestBusiness = useCallback(() => {
 		setBusinessName({ en: '', tn_latn: '', tn_arab: '' })
 		setShowBusinessModal(true)
-	}
+	}, [])
 	const updateBusinessName = (field: keyof MultiLang, value: string) => {
 		setBusinessName((prev) => ({ ...prev, [field]: value }))
 	}

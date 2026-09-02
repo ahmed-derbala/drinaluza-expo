@@ -331,27 +331,26 @@ export default function BusinessProductsScreen() {
 	const { data: response, isInitialLoading, isRefreshing, isOffline, refresh } = useBusinessProducts({ businessSlug })
 	const products = response?.data?.docs || []
 	const businessName = products.length > 0 && products[0].business?.name ? localize(products[0].business.name) : ''
-	const [filteredProducts, setFilteredProducts] = useState<Product[]>([])
-	const [cart, setCart] = useState<any[]>([])
 	const [searchText, setSearchText] = useState('')
 	const [activeFilter, setActiveFilter] = useState<'all' | 'inStock' | 'lowStock' | 'outOfStock'>('all')
-	// Load cart
-	const loadCart = async () => {
-		try {
-			const saved = await getItem<any[]>('cart')
-			if (saved) setCart(saved)
-		} catch {}
-	}
+	const [cart, setCart] = useState<any[]>([])
 	useEffect(() => {
-		loadCart()
+		const load = async () => {
+			try {
+				const saved = await getItem<any[]>('cart')
+				if (saved) setCart(saved)
+			} catch {}
+		}
+		load()
 	}, [])
-	useEffect(() => {
+	// Derive filtered list via useMemo (avoid double render from useEffect+setState)
+	const filteredProducts = useMemo(() => {
 		let list = products
 		if (searchText.trim()) {
 			const q = searchText.toLowerCase()
 			list = list.filter((p) => localize(p.name).toLowerCase().includes(q))
 		}
-		if (activeFilter === 'inStock') list = list.filter((p) => p.stock?.quantity > (p.stock?.minThreshold || 5))
+		if (activeFilter === 'inStock') list = list.filter((p) => (p.stock?.quantity || 0) > (p.stock?.minThreshold || 5))
 		if (activeFilter === 'lowStock') {
 			list = list.filter((p) => {
 				const q = p.stock?.quantity || 0
@@ -360,16 +359,22 @@ export default function BusinessProductsScreen() {
 			})
 		}
 		if (activeFilter === 'outOfStock') list = list.filter((p) => (p.stock?.quantity || 0) === 0)
-		setFilteredProducts(list)
+		return list
 	}, [products, searchText, activeFilter, localize])
-	// Add to cart
+	// Add to cart — functional update to keep renderItem stable (avoid cart dep churn)
 	const handleAddToCart = useCallback(
 		async (item: Product, qty: number) => {
 			try {
-				const existing = cart.findIndex((b) => b._id === item._id)
-				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
-				setCart(newCart)
-				await setItem('cart', newCart)
+				let snapshot: any[] = []
+				setCart((prev: any[]) => {
+					const existing = prev.findIndex((b) => b._id === item._id)
+					const next = existing > -1 ? prev.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...prev, { ...item, quantity: qty }]
+					snapshot = next
+					return next
+				})
+				setTimeout(async () => {
+					if (snapshot.length) await setItem('cart', snapshot)
+				}, 0)
 				toast.show({
 					title: 'Success',
 					content: `${localize(item.name)} ${translate('cart_added_to_cart', 'added to cart')}`,
@@ -380,11 +385,11 @@ export default function BusinessProductsScreen() {
 				toast.show({ title: 'Error', content: translate('cart_failed_to_add', 'Failed to add to cart'), borderColor: themeColors.error })
 			}
 		},
-		[cart, localize, translate, router]
+		[localize, translate, user]
 	)
-	const handleRefresh = () => {
+	const handleRefresh = useCallback(() => {
 		refresh()
-	}
+	}, [refresh])
 	// Filter counts
 	const counts = useMemo(() => {
 		const outOfStock = products.filter((p) => (p.stock?.quantity || 0) === 0).length

@@ -1,0 +1,16 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^git status --short && printf '\\\\nList usage:\\\\n' && rg -n \"<ScrollView\\|<FlatList\\|<FlashList\\|\\\\\\.map\\\\\\(\" src/features src/app \\| head -160$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^npx eslint src/features/dashboard/BusinessDashboardProductsScreen\\.tsx$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^npx tsc --noEmit --pretty false$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

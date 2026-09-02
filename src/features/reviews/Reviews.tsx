@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity, TextInput, Alert } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -75,25 +75,31 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 			setSubmitting(false)
 		}
 	}
-	const renderStars = (stars: number, interactive: boolean = false) => <RatingStars rating={stars} size={interactive ? 28 : 16} interactive={interactive} onRatingChange={handleStarPress} />
-	const renderReviewItem = (review: Review) => (
-		<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.background, borderColor: colors.info }]}>
-			<View style={styles.reviewHeader}>
-				<View style={styles.authorInfo}>
-					<View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryContainer }]}>
-						<Ionicons name="person" size={20} color={colors.primary} />
+	const renderStars = useCallback(
+		(stars: number, interactive: boolean = false) => <RatingStars rating={stars} size={interactive ? 28 : 16} interactive={interactive} onRatingChange={handleStarPress} />,
+		[]
+	)
+	const renderReviewItem = useCallback(
+		(review: Review) => (
+			<View key={review._id} style={[styles.reviewItem, { backgroundColor: colors.background, borderColor: colors.info }]}>
+				<View style={styles.reviewHeader}>
+					<View style={styles.authorInfo}>
+						<View style={[styles.avatarPlaceholder, { backgroundColor: colors.primaryContainer }]}>
+							<Ionicons name="person" size={20} color={colors.primary} />
+						</View>
+						<View style={styles.authorDetails}>
+							<Text style={[styles.authorName, { color: colors.text }]} numberOfLines={1}>
+								{review.author?.name ? localize(review.author.name) : 'Anonymous'}
+							</Text>
+							<Text style={[styles.reviewDate, { color: colors.textSecondary }]}>{new Date(review.createdAt).toLocaleDateString()}</Text>
+						</View>
 					</View>
-					<View style={styles.authorDetails}>
-						<Text style={[styles.authorName, { color: colors.text }]} numberOfLines={1}>
-							{review.author?.name ? localize(review.author.name) : 'Anonymous'}
-						</Text>
-						<Text style={[styles.reviewDate, { color: colors.textSecondary }]}>{new Date(review.createdAt).toLocaleDateString()}</Text>
-					</View>
+					{renderStars(review.stars)}
 				</View>
-				{renderStars(review.stars)}
+				<Text style={[styles.reviewComment, { color: colors.text }]}>{review.comment}</Text>
 			</View>
-			<Text style={[styles.reviewComment, { color: colors.text }]}>{review.comment}</Text>
-		</View>
+		),
+		[colors, localize, renderStars]
 	)
 	const averageRating = reviews.length > 0 ? reviews.reduce((sum, r) => sum + r.stars, 0) / reviews.length : 0
 	return (
@@ -152,20 +158,20 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 					)}
 				</View>
 			)}
-			{/* Reviews List */}
+			{/* Reviews List — flat rendering with pagination to avoid nested ScrollView */}
 			{loading ? (
 				<Spinner style={styles.loadingContainer} />
 			) : reviews.length === 0 ? (
 				<EmptyState style={styles.emptyContainer} />
 			) : (
-				<ScrollView style={styles.reviewsList}>
+				<View style={styles.reviewsList}>
 					{reviews.map(renderReviewItem)}
 					{pagination.hasNextPage && (
 						<TouchableOpacity style={[styles.loadMoreButton, { backgroundColor: colors.surface, borderColor: colors.border }]} onPress={() => loadReviews(pagination.page + 1)}>
 							<Text style={[styles.loadMoreText, { color: colors.primary }]}>{translate('load_more', 'Load More')}</Text>
 						</TouchableOpacity>
 					)}
-				</ScrollView>
+				</View>
 			)}
 		</View>
 	)
@@ -284,7 +290,7 @@ const styles = StyleSheet.create({
 		fontSize: 14
 	},
 	reviewsList: {
-		maxHeight: 400
+		gap: 0
 	},
 	reviewItem: {
 		padding: 16,

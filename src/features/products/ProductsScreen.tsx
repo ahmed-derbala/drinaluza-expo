@@ -169,13 +169,13 @@ export default function ProductsScreen() {
 			setIsLoadingMore(false)
 		}
 	}
-	const handleRefresh = async () => {
+	const handleRefresh = useCallback(async () => {
 		setPage(1)
 		setHasMore(true)
 		hasUserInteractedRef.current = false
 		await loadCart()
 		await refresh()
-	}
+	}, [refresh])
 	const handleLoadMore = () => {
 		if (hasMore && !isInitialLoading && !isLoadingMore && !isRefreshing) {
 			const next = page + 1
@@ -189,19 +189,25 @@ export default function ProductsScreen() {
 				const token = await getToken()
 				if (!token) {
 					toast.show({ title: 'Info', content: 'Please log in to add items to cart', borderColor: themeColors.info })
-					router.push('/auth')
+					router.push('/auth' as any)
 					return
 				}
-				const existing = cart.findIndex((b) => b._id === item._id)
-				const newCart = existing > -1 ? cart.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...cart, { ...item, quantity: qty }]
-				setCart(newCart)
-				await setItem('cart', newCart)
+				let snapshot: any[] = []
+				setCart((prev: any[]) => {
+					const existing = prev.findIndex((b) => b._id === item._id)
+					const next = existing > -1 ? prev.map((b, i) => (i === existing ? { ...b, quantity: b.quantity + qty } : b)) : [...prev, { ...item, quantity: qty }]
+					snapshot = next
+					return next
+				})
+				setTimeout(async () => {
+					if (snapshot.length) await setItem('cart', snapshot)
+				}, 0)
 				toast.show({ title: 'Success', content: `Added to cart`, borderColor: themeColors.success, screen: user ? '/purchases?status=cart' : '/auth' })
 			} catch {
 				toast.show({ title: 'Error', content: 'Failed to add to cart', borderColor: themeColors.error })
 			}
 		},
-		[cart, router, user]
+		[router, user]
 	)
 	const renderItem = useCallback(
 		({ item }: { item: ProductFeedItem }) => (
