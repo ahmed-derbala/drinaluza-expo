@@ -25,7 +25,11 @@ export function QuantityStepper({ value, onIncrement, onDecrement, decrementDisa
 	return (
 		<View style={[styles.container, style]} testID={testID}>
 			<TouchableOpacity
-				onPress={onDecrement}
+				onPress={(e: any) => {
+					e?.stopPropagation?.()
+					e?.preventDefault?.()
+					if (!decrementDisabled) onDecrement(e)
+				}}
 				disabled={decrementDisabled}
 				style={[styles.btn, { width: buttonSize, height: buttonSize }, decrementDisabled && styles.btnDisabled]}
 				activeOpacity={0.7}
@@ -36,7 +40,11 @@ export function QuantityStepper({ value, onIncrement, onDecrement, decrementDisa
 			</TouchableOpacity>
 			<Text style={styles.valueText}>{value}</Text>
 			<TouchableOpacity
-				onPress={onIncrement}
+				onPress={(e: any) => {
+					e?.stopPropagation?.()
+					e?.preventDefault?.()
+					if (!incrementDisabled) onIncrement(e)
+				}}
 				disabled={incrementDisabled}
 				style={[styles.btn, { width: buttonSize, height: buttonSize }, incrementDisabled && styles.btnDisabled]}
 				activeOpacity={0.7}

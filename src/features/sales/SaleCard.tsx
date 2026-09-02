@@ -1,10 +1,8 @@
-import { useTheme, themeColors } from '@/core/theme'
 import React from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, useWindowDimensions } from 'react-native'
-import { MaterialIcons } from '@expo/vector-icons'
+import { View, Text, StyleSheet } from 'react-native'
+import { useTheme, themeColors } from '@/core/theme'
 import { Sale } from './sales.api'
 import { format } from 'date-fns'
-import { SmartMediaView } from '@/core/smart-media'
 import { useUser } from '@/core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
 import { toast } from '@/features/common/Toast'
@@ -13,78 +11,26 @@ import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { CustomerContactBlock } from '@/features/customers/components/CustomerContactBlock'
+import { OrderProductsCard } from '@/features/orders/components/OrderProductsCard'
+import { useRouter } from 'expo-router'
 import SaleIdBadge from './SaleIdBadge'
 import SaleStatusBadge from './SaleStatusBadge'
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 interface SaleCardProps {
 	sale: Sale
 	onStatusUpdate?: () => void
 }
-interface ProductItemProps {
-	product: Sale['products'][0]
-	quantity: number
-	editable: boolean
-	disabled?: boolean
-	onIncrement: () => void
-	onDecrement: () => void
-}
-const ProductItem = ({ product, quantity, editable, disabled, onIncrement, onDecrement }: ProductItemProps) => {
-	const { colors } = useTheme()
-	const { localize, formatPrice, translate } = useUser()
-	const getImageUrl = () => {
-		return product.product.media?.thumbnail?.url || product.product.defaultProduct?.media?.thumbnail?.url || null
-	}
-	const unitMeasure = product.product.unit?.measure || translate('unit', 'unit')
-	const lineTotal = React.useMemo(() => {
-		const unit: any = product.product.price?.total || {}
-		const total: any = {}
-		if (unit.tnd != null) total.tnd = unit.tnd * quantity
-		if (unit.eur != null) total.eur = unit.eur * quantity
-		if (unit.usd != null) total.usd = unit.usd * quantity
-		return { total }
-	}, [product.product.price?.total, quantity])
-	return (
-		<View style={[styles.productItem, { backgroundColor: colors.surface, borderColor: colors.info }]}>
-			<SmartMediaView media={getImageUrl()} style={styles.productImage} />
-			<View style={styles.productDetails}>
-				<Text style={[styles.productName, { color: colors.text }]} numberOfLines={2}>
-					{localize(product.product.name)}
-				</Text>
-				<View style={styles.productMeta}>
-					{!editable && (
-						<Text style={[styles.productQuantity, { color: colors.textSecondary }]}>
-							{quantity} {unitMeasure}
-						</Text>
-					)}
-					<Text style={[styles.productUnitPrice, { color: colors.textTertiary }]}>
-						@ {formatPrice(product.product.price)}/{unitMeasure}
-					</Text>
-				</View>
-				{editable && (
-					<View style={styles.stepperRow}>
-						<TouchableOpacity onPress={onDecrement} disabled={disabled} activeOpacity={0.7} style={[styles.stepperBtn, { backgroundColor: colors.surfaceVariant, opacity: disabled ? 0.5 : 1 }]}>
-							<MaterialIcons name="remove" size={16} color={colors.text} />
-						</TouchableOpacity>
-						<Text style={[styles.stepperValue, { color: colors.text }]}>{quantity}</Text>
-						<TouchableOpacity onPress={onIncrement} disabled={disabled} activeOpacity={0.7} style={[styles.stepperBtn, { backgroundColor: colors.surfaceVariant, opacity: disabled ? 0.5 : 1 }]}>
-							<MaterialIcons name="add" size={16} color={colors.text} />
-						</TouchableOpacity>
-					</View>
-				)}
-				<Text style={[styles.productTotal, { color: colors.primary }]}>{formatPrice(lineTotal)}</Text>
-			</View>
-		</View>
-	)
-}
+
+// ─── Component ──────────────────────────────────────────────────────────────
 const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const { colors } = useTheme()
 	const { localize, formatPrice, translate } = useUser()
-	const { width } = useWindowDimensions()
-	const isWeb = Platform.OS === 'web'
-	const isTablet = width >= 768
-	const isDesktop = width >= 1024
+	const router = useRouter()
 	const [updating, setUpdating] = React.useState(false)
 	const [currentStatus, setCurrentStatus] = React.useState(sale.status)
 	const isPending = currentStatus === statuses.PENDING_BUSINESS_CONFIRMATION
+
 	const initialQuantities = React.useMemo(
 		() =>
 			sale.products.reduce(
@@ -100,13 +46,16 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	React.useEffect(() => {
 		setQuantities(initialQuantities)
 	}, [initialQuantities])
+
 	const hasQuantityChanges = React.useMemo(() => sale.products.some((p) => quantities[p._id ?? p.product._id] !== p.quantity), [sale.products, quantities])
+
 	const getProductBounds = React.useCallback((p: Sale['products'][0]) => {
 		const unit = p.product.unit
 		return { min: unit?.min ?? 1, max: unit?.max ?? Infinity, step: unit?.step ?? 1 }
 	}, [])
+
 	const onIncrement = React.useCallback(
-		(p: Sale['products'][0]) => {
+		(p: any) => {
 			const id = p._id ?? p.product._id
 			setQuantities((prev) => {
 				const current = prev[id] ?? p.quantity
@@ -118,8 +67,9 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		},
 		[getProductBounds]
 	)
+
 	const onDecrement = React.useCallback(
-		(p: Sale['products'][0]) => {
+		(p: any) => {
 			const id = p._id ?? p.product._id
 			setQuantities((prev) => {
 				const current = prev[id] ?? p.quantity
@@ -131,11 +81,30 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		},
 		[getProductBounds]
 	)
+
+	const onRemove = React.useCallback((p: any) => {
+		const id = p._id ?? p.product._id
+		setQuantities((prev) => {
+			const next = { ...prev }
+			delete next[id]
+			return next
+		})
+	}, [])
+
+	const displayProducts = React.useMemo(() => {
+		return sale.products.filter((p) => {
+			const id = p._id ?? p.product._id
+			const q = quantities[id]
+			return q === undefined || q > 0
+		})
+	}, [sale.products, quantities])
+
 	const computedTotalPrice = React.useMemo(() => {
 		if (!hasQuantityChanges) return sale.price
 		const total: any = {}
 		sale.products.forEach((p) => {
 			const q = quantities[p._id ?? p.product._id] ?? p.quantity
+			if (q <= 0) return
 			const unit: any = p.product.price?.total || {}
 			if (unit.tnd != null) total.tnd = (total.tnd || 0) + unit.tnd * q
 			if (unit.eur != null) total.eur = (total.eur || 0) + unit.eur * q
@@ -143,6 +112,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		})
 		return { total }
 	}, [hasQuantityChanges, quantities, sale.price, sale.products])
+
 	const handleStatusUpdate = async (newStatus: string) => {
 		try {
 			setUpdating(true)
@@ -150,7 +120,13 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			let productsPayload: { _id: string; quantity: number }[] | undefined
 			if (newStatus === statuses.CONFIRMED_BY_BUSINESS && hasQuantityChanges) {
 				payloadStatus = statuses.PENDING_CUSTOMER_CONFIRMATION
-				productsPayload = sale.products.map((p) => ({
+				productsPayload = displayProducts.map((p) => ({
+					_id: p._id ?? p.product._id,
+					quantity: quantities[p._id ?? p.product._id] ?? p.quantity
+				}))
+			}
+			if (newStatus === statuses.CANCELLED_BY_BUSINESS && displayProducts.length !== sale.products.length) {
+				productsPayload = displayProducts.map((p) => ({
 					_id: p._id ?? p.product._id,
 					quantity: quantities[p._id ?? p.product._id] ?? p.quantity
 				}))
@@ -165,6 +141,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			setUpdating(false)
 		}
 	}
+
 	const renderStatusActions = () => {
 		const actions = []
 		switch (currentStatus) {
@@ -210,57 +187,57 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 							onPress={() => handleStatusUpdate(action.status)}
 							disabled={updating}
 							loading={updating}
-							variant={resolveVariant(action.color)}
+							variant={resolveVariant(action.color) as any}
 						/>
 					)
 				)}
 			</View>
 		)
 	}
+
+	const handleProductPress = (item: any) => {
+		const slug = item.product?.slug
+		if (slug) router.push(`/products/${slug}` as any)
+	}
+
 	return (
 		<BaseCard style={styles.card} borderWidth={2} borderColor={colors.info} testID={`sale-card-${sale._id}`}>
-			{/* Header Section */}
 			<View style={styles.header}>
 				<View style={styles.headerLeft}>
 					<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
 						{localize(sale.business.name)}
 					</Text>
-					<Text style={[styles.dateText, { color: colors.textSecondary }]}>{format(new Date(sale.createdAt), 'MMM d, yyyy • HH:mm')}</Text>
+					<Text style={[styles.dateText, { color: colors.textSecondary }]}>
+						{new Date(sale.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+					</Text>
 				</View>
 				<View style={styles.headerRight}>
-					<SaleStatusBadge sale={sale} />
+					<SaleStatusBadge sale={{ ...sale, status: currentStatus } as any} />
 					<SaleIdBadge sale={sale} />
 				</View>
 			</View>
-			{/* Customer Section */}
 			<CustomerContactBlock customer={sale.customer} />
-			{/* Products Section - Scrollable */}
-			<View style={styles.productsContainer}>
-				<Text style={[styles.productsTitle, { color: colors.textSecondary }]}>
-					{translate('products', 'Products')} ({sale.products.length})
-				</Text>
-				<ScrollView horizontal showsHorizontalScrollIndicator={isWeb} contentContainerStyle={styles.productsScrollContent} style={styles.productsScroll}>
-					{sale.products.map((product, index) => (
-						<ProductItem
-							key={`${product._id ?? product.product._id}_${index}`}
-							product={product}
-							quantity={quantities[product._id ?? product.product._id] ?? product.quantity}
-							editable={isPending}
-							disabled={updating}
-							onIncrement={() => onIncrement(product)}
-							onDecrement={() => onDecrement(product)}
-						/>
-					))}
-				</ScrollView>
-			</View>
+			<OrderProductsCard
+				products={displayProducts as any}
+				editable={isPending}
+				disabled={updating}
+				getQuantity={(item) => quantities[(item as any)._id ?? item.product._id] ?? item.quantity}
+				onIncrement={onIncrement as any}
+				onDecrement={onDecrement as any}
+				onRemove={onRemove as any}
+				onProductPress={handleProductPress}
+				title={`${translate('products', 'Products')} (${displayProducts.length})`}
+			/>
 			<View style={[styles.footer, { borderTopColor: colors.border }]}>
 				<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
-				<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(computedTotalPrice)}</Text>
+				<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(computedTotalPrice as any)}</Text>
 			</View>
 			{renderStatusActions()}
 		</BaseCard>
 	)
 }
+
+// ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
 		marginBottom: 16,
@@ -271,7 +248,6 @@ const styles = StyleSheet.create({
 		justifyContent: 'space-between',
 		alignItems: 'flex-start',
 		padding: 16,
-		borderBottomWidth: 1,
 		gap: 12
 	},
 	headerLeft: {
@@ -288,62 +264,6 @@ const styles = StyleSheet.create({
 	},
 	dateText: {
 		fontSize: 13
-	},
-	productsContainer: {
-		paddingVertical: 12
-	},
-	productsTitle: {
-		fontSize: 13,
-		fontWeight: '600',
-		paddingHorizontal: 16,
-		marginBottom: 8,
-		textTransform: 'uppercase',
-		letterSpacing: 0.5
-	},
-	productsScroll: {
-		maxHeight: 140
-	},
-	productsScrollContent: {
-		paddingHorizontal: 16,
-		gap: 12
-	},
-	productItem: {
-		flexDirection: 'row',
-		width: 280,
-		padding: 12,
-		borderRadius: 12,
-		borderWidth: 1,
-		gap: 12
-	},
-	productImage: {
-		width: 60,
-		height: 60,
-		borderRadius: 8
-	},
-	productDetails: {
-		flex: 1,
-		justifyContent: 'space-between'
-	},
-	productName: {
-		fontSize: 15,
-		fontWeight: '600',
-		marginBottom: 4
-	},
-	productMeta: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 8,
-		marginBottom: 4
-	},
-	productQuantity: {
-		fontSize: 13
-	},
-	productUnitPrice: {
-		fontSize: 12
-	},
-	productTotal: {
-		fontSize: 16,
-		fontWeight: '700'
 	},
 	footer: {
 		flexDirection: 'row',
@@ -368,40 +288,7 @@ const styles = StyleSheet.create({
 		gap: 12,
 		borderTopWidth: 1,
 		backgroundColor: themeColors.background5
-	},
-	actionBtn: {
-		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingVertical: 10,
-		paddingHorizontal: 12,
-		borderRadius: 12,
-		borderWidth: 1.5,
-		gap: 8
-	},
-	actionBtnText: {
-		fontSize: 14,
-		fontWeight: '700'
-	},
-	stepperRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 6,
-		marginTop: 4
-	},
-	stepperBtn: {
-		width: 26,
-		height: 26,
-		borderRadius: 8,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	stepperValue: {
-		fontSize: 14,
-		fontWeight: '600',
-		minWidth: 28,
-		textAlign: 'center'
 	}
 })
+
 export default React.memo(SaleCard)

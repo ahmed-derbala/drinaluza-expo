@@ -226,6 +226,7 @@ export function ErrorBoundary({ error, retry }: { error: Error & { digest?: stri
 
 	// Use static themeColors to avoid dependency on AppThemeProvider which may be the error source.
 	// SmartHeader inside relies on LayoutProvider/AppThemeProvider; wrap with providers again for fallback.
+	// Avoid default headerActions (notifications/cart) which require NotificationProvider/UserProvider
 	return (
 		<SafeAreaProvider>
 			<AppThemeProvider>
@@ -235,7 +236,7 @@ export function ErrorBoundary({ error, retry }: { error: Error & { digest?: stri
 							<LayoutProvider>
 								<SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}>
 									<View style={{ flex: 1, backgroundColor: themeColors.background }}>
-										<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" />
+										<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" headerActions={[]} />
 										<ErrorBlock error={error} onRetry={retry} />
 									</View>
 								</SafeAreaView>

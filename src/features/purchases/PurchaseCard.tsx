@@ -1,20 +1,33 @@
 import React from 'react'
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTheme, themeColors } from '@/core/theme'
+import { useTheme } from '@/core/theme'
+import { CARD } from '@/core/theme/constants'
 import { useUser } from '@/core/contexts'
 import { SmartMediaView } from '@/core/smart-media'
+import { BaseCard } from '@/features/common/cards/BaseCard'
 import { CancelButton } from '@/features/common/buttons/CancelButton'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { OrderItem } from '@/features/orders/orders.interface'
+import { ORDER_STATUSES } from '@/features/orders/orders-statuses'
 import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
 import { OrderStepTracker } from '@/features/orders/components/OrderStepTracker'
+import { OrderProductCard } from '@/features/orders/components/OrderProductCard'
+import { OrderProductsCard } from '@/features/orders/components/OrderProductsCard'
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const ORDER_STEPS = ['Ordered', 'Confirmed', 'Transit', 'Delivered']
+
+// ─── Types ──────────────────────────────────────────────────────────────────
 interface PurchaseCardProps {
 	item: OrderItem
 	onCancel?: (id: string) => void
 	onMarkReceived?: (id: string) => void
+	onUpdateQuantity?: (productId: string, quantity: number) => void
+	onRemoveProduct?: (productId: string) => void
 }
-const ORDER_STEPS = ['Ordered', 'Confirmed', 'Transit', 'Delivered']
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
 function getStepIndex(status: string) {
 	if (status === 'pending_business_confirmation' || status === 'pending_customer_confirmation') return 0
 	if (status === 'confirmed_by_business') return 1
@@ -22,7 +35,8 @@ function getStepIndex(status: string) {
 	if (status === 'delivered_to_customer' || status === 'received_by_customer') return 3
 	return -1
 }
-export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, onMarkReceived }: PurchaseCardProps) {
+
+export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, onMarkReceived, onUpdateQuantity, onRemoveProduct }: PurchaseCardProps) {
 	const { colors } = useTheme()
 	const { localize, translate, formatPrice } = useUser()
 	const router = useRouter()
@@ -30,63 +44,114 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 	const statusLabel = orderStatusLabels[item.status as keyof typeof orderStatusLabels] || item.status
 	const stepIndex = getStepIndex(item.status)
 	const businessImage = item.business.media?.thumbnail?.url
-	const total = item.price?.total?.tnd ?? 0
 	const orderDate = new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+	const isPending = item.status === ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION || item.status === ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION
 	const canCancel = item.status === 'pending_business_confirmation'
 	const canMarkReceived = item.status === 'delivered_to_customer'
+
+	const initialQuantities = React.useMemo(
+		() =>
+			item.products.reduce(
+				(acc: Record<string, number>, p: any) => {
+					acc[p.product._id] = p.quantity
+					return acc
+				},
+				{} as Record<string, number>
+			),
+		[item.products]
+	)
+	const [quantities, setQuantities] = React.useState<Record<string, number>>(() => initialQuantities)
+	React.useEffect(() => {
+		setQuantities(initialQuantities)
+	}, [initialQuantities])
+
+	const getBounds = React.useCallback((p: any) => {
+		const unit = p.product.unit
+		return { min: unit?.min ?? 1, max: unit?.max ?? Infinity, step: unit?.step ?? 1 }
+	}, [])
+
+	const onIncrement = React.useCallback(
+		(p: any) => {
+			const id = p.product._id
+			setQuantities((prev) => {
+				const cur = prev[id] ?? p.quantity
+				const { step, max } = getBounds(p)
+				const next = Math.round((cur + step) * 100) / 100
+				if (next > max) return prev
+				if (onUpdateQuantity) onUpdateQuantity(id, next)
+				return { ...prev, [id]: next }
+			})
+		},
+		[getBounds, onUpdateQuantity]
+	)
+
+	const onDecrement = React.useCallback(
+		(p: any) => {
+			const id = p.product._id
+			setQuantities((prev) => {
+				const cur = prev[id] ?? p.quantity
+				const { step, min } = getBounds(p)
+				const next = Math.round((cur - step) * 100) / 100
+				if (next < min) return prev
+				if (onUpdateQuantity) onUpdateQuantity(id, next)
+				return { ...prev, [id]: next }
+			})
+		},
+		[getBounds, onUpdateQuantity]
+	)
+
+	const onRemove = React.useCallback(
+		(p: any) => {
+			const id = p.product._id
+			setQuantities((prev) => {
+				const next = { ...prev }
+				delete next[id]
+				return next
+			})
+			if (onRemoveProduct) onRemoveProduct(id)
+		},
+		[onRemoveProduct]
+	)
+
+	const displayProducts = React.useMemo(() => {
+		return item.products.filter((p: any) => {
+			const q = quantities[p.product._id]
+			return q === undefined || q > 0
+		})
+	}, [item.products, quantities])
+
+	const handleProductPress = (p: any) => {
+		const slug = p.product?.slug
+		if (slug) router.push(`/products/${slug}` as any)
+	}
+
 	return (
-		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
+		<BaseCard style={styles.card}>
 			<View style={styles.header}>
-				<TouchableOpacity
-					style={styles.headerLeft}
-					disabled={!item.business.slug}
-					onPress={() => {
-						if (item.business.slug) {
-							router.push(`/businesses/${item.business.slug}` as any)
-						}
-					}}
-				>
-					<SmartMediaView media={businessImage} style={styles.avatar} />
+				<View style={styles.headerLeft}>
+					<SmartMediaView media={businessImage} style={[styles.avatar, { borderColor: colors.border }]} />
 					<View style={styles.headerInfo}>
 						<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
 							{localize(item.business.name)}
 						</Text>
 						<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{orderDate}</Text>
 					</View>
-				</TouchableOpacity>
+				</View>
 				<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
 					<Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
 				</View>
 			</View>
 			<View style={[styles.divider, { backgroundColor: colors.border }]} />
-			<ScrollView style={styles.productList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-				{item.products.map((p, idx) => {
-					const img = p.product.media?.thumbnail?.url || p.product.defaultProduct?.media?.thumbnail?.url
-					return (
-						<TouchableOpacity
-							key={`${p.product._id}-${idx}`}
-							style={styles.productRow}
-							disabled={!p.product.slug}
-							onPress={() => {
-								if (p.product.slug) {
-									router.push(`/products/${p.product.slug}` as any)
-								}
-							}}
-						>
-							<SmartMediaView media={img} style={styles.productThumb} />
-							<View style={styles.productInfo}>
-								<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
-									{localize(p.product.name)}
-								</Text>
-								<Text style={[styles.productQty, { color: colors.textSecondary }]}>
-									{p.quantity} × {p.product.unit?.measure || translate('unit', 'unit')}
-								</Text>
-							</View>
-							<Text style={[styles.productPrice, { color: colors.primary }]}>{formatPrice(p.lineTotal || { total: { tnd: 0 } })}</Text>
-						</TouchableOpacity>
-					)
-				})}
-			</ScrollView>
+			<OrderProductsCard
+				products={displayProducts as any}
+				editable={isPending}
+				getQuantity={(it) => quantities[(it as any).product._id] ?? (it as any).quantity}
+				onIncrement={onIncrement as any}
+				onDecrement={onDecrement as any}
+				onRemove={onRemove as any}
+				onProductPress={handleProductPress}
+				title={`${translate('products', 'Products')} (${displayProducts.length})`}
+			/>
 			<OrderStepTracker stepIndex={stepIndex} steps={ORDER_STEPS} />
 			<View style={[styles.divider, { backgroundColor: colors.border }]} />
 			<View style={styles.footer}>
@@ -96,7 +161,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 				</View>
 				<View style={{ alignItems: 'flex-end' }}>
 					<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
-					<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(item.price || { total: { tnd: 0 } })}</Text>
+					<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(item.price || ({ total: { tnd: 0 } } as any))}</Text>
 				</View>
 			</View>
 			{(canCancel || canMarkReceived) && (
@@ -105,16 +170,17 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 					{canMarkReceived && <IconButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" />}
 				</View>
 			)}
-		</View>
+		</BaseCard>
 	)
 })
+
+// ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
-		borderRadius: 28,
-		borderWidth: 1,
-		padding: 22,
-		marginBottom: 16,
-		minHeight: 320,
+		borderRadius: CARD.borderRadius,
+		padding: CARD.padding * 1.8,
+		marginBottom: CARD.gap,
+		minHeight: CARD.minHeight,
 		justifyContent: 'space-between'
 	},
 	header: {
@@ -132,8 +198,7 @@ const styles = StyleSheet.create({
 		width: 46,
 		height: 46,
 		borderRadius: 16,
-		borderWidth: 1,
-		borderColor: themeColors.buttonText10
+		borderWidth: 1
 	},
 	headerInfo: {
 		flex: 1,
@@ -164,42 +229,6 @@ const styles = StyleSheet.create({
 		height: 1,
 		marginVertical: 18,
 		opacity: 0.4
-	},
-	productList: {
-		maxHeight: 180,
-		flexGrow: 0
-	},
-	productRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12,
-		marginBottom: 12
-	},
-	productThumb: {
-		width: 56,
-		height: 56,
-		borderRadius: 14,
-		borderWidth: 1,
-		borderColor: themeColors.buttonText5
-	},
-	productInfo: {
-		flex: 1,
-		minWidth: 0
-	},
-	productName: {
-		fontSize: 15,
-		fontWeight: '700',
-		letterSpacing: -0.2
-	},
-	productQty: {
-		fontSize: 12,
-		fontWeight: '500',
-		marginTop: 2
-	},
-	productPrice: {
-		fontSize: 15,
-		fontWeight: '800',
-		letterSpacing: -0.1
 	},
 	footer: {
 		flexDirection: 'row',
@@ -233,19 +262,5 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		gap: 10,
 		marginTop: 16
-	},
-	actionBtn: {
-		flex: 1,
-		flexDirection: 'row',
-		height: 46,
-		borderRadius: 14,
-		borderWidth: 1.5,
-		justifyContent: 'center',
-		alignItems: 'center',
-		gap: 8
-	},
-	actionBtnText: {
-		fontSize: 13,
-		fontWeight: '700'
 	}
 })

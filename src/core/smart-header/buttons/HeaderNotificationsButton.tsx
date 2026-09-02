@@ -10,7 +10,14 @@ export interface HeaderNotificationsButtonProps {
 export function HeaderNotificationsButton({ size = 38, label = 'Notifications' }: HeaderNotificationsButtonProps) {
 	const router = useRouter()
 	const pathname = usePathname()
-	const { notificationCount } = useNotification()
+	let notificationCount = 0
+	try {
+		// eslint-disable-next-line react-hooks/rules-of-hooks
+		const ctx = useNotification()
+		notificationCount = ctx.notificationCount ?? 0
+	} catch {
+		notificationCount = 0
+	}
 
 	const handlePress = () => {
 		if (pathname === '/notifications') return

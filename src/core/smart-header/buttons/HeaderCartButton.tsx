@@ -12,8 +12,22 @@ const HIDDEN_ON_ROUTES = ['/dashboard']
 export const HeaderCartButton: React.FC = React.memo(() => {
 	const router = useRouter()
 	const pathname = usePathname()
-	const { user } = useUser()
-	const badgeCount = useCartCount()
+	let user: any = null
+	let badgeCount = 0
+	try {
+		// eslint-disable-next-line react-hooks/rules-of-hooks
+		const ctx = useUser()
+		user = (ctx as any)?.user ?? null
+	} catch {
+		user = null
+	}
+	try {
+		// eslint-disable-next-line react-hooks/rules-of-hooks
+		const count = useCartCount()
+		badgeCount = typeof count === 'number' ? count : 0
+	} catch {
+		badgeCount = 0
+	}
 
 	const hidden = useHiddenOnRoutes(HIDDEN_ON_ROUTES)
 	if (hidden) return null

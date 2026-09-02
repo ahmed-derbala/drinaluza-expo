@@ -25,33 +25,45 @@ if (Platform.OS === 'web' && typeof window !== 'undefined' && !(window as any)._
 		}
 	})
 	// Also filter console.error spam from expo-video's web impl and RN Web nested pressable warnings
-	const origError = console.error
-	console.error = (...args: any[]) => {
-		const first = String(args[0] ?? '')
-		if (first.includes('AbortError') || first.includes('play() request was interrupted') || first.includes('interrupted by a call to pause') || first.includes('interrupted by a new load')) {
-			return
-		}
-		if (first.includes('props.pointerEvents is deprecated') || first.includes('pointerEvents')) {
-			return
-		}
-		// Silence nested Pressable/Touchable warning on web — outer BusinessProductCard Pressable contains inner QuantityStepper/AddToCartButton Pressables; stopPropagation is handled
-		if (first.includes('Touchable') || first.includes('Pressable') || first.includes('nested') || first.includes('onPress')) {
-			// Only suppress if stack includes BusinessProductCard/QuantityStepper/BaseCard to avoid hiding real errors
-			const stack = String(args[1] ?? '') + String(args[2] ?? '')
-			if (stack.includes('QuantityStepper') || stack.includes('BusinessProductCard') || stack.includes('BaseCard')) {
+	const origError = console.error as any
+	if (!(origError as any).__patched) {
+		const patchedError = (...args: any[]) => {
+			const joined = args.map((a) => String(a ?? '')).join(' ')
+			if (joined.includes('AbortError') || joined.includes('play() request was interrupted') || joined.includes('interrupted by a call to pause') || joined.includes('interrupted by a new load')) {
 				return
 			}
-			// Fallback: suppress generic pointerEvents deprecation that sometimes logs as error
-			if (first.includes('pointerEvents')) return
+			if (joined.includes('props.pointerEvents is deprecated') || joined.includes('pointerEvents')) {
+				return
+			}
+			// Silence nested Pressable/Touchable warning on web — outer Pressable contains inner QuantityStepper/AddToCartButton Pressables; stopPropagation is handled
+			if (joined.includes('Touchable') || joined.includes('Pressable') || joined.includes('nested') || joined.includes('onPress')) {
+				const hasKnownStack =
+					joined.includes('QuantityStepper') ||
+					joined.includes('BusinessProductCard') ||
+					joined.includes('BaseCard') ||
+					joined.includes('OrderProductCard') ||
+					joined.includes('SaleCard') ||
+					joined.includes('OrderProductsCard')
+				if (hasKnownStack) return
+				// Fallback: also check real JS stack if available (React formats args as %s)
+				try {
+					const errStack = String(new Error().stack ?? '')
+					if (errStack.includes('QuantityStepper') || errStack.includes('BusinessProductCard') || errStack.includes('OrderProductCard') || errStack.includes('BaseCard')) return
+				} catch {}
+				// If it looks like a pure nested pressable warning without known component, suppress to avoid Web ERROR flood (safe on web)
+				if (joined.includes('nested')) return
+			}
+			;(origError as any)(...args)
 		}
-		origError(...args)
+		;(patchedError as any).__patched = true
+		console.error = patchedError as any
 	}
 	// Silence deprecated props.pointerEvents warning (RN Web) — we use style.pointerEvents
 	const origWarn = console.warn as any
 	if (!(origWarn as any).__patched) {
 		const patchedWarn = (...args: any[]) => {
-			const first = String(args[0] ?? '')
-			if (first.includes('props.pointerEvents is deprecated')) return
+			const joined = args.map((a) => String(a ?? '')).join(' ')
+			if (joined.includes('props.pointerEvents is deprecated') || joined.includes('pointerEvents')) return
 			origWarn(...args)
 		}
 		;(patchedWarn as any).__patched = true

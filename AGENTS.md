@@ -14,9 +14,9 @@ trigger: always_on
 - docs/used-prompts
 
 ## file structure
-- first imports
-- then constants, interfacces, types
-- at the end of the file styles
+- first file description, purpose ...
+- then imports, constants, interfacces, types
+- at the end styles
 
 ## UI
 

@@ -12,7 +12,8 @@ import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@/features/
 import { SmartTabs, SmartTabOption } from '@/core/smart-tabs'
 import { OrderList } from '@/features/orders/components/OrderList'
 import { PurchaseCard } from './PurchaseCard'
-import { CartGroupCard, BusinessCartGroup } from '@/features/orders/components/CartGroupCard'
+import { CartCard } from './CartCard'
+import { BusinessCartGroup } from '@/features/orders/components/CartGroupCard'
 import { usePurchasesByStatus } from '@/features/orders/usePurchasesByStatus'
 import { updatePurchaseStatus } from '@/features/orders/orders.api'
 import { OrderItem } from '@/features/orders/orders.interface'
@@ -268,7 +269,7 @@ export default function PurchasesScreen() {
 	const renderCartGroup = useCallback(
 		({ item }: { item: BusinessCartGroup }) => (
 			<View style={[numColumns > 1 ? styles.columnItem : styles.fullWidthItem, numColumns > 1 && { paddingHorizontal: 8, marginBottom: 16 }]}>
-				<CartGroupCard group={item} onUpdateQuantity={updateQuantity} onRemove={removeItem} onCheckout={handleCheckout} />
+				<CartCard group={item} onUpdateQuantity={updateQuantity} onRemove={removeItem} onCheckout={handleCheckout} />
 			</View>
 		),
 		[numColumns, updateQuantity, removeItem, handleCheckout]
