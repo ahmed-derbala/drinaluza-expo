@@ -24,7 +24,7 @@ import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
 import MultiLingualInput from '@/features/common/languages/MultiLingualInput'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 // Import the reusable section components
-import ProductPricingSection from '@/features/products/common/ProductPricingSection'
+import ProductPricingCard from '@/features/products/cards/ProductPricingCard'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductGallerySection from '@/features/products/common/ProductGallerySection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
@@ -162,17 +162,17 @@ export default function CreateProductScreen() {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_enter_product_name', 'Please enter a product name (English)'))
 			return false
 		}
-		const price = parseFloat(priceTND)
+		const price = priceTND ? parseFloat(priceTND) : 10
 		if (isNaN(price) || price <= 0) {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_valid_price', 'Please enter a valid price'))
 			return false
 		}
-		const minUnitNum = parseFloat(minUnit)
+		const minUnitNum = minUnit ? parseFloat(minUnit) : 1
 		if (isNaN(minUnitNum) || minUnitNum <= 0) {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_min_unit', 'Minimum unit must be greater than 0'))
 			return false
 		}
-		const maxUnitNum = parseFloat(maxUnit)
+		const maxUnitNum = maxUnit ? parseFloat(maxUnit) : 10
 		if (isNaN(maxUnitNum) || maxUnitNum <= 0) {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_max_unit', 'Maximum unit must be greater than 0'))
 			return false
@@ -181,9 +181,13 @@ export default function CreateProductScreen() {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_max_min', 'Maximum unit cannot be less than minimum unit'))
 			return false
 		}
-		const stepUnitNum = parseFloat(unitStep)
+		const stepUnitNum = unitStep ? parseFloat(unitStep) : 1
 		if (isNaN(stepUnitNum) || stepUnitNum <= 0) {
 			showAlert(translate('validation_error', 'Validation Error'), translate('err_unit_step', 'Unit step must be greater than 0'))
+			return false
+		}
+		if (stepUnitNum >= maxUnitNum) {
+			showAlert(translate('validation_error', 'Validation Error'), translate('err_step_max', 'Unit step must be less than max unit'))
 			return false
 		}
 		const minW = singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : NaN
@@ -212,12 +216,12 @@ export default function CreateProductScreen() {
 					tn_latn: productNameTnLatn.trim() || enName,
 					tn_arab: productNameTnArab.trim() || enName
 				},
-				price: { total: { tnd: parseFloat(priceTND) } },
+				price: { total: { tnd: priceTND ? parseFloat(priceTND) : 10 } },
 				unit: {
 					measure: unit,
-					min: parseFloat(minUnit),
-					max: parseFloat(maxUnit),
-					step: parseFloat(unitStep),
+					min: minUnit ? parseFloat(minUnit) : 1,
+					max: maxUnit ? parseFloat(maxUnit) : 10,
+					step: unitStep ? parseFloat(unitStep) : 1,
 					singlePiece: [singlePieceMinWeightKg, singlePieceAvgWeightKg, singlePieceMaxWeightKg].some((v) => v.trim().length > 0)
 						? {
 								minWeightKg: singlePieceMinWeightKg ? parseFloat(singlePieceMinWeightKg) : undefined,
@@ -373,7 +377,7 @@ export default function CreateProductScreen() {
 						/>
 					</BaseCard>
 					{/* Pricing Section */}
-					<ProductPricingSection
+					<ProductPricingCard
 						variant="create"
 						colors={colors}
 						translate={translate}

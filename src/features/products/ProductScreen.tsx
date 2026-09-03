@@ -15,7 +15,7 @@ import { ProductType, FileRef } from '@/features/products/products.type'
 import type { MultiLang } from '@/features/common/address'
 import { formatAddress } from '@/features/common/address'
 import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
-import ProductPricingSection from '@/features/products/common/ProductPricingSection'
+import ProductPricingCard from '@/features/products/cards/ProductPricingCard'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import ErrorBlock from '@/core/error/ErrorBlock'
@@ -153,14 +153,14 @@ export default function ProductScreen() {
 		setGear(prod.specs?.gear)
 	}, [])
 	useEffect(() => {
-		if (product?.unit?.min) {
-			setQuantity(product.unit.min)
+		if (product?.unit?.min != null && product?.unit?.step != null) {
+			setQuantity(product.unit.min * product.unit.step)
 		}
 	}, [product])
 	const increment = () => {
 		if (!product) return
 		const step = product.unit?.step || 1
-		const maxQuantity = product.unit?.max || Infinity
+		const maxQuantity = product.unit?.max ? product.unit.max * step : Infinity
 		const stockQty = product.stock?.quantity || 0
 		setQuantity((prev) => {
 			const next = Math.round((prev + step) * 100) / 100
@@ -170,7 +170,7 @@ export default function ProductScreen() {
 	const decrement = () => {
 		if (!product) return
 		const step = product.unit?.step || 1
-		const minQty = product.unit?.min || 1
+		const minQty = product.unit?.min ? product.unit.min * step : step
 		setQuantity((prev) => {
 			const next = Math.round((prev - step) * 100) / 100
 			return next >= minQty ? next : minQty
@@ -493,7 +493,7 @@ export default function ProductScreen() {
 					else if (lang === 'tn_arab') setNameTnArab(value)
 				}}
 			/>
-			<ProductPricingSection
+			<ProductPricingCard
 				variant={editMode.pricing ? 'edit' : 'view'}
 				colors={colors}
 				translate={translate}

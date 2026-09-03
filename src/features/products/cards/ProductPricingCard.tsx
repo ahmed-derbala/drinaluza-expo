@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-nativ
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 
-export interface ProductPricingSectionProps {
+export interface ProductPricingCardProps {
 	variant: 'view' | 'edit' | 'create'
 	colors: any
 	translate: (key: string, defaultValue?: string) => string
@@ -40,7 +40,7 @@ export interface ProductPricingSectionProps {
 	onCancelPress?: () => void
 }
 
-export default function ProductPricingSection({
+export default function ProductPricingCard({
 	variant,
 	colors,
 	translate,
@@ -71,7 +71,7 @@ export default function ProductPricingSection({
 	onEditPress,
 	onSavePress,
 	onCancelPress
-}: ProductPricingSectionProps) {
+}: ProductPricingCardProps) {
 	const styles = createStyles(colors)
 
 	if (variant === 'create' || variant === 'edit') {

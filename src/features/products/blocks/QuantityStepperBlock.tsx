@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyl
 import { MaterialIcons } from '@expo/vector-icons'
 import { themeColors } from '@/core/theme'
 
-export interface QuantityStepperProps {
+export interface QuantityStepperBlockProps {
 	/** Current quantity value */
 	value: number
 	/** Callback when quantity increases */
@@ -21,7 +21,16 @@ export interface QuantityStepperProps {
 	buttonSize?: number
 }
 
-export function QuantityStepper({ value, onIncrement, onDecrement, decrementDisabled = false, incrementDisabled = false, style, testID = 'quantity-stepper', buttonSize = 32 }: QuantityStepperProps) {
+export function QuantityStepperBlock({
+	value,
+	onIncrement,
+	onDecrement,
+	decrementDisabled = false,
+	incrementDisabled = false,
+	style,
+	testID = 'quantity-stepper',
+	buttonSize = 32
+}: QuantityStepperBlockProps) {
 	return (
 		<View style={[styles.container, style]} testID={testID}>
 			<TouchableOpacity
@@ -86,4 +95,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default QuantityStepper
+export default QuantityStepperBlock

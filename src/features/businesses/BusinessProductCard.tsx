@@ -10,9 +10,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { LinearGradient } from 'expo-linear-gradient'
 import { AddToCartButton } from '@/features/common/buttons/AddToCartButton'
-import { QuantityStepper } from '@/features/common/QuantityStepper'
+import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
 import { ProductSpecsBlock } from '@/features/products/specs/ProductSpecsBlock'
-import { Price } from '@/features/common/Price'
+import { PriceBlock } from '@/features/products/blocks/PriceBlock'
 import { getItem, setItem, getToken } from '@/core/storage'
 import { toast } from '@/features/common/Toast'
 
@@ -45,9 +45,9 @@ const BusinessProductCard = React.memo(function BusinessProductCard({ product, a
 	const canAddToCart = purchaseAllowed && isActive && !isOutOfStock
 	const rating = product.rating?.average || 0
 
-	const minQuantity = product.unit?.min || 1
-	const maxQuantity = product.unit?.max || Infinity
 	const step = product.unit?.step || 1
+	const minQuantity = product.unit?.min ? product.unit.min * step : step
+	const maxQuantity = product.unit?.max ? product.unit.max * step : Infinity
 	const [quantity, setQuantity] = useState(minQuantity)
 	useEffect(() => {
 		setQuantity(minQuantity)
@@ -146,11 +146,11 @@ const BusinessProductCard = React.memo(function BusinessProductCard({ product, a
 
 				<View style={styles.bottomSection}>
 					<View style={styles.priceWrap}>
-						<Price compact price={product.price as any} unit={product.unit as any} quantity={quantity} />
+						<PriceBlock compact price={product.price as any} unit={product.unit as any} quantity={quantity} />
 					</View>
 					<View style={styles.cartColumn}>
 						{canAddToCart && (
-							<QuantityStepper
+							<QuantityStepperBlock
 								value={quantity}
 								onIncrement={increment}
 								onDecrement={decrement}

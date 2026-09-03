@@ -3,21 +3,20 @@ import { View, Text, StyleSheet, useWindowDimensions } from 'react-native'
 import { useUser } from '@/core/contexts/UserContext'
 import { themeColors } from '@/core/theme'
 
-export interface PriceProps {
+export interface PriceBlockProps {
 	price?: { total?: Record<string, number> }
 	unit?: { measure?: string; min?: number }
 	quantity?: number
 	compact?: boolean
 }
 
-export const Price = React.memo(function Price({ price, unit, quantity = 1, compact }: PriceProps) {
+export const PriceBlock = React.memo(function PriceBlock({ price, unit, quantity = 1, compact }: PriceBlockProps) {
 	const { currency, formatPrice, translate } = useUser()
 	const { width } = useWindowDimensions()
 	const isSmall = width < 500
 	// @ts-ignore
 	const unitPrice = price?.total?.[currency] || price?.total?.tnd || 0
-	const pricePerUnit = useMemo(() => unitPrice / (unit?.min || 1), [unitPrice, unit?.min])
-	const total = useMemo(() => pricePerUnit * quantity, [pricePerUnit, quantity])
+	const total = useMemo(() => unitPrice * quantity, [unitPrice, quantity])
 	const color = themeColors.primary
 	const unitColor = themeColors.textTertiary
 
@@ -69,4 +68,4 @@ const styles = StyleSheet.create({
 	}
 })
 
-export default Price
+export default PriceBlock

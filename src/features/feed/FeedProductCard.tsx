@@ -12,7 +12,7 @@ import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
 import { AddToCartButton } from '@/features/common/buttons/AddToCartButton'
-import { QuantityStepper } from '@/features/common/QuantityStepper'
+import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
 import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
 import { CARD } from '@/core/theme/constants'
@@ -65,10 +65,10 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	// ensures a card that loses focus immediately stops its carousel timer
 	// and its video is paused via autoPlay:false → safePause.
 	const carouselAutoPlay = isFocused
-	const minQuantity = item.unit?.min || 1
-	const maxQuantity = item.unit?.max || Infinity
-	const [quantity, setQuantity] = useState(minQuantity)
 	const step = item.unit?.step || 1
+	const minQuantity = (item.unit?.min || 1) * step
+	const maxQuantity = item.unit?.max ? item.unit.max * step : Infinity
+	const [quantity, setQuantity] = useState(minQuantity)
 	useEffect(() => {
 		setQuantity(minQuantity)
 	}, [itemId, minQuantity])
@@ -76,7 +76,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const ratingCount = item.rating?.count || 0
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
-	const pricePerUnit = useMemo(() => unitPrice / (item.unit?.min || 1), [unitPrice, item.unit?.min])
+	const pricePerUnit = unitPrice
 	const singlePiece = item.unit?.singlePiece
 	const singlePieceAvg = useMemo(() => {
 		if (!singlePiece) return undefined
@@ -234,7 +234,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 							{/* Stepper just above add to cart button */}
 							{purchaseAllowed && isActive && !isOutOfStock && (
 								<View style={styles.stepperWrapper}>
-									<QuantityStepper value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
+									<QuantityStepperBlock value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
 								</View>
 							)}
 							<AddToCartButton disabled={cartDisabled} onPress={handleCartPress} accessibilityLabel={translate('add_to_cart', 'Add to cart')} />

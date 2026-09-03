@@ -5,7 +5,7 @@ import { CaliberChip } from './CaliberChip'
 import { HarvestChip } from './HarvestChip'
 import { GearChip } from './GearChip'
 import { OriginChip } from './OriginChip'
-import { QuantityStepper } from '@/features/common/QuantityStepper'
+import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
 
 export interface ProductSpecsBlockProps {
 	specs?: {

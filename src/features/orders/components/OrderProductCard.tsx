@@ -6,8 +6,8 @@ import { CARD } from '@/core/theme/constants'
 import { useUser } from '@/core/contexts/UserContext'
 import { SmartMediaView } from '@/core/smart-media'
 import { DeleteButton } from '@/features/common/buttons/DeleteButton'
-import { QuantityStepper } from '@/features/common/QuantityStepper'
-import { Price } from '@/features/common/Price'
+import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
+import { PriceBlock } from '@/features/products/blocks/PriceBlock'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface OrderProduct {
@@ -71,10 +71,10 @@ export const OrderProductCard = React.memo(function OrderProductCard({ item, edi
 
 			<View style={[styles.bottomRow, { pointerEvents: 'box-none' as any }]}>
 				<View style={styles.priceWrap}>
-					<Price price={product?.price ?? (item as any).price} unit={product?.unit ?? (item as any).unit} quantity={item.quantity} compact />
+					<PriceBlock price={product?.price ?? (item as any).price} unit={product?.unit ?? (item as any).unit} quantity={item.quantity} compact />
 				</View>
 				{editable ? (
-					<QuantityStepper
+					<QuantityStepperBlock
 						value={item.quantity}
 						onIncrement={onIncrement as any}
 						onDecrement={onDecrement as any}

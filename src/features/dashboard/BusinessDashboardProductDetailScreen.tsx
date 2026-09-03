@@ -8,7 +8,7 @@ import { getProductBySlug, updateProduct } from '@/features/products/products.ap
 import { ProductType, FileRef } from '@/features/products/products.type'
 import type { MultiLang } from '@/features/common/address'
 import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
-import ProductPricingSection from '@/features/products/common/ProductPricingSection'
+import ProductPricingCard from '@/features/products/cards/ProductPricingCard'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import ErrorBlock from '@/core/error/ErrorBlock'
@@ -492,7 +492,7 @@ export default function BusinessDashboardProductDetailScreen() {
 						</View>
 						{/* Pricing Card */}
 						<View style={styles.sectionCard}>
-							<ProductPricingSection
+							<ProductPricingCard
 								variant={editMode.pricing ? 'edit' : 'view'}
 								colors={colors}
 								translate={translate}

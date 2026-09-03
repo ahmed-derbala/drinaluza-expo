@@ -14,7 +14,7 @@ import { PhoneButton } from '@/features/common/buttons/PhoneButton'
 import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
 import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
 import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
-import { QuantityStepper } from '@/features/common/QuantityStepper'
+import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
 import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -62,10 +62,10 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	}, [carouselMedia])
 	const carouselAutoPlay = isFocused
 
-	const minQuantity = item.unit?.min || 1
-	const maxQuantity = item.unit?.max || Infinity
-	const [quantity, setQuantity] = useState(minQuantity)
 	const step = item.unit?.step || 1
+	const minQuantity = (item.unit?.min || 1) * step
+	const maxQuantity = item.unit?.max ? item.unit.max * step : Infinity
+	const [quantity, setQuantity] = useState(minQuantity)
 
 	React.useEffect(() => {
 		setQuantity(minQuantity)
@@ -75,7 +75,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	const ratingCount = item.rating?.count || 0
 	// @ts-ignore
 	const unitPrice = item.price?.total?.[currency] || item.price?.total?.tnd || 0
-	const pricePerUnit = useMemo(() => unitPrice / (item.unit?.min || 1), [unitPrice, item.unit?.min])
+	const pricePerUnit = unitPrice
 	const singlePiece = item.unit?.singlePiece
 	const singlePieceAvg = useMemo(() => {
 		if (!singlePiece) return undefined
@@ -226,7 +226,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 											{singlePieceAvg != null && <Text style={[styles.weightChipText, { color: colors.primary }]}>~ {singlePieceAvg.toFixed(2)} kg/piece</Text>}
 										</View>
 										{purchaseAllowed && isActive && !isOutOfStock && (
-											<QuantityStepper value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
+											<QuantityStepperBlock value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
 										)}
 									</View>
 									{(item.specs?.harvest || item.specs?.origin?.city || item.specs?.gear) && (
