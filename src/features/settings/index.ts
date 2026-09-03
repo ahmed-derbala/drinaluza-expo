@@ -2,3 +2,5 @@ export { SettingsScreen, default as SettingsScreenDefault } from './SettingsScre
 export { CacheDetailsCard } from './CacheDetailsCard'
 export { ResetAppCard } from './ResetAppCard'
 export { MediaSettingsCard } from './MediaSettingsCard'
+export { SettingsUpdatesCard } from './SettingsUpdatesCard'
+export { UpdateSettingsProvider, useUpdateSettings } from './UpdateSettingsContext'

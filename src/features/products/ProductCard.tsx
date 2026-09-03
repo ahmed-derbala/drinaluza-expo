@@ -19,7 +19,7 @@ import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNam
 import { useTheme, themeColors } from '@/core/theme'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
+import { FeedFocusContext } from '@/features/feed/FeedVisibleContext'
 
 type ProductCardProps = {
 	item: ProductFeedItem
@@ -32,11 +32,7 @@ const ProductCard = React.memo(function ProductCard({ item, addToCart, style }: 
 	const { colors } = useTheme()
 	const { handleBusinessPress, handleProductPress } = useProductCardPress(item)
 	const { width } = useWindowDimensions()
-	const visibleIds = React.useContext(VisibleIdsContext)
-	const activeVideoId = React.useContext(ActiveVideoIdContext)
-	const setActiveVideoId = React.useContext(SetActiveVideoIdContext)
-	const focusedId = React.useContext(FocusedIdContext)
-	const setFocusedId = React.useContext(SetFocusedIdContext)
+	const { focusedId, activeVideoId, visibleIds, setFocusedId, setActiveVideoId } = React.useContext(FeedFocusContext)
 
 	const itemId = useMemo(() => item._id || (item as any).slug, [item._id, (item as any).slug])
 	const isFocused = useMemo(() => focusedId === itemId, [focusedId, itemId])

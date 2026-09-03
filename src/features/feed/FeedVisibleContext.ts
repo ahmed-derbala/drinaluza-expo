@@ -1,7 +1,17 @@
 import React from 'react'
 
-export const VisibleIdsContext = React.createContext<Set<string>>(new Set())
-export const ActiveVideoIdContext = React.createContext<string | null>(null)
-export const SetActiveVideoIdContext = React.createContext<(id: string | null) => void>(() => {})
-export const FocusedIdContext = React.createContext<string | null>(null)
-export const SetFocusedIdContext = React.createContext<(id: string | null) => void>(() => {})
+export interface FeedFocusState {
+	focusedId: string | null
+	activeVideoId: string | null
+	visibleIds: Set<string>
+	setFocusedId: (id: string | null) => void
+	setActiveVideoId: (id: string | null) => void
+}
+
+export const FeedFocusContext = React.createContext<FeedFocusState>({
+	focusedId: null,
+	activeVideoId: null,
+	visibleIds: new Set(),
+	setFocusedId: () => {},
+	setActiveVideoId: () => {}
+})

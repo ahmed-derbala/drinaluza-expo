@@ -53,7 +53,7 @@ examples:
 
 ### 3. Standards & Ecosystem Best Practices
 * **TypeScript:** Maintain strict, explicit TypeScript typing for all components, hooks, and refactored logic. No `any`.
-* **Framework Alignment:** Preserve Expo, `expo-router`, and React Native best practices (e.g., proper layout segments, link handling, splash screen integration).
+* **Framework Alignment:** Preserve Expo, `expo-router`, and React Native best practices (e.g., proper layout segments, link handling).
 
 ### 4. Execution Workflow
 When executing a refactor:

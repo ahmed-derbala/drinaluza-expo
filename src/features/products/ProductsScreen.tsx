@@ -16,7 +16,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import { toast } from '@/features/common/Toast'
 import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
 import { getToken } from '@/core/storage'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
+import { FeedFocusContext } from '@/features/feed/FeedVisibleContext'
 
 export default function ProductsScreen() {
 	const { colors } = useTheme()
@@ -240,6 +240,17 @@ export default function ProductsScreen() {
 		return <View style={{ height: 20 }} />
 	}, [isLoadingMore])
 
+	const focusContextValue = useMemo(
+		() => ({
+			focusedId,
+			activeVideoId,
+			visibleIds,
+			setFocusedId: handleSetFocusedId,
+			setActiveVideoId: handleSetActiveVideoId
+		}),
+		[focusedId, activeVideoId, visibleIds, handleSetFocusedId, handleSetActiveVideoId]
+	)
+
 	return (
 		<View style={[styles.container, { backgroundColor: colors.background }]}>
 			<Stack.Screen
@@ -250,36 +261,28 @@ export default function ProductsScreen() {
 					} as any
 				}
 			/>
-			<VisibleIdsContext.Provider value={visibleIds}>
-				<ActiveVideoIdContext.Provider value={activeVideoId}>
-					<SetActiveVideoIdContext.Provider value={handleSetActiveVideoId}>
-						<FocusedIdContext.Provider value={focusedId}>
-							<SetFocusedIdContext.Provider value={handleSetFocusedId}>
-								<SmartHeader.FlashList
-									ref={listRef}
-									data={products}
-									key={numColumns}
-									numColumns={numColumns}
-									keyExtractor={(item: ProductFeedItem) => item._id}
-									renderItem={renderItem}
-									estimatedItemSize={380}
-									contentContainerStyle={{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding, paddingTop: padding, paddingBottom: 100 }}
-									showsVerticalScrollIndicator={false}
-									refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-									onEndReached={handleLoadMore}
-									onEndReachedThreshold={0.5}
-									onViewableItemsChanged={onViewableItemsChanged}
-									viewabilityConfig={viewabilityConfig}
-									onScroll={handleListScroll}
-									scrollEventThrottle={16}
-									ListEmptyComponent={renderEmpty}
-									ListFooterComponent={renderFooter}
-								/>
-							</SetFocusedIdContext.Provider>
-						</FocusedIdContext.Provider>
-					</SetActiveVideoIdContext.Provider>
-				</ActiveVideoIdContext.Provider>
-			</VisibleIdsContext.Provider>
+			<FeedFocusContext.Provider value={focusContextValue}>
+				<SmartHeader.FlashList
+					ref={listRef}
+					data={products}
+					key={numColumns}
+					numColumns={numColumns}
+					keyExtractor={(item: ProductFeedItem) => item._id}
+					renderItem={renderItem}
+					estimatedItemSize={380}
+					contentContainerStyle={{ paddingHorizontal: numColumns > 1 ? padding - gap / 2 : padding, paddingTop: padding, paddingBottom: 100 }}
+					showsVerticalScrollIndicator={false}
+					refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
+					onEndReached={handleLoadMore}
+					onEndReachedThreshold={0.5}
+					onViewableItemsChanged={onViewableItemsChanged}
+					viewabilityConfig={viewabilityConfig}
+					onScroll={handleListScroll}
+					scrollEventThrottle={16}
+					ListEmptyComponent={renderEmpty}
+					ListFooterComponent={renderFooter}
+				/>
+			</FeedFocusContext.Provider>
 			{isInitialLoading && !isRefreshing && products.length === 0 && <Spinner style={styles.loadingOverlay} />}
 		</View>
 	)

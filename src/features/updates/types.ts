@@ -34,4 +34,5 @@ export interface UpdatesContextProps {
 	installApk: (fileUri: string) => Promise<void>
 	deleteApk: (fileUri: string) => Promise<void>
 	refreshApkList: () => Promise<CachedApkMetadata[]>
+	cleanupApks: (maxKeep: number) => Promise<void>
 }

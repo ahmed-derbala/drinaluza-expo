@@ -18,7 +18,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import { CARD } from '@/core/theme/constants'
 import { LinearGradient } from 'expo-linear-gradient'
 import BusinessBlock from '@/features/businesses/BusinessBlock'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
+import { FeedFocusContext } from '@/features/feed/FeedVisibleContext'
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
 	addToCart: (item: any, quantity: number) => void
@@ -30,11 +30,7 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 	const { colors } = useTheme()
 	const { handleBusinessPress, handleProductPress } = useProductCardPress(productFeedItem)
 	const { width } = useWindowDimensions()
-	const visibleIds = React.useContext(VisibleIdsContext)
-	const activeVideoId = React.useContext(ActiveVideoIdContext)
-	const setActiveVideoId = React.useContext(SetActiveVideoIdContext)
-	const focusedId = React.useContext(FocusedIdContext)
-	const setFocusedId = React.useContext(SetFocusedIdContext)
+	const { focusedId, activeVideoId, visibleIds, setFocusedId, setActiveVideoId } = React.useContext(FeedFocusContext)
 	// Memoize item ID to avoid repeated object property access
 	const itemId = useMemo(() => item._id || (item as any).slug, [item._id, (item as any).slug])
 	const isFocused = useMemo(() => focusedId === itemId, [focusedId, itemId])

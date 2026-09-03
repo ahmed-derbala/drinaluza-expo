@@ -1,52 +1,12 @@
-import { Stack, usePathname, Redirect, useRouter } from 'expo-router'
+import '@/core/bootstrap'
+import { Stack, usePathname, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, Platform, StyleSheet } from 'react-native'
+import { View, Platform } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { useUpdates, isVersionGreater, UpdateCheckResult } from '@/features/updates'
+import { useUpdates, isVersionGreater, UpdateCheckResult, DownloadAppModal, DOWNLOAD_APP_MODAL_DISMISSED_KEY } from '@/features/updates'
 import { config } from '@/config'
-import { getItem, setItem } from '@/core/storage'
-import { translate } from '@/core/translation'
-import { SmartModal } from '@/core/smart-modal'
-import { DownloadButton } from '@/features/common/buttons/DownloadButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
-import { EyeButton } from '@/features/common/buttons/EyeButton'
-
-// Polyfill for setImmediate which is missing in some web environments
-if (typeof setImmediate === 'undefined') {
-	// @ts-ignore
-	global.setImmediate = (callback: (...args: any[]) => void) => setTimeout(callback, 0)
-}
-
-// Enable text selection on Web by injecting a global style sheet
-if (Platform.OS === 'web' && typeof document !== 'undefined') {
-	const style = document.createElement('style')
-	style.type = 'text/css'
-	style.innerHTML =
-		`
-		html, body {
-			background-color: ` +
-		themeColors.background +
-		` !important;
-			color-scheme: dark;
-		}
-		* {
-			user-select: text !important;
-			-webkit-user-select: text !important;
-			-moz-user-select: text !important;
-			-ms-user-select: text !important;
-			-khtml-user-select: text !important;
-		}
-		button, [role="button"], [role="tab"], [role="img"] {
-			user-select: none !important;
-			-webkit-user-select: none !important;
-			-moz-user-select: none !important;
-			-ms-user-select: none !important;
-		}
-	`
-	document.head.appendChild(style)
-}
-
+import { getItem } from '@/core/storage'
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
 import { usePushNotificationNavigation } from '@/features/notifications/usePushNotificationNavigation'
 import { UserProvider, useUser } from '@/core/contexts/UserContext'
@@ -57,40 +17,18 @@ import { LayoutProvider } from '@/core/contexts/LayoutContext'
 import { SmartKebabMenuProvider } from '@/core/smart-kebab-menu'
 import { UpdatesProvider } from '@/features/updates/UpdatesContext'
 import { MediaSettingsProvider } from '@/features/settings/MediaSettingsContext'
+import { UpdateSettingsProvider } from '@/features/settings/UpdateSettingsContext'
 import { AppThemeProvider, useTheme, themeColors } from '@/core/theme'
 import { SmartHeader } from '@/core/smart-header'
 import Spinner from '@/features/common/Spinner'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import { log } from '@/core/log'
 import { deferStartup } from '@/core/helpers/defer'
+import { translate } from '@/core/translation'
 import { SafeAreaView } from 'react-native-safe-area-context'
 
 // Module-level flag — survives component remounts (e.g. user switch)
 let startupCheckPerformed = false
-
-// Storage key for the "don't show again" preference of the web update modal
-const WEB_UPDATE_MODAL_DISMISSED_KEY = 'web_update_modal_dismissed'
-
-const updateModalStyles = StyleSheet.create({
-	actionRow: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
-		gap: 16
-	},
-	iconButton: {
-		height: 56,
-		minWidth: 56,
-		flex: 0
-	},
-	checkboxRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'center',
-		paddingVertical: 4,
-		gap: 8
-	}
-})
 
 function RootLayoutContent() {
 	const { checkForUpdates, refreshApkList } = useUpdates()
@@ -99,8 +37,7 @@ function RootLayoutContent() {
 	const pathname = usePathname()
 	const { user, loading } = useUser()
 	const { colors } = useTheme()
-	const [webUpdateModal, setWebUpdateModal] = useState<UpdateCheckResult | null>(null)
-	const [dontShowWebUpdateModalAgain, setDontShowWebUpdateModalAgain] = useState(false)
+	const [downloadAppRelease, setDownloadAppRelease] = useState<UpdateCheckResult | null>(null)
 
 	useEffect(() => {
 		if (startupCheckPerformed) return
@@ -109,15 +46,19 @@ function RootLayoutContent() {
 		const performStartupCheck = async () => {
 			try {
 				if (Platform.OS === 'web') {
-					const isDismissed = await getItem<boolean>(WEB_UPDATE_MODAL_DISMISSED_KEY)
+					const isDismissed = await getItem<boolean>(DOWNLOAD_APP_MODAL_DISMISSED_KEY)
 					if (isDismissed) return
 
 					const result = await checkForUpdates(false)
 					if (result) {
-						setWebUpdateModal(result)
+						setDownloadAppRelease(result)
 					}
 					return
 				}
+
+				const stored = await getItem<{ enabled: boolean }>('updateSettings')
+				const enabled = stored?.enabled ?? true
+				if (!enabled) return
 
 				// 1. Instantly check if there is a downloaded APK ready to install (no network delay)
 				if (Platform.OS === 'android') {
@@ -147,13 +88,6 @@ function RootLayoutContent() {
 		return cancel
 	}, [checkForUpdates, refreshApkList, router])
 
-	const closeWebUpdateModal = async () => {
-		if (dontShowWebUpdateModalAgain) {
-			await setItem(WEB_UPDATE_MODAL_DISMISSED_KEY, true)
-		}
-		setWebUpdateModal(null)
-	}
-
 	const isAuthenticated = !!user
 	const isRestrictedRoute = pathname.startsWith('/dashboard') || pathname.startsWith('/notifications') || pathname.startsWith('/purchases') || pathname.startsWith('/profile')
 
@@ -176,26 +110,7 @@ function RootLayoutContent() {
 
 	return (
 		<>
-			<SmartModal
-				visible={!!webUpdateModal}
-				onClose={closeWebUpdateModal}
-				icon="logo-android"
-				title={translate('download_app', 'Download App')}
-				message={webUpdateModal ? `drinaluza-${webUpdateModal.latest_version}.apk` : undefined}
-				footer={
-					<View style={updateModalStyles.actionRow}>
-						<EyeButton
-							onPress={() => setDontShowWebUpdateModalAgain((prev) => !prev)}
-							visible={dontShowWebUpdateModalAgain}
-							label={translate('dont_show_again', "Don't show again")}
-							accessibilityRole="checkbox"
-							accessibilityState={{ checked: dontShowWebUpdateModalAgain }}
-						/>
-						<CancelButton onPress={closeWebUpdateModal} style={updateModalStyles.iconButton} />
-						<DownloadButton downloadUrl={webUpdateModal?.download_url} onAfterDownload={closeWebUpdateModal} variant="primary" style={updateModalStyles.iconButton} />
-					</View>
-				}
-			/>
+			<DownloadAppModal visible={!!downloadAppRelease} release={downloadAppRelease} onClose={() => setDownloadAppRelease(null)} />
 			<Stack
 				screenOptions={{
 					contentStyle: {
@@ -230,20 +145,24 @@ export function ErrorBoundary({ error, retry }: { error: Error & { digest?: stri
 	return (
 		<SafeAreaProvider>
 			<AppThemeProvider>
-				<UpdatesProvider>
-					<SmartKebabMenuProvider>
-						<ToastProvider>
-							<LayoutProvider>
-								<SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}>
-									<View style={{ flex: 1, backgroundColor: themeColors.background }}>
-										<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" headerActions={[]} />
-										<ErrorBlock error={error} onRetry={retry} />
-									</View>
-								</SafeAreaView>
-							</LayoutProvider>
-						</ToastProvider>
-					</SmartKebabMenuProvider>
-				</UpdatesProvider>
+				<MediaSettingsProvider>
+					<UpdateSettingsProvider>
+						<UpdatesProvider>
+							<SmartKebabMenuProvider>
+								<ToastProvider>
+									<LayoutProvider>
+										<SafeAreaView style={{ flex: 1, backgroundColor: themeColors.background }}>
+											<View style={{ flex: 1, backgroundColor: themeColors.background }}>
+												<SmartHeader title={translate('error', 'Error')} fallbackRoute="/feed" headerActions={[]} />
+												<ErrorBlock error={error} onRetry={retry} />
+											</View>
+										</SafeAreaView>
+									</LayoutProvider>
+								</ToastProvider>
+							</SmartKebabMenuProvider>
+						</UpdatesProvider>
+					</UpdateSettingsProvider>
+				</MediaSettingsProvider>
 			</AppThemeProvider>
 		</SafeAreaProvider>
 	)
@@ -255,23 +174,25 @@ export default function RootLayout() {
 			<SafeAreaProvider>
 				<AppThemeProvider>
 					<MediaSettingsProvider>
-						<UpdatesProvider>
-							<SmartKebabMenuProvider>
-								<ToastProvider>
-									<UserProvider>
-										<NotificationProvider>
-											<BackendConnectionProvider>
-												<SocketProvider>
-													<LayoutProvider>
-														<RootLayoutContent />
-													</LayoutProvider>
-												</SocketProvider>
-											</BackendConnectionProvider>
-										</NotificationProvider>
-									</UserProvider>
-								</ToastProvider>
-							</SmartKebabMenuProvider>
-						</UpdatesProvider>
+						<UpdateSettingsProvider>
+							<UpdatesProvider>
+								<SmartKebabMenuProvider>
+									<ToastProvider>
+										<UserProvider>
+											<NotificationProvider>
+												<BackendConnectionProvider>
+													<SocketProvider>
+														<LayoutProvider>
+															<RootLayoutContent />
+														</LayoutProvider>
+													</SocketProvider>
+												</BackendConnectionProvider>
+											</NotificationProvider>
+										</UserProvider>
+									</ToastProvider>
+								</SmartKebabMenuProvider>
+							</UpdatesProvider>
+						</UpdateSettingsProvider>
 					</MediaSettingsProvider>
 				</AppThemeProvider>
 			</SafeAreaProvider>

@@ -14,7 +14,6 @@ export function deferTask(callback: () => void | Promise<void>, options?: { dela
 	const delay = options?.delay ?? 1500
 	const timeout = options?.timeout ?? delay + 500
 
-	// Web idle callback — ideal for deferring until main thread is free
 	if (Platform.OS === 'web' && typeof window !== 'undefined' && typeof (window as any).requestIdleCallback === 'function') {
 		const id = (window as any).requestIdleCallback(
 			() => {
@@ -70,21 +69,45 @@ export function deferTask(callback: () => void | Promise<void>, options?: { dela
 // (AsyncStorage read of `feed:page1:*`) uncontended. If the user never
 // visits feed (e.g. deep-link to /auth), tasks still run after a fallback
 // timeout so nothing stalls indefinitely.
-let feedReady = false
-const feedReadyListeners = new Set<() => void>()
+//
+// Implementation notes:
+// - `feedReady` and `feedReadyListeners` live behind a single mutable object
+//   so we can `resetFeedReady()` for Fast Refresh / tests / user switches.
+// - Listener registration is gated by a `cancelled` flag to prevent the
+//   listener AND the fallback timer from both enqueueing the callback
+//   (race that previously caused double-fire on slow feeds).
+type FeedGate = {
+	ready: boolean
+	listeners: Set<() => void>
+}
+
+const gate: FeedGate = {
+	ready: false,
+	listeners: new Set()
+}
 
 export const markFeedReady = (): void => {
-	if (feedReady) return
-	feedReady = true
-	feedReadyListeners.forEach((cb) => {
+	if (gate.ready) return
+	gate.ready = true
+	const pending = Array.from(gate.listeners)
+	gate.listeners.clear()
+	for (const cb of pending) {
 		try {
 			cb()
 		} catch {}
-	})
-	feedReadyListeners.clear()
+	}
 }
 
-export const isFeedReady = (): boolean => feedReady
+export const isFeedReady = (): boolean => gate.ready
+
+/**
+ * Reset the feed-ready gate. Intended for tests and Fast Refresh.
+ * Does NOT cancel already-deferred tasks — callers should remount.
+ */
+export const resetFeedReady = (): void => {
+	gate.ready = false
+	gate.listeners.clear()
+}
 
 /**
  * Defer until the feed has painted (cache read → `isInitialLoading:false`).
@@ -97,42 +120,48 @@ export function deferAfterFeedReady(callback: () => void | Promise<void>, option
 	const timeout = options?.timeout ?? 2000
 	const maxWaitMs = options?.maxWaitMs ?? 3000
 
-	if (feedReady) {
+	if (gate.ready) {
 		return deferTask(callback, { delay, timeout })
 	}
 
 	let cancelled = false
 	let fallbackId: ReturnType<typeof setTimeout> | null = null
+	let dispatched = false
 
-	const run = () => {
-		if (cancelled) return
+	const dispatch = () => {
+		if (cancelled || dispatched) return
+		dispatched = true
+		if (fallbackId) {
+			clearTimeout(fallbackId)
+			fallbackId = null
+		}
+		gate.listeners.delete(listener)
 		deferTask(callback, { delay, timeout })
 	}
 
 	const listener = () => {
-		if (cancelled) return
-		if (fallbackId) clearTimeout(fallbackId)
-		feedReadyListeners.delete(listener)
-		run()
+		dispatch()
 	}
 
-	feedReadyListeners.add(listener)
+	gate.listeners.add(listener)
 
 	fallbackId = setTimeout(() => {
-		feedReadyListeners.delete(listener)
-		if (!cancelled) run()
+		fallbackId = null
+		dispatch()
 	}, maxWaitMs)
 
 	return () => {
 		cancelled = true
-		if (fallbackId) clearTimeout(fallbackId)
-		feedReadyListeners.delete(listener)
+		if (fallbackId) {
+			clearTimeout(fallbackId)
+			fallbackId = null
+		}
+		gate.listeners.delete(listener)
 	}
 }
 
 /**
  * Shorthand: defer with default delays tuned for startup phases.
- * Previously time-based; now feed-gated with the same idle delays.
  * - critical: ~400ms after feed paint (guest settings, user)
  * - normal: ~600ms after feed paint (sockets, backend connection)
  * - low: ~800ms after feed paint (updates check, FS cleanup, video cache)

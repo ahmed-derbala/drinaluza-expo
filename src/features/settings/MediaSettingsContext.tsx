@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
 import { getItem, setItem } from '@/core/storage'
+import { deferStartup } from '@/core/helpers/defer'
 
 export interface MediaSettings {
 	autoAdvance: boolean
@@ -34,16 +35,19 @@ export const MediaSettingsProvider: React.FC<{ children: React.ReactNode }> = ({
 	const [settings, setSettingsState] = useState<MediaSettings>(DEFAULTS)
 
 	useEffect(() => {
-		;(async () => {
-			const stored = await getItem<MediaSettings>(STORAGE_KEY)
-			if (stored && typeof stored === 'object') {
-				setSettingsState({
-					autoAdvance: typeof stored.autoAdvance === 'boolean' ? stored.autoAdvance : DEFAULTS.autoAdvance,
-					autoPlay: typeof stored.autoPlay === 'boolean' ? stored.autoPlay : DEFAULTS.autoPlay,
-					soundOn: typeof stored.soundOn === 'boolean' ? stored.soundOn : DEFAULTS.soundOn
-				})
-			}
-		})()
+		const cancel = deferStartup.critical(() => {
+			;(async () => {
+				const stored = await getItem<MediaSettings>(STORAGE_KEY)
+				if (stored && typeof stored === 'object') {
+					setSettingsState({
+						autoAdvance: typeof stored.autoAdvance === 'boolean' ? stored.autoAdvance : DEFAULTS.autoAdvance,
+						autoPlay: typeof stored.autoPlay === 'boolean' ? stored.autoPlay : DEFAULTS.autoPlay,
+						soundOn: typeof stored.soundOn === 'boolean' ? stored.soundOn : DEFAULTS.soundOn
+					})
+				}
+			})()
+		})
+		return cancel
 	}, [])
 
 	const persist = useCallback(async (next: MediaSettings) => {

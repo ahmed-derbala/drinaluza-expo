@@ -6,6 +6,7 @@ import { useScrollHandler } from '@/core/scroll'
 import { SmartHeader } from '@/core/smart-header'
 import { CacheDetailsCard, type CacheDetailsCardHandle } from '@/features/settings/CacheDetailsCard'
 import { MediaSettingsCard } from '@/features/settings/MediaSettingsCard'
+import { SettingsUpdatesCard } from '@/features/settings/SettingsUpdatesCard'
 import { ResetAppCard } from './ResetAppCard'
 
 export function SettingsScreen() {
@@ -49,6 +50,9 @@ export function SettingsScreen() {
 
 				{/* Media Settings */}
 				<MediaSettingsCard />
+
+				{/* Update Settings */}
+				<SettingsUpdatesCard />
 
 				{/* Danger Zone: Reset App */}
 				<ResetAppCard />

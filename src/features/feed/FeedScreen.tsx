@@ -22,7 +22,7 @@ import Spinner from '@/features/common/Spinner'
 import ScannerModal from '@/features/scanner/ScannerModal'
 import { log } from '@/core/log'
 import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
-import { VisibleIdsContext, ActiveVideoIdContext, SetActiveVideoIdContext, FocusedIdContext, SetFocusedIdContext } from '@/features/feed/FeedVisibleContext'
+import { FeedFocusContext } from '@/features/feed/FeedVisibleContext'
 import { markFeedReady } from '@/core/helpers/defer'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,9 +61,11 @@ export default function FeedScreen() {
 
 	const { user, localize, translate } = useUser()
 
-	const [visibleIds, setVisibleIds] = useState<Set<string>>(new Set())
-	const [activeVideoId, setActiveVideoId] = useState<string | null>(null)
-	const [focusedId, setFocusedId] = useState<string | null>(null)
+	const [focusState, setFocusState] = useState({
+		visibleIds: new Set<string>(),
+		activeVideoId: null as string | null,
+		focusedId: null as string | null
+	})
 	const hasUserInteractedRef = useRef(false)
 	const feedItemsRef = useRef<FeedItem[]>([])
 	const focusedIdRef = useRef<string | null>(null)
@@ -72,21 +74,25 @@ export default function FeedScreen() {
 		feedItemsRef.current = feedItems
 	}, [feedItems])
 	useEffect(() => {
-		focusedIdRef.current = focusedId
-	}, [focusedId])
+		focusedIdRef.current = focusState.focusedId
+	}, [focusState.focusedId])
 
 	const markUserInteracted = useCallback(() => {
 		hasUserInteractedRef.current = true
 	}, [])
 
-	const handleSetFocusedId = useCallback((id: string | null) => {
+	const setFocusedId = useCallback((id: string | null) => {
 		if (id !== null) hasUserInteractedRef.current = true
-		setFocusedId(id)
+		setFocusState((prev) => ({ ...prev, focusedId: id }))
 	}, [])
 
-	const handleSetActiveVideoId = useCallback((id: string | null) => {
+	const setActiveVideoId = useCallback((id: string | null) => {
 		if (id !== null) hasUserInteractedRef.current = true
-		setActiveVideoId(id)
+		setFocusState((prev) => ({ ...prev, activeVideoId: id }))
+	}, [])
+
+	const setVisibleIds = useCallback((ids: Set<string>) => {
+		setFocusState((prev) => ({ ...prev, visibleIds: ids }))
 	}, [])
 
 	const hasVideoMedia = useCallback((item: FeedItem): boolean => {
@@ -371,48 +377,46 @@ export default function FeedScreen() {
 		[translate, isWeb, refreshData, isRefreshing, isOffline]
 	)
 
+	const focusContextValue = useMemo(
+		() => ({
+			focusedId: focusState.focusedId,
+			activeVideoId: focusState.activeVideoId,
+			visibleIds: focusState.visibleIds,
+			setFocusedId,
+			setActiveVideoId
+		}),
+		[focusState.focusedId, focusState.activeVideoId, focusState.visibleIds, setFocusedId, setActiveVideoId]
+	)
+
 	return (
 		<View style={[styles.root, { backgroundColor: colors.background }]}>
 			<Tabs.Screen options={headerOptions as any} />
 			{isInitialLoading && feedItems.length === 0 ? (
 				<Spinner />
 			) : (
-				<VisibleIdsContext.Provider value={visibleIds}>
-					<ActiveVideoIdContext.Provider value={activeVideoId}>
-						<SetActiveVideoIdContext.Provider value={handleSetActiveVideoId}>
-							<FocusedIdContext.Provider value={focusedId}>
-								<SetFocusedIdContext.Provider value={handleSetFocusedId}>
-									<SmartHeader.FlashList
-										ref={listRef}
-										style={{ backgroundColor: 'transparent' }}
-										data={feedItems}
-										renderItem={renderItem}
-										numColumns={numColumns}
-										estimatedItemSize={cardHeight + CARD.gap}
-										removeClippedSubviews
-										keyExtractor={(item: FeedItem) => (item as any)._id || (item as any).slug}
-										extraData={focusedId + '|' + activeVideoId}
-										contentContainerStyle={[
-											styles.listContent,
-											{ paddingHorizontal: padding, paddingBottom: 120 + insets.bottom },
-											feedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }
-										]}
-										ListEmptyComponent={renderEmpty}
-										refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
-										showsVerticalScrollIndicator={false}
-										keyboardShouldPersistTaps="handled"
-										onScroll={handleListScroll}
-										onEndReached={handleLoadMore}
-										onEndReachedThreshold={0.2}
-										onViewableItemsChanged={onViewableItemsChanged}
-										viewabilityConfig={viewabilityConfig}
-										ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
-									/>
-								</SetFocusedIdContext.Provider>
-							</FocusedIdContext.Provider>
-						</SetActiveVideoIdContext.Provider>
-					</ActiveVideoIdContext.Provider>
-				</VisibleIdsContext.Provider>
+				<FeedFocusContext.Provider value={focusContextValue}>
+					<SmartHeader.FlashList
+						ref={listRef}
+						style={{ backgroundColor: 'transparent' }}
+						data={feedItems}
+						renderItem={renderItem}
+						numColumns={numColumns}
+						estimatedItemSize={cardHeight + CARD.gap}
+						removeClippedSubviews
+						keyExtractor={(item: FeedItem) => (item as any)._id || (item as any).slug}
+						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, feedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
+						ListEmptyComponent={renderEmpty}
+						refreshControl={<RefreshControl refreshing={isRefreshing} onRefresh={refreshData} colors={['#0EA5E9']} tintColor="#0EA5E9" />}
+						showsVerticalScrollIndicator={false}
+						keyboardShouldPersistTaps="handled"
+						onScroll={handleListScroll}
+						onEndReached={handleLoadMore}
+						onEndReachedThreshold={0.2}
+						onViewableItemsChanged={onViewableItemsChanged}
+						viewabilityConfig={viewabilityConfig}
+						ListFooterComponent={isLoadingMore ? <Spinner size="small" expand={false} /> : null}
+					/>
+				</FeedFocusContext.Provider>
 			)}
 			<ScannerModal visible={isScannerVisible} onClose={() => setIsScannerVisible(false)} />
 		</View>

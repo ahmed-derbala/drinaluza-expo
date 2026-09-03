@@ -18,6 +18,11 @@ trigger: always_on
 - then imports, constants, interfacces, types
 - at the end styles
 
+## config and env
+- for env files, you are allowed to read-only .env.sample 
+- never create, edit or delete env files
+- use src/config/index.ts
+
 ## UI
 
 ### cards

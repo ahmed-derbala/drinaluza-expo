@@ -255,5 +255,10 @@ export const en = {
 	media_auto_play: 'Auto Play',
 	media_auto_play_desc: 'Videos start playing automatically',
 	media_sound_on: 'Sound On',
-	media_sound_on_desc: 'Videos start with sound'
+	media_sound_on_desc: 'Videos start with sound',
+	updates_settings: 'Update Settings',
+	updates_check: 'Check for Updates',
+	updates_check_desc: 'Check for updates when the app starts',
+	max_apk_installers_keep: 'Keep APK Installers',
+	max_apk_installers_keep_desc: 'Number of APK installers to keep (1-5)'
 }

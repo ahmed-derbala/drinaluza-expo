@@ -473,8 +473,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 		}
 	}, [])
-	// Startup cleanup: delete incomplete downloads, corrupted files, and keep only the highest version APK
-	const performStartupCleanup = useCallback(async () => {
+	// Cleanup APK files: keeps up to maxKeep newest valid versions, removes .tmp, corrupted, and older files
+	const cleanupApks = useCallback(async (maxKeep: number = config.updates.maxApkInstallersCount) => {
 		if (Platform.OS === 'web') return
 		try {
 			await ensureUpdatesFolder()
@@ -490,69 +490,72 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 			for (const file of files) {
 				const filePath = UPDATES_FOLDER + file
-				// 1. Handle .tmp files (incomplete downloads) — also validate even when paused, to avoid resuming corrupted truncated file after kill
 				if (file.endsWith('.tmp')) {
 					if (isPausedStatus) {
 						try {
 							const info = await getFileInfo(filePath)
 							if (!info?.exists || (info.size || 0) < 1024) {
-								log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting empty .tmp ${file} despite paused status` })
+								log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting empty .tmp ${file} despite paused status` })
 								await deletePath(filePath)
-								// Clear stale resume data if tmp was deleted
 								await removeItem('download_resume_data')
 								await removeItem('download_progress')
 								await removeItem('download_status')
 							}
 						} catch {}
-						// Keep valid paused tmp for resume
 						continue
 					} else {
-						log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting incomplete/interrupted download file ${file}` })
+						log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting incomplete/interrupted download file ${file}` })
 						await deletePath(filePath)
 						continue
 					}
 				}
-				// 2. Only process .apk files, delete anything else unexpected
 				if (!file.endsWith('.apk')) {
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting unexpected file ${file}` })
+					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting unexpected file ${file}` })
 					await deletePath(filePath)
 					continue
 				}
-				// 3. Parse version from filename (e.g. drinaluza-1.16.2.apk)
 				const match = file.match(/drinaluza-(.+)\.apk/)
 				if (!match || match[1] === 'unknown') {
-					// Corrupted or unrecognized APK file
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting unrecognized APK ${file}` })
+					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting unrecognized APK ${file}` })
 					await deletePath(filePath)
 					continue
 				}
-				// 4. Check file integrity (APKs must be >1MB; smaller means truncated/killed download that was incorrectly promoted)
 				const info = await getFileInfo(filePath)
 				const apkSize = info?.size || 0
 				if (!info?.exists || apkSize === 0 || apkSize < 1024 * 1024) {
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting empty/corrupted APK ${file} size=${apkSize}` })
+					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting empty/corrupted APK ${file} size=${apkSize}` })
 					await deletePath(filePath)
 					continue
 				}
 				validApks.push({ filename: file, version: match[1] })
 			}
-			// 5. Among valid APKs, keep only up to maxApkInstallersCount newest versions
-			const maxApkInstallersCount = config.updates.maxApkInstallersCount
 			if (validApks.length > 0) {
 				validApks.sort((a, b) => (isVersionGreater(a.version, b.version) ? -1 : isVersionGreater(b.version, a.version) ? 1 : 0))
 			}
-			if (validApks.length > maxApkInstallersCount) {
-				for (let i = maxApkInstallersCount; i < validApks.length; i++) {
+			if (validApks.length > maxKeep) {
+				for (let i = maxKeep; i < validApks.length; i++) {
 					const apk = validApks[i]
-					log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup: deleting older APK ${apk.filename} (keeping ${maxApkInstallersCount} newest)` })
+					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting older APK ${apk.filename} (keeping ${maxKeep} newest)` })
 					await deletePath(UPDATES_FOLDER + apk.filename)
 				}
 			}
-			log({ level: 'info', label: 'UpdatesContext', message: `Startup cleanup complete. Kept ${validApks.length > 0 ? validApks[0].filename : 'no APKs'}.` })
+			log({ level: 'info', label: 'UpdatesContext', message: `Cleanup complete. Kept ${validApks.length > 0 ? validApks[0].filename : 'no APKs'}.` })
+		} catch (err) {
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Cleanup failed', error: err })
+		}
+	}, [])
+	// Startup cleanup: respects user updateSettings from storage.
+	const performStartupCleanup = useCallback(async () => {
+		if (Platform.OS === 'web') return
+		try {
+			await ensureUpdatesFolder()
+			const stored = await getItem<any>('updateSettings')
+			const userMaxKeep = stored && typeof stored === 'object' && typeof stored.maxApkKeepCount === 'number' ? Math.min(5, Math.max(1, stored.maxApkKeepCount)) : config.updates.maxApkInstallersCount
+			await cleanupApks(userMaxKeep)
 		} catch (err) {
 			log({ level: 'warn', label: 'UpdatesContext', message: 'Startup cleanup failed', error: err })
 		}
-	}, [])
+	}, [cleanupApks])
 	// Run startup cleanup then refresh APK list — deferred to prioritize feed rendering
 	useEffect(() => {
 		const init = async () => {
@@ -595,7 +598,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			cancelDownload,
 			installApk,
 			deleteApk,
-			refreshApkList
+			refreshApkList,
+			cleanupApks
 		}),
 		[
 			isChecking,
@@ -613,7 +617,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			cancelDownload,
 			installApk,
 			deleteApk,
-			refreshApkList
+			refreshApkList,
+			cleanupApks
 		]
 	)
 	return <UpdatesContext.Provider value={contextValue}>{children}</UpdatesContext.Provider>
