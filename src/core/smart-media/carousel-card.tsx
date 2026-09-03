@@ -342,6 +342,7 @@ const styles = StyleSheet.create({
 	},
 	preview: {
 		aspectRatio: 1,
+		position: 'relative',
 		borderRadius: 12,
 		overflow: 'hidden',
 		backgroundColor: themeColors.background

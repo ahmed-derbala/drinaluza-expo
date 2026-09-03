@@ -1,5 +1,6 @@
 export { SettingsScreen, default as SettingsScreenDefault } from './SettingsScreen'
 export { CacheDetailsCard } from './CacheDetailsCard'
+export { BackendServerInfosCard } from './BackendServerInfosCard'
 export { ResetAppCard } from './ResetAppCard'
 export { MediaSettingsCard } from './MediaSettingsCard'
 export { SettingsUpdatesCard } from './SettingsUpdatesCard'

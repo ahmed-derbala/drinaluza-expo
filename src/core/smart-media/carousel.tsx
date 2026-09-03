@@ -221,6 +221,7 @@ const styles = StyleSheet.create({
 	preview: {
 		width: '100%',
 		aspectRatio: 1,
+		position: 'relative',
 		backgroundColor: themeColors.background,
 		overflow: 'hidden'
 	},

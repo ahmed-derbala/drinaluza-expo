@@ -372,7 +372,9 @@ const SmartMediaViewComponent = ({
 const styles = StyleSheet.create({
 	image: {
 		width: '100%',
-		height: '100%'
+		height: '100%',
+		position: 'relative',
+		overflow: 'hidden'
 	},
 	loadingOverlay: {
 		position: 'absolute',

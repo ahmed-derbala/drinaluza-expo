@@ -6,6 +6,10 @@ import { logError } from '@/core/error/errorHandler'
 import { log } from '@/core/log'
 import { ConnectionService } from '@/core/connection'
 
+interface GetApiClientOptions {
+	prefix?: string
+}
+
 // Create an API client with the given base URL
 const createApiClient = (baseURL: string): AxiosInstance => {
 	const client = axios.create({
@@ -115,8 +119,21 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 // Default API client instance
 const apiClient = createApiClient(config.api.url || `${config.backend.url}${config.api.prefix}`)
 
-// Function to get the current API client
-export const getApiClient = (): AxiosInstance => apiClient
+// Cache for custom-prefix clients to avoid creating duplicates
+const customClients = new Map<string, AxiosInstance>()
+
+// Function to get the current API client, optionally with a custom prefix
+export const getApiClient = (options?: GetApiClientOptions): AxiosInstance => {
+	const prefix = options?.prefix ?? config.api.prefix ?? '/api'
+	const cacheKey = prefix
+	if (customClients.has(cacheKey)) {
+		return customClients.get(cacheKey)!
+	}
+	const baseURL = `${config.backend.url}${prefix}`
+	const client = createApiClient(baseURL)
+	customClients.set(cacheKey, client)
+	return client
+}
 
 // Export the API client instance getter
 export default getApiClient

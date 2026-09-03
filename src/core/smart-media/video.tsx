@@ -420,7 +420,7 @@ const SmartVideoPlayerComponent = forwardRef<SmartVideoPlayerHandle, SmartVideoP
 					<VideoView
 						surfaceType="textureView"
 						player={player}
-						style={StyleSheet.absoluteFill}
+						style={Platform.OS === 'web' ? ([StyleSheet.absoluteFill, { display: 'block' }] as any) : StyleSheet.absoluteFill}
 						contentFit={contentFit}
 						nativeControls={controls ? nativeControls : false}
 						allowsPictureInPicture={false}

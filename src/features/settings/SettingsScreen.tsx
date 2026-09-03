@@ -5,6 +5,7 @@ import { translate } from '@/core/translation'
 import { useScrollHandler } from '@/core/scroll'
 import { SmartHeader } from '@/core/smart-header'
 import { CacheDetailsCard, type CacheDetailsCardHandle } from '@/features/settings/CacheDetailsCard'
+import { BackendServerInfosCard, type BackendServerInfosCardHandle } from '@/features/settings/BackendServerInfosCard'
 import { MediaSettingsCard } from '@/features/settings/MediaSettingsCard'
 import { SettingsUpdatesCard } from '@/features/settings/SettingsUpdatesCard'
 import { ResetAppCard } from './ResetAppCard'
@@ -16,12 +17,13 @@ export function SettingsScreen() {
 	const isWideScreen = width > maxWidth
 	const { onScroll } = useScrollHandler()
 	const cacheRef = useRef<CacheDetailsCardHandle>(null)
+	const backendRef = useRef<BackendServerInfosCardHandle>(null)
 	const [isHeaderRefreshing, setIsHeaderRefreshing] = useState(false)
 
 	const handleHeaderRefresh = useCallback(async () => {
 		setIsHeaderRefreshing(true)
 		try {
-			await cacheRef.current?.refresh?.()
+			await Promise.all([cacheRef.current?.refresh?.(), backendRef.current?.refresh?.()])
 		} finally {
 			setIsHeaderRefreshing(false)
 		}
@@ -45,11 +47,14 @@ export function SettingsScreen() {
 			>
 				<View style={styles.topSpacer} />
 
+				{/* Media Settings */}
+				<MediaSettingsCard />
+
 				{/* Primary Card: Cached Data Details */}
 				<CacheDetailsCard ref={cacheRef} />
 
-				{/* Media Settings */}
-				<MediaSettingsCard />
+				{/* Backend Server Info */}
+				<BackendServerInfosCard ref={backendRef} />
 
 				{/* Update Settings */}
 				<SettingsUpdatesCard />
