@@ -8,6 +8,9 @@ export const config = {
 		version: packagejson.version,
 		timeout: Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000
 	},
+	node: {
+		env: process.env.EXPO_PUBLIC_NODE_ENV || 'local'
+	},
 	api: {
 		prefix: '/api',
 		url: `${process.env.EXPO_PUBLIC_BACKEND_URL || 'http://192.168.1.11:5001'}/api`,
@@ -23,6 +26,5 @@ export const config = {
 		checkUrl: process.env.EXPO_PUBLIC_UPDATES_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
 		minFreeStorageGB: Number(process.env.EXPO_PUBLIC_UPDATES_MIN_FREE_STORAGE_GB || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATES_MIN_FREE_STORAGE_GB || 2),
 		maxApkInstallersCount: Number(process.env.EXPO_PUBLIC_UPDATES_MAX_APK_INSTALLERS_COUNT || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATES_MAX_APK_INSTALLERS_COUNT || 5)
-	},
-	nodeEnv: process.env.EXPO_PUBLIC_NODE_ENV || 'local'
+	}
 }

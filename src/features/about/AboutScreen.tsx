@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
 import { IconButton } from '@/features/common/buttons/IconButton'
 import { useTheme, themeColors } from '@/core/theme'
-import { config } from '@/config'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
 import { useScrollHandler } from '@/core/scroll'
@@ -145,15 +144,6 @@ export default function AboutScreen() {
 						color={themeColors.info}
 					/>
 				</SettingSection>
-				<View style={styles.footer}>
-					<View style={styles.versionBadge}>
-						<Text style={styles.versionText}>
-							v{config.app.version} • {config.nodeEnv}
-						</Text>
-					</View>
-					<Text style={styles.copyright}>© 2026 Drinaluza</Text>
-					<Text style={styles.madeWith}>{translate('made_with', 'Made with 💙 in Tunisia')}</Text>
-				</View>
 			</SmartHeader.ScrollView>
 		</View>
 	)
@@ -227,30 +217,5 @@ const createStyles = (colors: any) =>
 			padding: 10,
 			borderRadius: 10,
 			backgroundColor: colors.surface
-		},
-		footer: {
-			alignItems: 'center',
-			marginTop: 32,
-			marginBottom: 20,
-			gap: 8
-		},
-		versionBadge: {
-			paddingHorizontal: 12,
-			paddingVertical: 6,
-			borderRadius: 8,
-			backgroundColor: colors.primaryContainer
-		},
-		versionText: {
-			fontSize: 13,
-			color: colors.primary,
-			fontWeight: '600'
-		},
-		copyright: {
-			fontSize: 13,
-			color: colors.textTertiary
-		},
-		madeWith: {
-			fontSize: 12,
-			color: colors.textTertiary
 		}
 	})

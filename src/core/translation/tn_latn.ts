@@ -25,7 +25,6 @@ export const tn_latn = {
 	downloads: 'Downloads',
 	developer: 'Developer',
 	server_info: 'Server Info',
-	made_with: 'Masnou3 b 💙 fi Tounes',
 	profile_updated: 'El profil tbadal!',
 	photo_url: 'Lien el taswira',
 	gps_coordinates: 'Coordinates GPS',

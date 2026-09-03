@@ -134,7 +134,7 @@ export const BackendServerInfosCard = forwardRef<BackendServerInfosCardHandle, {
 
 				<View style={[styles.row, styles.lastRow]}>
 					<View style={styles.rowItem}>
-						<Ionicons name="people-outline" size={16} color={colors.primary} />
+						<Ionicons name="pulse-outline" size={16} color={colors.primary} />
 						<Text style={[styles.rowLabel, { color: colors.textSecondary }]}>{translate('socketio', 'Socket.IO')}</Text>
 					</View>
 					<Text style={[styles.rowValue, { color: colors.text }]} numberOfLines={1}>

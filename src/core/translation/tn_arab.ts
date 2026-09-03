@@ -25,7 +25,6 @@ export const tn_arab = {
 	downloads: 'تحميل',
 	developer: 'المطور',
 	server_info: 'معلومات السيرفر',
-	made_with: 'صنع بـ 💙 في تونس',
 	profile_updated: 'الملف الشخصي تبدل!',
 	photo_url: 'رابط الصورة',
 	gps_coordinates: 'إحداثيات GPS',

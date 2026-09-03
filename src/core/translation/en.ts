@@ -28,7 +28,6 @@ export const en = {
 	downloads: 'Downloads',
 	developer: 'Developer',
 	server_info: 'Server Info',
-	made_with: 'Made with 💙 in Tunisia',
 	profile_updated: 'Profile updated successfully!',
 	photo_url: 'Photo URL',
 	gps_coordinates: 'GPS Coordinates',

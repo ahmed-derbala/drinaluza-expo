@@ -9,7 +9,7 @@ export interface UpdateSettings {
 
 const DEFAULTS: UpdateSettings = {
 	enabled: true,
-	maxApkKeepCount: 5
+	maxApkKeepCount: 2
 }
 
 const STORAGE_KEY = 'updateSettings'
