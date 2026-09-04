@@ -4,7 +4,7 @@ import { translate } from '@/core/translation'
 import { useUser } from '@/core/contexts'
 import { useCartCount } from '@/features/purchases/hooks/useCartCount'
 import { useHiddenOnRoutes } from './useHiddenOnRoutes'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 // Add route prefixes where the cart button should not appear.
 const HIDDEN_ON_ROUTES = ['/dashboard']
@@ -46,7 +46,7 @@ export const HeaderCartButton: React.FC = React.memo(() => {
 		router.push('/purchases?status=cart')
 	}
 
-	return <HeaderIconButton icon="cart-outline" onPress={handlePress} badgeCount={badgeCount} label={translate('view_cart', 'View Cart')} />
+	return <HeaderIconBaseButton icon="cart-outline" onPress={handlePress} badgeCount={badgeCount} label={translate('view_cart', 'View Cart')} />
 })
 
 HeaderCartButton.displayName = 'HeaderCartButton'

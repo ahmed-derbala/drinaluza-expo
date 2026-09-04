@@ -1,5 +1,5 @@
 export { HeaderBackButton } from './HeaderBackButton'
-export { HeaderIconButton } from './HeaderIconButton'
+export { HeaderIconBaseButton } from './HeaderIconBaseButton'
 export { HeaderRefreshButton } from './HeaderRefreshButton'
 export { HeaderSearchButton } from './HeaderSearchButton'
 export { HeaderCartButton } from './HeaderCartButton'

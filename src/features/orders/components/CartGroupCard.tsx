@@ -5,8 +5,8 @@ import { Ionicons } from '@expo/vector-icons'
 
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { DeleteButton } from '@/features/common/buttons/DeleteButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
 import { SmartMediaView } from '@/core/smart-media'
 import { FeedItem } from '@/features/feed/feed.interface'
 
@@ -134,7 +134,7 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 						<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 						<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 					</View>
-					<IconButton icon="checkmark" label="Place order" variant="primary" onPress={() => onCheckout(group)} />
+					<IconBaseButton icon="checkmark" label="Place order" variant="primary" onPress={() => onCheckout(group)} />
 				</View>
 			</View>
 		</View>

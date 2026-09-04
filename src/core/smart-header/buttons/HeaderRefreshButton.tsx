@@ -2,7 +2,7 @@ import { useSyncExternalStore, useCallback } from 'react'
 import { useTheme } from '@/core/theme'
 import { ConnectionService, BackendState } from '@/core/connection'
 import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/cache/useCacheFirst'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderRefreshButtonProps {
 	onRefresh?: () => void | Promise<void>
@@ -49,7 +49,7 @@ export function HeaderRefreshButton({ onRefresh, isRefreshing: isRefreshingProp,
 	const iconColor = showOffline ? colors.error : colors.primary
 
 	return (
-		<HeaderIconButton
+		<HeaderIconBaseButton
 			icon={icon}
 			iconType={iconType}
 			label={showOffline ? 'Offline' : 'Refresh'}

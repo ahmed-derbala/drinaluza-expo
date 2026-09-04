@@ -35,6 +35,7 @@ export interface ThemeColors {
 	inputBorder: string
 	instagram: string
 	modalOverlay: string
+	modalBorder: string
 	notification: string
 	primary: string
 	primary06: string

@@ -4,7 +4,7 @@ import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
 import { UserData } from '@/features/profile/profile.interface'
 import { MultiLang } from '@/features/businesses/businesses.interface'
 import { translate as translateHelper, setGlobalAppLang } from '@/core/translation'
-import { getStringFromMultiLang, setGlobalContentLang } from '@/features/common/languages/languages.helpers'
+import { getStringFromMultiLang, setGlobalContentLang } from '@/core/ui/languages/languages.helpers'
 import { deferStartup } from '@/core/helpers/defer'
 import { log } from '@/core/log'
 

@@ -5,7 +5,7 @@ import * as Location from 'expo-location'
 
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
-import { IconButton } from './buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import type { Location as LocationType } from '@/features/profile/profile.interface'
 
 interface LocationFormProps {
@@ -158,7 +158,7 @@ export default function LocationForm({ location, onChange }: LocationFormProps) 
 						<View style={[styles.switchThumb, sharingEnabled ? { transform: [{ translateX: 20 }], backgroundColor: themeColors.buttonText } : { backgroundColor: themeColors.buttonText }]} />
 					</TouchableOpacity>
 				</View>
-				<IconButton
+				<IconBaseButton
 					icon="location"
 					label={translate('get_current', 'Get Current Location')}
 					onPress={handleGetCurrentLocation}

@@ -14,18 +14,18 @@ import { useProductBySlug } from './useProductBySlug'
 import { ProductType, FileRef } from '@/features/products/products.type'
 import type { MultiLang } from '@/features/common/address'
 import { formatAddress } from '@/features/common/address'
-import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
+import { MultiLingualCard } from '@/core/ui/languages/MultiLingualCard'
 import ProductPricingCard from '@/features/products/cards/ProductPricingCard'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import Spinner from '@/features/common/Spinner'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { PhoneButton } from '@/features/common/buttons/PhoneButton'
-import { WhatsAppButton } from '@/features/common/buttons/WhatsAppButton'
-import { EmailButton } from '@/features/common/buttons/EmailButton'
-import { WebsiteButton } from '@/features/common/buttons/WebsiteButton'
-import { DirectionsButton } from '@/features/common/buttons/DirectionsButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { PhoneButton } from '@/core/ui/buttons/PhoneButton'
+import { WhatsAppButton } from '@/core/ui/buttons/WhatsAppButton'
+import { EmailButton } from '@/core/ui/buttons/EmailButton'
+import { WebsiteButton } from '@/core/ui/buttons/WebsiteButton'
+import { DirectionsButton } from '@/core/ui/buttons/DirectionsButton'
 import { HeaderQRCodeButton, HeaderRefreshButton, SmartHeader } from '@/core/smart-header'
 import { SmartMediaView, deleteMediaFile } from '@/core/smart-media'
 import { CarouselCard } from '@/core/smart-media/carousel-card'
@@ -548,11 +548,11 @@ export default function ProductScreen() {
 					</View>
 					<View style={styles.checkoutActionsCol}>
 						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} style={styles.stepperBtn} />
+							<IconBaseButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} style={styles.stepperBtn} />
 							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
-							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} style={styles.stepperBtn} />
+							<IconBaseButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} style={styles.stepperBtn} />
 						</View>
-						<IconButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" />
+						<IconBaseButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" />
 					</View>
 				</View>
 			)}

@@ -2,7 +2,7 @@ import React from 'react'
 import { Platform } from 'react-native'
 import { useRouter, Href } from 'expo-router'
 import { translate } from '@/core/translation'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderBackButtonProps {
 	onPress?: () => void
@@ -22,7 +22,7 @@ export const HeaderBackButton: React.FC<HeaderBackButtonProps> = React.memo(({ o
 		}
 	}
 
-	return <HeaderIconButton icon={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} label={translate('go_back', 'Go back')} onPress={handlePress} />
+	return <HeaderIconBaseButton icon={Platform.OS === 'ios' ? 'chevron-back' : 'arrow-back'} label={translate('go_back', 'Go back')} onPress={handlePress} />
 })
 
 HeaderBackButton.displayName = 'HeaderBackButton'

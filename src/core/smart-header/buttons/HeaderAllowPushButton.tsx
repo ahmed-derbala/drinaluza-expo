@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 import { Linking, Platform } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { log } from '@/core/log'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderAllowPushButtonProps {
 	onPermissionResult?: (granted: boolean) => void
@@ -47,5 +47,5 @@ export function HeaderAllowPushButton({ onPermissionResult, size = 38, label = '
 		}
 	}, [onPermissionResult, openNotificationSettings])
 
-	return <HeaderIconButton icon="notifications-outline" label={label} onPress={handlePress} size={size} iconColor={colors.warning} />
+	return <HeaderIconBaseButton icon="notifications-outline" label={label} onPress={handlePress} size={size} iconColor={colors.warning} />
 }

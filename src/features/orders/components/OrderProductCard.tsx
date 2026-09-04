@@ -5,7 +5,7 @@ import { useTheme, themeColors } from '@/core/theme'
 import { CARD } from '@/core/theme/constants'
 import { useUser } from '@/core/contexts/UserContext'
 import { SmartMediaView } from '@/core/smart-media'
-import { DeleteButton } from '@/features/common/buttons/DeleteButton'
+import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
 import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
 import { PriceBlock } from '@/features/products/blocks/PriceBlock'
 

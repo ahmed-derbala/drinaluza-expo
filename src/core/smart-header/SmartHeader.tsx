@@ -5,7 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-na
 import { useScrollHandler } from '@/core/scroll'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { Href, usePathname } from 'expo-router'
-import { HeaderBackButton, HeaderIconButton, HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
+import { HeaderBackButton, HeaderIconBaseButton, HeaderRefreshButton, HeaderSearchButton, HeaderCartButton } from './buttons'
 import { useTheme } from '@/core/theme'
 import { useSmartKebabMenu } from '@/core/smart-kebab-menu'
 import { SmartKebabMenuItem } from '@/core/smart-kebab-menu/types'
@@ -15,7 +15,7 @@ import HeaderTitle from './HeaderTitle'
 // Re-export actions for convenience
 export {
 	HeaderBackButton,
-	HeaderIconButton,
+	HeaderIconBaseButton,
 	HeaderNotificationsButton,
 	HeaderRefreshButton,
 	HeaderSearchButton,
@@ -292,7 +292,7 @@ export const SmartFlashList = React.forwardRef<any, FlashListProps<any>>(({ onSc
 SmartFlashList.displayName = 'SmartHeader.FlashList'
 const MemoizedHeader = React.memo(SmartHeaderComponent) as any
 MemoizedHeader.BackButton = HeaderBackButton
-MemoizedHeader.ActionButton = HeaderIconButton
+MemoizedHeader.ActionButton = HeaderIconBaseButton
 MemoizedHeader.RefreshButton = HeaderRefreshButton
 MemoizedHeader.SearchButton = HeaderSearchButton
 MemoizedHeader.CartButton = HeaderCartButton
@@ -300,7 +300,7 @@ MemoizedHeader.ScrollView = SmartScrollView
 MemoizedHeader.FlashList = SmartFlashList
 export const SmartHeader = MemoizedHeader as React.NamedExoticComponent<SmartHeaderProps> & {
 	BackButton: typeof HeaderBackButton
-	ActionButton: typeof HeaderIconButton
+	ActionButton: typeof HeaderIconBaseButton
 	RefreshButton: typeof HeaderRefreshButton
 	SearchButton: typeof HeaderSearchButton
 	CartButton: typeof HeaderCartButton

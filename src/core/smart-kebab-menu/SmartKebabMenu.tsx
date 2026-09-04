@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'
 import { StyleSheet, Text, View, Animated, Platform, Pressable, useWindowDimensions, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { HeaderIconButton } from '@/core/smart-header/buttons'
+import { HeaderIconBaseButton } from '@/core/smart-header/buttons'
 import { usePathname, useRouter, useNavigation } from 'expo-router'
 import { useTheme } from '@/core/theme'
 import { translate } from '@/core/translation'
@@ -250,7 +250,7 @@ export const SmartKebabMenu: React.FC = () => {
 	return (
 		<View ref={buttonRef} style={styles.container}>
 			{/* Kebab Icon Button */}
-			<HeaderIconButton icon="ellipsis-vertical" label={translate('kebab_menu_button', 'Open menu')} onPress={toggleMenu} />
+			<HeaderIconBaseButton icon="ellipsis-vertical" label={translate('kebab_menu_button', 'Open menu')} onPress={toggleMenu} />
 
 			{/* Render the dropdown in a Modal so it is never clipped by header siblings or parent stacking contexts */}
 			<Modal transparent visible={isOpen} animationType="none" onRequestClose={closeMenu}>

@@ -12,7 +12,7 @@ import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/scroll'
 import { SmartMediaView } from '@/core/smart-media'
 import { BaseCard } from '@/features/common/cards/BaseCard'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { log } from '@/core/log'
 import { config } from '@/config'
 import QRCodeModal from '@/features/common/QRCodeModal'
@@ -286,7 +286,7 @@ const HeroCard = ({ business, styles, colors }: { business: BusinessDashboard['b
 						@{business.slug}
 					</Text>
 				</View>
-				<IconButton
+				<IconBaseButton
 					icon="edit"
 					iconType="material"
 					label={translate('edit_business', 'Edit Business')}

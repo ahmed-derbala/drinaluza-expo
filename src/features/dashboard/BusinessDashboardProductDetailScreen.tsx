@@ -7,7 +7,7 @@ import { useLayout } from '@/core/contexts/LayoutContext'
 import { getProductBySlug, updateProduct } from '@/features/products/products.api'
 import { ProductType, FileRef } from '@/features/products/products.type'
 import type { MultiLang } from '@/features/common/address'
-import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
+import { MultiLingualCard } from '@/core/ui/languages/MultiLingualCard'
 import ProductPricingCard from '@/features/products/cards/ProductPricingCard'
 import ProductStockSection from '@/features/products/common/ProductStockSection'
 import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
@@ -17,7 +17,7 @@ import { SmartHeader } from '@/core/smart-header'
 import { SmartMediaView, deleteMediaFile } from '@/core/smart-media'
 import { CarouselCard } from '@/core/smart-media/carousel-card'
 import StateBadge from '@/features/common/StateBadge'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { toast } from '@/features/common/Toast'
 import { parseError } from '@/core/error/errorHandler'
 import { LinearGradient } from 'expo-linear-gradient'
@@ -435,7 +435,7 @@ export default function BusinessDashboardProductDetailScreen() {
 								<Text style={styles.heroTitle}>{displayTitle}</Text>
 								<View style={styles.heroBadgeRow}>
 									<StateBadge stateCode={productState} />
-									<IconButton
+									<IconBaseButton
 										icon={isProductActive ? 'pause-circle-outline' : 'play-circle-outline'}
 										label={isProductActive ? translate('suspend', 'Suspend') : translate('activate', 'Activate')}
 										onPress={handleToggleState}

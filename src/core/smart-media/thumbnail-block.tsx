@@ -15,7 +15,7 @@ import * as Clipboard from 'expo-clipboard'
 import { themeColors } from '@/core/theme'
 import { log } from '@/core/log'
 import { parseError } from '@/core/error/errorHandler'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import Spinner from '@/features/common/Spinner'
 import { type TargetModelName } from './constants'
 import { pickSingleMediaFile, type PickMediaType } from './picker'
@@ -214,10 +214,16 @@ const SmartMediaThumbnailBlockComponent = ({
 			</View>
 
 			<View style={styles.actions}>
-				<IconButton icon="cloud-upload-outline" label="Upload file" onPress={handleUpload} disabled={disabled || loading} loading={loading} style={styles.actionButton} />
-				<IconButton icon={copied ? 'checkmark-circle-outline' : 'link-outline'} label={copied ? 'Copied' : 'Copy URL'} onPress={handleCopy} disabled={!url || disabled} style={styles.actionButton} />
-				<IconButton icon="clipboard-outline" label="Paste URL" onPress={handlePaste} disabled={disabled || loading} style={styles.actionButton} />
-				<IconButton icon="trash-outline" label="Remove" onPress={handleRemove} disabled={!thumbnail || disabled || loading} variant="danger" style={styles.actionButton} />
+				<IconBaseButton icon="cloud-upload-outline" label="Upload file" onPress={handleUpload} disabled={disabled || loading} loading={loading} style={styles.actionButton} />
+				<IconBaseButton
+					icon={copied ? 'checkmark-circle-outline' : 'link-outline'}
+					label={copied ? 'Copied' : 'Copy URL'}
+					onPress={handleCopy}
+					disabled={!url || disabled}
+					style={styles.actionButton}
+				/>
+				<IconBaseButton icon="clipboard-outline" label="Paste URL" onPress={handlePaste} disabled={disabled || loading} style={styles.actionButton} />
+				<IconBaseButton icon="trash-outline" label="Remove" onPress={handleRemove} disabled={!thumbnail || disabled || loading} variant="danger" style={styles.actionButton} />
 			</View>
 
 			<View style={styles.urlInputRow}>
@@ -233,7 +239,7 @@ const SmartMediaThumbnailBlockComponent = ({
 					editable={!disabled && !loading}
 					accessibilityLabel="Media URL"
 				/>
-				<IconButton icon="checkmark" label="Set URL" onPress={() => applyUrl(draftUrl)} disabled={!canApplyUrl || disabled || loading} style={styles.urlApplyButton} />
+				<IconBaseButton icon="checkmark" label="Set URL" onPress={() => applyUrl(draftUrl)} disabled={!canApplyUrl || disabled || loading} style={styles.urlApplyButton} />
 			</View>
 		</View>
 	)

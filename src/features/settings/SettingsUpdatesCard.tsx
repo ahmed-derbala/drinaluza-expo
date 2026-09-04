@@ -8,7 +8,7 @@ import { useUpdateSettings } from '@/features/settings/UpdateSettingsContext'
 import { useUpdates } from '@/features/updates/useUpdates'
 import { isAndroid, isWeb } from '@/core/platform'
 import { config } from '@/config'
-import BottomSheetModal from '@/core/smart-modal/BottomSheetModal'
+import BottomSheetModal from '@/core/ui/modals/BottomSheetModal'
 
 export function SettingsUpdatesCard() {
 	const { colors } = useTheme()

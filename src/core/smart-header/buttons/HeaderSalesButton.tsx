@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderSalesButtonProps {
 	businessSlug?: string
@@ -12,5 +12,5 @@ export function HeaderSalesButton({ businessSlug, size = 38, label = 'Sales' }: 
 
 	if (!businessSlug) return null
 
-	return <HeaderIconButton icon="trending-up" label={label} onPress={() => router.push(`/dashboard/${businessSlug}/sales` as any)} size={size} />
+	return <HeaderIconBaseButton icon="trending-up" label={label} onPress={() => router.push(`/dashboard/${businessSlug}/sales` as any)} size={size} />
 }

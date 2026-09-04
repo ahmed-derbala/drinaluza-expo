@@ -1,4 +1,4 @@
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderSwitchUserButtonProps {
 	onPress: () => void
@@ -9,5 +9,5 @@ export interface HeaderSwitchUserButtonProps {
 }
 
 export function HeaderSwitchUserButton({ onPress, size = 38, label = 'Switch User', iconColor, backgroundColor }: HeaderSwitchUserButtonProps) {
-	return <HeaderIconButton icon="people" label={label} onPress={onPress} size={size} iconColor={iconColor} style={{ backgroundColor }} />
+	return <HeaderIconBaseButton icon="people" label={label} onPress={onPress} size={size} iconColor={iconColor} style={{ backgroundColor }} />
 }

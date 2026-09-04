@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
 
 export interface ProductStateSectionProps {
 	variant: 'view' | 'edit'
@@ -41,7 +41,7 @@ export default function ProductStateSection({
 					<Text style={styles.cardTitle}>{translate('state', 'State')}</Text>
 					<View style={styles.actionButtons}>
 						{onCancelPress && <CancelButton onPress={onCancelPress} style={styles.actionBtn} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={styles.actionBtn} />}
+						{onSavePress && <IconBaseButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={styles.actionBtn} />}
 					</View>
 				</View>
 				<View style={styles.row}>
@@ -89,7 +89,7 @@ export default function ProductStateSection({
 		<View style={styles.statusRow}>
 			<View style={styles.statusLabelContainer}>
 				<Text style={styles.statusLabel}>{translate('state', 'State')}</Text>
-				{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={{ padding: 2 }} />}
+				{canEdit && onEditPress && <IconBaseButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={{ padding: 2 }} />}
 			</View>
 			<View style={[styles.statusBadgeTouch, { backgroundColor: isAvailable ? `${colors.success}15` : `${colors.error}15` }]}>
 				<Text style={[styles.statusText, { color: isAvailable ? colors.success : colors.error }]}>{stateCode === 'active' ? translate('active', 'Active') : translate('inactive', 'Inactive')}</Text>

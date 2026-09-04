@@ -2,8 +2,8 @@ import React from 'react'
 import { StyleSheet, View, Pressable, Text, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
 
 export type CardSize = 'sm' | 'md' | 'lg' | number
 
@@ -145,11 +145,11 @@ export function BaseCard({
 			</View>
 			<View style={styles.actions}>
 				{headerRight}
-				{isEditable ? <IconButton icon="create-outline" label="Edit" onPress={handleEdit} style={styles.iconButton} /> : null}
+				{isEditable ? <IconBaseButton icon="create-outline" label="Edit" onPress={handleEdit} style={styles.iconButton} /> : null}
 				{isEdit ? (
 					<>
 						<CancelButton onPress={handleCancel} style={styles.iconButton} />
-						<IconButton icon="checkmark-circle" label="Save" onPress={handleSave} variant="success" disabled={loading} loading={loading} style={styles.iconButton} />
+						<IconBaseButton icon="checkmark-circle" label="Save" onPress={handleSave} variant="success" disabled={loading} loading={loading} style={styles.iconButton} />
 					</>
 				) : null}
 			</View>

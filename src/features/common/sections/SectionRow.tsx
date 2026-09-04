@@ -2,7 +2,7 @@ import React from 'react'
 import { StyleSheet, Text, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@/core/theme'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 
 interface SectionRowProps {
 	label?: string
@@ -30,7 +30,7 @@ export function SectionRow({ label, value, icon, iconColor, onPress, onLongPress
 				{label && <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{label}</Text>}
 				{typeof value === 'string' ? <Text style={[styles.infoValue, { color: colors.text }, isRtl && styles.infoValueRtl]}>{value}</Text> : value}
 			</View>
-			{onCopy && <IconButton icon="copy-outline" label="Copy" onPress={onCopy} style={styles.copyButton} />}
+			{onCopy && <IconBaseButton icon="copy-outline" label="Copy" onPress={onCopy} style={styles.copyButton} />}
 		</View>
 	)
 

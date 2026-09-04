@@ -8,7 +8,7 @@ import { Review } from './reviews.interface'
 import RatingStars from '@/features/common/RatingStars'
 import Spinner from '@/features/common/Spinner'
 import EmptyState from '@/features/common/EmptyState'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 type ReviewSectionProps = {
 	targetResource: 'businesses' | 'products' | 'users'
 	targetId: string
@@ -116,7 +116,7 @@ export default function ReviewSection({ targetResource, targetId, targetName }: 
 						</View>
 					)}
 				</View>
-				<IconButton
+				<IconBaseButton
 					icon={showAddReview ? 'close' : 'add'}
 					label={showAddReview ? translate('close', 'Close') : translate('add_review', 'Add Review')}
 					onPress={() => setShowAddReview(!showAddReview)}

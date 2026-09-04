@@ -1,6 +1,6 @@
 import { themeColors } from '@/core/theme'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 
 export interface ProductPricingCardProps {
@@ -156,7 +156,7 @@ export default function ProductPricingCard({
 		<View style={styles.viewSection}>
 			<View style={styles.viewHeader}>
 				<Text style={styles.priceLabel}>{translate('price', 'Price')}</Text>
-				{canEdit && onEditPress && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.editActionBtn} />}
+				{canEdit && onEditPress && <IconBaseButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.editActionBtn} />}
 			</View>
 			<View style={styles.priceContainer}>
 				<Text style={[styles.priceValue, { color: colors.primary }]}>{formattedPrice}</Text>

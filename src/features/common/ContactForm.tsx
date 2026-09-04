@@ -1,8 +1,8 @@
 import { useCallback, useMemo } from 'react'
 import { StyleSheet, Text, TextInput, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { IconButton } from './buttons/IconButton'
-import { DeleteButton } from './buttons/DeleteButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
 
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
@@ -142,7 +142,7 @@ export default function ContactForm({ contact, phone, backupPhones, email, whats
 				</View>
 			))}
 
-			<IconButton icon="call-outline" label={translate('add_backup_phone', 'Add Backup Phone')} onPress={addBackupPhone} style={[styles.addButtonIcon, { borderColor: colors.primary }]} />
+			<IconBaseButton icon="call-outline" label={translate('add_backup_phone', 'Add Backup Phone')} onPress={addBackupPhone} style={[styles.addButtonIcon, { borderColor: colors.primary }]} />
 
 			<View style={styles.inputGroup}>
 				<Text style={styles.inputLabel}>Email</Text>

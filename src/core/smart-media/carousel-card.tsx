@@ -3,7 +3,7 @@ import { Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View, type Style
 import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
 import { BaseCard, type CardSize } from '@/features/common/cards/BaseCard'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import Spinner from '@/features/common/Spinner'
 import { themeColors } from '@/core/theme'
 import { log } from '@/core/log'
@@ -99,7 +99,7 @@ const ThumbItem = React.memo(
 						<SmartMediaView media={item as any} contentFit="cover" style={StyleSheet.absoluteFill} controls={false} isVisible={isVisible} />
 					)}
 				</TouchableOpacity>
-				{isEditing && <IconButton icon="close" label="Remove" onPress={() => onRemove(item)} variant="danger" iconColor={themeColors.buttonText} size={20} style={styles.removeBadge} />}
+				{isEditing && <IconBaseButton icon="close" label="Remove" onPress={() => onRemove(item)} variant="danger" iconColor={themeColors.buttonText} size={20} style={styles.removeBadge} />}
 			</View>
 		)
 	}
@@ -304,7 +304,7 @@ const CarouselCardComponent = ({
 						/>
 					))}
 					{isEditing && (
-						<IconButton
+						<IconBaseButton
 							icon="camera-outline"
 							label={internalUploading ? 'Uploading...' : 'Add media'}
 							onPress={handleUpload}

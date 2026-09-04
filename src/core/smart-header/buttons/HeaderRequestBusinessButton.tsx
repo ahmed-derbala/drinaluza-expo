@@ -1,4 +1,4 @@
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderRequestBusinessButtonProps {
 	onPress: () => void
@@ -8,5 +8,5 @@ export interface HeaderRequestBusinessButtonProps {
 }
 
 export function HeaderRequestBusinessButton({ onPress, size = 38, label = 'Request Business', iconColor }: HeaderRequestBusinessButtonProps) {
-	return <HeaderIconButton icon="briefcase" label={label} onPress={onPress} size={size} iconColor={iconColor} />
+	return <HeaderIconBaseButton icon="briefcase" label={label} onPress={onPress} size={size} iconColor={iconColor} />
 }

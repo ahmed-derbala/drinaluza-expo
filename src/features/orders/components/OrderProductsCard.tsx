@@ -1,8 +1,7 @@
 import React from 'react'
-import { StyleSheet, View, Text } from 'react-native'
+import { StyleSheet, View, Text, ScrollView } from 'react-native'
 import { useTheme } from '@/core/theme'
 import { OrderProductCard, OrderProduct } from './OrderProductCard'
-import { Scrollbar } from '@/core/scroll'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface OrderProductsCardProps {
@@ -36,7 +35,7 @@ export const OrderProductsCard = React.memo(function OrderProductsCard({
 	return (
 		<View style={styles.container}>
 			{title ? <Text style={[styles.title, { color: colors.textSecondary }]}>{title}</Text> : null}
-			<Scrollbar horizontal bounces={false} overScrollMode="never" contentContainerStyle={styles.content} style={styles.scroll} keyboardShouldPersistTaps="handled">
+			<ScrollView horizontal bounces={false} overScrollMode="never" contentContainerStyle={styles.content} style={styles.scroll} keyboardShouldPersistTaps="handled" showsHorizontalScrollIndicator>
 				{products.map((item, index) => {
 					const key = (item._id || item.product._id || `idx-${index}`) as string
 					const quantity = getQuantity ? getQuantity(item) : item.quantity
@@ -53,7 +52,7 @@ export const OrderProductsCard = React.memo(function OrderProductsCard({
 						/>
 					)
 				})}
-			</Scrollbar>
+			</ScrollView>
 		</View>
 	)
 })

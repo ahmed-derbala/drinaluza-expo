@@ -1,5 +1,5 @@
 import type { MultiLang, Address } from './address.interface'
-import { getStringFromMultiLang } from '@/features/common/languages/languages.helpers'
+import { getStringFromMultiLang } from '@/core/ui/languages/languages.helpers'
 
 /**
  * Returns localized street string.

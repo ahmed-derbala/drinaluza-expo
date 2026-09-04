@@ -10,15 +10,15 @@ import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import Spinner from '@/features/common/Spinner'
 import { SmartMediaView } from '@/core/smart-media'
-import { DeleteButton } from '@/features/common/buttons/DeleteButton'
-import { EyeButton } from '@/features/common/buttons/EyeButton'
+import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
+import { EyeButton } from '@/core/ui/buttons/EyeButton'
 import { SmartHeader } from '@/core/smart-header'
 import { toast } from '@/features/common/Toast'
 import { showConfirm } from '@/core/helpers/popup'
 import { config } from '@/config'
 import { log } from '@/core/log'
 import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, signInWithToken, switchUser, SavedAuth } from './auth.api'
-import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
+import { LanguageIcon, LANGUAGES } from '@/core/ui/languages'
 // ─── Static stylesheet — defined ONCE at module level, never recreated ────────
 const S = StyleSheet.create({
 	root: { flex: 1, backgroundColor: themeColors.background },

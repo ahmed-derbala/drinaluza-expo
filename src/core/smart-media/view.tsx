@@ -12,7 +12,7 @@ import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-nativ
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { themeColors } from '@/core/theme'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import Spinner from '@/features/common/Spinner'
 import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@/core/cache'
 import { getMediaType, getMediaUrl, getVideoPosterUrl, type MediaSource, type SmartMediaStyleProps } from './types'
@@ -350,7 +350,7 @@ const SmartMediaViewComponent = ({
 				<Modal visible={isPreviewOpen} animationType="fade" onRequestClose={() => setIsPreviewOpen(false)}>
 					<View style={styles.modalBackdrop}>
 						<TouchableOpacity style={StyleSheet.absoluteFill} onPress={() => setIsPreviewOpen(false)} />
-						<IconButton
+						<IconBaseButton
 							icon="close"
 							label="Close preview"
 							onPress={() => setIsPreviewOpen(false)}

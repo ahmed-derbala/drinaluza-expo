@@ -4,7 +4,7 @@ import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { Ionicons } from '@expo/vector-icons'
 import type { MultiLang } from './address.interface'
-import MultiLingualInput from '@/features/common/languages/MultiLingualInput'
+import MultiLingualInput from '@/core/ui/languages/MultiLingualInput'
 
 export interface AddressFormProps {
 	street: MultiLang

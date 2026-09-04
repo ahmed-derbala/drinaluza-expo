@@ -157,7 +157,7 @@ export const useScrollHandler = (
 		const handleWebScroll = (e: Event) => {
 			const target = e.target as HTMLElement | Document | Window | null
 			if (!target) return
-			if (target instanceof HTMLElement && target.closest?.('[data-smart-modal]')) return
+			if (target instanceof HTMLElement && target.closest?.('[data-base-modal]')) return
 
 			let y: number | null = null
 			if (target === document || target === window) y = window.scrollY ?? document.documentElement.scrollTop ?? 0

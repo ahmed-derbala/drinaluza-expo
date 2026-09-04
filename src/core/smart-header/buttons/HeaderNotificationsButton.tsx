@@ -1,6 +1,6 @@
 import { useRouter, usePathname } from 'expo-router'
 import { useNotification } from '@/features/notifications/NotificationContext'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderNotificationsButtonProps {
 	size?: number
@@ -24,5 +24,5 @@ export function HeaderNotificationsButton({ size = 38, label = 'Notifications' }
 		router.push('/notifications' as any)
 	}
 
-	return <HeaderIconButton icon="notifications-outline" label={label} onPress={handlePress} size={size} badgeCount={notificationCount} />
+	return <HeaderIconBaseButton icon="notifications-outline" label={label} onPress={handlePress} size={size} badgeCount={notificationCount} />
 }

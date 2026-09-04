@@ -6,8 +6,8 @@ import { CARD } from '@/core/theme/constants'
 import { useUser } from '@/core/contexts'
 import { SmartMediaView } from '@/core/smart-media'
 import { BaseCard } from '@/features/common/cards/BaseCard'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { OrderItem } from '@/features/orders/orders.interface'
 import { ORDER_STATUSES } from '@/features/orders/orders-statuses'
 import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
@@ -167,7 +167,7 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 			{(canCancel || canMarkReceived) && (
 				<View style={styles.actionsRow}>
 					{canCancel && <CancelButton onPress={() => onCancel?.(item._id)} />}
-					{canMarkReceived && <IconButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" />}
+					{canMarkReceived && <IconBaseButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" />}
 				</View>
 			)}
 		</BaseCard>

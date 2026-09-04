@@ -2,8 +2,8 @@ import { themeColors } from '@/core/theme'
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { getCaliberIconSize, getCaliberFontSize, getHarvestLabel, getHarvestIcon, getGearLabel } from '@/features/products/products.helpers'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
 import { AddressForm, formatAddress } from '@/features/common/address'
 import { GearIcon } from './GearIcons'
 import { useUser } from '@/core/contexts/UserContext'
@@ -73,7 +73,7 @@ export default function ProductSpecsSection({
 					</Text>
 					<View style={{ flexDirection: 'row', gap: 12 }}>
 						{onCancelPress && <CancelButton onPress={onCancelPress} style={{ padding: 4 }} />}
-						{onSavePress && <IconButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={{ padding: 4 }} />}
+						{onSavePress && <IconBaseButton icon="checkmark-circle" label={translate('save', 'Save')} onPress={onSavePress} variant="success" style={{ padding: 4 }} />}
 					</View>
 				</View>
 				{/* Caliber Selection */}
@@ -166,7 +166,7 @@ export default function ProductSpecsSection({
 					</View>
 					<Text style={[styles.metaCardTitle, { color: colors.textTertiary }]}>{translate('specifications', 'Specifications')}</Text>
 				</View>
-				{onEdit && <IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEdit} style={{ padding: 4 }} />}
+				{onEdit && <IconBaseButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEdit} style={{ padding: 4 }} />}
 			</View>
 			{/* Caliber */}
 			<View style={styles.specDetailRow}>

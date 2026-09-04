@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 
-import { CenteredModal } from '@/core/smart-modal'
+import { CenteredModal } from '@/core/ui/modals'
 import Spinner from '@/features/common/Spinner'
 import { useTheme } from '@/core/theme'
 import { useUser } from '@/core/contexts'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
-import { EyeButton } from '@/features/common/buttons/EyeButton'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { EyeButton } from '@/core/ui/buttons/EyeButton'
 import { updateMyProfile } from '@/features/auth/auth.api'
 import { useMyProfile } from '@/features/profile/useMyProfile'
 import { BaseCard } from '@/features/common/cards/BaseCard'
@@ -139,6 +140,20 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 		return group?.items.reduce((sum, item) => sum + (item.price?.total?.tnd || 0) * (item.quantity || 1), 0) || 0
 	}, [group])
 
+	const buttons: ReactNode[] = [
+		<CancelButton key="cancel" onPress={onClose} disabled={isSaving} />,
+		<IconBaseButton
+			key="confirm"
+			icon="checkmark"
+			label={translate('confirm_purchase', 'Confirm Purchase')}
+			onPress={() => handleSave(disableConfirmation)}
+			disabled={isSaving}
+			loading={isSaving}
+			variant="primary"
+			style={{ backgroundColor: colors.primary }}
+		/>
+	]
+
 	return (
 		<CenteredModal
 			visible={visible}
@@ -147,35 +162,25 @@ export default function CheckoutConfirmationModal({ visible, group, user, onClos
 			subtitle={group ? `${group.items.length} ${group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')} · ${total.toFixed(2)} TND` : undefined}
 			icon="receipt-outline"
 			scrollable
-			footer={
-				<View style={styles.footer}>
-					{error && (
-						<View style={[styles.errorBanner, { backgroundColor: colors.error + '15', borderColor: colors.error + '40' }]}>
-							<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
-						</View>
-					)}
-					<View style={styles.actionRow}>
-						<EyeButton
-							onPress={() => setDisableConfirmation((prev) => !prev)}
-							visible={disableConfirmation}
-							label={translate('disable_confirm', "Don't ask again")}
-							accessibilityRole="checkbox"
-							accessibilityState={{ checked: disableConfirmation }}
-						/>
-						<CancelButton onPress={onClose} disabled={isSaving} />
-						<IconButton
-							icon="checkmark"
-							label={translate('confirm_purchase', 'Confirm Purchase')}
-							onPress={() => handleSave(disableConfirmation)}
-							disabled={isSaving}
-							loading={isSaving}
-							variant="primary"
-						/>
-					</View>
-				</View>
-			}
+			buttons={buttons}
 		>
 			{isSaving && <Spinner size="small" expand={false} style={styles.loader} />}
+
+			{error && (
+				<View style={[styles.errorBanner, { backgroundColor: colors.error + '15', borderColor: colors.error + '40' }]}>
+					<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
+				</View>
+			)}
+
+			<View style={styles.checkboxRow}>
+				<EyeButton
+					onPress={() => setDisableConfirmation((prev) => !prev)}
+					visible={disableConfirmation}
+					label={translate('disable_confirm', "Don't ask again")}
+					accessibilityRole="checkbox"
+					accessibilityState={{ checked: disableConfirmation }}
+				/>
+			</View>
 
 			<BaseCard title={translate('delivery_address', 'Delivery Address')} iconName="location-outline" style={styles.section}>
 				<AddressForm
@@ -220,21 +225,12 @@ const styles = StyleSheet.create({
 	section: {
 		marginBottom: 16
 	},
-	footer: {
-		paddingTop: 8,
-		gap: 12
-	},
-	actionRow: {
-		flexDirection: 'row',
-		justifyContent: 'center',
-		alignItems: 'center',
-		gap: 16
-	},
 	checkboxRow: {
 		flexDirection: 'row',
 		alignItems: 'center',
 		justifyContent: 'center',
 		paddingVertical: 4,
-		gap: 8
+		gap: 8,
+		marginBottom: 16
 	}
 })

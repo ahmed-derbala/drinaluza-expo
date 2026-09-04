@@ -2,7 +2,7 @@ import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Linking, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { useTheme, themeColors } from '@/core/theme'
 import { toast } from '@/features/common/Toast'
 import { translate } from '@/core/translation'
@@ -55,7 +55,7 @@ export default function AboutScreen() {
 				</View>
 				<View style={styles.itemRight}>
 					{copyValue && (
-						<IconButton
+						<IconBaseButton
 							icon="copy-outline"
 							label={translate('copy', 'Copy')}
 							onPress={(e) => {

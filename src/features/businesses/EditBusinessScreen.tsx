@@ -14,10 +14,10 @@ import * as Location from 'expo-location'
 import { LinearGradient } from 'expo-linear-gradient'
 import { SmartMediaView, pickSingleMediaFile, uploadThumbnail } from '@/core/smart-media'
 import StateBadge from '@/features/common/StateBadge'
-import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
+import { MultiLingualCard } from '@/core/ui/languages/MultiLingualCard'
 import { SmartHeader } from '@/core/smart-header'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { DeleteButton } from '@/features/common/buttons/DeleteButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { SectionRow } from '@/features/common/sections/SectionRow'
 import { log } from '@/core/log'
@@ -524,7 +524,7 @@ export default function EditBusinessScreen() {
 							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
 							onSave={saveCoordinates}
 							onCancel={() => cancelEdit('coordinates')}
-							headerRight={editMode.coordinates && <IconButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} style={styles.getLocationChip} />}
+							headerRight={editMode.coordinates && <IconBaseButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} style={styles.getLocationChip} />}
 						>
 							{editMode.coordinates ? (
 								<View style={{ gap: 12 }}>

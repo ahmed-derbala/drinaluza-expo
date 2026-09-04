@@ -6,7 +6,7 @@ import { useTheme } from '@/core/theme'
 import { CARD } from '@/core/theme/constants'
 import { useUser } from '@/core/contexts'
 import { BaseCard } from '@/features/common/cards/BaseCard'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { SmartMediaView } from '@/core/smart-media'
 import { OrderProductsCard } from '@/features/orders/components/OrderProductsCard'
 import { BusinessCartGroup } from '@/features/orders/components/CartGroupCard'
@@ -71,7 +71,7 @@ export const CartCard = React.memo(function CartCard({ group, onUpdateQuantity, 
 					<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
 					<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 				</View>
-				<IconButton icon="checkmark" label={translate('checkout', 'Checkout')} variant="primary" onPress={() => onCheckout(group)} />
+				<IconBaseButton icon="checkmark" label={translate('checkout', 'Checkout')} variant="primary" onPress={() => onCheckout(group)} />
 			</View>
 		</BaseCard>
 	)

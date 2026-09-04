@@ -7,8 +7,8 @@ import { useUser } from '@/core/contexts/UserContext'
 import { updateSaleStatus } from './sales.api'
 import { toast } from '@/features/common/Toast'
 import { ORDER_STATUSES as statuses } from '@/features/orders/orders-statuses'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { CustomerContactBlock } from '@/features/customers/components/CustomerContactBlock'
 import { OrderProductsCard } from '@/features/orders/components/OrderProductsCard'
@@ -180,7 +180,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 					action.status === statuses.CANCELLED_BY_BUSINESS ? (
 						<CancelButton key={action.status} onPress={() => handleStatusUpdate(action.status)} disabled={updating} loading={updating} />
 					) : (
-						<IconButton
+						<IconBaseButton
 							key={action.status}
 							icon={action.icon as any}
 							label={action.label}

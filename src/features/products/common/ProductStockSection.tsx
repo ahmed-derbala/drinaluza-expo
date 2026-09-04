@@ -1,6 +1,6 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 
 export interface ProductStockSectionProps {
@@ -67,7 +67,7 @@ export default function ProductStockSection({
 		<View style={[styles.stockSection, { backgroundColor: colors.surfaceVariant }]}>
 			{canEdit && onEditPress && (
 				<View style={styles.editBtnContainer}>
-					<IconButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={{ padding: 2 }} />
+					<IconBaseButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={{ padding: 2 }} />
 				</View>
 			)}
 			<View style={styles.stockRow}>

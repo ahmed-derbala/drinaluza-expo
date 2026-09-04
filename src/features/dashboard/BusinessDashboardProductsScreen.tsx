@@ -9,7 +9,7 @@ const FlashList = ShopifyFlashList as any
 import { useTheme, themeColors } from '@/core/theme'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/scroll'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { toast } from '@/features/common/Toast'
 import Spinner from '@/features/common/Spinner'
 import QRCodeModal from '@/features/common/QRCodeModal'
@@ -231,13 +231,13 @@ export default function BusinessDashboardProductsScreen() {
 								/>
 							</View>
 							<View style={cardStyles.iconActionsRow}>
-								<IconButton
+								<IconBaseButton
 									icon="trending-up-outline"
 									label={translate('sales_reports', 'Sales')}
 									onPress={() => router.push(`/dashboard/${businessSlug}/sales?productSlug=${item.slug}` as any)}
 									style={{ backgroundColor: colors.surface, borderColor: colors.border }}
 								/>
-								<IconButton
+								<IconBaseButton
 									icon="qr-code-outline"
 									label={translate('qr_code', 'QR Code')}
 									onPress={() => setSelectedProductForQR(item)}

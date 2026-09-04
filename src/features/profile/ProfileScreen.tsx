@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef, useMemo } from 'react'
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, useWindowDimensions, Linking, Modal, KeyboardAvoidingView } from 'react-native'
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Platform, useWindowDimensions, Linking, KeyboardAvoidingView } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import StateBadge from '@/features/common/StateBadge'
 import * as Clipboard from 'expo-clipboard'
@@ -16,16 +16,16 @@ import { useTheme, themeColors } from '@/core/theme'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import { BaseCard } from '@/features/common/cards/BaseCard'
 import { SectionRow } from '@/features/common/sections/SectionRow'
-import { LanguageIcon, LANGUAGES } from '@/features/common/languages'
+import { LanguageIcon, LANGUAGES } from '@/core/ui/languages'
 import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@/core/smart-media'
 import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@/core/smart-header'
-import { IconButton } from '@/features/common/buttons/IconButton'
-import { CancelButton } from '@/features/common/buttons/CancelButton'
-import { MultiLingualCard } from '@/features/common/languages/MultiLingualCard'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { CancelButton } from '@/core/ui/buttons/CancelButton'
+import { MultiLingualCard } from '@/core/ui/languages/MultiLingualCard'
 import Spinner from '@/features/common/Spinner'
 import { showAlert } from '@/core/helpers/popup'
-import { CenteredModal } from '@/core/smart-modal'
 import { requestBusiness } from '@/features/businesses/business.api'
+import { RequestBusinessCreationModal } from '@/features/businesses/RequestBusinessCreationModal'
 import { useUser } from '@/core/contexts/UserContext'
 import { useScrollHandler } from '@/core/scroll'
 import { log } from '@/core/log'
@@ -70,11 +70,7 @@ export default function ProfileScreen() {
 	const [showDatePicker, setShowDatePicker] = useState(false)
 	const [imageError, setImageError] = useState(false)
 	const [showBusinessModal, setShowBusinessModal] = useState(false)
-	const [showSwitchAccountModal, setShowSwitchAccountModal] = useState(false)
-	const [businessName, setBusinessName] = useState<MultiLang>({ en: '', tn_latn: '', tn_arab: '' })
 	const [businessLoading, setBusinessLoading] = useState(false)
-	const tnLatnInputRef = useRef<TextInput>(null)
-	const tnArabInputRef = useRef<TextInput>(null)
 	// Sync cached profile into editable state — avoid resetting while user is editing.
 	const isEditingRef = useRef(editMode)
 	isEditingRef.current = editMode
@@ -236,51 +232,35 @@ export default function ProfileScreen() {
 		if (!date) return 'Not set'
 		return new Date(date).toLocaleDateString()
 	}
-	const handleSwitchUser = useCallback(() => {
-		setShowSwitchAccountModal(true)
-	}, [])
-	const confirmSwitchUser = useCallback(async () => {
+	const handleSwitchUser = useCallback(async () => {
 		try {
 			await switchUser()
 			await refreshUser()
-			setShowSwitchAccountModal(false)
 			router.replace('/auth' as any)
 		} catch (error) {
 			log({ level: 'error', label: 'profile', message: 'Switch user failed', error })
 			await refreshUser()
-			setShowSwitchAccountModal(false)
 			router.replace('/auth' as any)
 		}
 	}, [refreshUser, router])
 	const handleRequestBusiness = useCallback(() => {
-		setBusinessName({ en: '', tn_latn: '', tn_arab: '' })
 		setShowBusinessModal(true)
 	}, [])
-	const updateBusinessName = (field: keyof MultiLang, value: string) => {
-		setBusinessName((prev) => ({ ...prev, [field]: value }))
-	}
-	const handleSubmitBusinessRequest = async () => {
-		if (!businessName.en.trim()) {
-			showAlert(translate('error', 'Error'), translate('business_name_required', 'Please enter a business name in English'))
-			return
-		}
-		try {
-			setBusinessLoading(true)
-			const nameData: MultiLang = {
-				en: businessName.en.trim(),
-				tn_latn: businessName.tn_latn?.trim() || businessName.en.trim(),
-				tn_arab: businessName.tn_arab?.trim() || businessName.en.trim()
+	const handleBusinessSubmit = useCallback(
+		async (name: MultiLang) => {
+			try {
+				setBusinessLoading(true)
+				await requestBusiness(name)
+				showAlert(translate('success', 'Success'), 'Your business request has been sent successfully!')
+			} catch (error: any) {
+				const errorMessage = error.response?.data?.message || 'Failed to send business request'
+				showAlert(translate('error', 'Error'), errorMessage)
+			} finally {
+				setBusinessLoading(false)
 			}
-			await requestBusiness(nameData)
-			setShowBusinessModal(false)
-			showAlert(translate('success', 'Success'), 'Your business request has been sent successfully!')
-		} catch (error: any) {
-			const errorMessage = error.response?.data?.message || 'Failed to send business request'
-			showAlert(translate('error', 'Error'), errorMessage)
-		} finally {
-			setBusinessLoading(false)
-		}
-	}
+		},
+		[requestBusiness, translate]
+	)
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
 		if (userData?.role === 'customer') {
@@ -331,7 +311,7 @@ export default function ProfileScreen() {
 						<View style={styles.profileCardContent}>
 							<View style={styles.photoContainer}>
 								<SmartMediaView media={userData.media?.thumbnail?.url} style={styles.profilePhoto} resizeMode="cover" enableFullscreenPreview={true} />
-								<IconButton
+								<IconBaseButton
 									icon={editMode.photo ? 'close' : 'camera'}
 									label={editMode.photo ? translate('cancel', 'Cancel') : translate('change_profile_photo', 'Change profile photo')}
 									onPress={() => toggleEdit('photo', !editMode.photo)}
@@ -519,7 +499,7 @@ export default function ProfileScreen() {
 												}
 											}}
 										/>
-										<IconButton
+										<IconBaseButton
 											icon="map"
 											label={translate('open_directions', 'Open Directions')}
 											onPress={() => openDirections(userData.location, userData.address)}
@@ -788,129 +768,7 @@ export default function ProfileScreen() {
 				</SmartHeader.ScrollView>
 			</KeyboardAvoidingView>
 			{/* Business Name Modal */}
-			<Modal visible={showBusinessModal} transparent animationType="fade" onRequestClose={() => !businessLoading && setShowBusinessModal(false)}>
-				<View style={styles.modalOverlay}>
-					<TouchableOpacity style={styles.modalBackdrop} activeOpacity={1} onPress={() => !businessLoading && setShowBusinessModal(false)} />
-					<KeyboardAvoidingView style={{ width: '100%' }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-						<ScrollView
-							style={{ width: '100%' }}
-							contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center' }}
-							keyboardShouldPersistTaps="handled"
-							showsVerticalScrollIndicator={false}
-						>
-							<View style={[styles.businessModalContent, { backgroundColor: colors.background }]}>
-								<View style={styles.businessModalHeader}>
-									<View style={[styles.businessModalIcon, { backgroundColor: colors.primary + '15' }]}>
-										<Ionicons name="briefcase" size={32} color={colors.primary} />
-									</View>
-									<Text style={[styles.businessModalTitle, { color: colors.text }]}>{translate('create_business', 'Create Business')}</Text>
-									<Text style={[styles.businessModalSubtitle, { color: colors.textSecondary }]}>{translate('enter_business_name', 'Enter a name for your business in multiple languages')}</Text>
-								</View>
-								<View style={styles.businessInputContainer}>
-									{/* English Name (Required) */}
-									<View style={styles.languageInputGroup}>
-										<View style={styles.inputLabelRow}>
-											<Text style={[styles.inputLabel, { color: colors.text }]}>English</Text>
-											<Text style={[styles.required, { color: themeColors.error }]}>*</Text>
-										</View>
-										<View style={[styles.languageInputWrapper, { borderColor: businessName.en ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-												<Text style={styles.flagText}>🇺🇸</Text>
-											</View>
-											<TextInput
-												style={[styles.languageInput, { color: colors.text }]}
-												value={businessName.en}
-												onChangeText={(text) => updateBusinessName('en', text)}
-												placeholder="e.g., Fresh Seafood Market"
-												placeholderTextColor={colors.textSecondary}
-												autoFocus
-												maxLength={50}
-												editable={!businessLoading}
-												returnKeyType="next"
-												onSubmitEditing={() => tnLatnInputRef.current?.focus()}
-											/>
-										</View>
-									</View>
-									{/* Tunisian Latin (Optional) */}
-									<View style={styles.languageInputGroup}>
-										<View style={styles.inputLabelRow}>
-											<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Latin)</Text>
-											<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
-										</View>
-										<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_latn ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-												<Text style={styles.flagText}>🇹🇳</Text>
-											</View>
-											<TextInput
-												ref={tnLatnInputRef}
-												style={[styles.languageInput, { color: colors.text }]}
-												value={businessName.tn_latn}
-												onChangeText={(text) => updateBusinessName('tn_latn', text)}
-												placeholder="e.g., Souk el 7out"
-												placeholderTextColor={colors.textSecondary}
-												maxLength={50}
-												editable={!businessLoading}
-												returnKeyType="next"
-												onSubmitEditing={() => tnArabInputRef.current?.focus()}
-											/>
-										</View>
-									</View>
-									{/* Tunisian Arabic (Optional) */}
-									<View style={styles.languageInputGroup}>
-										<View style={styles.inputLabelRow}>
-											<Text style={[styles.inputLabel, { color: colors.text }]}>Tunisian (Arabic)</Text>
-											<Text style={[styles.optional, { color: colors.textSecondary }]}>(optional)</Text>
-										</View>
-										<View style={[styles.languageInputWrapper, { borderColor: businessName.tn_arab ? colors.primary : colors.border, backgroundColor: colors.background }]}>
-											<View style={[styles.languageIcon, { backgroundColor: colors.primary + '10' }]}>
-												<Text style={styles.flagText}>🇹🇳</Text>
-											</View>
-											<TextInput
-												ref={tnArabInputRef}
-												style={[styles.languageInput, { color: colors.text, textAlign: 'right' }]}
-												value={businessName.tn_arab}
-												onChangeText={(text) => updateBusinessName('tn_arab', text)}
-												placeholder="مثال: سوق الحوت"
-												placeholderTextColor={colors.textSecondary}
-												maxLength={50}
-												editable={!businessLoading}
-												returnKeyType="done"
-												onSubmitEditing={handleSubmitBusinessRequest}
-											/>
-										</View>
-									</View>
-								</View>
-								<View style={styles.businessModalActions}>
-									<CancelButton onPress={() => setShowBusinessModal(false)} disabled={businessLoading} />
-									<IconButton
-										icon="checkmark"
-										label={translate('submit', 'Submit')}
-										onPress={handleSubmitBusinessRequest}
-										disabled={businessLoading || !businessName.en.trim()}
-										loading={businessLoading}
-										variant="primary"
-										style={{ backgroundColor: businessName.en.trim() ? colors.primary : colors.primary + '50' }}
-									/>
-								</View>
-							</View>
-						</ScrollView>
-					</KeyboardAvoidingView>
-				</View>
-			</Modal>
-			{/* Switch Account Modal */}
-			<CenteredModal
-				visible={showSwitchAccountModal}
-				onClose={() => setShowSwitchAccountModal(false)}
-				title={translate('switch_account', 'Switch User')}
-				icon="people"
-				message={translate('switch_account_description', 'You will be redirected to the login screen where you can select a different account or sign in with a new one.')}
-				footer={
-					<View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 10, width: '100%' }}>
-						<CancelButton onPress={() => setShowSwitchAccountModal(false)} />
-						<IconButton icon="people" label={translate('switch', 'Switch')} onPress={confirmSwitchUser} variant="primary" />
-					</View>
-				}
-			/>
+			<RequestBusinessCreationModal visible={showBusinessModal} onClose={() => setShowBusinessModal(false)} onSubmit={handleBusinessSubmit} loading={businessLoading} />
 		</View>
 	)
 }
@@ -946,7 +804,7 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			alignItems: 'center',
 			gap: 8
 		},
-		headerIconButton: {
+		headerIconBaseButton: {
 			width: 40,
 			height: 40,
 			borderRadius: 20,
@@ -1431,110 +1289,5 @@ const createStyles = (colors: any, isWideScreen?: boolean, width?: number) =>
 			position: 'absolute',
 			top: 2,
 			left: 2
-		},
-		// Business Modal Styles
-		modalOverlay: {
-			flex: 1,
-			justifyContent: 'center',
-			alignItems: 'center',
-			backgroundColor: themeColors.background50
-		},
-		modalBackdrop: {
-			position: 'absolute',
-			top: 0,
-			left: 0,
-			right: 0,
-			bottom: 0
-		},
-		businessModalContent: {
-			width: isWideScreen ? 500 : (width || 400) - 40,
-			maxWidth: 500,
-			borderRadius: 16,
-			padding: 24
-		},
-		businessModalHeader: {
-			alignItems: 'center',
-			marginBottom: 20
-		},
-		businessModalIcon: {
-			width: 64,
-			height: 64,
-			borderRadius: 32,
-			justifyContent: 'center',
-			alignItems: 'center',
-			marginBottom: 16
-		},
-		businessModalTitle: {
-			fontSize: 20,
-			fontWeight: '700',
-			marginBottom: 8
-		},
-		businessModalSubtitle: {
-			fontSize: 14,
-			textAlign: 'center'
-		},
-		businessInputContainer: {
-			marginBottom: 20,
-			maxHeight: 300
-		},
-		languageInputGroup: {
-			marginBottom: 16
-		},
-		inputLabelRow: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			marginBottom: 8
-		},
-		required: {
-			marginLeft: 4,
-			fontSize: 14,
-			fontWeight: '600'
-		},
-		optional: {
-			marginLeft: 4,
-			fontSize: 12,
-			fontWeight: '500'
-		},
-		languageInputWrapper: {
-			flexDirection: 'row',
-			alignItems: 'center',
-			borderWidth: 1,
-			borderRadius: 12,
-			overflow: 'hidden'
-		},
-		languageIcon: {
-			width: 48,
-			height: 48,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		languageInput: {
-			flex: 1,
-			padding: 12,
-			fontSize: 16,
-			fontWeight: '500'
-		},
-		businessModalActions: {
-			flexDirection: 'row',
-			gap: 12
-		},
-		businessModalButton: {
-			flex: 1,
-			padding: 16,
-			borderRadius: 12,
-			alignItems: 'center',
-			justifyContent: 'center',
-			minHeight: 48
-		},
-		businessModalCancelButton: {
-			borderWidth: 1,
-			backgroundColor: 'transparent'
-		},
-		businessModalSubmitButton: {
-			// backgroundColor set dynamically
-		},
-		businessModalButtonText: {
-			fontSize: 16,
-			fontWeight: '600'
 		}
 	})

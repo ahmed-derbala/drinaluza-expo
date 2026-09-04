@@ -10,7 +10,7 @@ import { GearIcon } from '@/features/products/common/GearIcons'
 import { useTheme, themeColors } from '@/core/theme'
 import ErrorBlock from '@/core/error/ErrorBlock'
 import EmptyState from '@/features/common/EmptyState'
-import { IconButton } from '@/features/common/buttons/IconButton'
+import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
 import { Stack } from 'expo-router'
 import { HeaderRefreshButton, HeaderSalesButton, SmartHeader } from '@/core/smart-header'
 import { getItem, setItem } from '@/core/storage'
@@ -164,11 +164,11 @@ const ProductCard = React.memo(function ProductCard({ item, colors, localize, fo
 				{!isDashboard && isActive && !isOutOfStock && (
 					<View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, zIndex: 10 }}>
 						<View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surfaceVariant, borderRadius: 10, padding: 2 }}>
-							<IconButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} />
+							<IconBaseButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} />
 							<Text style={{ fontSize: 13, fontWeight: '600', color: colors.text, minWidth: 24, textAlign: 'center' }}>{quantity}</Text>
-							<IconButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} />
+							<IconBaseButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} />
 						</View>
-						<IconButton
+						<IconBaseButton
 							icon="cart-outline"
 							label={translate('add_to_cart', 'Add to Cart')}
 							onPress={(e) => {

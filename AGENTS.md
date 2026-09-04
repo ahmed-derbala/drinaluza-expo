@@ -19,9 +19,12 @@ trigger: always_on
 - at the end styles
 
 ## config and env
-- for env files, you are allowed to read-only .env.sample 
+- for env files, you are allowed to read-only .env.sample . do not read any other env file
 - never create, edit or delete env files
 - use src/config/index.ts
+
+## platform
+- use core/platform/ for device platform
 
 ## UI
 
@@ -29,11 +32,15 @@ trigger: always_on
 - all cards must be based on BaseCard
 - a card must be implemented on its own file
 
+### modals
+- all modals must be based on BaseModal
+- a modal must be implemented on its own file
+
 ### theme
 - never hardcode colors or ui constants. use core/theme/ instead
 
 ### buttons
-- all buttons must be based on IconButton (icon only) or TextButton (text only) or IconTextButton (icon + text)
+- all buttons must be based on IconBaseButton (icon only) or IconTextBaseButton (icon + text)
 - a button should be on its own file
 
 ### Spinner

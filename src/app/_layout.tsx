@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
 import { View, Platform } from 'react-native'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
-import { useUpdates, isVersionGreater, UpdateCheckResult, DownloadAppModal, DOWNLOAD_APP_MODAL_DISMISSED_KEY } from '@/features/updates'
+import { useUpdates, isVersionGreater, UpdateCheckResult, DownloadAndroidAppModal, DOWNLOAD_APP_MODAL_DISMISSED_KEY } from '@/features/updates'
 import { config } from '@/config'
 import { getItem } from '@/core/storage'
 import { NotificationProvider } from '@/features/notifications/NotificationContext'
@@ -110,7 +110,7 @@ function RootLayoutContent() {
 
 	return (
 		<>
-			<DownloadAppModal visible={!!downloadAppRelease} release={downloadAppRelease} onClose={() => setDownloadAppRelease(null)} />
+			<DownloadAndroidAppModal visible={!!downloadAppRelease} release={downloadAppRelease} onClose={() => setDownloadAppRelease(null)} />
 			<Stack
 				screenOptions={{
 					contentStyle: {

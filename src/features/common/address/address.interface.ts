@@ -1,6 +1,6 @@
-import type { MultiLang } from '@/features/common/languages/languages.types'
+import type { MultiLang } from '@/core/ui/languages/languages.types'
 
-export type { MultiLang } from '@/features/common/languages/languages.types'
+export type { MultiLang } from '@/core/ui/languages/languages.types'
 
 export interface Address {
 	street?: MultiLang

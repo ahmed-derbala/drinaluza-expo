@@ -3,8 +3,8 @@ import { View, Pressable, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@/core/theme'
 import { translate } from '@/core/translation'
-import { HomeButton } from '@/features/common/buttons/HomeButton'
-import { UpdatesButton } from '@/features/common/buttons/UpdatesButton'
+import { HomeButton } from '@/core/ui/buttons/HomeButton'
+import { UpdatesButton } from '@/core/ui/buttons/UpdatesButton'
 
 export interface ErrorBlockProps {
 	/** When provided, tapping the icon retries the failed action. */

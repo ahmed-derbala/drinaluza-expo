@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router'
-import { HeaderIconButton } from './HeaderIconButton'
+import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderCreateProductButtonProps {
 	businessSlug?: string
@@ -12,5 +12,5 @@ export function HeaderCreateProductButton({ businessSlug, size = 38, label = 'Cr
 
 	if (!businessSlug) return null
 
-	return <HeaderIconButton icon="add" iconType="material" label={label} onPress={() => router.push(`/dashboard/${businessSlug}/create-product` as any)} size={size} />
+	return <HeaderIconBaseButton icon="add" iconType="material" label={label} onPress={() => router.push(`/dashboard/${businessSlug}/create-product` as any)} size={size} />
 }
