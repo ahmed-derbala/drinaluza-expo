@@ -1,7 +1,7 @@
 import { useCallback } from 'react'
 import { Linking, Platform } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { log } from '@/core/log'
+import { useTheme } from '@theme'
+import { log } from '@log'
 import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderAllowPushButtonProps {

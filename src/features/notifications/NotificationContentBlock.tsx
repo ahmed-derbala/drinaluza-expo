@@ -1,7 +1,7 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { SmartMediaView } from '@/core/smart-media'
+import { useTheme } from '@theme'
+import { SmartMediaView } from '@smart-media'
 
 const IMAGE_SIZE = 40
 const TITLE_NUMBER_OF_LINES = 1

@@ -2,14 +2,12 @@ import React, { useMemo } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
-import { useUser } from '@/core/contexts'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { SmartMediaView } from '@/core/smart-media'
-import { OrderProductsCard } from '@/features/orders/components/OrderProductsCard'
-import { BusinessCartGroup } from '@/features/orders/components/CartGroupCard'
+import { useTheme } from '@theme'
+import { useUser } from '@contexts'
+import { BaseCard } from '@cards/BaseCard'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { SmartMediaView } from '@smart-media'
+import { OrderProductsCard, BusinessCartGroup } from '@orders/components'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface CartCardProps {
@@ -80,10 +78,10 @@ export const CartCard = React.memo(function CartCard({ group, onUpdateQuantity, 
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
-		borderRadius: CARD.borderRadius,
-		padding: CARD.padding * 1.8,
-		marginBottom: CARD.gap,
-		minHeight: CARD.minHeight,
+		borderRadius: 16,
+		padding: 12 * 1.8,
+		marginBottom: 16,
+		minHeight: 440,
 		justifyContent: 'space-between'
 	},
 	header: {

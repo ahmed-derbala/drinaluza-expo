@@ -1,7 +1,7 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { BaseCard } from '@cards/BaseCard'
 
 export interface ProductStockSectionProps {
 	variant: 'view' | 'edit' | 'create'

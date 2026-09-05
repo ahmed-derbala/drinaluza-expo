@@ -1,7 +1,7 @@
 import { Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native'
 import { useRouter, usePathname } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
+import { useTheme } from '@theme'
 import { Sale } from './sales.api'
 export interface SaleIdBadgeProps {
 	sale: Sale

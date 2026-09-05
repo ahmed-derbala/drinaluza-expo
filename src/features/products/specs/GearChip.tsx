@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { getGearLabel } from '@/features/products/products.helpers'
-import { GearIcon } from '@/features/products/common/GearIcons'
+import { useTheme } from '@theme'
+import { getGearLabel } from '@products/products.helpers'
+import { GearIcon } from '@products/common/GearIcons'
 
 export interface GearChipProps {
 	gear?: 'trap' | 'gillnet' | string | null

@@ -1,14 +1,12 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
-import { config } from '@/config'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { InstallButton } from '@/core/ui/buttons/InstallButton'
-import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
-import { ShareButton } from '@/core/ui/buttons/ShareButton'
+import { useTheme, themeColors } from '@theme'
+import { config } from '@config'
+import { BaseCard } from '@cards/BaseCard'
+import { InstallButton, DeleteButton, ShareButton } from '@buttons'
 import { CachedApkMetadata } from './types'
-import { formatBytes } from '@/core/helpers/format'
+import { formatBytes } from '@helpers/format'
 
 const styles = StyleSheet.create({
 	card: {
@@ -81,7 +79,7 @@ export const ApkCard: React.FC<ApkCardProps> = ({ apk, onInstall, onDelete, onSh
 	const isCurrentVersion = apk.version === config.app.version
 
 	return (
-		<BaseCard backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+		<BaseCard style={styles.card}>
 			<View style={styles.topRow}>
 				<View style={styles.iconContainer}>
 					<Ionicons name="logo-android" size={22} color={colors.primary} />

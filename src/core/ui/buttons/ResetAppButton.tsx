@@ -1,6 +1,6 @@
 import { type StyleProp, type ViewStyle } from 'react-native'
-import { IconTextBaseButton } from '@/core/ui/buttons/IconTextBaseButton'
-import { translate } from '@/core/translation'
+import { IconTextBaseButton } from '@buttons/IconTextBaseButton'
+import { translate } from '@translation'
 
 export interface ResetAppButtonProps {
 	onPress: () => void

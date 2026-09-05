@@ -3,32 +3,27 @@ import { View, Text, StyleSheet, TouchableOpacity, Platform, KeyboardAvoidingVie
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
-import { useUser } from '@/core/contexts/UserContext'
-import { useLayout } from '@/core/contexts/LayoutContext'
-import { createProduct, getDefaultProducts, type DefaultProduct } from '@/features/products/products.api'
-import { FileRef } from '@/features/products/products.type'
-import { getMyBusinesses } from '@/features/businesses/businesses.api'
-import { Business } from '@/features/businesses/businesses.interface'
-import { SmartHeader } from '@/core/smart-header'
-import Spinner from '@/features/common/Spinner'
-import { SmartMediaView, SmartMediaThumbnailBlock, isDeferredMediaFile, uploadThumbnail, MAX_FILE_COUNT, pickMediaFiles, uploadGallery, type UploadMediaFile, type MediaFile } from '@/core/smart-media'
-import type { MultiLang } from '@/features/common/address'
-import { toast } from '@/features/common/Toast'
-import { useScrollHandler } from '@/core/scroll'
-import SearchableModalPicker from '@/features/common/SearchableModalPicker'
-import { showAlert } from '@/core/helpers/popup'
-import { log } from '@/core/log'
-import { parseError } from '@/core/error/errorHandler'
-import { MultiLingualCard } from '@/core/ui/languages/MultiLingualCard'
-import MultiLingualInput from '@/core/ui/languages/MultiLingualInput'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { useTheme, themeColors } from '@theme'
+import { useUser, useLayout } from '@contexts'
+import { createProduct, getDefaultProducts, type DefaultProduct } from '@products/products.api'
+import { FileRef } from '@products/products.type'
+import { getMyBusinesses } from '@businesses/businesses.api'
+import { Business } from '@businesses/businesses.interface'
+import { SmartHeader } from '@smart-header'
+import Spinner from '@ui/spinner/Spinner'
+import { SmartMediaView, SmartMediaThumbnailBlock, isDeferredMediaFile, uploadThumbnail, MAX_FILE_COUNT, pickMediaFiles, uploadGallery, type UploadMediaFile, type MediaFile } from '@smart-media'
+import type { MultiLang } from '@address'
+import { toast } from '@ui/toast/Toast'
+import { useScrollHandler } from '@scroll'
+import SearchableModalPicker from '@ui/SearchableModalPicker'
+import { showAlert } from '@helpers/popup'
+import { log } from '@log'
+import { parseError } from '@error/errorHandler'
+import { MultiLingualForm, MultiLingualCard } from '@languages'
+import { BaseCard } from '@cards/BaseCard'
 // Import the reusable section components
-import ProductPricingCard from '@/features/products/cards/ProductPricingCard'
-import ProductStockSection from '@/features/products/common/ProductStockSection'
-import ProductGallerySection from '@/features/products/common/ProductGallerySection'
-import ProductSpecsSection from '@/features/products/common/ProductSpecsSection'
-type PickedFileRef = FileRef & { pickedFile?: UploadMediaFile }
+import ProductPricingCard from '@products/cards/ProductPricingCard'
+import { ProductStockSection, ProductGallerySection, ProductSpecsSection } from '@products/common'
 export default function CreateProductScreen() {
 	const { businessSlug, businessId } = useLocalSearchParams<{ businessSlug?: string; businessId?: string }>()
 	const router = useRouter()
@@ -55,7 +50,7 @@ export default function CreateProductScreen() {
 	// Inventory
 	const [stockQuantity, setStockQuantity] = useState('100')
 	const [minThreshold, setMinThreshold] = useState('10')
-	const [uploadedGallery, setUploadedGallery] = useState<PickedFileRef[]>([])
+	const [uploadedGallery, setUploadedGallery] = useState<Array<FileRef & { pickedFile?: UploadMediaFile }>>([])
 	const [thumbnail, setThumbnail] = useState<MediaFile | null>(null)
 	// Specs
 	const [caliber, setCaliber] = useState<1 | 2 | 3 | 4 | 5>(3)
@@ -140,7 +135,7 @@ export default function CreateProductScreen() {
 			const picked = await pickMediaFiles({ mediaType: 'image', multiple: true, maxCount: remainingSlots })
 			if (picked.length === 0) return
 			setUploadingPhoto(true)
-			const entries: PickedFileRef[] = picked.map((file, index) => ({
+			const entries: Array<FileRef & { pickedFile?: UploadMediaFile }> = picked.map((file, index) => ({
 				_id: `pending-${Date.now()}-${index}`,
 				name: file.name,
 				extension: file.name.split('.').pop(),
@@ -367,7 +362,7 @@ export default function CreateProductScreen() {
 					</View>
 					{/* Name Section */}
 					<BaseCard title={translate('names', 'Names')}>
-						<MultiLingualInput
+						<MultiLingualForm
 							nameEn={productNameEn}
 							setNameEn={setProductNameEn}
 							nameTnLatn={productNameTnLatn}

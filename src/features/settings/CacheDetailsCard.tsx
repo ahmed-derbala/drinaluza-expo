@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useState, useImperativeHandle, forwardRef, memo } from 'react'
 import { StyleSheet, View, Text, TouchableOpacity, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import { toast } from '@/features/common/Toast'
-import { clearAllCache } from '@/core/cache/store'
-import { formatBytes } from '@/core/helpers/format'
-import { clearDirectory, getDirectorySize, getCacheDirectory, getDocumentDirectory } from '@/core/disk'
+import { BaseCard } from '@cards/BaseCard'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import { toast } from '@ui/toast/Toast'
+import { clearAllCache } from '@cache/store'
+import { formatBytes } from '@helpers/format'
+import { clearDirectory, getDirectorySize, getCacheDirectory, getDocumentDirectory } from '@disk'
 
 export interface CacheDetailsCardProps {
 	onCacheCleared?: () => void
@@ -152,7 +152,7 @@ export const CacheDetailsCard = forwardRef<CacheDetailsCardHandle, CacheDetailsC
 	const busy = loading || clearing
 
 	return (
-		<BaseCard title={translate('cache_details', 'Cached Data Details')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+		<BaseCard title={translate('cache_details', 'Cached Data Details')} iconName="server-outline" style={styles.card}>
 			<View style={styles.container}>
 				<View style={styles.breakdownList}>
 					<CacheRow

@@ -4,7 +4,7 @@
 
 import { getCacheItem, setCacheItem, invalidateCache } from './store'
 import { MEDIA_CACHE_TTL_MS } from './constants'
-import type { MediaFile } from '@/core/smart-media/types'
+import type { MediaFile } from '@smart-media/types'
 
 export const mediaCacheKey = (fileId: string): string => `media:file:${fileId}`
 

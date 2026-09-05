@@ -1,5 +1,5 @@
-import type { MultiLang, Address } from '@/features/common/address'
-import type { ProductSpecs } from '@/features/businesses/businesses.interface'
+import type { MultiLang, Address } from '@address'
+import type { ProductSpecs } from '@businesses/businesses.interface'
 
 interface RatingBreakdown {
 	1: number

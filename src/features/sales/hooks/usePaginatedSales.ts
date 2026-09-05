@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 
-import { useSalesByStatus } from '@/features/sales/useSalesByStatus'
-import { getSales, Sale } from '@/features/sales/sales.api'
+import { useSalesByStatus } from '@sales/useSalesByStatus'
+import { getSales, Sale } from '@sales/sales.api'
 
 const ITEMS_PER_PAGE = 10
 

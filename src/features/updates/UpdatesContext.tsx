@@ -1,10 +1,10 @@
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { Platform, Alert, AppState, type AppStateStatus } from 'react-native'
 import { config } from '@/config'
-import { Directory, File, ensureDirectory, getUpdatesDirectory, getFileInfo, deletePath, moveFile, getFreeDiskStorage, listDirectory, getContentUri } from '@/core/disk'
-import { log } from '@/core/log'
-import { getItem, setItem, removeItem } from '@/core/storage'
-import { deferStartup } from '@/core/helpers/defer'
+import { Directory, File, ensureDirectory, getUpdatesDirectory, getFileInfo, deletePath, moveFile, getFreeDiskStorage, listDirectory, getContentUri } from '@disk'
+import { log } from '@log'
+import { getItem, setItem, removeItem } from '@storage'
+import { deferStartup } from '@helpers/defer'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
 // Verify file against existence and expected size bounds
 const verifyFileIntegrity = async (fileUri: string, expectedSize: number): Promise<{ ok: boolean; reason?: string }> => {

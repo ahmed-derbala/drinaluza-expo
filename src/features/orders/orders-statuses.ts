@@ -1,5 +1,5 @@
-import { themeColors } from '@/core/theme'
-import { translate } from '@/core/translation'
+import { themeColors } from '@theme'
+import { translate } from '@translation'
 export const ORDER_STATUSES = {
 	PENDING_BUSINESS_CONFIRMATION: 'pending_business_confirmation', //active
 	PENDING_CUSTOMER_CONFIRMATION: 'pending_customer_confirmation', //active

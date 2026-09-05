@@ -1,6 +1,6 @@
 import { type StyleProp, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { translate } from '@/core/translation'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { translate } from '@translation'
 
 export interface EyeButtonProps {
 	/** Whether the content is currently visible (eye-off) or hidden (eye). */

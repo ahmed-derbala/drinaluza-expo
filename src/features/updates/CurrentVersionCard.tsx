@@ -1,8 +1,8 @@
 import React from 'react'
 import { StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { useTheme, themeColors } from '@theme'
+import { BaseCard } from '@cards/BaseCard'
 import { config } from '@/config'
 
 const styles = StyleSheet.create({
@@ -41,7 +41,7 @@ export const CurrentVersionCard: React.FC = () => {
 	const { colors } = useTheme()
 
 	return (
-		<BaseCard backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+		<BaseCard style={styles.card}>
 			<View style={styles.topRow}>
 				<View style={styles.iconContainer}>
 					<Ionicons name="phone-portrait-outline" size={22} color={colors.textTertiary} />

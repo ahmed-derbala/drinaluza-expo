@@ -1,8 +1,8 @@
-import { getApiClient } from '@/core/api'
-import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@/core/storage'
-import { setCacheItem, clearMemoryCache } from '@/core/cache'
-import { log } from '@/core/log'
-import { registerForExpoPush, saveExpoPushTokenInSession } from '@/features/notifications/notifications.api'
+import { getApiClient } from '@api'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@storage'
+import { setCacheItem, clearMemoryCache } from '@cache'
+import { log } from '@log'
+import { registerForExpoPush, saveExpoPushTokenInSession } from '@notifications/notifications.api'
 // Default settings
 const defaultAuthSettings = {
 	tokenStorageKey: 'authToken',

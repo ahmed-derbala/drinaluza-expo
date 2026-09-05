@@ -1,29 +1,35 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { View, StyleSheet, RefreshControl, AppState, useWindowDimensions } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { isWeb, useIsLandscape } from '@/core/platform'
-import { getItem, setItem } from '@/core/storage'
+import { isWeb, useIsLandscape } from '@platform'
+import { getItem, setItem, getToken } from '@storage'
 import { useRouter, Tabs, useFocusEffect, useLocalSearchParams } from 'expo-router'
-import { getFeed } from '@/features/feed/feed.api'
-import { FeedItem } from '@/features/feed/feed.interface'
-import useFeed from '@/features/feed/useFeed'
-import FeedProductCard from '@/features/feed/FeedProductCard'
-import { enrichFeedContacts } from '@/features/feed/feed.helpers'
-import ErrorBlock from '@/core/error/ErrorBlock'
-import EmptyState from '@/features/common/EmptyState'
-import { toast } from '@/features/common/Toast'
-import { logError } from '@/core/error/errorHandler'
-import { useUser } from '@/core/contexts'
-import { useTheme } from '@/core/theme'
-import { CARD, getResponsiveCardHeight } from '@/core/theme/constants'
-import { useResponsiveGrid } from '@/core/hooks/useResponsiveGrid'
-import { getToken } from '@/core/storage'
-import Spinner from '@/features/common/Spinner'
-import ScannerModal from '@/features/scanner/ScannerModal'
-import { log } from '@/core/log'
-import { HeaderScannerButton, SmartHeader } from '@/core/smart-header'
-import { FeedFocusContext } from '@/features/feed/FeedVisibleContext'
-import { markFeedReady } from '@/core/helpers/defer'
+import { getFeed } from '@feed/feed.api'
+import { FeedItem } from '@feed/feed.interface'
+import useFeed from '@feed/useFeed'
+import FeedProductCard from '@feed/FeedProductCard'
+import { enrichFeedContacts } from '@feed/feed.helpers'
+import { ErrorBlock, logError } from '@error'
+import EmptyState from '@ui/states/EmptyState'
+import { toast } from '@ui/toast/Toast'
+import { useUser } from '@contexts'
+import { useTheme, getResponsiveCardHeight } from '@theme'
+import { useResponsiveGrid } from '@hooks/useResponsiveGrid'
+import Spinner from '@ui/spinner/Spinner'
+import ScannerModal from '@scanner/ScannerModal'
+import { log } from '@log'
+import { HeaderScannerButton, SmartHeader } from '@smart-header'
+import { FeedFocusContext } from '@feed/FeedVisibleContext'
+import { markFeedReady } from '@helpers/defer'
+
+const FEED_CARD_HEIGHT = 440
+const FEED_CARD_PADDING = 12
+const FEED_CARD_GAP = 16
+// Landscape guarantees so every card shows all components:
+// - cards never narrower than the smallest portrait phone (~300px)
+// - cards never shorter than the full content stack (~340px)
+const MIN_LANDSCAPE_CARD_WIDTH = 300
+const MIN_FULL_CARD_HEIGHT = 340
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CartItem = FeedItem & { quantity: number }
@@ -36,11 +42,21 @@ export default function FeedScreen() {
 	const router = useRouter()
 	const insets = useSafeAreaInsets()
 	const { height: windowHeight } = useWindowDimensions()
-	const { numColumns, gap, padding } = useResponsiveGrid()
+	const { numColumns: gridColumns, gap, padding, width: screenWidth } = useResponsiveGrid()
 	const isLandscape = useIsLandscape()
+	// In landscape, cap columns so cards stay wide enough for all rows
+	// (specs + stepper side by side). Portrait keeps the grid default.
+	const numColumns = useMemo(() => {
+		if (!isLandscape) return gridColumns
+		let cols = gridColumns
+		while (cols > 1 && (screenWidth - padding * 2 - gap * (cols - 1)) / cols < MIN_LANDSCAPE_CARD_WIDTH) cols -= 1
+		return cols
+	}, [isLandscape, gridColumns, screenWidth, padding, gap])
 	const cardHeight = useMemo(() => {
-		if (!isLandscape) return CARD.height
-		return getResponsiveCardHeight(windowHeight, 56 + 52, insets.top, insets.bottom)
+		if (!isLandscape) return FEED_CARD_HEIGHT
+		// Floor (not ceiling): the card always fits top block + full body + thumb strip,
+		// even if that exceeds the visible viewport — the list scrolls.
+		return Math.max(getResponsiveCardHeight(windowHeight, 56 + 52, insets.top, insets.bottom), MIN_FULL_CARD_HEIGHT)
 	}, [isLandscape, windowHeight, insets.top, insets.bottom])
 	const { filter: queryFilter } = useLocalSearchParams<{ filter?: string }>()
 	const selectedFilter = queryFilter || 'all'
@@ -401,7 +417,7 @@ export default function FeedScreen() {
 						data={feedItems}
 						renderItem={renderItem}
 						numColumns={numColumns}
-						estimatedItemSize={cardHeight + CARD.gap}
+						estimatedItemSize={cardHeight + FEED_CARD_GAP}
 						removeClippedSubviews
 						keyExtractor={(item: FeedItem) => (item as any)._id || (item as any).slug}
 						contentContainerStyle={[styles.listContent, { paddingHorizontal: padding, paddingBottom: 120 + insets.bottom }, feedItems.length === 0 && { flexGrow: 1, justifyContent: 'center' }]}
@@ -424,7 +440,7 @@ export default function FeedScreen() {
 }
 const styles = StyleSheet.create({
 	root: { flex: 1 },
-	listContent: { paddingTop: CARD.padding, paddingBottom: 120 },
-	cardWrap: { width: '100%', marginBottom: CARD.gap },
+	listContent: { paddingTop: FEED_CARD_PADDING, paddingBottom: 120 },
+	cardWrap: { width: '100%', marginBottom: FEED_CARD_GAP },
 	emptyWrap: { alignItems: 'center', justifyContent: 'center', paddingTop: 120, paddingHorizontal: 40 }
 })

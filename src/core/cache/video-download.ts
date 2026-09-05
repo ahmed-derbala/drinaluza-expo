@@ -3,10 +3,10 @@
  */
 
 import { Platform } from 'react-native'
-import { File, moveFile, getVideosDirectory } from '@/core/disk'
-import { log } from '@/core/log'
-import { setItem, removeItem } from '@/core/storage'
-import type { MediaFile } from '@/core/smart-media/types'
+import { File, moveFile, getVideosDirectory } from '@disk'
+import { log } from '@log'
+import { setItem, removeItem } from '@storage'
+import type { MediaFile } from '@smart-media/types'
 import { VIDEO_PROGRESS_KEY_PREFIX } from './constants'
 import { ensureVideosFolder, getVideoFileName, isCacheCompleteBySize } from './video-utils'
 

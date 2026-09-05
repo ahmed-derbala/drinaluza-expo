@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Linking } from 'react-native'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { themeColors } from '@/core/theme'
-import { translate } from '@/core/translation'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { themeColors } from '@theme'
+import { translate } from '@translation'
 
 export interface WhatsAppButtonProps {
 	/** WhatsApp number as a string. */

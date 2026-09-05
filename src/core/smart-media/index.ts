@@ -11,14 +11,12 @@ export * from './constants'
 export * from './types'
 
 // File picking
-import { pickMediaFiles, pickSingleMediaFile } from './picker'
-import type { PickedMediaFile, PickMediaOptions, PickMediaType } from './picker'
+import { pickMediaFiles, pickSingleMediaFile, PickedMediaFile, PickMediaOptions, PickMediaType } from './picker'
 export { pickMediaFiles, pickSingleMediaFile }
 export type { PickedMediaFile, PickMediaOptions, PickMediaType }
 
 // Upload
-import { uploadMedia, uploadThumbnail, uploadGallery } from './upload'
-import type { UploadMediaFile, UploadMediaOptions, UploadMediaResult } from './upload'
+import { uploadMedia, uploadThumbnail, uploadGallery, UploadMediaFile, UploadMediaOptions, UploadMediaResult } from './upload'
 export { uploadMedia, uploadThumbnail, uploadGallery }
 export type { UploadMediaFile, UploadMediaOptions, UploadMediaResult }
 
@@ -27,13 +25,12 @@ import { deleteMediaFile } from './delete'
 export { deleteMediaFile }
 
 // Download
-import { downloadMediaFile } from './download'
-import type { DownloadMediaOptions } from './download'
+import { downloadMediaFile, DownloadMediaOptions } from './download'
 export { downloadMediaFile }
 export type { DownloadMediaOptions }
 
 // Cache
-import { cacheMediaFile, getCachedMediaFile, invalidateMediaCache } from '@/core/cache'
+import { cacheMediaFile, getCachedMediaFile, invalidateMediaCache } from '@cache'
 export { cacheMediaFile, getCachedMediaFile, invalidateMediaCache }
 
 // Components

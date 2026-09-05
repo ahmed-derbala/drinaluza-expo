@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useCacheFirst } from '@/core/cache/useCacheFirst'
+import { useCacheFirst } from '@cache/useCacheFirst'
 import { getNotifications, NotificationFilter } from './notifications.api'
 import { NotificationResponse } from './notifications.interface'
 

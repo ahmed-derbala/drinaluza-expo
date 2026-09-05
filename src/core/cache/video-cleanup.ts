@@ -3,10 +3,10 @@
  */
 
 import { Platform } from 'react-native'
-import { log } from '@/core/log'
-import { removeItem, getAllKeys } from '@/core/storage'
+import { log } from '@log'
+import { removeItem, getAllKeys } from '@storage'
 import { VIDEO_RESUME_KEY_PREFIX, VIDEO_PROGRESS_KEY_PREFIX } from './constants'
-import { wipeAndRecreateDirectory, getVideosDirectory } from '@/core/disk'
+import { wipeAndRecreateDirectory, getVideosDirectory } from '@disk'
 import { resetDownloadState } from './video-download'
 
 export const clearVideoCache = async (): Promise<void> => {

@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
-import { getHarvestIcon, getHarvestLabel } from '@/features/products/products.helpers'
+import { useTheme } from '@theme'
+import { getHarvestIcon, getHarvestLabel } from '@products/products.helpers'
 
 export interface HarvestChipProps {
 	harvest?: 'wild' | 'farm' | string | null

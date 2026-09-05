@@ -1,10 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { useUser } from '@/core/contexts/UserContext'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { SectionRow } from '@/features/common/sections/SectionRow'
-import MultiLingualInput from './MultiLingualInput'
+import { useTheme } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { BaseCard } from '@cards/BaseCard'
+import { SectionRow } from '@ui/sections/SectionRow'
+import MultiLingualForm from './MultiLingualForm'
 import { LanguageIcon } from './LanguageIcon'
 import type { LanguageCode } from './languages.constants'
 import type { MultiLang } from './languages.types'
@@ -26,7 +26,7 @@ export function MultiLingualCard({ name, isEditing, onEdit, onSave, onCancel, on
 	return (
 		<BaseCard title={title ?? translate('name', 'Name')} iconName="language" mode={isEditing ? 'edit' : onEdit ? 'editable' : 'view'} onEdit={onEdit} onSave={onSave} onCancel={onCancel}>
 			{isEditing ? (
-				<MultiLingualInput
+				<MultiLingualForm
 					nameEn={name?.en || ''}
 					setNameEn={(value) => onChange('en', value)}
 					nameTnLatn={name?.tn_latn || ''}

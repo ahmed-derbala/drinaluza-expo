@@ -1,4 +1,4 @@
-import { getApiClient } from '@/core/api'
+import { getApiClient } from '@api'
 import { OrderResponse } from './orders.interface'
 export const getPurchases = async (status?: string): Promise<OrderResponse> => {
 	const url = status ? `/purchases?status=${status}` : '/purchases'

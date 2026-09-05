@@ -1,10 +1,10 @@
 import axios, { AxiosInstance, AxiosResponse, AxiosError, InternalAxiosRequestConfig } from 'axios'
 import { router } from 'expo-router'
-import { secureGetItem, secureRemoveItem } from '@/core/storage'
+import { secureGetItem, secureRemoveItem } from '@storage'
 import { config } from '@/config'
-import { logError } from '@/core/error/errorHandler'
-import { log } from '@/core/log'
-import { ConnectionService } from '@/core/connection'
+import { logError } from '@error/errorHandler'
+import { log } from '@log'
+import { ConnectionService } from '@connection'
 
 interface GetApiClientOptions {
 	prefix?: string

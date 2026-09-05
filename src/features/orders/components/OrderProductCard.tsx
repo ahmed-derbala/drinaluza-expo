@@ -1,13 +1,12 @@
 import React, { useMemo } from 'react'
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { LinearGradient } from 'expo-linear-gradient'
-import { useTheme, themeColors } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
-import { useUser } from '@/core/contexts/UserContext'
-import { SmartMediaView } from '@/core/smart-media'
-import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
-import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
-import { PriceBlock } from '@/features/products/blocks/PriceBlock'
+import { useTheme, themeColors } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { SmartMediaView } from '@smart-media'
+import { DeleteButton } from '@buttons/DeleteButton'
+import { QuantityStepperBlock, PriceBlock } from '@products/blocks'
+import { BaseCard } from '@cards/BaseCard'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 export interface OrderProduct {
@@ -38,7 +37,7 @@ export interface OrderProductCardProps {
 // ─── Component ──────────────────────────────────────────────────────────────
 export const OrderProductCard = React.memo(function OrderProductCard({ item, editable = false, disabled = false, onIncrement, onDecrement, onRemove, onPress }: OrderProductCardProps) {
 	const { colors } = useTheme()
-	const { localize, translate } = useUser()
+	const { localize } = useUser()
 
 	const product: any = (item as any).product ?? item
 
@@ -49,11 +48,16 @@ export const OrderProductCard = React.memo(function OrderProductCard({ item, edi
 	const min = product?.unit?.min ?? 1
 	const max = product?.unit?.max ?? Infinity
 
-	const Wrapper: any = onPress ? TouchableOpacity : View
-	const wrapperProps = onPress ? { onPress, activeOpacity: 0.7, disabled } : {}
-
 	return (
-		<Wrapper {...wrapperProps} style={[styles.card, { backgroundColor: colors.surface, borderColor: colors.border }]} accessibilityRole={onPress ? 'button' : undefined}>
+		<BaseCard
+			onPress={onPress}
+			activeOpacity={0.7}
+			disabled={disabled}
+			backgroundColor={colors.surface}
+			style={styles.card}
+			contentStyle={styles.cardContent}
+			testID={product?._id ? `order-product-card-${product._id}` : undefined}
+		>
 			<SmartMediaView media={imageUrl} style={StyleSheet.absoluteFill} contentFit="cover" isVisible />
 			<LinearGradient
 				colors={[themeColors.background50, themeColors.background25, themeColors.background75]}
@@ -85,7 +89,7 @@ export const OrderProductCard = React.memo(function OrderProductCard({ item, edi
 					/>
 				) : null}
 			</View>
-		</Wrapper>
+		</BaseCard>
 	)
 })
 
@@ -94,10 +98,13 @@ const styles = StyleSheet.create({
 	card: {
 		width: 280,
 		height: 160,
-		borderRadius: CARD.borderRadius,
-		borderWidth: 1,
-		overflow: 'hidden',
+		padding: 0,
 		justifyContent: 'space-between'
+		// background via BaseCard backgroundColor prop; border/radius/overflow via BaseCard defaults
+	},
+	cardContent: {
+		flex: 1,
+		padding: 0
 	},
 	topRow: {
 		position: 'absolute',

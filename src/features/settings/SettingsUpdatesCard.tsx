@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { StyleSheet, View, Text, Switch, Platform, TouchableOpacity } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import { useUpdateSettings } from '@/features/settings/UpdateSettingsContext'
-import { useUpdates } from '@/features/updates/useUpdates'
-import { isAndroid, isWeb } from '@/core/platform'
+import { BaseCard } from '@cards/BaseCard'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import { useUpdateSettings } from '@settings/UpdateSettingsContext'
+import { useUpdates } from '@updates/useUpdates'
+import { isAndroid, isWeb } from '@platform'
 import { config } from '@/config'
-import BottomSheetModal from '@/core/ui/modals/BottomSheetModal'
+import BottomSheetModal from '@modals/BottomSheetModal'
 
 export function SettingsUpdatesCard() {
 	const { colors } = useTheme()
@@ -26,7 +26,7 @@ export function SettingsUpdatesCard() {
 	if (isWeb) return null
 
 	return (
-		<BaseCard title={translate('updates_settings', 'Update Settings')} iconName="download-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+		<BaseCard title={translate('updates_settings', 'Update Settings')} iconName="download-outline" style={styles.card}>
 			<View style={styles.list}>
 				<View style={[styles.row, isAndroid ? { borderBottomColor: colors.border } : styles.lastRow]}>
 					<View style={[styles.iconWrapper, { backgroundColor: colors.primary + '12' }]}>

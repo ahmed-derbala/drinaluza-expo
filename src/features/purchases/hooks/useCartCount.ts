@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useFocusEffect } from 'expo-router'
-import { getItem } from '@/core/storage'
+import { getItem } from '@storage'
 
 export function useCartCount() {
 	const [count, setCount] = useState(0)

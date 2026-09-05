@@ -1,13 +1,9 @@
-import { useCallback, useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
-import { BaseModal } from '@/core/ui/modals'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import { CancelButton } from '@/core/ui/buttons/CancelButton'
-import { ConfirmButton } from '@/core/ui/buttons/ConfirmButton'
-import MultiLingualInput from '@/core/ui/languages/MultiLingualInput'
-import type { MultiLang } from '@/core/ui/languages/languages.types'
-
+import { useCallback, useEffect, useState, ReactNode } from 'react'
+import { BaseModal } from '@modals'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import { CancelButton, ConfirmButton } from '@buttons'
+import { MultiLingualForm, type MultiLang } from '@languages'
 export interface RequestBusinessCreationModalProps {
 	visible: boolean
 	onClose: () => void
@@ -47,7 +43,7 @@ export function RequestBusinessCreationModal({ visible, onClose, onSubmit, loadi
 			scrollable
 			buttons={buttons}
 		>
-			<MultiLingualInput
+			<MultiLingualForm
 				nameEn={businessName.en}
 				setNameEn={(text) => setBusinessName((prev) => ({ ...prev, en: text }))}
 				nameTnLatn={businessName.tn_latn}

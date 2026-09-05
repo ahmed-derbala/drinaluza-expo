@@ -1,5 +1,5 @@
-import type { MultiLang, Address } from '@/features/common/address'
-export type { MultiLang, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@address'
+export type { MultiLang, Address } from '@address'
 type GeoPoint = {
 	geo?: {
 		type: 'Point'

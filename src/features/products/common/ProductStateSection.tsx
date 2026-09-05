@@ -1,6 +1,5 @@
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { CancelButton } from '@/core/ui/buttons/CancelButton'
+import { IconBaseButton, CancelButton } from '@buttons'
 
 export interface ProductStateSectionProps {
 	variant: 'view' | 'edit'

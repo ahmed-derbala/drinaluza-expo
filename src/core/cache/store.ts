@@ -6,8 +6,8 @@
  * circular barrel import.
  */
 
-import { getItem, setItem, removeItem, multiRemove, getAllKeys } from '@/core/storage'
-import { log } from '@/core/log'
+import { getItem, setItem, removeItem, multiRemove, getAllKeys } from '@storage'
+import { log } from '@log'
 import { DEFAULT_CACHE_TTL_MS, MEMORY_CACHE_MAX_ENTRIES, PROTECTED_STORAGE_KEYS } from './constants'
 
 export interface CacheEntry<T> {

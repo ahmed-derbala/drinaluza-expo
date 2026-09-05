@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { Linking } from 'react-native'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
 
 export type PhoneLike = string | { fullNumber?: string } | null | undefined
 export type BackupPhoneLike = { fullNumber?: string } | string

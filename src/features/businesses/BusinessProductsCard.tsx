@@ -2,12 +2,11 @@ import React, { useCallback } from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { FlashList as ShopifyFlashList } from '@shopify/flash-list'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
-import { useUser } from '@/core/contexts/UserContext'
-import { ProductType } from '@/features/products/products.type'
+import { useTheme, useCardWidth } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { ProductType } from '@products/products.type'
 import BusinessProductCard from './BusinessProductCard'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { BaseCard } from '@cards/BaseCard'
 
 const FlashList = ShopifyFlashList as any
 
@@ -18,18 +17,19 @@ export interface BusinessProductsCardProps {
 export function BusinessProductsCard({ products }: BusinessProductsCardProps) {
 	const { colors } = useTheme()
 	const { translate } = useUser()
+	const cardWidth = useCardWidth()
 
 	const renderProductCard = useCallback(
 		({ item }: { item: ProductType }) => (
-			<View style={{ width: CARD.width }}>
+			<View style={{ width: cardWidth }}>
 				<BusinessProductCard product={item} />
 			</View>
 		),
-		[]
+		[cardWidth]
 	)
 
 	return (
-		<BaseCard borderColor={colors.border} backgroundColor={colors.background} size={CARD.padding} contentStyle={styles.cardContent}>
+		<BaseCard size={12} contentStyle={styles.cardContent}>
 			<View style={styles.header}>
 				<View style={styles.titleRow}>
 					<Ionicons name="fish-outline" size={20} color={colors.primary} />
@@ -48,8 +48,8 @@ export function BusinessProductsCard({ products }: BusinessProductsCardProps) {
 					data={products}
 					renderItem={renderProductCard}
 					keyExtractor={(item: ProductType) => item._id}
-					estimatedItemSize={CARD.width}
-					ItemSeparatorComponent={() => <View style={{ width: CARD.gap }} />}
+					estimatedItemSize={cardWidth}
+					ItemSeparatorComponent={() => <View style={{ width: 16 }} />}
 					contentContainerStyle={styles.listContent}
 					style={styles.list}
 				/>
@@ -102,7 +102,7 @@ const styles = StyleSheet.create({
 		width: '100%'
 	},
 	listContent: {
-		paddingRight: CARD.padding
+		paddingRight: 12
 	},
 	empty: {
 		alignItems: 'center',

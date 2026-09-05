@@ -1,4 +1,4 @@
-import type { ThemeColors } from '@/core/theme'
+import type { ThemeColors } from '@theme'
 import type { IconName, ModalStatus } from './types'
 
 export const STATUS_ICONS: Record<ModalStatus, IconName> = {

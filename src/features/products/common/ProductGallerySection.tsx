@@ -1,9 +1,8 @@
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native'
-import { SmartMediaView } from '@/core/smart-media'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { CancelButton } from '@/core/ui/buttons/CancelButton'
-import { FileRef } from '@/features/products/products.type'
+import { SmartMediaView } from '@smart-media'
+import { IconBaseButton, CancelButton } from '@buttons'
+import { FileRef } from '@products/products.type'
 
 export interface ProductGallerySectionProps {
 	editable: boolean

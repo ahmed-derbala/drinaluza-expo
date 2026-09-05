@@ -1,4 +1,4 @@
-import { MultiLang } from '@/features/businesses/businesses.interface'
+import { MultiLang } from '@businesses/businesses.interface'
 
 interface ReviewAuthor {
 	_id: string

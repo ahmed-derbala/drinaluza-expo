@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet, TouchableOpacity, type StyleProp, type ViewStyle } from 'react-native'
 import { MaterialIcons } from '@expo/vector-icons'
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 
 export interface QuantityStepperBlockProps {
 	/** Current quantity value */

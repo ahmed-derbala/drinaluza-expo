@@ -1,24 +1,18 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react'
 import { View, Text, StyleSheet, useWindowDimensions, Platform, type StyleProp, type ViewStyle } from 'react-native'
-import { SmartMediaCarousel } from '@/core/smart-media'
-import type { MediaField } from '@/core/smart-media/types'
+import { SmartMediaCarousel, type MediaField } from '@smart-media'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { ProductSpecsBlock } from '@/features/products/specs/ProductSpecsBlock'
+import { ProductSpecsBlock } from '@products/specs'
 import { ProductFeedItem, FeedItem } from './feed.interface'
-import { useUser } from '@/core/contexts/UserContext'
-import { useProductCardPress } from '@/features/products/useProductCardPress'
-import { PhoneButton } from '@/core/ui/buttons/PhoneButton'
-import { WhatsAppButton } from '@/core/ui/buttons/WhatsAppButton'
-import { WebsiteButton } from '@/core/ui/buttons/WebsiteButton'
-import { DirectionsButton } from '@/core/ui/buttons/DirectionsButton'
-import { AddToCartButton } from '@/core/ui/buttons/AddToCartButton'
-import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
-import ProductNameWithThumbnailBlock from '@/features/products/blocks/ProductNameWithThumbnailBlock'
-import { useTheme, themeColors } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
+import { useUser } from '@contexts/UserContext'
+import { useProductCardPress } from '@products/useProductCardPress'
+import { PhoneButton, WhatsAppButton, WebsiteButton, DirectionsButton, AddToCartButton } from '@buttons'
+import { QuantityStepperBlock, ProductNameWithThumbnailBlock } from '@products/blocks'
+import { themeColors } from '@theme'
 import { LinearGradient } from 'expo-linear-gradient'
-import BusinessBlock from '@/features/businesses/BusinessBlock'
-import { FeedFocusContext } from '@/features/feed/FeedVisibleContext'
+import BusinessBlock from '@businesses/BusinessBlock'
+import { FeedFocusContext } from '@feed/FeedVisibleContext'
+import { BaseCard } from '@cards/BaseCard'
 export interface FeedProductCardProps {
 	item: ProductFeedItem | FeedItem
 	addToCart: (item: any, quantity: number) => void
@@ -27,7 +21,6 @@ export interface FeedProductCardProps {
 const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, style }: FeedProductCardProps) {
 	const productFeedItem = item as ProductFeedItem
 	const { localize, currency, formatPrice, translate } = useUser()
-	const { colors } = useTheme()
 	const { handleBusinessPress, handleProductPress } = useProductCardPress(productFeedItem)
 	const { width } = useWindowDimensions()
 	const { focusedId, activeVideoId, visibleIds, setFocusedId, setActiveVideoId } = React.useContext(FeedFocusContext)
@@ -145,103 +138,100 @@ const FeedProductCard = React.memo(function FeedProductCard({ item, addToCart, s
 		}
 	}, [focusedId, itemId, setFocusedId, hasVideo, activeVideoId, setActiveVideoId])
 	return (
-		<View
-			style={[styles.card, style, { backgroundColor: colors.background, borderColor: isFocused ? colors.focus : colors.border, borderWidth: isFocused ? 2 : 1 }]}
-			testID={`feed-product-card-${itemId}`}
-			onPointerEnter={handleFocusTrigger}
-			onTouchStart={handleFocusTrigger}
-		>
-			{/* Background media — video is background of host card only (no controls, no fullscreen) */}
-			<View style={[styles.bgImageContainer, { pointerEvents: 'box-none' as any }]}>
-				<SmartMediaCarousel
-					key={itemId}
-					media={carouselMedia}
-					style={StyleSheet.absoluteFill}
-					previewStyle={StyleSheet.absoluteFill}
-					contentFit="cover"
-					overlayThumbnails={hasMultipleMedia}
-					showThumbnails={hasMultipleMedia}
-					thumbnailStyle={styles.carouselThumb}
-					stripStyle={styles.carouselStrip}
-					stripContentStyle={styles.carouselStripContent}
-					controls={false}
-					enableFullscreenPreview={false}
-					autoPlay={carouselAutoPlay}
-					isVisible={isVisible}
-					onIndexChange={() => setActiveVideoId(itemId)}
+		<View onPointerEnter={handleFocusTrigger as any} onTouchStart={handleFocusTrigger as any} style={[styles.focusWrapper, style]}>
+			<BaseCard focused={isFocused} borderWidth={isFocused ? 2 : 1} borderRadius={16} style={styles.card} contentStyle={styles.cardContent} testID={`feed-product-card-${itemId}`}>
+				{/* Background media — video is background of host card only (no controls, no fullscreen) */}
+				<View style={[styles.bgImageContainer, { pointerEvents: 'box-none' as any }]}>
+					<SmartMediaCarousel
+						key={itemId}
+						media={carouselMedia}
+						style={StyleSheet.absoluteFill}
+						previewStyle={StyleSheet.absoluteFill}
+						contentFit="cover"
+						overlayThumbnails={hasMultipleMedia}
+						showThumbnails={hasMultipleMedia}
+						thumbnailStyle={styles.carouselThumb}
+						stripStyle={styles.carouselStrip}
+						stripContentStyle={styles.carouselStripContent}
+						controls={false}
+						enableFullscreenPreview={false}
+						autoPlay={carouselAutoPlay}
+						isVisible={isVisible}
+						onIndexChange={() => setActiveVideoId(itemId)}
+					/>
+				</View>
+				{/* Gradient overlay for text readability */}
+				<LinearGradient
+					colors={[themeColors.background50, themeColors.background25, themeColors.background75]}
+					start={{ x: 0, y: 0 }}
+					end={{ x: 0, y: 1 }}
+					style={[styles.bgOverlay, { pointerEvents: 'none' }]}
 				/>
-			</View>
-			{/* Gradient overlay for text readability */}
-			<LinearGradient
-				colors={[themeColors.background50, themeColors.background25, themeColors.background75]}
-				start={{ x: 0, y: 0 }}
-				end={{ x: 0, y: 1 }}
-				style={[styles.bgOverlay, { pointerEvents: 'none' }]}
-			/>
-			{/* Top content */}
-			<View style={styles.topContent}>
-				<BusinessBlock business={item.business} onPress={handleBusinessPress} />
-			</View>
-			{/* Stock overlay */}
-			{(isOutOfStock || isLowStock) && (
-				<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : 'transparent', pointerEvents: 'none' }]}>
-					<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
-						<MaterialIcons name={stockIcon} size={11} color={stockColor} />
-						<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
-					</View>
+				{/* Top content */}
+				<View style={styles.topContent}>
+					<BusinessBlock business={item.business} onPress={handleBusinessPress} />
 				</View>
-			)}
-			{/* Contact buttons - right side */}
-			{hasContactButtons && (
-				<View style={styles.contactButtonsSide}>
-					<View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-						<PhoneButton phone={item.business?.contact?.phone} size={36} />
-						<WhatsAppButton whatsapp={item.business?.contact?.whatsapp} size={36} />
-						<WebsiteButton website={item.business?.contact?.website} size={36} />
-						<DirectionsButton location={item.business?.location} address={item.business?.address} size={36} />
-					</View>
-				</View>
-			)}
-			{/* Bottom content — reserve thumb strip height always to prevent shift when SmartMediaCarousel thumbs hide/show */}
-			<View style={[styles.bottomContent, styles.bottomContentWithThumbnails]}>
-				{/* ── Body ── */}
-				<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
-					<View style={styles.bodyTop}>
-						<ProductNameWithThumbnailBlock name={mainName} imageUrl={imageUrl} onPress={handleProductPress} />
-						{/* Rating — always rendered for stable layout */}
-						<View style={styles.ratingRow}>
-							{rating > 0 ? (
-								<>
-									<MaterialIcons name="star" size={12} color={themeColors.warning} />
-									<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
-									<Text style={styles.ratingCount}>({ratingCount})</Text>
-								</>
-							) : null}
+				{/* Stock overlay */}
+				{(isOutOfStock || isLowStock) && (
+					<View style={[styles.stockOverlay, { backgroundColor: isOutOfStock ? themeColors.background50 : 'transparent', pointerEvents: 'none' }]}>
+						<View style={[styles.stockChip, { backgroundColor: stockColor + '1F', borderColor: stockColor + '55' }]}>
+							<MaterialIcons name={stockIcon} size={11} color={stockColor} />
+							<Text style={[styles.stockChipText, { color: stockColor }]}>{stockLabel}</Text>
 						</View>
-						<ProductSpecsBlock specs={item.specs as any} singlePieceAvg={singlePieceAvg} variant="dark" />
 					</View>
-					<View style={styles.bodyBottom}>
-						{/* Price bottom-left */}
-						<View style={styles.priceRow}>
-							<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
-								{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
-							</Text>
-							<Text style={styles.priceUnit} numberOfLines={1}>
-								{quantity === 1 ? `/ ${item.unit?.measure || translate('unit', 'unit')}` : `${quantity} ${item.unit?.measure || translate('unit', 'unit')}`}
-							</Text>
+				)}
+				{/* Contact buttons - right side */}
+				{hasContactButtons && (
+					<View style={styles.contactButtonsSide}>
+						<View style={{ flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+							<PhoneButton phone={item.business?.contact?.phone} size={36} />
+							<WhatsAppButton whatsapp={item.business?.contact?.whatsapp} size={36} />
+							<WebsiteButton website={item.business?.contact?.website} size={36} />
+							<DirectionsButton location={item.business?.location} address={item.business?.address} size={36} />
 						</View>
-						<View style={styles.cartColumn}>
-							{/* Stepper just above add to cart button */}
-							{purchaseAllowed && isActive && !isOutOfStock && (
-								<View style={styles.stepperWrapper}>
-									<QuantityStepperBlock value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
-								</View>
-							)}
-							<AddToCartButton disabled={cartDisabled} onPress={handleCartPress} accessibilityLabel={translate('add_to_cart', 'Add to cart')} />
+					</View>
+				)}
+				{/* Bottom content — thumbs stay overlaid at the card bottom; paddingBottom below reserves their zone so price never slides under them */}
+				<View style={[styles.bottomContent, styles.bottomContentWithThumbnails]}>
+					{/* ── Body ── */}
+					<View style={[styles.body, isSmall ? styles.bodySmall : styles.bodyNormal]}>
+						<View style={styles.bodyTop}>
+							<ProductNameWithThumbnailBlock name={mainName} imageUrl={imageUrl} onPress={handleProductPress} />
+							{/* Rating — always rendered for stable layout */}
+							<View style={styles.ratingRow}>
+								{rating > 0 ? (
+									<>
+										<MaterialIcons name="star" size={12} color={themeColors.warning} />
+										<Text style={styles.ratingValue}>{rating.toFixed(1)}</Text>
+										<Text style={styles.ratingCount}>({ratingCount})</Text>
+									</>
+								) : null}
+							</View>
+							<ProductSpecsBlock specs={item.specs as any} singlePieceAvg={singlePieceAvg} variant="dark" />
+						</View>
+						<View style={styles.bodyBottom}>
+							{/* Price bottom-left */}
+							<View style={styles.priceRow}>
+								<Text style={[styles.price, isSmall ? styles.priceSmall : styles.priceNormal]} adjustsFontSizeToFit numberOfLines={1}>
+									{formatPrice({ total: { [currency]: pricePerUnit * quantity } })}
+								</Text>
+								<Text style={styles.priceUnit} numberOfLines={1}>
+									{quantity === 1 ? `/ ${item.unit?.measure || translate('unit', 'unit')}` : `${quantity} ${item.unit?.measure || translate('unit', 'unit')}`}
+								</Text>
+							</View>
+							<View style={styles.cartColumn}>
+								{/* Stepper just above add to cart button */}
+								{purchaseAllowed && isActive && !isOutOfStock && (
+									<View style={styles.stepperWrapper}>
+										<QuantityStepperBlock value={quantity} onIncrement={increment} onDecrement={decrement} decrementDisabled={quantity <= minQuantity} incrementDisabled={quantity >= maxQuantity} />
+									</View>
+								)}
+								<AddToCartButton disabled={cartDisabled} onPress={handleCartPress} accessibilityLabel={translate('add_to_cart', 'Add to cart')} />
+							</View>
 						</View>
 					</View>
 				</View>
-			</View>
+			</BaseCard>
 		</View>
 	)
 })
@@ -252,12 +242,20 @@ const styles = StyleSheet.create({
 		flex: 1,
 		height: '100%',
 		position: 'relative',
-		borderRadius: CARD.borderRadius,
-		borderWidth: CARD.borderWidth,
-		borderColor: themeColors.border,
-		overflow: 'hidden',
-		justifyContent: 'space-between',
-		zIndex: 0
+		zIndex: 0,
+		padding: 0
+		// background/border/radius/overflow come from BaseCard; no borderColor here so BaseCard default is used
+	},
+	focusWrapper: {
+		width: '100%',
+		flex: 1
+		// Must fill the fixed-height cardWrap in FeedScreen so the card keeps its height
+	},
+	cardContent: {
+		flex: 1,
+		padding: 0,
+		justifyContent: 'space-between'
+		// BaseCard wraps children in this container, so top/bottom distribution lives here
 	},
 	contactButtonsSide: {
 		position: 'absolute',
@@ -272,7 +270,7 @@ const styles = StyleSheet.create({
 		right: 0,
 		bottom: 0,
 		overflow: 'hidden',
-		borderRadius: CARD.borderRadius,
+		borderRadius: 16,
 		zIndex: 0
 	},
 	bgImage: {

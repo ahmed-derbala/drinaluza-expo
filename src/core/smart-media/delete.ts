@@ -4,9 +4,9 @@
  * Uses `DELETE /api/files/:fileId`.
  */
 
-import { getApiClient } from '@/core/api'
-import { log } from '@/core/log'
-import { invalidateMediaCache } from '@/core/cache'
+import { getApiClient } from '@api'
+import { log } from '@log'
+import { invalidateMediaCache } from '@cache'
 
 /** Delete a media file by its id. Resolves when the file was removed. */
 export const deleteMediaFile = async (fileId: string): Promise<void> => {

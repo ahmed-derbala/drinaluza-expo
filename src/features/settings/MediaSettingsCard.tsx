@@ -1,10 +1,10 @@
 import React, { memo } from 'react'
 import { StyleSheet, View, Text, Switch, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
+import { BaseCard } from '@cards/BaseCard'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import { useMediaSettings } from '@settings/MediaSettingsContext'
 
 interface MediaSettingRowProps {
 	icon: keyof typeof Ionicons.glyphMap
@@ -42,7 +42,7 @@ export function MediaSettingsCard() {
 	const { autoAdvance, autoPlay, soundOn, setAutoAdvance, setAutoPlay, setSoundOn } = useMediaSettings()
 
 	return (
-		<BaseCard title={translate('media_settings', 'Media Settings')} iconName="play-circle-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+		<BaseCard title={translate('media_settings', 'Media Settings')} iconName="play-circle-outline" style={styles.card}>
 			<View style={styles.list}>
 				<MediaSettingRow
 					icon="albums-outline"

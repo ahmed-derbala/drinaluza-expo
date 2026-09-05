@@ -2,7 +2,7 @@ import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@theme'
 
 interface OrderStepTrackerProps {
 	stepIndex: number

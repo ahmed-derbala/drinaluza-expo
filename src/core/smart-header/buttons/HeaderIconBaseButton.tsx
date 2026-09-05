@@ -1,6 +1,6 @@
 import { StyleSheet, View, Text, StyleProp, ViewStyle } from 'react-native'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { useTheme, themeColors } from '@/core/theme'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { useTheme, themeColors } from '@theme'
 
 export interface HeaderIconBaseButtonProps {
 	icon: any

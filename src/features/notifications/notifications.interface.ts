@@ -1,5 +1,5 @@
-import { Customer } from '@/features/customers/customers.interface'
-import { Priority } from '@/features/common/PriorityBadge'
+import { Customer } from '@customers/customers.interface'
+import { Priority } from '@ui/badges/PriorityBadge'
 
 interface LocalizedText {
 	en?: string

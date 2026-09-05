@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useRouter } from 'expo-router'
 import { Platform } from 'react-native'
-import { log } from '@/core/log'
+import { log } from '@log'
 
 const NAVIGATION_COOLDOWN_MS = 500
 

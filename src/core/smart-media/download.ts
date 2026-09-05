@@ -3,8 +3,8 @@
  */
 
 import { Platform } from 'react-native'
-import { File, getDocumentDirectory, downloadFile } from '@/core/disk'
-import { log } from '@/core/log'
+import { File, getDocumentDirectory, downloadFile } from '@disk'
+import { log } from '@log'
 
 export interface DownloadMediaOptions {
 	url: string

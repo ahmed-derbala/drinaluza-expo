@@ -1,6 +1,6 @@
 import { FeedItem } from './feed.interface'
-import { getGeoCoordinates } from '@/core/helpers/maps'
-import { log } from '@/core/log'
+import { getGeoCoordinates } from '@helpers/maps'
+import { log } from '@log'
 
 export const businessContactCache = new Map<string, any>()
 
@@ -74,7 +74,7 @@ export const enrichFeedContacts = async (items: FeedItem[], updateState: (items:
 	if (missingSlugs.size === 0) return
 
 	try {
-		const { getBusinessBySlug } = require('@/features/businesses/businesses.api')
+		const { getBusinessBySlug } = require('@businesses/businesses.api')
 		await Promise.all(
 			Array.from(missingSlugs).map(async (slug) => {
 				try {

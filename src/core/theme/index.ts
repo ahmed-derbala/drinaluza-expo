@@ -2,6 +2,7 @@ import { useTheme as useNavigationTheme } from 'expo-router/react-navigation'
 
 export { AppThemeProvider, DarkTheme } from './provider'
 export { themeColors } from './themeColors'
+export { SCREEN, useCardWidth, getResponsiveCardHeight, getCarouselPreviewHeight } from './constants'
 export type { ThemeColors } from './types'
 
 /**

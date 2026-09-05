@@ -7,8 +7,8 @@ import { Platform, StyleSheet, TouchableOpacity, View, type StyleProp, type View
 import { useEventListener } from 'expo'
 import { VideoView, createVideoPlayer, type VideoPlayerStatus } from 'expo-video'
 import { Ionicons } from '@expo/vector-icons'
-import Spinner from '@/features/common/Spinner'
-import { themeColors } from '@/core/theme'
+import Spinner from '@ui/spinner/Spinner'
+import { themeColors } from '@theme'
 
 // ── Web: suppress noisy AbortError from interrupted play() ─────────────────
 // On web, HTMLMediaElement.play() rejects with AbortError when pause() or

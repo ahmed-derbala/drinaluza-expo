@@ -1,6 +1,6 @@
 import React from 'react'
 import { View, Text, Platform } from 'react-native'
-import { useTheme } from '@/core/theme'
+import { useTheme } from '@theme'
 
 interface HeaderTitleProps {
 	title?: React.ReactNode

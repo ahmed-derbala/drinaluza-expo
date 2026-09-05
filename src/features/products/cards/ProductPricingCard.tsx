@@ -1,7 +1,7 @@
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { BaseCard } from '@cards/BaseCard'
 
 export interface ProductPricingCardProps {
 	variant: 'view' | 'edit' | 'create'

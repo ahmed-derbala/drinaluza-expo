@@ -1,8 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react'
 import { getNotifications } from './notifications.api'
-import { log } from '@/core/log'
-import { deferStartup } from '@/core/helpers/defer'
-import { useUser } from '@/core/contexts/UserContext'
+import { log } from '@log'
+import { deferStartup } from '@helpers/defer'
+import { useUser } from '@contexts/UserContext'
 
 const BASE_REFRESH_COOLDOWN_MS = 5000
 const MAX_REFRESH_BACKOFF_MS = 60000

@@ -1,11 +1,10 @@
 import React from 'react'
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { MaterialIcons, Ionicons } from '@expo/vector-icons'
-import { SmartMediaView } from '@/core/smart-media'
-import { useUser } from '@/core/contexts/UserContext'
-import { themeColors } from '@/core/theme'
-import { getStreetString } from '@/features/common/address'
-import type { MultiLang, Address } from '@/features/common/address'
+import { SmartMediaView } from '@smart-media'
+import { useUser } from '@contexts/UserContext'
+import { themeColors } from '@theme'
+import { getStreetString, MultiLang, Address } from '@address'
 
 export type BusinessBlockBusiness = {
 	name: MultiLang

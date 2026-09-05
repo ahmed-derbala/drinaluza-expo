@@ -7,7 +7,7 @@
  */
 
 import { Platform } from 'react-native'
-import { log } from '@/core/log'
+import { log } from '@log'
 import type { Directory as DirectoryType, File as FileType } from 'expo-file-system'
 
 let Directory: any

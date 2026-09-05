@@ -1,8 +1,8 @@
 import React from 'react'
 import { useRouter, usePathname } from 'expo-router'
-import { translate } from '@/core/translation'
-import { useUser } from '@/core/contexts'
-import { useCartCount } from '@/features/purchases/hooks/useCartCount'
+import { translate } from '@translation'
+import { useUser } from '@contexts'
+import { useCartCount } from '@purchases/hooks/useCartCount'
 import { useHiddenOnRoutes } from './useHiddenOnRoutes'
 import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 

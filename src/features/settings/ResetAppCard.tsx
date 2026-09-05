@@ -1,18 +1,18 @@
 import { useState, useCallback } from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { ResetAppButton } from '@/core/ui/buttons/ResetAppButton'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import { toast } from '@/features/common/Toast'
-import { showConfirm } from '@/core/helpers/popup'
-import { clearAllStorage } from '@/core/storage'
-import { clearMemoryCache } from '@/core/cache/store'
-import { clearDirectory, getCacheDirectory, getDocumentDirectory } from '@/core/disk'
-import { useUser } from '@/core/contexts/UserContext'
+import { BaseCard } from '@cards/BaseCard'
+import { ResetAppButton } from '@buttons/ResetAppButton'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import { toast } from '@ui/toast/Toast'
+import { showConfirm } from '@helpers/popup'
+import { clearAllStorage } from '@storage'
+import { clearMemoryCache } from '@cache/store'
+import { clearDirectory, getCacheDirectory, getDocumentDirectory } from '@disk'
+import { useUser } from '@contexts/UserContext'
 import { useRouter } from 'expo-router'
-import { log } from '@/core/log'
+import { log } from '@log'
 
 export function ResetAppCard() {
 	const { colors } = useTheme()
@@ -50,7 +50,7 @@ export function ResetAppCard() {
 	}, [colors.error, colors.success, refreshUser, router])
 
 	return (
-		<BaseCard title={translate('reset_app', 'Reset App')} iconName="trash-outline" backgroundColor={colors.background} borderColor={colors.error + '30'} style={styles.card}>
+		<BaseCard title={translate('reset_app', 'Reset App')} iconName="trash-outline" borderColor={colors.error + '30'} style={styles.card}>
 			<View style={styles.container}>
 				<View style={[styles.warningBox, { backgroundColor: colors.error + '12', borderColor: colors.error + '30' }]}>
 					<Ionicons name="warning-outline" size={18} color={colors.error} />

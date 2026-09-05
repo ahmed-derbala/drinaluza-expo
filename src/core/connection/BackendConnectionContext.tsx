@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react'
 import { ConnectionService, BackendState } from './ConnectionService'
-import { deferStartup } from '@/core/helpers/defer'
+import { deferStartup } from '@helpers/defer'
 
 interface BackendConnectionContextType {
 	backendState: BackendState

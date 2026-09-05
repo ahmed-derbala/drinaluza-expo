@@ -1,4 +1,4 @@
-import PersonalDashboardScreen from '@/features/dashboard/PersonalDashboardScreen'
+import PersonalDashboardScreen from '@dashboard/PersonalDashboardScreen'
 
 export default function PersonalDashboardRoute() {
 	return <PersonalDashboardScreen />

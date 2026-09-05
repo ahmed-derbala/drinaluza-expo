@@ -11,13 +11,13 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Modal, Platform, StyleSheet, TouchableOpacity, View } from 'react-native'
 import { Image, type ImageContentFit } from 'expo-image'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { themeColors } from '@/core/theme'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import Spinner from '@/features/common/Spinner'
-import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@/core/cache'
+import { themeColors } from '@theme'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import Spinner from '@ui/spinner/Spinner'
+import { cacheMediaFile, getCachedVideoUri, prefetchVideoToCache } from '@cache'
 import { getMediaType, getMediaUrl, getVideoPosterUrl, type MediaSource, type SmartMediaStyleProps } from './types'
 import { SmartVideoPlayer } from './video'
-import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
+import { useMediaSettings } from '@settings/MediaSettingsContext'
 
 const FALLBACK_IMAGE = require('../../../assets/images/no_media.png')
 
@@ -255,7 +255,7 @@ const SmartMediaViewComponent = ({
 			const badUri = cachedVideoUri
 			setCachedVideoUri(null)
 			if (Platform.OS !== 'web') {
-				import('@/core/disk').then(({ deletePath }) => {
+				import('@disk').then(({ deletePath }) => {
 					deletePath(badUri).catch(() => {})
 				})
 			}

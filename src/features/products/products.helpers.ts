@@ -1,4 +1,4 @@
-import { translate } from '@/core/translation'
+import { translate } from '@translation'
 
 export const getCaliberLabel = (val?: number): string => {
 	switch (val) {

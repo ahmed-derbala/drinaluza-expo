@@ -1,8 +1,8 @@
 import { useCallback } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
 import { useRouter, type Href } from 'expo-router'
-import { translate } from '@/core/translation'
-import { IconBaseButton, type IconVariant } from '@/core/ui/buttons/IconBaseButton'
+import { translate } from '@translation'
+import { IconBaseButton, type IconVariant } from '@buttons/IconBaseButton'
 
 export interface UpdatesButtonProps {
 	/** Optional accessibility label. Defaults to "Updates". */

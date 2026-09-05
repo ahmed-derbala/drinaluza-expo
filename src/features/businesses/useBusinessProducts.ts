@@ -1,5 +1,5 @@
 import { useCallback } from 'react'
-import { useCacheFirst } from '@/core/cache/useCacheFirst'
+import { useCacheFirst } from '@cache/useCacheFirst'
 import { getBusinessProductsBySlug } from './businesses.api'
 import { BusinessProductsResponse } from './businesses.interface'
 export interface UseBusinessProductsOptions {

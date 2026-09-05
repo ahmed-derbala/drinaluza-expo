@@ -1,16 +1,13 @@
 import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, Platform, type StyleProp, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
-import { useUser } from '@/core/contexts/UserContext'
-import { SmartMediaView } from '@/core/smart-media'
+import { useTheme, themeColors } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { SmartMediaView } from '@smart-media'
 import { Business } from './businesses.interface'
 import { useRouter } from 'expo-router'
-import { PhoneButton } from '@/core/ui/buttons/PhoneButton'
-import { WhatsAppButton } from '@/core/ui/buttons/WhatsAppButton'
-import { WebsiteButton } from '@/core/ui/buttons/WebsiteButton'
-import { DirectionsButton } from '@/core/ui/buttons/DirectionsButton'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { PhoneButton, WhatsAppButton, WebsiteButton, DirectionsButton } from '@buttons'
+import { BaseCard } from '@cards/BaseCard'
 import { LinearGradient } from 'expo-linear-gradient'
 
 export interface BusinessCardProps {
@@ -40,7 +37,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, style }) => {
 	const ratingCount = business.rating?.count || 0
 
 	return (
-		<BaseCard onPress={handleBusinessPress} style={[styles.card, style]} contentStyle={styles.cardContent} borderColor={colors.info} backgroundColor={colors.background}>
+		<BaseCard onPress={handleBusinessPress} style={[styles.card, style]} contentStyle={styles.cardContent} borderColor={colors.info}>
 			{/* Background — business thumbnail as card background */}
 			<View style={[styles.bgImageContainer, { pointerEvents: 'none' as any }]}>
 				<SmartMediaView media={business.media?.thumbnail?.url} style={StyleSheet.absoluteFill} contentFit="cover" />

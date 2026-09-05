@@ -1,6 +1,6 @@
 import React from 'react'
 import { StyleSheet, View, Text, ScrollView } from 'react-native'
-import { useTheme } from '@/core/theme'
+import { useTheme } from '@theme'
 import { OrderProductCard, OrderProduct } from './OrderProductCard'
 
 // ─── Types ──────────────────────────────────────────────────────────────────

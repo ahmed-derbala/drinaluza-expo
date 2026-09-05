@@ -1,7 +1,6 @@
 import { useCallback } from 'react'
-import { useCacheFirst } from '@/core/cache/useCacheFirst'
-import { getProducts } from './products.api'
-import { ProductsResponse } from './products.api'
+import { useCacheFirst } from '@cache/useCacheFirst'
+import { getProducts, ProductsResponse } from './products.api'
 
 export interface UseProductsOptions {
 	ttlMs?: number

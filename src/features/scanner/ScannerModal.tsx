@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react'
 import { Modal, View, Text, StyleSheet, TouchableOpacity, Platform, Alert, Dimensions } from 'react-native'
 import { CameraView, useCameraPermissions } from 'expo-camera'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@theme'
 import { useRouter } from 'expo-router'
-import { useUser } from '@/core/contexts'
-import { toast } from '@/features/common/Toast'
+import { useUser } from '@contexts'
+import { toast } from '@ui/toast/Toast'
 
 type ScannerModalProps = {
 	visible: boolean

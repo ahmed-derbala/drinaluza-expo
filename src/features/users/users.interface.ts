@@ -1,4 +1,4 @@
-import type { MultiLang, Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@address'
 
 interface UserLocation {
 	geo?: {

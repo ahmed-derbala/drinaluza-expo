@@ -1,13 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import { Alert } from 'react-native'
 
-import { getItem, setItem } from '@/core/storage'
-import { log } from '@/core/log'
-import { createPurchase } from '@/features/orders/orders.api'
-import { getProductBySlug } from '@/features/products/products.api'
-import { getBusinessBySlug } from '@/features/businesses/businesses.api'
-import { useUser } from '@/core/contexts'
-import { FeedItem } from '@/features/feed/feed.interface'
+import { getItem, setItem } from '@storage'
+import { log } from '@log'
+import { createPurchase } from '@orders/orders.api'
+import { getProductBySlug } from '@products/products.api'
+import { getBusinessBySlug } from '@businesses/businesses.api'
+import { useUser } from '@contexts'
+import { FeedItem } from '@feed/feed.interface'
 
 export type CartItem = FeedItem & { quantity: number }
 

@@ -1,5 +1,5 @@
 import { useRouter, usePathname } from 'expo-router'
-import { useNotification } from '@/features/notifications/NotificationContext'
+import { useNotification } from '@notifications/NotificationContext'
 import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderNotificationsButtonProps {

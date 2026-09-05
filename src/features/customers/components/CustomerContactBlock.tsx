@@ -1,13 +1,9 @@
 import { View, Text, StyleSheet } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { useUser } from '@/core/contexts/UserContext'
-import { SmartMediaView } from '@/core/smart-media'
-import { formatAddress } from '@/features/common/address'
-import { PhoneButton } from '@/core/ui/buttons/PhoneButton'
-import { WhatsAppButton } from '@/core/ui/buttons/WhatsAppButton'
-import { EmailButton } from '@/core/ui/buttons/EmailButton'
-import { WebsiteButton } from '@/core/ui/buttons/WebsiteButton'
-import { DirectionsButton } from '@/core/ui/buttons/DirectionsButton'
+import { useTheme } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { SmartMediaView } from '@smart-media'
+import { formatAddress } from '@address'
+import { PhoneButton, WhatsAppButton, EmailButton, WebsiteButton, DirectionsButton } from '@buttons'
 import { Customer } from '../customers.interface'
 
 interface CustomerContactBlockProps {

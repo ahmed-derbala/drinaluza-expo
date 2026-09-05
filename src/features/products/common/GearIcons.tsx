@@ -1,4 +1,4 @@
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 import React from 'react'
 import Svg, { Path, Circle, Line, G } from 'react-native-svg'
 

@@ -1,12 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback, useMemo } from 'react'
-import { getItem, setItem } from '@/core/storage'
-import { getCurrentUser, updateSavedAuthUser } from '@/features/auth/auth.api'
-import { UserData } from '@/features/profile/profile.interface'
-import { MultiLang } from '@/features/businesses/businesses.interface'
-import { translate as translateHelper, setGlobalAppLang } from '@/core/translation'
-import { getStringFromMultiLang, setGlobalContentLang } from '@/core/ui/languages/languages.helpers'
-import { deferStartup } from '@/core/helpers/defer'
-import { log } from '@/core/log'
+import { getItem, setItem } from '@storage'
+import { getCurrentUser, updateSavedAuthUser } from '@auth/auth.api'
+import { UserData } from '@profile/profile.interface'
+import { MultiLang } from '@businesses/businesses.interface'
+import { translate as translateHelper, setGlobalAppLang } from '@translation'
+import { getStringFromMultiLang, setGlobalContentLang } from '@languages/languages.helpers'
+import { deferStartup } from '@helpers/defer'
+import { log } from '@log'
 
 interface UserContextType {
 	user: UserData | null

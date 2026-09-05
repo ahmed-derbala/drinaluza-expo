@@ -1,13 +1,13 @@
 import { useEffect } from 'react'
 import { Tabs, usePathname, useRouter } from 'expo-router'
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native'
-import { useLayout, useUser, TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@/core/contexts'
-import { useTheme, themeColors } from '@/core/theme'
+import { useLayout, useUser, TAB_BAR_HEIGHT, TAB_BAR_BOTTOM_MARGIN } from '@contexts'
+import { useTheme, themeColors } from '@theme'
 import { Ionicons } from '@expo/vector-icons'
-import { useBackButton } from '@/core/hooks/useBackButton'
-import { SmartHeader } from '@/core/smart-header'
+import { useBackButton } from '@hooks/useBackButton'
+import { SmartHeader } from '@smart-header'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { ErrorBoundaryFallback } from '@/core/error/ErrorBoundaryFallback'
+import { ErrorBoundaryFallback } from '@error/ErrorBoundaryFallback'
 export default function HomeLayout() {
 	const { colors } = useTheme()
 	const { isTabBarVisible, setTabBarVisible } = useLayout()

@@ -1,0 +1,11 @@
+// Auto-generated barrel
+export { default as CaliberChip } from './CaliberChip'
+export { CaliberChipProps } from './CaliberChip'
+export { default as GearChip } from './GearChip'
+export { GearChipProps } from './GearChip'
+export { default as HarvestChip } from './HarvestChip'
+export { HarvestChipProps } from './HarvestChip'
+export { default as OriginChip } from './OriginChip'
+export { OriginChipProps } from './OriginChip'
+export { default as ProductSpecsBlock } from './ProductSpecsBlock'
+export { ProductSpecsBlockProps } from './ProductSpecsBlock'

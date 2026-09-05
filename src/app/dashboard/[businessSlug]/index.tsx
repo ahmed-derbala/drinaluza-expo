@@ -1,5 +1,5 @@
 import { useLocalSearchParams } from 'expo-router'
-import BusinessDashboardScreen from '@/features/dashboard/BusinessDashboardScreen'
+import BusinessDashboardScreen from '@dashboard/BusinessDashboardScreen'
 
 export default function BusinessDashboardRoute() {
 	const { businessSlug } = useLocalSearchParams<{ businessSlug: string }>()

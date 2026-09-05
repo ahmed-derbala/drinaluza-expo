@@ -40,7 +40,7 @@ trigger: always_on
 - never hardcode colors or ui constants. use core/theme/ instead
 
 ### buttons
-- all buttons must be based on IconBaseButton (icon only) or IconTextBaseButton (icon + text)
+- all buttons must be based on IconBaseButton (icon only) or TextIconBaseButton (icon + text)
 - a button should be on its own file
 
 ### Spinner

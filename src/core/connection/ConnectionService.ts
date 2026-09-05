@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client'
 import { config } from '@/config'
-import { log } from '@/core/log'
+import { log } from '@log'
 
 export type BackendState = 'connecting' | 'online' | 'offline'
 

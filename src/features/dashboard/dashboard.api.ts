@@ -1,4 +1,4 @@
-import { getApiClient } from '@/core/api'
+import { getApiClient } from '@api'
 import { DashboardProfilesResponse, DashboardResponse } from './dashboard.interface'
 
 export const getDashboardProfiles = async (): Promise<DashboardProfilesResponse> => {

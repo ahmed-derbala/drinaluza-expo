@@ -1,7 +1,7 @@
 import { type StyleProp, type ViewStyle } from 'react-native'
-import { translate } from '@/core/translation'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import type { ButtonVariant } from '@/core/ui/buttons/BaseButton'
+import { translate } from '@translation'
+import { IconBaseButton } from './IconBaseButton'
+import type { ButtonVariant } from './BaseButton'
 
 export interface InstallButtonProps {
 	/** Optional APK file URI. If missing, the button is disabled. */

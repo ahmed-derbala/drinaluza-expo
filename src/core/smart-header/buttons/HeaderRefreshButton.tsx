@@ -1,7 +1,7 @@
 import { useSyncExternalStore, useCallback } from 'react'
-import { useTheme } from '@/core/theme'
-import { ConnectionService, BackendState } from '@/core/connection'
-import { triggerGlobalRefresh, useGlobalRefreshingState } from '@/core/cache/useCacheFirst'
+import { useTheme } from '@theme'
+import { ConnectionService, BackendState } from '@connection'
+import { triggerGlobalRefresh, useGlobalRefreshingState } from '@cache/useCacheFirst'
 import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderRefreshButtonProps {

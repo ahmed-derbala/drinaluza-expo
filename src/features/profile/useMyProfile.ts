@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
-import { useCacheFirst } from '@/core/cache/useCacheFirst'
-import { getMyProfile } from '@/features/auth/auth.api'
+import { useCacheFirst } from '@cache/useCacheFirst'
+import { getMyProfile } from '@auth/auth.api'
 import { UserData } from './profile.interface'
 
 export const MY_PROFILE_CACHE_KEY = 'profile:me'

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useRouter } from 'expo-router'
-import { translate } from '@/core/translation'
+import { translate } from '@translation'
 import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export const HeaderSearchButton: React.FC = React.memo(() => {

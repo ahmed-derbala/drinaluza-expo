@@ -1,11 +1,11 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
-import { useTheme, themeColors } from '@/core/theme'
+import { useTheme, themeColors } from '@theme'
 import { CaliberChip } from './CaliberChip'
 import { HarvestChip } from './HarvestChip'
 import { GearChip } from './GearChip'
 import { OriginChip } from './OriginChip'
-import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
+import { QuantityStepperBlock } from '@products/blocks/QuantityStepperBlock'
 
 export interface ProductSpecsBlockProps {
 	specs?: {

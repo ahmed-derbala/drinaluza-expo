@@ -1,4 +1,4 @@
-import { getApiClient } from '@/core/api'
+import { getApiClient } from '@api'
 import { ReviewsResponse, CreateReviewRequest, CreateReviewResponse } from './reviews.interface'
 
 export const getReviews = async (targetResource: 'businesses' | 'products' | 'users', targetId: string, page: number = 1, limit: number = 10): Promise<ReviewsResponse> => {

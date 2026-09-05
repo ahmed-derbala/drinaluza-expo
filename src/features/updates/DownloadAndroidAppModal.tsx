@@ -1,12 +1,9 @@
-import { useCallback, useState } from 'react'
-import type { ReactNode } from 'react'
-import { BaseModal } from '@/core/ui/modals'
-import { translate } from '@/core/translation'
-import { setItem } from '@/core/storage'
-import { DownloadButton } from '@/core/ui/buttons/DownloadButton'
-import { CancelButton } from '@/core/ui/buttons/CancelButton'
-import { EyeButton } from '@/core/ui/buttons/EyeButton'
-import type { UpdateCheckResult } from './types'
+import { useCallback, useState, ReactNode } from 'react'
+import { BaseModal } from '@modals'
+import { translate } from '@translation'
+import { setItem } from '@storage'
+import { DownloadButton, CancelButton, EyeButton } from '@buttons'
+import { UpdateCheckResult } from './types'
 
 export const DOWNLOAD_APP_MODAL_DISMISSED_KEY = 'web_update_modal_dismissed'
 

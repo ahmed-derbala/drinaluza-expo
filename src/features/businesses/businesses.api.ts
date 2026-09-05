@@ -1,7 +1,7 @@
-import { getApiClient } from '@/core/api'
-import { setCacheItem } from '@/core/cache'
+import { getApiClient } from '@api'
+import { setCacheItem } from '@cache'
 import { BusinessesResponse, CreateBusinessRequest, CreateBusinessResponse, BusinessResponse, BusinessProductsResponse, BusinessCustomersResponse } from './businesses.interface'
-import { log } from '@/core/log'
+import { log } from '@log'
 export const getMyBusinesses = async (): Promise<BusinessesResponse> => {
 	try {
 		const response = await getApiClient().get(`/businesses/my-businesses`)

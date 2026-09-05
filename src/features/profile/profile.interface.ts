@@ -1,5 +1,5 @@
-import type { MultiLang, Address } from '@/features/common/address'
-export type { Address } from '@/features/common/address'
+import type { MultiLang, Address } from '@address'
+export type { Address } from '@address'
 export interface Phone {
 	fullNumber?: string
 	countryCode?: string

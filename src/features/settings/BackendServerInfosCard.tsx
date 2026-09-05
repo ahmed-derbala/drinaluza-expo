@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState, useImperativeHandle, forwardRef, useSyncExternalStore } from 'react'
 import { StyleSheet, View, Text } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import Spinner from '@/features/common/Spinner'
-import { ConnectionService } from '@/core/connection'
+import { BaseCard } from '@cards/BaseCard'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import Spinner from '@ui/spinner/Spinner'
+import { ConnectionService } from '@connection'
 import { getHealth, type HealthResponse } from './health.api'
 
 const subscribeToBackendState = (onStoreChange: () => void): (() => void) => {
@@ -53,7 +53,7 @@ export const BackendServerInfosCard = forwardRef<BackendServerInfosCardHandle, {
 
 	if (isOffline) {
 		return (
-			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" style={styles.card}>
 				<View style={styles.center}>
 					<Ionicons name="cloud-offline" size={28} color={colors.error} />
 				</View>
@@ -63,7 +63,7 @@ export const BackendServerInfosCard = forwardRef<BackendServerInfosCardHandle, {
 
 	if (isConnecting) {
 		return (
-			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" style={styles.card}>
 				<View style={styles.center}>
 					<Spinner size="small" expand={false} />
 				</View>
@@ -73,7 +73,7 @@ export const BackendServerInfosCard = forwardRef<BackendServerInfosCardHandle, {
 
 	if (loading) {
 		return (
-			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" style={styles.card}>
 				<View style={styles.center}>
 					<Spinner size="small" expand={false} />
 				</View>
@@ -83,7 +83,7 @@ export const BackendServerInfosCard = forwardRef<BackendServerInfosCardHandle, {
 
 	if (error || !info) {
 		return (
-			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+			<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" style={styles.card}>
 				<View style={styles.center}>
 					<Text style={[styles.errorText, { color: colors.error }]}>{error}</Text>
 				</View>
@@ -94,7 +94,7 @@ export const BackendServerInfosCard = forwardRef<BackendServerInfosCardHandle, {
 	const { data } = info
 
 	return (
-		<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" backgroundColor={colors.background} borderColor={colors.border} style={styles.card}>
+		<BaseCard title={translate('backend_server_info', 'Backend Server Info')} iconName="server-outline" style={styles.card}>
 			<View style={styles.content}>
 				<View style={styles.divider} />
 

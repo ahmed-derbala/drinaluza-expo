@@ -1,6 +1,5 @@
 import { Linking, Platform } from 'react-native'
-import { formatAddress, getStreetString } from '@/features/common/address'
-import type { Address, MultiLang } from '@/features/common/address'
+import { formatAddress, getStreetString, type Address, type MultiLang } from '@address'
 
 export type LocationLike =
 	| {

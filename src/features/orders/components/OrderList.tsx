@@ -1,9 +1,9 @@
 import React, { useMemo } from 'react'
 import { RefreshControl } from 'react-native'
-import { SmartHeader } from '@/core/smart-header'
-import Spinner from '@/features/common/Spinner'
-import { useTheme } from '@/core/theme'
-import EmptyState from '@/features/common/EmptyState'
+import { SmartHeader } from '@smart-header'
+import Spinner from '@ui/spinner/Spinner'
+import { useTheme } from '@theme'
+import EmptyState from '@ui/states/EmptyState'
 interface OrderListProps<T> {
 	data: T[]
 	renderItem: ({ item, index }: any) => React.ReactElement

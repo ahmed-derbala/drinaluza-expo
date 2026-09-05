@@ -1,4 +1,4 @@
-import { getApiClient } from '@/core/api'
+import { getApiClient } from '@api'
 import { FeedItem, NormalizedFeedResponse } from './feed.interface'
 /**
  * Transforms a raw feed doc from the API into a normalized FeedItem

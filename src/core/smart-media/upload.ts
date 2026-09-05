@@ -12,10 +12,10 @@
  */
 
 import { Platform } from 'react-native'
-import { getApiClient } from '@/core/api'
-import { log } from '@/core/log'
-import { parseError } from '@/core/error/errorHandler'
-import { ConnectionService } from '@/core/connection'
+import { getApiClient } from '@api'
+import { log } from '@log'
+import { parseError } from '@error/errorHandler'
+import { ConnectionService } from '@connection'
 import { MAX_FILE_COUNT, UPLOAD_TIMEOUT_IMAGE_MS, UPLOAD_TIMEOUT_VIDEO_MS, type TargetModelName } from './constants'
 import type { MediaFile } from './types'
 import type { PickedMediaFile } from './picker'

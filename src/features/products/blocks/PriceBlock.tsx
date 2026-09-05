@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, useWindowDimensions } from 'react-native'
-import { useUser } from '@/core/contexts/UserContext'
-import { themeColors } from '@/core/theme'
+import { useUser } from '@contexts/UserContext'
+import { themeColors } from '@theme'
 
 export interface PriceBlockProps {
 	price?: { total?: Record<string, number> }

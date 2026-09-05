@@ -3,7 +3,7 @@
  * and filesystem thresholds. Import from here instead of duplicating literals.
  */
 
-import { SECURE_KEYS } from '@/core/storage'
+import { SECURE_KEYS } from '@storage'
 
 // TTL for AsyncStorage cache entries (offline-first layer)
 export const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes

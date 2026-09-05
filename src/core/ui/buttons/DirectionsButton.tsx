@@ -1,9 +1,9 @@
 import { useMemo } from 'react'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { themeColors } from '@/core/theme'
-import { hasDirectionsTarget, openDirections, type LocationLike } from '@/core/helpers/maps'
-import type { Address } from '@/features/common/address'
-import { translate } from '@/core/translation'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { themeColors } from '@theme'
+import { hasDirectionsTarget, openDirections, type LocationLike } from '@helpers/maps'
+import type { Address } from '@address'
+import { translate } from '@translation'
 
 export interface DirectionsButtonProps {
 	/** GPS location. */

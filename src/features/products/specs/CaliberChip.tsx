@@ -1,8 +1,8 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { getCaliberIconSize, getCaliberFontSize } from '@/features/products/products.helpers'
-import { themeColors } from '@/core/theme'
+import { getCaliberIconSize, getCaliberFontSize } from '@products/products.helpers'
+import { themeColors } from '@theme'
 
 export interface CaliberChipProps {
 	caliber: number

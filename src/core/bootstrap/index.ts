@@ -1,5 +1,5 @@
 import { Platform } from 'react-native'
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 
 if (typeof setImmediate === 'undefined') {
 	;(globalThis as unknown as { setImmediate: (callback: (...args: unknown[]) => void) => void }).setImmediate = (callback: (...args: unknown[]) => void) => setTimeout(callback, 0)

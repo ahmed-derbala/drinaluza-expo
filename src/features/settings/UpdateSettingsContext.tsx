@@ -1,6 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
-import { getItem, setItem } from '@/core/storage'
-import { deferStartup } from '@/core/helpers/defer'
+import { getItem, setItem } from '@storage'
+import { deferStartup } from '@helpers/defer'
 
 export interface UpdateSettings {
 	enabled: boolean

@@ -1,6 +1,6 @@
 import React from 'react'
 import { View } from 'react-native'
-import { SmartKebabMenu } from '@/core/smart-kebab-menu'
+import { SmartKebabMenu } from '@smart-kebab-menu'
 import { HeaderActionType, resolveHeaderActions } from './headerActionsConfig'
 
 export type { HeaderActionType }

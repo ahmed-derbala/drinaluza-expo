@@ -1,3 +1,3 @@
-import AuthScreen from '@/features/auth/AuthScreen'
+import AuthScreen from '@auth/AuthScreen'
 
 export default AuthScreen

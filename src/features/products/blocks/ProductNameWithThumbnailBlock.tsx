@@ -1,7 +1,7 @@
 import { View, Text, StyleSheet, Pressable, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
-import { SmartMediaView } from '@/core/smart-media'
+import { SmartMediaView } from '@smart-media'
 import { MaterialIcons } from '@expo/vector-icons'
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 
 export interface ProductNameWithThumbnailBlockProps {
 	/** Product name (localized string) */

@@ -1,4 +1,4 @@
-import { themeColors } from '@/core/theme'
+import { themeColors } from '@theme'
 
 export const NOTIFICATIONS_TEMPLATES = {
 	PURCHASE_REQUEST: 'purchase_request',

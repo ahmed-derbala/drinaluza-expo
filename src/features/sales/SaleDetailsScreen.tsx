@@ -1,16 +1,14 @@
 import { useCallback, useState } from 'react'
 import { View, StyleSheet, RefreshControl } from 'react-native'
-import { useLocalSearchParams, Stack } from 'expo-router'
-import { useFocusEffect } from 'expo-router'
+import { useLocalSearchParams, Stack, useFocusEffect } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useTheme } from '@/core/theme'
-import { useUser } from '@/core/contexts/UserContext'
-import { SmartHeader } from '@/core/smart-header'
-import { HeaderSalesButton } from '@/core/smart-header/buttons'
+import { useTheme } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { HeaderSalesButton, SmartHeader } from '@smart-header'
 import { getSaleById, Sale } from './sales.api'
 import SaleCard from './SaleCard'
-import Spinner from '@/features/common/Spinner'
-import ErrorBlock from '@/core/error/ErrorBlock'
+import Spinner from '@ui/spinner/Spinner'
+import ErrorBlock from '@error/ErrorBlock'
 
 export default function SaleDetailsScreen() {
 	const { businessSlug, saleId } = useLocalSearchParams<{ businessSlug: string; saleId: string }>()

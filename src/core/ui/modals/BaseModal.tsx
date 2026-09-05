@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo } from 'react'
 import { BackHandler, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, ThemeColors } from '@/core/theme'
+import { useTheme, ThemeColors } from '@theme'
 import { STATUS_ICONS, getStatusColor } from './utils'
 import type { BaseModalProps } from './types'
 

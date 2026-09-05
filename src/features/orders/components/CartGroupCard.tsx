@@ -3,12 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { useRouter } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
 
-import { useTheme, themeColors } from '@/core/theme'
-import { useUser } from '@/core/contexts'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { DeleteButton } from '@/core/ui/buttons/DeleteButton'
-import { SmartMediaView } from '@/core/smart-media'
-import { FeedItem } from '@/features/feed/feed.interface'
+import { useTheme, themeColors } from '@theme'
+import { useUser } from '@contexts'
+import { IconBaseButton, DeleteButton } from '@buttons'
+import { BaseCard } from '@cards/BaseCard'
+import { SmartMediaView } from '@smart-media'
+import { FeedItem } from '@feed/feed.interface'
 
 export type CartItem = FeedItem & { quantity: number }
 
@@ -47,112 +47,109 @@ export const CartGroupCard = React.memo(function CartGroupCard({ group, onUpdate
 	}
 
 	return (
-		<View style={styles.cardContainer}>
-			<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-				<View style={styles.header}>
-					<TouchableOpacity
-						style={styles.headerLeft}
-						disabled={!group.businessSlug}
-						onPress={() => {
-							if (group.businessSlug) {
-								router.push(`/businesses/${group.businessSlug}` as any)
-							}
-						}}
-					>
-						<Ionicons name="storefront-outline" size={24} color={colors.primary} />
-						<View style={styles.headerInfo}>
-							<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
-								{group.businessName}
-							</Text>
-							<Text style={[styles.itemCount, { color: colors.textSecondary }]}>
-								{group.items.length} {group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')}
-							</Text>
-						</View>
-					</TouchableOpacity>
-					<View style={[styles.statusBadge, { backgroundColor: colors.primary + '15' }]}>
-						<Text style={[styles.statusText, { color: colors.primary }]}>{translate('draft', 'DRAFT')}</Text>
+		<BaseCard style={styles.card} borderRadius={28} contentStyle={styles.cardContent}>
+			<View style={styles.header}>
+				<TouchableOpacity
+					style={styles.headerLeft}
+					disabled={!group.businessSlug}
+					onPress={() => {
+						if (group.businessSlug) {
+							router.push(`/businesses/${group.businessSlug}` as any)
+						}
+					}}
+				>
+					<Ionicons name="storefront-outline" size={24} color={colors.primary} />
+					<View style={styles.headerInfo}>
+						<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
+							{group.businessName}
+						</Text>
+						<Text style={[styles.itemCount, { color: colors.textSecondary }]}>
+							{group.items.length} {group.items.length === 1 ? translate('item', 'item') : translate('items', 'items')}
+						</Text>
 					</View>
+				</TouchableOpacity>
+				<View style={[styles.statusBadge, { backgroundColor: colors.primary + '15' }]}>
+					<Text style={[styles.statusText, { color: colors.primary }]}>{translate('draft', 'DRAFT')}</Text>
 				</View>
+			</View>
 
-				<View style={[styles.divider, { backgroundColor: colors.border }]} />
+			<View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-				<ScrollView style={styles.productList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-					{group.items.map((item) => {
-						const price = item.price?.total?.tnd || 0
-						const img = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
-						return (
-							<View key={item._id} style={styles.itemRow}>
-								<TouchableOpacity
-									onPress={() => {
-										if (item.slug) {
-											router.push(`/products/${item.slug}` as any)
-										}
-									}}
-								>
-									<SmartMediaView media={img} style={styles.productThumb} />
-								</TouchableOpacity>
-								<View style={styles.itemDetails}>
-									<View style={styles.itemHeader}>
-										<TouchableOpacity
-											style={{ flex: 1, marginRight: 8 }}
-											onPress={() => {
-												if (item.slug) {
-													router.push(`/products/${item.slug}` as any)
-												}
-											}}
-										>
-											<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
-												{localize(item.name)}
-											</Text>
+			<ScrollView style={styles.productList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+				{group.items.map((item) => {
+					const price = item.price?.total?.tnd || 0
+					const img = item.media?.thumbnail?.url || item.defaultProduct?.media?.thumbnail?.url
+					return (
+						<View key={item._id} style={styles.itemRow}>
+							<TouchableOpacity
+								onPress={() => {
+									if (item.slug) {
+										router.push(`/products/${item.slug}` as any)
+									}
+								}}
+							>
+								<SmartMediaView media={img} style={styles.productThumb} />
+							</TouchableOpacity>
+							<View style={styles.itemDetails}>
+								<View style={styles.itemHeader}>
+									<TouchableOpacity
+										style={{ flex: 1, marginRight: 8 }}
+										onPress={() => {
+											if (item.slug) {
+												router.push(`/products/${item.slug}` as any)
+											}
+										}}
+									>
+										<Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
+											{localize(item.name)}
+										</Text>
+									</TouchableOpacity>
+									<DeleteButton onPress={() => handleRemove(item._id)} size={28} style={{ backgroundColor: 'transparent', borderColor: 'transparent' }} />
+								</View>
+
+								<View style={styles.itemFooter}>
+									<Text style={[styles.productPrice, { color: colors.primary }]}>{(price * item.quantity).toFixed(2)} TND</Text>
+
+									<View style={[styles.qtyRow, { backgroundColor: colors.surfaceVariant }]}>
+										<TouchableOpacity onPress={() => onUpdateQuantity(item._id, item.quantity - 1)} style={styles.qtyBtn}>
+											<Ionicons name="remove" size={14} color={colors.text} />
 										</TouchableOpacity>
-										<DeleteButton onPress={() => handleRemove(item._id)} size={28} style={{ backgroundColor: 'transparent', borderColor: 'transparent' }} />
-									</View>
-
-									<View style={styles.itemFooter}>
-										<Text style={[styles.productPrice, { color: colors.primary }]}>{(price * item.quantity).toFixed(2)} TND</Text>
-
-										<View style={[styles.qtyRow, { backgroundColor: colors.surfaceVariant }]}>
-											<TouchableOpacity onPress={() => onUpdateQuantity(item._id, item.quantity - 1)} style={styles.qtyBtn}>
-												<Ionicons name="remove" size={14} color={colors.text} />
-											</TouchableOpacity>
-											<Text style={[styles.qtyVal, { color: colors.text }]}>{item.quantity}</Text>
-											<TouchableOpacity onPress={() => onUpdateQuantity(item._id, item.quantity + 1)} style={styles.qtyBtn}>
-												<Ionicons name="add" size={14} color={colors.text} />
-											</TouchableOpacity>
-										</View>
+										<Text style={[styles.qtyVal, { color: colors.text }]}>{item.quantity}</Text>
+										<TouchableOpacity onPress={() => onUpdateQuantity(item._id, item.quantity + 1)} style={styles.qtyBtn}>
+											<Ionicons name="add" size={14} color={colors.text} />
+										</TouchableOpacity>
 									</View>
 								</View>
 							</View>
-						)
-					})}
-				</ScrollView>
+						</View>
+					)
+				})}
+			</ScrollView>
 
-				<View style={[styles.divider, { backgroundColor: colors.border }]} />
+			<View style={[styles.divider, { backgroundColor: colors.border }]} />
 
-				<View style={styles.cardFooter}>
-					<View>
-						<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
-						<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
-					</View>
-					<IconBaseButton icon="checkmark" label="Place order" variant="primary" onPress={() => onCheckout(group)} />
+			<View style={styles.cardFooter}>
+				<View>
+					<Text style={[styles.totalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
+					<Text style={[styles.totalPrice, { color: colors.primary }]}>{groupTotal.toFixed(2)} TND</Text>
 				</View>
+				<IconBaseButton icon="checkmark" label="Place order" variant="primary" onPress={() => onCheckout(group)} />
 			</View>
-		</View>
+		</BaseCard>
 	)
 })
 
 const styles = StyleSheet.create({
-	cardContainer: {
-		width: '100%',
-		marginBottom: 16
-	},
 	card: {
-		borderRadius: 28,
-		borderWidth: 1,
-		borderColor: themeColors.buttonText5,
 		padding: 22,
 		minHeight: 320,
+		marginBottom: 16,
 		justifyContent: 'space-between'
+		// background/border/overflow come from BaseCard defaults; radius via borderRadius prop
+	},
+	cardContent: {
+		flex: 1,
+		padding: 0
 	},
 	header: {
 		flexDirection: 'row',

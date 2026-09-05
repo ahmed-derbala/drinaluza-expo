@@ -1,3 +1,3 @@
-import { UpdatesScreen } from '@/features/updates'
+import { UpdatesScreen } from '@updates'
 
 export default UpdatesScreen

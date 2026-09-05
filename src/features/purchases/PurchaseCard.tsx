@@ -1,20 +1,14 @@
 import React from 'react'
 import { View, Text, StyleSheet } from 'react-native'
 import { useRouter } from 'expo-router'
-import { useTheme } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
-import { useUser } from '@/core/contexts'
-import { SmartMediaView } from '@/core/smart-media'
-import { BaseCard } from '@/features/common/cards/BaseCard'
-import { CancelButton } from '@/core/ui/buttons/CancelButton'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { OrderItem } from '@/features/orders/orders.interface'
-import { ORDER_STATUSES } from '@/features/orders/orders-statuses'
-import { orderStatusColors, orderStatusLabels } from '@/features/orders/orders-statuses'
-import { OrderStepTracker } from '@/features/orders/components/OrderStepTracker'
-import { OrderProductCard } from '@/features/orders/components/OrderProductCard'
-import { OrderProductsCard } from '@/features/orders/components/OrderProductsCard'
-
+import { useTheme } from '@theme'
+import { BaseCard } from '@cards/BaseCard'
+import { useUser } from '@contexts'
+import { SmartMediaView } from '@smart-media'
+import { CancelButton, IconBaseButton } from '@buttons'
+import { OrderItem } from '@orders/orders.interface'
+import { ORDER_STATUSES, orderStatusColors, orderStatusLabels } from '@orders/orders-statuses'
+import { OrderStepTracker, OrderProductCard, OrderProductsCard } from '@orders/components'
 // ─── Constants ────────────────────────────────────────────────────────────────
 const ORDER_STEPS = ['Ordered', 'Confirmed', 'Transit', 'Delivered']
 
@@ -177,10 +171,10 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
-		borderRadius: CARD.borderRadius,
-		padding: CARD.padding * 1.8,
-		marginBottom: CARD.gap,
-		minHeight: CARD.minHeight,
+		borderRadius: 16,
+		padding: 12 * 1.8,
+		marginBottom: 16,
+		minHeight: 440,
 		justifyContent: 'space-between'
 	},
 	header: {

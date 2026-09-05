@@ -1,6 +1,5 @@
-import { getApiClient } from '@/core/api'
-import { ProductFeedItem } from '@/features/feed/feed.interface'
-import { UserFeedItem } from '@/features/feed/feed.interface'
+import { getApiClient } from '@api'
+import { ProductFeedItem, UserFeedItem } from '@feed/feed.interface'
 
 export interface SearchPagination {
 	totalDocs: number

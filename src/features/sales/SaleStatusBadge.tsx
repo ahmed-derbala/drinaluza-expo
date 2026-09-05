@@ -2,10 +2,10 @@ import { useMemo } from 'react'
 import { Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native'
 import { useRouter, usePathname } from 'expo-router'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme } from '@/core/theme'
-import { useUser } from '@/core/contexts'
+import { useTheme } from '@theme'
+import { useUser } from '@contexts'
 import { Sale } from './sales.api'
-import { ORDER_STATUSES, orderStatusColors, orderStatusIcons } from '@/features/orders/orders-statuses'
+import { ORDER_STATUSES, orderStatusColors, orderStatusIcons } from '@orders/orders-statuses'
 export interface SaleStatusBadgeProps {
 	sale: Sale
 	style?: StyleProp<ViewStyle>

@@ -1,5 +1,5 @@
 import { useCallback, useMemo } from 'react'
-import { useCacheFirst } from '@/core/cache/useCacheFirst'
+import { useCacheFirst } from '@cache/useCacheFirst'
 import { getFeed } from './feed.api'
 import { FeedItem, NormalizedFeedResponse } from './feed.interface'
 

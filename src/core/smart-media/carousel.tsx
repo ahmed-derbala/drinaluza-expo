@@ -11,11 +11,10 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ScrollView, StyleSheet, TouchableOpacity, View, type StyleProp, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { themeColors } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
+import { themeColors } from '@theme'
 import { getMediaUrl, isVideoMedia, type MediaField, type MediaFile } from './types'
 import SmartMediaView from './view'
-import { useMediaSettings } from '@/features/settings/MediaSettingsContext'
+import { useMediaSettings } from '@settings/MediaSettingsContext'
 
 /** How long an image is displayed before auto-advancing. */
 const IMAGE_DISPLAY_MS = 2_000
@@ -216,7 +215,7 @@ const styles = StyleSheet.create({
 		width: '100%',
 		height: '100%',
 		overflow: 'hidden',
-		borderRadius: CARD.borderRadius
+		borderRadius: 16
 	},
 	preview: {
 		width: '100%',
@@ -235,7 +234,7 @@ const styles = StyleSheet.create({
 		height: '100%',
 		aspectRatio: undefined as any,
 		overflow: 'hidden',
-		borderRadius: CARD.borderRadius
+		borderRadius: 16
 	},
 	strip: {
 		marginTop: 8

@@ -1,13 +1,10 @@
 import { useMemo, useRef, useCallback, useState } from 'react'
 import { StyleSheet, View, useWindowDimensions } from 'react-native'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
-import { useScrollHandler } from '@/core/scroll'
-import { SmartHeader } from '@/core/smart-header'
-import { CacheDetailsCard, type CacheDetailsCardHandle } from '@/features/settings/CacheDetailsCard'
-import { BackendServerInfosCard, type BackendServerInfosCardHandle } from '@/features/settings/BackendServerInfosCard'
-import { MediaSettingsCard } from '@/features/settings/MediaSettingsCard'
-import { SettingsUpdatesCard } from '@/features/settings/SettingsUpdatesCard'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
+import { useScrollHandler } from '@scroll'
+import { SmartHeader } from '@smart-header'
+import { CacheDetailsCard, type CacheDetailsCardHandle, BackendServerInfosCard, type BackendServerInfosCardHandle, MediaSettingsCard, SettingsUpdatesCard } from '@settings'
 import { ResetAppCard } from './ResetAppCard'
 
 export function SettingsScreen() {

@@ -1,4 +1,4 @@
-import { getApiClient } from '@/core/api'
+import { getApiClient } from '@api'
 
 export interface HealthData {
 	node: {

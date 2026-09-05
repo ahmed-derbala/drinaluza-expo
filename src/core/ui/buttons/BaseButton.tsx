@@ -1,7 +1,7 @@
 import { StyleSheet, Text, TouchableOpacity, View, Platform, type StyleProp, type TextStyle, type ViewStyle, type AccessibilityRole, type AccessibilityState } from 'react-native'
 import { Ionicons, MaterialIcons } from '@expo/vector-icons'
-import { useTheme, ThemeColors, themeColors } from '@/core/theme'
-import Spinner from '@/features/common/Spinner'
+import { useTheme, ThemeColors, themeColors } from '@theme'
+import Spinner from '@ui/spinner/Spinner'
 
 export type ButtonVariant = 'primary' | 'success' | 'warning' | 'info' | 'secondary' | 'danger'
 

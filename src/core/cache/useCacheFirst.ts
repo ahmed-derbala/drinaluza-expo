@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
-import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem } from './store'
-import type { CacheReadResult } from './store'
-import { BackendState, useBackendConnection } from '@/core/connection'
-import { log } from '@/core/log'
-import { parseError } from '@/core/error/errorHandler'
+import { getCacheItem, setCacheItem, invalidateCache as removeCacheItem, CacheReadResult } from './store'
+import { BackendState, useBackendConnection } from '@connection'
+import { log } from '@log'
+import { parseError } from '@error/errorHandler'
 const pendingFetches = new Map<string, Promise<unknown>>()
 // ── Global refresh & status registry for useCacheFirst hooks ─────────
 type RefreshCallback = () => Promise<unknown>

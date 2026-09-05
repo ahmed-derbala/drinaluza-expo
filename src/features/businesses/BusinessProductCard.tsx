@@ -1,20 +1,18 @@
 import React, { useMemo, useCallback, useState, useEffect } from 'react'
 import { View, Text, StyleSheet, Platform, type StyleProp, type ViewStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { useTheme, themeColors } from '@/core/theme'
-import { CARD } from '@/core/theme/constants'
-import { useUser } from '@/core/contexts/UserContext'
-import { SmartMediaView } from '@/core/smart-media'
-import { ProductType } from '@/features/products/products.type'
+import { useTheme, themeColors } from '@theme'
+import { useUser } from '@contexts/UserContext'
+import { SmartMediaView } from '@smart-media'
+import { ProductType } from '@products/products.type'
 import { useRouter, useLocalSearchParams } from 'expo-router'
-import { BaseCard } from '@/features/common/cards/BaseCard'
+import { BaseCard } from '@cards/BaseCard'
 import { LinearGradient } from 'expo-linear-gradient'
-import { AddToCartButton } from '@/core/ui/buttons/AddToCartButton'
-import { QuantityStepperBlock } from '@/features/products/blocks/QuantityStepperBlock'
-import { ProductSpecsBlock } from '@/features/products/specs/ProductSpecsBlock'
-import { PriceBlock } from '@/features/products/blocks/PriceBlock'
-import { getItem, setItem, getToken } from '@/core/storage'
-import { toast } from '@/features/common/Toast'
+import { AddToCartButton } from '@buttons/AddToCartButton'
+import { QuantityStepperBlock, PriceBlock } from '@products/blocks'
+import { ProductSpecsBlock } from '@products/specs/ProductSpecsBlock'
+import { getItem, setItem, getToken } from '@storage'
+import { toast } from '@ui/toast/Toast'
 
 export interface BusinessProductCardProps {
 	product: ProductType
@@ -110,7 +108,7 @@ const BusinessProductCard = React.memo(function BusinessProductCard({ product, a
 	)
 
 	return (
-		<BaseCard onPress={handlePress} style={[styles.card, style]} contentStyle={styles.cardContent} borderColor={colors.border} backgroundColor={colors.background}>
+		<BaseCard onPress={handlePress} style={[styles.card, style]} contentStyle={styles.cardContent}>
 			<View style={[styles.bgImageContainer, { pointerEvents: 'none' as any }]}>
 				<SmartMediaView media={imageUrl} style={StyleSheet.absoluteFill} contentFit="cover" />
 			</View>
@@ -169,8 +167,11 @@ const BusinessProductCard = React.memo(function BusinessProductCard({ product, a
 
 const styles = StyleSheet.create({
 	card: {
-		...CARD,
+		borderRadius: 16,
+		borderWidth: 1,
 		padding: 0,
+		gap: 16,
+		minHeight: 440,
 		overflow: 'hidden'
 	},
 	cardContent: { flex: 1, padding: 0 },
@@ -181,11 +182,11 @@ const styles = StyleSheet.create({
 		right: 0,
 		bottom: 0,
 		overflow: 'hidden',
-		borderRadius: CARD.borderRadius,
+		borderRadius: 16,
 		...Platform.select({ web: { overflow: 'hidden', isolation: 'isolate' as any, transform: 'translateZ(0)' as any } as any })
 	},
 	bgOverlay: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
-	info: { flex: 1, padding: CARD.padding, gap: 4, justifyContent: 'space-between', zIndex: 1 },
+	info: { flex: 1, padding: 12, gap: 4, justifyContent: 'space-between', zIndex: 1 },
 	topGroup: { gap: 3, alignSelf: 'stretch' },
 	header: { alignSelf: 'stretch' },
 	name: { fontSize: 14, fontWeight: '600', lineHeight: 18, height: 36, textAlign: 'left', alignSelf: 'flex-start' },

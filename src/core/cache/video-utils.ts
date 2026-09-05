@@ -3,9 +3,9 @@
  */
 
 import { Platform } from 'react-native'
-import { log } from '@/core/log'
-import type { MediaFile } from '@/core/smart-media/types'
-import { ensureDirectory, getVideosDirectory, getFileInfo as diskGetFileInfo, deletePath } from '@/core/disk'
+import { log } from '@log'
+import type { MediaFile } from '@smart-media/types'
+import { ensureDirectory, getVideosDirectory, getFileInfo as diskGetFileInfo, deletePath } from '@disk'
 
 export const VIDEOS_FOLDER = (() => {
 	if (Platform.OS === 'web') return ''

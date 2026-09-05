@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { LayoutRectangle, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import Spinner from '@/features/common/Spinner'
-import { useTheme } from '@/core/theme'
+import Spinner from '@ui/spinner/Spinner'
+import { useTheme } from '@theme'
 
 export interface SmartTabOption {
 	value: string

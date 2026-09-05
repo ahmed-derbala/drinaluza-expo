@@ -1,7 +1,7 @@
-import { getApiClient } from '@/core/api'
-import { parseError } from '@/core/error/errorHandler'
-import { Customer } from '@/features/customers/customers.interface'
-import type { Address, MultiLang } from '@/features/common/address'
+import { getApiClient } from '@api'
+import { parseError } from '@error/errorHandler'
+import { Customer } from '@customers/customers.interface'
+import type { Address, MultiLang } from '@address'
 
 const apiClient = getApiClient()
 

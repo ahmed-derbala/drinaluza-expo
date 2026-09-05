@@ -1,6 +1,6 @@
-import { getApiClient } from '@/core/api'
-import { setCacheItem } from '@/core/cache'
-import { MultiLang, ProductSpecs } from '@/features/businesses/businesses.interface'
+import { getApiClient } from '@api'
+import { setCacheItem } from '@cache'
+import { MultiLang, ProductSpecs } from '@businesses/businesses.interface'
 import { ProductType, FileRef } from './products.type'
 export interface CreateProductRequest {
 	business: {

@@ -8,6 +8,345 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
+      "@app/*": [
+        "src/app/*"
+      ],
+      "@assets/*": [
+        "assets/*"
+      ],
+      "@config": [
+        "src/config"
+      ],
+      "@api": [
+        "src/core/api"
+      ],
+      "@api/*": [
+        "src/core/api/*"
+      ],
+      "@bootstrap": [
+        "src/core/bootstrap"
+      ],
+      "@bootstrap/*": [
+        "src/core/bootstrap/*"
+      ],
+      "@cache": [
+        "src/core/cache"
+      ],
+      "@cache/*": [
+        "src/core/cache/*"
+      ],
+      "@connection": [
+        "src/core/connection"
+      ],
+      "@connection/*": [
+        "src/core/connection/*"
+      ],
+      "@constants": [
+        "src/core/constants"
+      ],
+      "@constants/*": [
+        "src/core/constants/*"
+      ],
+      "@contexts": [
+        "src/core/contexts"
+      ],
+      "@contexts/*": [
+        "src/core/contexts/*"
+      ],
+      "@disk": [
+        "src/core/disk"
+      ],
+      "@disk/*": [
+        "src/core/disk/*"
+      ],
+      "@error": [
+        "src/core/error"
+      ],
+      "@error/*": [
+        "src/core/error/*"
+      ],
+      "@helpers": [
+        "src/core/helpers"
+      ],
+      "@helpers/*": [
+        "src/core/helpers/*"
+      ],
+      "@hooks": [
+        "src/core/hooks"
+      ],
+      "@hooks/*": [
+        "src/core/hooks/*"
+      ],
+      "@log": [
+        "src/core/log"
+      ],
+      "@log/*": [
+        "src/core/log/*"
+      ],
+      "@platform": [
+        "src/core/platform"
+      ],
+      "@platform/*": [
+        "src/core/platform/*"
+      ],
+      "@scroll": [
+        "src/core/scroll"
+      ],
+      "@scroll/*": [
+        "src/core/scroll/*"
+      ],
+      "@smart-header": [
+        "src/core/smart-header"
+      ],
+      "@smart-header/*": [
+        "src/core/smart-header/*"
+      ],
+      "@smart-kebab-menu": [
+        "src/core/smart-kebab-menu"
+      ],
+      "@smart-kebab-menu/*": [
+        "src/core/smart-kebab-menu/*"
+      ],
+      "@smart-media": [
+        "src/core/smart-media"
+      ],
+      "@smart-media/*": [
+        "src/core/smart-media/*"
+      ],
+      "@smart-tabs": [
+        "src/core/smart-tabs"
+      ],
+      "@smart-tabs/*": [
+        "src/core/smart-tabs/*"
+      ],
+      "@socketio": [
+        "src/core/socketio"
+      ],
+      "@socketio/*": [
+        "src/core/socketio/*"
+      ],
+      "@storage": [
+        "src/core/storage"
+      ],
+      "@storage/*": [
+        "src/core/storage/*"
+      ],
+      "@theme": [
+        "src/core/theme"
+      ],
+      "@theme/*": [
+        "src/core/theme/*"
+      ],
+      "@translation": [
+        "src/core/translation"
+      ],
+      "@translation/*": [
+        "src/core/translation/*"
+      ],
+      "@ui": [
+        "src/core/ui"
+      ],
+      "@ui/*": [
+        "src/core/ui/*"
+      ],
+      "@address": [
+        "src/core/ui/address"
+      ],
+      "@address/*": [
+        "src/core/ui/address/*"
+      ],
+      "@badges": [
+        "src/core/ui/badges"
+      ],
+      "@badges/*": [
+        "src/core/ui/badges/*"
+      ],
+      "@buttons": [
+        "src/core/ui/buttons"
+      ],
+      "@buttons/*": [
+        "src/core/ui/buttons/*"
+      ],
+      "@cards": [
+        "src/core/ui/cards"
+      ],
+      "@cards/*": [
+        "src/core/ui/cards/*"
+      ],
+      "@contact": [
+        "src/core/ui/contact"
+      ],
+      "@contact/*": [
+        "src/core/ui/contact/*"
+      ],
+      "@forms": [
+        "src/core/ui/forms"
+      ],
+      "@forms/*": [
+        "src/core/ui/forms/*"
+      ],
+      "@languages": [
+        "src/core/ui/languages"
+      ],
+      "@languages/*": [
+        "src/core/ui/languages/*"
+      ],
+      "@location": [
+        "src/core/ui/location"
+      ],
+      "@location/*": [
+        "src/core/ui/location/*"
+      ],
+      "@modals": [
+        "src/core/ui/modals"
+      ],
+      "@modals/*": [
+        "src/core/ui/modals/*"
+      ],
+      "@qrcode": [
+        "src/core/ui/qrcode"
+      ],
+      "@qrcode/*": [
+        "src/core/ui/qrcode/*"
+      ],
+      "@screens": [
+        "src/core/ui/screens"
+      ],
+      "@screens/*": [
+        "src/core/ui/screens/*"
+      ],
+      "@spinner": [
+        "src/core/ui/spinner"
+      ],
+      "@spinner/*": [
+        "src/core/ui/spinner/*"
+      ],
+      "@states": [
+        "src/core/ui/states"
+      ],
+      "@states/*": [
+        "src/core/ui/states/*"
+      ],
+      "@toast": [
+        "src/core/ui/toast"
+      ],
+      "@toast/*": [
+        "src/core/ui/toast/*"
+      ],
+      "@about": [
+        "src/features/about"
+      ],
+      "@about/*": [
+        "src/features/about/*"
+      ],
+      "@auth": [
+        "src/features/auth"
+      ],
+      "@auth/*": [
+        "src/features/auth/*"
+      ],
+      "@businesses": [
+        "src/features/businesses"
+      ],
+      "@businesses/*": [
+        "src/features/businesses/*"
+      ],
+      "@customers": [
+        "src/features/customers"
+      ],
+      "@customers/*": [
+        "src/features/customers/*"
+      ],
+      "@dashboard": [
+        "src/features/dashboard"
+      ],
+      "@dashboard/*": [
+        "src/features/dashboard/*"
+      ],
+      "@feed": [
+        "src/features/feed"
+      ],
+      "@feed/*": [
+        "src/features/feed/*"
+      ],
+      "@notifications": [
+        "src/features/notifications"
+      ],
+      "@notifications/*": [
+        "src/features/notifications/*"
+      ],
+      "@order": [
+        "src/features/orders"
+      ],
+      "@order/*": [
+        "src/features/orders/*"
+      ],
+      "@orders": [
+        "src/features/orders"
+      ],
+      "@orders/*": [
+        "src/features/orders/*"
+      ],
+      "@products": [
+        "src/features/products"
+      ],
+      "@products/*": [
+        "src/features/products/*"
+      ],
+      "@profile": [
+        "src/features/profile"
+      ],
+      "@profile/*": [
+        "src/features/profile/*"
+      ],
+      "@purchases": [
+        "src/features/purchases"
+      ],
+      "@purchases/*": [
+        "src/features/purchases/*"
+      ],
+      "@reviews": [
+        "src/features/reviews"
+      ],
+      "@reviews/*": [
+        "src/features/reviews/*"
+      ],
+      "@sales": [
+        "src/features/sales"
+      ],
+      "@sales/*": [
+        "src/features/sales/*"
+      ],
+      "@scanner": [
+        "src/features/scanner"
+      ],
+      "@scanner/*": [
+        "src/features/scanner/*"
+      ],
+      "@search": [
+        "src/features/search"
+      ],
+      "@search/*": [
+        "src/features/search/*"
+      ],
+      "@settings": [
+        "src/features/settings"
+      ],
+      "@settings/*": [
+        "src/features/settings/*"
+      ],
+      "@updates": [
+        "src/features/updates"
+      ],
+      "@updates/*": [
+        "src/features/updates/*"
+      ],
+      "@users": [
+        "src/features/users"
+      ],
+      "@users/*": [
+        "src/features/users/*"
+      ],
       "@/*": [
         "./src/*"
       ]

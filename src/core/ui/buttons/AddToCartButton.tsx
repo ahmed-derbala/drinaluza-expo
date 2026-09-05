@@ -1,5 +1,5 @@
 import React from 'react'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { IconBaseButton } from '@buttons/IconBaseButton'
 
 export interface AddToCartButtonProps {
 	disabled?: boolean

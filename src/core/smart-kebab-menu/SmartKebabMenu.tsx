@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef, useContext } from 'react'
 import { StyleSheet, Text, View, Animated, Platform, Pressable, useWindowDimensions, Modal } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
-import { HeaderIconBaseButton } from '@/core/smart-header/buttons'
+import { HeaderIconBaseButton } from '../smart-header/buttons'
 import { usePathname, useRouter, useNavigation } from 'expo-router'
-import { useTheme } from '@/core/theme'
-import { translate } from '@/core/translation'
+import { useTheme } from '@theme'
+import { translate } from '@translation'
 import { SmartKebabMenuContext } from './SmartKebabMenuProvider'
 import { SmartKebabMenuItem } from './types'
 
-import { useUpdates } from '@/features/updates/useUpdates'
-import { isVersionGreater } from '@/features/updates/UpdatesContext'
+import { useUpdates } from '../../features/updates/useUpdates'
+import { isVersionGreater } from '../../features/updates/UpdatesContext'
 import { config } from '@/config'
 
 export const SmartKebabMenu: React.FC = () => {

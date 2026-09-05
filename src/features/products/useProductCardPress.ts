@@ -1,6 +1,6 @@
 import { useRouter, usePathname } from 'expo-router'
-import { getCacheItem, setCacheItem } from '@/core/cache'
-import { ProductFeedItem } from '@/features/feed/feed.interface'
+import { getCacheItem, setCacheItem } from '@cache'
+import { ProductFeedItem } from '@feed/feed.interface'
 
 export function useProductCardPress(item: ProductFeedItem) {
 	const router = useRouter()

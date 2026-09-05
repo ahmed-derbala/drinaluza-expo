@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { type StyleProp, type ViewStyle } from 'react-native'
 import * as Clipboard from 'expo-clipboard'
-import { translate } from '@/core/translation'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { translate } from '@translation'
+import { IconBaseButton } from '@buttons/IconBaseButton'
 
 export interface CopyUrlButtonProps {
 	/** URL to copy to the clipboard. */

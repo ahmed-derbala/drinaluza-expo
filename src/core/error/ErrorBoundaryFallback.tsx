@@ -1,11 +1,11 @@
 import { View } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { Stack } from 'expo-router'
-import { translate } from '@/core/translation'
-import { themeColors } from '@/core/theme'
-import { SmartHeader } from '@/core/smart-header'
-import ErrorBlock from '@/core/error/ErrorBlock'
-import { log } from '@/core/log'
+import { translate } from '@translation'
+import { themeColors } from '@theme'
+import { SmartHeader } from '@smart-header'
+import ErrorBlock from '@error/ErrorBlock'
+import { log } from '@log'
 
 export interface ErrorBoundaryFallbackProps {
 	error: Error & { digest?: string }

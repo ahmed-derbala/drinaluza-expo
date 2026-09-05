@@ -1,1 +1,1 @@
-export { default } from '@/features/sales/SalesScreen'
+export { default } from '@sales/SalesScreen'

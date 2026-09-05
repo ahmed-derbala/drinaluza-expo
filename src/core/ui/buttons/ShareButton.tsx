@@ -1,6 +1,6 @@
 import { type StyleProp, type ViewStyle } from 'react-native'
-import { translate } from '@/core/translation'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
+import { translate } from '@translation'
+import { IconBaseButton } from '@buttons/IconBaseButton'
 
 export interface ShareButtonProps {
 	/** Press handler. */

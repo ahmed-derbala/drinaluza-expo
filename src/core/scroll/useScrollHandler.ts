@@ -1,6 +1,6 @@
 import { useCallback, useEffect } from 'react'
 import { Platform } from 'react-native'
-import { useLayout } from '@/core/contexts/LayoutContext'
+import { useLayout } from '@contexts/LayoutContext'
 import { usePathname } from 'expo-router'
 import { useSharedValue, useAnimatedScrollHandler } from 'react-native-reanimated'
 import { scheduleOnRN, scheduleOnUI } from 'react-native-worklets'

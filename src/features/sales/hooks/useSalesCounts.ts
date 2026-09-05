@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getCacheItem, setCacheItem } from '@/core/cache'
-import { SalesResponse } from '@/features/sales/sales.api'
+import { getCacheItem, setCacheItem } from '@cache'
+import { SalesResponse } from '@sales/sales.api'
 export interface UseSalesCountsOptions {
 	businessSlug?: string
 	customerSlug?: string

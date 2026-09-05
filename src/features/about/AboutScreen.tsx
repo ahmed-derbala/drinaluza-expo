@@ -2,12 +2,12 @@ import React, { useMemo } from 'react'
 import { View, Text, StyleSheet, TouchableOpacity, Linking, useWindowDimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import * as Clipboard from 'expo-clipboard'
-import { IconBaseButton } from '@/core/ui/buttons/IconBaseButton'
-import { useTheme, themeColors } from '@/core/theme'
-import { toast } from '@/features/common/Toast'
-import { translate } from '@/core/translation'
-import { useScrollHandler } from '@/core/scroll'
-import { SmartHeader } from '@/core/smart-header'
+import { IconBaseButton } from '@buttons/IconBaseButton'
+import { useTheme, themeColors } from '@theme'
+import { toast } from '@ui/toast/Toast'
+import { translate } from '@translation'
+import { useScrollHandler } from '@scroll'
+import { SmartHeader } from '@smart-header'
 export default function AboutScreen() {
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()

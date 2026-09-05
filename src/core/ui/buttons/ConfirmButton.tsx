@@ -1,6 +1,6 @@
 import { type StyleProp, type ViewStyle } from 'react-native'
-import { translate } from '@/core/translation'
-import { IconBaseButton, type IconVariant } from '@/core/ui/buttons/IconBaseButton'
+import { translate } from '@translation'
+import { IconBaseButton, type IconVariant } from '@buttons/IconBaseButton'
 
 export interface ConfirmButtonProps {
 	onPress: () => void

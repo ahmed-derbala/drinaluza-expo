@@ -1,7 +1,7 @@
 import React from 'react'
 import { Platform } from 'react-native'
 import { useRouter, Href } from 'expo-router'
-import { translate } from '@/core/translation'
+import { translate } from '@translation'
 import { HeaderIconBaseButton } from './HeaderIconBaseButton'
 
 export interface HeaderBackButtonProps {

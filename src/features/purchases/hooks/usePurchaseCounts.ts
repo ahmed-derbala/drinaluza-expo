@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getCacheItem, setCacheItem } from '@/core/cache'
-import { getItem } from '@/core/storage'
-import { useUser } from '@/core/contexts'
-import { OrderResponse } from '@/features/orders/orders.interface'
+import { getCacheItem, setCacheItem } from '@cache'
+import { getItem } from '@storage'
+import { useUser } from '@contexts'
+import { OrderResponse } from '@orders/orders.interface'
 export function usePurchaseCounts() {
 	const { user } = useUser()
 	const cacheKey = user?._id ? `purchase-counts:${user._id}` : 'purchase-counts:anonymous'

@@ -3,7 +3,7 @@
  */
 
 import * as DocumentPicker from 'expo-document-picker'
-import { log } from '@/core/log'
+import { log } from '@log'
 import { ALLOWED_IMAGE_MIME_TYPES, ALLOWED_VIDEO_MIME_TYPES, MAX_FILE_SIZE } from './constants'
 
 /** A picked file ready to be uploaded. */
