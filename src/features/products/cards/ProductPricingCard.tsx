@@ -81,18 +81,7 @@ export default function ProductPricingCard({
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<BaseCard
-				title={translate('pricing_units', 'Pricing')}
-				mode={isEditing ? 'form' : 'view'}
-				headerRight={
-					isEditing && (onSavePress || onCancelPress) ? (
-						<>
-							{onCancelPress ? <CancelButton onPress={onCancelPress} /> : null}
-							{onSavePress ? <SaveButton onPress={onSavePress} loading={loading} disabled={loading} /> : null}
-						</>
-					) : null
-				}
-			>
+			<BaseCard title={translate('pricing_units', 'Pricing')} mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress} loading={loading}>
 				<ProductPricingForm
 					colors={colors}
 					translate={translate}

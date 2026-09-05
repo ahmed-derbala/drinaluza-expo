@@ -15,14 +15,14 @@ export interface AddressCardProps {
 		country?: string
 	}
 	isEditing: boolean
-	onEdit: () => void
+	onPhaseChange?: (editing: boolean) => void
 	onSave: () => void
 	onCancel: () => void
 	onChange: (field: 'street' | 'city' | 'region' | 'country', value: any) => void
 	title?: string
 }
 
-export default function AddressCard({ address, isEditing, onEdit, onSave, onCancel, onChange, title }: AddressCardProps) {
+export default function AddressCard({ address, isEditing, onPhaseChange, onSave, onCancel, onChange, title }: AddressCardProps) {
 	const { colors } = useTheme()
 	const { translate } = useUser()
 
@@ -35,8 +35,8 @@ export default function AddressCard({ address, isEditing, onEdit, onSave, onCanc
 		<BaseCard
 			title={title ?? translate('address', 'Address')}
 			iconName="location-outline"
-			mode={isEditing ? 'form' : onEdit !== undefined ? 'edit' : 'view'}
-			onEdit={onEdit}
+			mode={isEditing ? 'form' : onPhaseChange ? 'editable' : 'view'}
+			onPhaseChange={onPhaseChange}
 			headerRight={
 				isEditing ? (
 					<>

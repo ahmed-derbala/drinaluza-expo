@@ -32,10 +32,13 @@ trigger: always_on
 - all cards must be based on BaseCard
 - a card must be implemented on its own file
 - BaseCard purpose is to prevent duplicate and repetitive code across cards and set a standard shape and size for cards
-- BaseCard has 3 modes:
-  - view: show card data. no edit, cancel or save buttons in the top right
-  - form: card data can be edited. no edit, cancel or save buttons in the top right
-  - edit: card is shown in view mode. an edit button in the top right that activates card form mode. when pressed, edit button is replaced with cancel and save buttons
+- BaseCard has 4 modes:
+  - view: viewable data. no edit, cancel or save buttons in the top right
+  - editable: viewable data with an edit button on the top right. the press on edit button switches to edit mode
+  - edit: editable data with cancel and save buttons in the top right
+  - form: editable data without cancel or save buttons. the save action is handled by another button on the screen, not the card itself
+- BaseCard owns the show/edit lifecycle internally (transitions are always known): no onEdit prop. onSave runs the save worker, onCancel reverts draft data, onPhaseChange syncs parent flags or phase-dependent UI
+
 ### modals
 - all modals must be based on BaseModal
 - a modal must be implemented on its own file

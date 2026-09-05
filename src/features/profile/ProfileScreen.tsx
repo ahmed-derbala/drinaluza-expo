@@ -19,7 +19,7 @@ import { SectionRow } from '@ui/sections/SectionRow'
 import { LanguageIcon, LANGUAGES } from '@ui/languages'
 import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@smart-media'
 import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@smart-header'
-import { IconBaseButton, CancelButton, SaveButton } from '@buttons'
+import { IconBaseButton } from '@buttons'
 import { MultiLingualCard } from '@languages/MultiLingualCard'
 import Spinner from '@ui/spinner/Spinner'
 import { showAlert } from '@helpers/popup'
@@ -367,23 +367,17 @@ export default function ProfileScreen() {
 					<MultiLingualCard
 						name={userData.name}
 						isEditing={editMode.name}
-						onEdit={() => toggleEdit('name', true)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, name: editing }))}
 						onSave={() => saveUserData('name')}
 						onCancel={() => toggleEdit('name', false)}
 						onChange={(lang, value) => updateField(lang, value, 'name')}
 					/>
 					<BaseCard
 						title="👤 Basic Information"
-						mode={editMode.basic ? 'form' : 'edit'}
-						onEdit={() => toggleEdit('basic', true)}
-						headerRight={
-							editMode.basic ? (
-								<>
-									<CancelButton onPress={() => toggleEdit('basic', false)} />
-									<SaveButton onPress={() => saveUserData('basic')} />
-								</>
-							) : null
-						}
+						mode={editMode.basic ? 'edit' : 'editable'}
+						onSave={() => saveUserData('basic')}
+						onCancel={() => cachedProfile && applyProfileToState(cachedProfile)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, basic: editing }))}
 					>
 						{editMode.basic ? (
 							<>
@@ -444,16 +438,10 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="📍 Address"
-						mode={editMode.address ? 'form' : 'edit'}
-						onEdit={() => toggleEdit('address', true)}
-						headerRight={
-							editMode.address ? (
-								<>
-									<CancelButton onPress={() => toggleEdit('address', false)} />
-									<SaveButton onPress={() => saveUserData('address')} />
-								</>
-							) : null
-						}
+						mode={editMode.address ? 'edit' : 'editable'}
+						onSave={() => saveUserData('address')}
+						onCancel={() => cachedProfile && applyProfileToState(cachedProfile)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, address: editing }))}
 					>
 						{editMode.address ? (
 							<AddressForm
@@ -481,16 +469,10 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="📍 Location"
-						mode={editMode.location ? 'form' : 'edit'}
-						onEdit={() => toggleEdit('location', true)}
-						headerRight={
-							editMode.location ? (
-								<>
-									<CancelButton onPress={() => toggleEdit('location', false)} />
-									<SaveButton onPress={() => saveUserData('location')} />
-								</>
-							) : null
-						}
+						mode={editMode.location ? 'edit' : 'editable'}
+						onSave={() => saveUserData('location')}
+						onCancel={() => cachedProfile && applyProfileToState(cachedProfile)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, location: editing }))}
 					>
 						{editMode.location ? (
 							<LocationForm location={userData.location} onChange={(location) => updateField('location', { ...userData.location, ...location })} />
@@ -539,16 +521,10 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="🌐 Social Media"
-						mode={editMode.social ? 'form' : 'edit'}
-						onEdit={() => toggleEdit('social', true)}
-						headerRight={
-							editMode.social ? (
-								<>
-									<CancelButton onPress={() => toggleEdit('social', false)} />
-									<SaveButton onPress={() => saveUserData('social')} />
-								</>
-							) : null
-						}
+						mode={editMode.social ? 'edit' : 'editable'}
+						onSave={() => saveUserData('social')}
+						onCancel={() => cachedProfile && applyProfileToState(cachedProfile)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, social: editing }))}
 					>
 						{editMode.social ? (
 							SOCIAL_PLATFORMS.map((platform) => (
@@ -620,16 +596,10 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="📞 Contact Information"
-						mode={editMode.phone ? 'form' : 'edit'}
-						onEdit={() => toggleEdit('phone', true)}
-						headerRight={
-							editMode.phone ? (
-								<>
-									<CancelButton onPress={() => toggleEdit('phone', false)} />
-									<SaveButton onPress={() => saveUserData('phone')} />
-								</>
-							) : null
-						}
+						mode={editMode.phone ? 'edit' : 'editable'}
+						onSave={() => saveUserData('phone')}
+						onCancel={() => cachedProfile && applyProfileToState(cachedProfile)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, phone: editing }))}
 					>
 						{editMode.phone ? (
 							<ContactForm
@@ -703,16 +673,10 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title={'⚙️ ' + translate('settings', 'Account Settings')}
-						mode={editMode.settings ? 'form' : 'edit'}
-						onEdit={() => toggleEdit('settings', true)}
-						headerRight={
-							editMode.settings ? (
-								<>
-									<CancelButton onPress={() => toggleEdit('settings', false)} />
-									<SaveButton onPress={() => saveUserData('settings')} />
-								</>
-							) : null
-						}
+						mode={editMode.settings ? 'edit' : 'editable'}
+						onSave={() => saveUserData('settings')}
+						onCancel={() => cachedProfile && applyProfileToState(cachedProfile)}
+						onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, settings: editing }))}
 					>
 						{editMode.settings ? (
 							<>

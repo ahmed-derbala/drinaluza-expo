@@ -13,14 +13,14 @@ import type { MultiLang } from './languages.types'
 interface MultiLingualCardProps {
 	name?: MultiLang
 	isEditing: boolean
-	onEdit?: () => void
+	onPhaseChange?: (editing: boolean) => void
 	onSave?: () => void
 	onCancel?: () => void
 	onChange: (lang: LanguageCode, value: string) => void
 	title?: React.ReactNode
 }
 
-export function MultiLingualCard({ name, isEditing, onEdit, onSave, onCancel, onChange, title }: MultiLingualCardProps) {
+export function MultiLingualCard({ name, isEditing, onPhaseChange, onSave, onCancel, onChange, title }: MultiLingualCardProps) {
 	const { colors } = useTheme()
 	const { translate, contentLang } = useUser()
 
@@ -30,7 +30,7 @@ export function MultiLingualCard({ name, isEditing, onEdit, onSave, onCancel, on
 
 	// Editing without save/cancel handlers (e.g. create screens with a single
 	// submit) shows no action buttons — submit is handled externally.
-	const mode = isEditing ? 'form' : onEdit ? 'edit' : 'view'
+	const mode = isEditing ? 'form' : onPhaseChange ? 'editable' : 'view'
 	const formActions =
 		isEditing && (onSave || onCancel) ? (
 			<>
@@ -40,7 +40,7 @@ export function MultiLingualCard({ name, isEditing, onEdit, onSave, onCancel, on
 		) : null
 
 	return (
-		<BaseCard title={title ?? translate('name', 'Name')} iconName="language" mode={mode} onEdit={onEdit} headerRight={formActions}>
+		<BaseCard title={title ?? translate('name', 'Name')} iconName="language" mode={mode} onPhaseChange={onPhaseChange} headerRight={formActions}>
 			{isEditing ? (
 				<MultiLingualForm
 					nameEn={name?.en || ''}

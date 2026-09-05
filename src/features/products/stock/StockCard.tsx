@@ -64,27 +64,22 @@ export function StockCard({
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<BaseCard
-				title={translate('inventory', 'Inventory')}
-				iconName="cube-outline"
-				mode={isEditing ? 'form' : 'view'}
-				headerRight={
-					isEditing && (onSavePress || onCancelPress) ? (
-						<>
-							{onCancelPress ? <CancelButton onPress={onCancelPress} /> : null}
-							{onSavePress ? <SaveButton onPress={onSavePress} loading={loading} disabled={loading} /> : null}
-						</>
-					) : null
-				}
-				style={style}
-			>
+			<BaseCard title={translate('inventory', 'Inventory')} iconName="cube-outline" mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress} loading={loading} style={style}>
 				<StockForm stockQuantity={stockQuantity} setStockQuantity={setStockQuantity} minThreshold={minThreshold} setMinThreshold={setMinThreshold} />
 			</BaseCard>
 		)
 	}
 
 	return (
-		<BaseCard title={translate('inventory', 'Inventory')} iconName="cube-outline" mode={canEdit ? 'edit' : 'view'} onEdit={onEditPress} style={style}>
+		<BaseCard
+			title={translate('inventory', 'Inventory')}
+			iconName="cube-outline"
+			mode={canEdit ? 'editable' : 'view'}
+			onPhaseChange={(editing) => {
+				if (editing) onEditPress?.()
+			}}
+			style={style}
+		>
 			<View style={styles.row}>
 				<Ionicons name="cube-outline" size={18} color={colors.textSecondary} style={styles.icon} />
 				<Text style={[styles.label, { color: colors.textSecondary }]}>{translate('stock_quantity', 'Stock Quantity')}</Text>

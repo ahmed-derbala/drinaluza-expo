@@ -43,18 +43,7 @@ export default function ProductStockSection({
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<BaseCard
-				title={translate('inventory', 'Inventory')}
-				mode={isEditing ? 'form' : 'view'}
-				headerRight={
-					isEditing && (onSavePress || onCancelPress) ? (
-						<>
-							{onCancelPress ? <CancelButton onPress={onCancelPress} /> : null}
-							{onSavePress ? <SaveButton onPress={onSavePress} /> : null}
-						</>
-					) : null
-				}
-			>
+			<BaseCard title={translate('inventory', 'Inventory')} mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress}>
 				<View style={styles.row}>
 					<View style={styles.flexItem}>
 						<Text style={styles.fieldLabel}>{translate('stock_quantity', 'Stock Quantity')}</Text>

@@ -4,7 +4,6 @@ import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
 import { BaseCard, type CardSize } from '@cards/BaseCard'
 import { IconBaseButton } from '@buttons/IconBaseButton'
-import { SaveButton, CancelButton } from '@buttons'
 import Spinner from '@ui/spinner/Spinner'
 import { themeColors } from '@theme'
 import { log } from '@log'
@@ -25,7 +24,7 @@ export interface CarouselCardProps {
 	targetModelId?: string
 	maxCount?: number
 	mediaType?: PickMediaType
-	mode?: 'view' | 'edit' | 'form'
+	mode?: 'view' | 'editable' | 'edit' | 'form'
 	size?: CardSize
 	style?: StyleProp<ViewStyle>
 	previewHeight?: number
@@ -33,7 +32,6 @@ export interface CarouselCardProps {
 	autoPlay?: boolean
 	isVisible?: boolean
 	contentFit?: 'cover' | 'contain' | 'fill'
-	onEdit?: () => void
 	onSave?: () => void
 	onCancel?: () => void
 	onChange?: (gallery: MediaFile[]) => void
@@ -122,7 +120,6 @@ const CarouselCardComponent = ({
 	autoPlay = true,
 	isVisible = true,
 	contentFit = 'cover',
-	onEdit,
 	onSave,
 	onCancel,
 	onChange,
@@ -182,7 +179,8 @@ const CarouselCardComponent = ({
 	)
 
 	const uploadDisabled = useMemo(() => internalUploading || !targetModelName || !targetModelId || items.length >= maxCount, [internalUploading, targetModelName, targetModelId, items.length, maxCount])
-	const isEditing = mode === 'form'
+	const [phaseEditing, setPhaseEditing] = useState(mode === 'edit' || mode === 'form')
+	const isEditing = phaseEditing || mode === 'edit' || mode === 'form'
 
 	const handleUpload = useCallback(async () => {
 		if (uploadDisabled || !targetModelName || !targetModelId) return
@@ -265,22 +263,17 @@ const CarouselCardComponent = ({
 			}
 			size={size}
 			style={style}
-			onEdit={onEdit}
-			headerRight={
-				isEditing && (onSave || onCancel) ? (
-					<>
-						{onCancel ? <CancelButton onPress={onCancel} /> : null}
-						{onSave ? <SaveButton onPress={onSave} loading={loading} disabled={loading} /> : null}
-					</>
-				) : null
-			}
+			onSave={onSave}
+			onCancel={onCancel}
+			loading={loading}
+			onPhaseChange={setPhaseEditing}
 		>
 			<View style={[styles.preview, previewHeight ? ({ height: previewHeight, aspectRatio: undefined } as any) : null]}>
 				{activeItem ? (
 					<SmartMediaView
 						media={activeItem as any}
 						contentFit={contentFit}
-						enableFullscreenPreview={mode !== 'form'}
+						enableFullscreenPreview={!isEditing}
 						autoPlay={shouldAutoPlayVideo}
 						loop={shouldLoopSingleVideo}
 						onPlaybackEnd={isVisible && canAdvance && activeIsVideo ? advanceToNext : undefined}

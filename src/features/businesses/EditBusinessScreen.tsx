@@ -333,7 +333,7 @@ export default function EditBusinessScreen() {
 							title={translate('name', 'Name')}
 							name={{ en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab }}
 							isEditing={editMode.names}
-							onEdit={() => setEditMode((prev) => ({ ...prev, names: true }))}
+							onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, names: editing }))}
 							onSave={saveNames}
 							onCancel={() => cancelEdit('names')}
 							onChange={(lang, value) => {
@@ -345,8 +345,8 @@ export default function EditBusinessScreen() {
 						{/* Description Card */}
 						<BaseCard
 							title={translate('about_business', 'About Business')}
-							mode={editMode.about ? 'form' : 'edit'}
-							onEdit={() => setEditMode((prev) => ({ ...prev, about: true }))}
+							mode={editMode.about ? 'edit' : 'editable'}
+							onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, about: editing }))}
 							headerRight={
 								editMode.about ? (
 									<>
@@ -380,8 +380,8 @@ export default function EditBusinessScreen() {
 						{/* Contact Info Card */}
 						<BaseCard
 							title={translate('contact', 'Contact Info')}
-							mode={editMode.contact ? 'form' : 'edit'}
-							onEdit={() => setEditMode((prev) => ({ ...prev, contact: true }))}
+							mode={editMode.contact ? 'edit' : 'editable'}
+							onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, contact: editing }))}
 							headerRight={
 								editMode.contact ? (
 									<>
@@ -529,8 +529,8 @@ export default function EditBusinessScreen() {
 						{/* Coordinates Card */}
 						<BaseCard
 							title={translate('coordinates', 'Coordinates')}
-							mode={editMode.coordinates ? 'form' : 'edit'}
-							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
+							mode={editMode.coordinates ? 'edit' : 'editable'}
+							onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, coordinates: editing }))}
 							headerRight={
 								<>
 									{editMode.coordinates && <IconBaseButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} style={styles.getLocationChip} />}
@@ -668,8 +668,8 @@ export default function EditBusinessScreen() {
 						{/* Address Card */}
 						<BaseCard
 							title={translate('address', 'Address')}
-							mode={editMode.address ? 'form' : 'edit'}
-							onEdit={() => setEditMode((prev) => ({ ...prev, address: true }))}
+							mode={editMode.address ? 'edit' : 'editable'}
+							onPhaseChange={(editing) => setEditMode((prev) => ({ ...prev, address: editing }))}
 							headerRight={
 								editMode.address ? (
 									<>

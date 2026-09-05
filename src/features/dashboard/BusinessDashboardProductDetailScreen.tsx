@@ -34,8 +34,7 @@ export default function BusinessDashboardProductDetailScreen() {
 		names: false,
 		pricing: false,
 		stock: false,
-		specs: false,
-		gallery: false
+		specs: false
 	})
 	// Form States
 	const [nameEn, setNameEn] = useState('')
@@ -341,7 +340,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			})
 			setProduct(res.data)
 			syncProductToState(res.data)
-			setEditMode((prev) => ({ ...prev, gallery: false }))
 			toast.show({ title: translate('success', 'Success'), content: translate('product_gallery_updated', 'Gallery updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
 			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update gallery'), borderColor: colors.error })
@@ -354,7 +352,6 @@ export default function BusinessDashboardProductDetailScreen() {
 			setUploadedGallery(product.media?.gallery || [])
 		}
 		setRemovedFiles([])
-		setEditMode((prev) => ({ ...prev, gallery: false }))
 	}
 	const handleToggleState = async () => {
 		if (!product) return
@@ -449,7 +446,7 @@ export default function BusinessDashboardProductDetailScreen() {
 							<MultiLingualCard
 								name={editMode.names ? ({ en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab } as any) : (product?.name as any)}
 								isEditing={editMode.names}
-								onEdit={canEditProduct ? () => setEditMode((prev) => ({ ...prev, names: true })) : (undefined as any)}
+								onPhaseChange={(editing) => canEditProduct && setEditMode((prev) => ({ ...prev, names: editing }))}
 								onSave={saveNames}
 								onCancel={cancelNames}
 								onChange={(lang, value) => {
@@ -471,9 +468,8 @@ export default function BusinessDashboardProductDetailScreen() {
 								targetModelName="products"
 								targetModelId={product._id}
 								title={translate('gallery', 'Gallery')}
-								mode={canEditProduct ? (editMode.gallery ? 'form' : 'edit') : 'view'}
+								mode={canEditProduct ? 'editable' : 'view'}
 								mediaType="mixed"
-								onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
 								onSave={saveGallery}
 								onCancel={cancelGallery}
 								onChange={(next) => {

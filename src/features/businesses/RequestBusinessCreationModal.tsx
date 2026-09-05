@@ -3,7 +3,7 @@ import { BaseModal } from '@modals'
 import { useTheme } from '@theme'
 import { translate } from '@translation'
 import { CancelButton, ConfirmButton } from '@buttons'
-import { MultiLingualForm, type MultiLang } from '@languages'
+import { MultiLingualCard, type MultiLang } from '@languages'
 export interface RequestBusinessCreationModalProps {
 	visible: boolean
 	onClose: () => void
@@ -43,13 +43,14 @@ export function RequestBusinessCreationModal({ visible, onClose, onSubmit, loadi
 			scrollable
 			buttons={buttons}
 		>
-			<MultiLingualForm
-				nameEn={businessName.en}
-				setNameEn={(text) => setBusinessName((prev) => ({ ...prev, en: text }))}
-				nameTnLatn={businessName.tn_latn}
-				setNameTnLatn={(text) => setBusinessName((prev) => ({ ...prev, tn_latn: text }))}
-				nameTnArab={businessName.tn_arab}
-				setNameTnArab={(text) => setBusinessName((prev) => ({ ...prev, tn_arab: text }))}
+			<MultiLingualCard
+				name={businessName}
+				isEditing
+				onChange={(lang, text) => {
+					if (lang === 'en') setBusinessName((prev) => ({ ...prev, en: text }))
+					else if (lang === 'tn_latn') setBusinessName((prev) => ({ ...prev, tn_latn: text }))
+					else setBusinessName((prev) => ({ ...prev, tn_arab: text }))
+				}}
 			/>
 		</BaseModal>
 	)

@@ -61,7 +61,6 @@ export default function ProductScreen() {
 		names: false,
 		pricing: false,
 		stock: false,
-		gallery: false,
 		specs: false
 	})
 	const carouselMedia = useMemo(() => {
@@ -349,7 +348,6 @@ export default function ProductScreen() {
 				refresh()
 			}
 			syncProductToState(res.data)
-			setEditMode((prev) => ({ ...prev, gallery: false }))
 			toast.show({ title: translate('success', 'Success'), content: translate('product_gallery_updated', 'Gallery updated successfully'), borderColor: colors.success })
 		} catch (err: any) {
 			toast.show({ title: translate('error', 'Error'), content: err.message || translate('failed_to_update', 'Failed to update gallery'), borderColor: colors.error })
@@ -360,7 +358,6 @@ export default function ProductScreen() {
 	const cancelGallery = () => {
 		if (product) syncProductToState(product)
 		setRemovedFiles([])
-		setEditMode((prev) => ({ ...prev, gallery: false }))
 	}
 	const saveSpecs = async () => {
 		if (!canEditProduct) return
@@ -437,8 +434,7 @@ export default function ProductScreen() {
 				targetModelName="products"
 				targetModelId={product._id}
 				title={translate('media', 'Media')}
-				mode={canEditProduct ? (editMode.gallery ? 'form' : 'edit') : 'view'}
-				onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
+				mode={canEditProduct ? 'editable' : 'view'}
 				onSave={saveGallery}
 				onCancel={cancelGallery}
 				onChange={(next) => setUploadedGallery(next as any)}
@@ -449,7 +445,7 @@ export default function ProductScreen() {
 				previewHeight={carouselPreviewHeight}
 			/>
 		)
-	}, [carouselMedia, product?._id, canEditProduct, editMode.gallery, saveGallery, cancelGallery, saving, isScreenFocused, isLargeScreen, carouselMaxHeight, carouselPreviewHeight, translate])
+	}, [carouselMedia, product?._id, canEditProduct, saveGallery, cancelGallery, saving, isScreenFocused, isLargeScreen, carouselMaxHeight, carouselPreviewHeight, translate])
 
 	if (isInitialLoading && !product) {
 		return (
@@ -476,7 +472,7 @@ export default function ProductScreen() {
 			<MultiLingualCard
 				name={editMode.names ? { en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab } : (product.name as any)}
 				isEditing={editMode.names}
-				onEdit={canEditProduct ? () => setEditMode((prev) => ({ ...prev, names: true })) : (undefined as any)}
+				onPhaseChange={(editing) => canEditProduct && setEditMode((prev) => ({ ...prev, names: editing }))}
 				onSave={saveNames}
 				onCancel={cancelNames}
 				onChange={(lang, value) => {
