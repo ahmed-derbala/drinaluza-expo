@@ -471,7 +471,7 @@ export default function BusinessDashboardProductDetailScreen() {
 								targetModelName="products"
 								targetModelId={product._id}
 								title={translate('gallery', 'Gallery')}
-								mode={canEditProduct ? (editMode.gallery ? 'edit' : 'editable') : 'view'}
+								mode={canEditProduct ? (editMode.gallery ? 'form' : 'edit') : 'view'}
 								mediaType="mixed"
 								onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
 								onSave={saveGallery}

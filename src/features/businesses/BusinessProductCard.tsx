@@ -167,12 +167,9 @@ const BusinessProductCard = React.memo(function BusinessProductCard({ product, a
 
 const styles = StyleSheet.create({
 	card: {
-		borderRadius: 16,
-		borderWidth: 1,
 		padding: 0,
-		gap: 16,
-		minHeight: 440,
-		overflow: 'hidden'
+		minHeight: 440
+		// radius/border/overflow from BaseCard defaults
 	},
 	cardContent: { flex: 1, padding: 0 },
 	bgImageContainer: {

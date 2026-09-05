@@ -2,6 +2,7 @@ import { View, Text } from 'react-native'
 import { useTheme } from '@theme'
 import { useUser } from '@contexts/UserContext'
 import { BaseCard } from '@cards/BaseCard'
+import { SaveButton, CancelButton } from '@buttons'
 import { SectionRow } from '@ui/sections/SectionRow'
 import AddressForm from './AddressForm'
 import type { MultiLang } from './address.interface'
@@ -34,10 +35,16 @@ export default function AddressCard({ address, isEditing, onEdit, onSave, onCanc
 		<BaseCard
 			title={title ?? translate('address', 'Address')}
 			iconName="location-outline"
-			mode={isEditing ? 'edit' : onEdit !== undefined ? 'editable' : 'view'}
+			mode={isEditing ? 'form' : onEdit !== undefined ? 'edit' : 'view'}
 			onEdit={onEdit}
-			onSave={onSave}
-			onCancel={onCancel}
+			headerRight={
+				isEditing ? (
+					<>
+						<CancelButton onPress={onCancel} />
+						<SaveButton onPress={onSave} />
+					</>
+				) : null
+			}
 		>
 			{isEditing ? (
 				<AddressForm

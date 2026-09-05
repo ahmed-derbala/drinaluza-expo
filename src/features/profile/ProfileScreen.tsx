@@ -19,7 +19,7 @@ import { SectionRow } from '@ui/sections/SectionRow'
 import { LanguageIcon, LANGUAGES } from '@ui/languages'
 import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@smart-media'
 import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@smart-header'
-import { IconBaseButton, CancelButton } from '@buttons'
+import { IconBaseButton, CancelButton, SaveButton } from '@buttons'
 import { MultiLingualCard } from '@languages/MultiLingualCard'
 import Spinner from '@ui/spinner/Spinner'
 import { showAlert } from '@helpers/popup'
@@ -374,10 +374,16 @@ export default function ProfileScreen() {
 					/>
 					<BaseCard
 						title="👤 Basic Information"
-						mode={editMode.basic ? 'edit' : 'editable'}
+						mode={editMode.basic ? 'form' : 'edit'}
 						onEdit={() => toggleEdit('basic', true)}
-						onSave={() => saveUserData('basic')}
-						onCancel={() => toggleEdit('basic', false)}
+						headerRight={
+							editMode.basic ? (
+								<>
+									<CancelButton onPress={() => toggleEdit('basic', false)} />
+									<SaveButton onPress={() => saveUserData('basic')} />
+								</>
+							) : null
+						}
 					>
 						{editMode.basic ? (
 							<>
@@ -438,10 +444,16 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="📍 Address"
-						mode={editMode.address ? 'edit' : 'editable'}
+						mode={editMode.address ? 'form' : 'edit'}
 						onEdit={() => toggleEdit('address', true)}
-						onSave={() => saveUserData('address')}
-						onCancel={() => toggleEdit('address', false)}
+						headerRight={
+							editMode.address ? (
+								<>
+									<CancelButton onPress={() => toggleEdit('address', false)} />
+									<SaveButton onPress={() => saveUserData('address')} />
+								</>
+							) : null
+						}
 					>
 						{editMode.address ? (
 							<AddressForm
@@ -469,10 +481,16 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="📍 Location"
-						mode={editMode.location ? 'edit' : 'editable'}
+						mode={editMode.location ? 'form' : 'edit'}
 						onEdit={() => toggleEdit('location', true)}
-						onSave={() => saveUserData('location')}
-						onCancel={() => toggleEdit('location', false)}
+						headerRight={
+							editMode.location ? (
+								<>
+									<CancelButton onPress={() => toggleEdit('location', false)} />
+									<SaveButton onPress={() => saveUserData('location')} />
+								</>
+							) : null
+						}
 					>
 						{editMode.location ? (
 							<LocationForm location={userData.location} onChange={(location) => updateField('location', { ...userData.location, ...location })} />
@@ -521,10 +539,16 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="🌐 Social Media"
-						mode={editMode.social ? 'edit' : 'editable'}
+						mode={editMode.social ? 'form' : 'edit'}
 						onEdit={() => toggleEdit('social', true)}
-						onSave={() => saveUserData('social')}
-						onCancel={() => toggleEdit('social', false)}
+						headerRight={
+							editMode.social ? (
+								<>
+									<CancelButton onPress={() => toggleEdit('social', false)} />
+									<SaveButton onPress={() => saveUserData('social')} />
+								</>
+							) : null
+						}
 					>
 						{editMode.social ? (
 							SOCIAL_PLATFORMS.map((platform) => (
@@ -596,10 +620,16 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title="📞 Contact Information"
-						mode={editMode.phone ? 'edit' : 'editable'}
+						mode={editMode.phone ? 'form' : 'edit'}
 						onEdit={() => toggleEdit('phone', true)}
-						onSave={() => saveUserData('phone')}
-						onCancel={() => toggleEdit('phone', false)}
+						headerRight={
+							editMode.phone ? (
+								<>
+									<CancelButton onPress={() => toggleEdit('phone', false)} />
+									<SaveButton onPress={() => saveUserData('phone')} />
+								</>
+							) : null
+						}
 					>
 						{editMode.phone ? (
 							<ContactForm
@@ -673,10 +703,16 @@ export default function ProfileScreen() {
 					</BaseCard>
 					<BaseCard
 						title={'⚙️ ' + translate('settings', 'Account Settings')}
-						mode={editMode.settings ? 'edit' : 'editable'}
+						mode={editMode.settings ? 'form' : 'edit'}
 						onEdit={() => toggleEdit('settings', true)}
-						onSave={() => saveUserData('settings')}
-						onCancel={() => toggleEdit('settings', false)}
+						headerRight={
+							editMode.settings ? (
+								<>
+									<CancelButton onPress={() => toggleEdit('settings', false)} />
+									<SaveButton onPress={() => saveUserData('settings')} />
+								</>
+							) : null
+						}
 					>
 						{editMode.settings ? (
 							<>

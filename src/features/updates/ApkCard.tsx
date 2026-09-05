@@ -10,11 +10,8 @@ import { formatBytes } from '@helpers/format'
 
 const styles = StyleSheet.create({
 	card: {
-		flexDirection: 'column',
-		gap: 14,
-		padding: 16,
-		borderRadius: 20,
 		minHeight: 0
+		// radius via borderRadius prop; padding/overflow from BaseCard defaults
 	},
 	topRow: {
 		flexDirection: 'row',
@@ -79,7 +76,7 @@ export const ApkCard: React.FC<ApkCardProps> = ({ apk, onInstall, onDelete, onSh
 	const isCurrentVersion = apk.version === config.app.version
 
 	return (
-		<BaseCard style={styles.card}>
+		<BaseCard borderRadius={20} style={styles.card}>
 			<View style={styles.topRow}>
 				<View style={styles.iconContainer}>
 					<Ionicons name="logo-android" size={22} color={colors.primary} />

@@ -131,7 +131,7 @@ export interface FormInputProps {
 	onChangeText?: (text: string) => void
 	placeholder?: string
 	placeholderTextColor?: string
-	keyboardType?: 'default' | 'numeric' | 'phone-pad' | 'email-address'
+	keyboardType?: 'default' | 'numeric' | 'decimal-pad' | 'phone-pad' | 'email-address'
 	autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
 	maxLength?: number
 	editable?: boolean

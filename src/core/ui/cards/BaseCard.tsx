@@ -13,7 +13,7 @@ import React from 'react'
 import { StyleSheet, View, Pressable, Text, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@theme'
-import { IconBaseButton, CancelButton } from '@buttons'
+import { EditButton } from '@buttons'
 
 export type CardSize = 'sm' | 'md' | 'lg' | number
 
@@ -52,8 +52,8 @@ export interface BaseCardProps {
 	contentStyle?: StyleProp<ViewStyle>
 	/** Optional test ID. */
 	testID?: string
-	/** Card interaction mode. 'view' is read-only, 'editable' shows an edit trigger, 'edit' shows save/cancel. Defaults to 'view'. */
-	mode?: 'view' | 'edit' | 'editable'
+	/** Card interaction mode. 'view' is read-only, 'edit' shows an edit trigger, 'form' serves as a form with no action buttons (save is handled by another button on the screen, e.g. via headerRight). Defaults to 'view'. */
+	mode?: 'view' | 'edit' | 'form'
 	/** Optional title displayed in the header. */
 	title?: React.ReactNode
 	/** Optional title style. */
@@ -62,14 +62,8 @@ export interface BaseCardProps {
 	iconName?: React.ComponentProps<typeof Ionicons>['name']
 	/** Extra content rendered in the header, before edit/save/cancel controls. */
 	headerRight?: React.ReactNode
-	/** Edit action for 'editable' mode. */
+	/** Edit action for 'edit' mode. The card is fully controlled: activating the form and saving are owned by the caller. */
 	onEdit?: () => void
-	/** Save action for 'edit' mode. */
-	onSave?: () => void
-	/** Cancel action for 'edit' mode. */
-	onCancel?: () => void
-	/** Loading state for the 'edit' mode save action. */
-	loading?: boolean
 }
 
 function resolveSize(size: CardSize = 'md'): { padding: number; minHeight: number } {
@@ -99,10 +93,7 @@ export function BaseCard({
 	titleStyle,
 	iconName,
 	headerRight,
-	onEdit,
-	onSave,
-	onCancel,
-	loading = false
+	onEdit
 }: BaseCardProps) {
 	const { colors } = useTheme()
 	const { padding, minHeight } = resolveSize(size)
@@ -122,29 +113,12 @@ export function BaseCard({
 
 	const cardStyles = [styles.baseCard, computedStyle, style]
 
-	const [currentMode, setCurrentMode] = React.useState(mode)
-	React.useEffect(() => {
-		setCurrentMode(mode)
-	}, [mode])
-
-	const isEdit = currentMode === 'edit'
-	const isEditable = currentMode === 'editable'
-	const showHeader = !!title || !!iconName || !!headerRight || isEdit || isEditable
+	const isForm = mode === 'form'
+	const isEdit = mode === 'edit'
+	const showHeader = !!title || !!iconName || !!headerRight || isForm || isEdit
 
 	const handleEdit = () => {
 		onEdit?.()
-		// Parent-driven mode wins: only advance internally when the parent provides no handler.
-		if (!onEdit) setCurrentMode('edit')
-	}
-
-	const handleSave = () => {
-		onSave?.()
-		if (!onSave) setCurrentMode('editable')
-	}
-
-	const handleCancel = () => {
-		onCancel?.()
-		if (!onCancel) setCurrentMode('editable')
 	}
 
 	const titleContent = title ? typeof title === 'string' ? <Text style={[styles.title, { color: colors.text }, titleStyle]}>{title}</Text> : title : null
@@ -157,13 +131,7 @@ export function BaseCard({
 			</View>
 			<View style={styles.actions}>
 				{headerRight}
-				{isEditable ? <IconBaseButton icon="create-outline" label="Edit" onPress={handleEdit} style={styles.iconButton} /> : null}
-				{isEdit ? (
-					<>
-						<CancelButton onPress={handleCancel} style={styles.iconButton} />
-						<IconBaseButton icon="checkmark-circle" label="Save" onPress={handleSave} variant="success" disabled={loading} loading={loading} style={styles.iconButton} />
-					</>
-				) : null}
+				{isEdit ? <EditButton onPress={handleEdit} style={styles.iconButton} /> : null}
 			</View>
 		</View>
 	) : null

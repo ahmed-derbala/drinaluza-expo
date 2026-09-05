@@ -31,7 +31,11 @@ trigger: always_on
 ### cards
 - all cards must be based on BaseCard
 - a card must be implemented on its own file
-
+- BaseCard purpose is to prevent duplicate and repetitive code across cards and set a standard shape and size for cards
+- BaseCard has 3 modes:
+  - view: show card data. no edit, cancel or save buttons in the top right
+  - form: card data can be edited. no edit, cancel or save buttons in the top right
+  - edit: card is shown in view mode. an edit button in the top right that activates card form mode. when pressed, edit button is replaced with cancel and save buttons
 ### modals
 - all modals must be based on BaseModal
 - a modal must be implemented on its own file

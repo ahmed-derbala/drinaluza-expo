@@ -8,11 +8,8 @@ import { config } from '@/config'
 const styles = StyleSheet.create({
 	card: {
 		flex: 1,
-		flexDirection: 'column',
-		gap: 14,
-		padding: 16,
-		borderRadius: 20,
 		minHeight: 0
+		// radius via borderRadius prop; padding/overflow from BaseCard defaults
 	},
 	topRow: {
 		flexDirection: 'row',
@@ -41,7 +38,7 @@ export const CurrentVersionCard: React.FC = () => {
 	const { colors } = useTheme()
 
 	return (
-		<BaseCard style={styles.card}>
+		<BaseCard borderRadius={20} style={styles.card}>
 			<View style={styles.topRow}>
 				<View style={styles.iconContainer}>
 					<Ionicons name="phone-portrait-outline" size={22} color={colors.textTertiary} />

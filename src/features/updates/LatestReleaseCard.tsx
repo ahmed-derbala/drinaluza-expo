@@ -15,11 +15,8 @@ import { formatBytes } from '@helpers/format'
 const styles = StyleSheet.create({
 	card: {
 		flex: 1,
-		flexDirection: 'column',
-		gap: 20,
-		padding: 16,
-		borderRadius: 20,
 		minHeight: 0
+		// radius via borderRadius prop; padding/overflow from BaseCard defaults
 	},
 	topRow: {
 		flexDirection: 'row',
@@ -273,7 +270,7 @@ export const LatestReleaseCard: React.FC = () => {
 	const valueColor = isHighlight ? colors.info : colors.textTertiary
 
 	return (
-		<BaseCard backgroundColor={resolvedBackground} borderColor={resolvedBorder} style={styles.card}>
+		<BaseCard backgroundColor={resolvedBackground} borderColor={resolvedBorder} borderRadius={20} style={styles.card}>
 			<View style={styles.topRow}>
 				{isWeb ? (
 					<DownloadButton downloadUrl={latestRelease?.download_url} size={48} variant="primary" disabled={!latestRelease?.download_url} />

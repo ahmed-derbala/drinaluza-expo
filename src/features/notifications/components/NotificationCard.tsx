@@ -37,7 +37,6 @@ export const NotificationCard = React.memo(function NotificationCard({ item, onP
 			activeOpacity={0.7}
 			borderColor={borderColor}
 			style={[
-				styles.card,
 				{
 					minHeight: 0,
 					maxHeight: maxCardHeight,
@@ -66,9 +65,6 @@ export const NotificationCard = React.memo(function NotificationCard({ item, onP
 })
 
 const styles = StyleSheet.create({
-	card: {
-		borderRadius: 16
-	},
 	cardHeader: {
 		flexDirection: 'row',
 		justifyContent: 'space-between',

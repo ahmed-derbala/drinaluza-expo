@@ -1,7 +1,8 @@
-import { themeColors } from '@theme'
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet } from 'react-native'
 import { IconBaseButton } from '@buttons/IconBaseButton'
+import { SaveButton, CancelButton } from '@buttons'
 import { BaseCard } from '@cards/BaseCard'
+import { ProductPricingForm } from '@products/forms/ProductPricingForm'
 
 export interface ProductPricingCardProps {
 	variant: 'view' | 'edit' | 'create'
@@ -38,6 +39,8 @@ export interface ProductPricingCardProps {
 	onEditPress?: () => void
 	onSavePress?: () => void
 	onCancelPress?: () => void
+	/** Loading state forwarded to BaseCard (spins/disables the save action). */
+	loading?: boolean
 }
 
 export default function ProductPricingCard({
@@ -70,147 +73,78 @@ export default function ProductPricingCard({
 	canEdit,
 	onEditPress,
 	onSavePress,
-	onCancelPress
+	onCancelPress,
+	loading = false
 }: ProductPricingCardProps) {
 	const styles = createStyles(colors)
 
 	if (variant === 'create' || variant === 'edit') {
 		const isEditing = variant === 'edit'
 		return (
-			<BaseCard title={translate('pricing_units', 'Pricing & Units')} mode={isEditing ? 'edit' : 'view'} onSave={onSavePress} onCancel={onCancelPress}>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('price_tnd', 'Price (TND)')} *</Text>
-						<View style={[styles.inputBox, { borderColor: priceTND ? colors.primary : colors.border }]}>
-							<Text style={styles.prefix}>TND</Text>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={priceTND} onChangeText={setPriceTND} placeholder="0.00" keyboardType="decimal-pad" />
-						</View>
-					</View>
-				</View>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('unit_measure', 'Unit Measure')}</Text>
-						<View style={styles.segmentContainer}>
-							{['kg', 'piece', 'crate'].map((val) => {
-								const isSelected = unit === val
-								return (
-									<TouchableOpacity key={val} style={[styles.segmentButton, isSelected && { backgroundColor: colors.primary }]} onPress={() => setUnit(val)}>
-										<Text style={[styles.segmentText, { color: isSelected ? themeColors.buttonText : colors.textSecondary }]}>{translate(val, val)}</Text>
-									</TouchableOpacity>
-								)
-							})}
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('unit_step', 'Unit Step')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={unitStep} onChangeText={setUnitStep} placeholder="1" keyboardType="numeric" />
-						</View>
-					</View>
-				</View>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('min_unit', 'Min Limit')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={minUnit} onChangeText={setMinUnit} placeholder="1" keyboardType="numeric" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('max_unit', 'Max Limit')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={maxUnit} onChangeText={setMaxUnit} placeholder="10" keyboardType="numeric" />
-						</View>
-					</View>
-				</View>
-				<Text style={styles.subSectionTitle}>{translate('single_piece_weight_kg', 'Single piece weight (kg)')}</Text>
-				<View style={styles.row}>
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('min', 'Min')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMinWeightKg} onChangeText={setSinglePieceMinWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('avg', 'Avg')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceAvgWeightKg} onChangeText={setSinglePieceAvgWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
-						</View>
-					</View>
-					<View style={{ width: 12 }} />
-					<View style={styles.flexItem}>
-						<Text style={styles.fieldLabel}>{translate('max', 'Max')}</Text>
-						<View style={[styles.inputBox, { borderColor: colors.primary }]}>
-							<TextInput style={[styles.textInput, { color: colors.text }]} value={singlePieceMaxWeightKg} onChangeText={setSinglePieceMaxWeightKg} placeholder="0.0" keyboardType="decimal-pad" />
-						</View>
-					</View>
-				</View>
+			<BaseCard
+				title={translate('pricing_units', 'Pricing')}
+				mode={isEditing ? 'form' : 'view'}
+				headerRight={
+					isEditing && (onSavePress || onCancelPress) ? (
+						<>
+							{onCancelPress ? <CancelButton onPress={onCancelPress} /> : null}
+							{onSavePress ? <SaveButton onPress={onSavePress} loading={loading} disabled={loading} /> : null}
+						</>
+					) : null
+				}
+			>
+				<ProductPricingForm
+					colors={colors}
+					translate={translate}
+					priceTND={priceTND}
+					setPriceTND={setPriceTND}
+					unit={unit}
+					setUnit={setUnit}
+					minUnit={minUnit}
+					setMinUnit={setMinUnit}
+					maxUnit={maxUnit}
+					setMaxUnit={setMaxUnit}
+					unitStep={unitStep}
+					setUnitStep={setUnitStep}
+					singlePieceMinWeightKg={singlePieceMinWeightKg}
+					setSinglePieceMinWeightKg={setSinglePieceMinWeightKg}
+					singlePieceAvgWeightKg={singlePieceAvgWeightKg}
+					setSinglePieceAvgWeightKg={setSinglePieceAvgWeightKg}
+					singlePieceMaxWeightKg={singlePieceMaxWeightKg}
+					setSinglePieceMaxWeightKg={setSinglePieceMaxWeightKg}
+				/>
 			</BaseCard>
 		)
 	}
 
 	// view mode
 	return (
-		<View style={styles.viewSection}>
-			<View style={styles.viewHeader}>
-				<Text style={styles.priceLabel}>{translate('price', 'Price')}</Text>
-				{canEdit && onEditPress && <IconBaseButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.editActionBtn} />}
-			</View>
-			<View style={styles.priceContainer}>
-				<Text style={[styles.priceValue, { color: colors.primary }]}>{formattedPrice}</Text>
-				<Text style={[styles.priceUnit, { color: colors.textSecondary }]}>/ {unitMeasure || translate('unit', 'unit')}</Text>
-			</View>
-			<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
-				{translate('min', 'Min')}: {minLimit} - {translate('max', 'Max')}: {maxLimit} {unitMeasure || ''}
-			</Text>
-			{(singlePieceMin != null || singlePieceAvg != null || singlePieceMax != null) && (
+		<BaseCard>
+			<View style={styles.viewSection}>
+				<View style={styles.viewHeader}>
+					<Text style={styles.priceLabel}>{translate('price', 'Price')}</Text>
+					{canEdit && onEditPress && <IconBaseButton icon="create-outline" label={translate('edit', 'Edit')} onPress={onEditPress} style={styles.editActionBtn} />}
+				</View>
+				<View style={styles.priceContainer}>
+					<Text style={[styles.priceValue, { color: colors.primary }]}>{formattedPrice}</Text>
+					<Text style={[styles.priceUnit, { color: colors.textSecondary }]}>/ {unitMeasure || translate('unit', 'unit')}</Text>
+				</View>
 				<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
-					{translate('single_piece_weight', 'Single piece weight')}: {singlePieceMin != null ? singlePieceMin.toFixed(2) : '—'} / {singlePieceAvg != null ? singlePieceAvg.toFixed(2) : '—'} /{' '}
-					{singlePieceMax != null ? singlePieceMax.toFixed(2) : '—'} kg
+					{translate('min', 'Min')}: {minLimit} - {translate('max', 'Max')}: {maxLimit} {unitMeasure || ''}
 				</Text>
-			)}
-		</View>
+				{(singlePieceMin != null || singlePieceAvg != null || singlePieceMax != null) && (
+					<Text style={[styles.quantityRange, { color: colors.textSecondary }]}>
+						{translate('single_piece_weight', 'Single piece weight')}: {singlePieceMin != null ? singlePieceMin.toFixed(2) : '—'} / {singlePieceAvg != null ? singlePieceAvg.toFixed(2) : '—'} /{' '}
+						{singlePieceMax != null ? singlePieceMax.toFixed(2) : '—'} kg
+					</Text>
+				)}
+			</View>
+		</BaseCard>
 	)
 }
 
 const createStyles = (colors: any) =>
 	StyleSheet.create({
-		row: {
-			flexDirection: 'row',
-			marginBottom: 16
-		},
-		flexItem: {
-			flex: 1
-		},
-		fieldLabel: {
-			fontSize: 14,
-			fontWeight: '700',
-			color: colors.text,
-			marginBottom: 8
-		},
-		prefix: {
-			fontSize: 16,
-			fontWeight: '600',
-			color: colors.textSecondary,
-			marginRight: 8
-		},
-		inputBox: {
-			height: 48,
-			borderRadius: 12,
-			borderWidth: 1.5,
-			backgroundColor: colors.surfaceVariant,
-			paddingHorizontal: 12,
-			flexDirection: 'row',
-			alignItems: 'center'
-		},
-		textInput: {
-			flex: 1,
-			fontSize: 16,
-			height: '100%',
-			padding: 0
-		},
 		viewSection: {
 			marginBottom: 20,
 			paddingBottom: 20,
@@ -251,32 +185,5 @@ const createStyles = (colors: any) =>
 			fontSize: 13,
 			marginTop: 6,
 			fontWeight: '500'
-		},
-		subSectionTitle: {
-			fontSize: 13,
-			fontWeight: '700',
-			color: colors.text,
-			marginTop: 16,
-			marginBottom: 8
-		},
-		segmentContainer: {
-			flexDirection: 'row',
-			height: 48,
-			borderRadius: 12,
-			borderWidth: 1.5,
-			borderColor: colors.border,
-			backgroundColor: colors.surfaceVariant,
-			padding: 4,
-			gap: 4
-		},
-		segmentButton: {
-			flex: 1,
-			borderRadius: 8,
-			justifyContent: 'center',
-			alignItems: 'center'
-		},
-		segmentText: {
-			fontSize: 14,
-			fontWeight: '700'
 		}
 	})

@@ -171,11 +171,11 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 // ─── Styles ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
 	card: {
-		borderRadius: 16,
 		padding: 12 * 1.8,
 		marginBottom: 16,
 		minHeight: 440,
 		justifyContent: 'space-between'
+		// radius/border/overflow from BaseCard defaults
 	},
 	header: {
 		flexDirection: 'row',

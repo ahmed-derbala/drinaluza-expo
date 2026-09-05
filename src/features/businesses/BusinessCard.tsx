@@ -37,7 +37,7 @@ const BusinessCard: React.FC<BusinessCardProps> = ({ business, style }) => {
 	const ratingCount = business.rating?.count || 0
 
 	return (
-		<BaseCard onPress={handleBusinessPress} style={[styles.card, style]} contentStyle={styles.cardContent} borderColor={colors.info}>
+		<BaseCard onPress={handleBusinessPress} style={[styles.card, style]} contentStyle={styles.cardContent} borderColor={colors.info} borderWidth={1.5}>
 			{/* Background — business thumbnail as card background */}
 			<View style={[styles.bgImageContainer, { pointerEvents: 'none' as any }]}>
 				<SmartMediaView media={business.media?.thumbnail?.url} style={StyleSheet.absoluteFill} contentFit="cover" />
@@ -100,10 +100,8 @@ const styles = StyleSheet.create({
 		height: CARD_HEIGHT,
 		minHeight: CARD_HEIGHT,
 		maxHeight: CARD_HEIGHT,
-		padding: 0,
-		overflow: 'hidden' as any,
-		borderWidth: 1.5,
-		borderRadius: 16
+		padding: 0
+		// borderWidth/borderColor via props; radius/overflow from BaseCard defaults
 	},
 	cardContent: {
 		flex: 1,

@@ -19,11 +19,11 @@ import SearchableModalPicker from '@ui/SearchableModalPicker'
 import { showAlert } from '@helpers/popup'
 import { log } from '@log'
 import { parseError } from '@error/errorHandler'
-import { MultiLingualForm, MultiLingualCard } from '@languages'
-import { BaseCard } from '@cards/BaseCard'
+import { MultiLingualCard } from '@languages'
 // Import the reusable section components
 import ProductPricingCard from '@products/cards/ProductPricingCard'
-import { ProductStockSection, ProductGallerySection, ProductSpecsSection } from '@products/common'
+import { ProductGallerySection, ProductSpecsSection } from '@products/common'
+import { StockCard } from '@products/stock'
 export default function CreateProductScreen() {
 	const { businessSlug, businessId } = useLocalSearchParams<{ businessSlug?: string; businessId?: string }>()
 	const router = useRouter()
@@ -361,16 +361,16 @@ export default function CreateProductScreen() {
 						/>
 					</View>
 					{/* Name Section */}
-					<BaseCard title={translate('names', 'Names')}>
-						<MultiLingualForm
-							nameEn={productNameEn}
-							setNameEn={setProductNameEn}
-							nameTnLatn={productNameTnLatn}
-							setNameTnLatn={setProductNameTnLatn}
-							nameTnArab={productNameTnArab}
-							setNameTnArab={setProductNameTnArab}
-						/>
-					</BaseCard>
+					<MultiLingualCard
+						title={translate('names', 'Names')}
+						name={{ en: productNameEn, tn_latn: productNameTnLatn, tn_arab: productNameTnArab }}
+						isEditing
+						onChange={(lang, value) => {
+							if (lang === 'en') setProductNameEn(value)
+							else if (lang === 'tn_latn') setProductNameTnLatn(value)
+							else if (lang === 'tn_arab') setProductNameTnArab(value)
+						}}
+					/>
 					{/* Pricing Section */}
 					<ProductPricingCard
 						variant="create"
@@ -394,15 +394,7 @@ export default function CreateProductScreen() {
 						setSinglePieceMaxWeightKg={setSinglePieceMaxWeightKg}
 					/>
 					{/* Stock Section */}
-					<ProductStockSection
-						variant="create"
-						colors={colors}
-						translate={translate}
-						stockQuantity={stockQuantity}
-						setStockQuantity={setStockQuantity}
-						minThreshold={minThreshold}
-						setMinThreshold={setMinThreshold}
-					/>
+					<StockCard variant="create" stockQuantity={stockQuantity} setStockQuantity={setStockQuantity} minThreshold={minThreshold} setMinThreshold={setMinThreshold} />
 					{/* Specs Card */}
 					<ProductSpecsSection
 						editable={true}

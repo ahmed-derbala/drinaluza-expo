@@ -4,6 +4,7 @@ import { Image } from 'expo-image'
 import { Ionicons } from '@expo/vector-icons'
 import { BaseCard, type CardSize } from '@cards/BaseCard'
 import { IconBaseButton } from '@buttons/IconBaseButton'
+import { SaveButton, CancelButton } from '@buttons'
 import Spinner from '@ui/spinner/Spinner'
 import { themeColors } from '@theme'
 import { log } from '@log'
@@ -24,7 +25,7 @@ export interface CarouselCardProps {
 	targetModelId?: string
 	maxCount?: number
 	mediaType?: PickMediaType
-	mode?: 'view' | 'editable' | 'edit'
+	mode?: 'view' | 'edit' | 'form'
 	size?: CardSize
 	style?: StyleProp<ViewStyle>
 	previewHeight?: number
@@ -181,7 +182,7 @@ const CarouselCardComponent = ({
 	)
 
 	const uploadDisabled = useMemo(() => internalUploading || !targetModelName || !targetModelId || items.length >= maxCount, [internalUploading, targetModelName, targetModelId, items.length, maxCount])
-	const isEditing = mode === 'edit'
+	const isEditing = mode === 'form'
 
 	const handleUpload = useCallback(async () => {
 		if (uploadDisabled || !targetModelName || !targetModelId) return
@@ -265,16 +266,21 @@ const CarouselCardComponent = ({
 			size={size}
 			style={style}
 			onEdit={onEdit}
-			onSave={onSave}
-			onCancel={onCancel}
-			loading={loading}
+			headerRight={
+				isEditing && (onSave || onCancel) ? (
+					<>
+						{onCancel ? <CancelButton onPress={onCancel} /> : null}
+						{onSave ? <SaveButton onPress={onSave} loading={loading} disabled={loading} /> : null}
+					</>
+				) : null
+			}
 		>
 			<View style={[styles.preview, previewHeight ? ({ height: previewHeight, aspectRatio: undefined } as any) : null]}>
 				{activeItem ? (
 					<SmartMediaView
 						media={activeItem as any}
 						contentFit={contentFit}
-						enableFullscreenPreview={mode !== 'edit'}
+						enableFullscreenPreview={mode !== 'form'}
 						autoPlay={shouldAutoPlayVideo}
 						loop={shouldLoopSingleVideo}
 						onPlaybackEnd={isVisible && canAdvance && activeIsVideo ? advanceToNext : undefined}

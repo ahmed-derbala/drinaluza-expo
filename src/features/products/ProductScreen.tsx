@@ -13,10 +13,12 @@ import { ProductType, FileRef } from '@products/products.type'
 import { MultiLang, formatAddress } from '@address'
 import { MultiLingualCard } from '@languages'
 import ProductPricingCard from '@products/cards/ProductPricingCard'
+import { CheckoutCard } from '@products/cards/CheckoutCard'
+import { StockCard } from '@products/stock'
 import { ProductStockSection, ProductSpecsSection } from '@products/common'
 import ErrorBlock from '@error/ErrorBlock'
 import { Spinner } from '@spinner'
-import { IconBaseButton, PhoneButton, WhatsAppButton, EmailButton, WebsiteButton, DirectionsButton } from '@buttons'
+import { PhoneButton, WhatsAppButton, EmailButton, WebsiteButton, DirectionsButton } from '@buttons'
 import { SmartMediaView, deleteMediaFile, CarouselCard } from '@smart-media'
 import { toast } from '@toast'
 import { useScrollHandler } from '@scroll'
@@ -88,6 +90,7 @@ export default function ProductScreen() {
 	// Stock
 	const [stockQuantity, setStockQuantity] = useState('0')
 	const [minThreshold, setMinThreshold] = useState('10')
+	// Gallery
 	// Gallery
 	const [uploadedGallery, setUploadedGallery] = useState<FileRef[]>([])
 	const [removedFiles, setRemovedFiles] = useState<FileRef[]>([])
@@ -434,7 +437,7 @@ export default function ProductScreen() {
 				targetModelName="products"
 				targetModelId={product._id}
 				title={translate('media', 'Media')}
-				mode={canEditProduct ? (editMode.gallery ? 'edit' : 'editable') : 'view'}
+				mode={canEditProduct ? (editMode.gallery ? 'form' : 'edit') : 'view'}
 				onEdit={() => setEditMode((prev) => ({ ...prev, gallery: true }))}
 				onSave={saveGallery}
 				onCancel={cancelGallery}
@@ -469,8 +472,7 @@ export default function ProductScreen() {
 	const unitPrice = (priceTotal[currency as keyof typeof priceTotal] as number | null | undefined) || priceTotal.tnd || 0
 	const isAvailable = product.stock.quantity > 0 && product.state?.code === 'active'
 	const renderInfoCard = () => (
-		<View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.border }]}>
-			{saving && <Spinner size="small" expand={false} style={styles.savingOverlay} />}
+		<>
 			<MultiLingualCard
 				name={editMode.names ? { en: nameEn, tn_latn: nameTnLatn, tn_arab: nameTnArab } : (product.name as any)}
 				isEditing={editMode.names}
@@ -487,6 +489,7 @@ export default function ProductScreen() {
 				variant={editMode.pricing ? 'edit' : 'view'}
 				colors={colors}
 				translate={translate}
+				loading={saving}
 				priceTND={priceTND}
 				setPriceTND={setPriceTND}
 				unit={unit}
@@ -515,10 +518,8 @@ export default function ProductScreen() {
 				onSavePress={savePricing}
 				onCancelPress={cancelPricing}
 			/>
-			<ProductStockSection
+			<StockCard
 				variant={editMode.stock ? 'edit' : 'view'}
-				colors={colors}
-				translate={translate}
 				stockQuantity={stockQuantity}
 				setStockQuantity={setStockQuantity}
 				minThreshold={minThreshold}
@@ -529,24 +530,10 @@ export default function ProductScreen() {
 				onEditPress={canEditProduct ? () => setEditMode((prev) => ({ ...prev, stock: true })) : undefined}
 				onSavePress={saveStock}
 				onCancelPress={cancelStock}
+				loading={saving}
 			/>
-			{isAvailable && (
-				<View style={[styles.checkoutPanel, { borderTopColor: colors.border }]}>
-					<View style={styles.checkoutTotalCol}>
-						<Text style={[styles.checkoutTotalLabel, { color: colors.textSecondary }]}>{translate('total', 'Total')}</Text>
-						<Text style={[styles.checkoutTotalPrice, { color: colors.primary }]}>{formatPrice({ total: { [currency]: unitPrice * quantity } })}</Text>
-					</View>
-					<View style={styles.checkoutActionsCol}>
-						<View style={[styles.stepperContainer, { backgroundColor: colors.surfaceVariant, borderColor: colors.border }]}>
-							<IconBaseButton icon="remove-outline" label={translate('decrease', 'Decrease')} onPress={decrement} iconColor={colors.text} style={styles.stepperBtn} />
-							<Text style={[styles.stepperText, { color: colors.text }]}>{quantity}</Text>
-							<IconBaseButton icon="add-outline" label={translate('increase', 'Increase')} onPress={increment} iconColor={colors.text} style={styles.stepperBtn} />
-						</View>
-						<IconBaseButton icon="cart-outline" label={translate('add_to_cart', 'Add to Cart')} onPress={handleAddToCart} variant="primary" />
-					</View>
-				</View>
-			)}
-		</View>
+			{isAvailable && <CheckoutCard unitPrice={unitPrice} quantity={quantity} unitMeasure={product.unit?.measure} onIncrement={increment} onDecrement={decrement} onAddToCart={handleAddToCart} />}
+		</>
 	)
 	const renderMetadata = () => {
 		const hasPhone = Boolean(product?.business?.contact?.phone?.fullNumber || product?.business?.contact?.backupPhones?.[0]?.fullNumber)
@@ -789,64 +776,6 @@ const styles = StyleSheet.create({
 	mobileLayoutContainer: {
 		width: '100%',
 		gap: 16
-	},
-	card: {
-		borderRadius: 24,
-		padding: 24,
-		borderWidth: 1
-	},
-	savingOverlay: {
-		position: 'absolute',
-		right: 16,
-		top: 16,
-		zIndex: 10
-	},
-	checkoutPanel: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		marginTop: 20,
-		paddingTop: 20,
-		borderTopWidth: 1
-	},
-	checkoutTotalCol: {
-		flex: 1
-	},
-	checkoutTotalLabel: {
-		fontSize: 10,
-		fontWeight: '700',
-		textTransform: 'uppercase',
-		letterSpacing: 0.8,
-		marginBottom: 2
-	},
-	checkoutTotalPrice: {
-		fontSize: 22,
-		fontWeight: '900',
-		letterSpacing: -0.5
-	},
-	checkoutActionsCol: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 12
-	},
-	stepperContainer: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		borderRadius: 12,
-		padding: 3,
-		borderWidth: 1
-	},
-	stepperBtn: {
-		width: 36,
-		height: 36,
-		justifyContent: 'center',
-		alignItems: 'center'
-	},
-	stepperText: {
-		fontSize: 16,
-		fontWeight: '800',
-		minWidth: 32,
-		textAlign: 'center'
 	},
 	metadataContainer: {
 		gap: 12

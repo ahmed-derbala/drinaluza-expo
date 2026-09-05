@@ -15,7 +15,7 @@ import { SmartMediaView, pickSingleMediaFile, uploadThumbnail } from '@smart-med
 import StateBadge from '@ui/badges/StateBadge'
 import { MultiLingualCard } from '@languages/MultiLingualCard'
 import { SmartHeader } from '@smart-header'
-import { IconBaseButton, DeleteButton } from '@buttons'
+import { IconBaseButton, DeleteButton, SaveButton, CancelButton } from '@buttons'
 import { BaseCard } from '@cards/BaseCard'
 import { SectionRow } from '@ui/sections/SectionRow'
 import { log } from '@log'
@@ -345,10 +345,16 @@ export default function EditBusinessScreen() {
 						{/* Description Card */}
 						<BaseCard
 							title={translate('about_business', 'About Business')}
-							mode={editMode.about ? 'edit' : 'editable'}
+							mode={editMode.about ? 'form' : 'edit'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, about: true }))}
-							onSave={saveAbout}
-							onCancel={() => cancelEdit('about')}
+							headerRight={
+								editMode.about ? (
+									<>
+										<CancelButton onPress={() => cancelEdit('about')} />
+										<SaveButton onPress={saveAbout} />
+									</>
+								) : null
+							}
 						>
 							{editMode.about ? (
 								<View style={styles.inputGroup}>
@@ -374,10 +380,16 @@ export default function EditBusinessScreen() {
 						{/* Contact Info Card */}
 						<BaseCard
 							title={translate('contact', 'Contact Info')}
-							mode={editMode.contact ? 'edit' : 'editable'}
+							mode={editMode.contact ? 'form' : 'edit'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, contact: true }))}
-							onSave={saveContact}
-							onCancel={() => cancelEdit('contact')}
+							headerRight={
+								editMode.contact ? (
+									<>
+										<CancelButton onPress={() => cancelEdit('contact')} />
+										<SaveButton onPress={saveContact} />
+									</>
+								) : null
+							}
 						>
 							{editMode.contact ? (
 								<View style={{ gap: 12 }}>
@@ -517,11 +529,19 @@ export default function EditBusinessScreen() {
 						{/* Coordinates Card */}
 						<BaseCard
 							title={translate('coordinates', 'Coordinates')}
-							mode={editMode.coordinates ? 'edit' : 'editable'}
+							mode={editMode.coordinates ? 'form' : 'edit'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, coordinates: true }))}
-							onSave={saveCoordinates}
-							onCancel={() => cancelEdit('coordinates')}
-							headerRight={editMode.coordinates && <IconBaseButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} style={styles.getLocationChip} />}
+							headerRight={
+								<>
+									{editMode.coordinates && <IconBaseButton icon="navigate" label={translate('get_current', 'GPS')} onPress={handleGetCurrentLocation} style={styles.getLocationChip} />}
+									{editMode.coordinates && (
+										<>
+											<CancelButton onPress={() => cancelEdit('coordinates')} />
+											<SaveButton onPress={saveCoordinates} />
+										</>
+									)}
+								</>
+							}
 						>
 							{editMode.coordinates ? (
 								<View style={{ gap: 12 }}>
@@ -648,10 +668,16 @@ export default function EditBusinessScreen() {
 						{/* Address Card */}
 						<BaseCard
 							title={translate('address', 'Address')}
-							mode={editMode.address ? 'edit' : 'editable'}
+							mode={editMode.address ? 'form' : 'edit'}
 							onEdit={() => setEditMode((prev) => ({ ...prev, address: true }))}
-							onSave={saveAddress}
-							onCancel={() => cancelEdit('address')}
+							headerRight={
+								editMode.address ? (
+									<>
+										<CancelButton onPress={() => cancelEdit('address')} />
+										<SaveButton onPress={saveAddress} />
+									</>
+								) : null
+							}
 						>
 							{editMode.address ? (
 								<AddressForm street={street} setStreet={setStreet} city={city} setCity={setCity} region={region} setRegion={setRegion} country={country} setCountry={setCountry} />
