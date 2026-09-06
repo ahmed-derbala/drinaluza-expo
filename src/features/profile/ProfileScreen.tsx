@@ -18,7 +18,7 @@ import { BaseCard } from '@cards/BaseCard'
 import { SectionRow } from '@ui/sections/SectionRow'
 import { LanguageIcon, LANGUAGES } from '@ui/languages'
 import { SmartMediaView, SmartMediaThumbnailBlock, type MediaFile } from '@smart-media'
-import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderSwitchUserButton, SmartHeader } from '@smart-header'
+import { HeaderRefreshButton, HeaderRequestBusinessButton, HeaderAccountSwitchButton, SmartHeader } from '@smart-header'
 import { IconBaseButton } from '@buttons'
 import { MultiLingualCard } from '@languages/MultiLingualCard'
 import Spinner from '@ui/spinner/Spinner'
@@ -265,9 +265,7 @@ export default function ProfileScreen() {
 		if (userData?.role === 'customer') {
 			actions.push(<HeaderRequestBusinessButton key="request-business" onPress={handleRequestBusiness} />)
 		}
-		actions.push(
-			<HeaderSwitchUserButton key="switch-user" onPress={handleSwitchUser} iconColor={colors.text} backgroundColor={colors.text + '05'} label={translate('switch_user', 'Switch User Account')} />
-		)
+		actions.push(<HeaderAccountSwitchButton key="switch-account" onPress={handleSwitchUser} label={translate('switch_user', 'Switch User Account')} />)
 		actions.push(
 			<HeaderRefreshButton
 				key="refresh"
@@ -279,7 +277,7 @@ export default function ProfileScreen() {
 			/>
 		)
 		return actions
-	}, [userData?.role, handleRequestBusiness, handleSwitchUser, refreshProfile, isRefreshing, isOffline, colors, translate])
+	}, [userData?.role, handleRequestBusiness, handleSwitchUser, refreshProfile, isRefreshing, isOffline, translate])
 	if (isInitialLoading) {
 		return <Spinner />
 	}

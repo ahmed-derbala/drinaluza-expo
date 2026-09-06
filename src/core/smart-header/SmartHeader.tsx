@@ -25,6 +25,7 @@ export {
 	HeaderCreateProductButton,
 	HeaderRequestBusinessButton,
 	HeaderSwitchUserButton,
+	HeaderAccountSwitchButton,
 	HeaderAllowPushButton
 } from './buttons'
 export interface SmartHeaderProps {

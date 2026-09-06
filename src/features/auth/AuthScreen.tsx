@@ -1,215 +1,30 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Platform, useWindowDimensions, KeyboardAvoidingView, Keyboard } from 'react-native'
-import { LinearGradient } from 'expo-linear-gradient'
+import { View, Text, StyleSheet, TextInput, ScrollView, Platform, useWindowDimensions, KeyboardAvoidingView, Keyboard } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
-import { Ionicons } from '@expo/vector-icons'
-import { format, formatDistanceToNow } from 'date-fns'
 import { getToken } from '@storage'
 import { useTheme, themeColors } from '@theme'
 import { useUser } from '@contexts/UserContext'
-import Spinner from '@ui/spinner/Spinner'
-import { SmartMediaView } from '@smart-media'
-import { DeleteButton, EyeButton } from '@buttons'
 import { SmartHeader } from '@smart-header'
 import { toast } from '@ui/toast/Toast'
 import { showConfirm } from '@helpers/popup'
 import { config } from '@/config'
 import { log } from '@log'
 import { getSavedAuthentications, deleteSavedAuthentication, signIn, signUp, signInWithToken, switchUser, SavedAuth } from './auth.api'
-import { LanguageIcon, LANGUAGES } from '@ui/languages'
+import AccountsCard from './AccountsCard'
+import AuthCard from './AuthCard'
+import LanguageSelectionBlock from './LanguageSelectionBlock'
 // ─── Static stylesheet — defined ONCE at module level, never recreated ────────
 const S = StyleSheet.create({
 	root: { flex: 1, backgroundColor: themeColors.background },
 	flex: { flex: 1 },
 	scrollContent: { flexGrow: 1 },
-	desktopGrid: { flex: 1, flexDirection: 'row', minHeight: '100%' as any },
-	brandPane: {
-		flex: 1,
-		backgroundColor: themeColors.modalOverlay,
-		padding: 56,
-		justifyContent: 'center',
-		borderRightWidth: StyleSheet.hairlineWidth,
-		borderRightColor: themeColors.border
-	},
-	brandLogoRow: { marginBottom: 20 },
-	brandIconBox: {
-		width: 52,
-		height: 52,
-		borderRadius: 14,
-		backgroundColor: themeColors.primaryContainer,
-		borderWidth: 1,
-		borderColor: themeColors.primaryContainer20,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	brandName: {
-		fontSize: 13,
-		fontWeight: '900',
-		color: themeColors.primary,
-		letterSpacing: 3,
-		textTransform: 'uppercase',
-		marginBottom: 16
-	},
-	brandDivider: { width: 40, height: 2, backgroundColor: themeColors.primary, borderRadius: 1, marginBottom: 24 },
-	brandHeadline: { fontSize: 36, fontWeight: '800', color: themeColors.text, lineHeight: 44, marginBottom: 16 },
-	brandSub: { fontSize: 15, color: themeColors.textTertiary, lineHeight: 22, marginBottom: 40 },
-	featuresList: { gap: 14 },
-	featureRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-	featureDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: themeColors.primary },
-	featureText: { fontSize: 14, color: themeColors.textSecondary, fontWeight: '500' },
 	formPane: { flex: 1, justifyContent: 'center', backgroundColor: themeColors.background },
 	formContainer: { padding: 24 },
-	formContainerTablet: { padding: 48, maxWidth: 480, alignSelf: 'center' as const, width: 480 },
-	mobileHeader: { marginBottom: 32 },
-	mobileLogoRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 28 },
-	mobileIconBox: {
-		width: 40,
-		height: 40,
-		borderRadius: 11,
-		backgroundColor: themeColors.primaryContainer,
-		borderWidth: 1,
-		borderColor: themeColors.primaryContainer20,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	mobileBrandName: { fontSize: 12, fontWeight: '900', color: themeColors.primary, letterSpacing: 2.5, textTransform: 'uppercase' },
-	mobileTitle: { fontSize: 34, fontWeight: '800', color: themeColors.text, lineHeight: 40, marginBottom: 6 },
-	mobileSub: { fontSize: 15, color: themeColors.textTertiary, lineHeight: 20 },
-	langSection: { marginBottom: 20 },
-	langRow: { flexDirection: 'row', gap: 8, paddingVertical: 2 },
-	langChip: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		gap: 4,
-		paddingHorizontal: 10,
-		paddingVertical: 6,
-		borderRadius: 20,
-		borderWidth: 1,
-		borderColor: themeColors.border,
-		backgroundColor: 'transparent'
-	},
-	langChipActive: { borderColor: themeColors.primary, backgroundColor: themeColors.primaryContainer },
-	accountsSection: { marginBottom: 20 },
-	sectionLabel: {
-		fontSize: 11,
-		fontWeight: '700',
-		color: themeColors.textTertiary,
-		letterSpacing: 0.8,
-		textTransform: 'uppercase',
-		marginBottom: 10
-	},
-	accountsList: { gap: 10, paddingBottom: 4 },
-	accountRow: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		justifyContent: 'space-between',
-		backgroundColor: themeColors.surface,
-		borderWidth: 1,
-		borderColor: themeColors.border,
-		borderRadius: 12,
-		padding: 10
-	},
-	accountRowActive: {
-		borderColor: themeColors.primary,
-		backgroundColor: themeColors.primaryContainer20
-	},
-	accountRowClickable: {
-		flex: 1,
-		flexDirection: 'row',
-		alignItems: 'center'
-	},
-	accountAvatar: {
-		width: 40,
-		height: 40,
-		borderRadius: 20,
-		overflow: 'hidden',
-		backgroundColor: themeColors.surface,
-		borderWidth: 1.5,
-		borderColor: themeColors.border
-	},
-	accountAvatarActive: {
-		borderColor: themeColors.primary
-	},
-	accountAvatarImg: { width: '100%', height: '100%' },
-	accountInfo: {
-		flex: 1,
-		paddingHorizontal: 12
-	},
-	accountSlug: {
-		fontSize: 14,
-		fontWeight: '600',
-		color: themeColors.text
-	},
-	accountSlugActive: {
-		color: themeColors.primary
-	},
-	accountAccessTime: {
-		fontSize: 11,
-		color: themeColors.textTertiary,
-		marginTop: 2
-	},
-	accountRemoveBtn: {
-		padding: 10,
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	divider: { height: StyleSheet.hairlineWidth, backgroundColor: themeColors.textTertiary, marginBottom: 24 },
-	fieldGroup: { marginBottom: 16 },
-	fieldLabel: {
-		fontSize: 12,
-		fontWeight: '600',
-		color: themeColors.textTertiary,
-		letterSpacing: 0.4,
-		textTransform: 'uppercase',
-		marginBottom: 8
-	},
-	inputBox: {
-		flexDirection: 'row',
-		alignItems: 'center',
-		height: 50,
-		borderRadius: 12,
-		borderWidth: 1,
-		borderColor: themeColors.border,
-		backgroundColor: themeColors.surface,
-		paddingHorizontal: 14
-	},
-	inputBoxFocused: {
-		borderColor: themeColors.primary,
-		backgroundColor: themeColors.primaryContainer20
-	},
-	inputBoxError: { borderColor: themeColors.error },
-	inputIcon: { marginRight: 10 },
-	inputText: { flex: 1, fontSize: 15, color: themeColors.text, paddingVertical: 0 },
-	eyeBtn: { padding: 6 },
-	errorRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 6 },
-	errorText: { fontSize: 12, color: themeColors.error, fontWeight: '500', flex: 1 },
-	toggleRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 16 },
-	toggleBox: {
-		width: 18,
-		height: 18,
-		borderRadius: 5,
-		borderWidth: 1.5,
-		borderColor: themeColors.inputBorder,
-		backgroundColor: 'transparent',
-		alignItems: 'center',
-		justifyContent: 'center'
-	},
-	toggleBoxActive: { backgroundColor: themeColors.primary, borderColor: themeColors.primary },
-	toggleLabel: { fontSize: 13, color: themeColors.textTertiary, fontWeight: '500', flex: 1 },
-	ctaBtn: {
-		height: 52,
-		borderRadius: 13,
-		alignItems: 'center',
-		justifyContent: 'center',
-		marginTop: 8,
-		overflow: 'hidden'
-	},
-	ctaBtnText: { fontSize: 16, fontWeight: '700', color: themeColors.buttonText, letterSpacing: 0.2 }
+	formContainerTablet: { padding: 48, maxWidth: 480, alignSelf: 'center' as const, width: 480 }
 })
 // ─── Types for AuthForm props ─────────────────────────────────────────────────
 interface AuthFormProps {
-	isTablet: boolean
 	slug: string
 	password: string
 	saveAccount: boolean
@@ -239,20 +54,9 @@ interface AuthFormProps {
 	handleSelectSavedAccount: (account: SavedAuth) => void
 	handleRemoveSavedAccount: (slug: string) => void
 }
-const formatLastAccess = (dateStr?: string) => {
-	if (!dateStr) return ''
-	try {
-		const date = new Date(dateStr)
-		if (isNaN(date.getTime())) return ''
-		return `${format(date, 'MMM d, yyyy, h:mm a')} (${formatDistanceToNow(date, { addSuffix: true })})`
-	} catch {
-		return ''
-	}
-}
 // ─── AuthForm — standalone component, never re-created on parent render ───────
 const AuthForm = React.memo(
 	({
-		isTablet,
 		slug,
 		password,
 		saveAccount,
@@ -282,190 +86,40 @@ const AuthForm = React.memo(
 		handleSelectSavedAccount,
 		handleRemoveSavedAccount
 	}: AuthFormProps) => {
-		const { colors } = useTheme()
 		return (
 			<>
-				{/* Mobile-only hero */}
-				{!isTablet && (
-					<View style={S.mobileHeader}>
-						<View style={S.mobileLogoRow}>
-							<View style={S.mobileIconBox}>
-								<Ionicons name="business" size={22} color={themeColors.primary} />
-							</View>
-							<Text style={S.mobileBrandName}>DRINALUZA</Text>
-						</View>
-						<Text style={S.mobileTitle}>{translate('welcome_back', 'Welcome back.')}</Text>
-						<Text style={S.mobileSub}>{translate('auth_subtitle', 'Sign in to your business account.')}</Text>
-					</View>
-				)}
-				{/* Language selector */}
-				<View style={S.langSection}>
-					<ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={S.langRow} keyboardShouldPersistTaps="handled">
-						{LANGUAGES.map((lang) => {
-							const selected = appLang === lang.code
-							return (
-								<TouchableOpacity
-									key={lang.code}
-									style={[S.langChip, selected && S.langChipActive]}
-									onPress={() => setAppLang(lang.code)}
-									activeOpacity={0.75}
-									accessibilityLabel={lang.label}
-									accessibilityRole="button"
-								>
-									<LanguageIcon code={lang.code} size={18} />
-								</TouchableOpacity>
-							)
-						})}
-					</ScrollView>
-				</View>
-				{/* Saved accounts chip strip */}
-				{savedAccounts.length > 0 && (
-					<View style={S.accountsSection}>
-						<Text style={S.sectionLabel}>{translate('saved_accounts', 'Saved Accounts')}</Text>
-						<View style={S.accountsList}>
-							{savedAccounts.map((account) => {
-								const isActive = activeSlug === account.slug
-								return (
-									<View key={account.slug} style={[S.accountRow, isActive && S.accountRowActive]}>
-										<TouchableOpacity style={S.accountRowClickable} onPress={() => handleSelectSavedAccount(account)} activeOpacity={0.75} accessibilityLabel={`Switch to ${account.slug}`}>
-											<View style={[S.accountAvatar, isActive && S.accountAvatarActive]}>
-												<SmartMediaView media={account.photoUrl} style={S.accountAvatarImg} />
-											</View>
-											<View style={S.accountInfo}>
-												<Text style={[S.accountSlug, isActive && S.accountSlugActive]} numberOfLines={1}>
-													{account.slug}
-												</Text>
-												{account.lastSignIn && (
-													<Text style={S.accountAccessTime} numberOfLines={2}>
-														{formatLastAccess(account.lastSignIn)}
-													</Text>
-												)}
-											</View>
-										</TouchableOpacity>
-										<DeleteButton onPress={() => handleRemoveSavedAccount(account.slug)} label={`Remove ${account.slug}`} style={S.accountRemoveBtn} />
-									</View>
-								)
-							})}
-						</View>
-					</View>
-				)}
-				<View style={S.divider} />
-				{/* Username */}
-				<View style={S.fieldGroup}>
-					<Text style={S.fieldLabel}>{translate('username', 'Username')}</Text>
-					<View style={[S.inputBox, isSlugFocused && S.inputBoxFocused, !!slugError && S.inputBoxError]}>
-						<Ionicons name="at-outline" size={17} color={isSlugFocused ? themeColors.primary : themeColors.textTertiary} style={S.inputIcon} />
-						<TextInput
-							ref={slugInputRef}
-							style={S.inputText}
-							value={slug}
-							onChangeText={handleSlugChange}
-							placeholder={translate('username_placeholder', 'your-username')}
-							placeholderTextColor={themeColors.slate}
-							autoCapitalize="none"
-							autoCorrect={false}
-							maxLength={25}
-							onFocus={() => {
-								setIsSlugFocused(true)
-								scrollToInput(slugInputRef)
-							}}
-							onBlur={() => setIsSlugFocused(false)}
-							returnKeyType="next"
-							onSubmitEditing={focusPasswordField}
-							accessibilityLabel={translate('username', 'Username')}
-						/>
-					</View>
-					{slugError && (
-						<View style={S.errorRow}>
-							<Ionicons name="alert-circle-outline" size={13} color={themeColors.error} />
-							<Text style={S.errorText}>{slugError}</Text>
-						</View>
-					)}
-				</View>
-				{/* Save account toggle */}
-				<TouchableOpacity style={S.toggleRow} onPress={() => setSaveAccount(!saveAccount)} activeOpacity={0.75} accessibilityRole="checkbox" accessibilityState={{ checked: saveAccount }}>
-					<View style={[S.toggleBox, saveAccount && S.toggleBoxActive]}>{saveAccount && <Ionicons name="checkmark" size={12} color={themeColors.buttonText} />}</View>
-					<Text style={S.toggleLabel}>{translate('save_account_checkbox', 'Save to accounts list')}</Text>
-				</TouchableOpacity>
-				{/* Password */}
-				<View style={S.fieldGroup}>
-					<Text style={S.fieldLabel}>{translate('password', 'Password')}</Text>
-					<View style={[S.inputBox, isPasswordFocused && S.inputBoxFocused]}>
-						<Ionicons name="lock-closed-outline" size={17} color={isPasswordFocused ? themeColors.primary : themeColors.textTertiary} style={S.inputIcon} />
-						<TextInput
-							ref={passwordInputRef}
-							style={S.inputText}
-							value={password}
-							onChangeText={setPassword}
-							placeholder="••••••••"
-							placeholderTextColor={themeColors.slate}
-							secureTextEntry={!showPassword}
-							autoCapitalize="none"
-							autoCorrect={false}
-							maxLength={20}
-							onFocus={() => {
-								setIsPasswordFocused(true)
-								scrollToInput(passwordInputRef)
-							}}
-							onBlur={() => setIsPasswordFocused(false)}
-							returnKeyType="done"
-							onSubmitEditing={handleSignInSubmit}
-							accessibilityLabel={translate('password', 'Password')}
-						/>
-					</View>
-				</View>
-				{/* Require password on switch */}
-				<View style={S.toggleRow}>
-					<TouchableOpacity
-						style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 10 }}
-						onPress={() => setNeedPassword(!needPassword)}
-						activeOpacity={0.75}
-						accessibilityRole="checkbox"
-						accessibilityState={{ checked: needPassword }}
-					>
-						<View style={[S.toggleBox, needPassword && S.toggleBoxActive]}>{needPassword && <Ionicons name="checkmark" size={12} color={themeColors.buttonText} />}</View>
-						<Text style={S.toggleLabel}>{translate('require_password_checkbox', 'Require password on switch')}</Text>
-					</TouchableOpacity>
-					<EyeButton visible={showPassword} onPress={() => setShowPassword(!showPassword)} iconColor={isPasswordFocused ? themeColors.primary : themeColors.textTertiary} style={S.eyeBtn} />
-				</View>
-				{/* CTA */}
-				{loading ? (
-					<Spinner size="small" expand={false} />
-				) : (
-					<TouchableOpacity style={S.ctaBtn} onPress={handleSignInSubmit} activeOpacity={0.85} accessibilityLabel={translate('continue', 'Continue')} accessibilityRole="button">
-						<LinearGradient colors={[themeColors.primary, themeColors.info]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={StyleSheet.absoluteFill} />
-						<Text style={S.ctaBtnText}>{translate('continue', 'Continue')}</Text>
-					</TouchableOpacity>
-				)}
+				<LanguageSelectionBlock appLang={appLang} onSelectLang={setAppLang} />
+				<AccountsCard savedAccounts={savedAccounts} activeSlug={activeSlug} onSelectAccount={handleSelectSavedAccount} onRemoveAccount={handleRemoveSavedAccount} />
+				<AuthCard
+					slug={slug}
+					password={password}
+					saveAccount={saveAccount}
+					needPassword={needPassword}
+					showPassword={showPassword}
+					loading={loading}
+					slugError={slugError}
+					isSlugFocused={isSlugFocused}
+					isPasswordFocused={isPasswordFocused}
+					passwordInputRef={passwordInputRef}
+					slugInputRef={slugInputRef}
+					scrollToInput={scrollToInput}
+					translate={translate}
+					handleSlugChange={handleSlugChange}
+					setIsSlugFocused={setIsSlugFocused}
+					setIsPasswordFocused={setIsPasswordFocused}
+					setSaveAccount={setSaveAccount}
+					setNeedPassword={setNeedPassword}
+					setPassword={setPassword}
+					setShowPassword={setShowPassword}
+					focusPasswordField={focusPasswordField}
+					handleSignInSubmit={handleSignInSubmit}
+				/>
 				<View style={{ height: 32 }} />
 			</>
 		)
 	}
 )
 AuthForm.displayName = 'AuthForm'
-// ─── BrandPane — static left panel for tablet/desktop ────────────────────────
-const BrandPane = React.memo(({ translate }: { translate: (k: string, d: string) => string }) => (
-	<View style={S.brandPane}>
-		<View style={S.brandLogoRow}>
-			<View style={S.brandIconBox}>
-				<Ionicons name="business" size={28} color={themeColors.primary} />
-			</View>
-		</View>
-		<Text style={S.brandName}>DRINALUZA</Text>
-		<View style={S.brandDivider} />
-		<Text style={S.brandHeadline}>{translate('branding_heading', 'Manage your\nbusiness with ease.')}</Text>
-		<Text style={S.brandSub}>{translate('branding_subheading', 'The complete dashboard for modern business owners and their teams.')}</Text>
-		<View style={S.featuresList}>
-			{[translate('feature_1', 'Real-time sales tracking'), translate('feature_2', 'Multi-language support'), translate('feature_3', 'Saved accounts & fast-switching')].map((feat, i) => (
-				<View key={i} style={S.featureRow}>
-					<View style={S.featureDot} />
-					<Text style={S.featureText}>{feat}</Text>
-				</View>
-			))}
-		</View>
-	</View>
-))
-BrandPane.displayName = 'BrandPane'
 // ─── AuthScreen ───────────────────────────────────────────────────────────────
 export default function AuthScreen() {
 	const router = useRouter()
@@ -701,49 +355,44 @@ export default function AuthScreen() {
 				<ScrollView ref={scrollViewRef} style={S.flex} contentContainerStyle={scrollContentStyle} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
 					<View ref={contentRef} style={{ width: '100%', flexGrow: 1 }}>
 						{isTablet ? (
-							<View style={S.desktopGrid}>
-								<BrandPane translate={translate} />
-								<View style={S.formPane}>
-									<View style={[S.formContainerTablet, { pointerEvents: loading ? 'none' : 'auto' }]}>
-										<AuthForm
-											isTablet={isTablet}
-											slug={slug}
-											password={password}
-											saveAccount={saveAccount}
-											needPassword={needPassword}
-											showPassword={showPassword}
-											loading={loading}
-											slugError={slugError}
-											isSlugFocused={isSlugFocused}
-											isPasswordFocused={isPasswordFocused}
-											savedAccounts={savedAccounts}
-											activeSlug={slug}
-											appLang={appLang}
-											passwordInputRef={passwordInputRef}
-											slugInputRef={slugInputRef}
-											scrollToInput={scrollToInput}
-											translate={translate}
-											setAppLang={setAppLang}
-											handleSlugChange={handleSlugChange}
-											setIsSlugFocused={setIsSlugFocused}
-											setIsPasswordFocused={setIsPasswordFocused}
-											setSaveAccount={setSaveAccount}
-											setNeedPassword={setNeedPassword}
-											setPassword={setPassword}
-											setShowPassword={setShowPassword}
-											focusPasswordField={focusPasswordField}
-											handleSignInSubmit={handleSignInSubmit}
-											handleSelectSavedAccount={handleSelectSavedAccount}
-											handleRemoveSavedAccount={handleRemoveSavedAccount}
-										/>
-										<View style={{ height: Platform.OS === 'android' ? keyboardHeight : 0 }} />
-									</View>
+							<View style={S.formPane}>
+								<View style={[S.formContainerTablet, { pointerEvents: loading ? 'none' : 'auto' }]}>
+									<AuthForm
+										slug={slug}
+										password={password}
+										saveAccount={saveAccount}
+										needPassword={needPassword}
+										showPassword={showPassword}
+										loading={loading}
+										slugError={slugError}
+										isSlugFocused={isSlugFocused}
+										isPasswordFocused={isPasswordFocused}
+										savedAccounts={savedAccounts}
+										activeSlug={slug}
+										appLang={appLang}
+										passwordInputRef={passwordInputRef}
+										slugInputRef={slugInputRef}
+										scrollToInput={scrollToInput}
+										translate={translate}
+										setAppLang={setAppLang}
+										handleSlugChange={handleSlugChange}
+										setIsSlugFocused={setIsSlugFocused}
+										setIsPasswordFocused={setIsPasswordFocused}
+										setSaveAccount={setSaveAccount}
+										setNeedPassword={setNeedPassword}
+										setPassword={setPassword}
+										setShowPassword={setShowPassword}
+										focusPasswordField={focusPasswordField}
+										handleSignInSubmit={handleSignInSubmit}
+										handleSelectSavedAccount={handleSelectSavedAccount}
+										handleRemoveSavedAccount={handleRemoveSavedAccount}
+									/>
+									<View style={{ height: Platform.OS === 'android' ? keyboardHeight : 0 }} />
 								</View>
 							</View>
 						) : (
 							<View style={[S.formContainer, { pointerEvents: loading ? 'none' : 'auto' }]}>
 								<AuthForm
-									isTablet={isTablet}
 									slug={slug}
 									password={password}
 									saveAccount={saveAccount}

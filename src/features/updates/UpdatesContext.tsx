@@ -1,27 +1,48 @@
+/**
+ * features/updates/UpdatesContext — check, download (pausable/resumable), verify and install APK updates.
+ *
+ * Download durability design (expo-file-system `DownloadTask`):
+ * - in-app navigation: the task lives in this provider, screens can change freely.
+ * - background / other apps: the native transfer keeps running (no auto-pause);
+ *   progress snapshots are persisted so a kill never loses the partial file.
+ * - app killed: the partial `.tmp` file plus persisted state are picked up on
+ *   next launch and offered as a paused download; resume re-sends
+ *   `Range: bytes=<on-disk-length>-` (server answers 206) or restarts cleanly.
+ * - completion gate: exact size + ZIP structure + SHA-256 (release digest)
+ *   are verified before the file is renamed to `.apk` and the installer opens.
+ */
+
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Platform, Alert, AppState, type AppStateStatus } from 'react-native'
+import { Platform, Alert, AppState } from 'react-native'
 import { config } from '@/config'
-import { Directory, File, ensureDirectory, getUpdatesDirectory, getFileInfo, deletePath, moveFile, getFreeDiskStorage, listDirectory, getContentUri } from '@disk'
+import { File, ensureDirectory, getUpdatesDirectory, getFileInfo, deletePath, moveFile, getFreeDiskStorage, listDirectory, getContentUri } from '@disk'
 import { log } from '@log'
 import { getItem, setItem, removeItem } from '@storage'
 import { deferStartup } from '@helpers/defer'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
-// Verify file against existence and expected size bounds
-const verifyFileIntegrity = async (fileUri: string, expectedSize: number): Promise<{ ok: boolean; reason?: string }> => {
-	try {
-		const info = await getFileInfo(fileUri)
-		const size = info?.size ?? 0
-		if (!info?.exists) return { ok: false, reason: 'file not found' }
-		if (size < 1024 * 1024) return { ok: false, reason: `size ${size} <1MB` }
-		if (expectedSize > 0 && size < expectedSize * 0.95) return { ok: false, reason: `size ${size}/${expectedSize} <95%` }
-		if (expectedSize > 0 && size > expectedSize * 1.05) return { ok: false, reason: `size ${size}/${expectedSize} >105%` }
-		return { ok: true }
-	} catch (err) {
-		log({ level: 'warn', label: 'UpdatesContext', message: 'File integrity verification failed', error: err })
-		return { ok: false, reason: 'verification error' }
-	}
+import { verifyApkFile } from './apkIntegrity'
+import type { DownloadTask, DownloadPauseState, DownloadProgress } from 'expo-file-system'
+
+interface DownloadMeta {
+	version: string
+	url: string
+	size: number
+	digest: string | null
 }
+
+interface PersistedDownloadState extends DownloadMeta {
+	status: 'downloading' | 'paused'
+	bytesWritten: number
+	totalBytes: number
+	savable: DownloadPauseState | null
+}
+
 export const UpdatesContext = createContext<UpdatesContextProps | undefined>(undefined)
+
+const DOWNLOAD_STATE_KEY = 'apk_download_state'
+const LEGACY_DOWNLOAD_KEYS = ['download_resume_data', 'download_progress', 'download_status']
+const PROGRESS_PERSIST_MIN_MS = 2000
+
 const getUpdatesFolder = (): any | null => getUpdatesDirectory()
 const UPDATES_FOLDER = (() => {
 	if (Platform.OS === 'web') return ''
@@ -37,6 +58,20 @@ const ensureUpdatesFolder = async () => {
 	if (Platform.OS === 'web') return
 	await ensureDirectory(getUpdatesFolder())
 }
+
+const tmpUriFor = (version: string): string => `${UPDATES_FOLDER}drinaluza-${version}.apk.tmp`
+const finalUriFor = (version: string): string => `${UPDATES_FOLDER}drinaluza-${version}.apk`
+
+const getDownloadTaskClass = (): any | null => {
+	if (Platform.OS === 'web') return null
+	try {
+		// eslint-disable-next-line @typescript-eslint/no-require-imports
+		return require('expo-file-system').DownloadTask
+	} catch {
+		return null
+	}
+}
+
 // Function that parses Github release response
 export const checkUpdatesApi = async (url: string): Promise<UpdateCheckResult> => {
 	const controller = new AbortController()
@@ -83,19 +118,21 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const [error, setError] = useState<string | null>(null)
 	const [downloadProgress, setDownloadProgress] = useState(0)
 	const [isDownloading, setIsDownloading] = useState(false)
+	const [isVerifying, setIsVerifying] = useState(false)
 	const [downloadedApks, setDownloadedApks] = useState<CachedApkMetadata[]>([])
 	const [deviceFreeStorage, setDeviceFreeStorage] = useState(0)
-	const activeDownloadRef = useRef<any | null>(null)
 	const [isPaused, setIsPaused] = useState(false)
-	const resumeDataRef = useRef<string | null>(null)
-	const isPausingRef = useRef(false)
-	const isCancellingRef = useRef(false)
-	const isAutoPausedRef = useRef(false)
-	const isDownloadingRef = useRef(isDownloading)
-	const isPausedRef = useRef(isPaused)
+	const taskRef = useRef<DownloadTask | null>(null)
+	const metaRef = useRef<DownloadMeta | null>(null)
+	const savableRef = useRef<DownloadPauseState | null>(null)
+	const progressBytesRef = useRef({ bytesWritten: 0, totalBytes: 0 })
+	const lastPersistAtRef = useRef(0)
+	const cancellingRef = useRef(false)
+	// Invalidates late-arriving task results/errors after cancel or a newer run.
+	const sessionRef = useRef(0)
+	const isDownloadingRef = useRef(false)
+	const isPausedRef = useRef(false)
 	const latestReleaseRef = useRef(latestRelease)
-	const pauseDownloadRef = useRef<() => Promise<void>>(async () => {})
-	const resumeDownloadRef = useRef<() => Promise<string | null>>(async () => null)
 	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
 		if (Platform.OS === 'web') return []
@@ -134,20 +171,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			return []
 		}
 	}, [])
-	// Self-healing cleaner: deletes older APK versions, keeping only the latest
-	const pruneOldApks = useCallback(async (latestVer: string) => {
-		if (Platform.OS === 'web') return
-		try {
-			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
-			for (const file of files) {
-				if (file.endsWith('.apk') && !file.includes(latestVer)) {
-					await deletePath(UPDATES_FOLDER + file)
-				}
-			}
-		} catch (err) {
-			log({ level: 'warn', label: 'UpdatesContext', message: 'Pruning older cached releases failed', error: err })
-		}
-	}, [])
 	const checkForUpdates = useCallback(async (): Promise<UpdateCheckResult | null> => {
 		setIsChecking(true)
 		setError(null)
@@ -166,17 +189,92 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			return null
 		}
 	}, [refreshApkList])
-	// Install Android APK — validates file integrity first to avoid "parsing the package" error
+	// Persist the download snapshot so an app kill never loses resume info.
+	// The partial `.tmp` file on disk is the source of truth for the offset.
+	const persistDownloadState = useCallback(async (state: PersistedDownloadState | null) => {
+		try {
+			if (state) await setItem(DOWNLOAD_STATE_KEY, state)
+			else await removeItem(DOWNLOAD_STATE_KEY)
+		} catch (err) {
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to persist download state', error: err })
+		}
+	}, [])
+	const persistProgressThrottled = useCallback(
+		async (meta: DownloadMeta, bytesWritten: number, totalBytes: number) => {
+			const now = Date.now()
+			if (now - lastPersistAtRef.current < PROGRESS_PERSIST_MIN_MS) return
+			lastPersistAtRef.current = now
+			await persistDownloadState({ ...meta, status: 'downloading', bytesWritten, totalBytes, savable: savableRef.current })
+		},
+		[persistDownloadState]
+	)
+	// Progress callback shared by fresh downloads and resumes.
+	const makeOnProgress = useCallback(
+		(meta: DownloadMeta) => (data: DownloadProgress) => {
+			const total = data.totalBytes > 0 ? data.totalBytes : meta.size > 0 ? meta.size : 0
+			const progress = total > 0 ? data.bytesWritten / total : 0
+			progressBytesRef.current = { bytesWritten: data.bytesWritten, totalBytes: total }
+			setDownloadProgress(isNaN(progress) ? 0 : Math.min(1, Math.max(0, progress)))
+			void persistProgressThrottled(meta, data.bytesWritten, total)
+		},
+		[persistProgressThrottled]
+	)
+	// Shared completion tail for downloadAsync()/resumeAsync(): null = paused,
+	// File = fully written → integrity gate → rename → install.
+	const completeTask = useCallback(
+		async (file: any | null, meta: DownloadMeta): Promise<string | null> => {
+			const tmpUri = tmpUriFor(meta.version)
+			const fileUri = finalUriFor(meta.version)
+			if (!file) {
+				log({ level: 'info', label: 'UpdatesContext', message: 'Download task paused, partial kept for resume' })
+				return null
+			}
+			const completedUri = file?.uri ?? tmpUri
+			setIsDownloading(false)
+			setIsVerifying(true)
+			try {
+				const verify = await verifyApkFile(completedUri, { expectedSize: meta.size, digest: meta.digest })
+				if (!verify.ok) {
+					await deletePath(completedUri).catch(() => {})
+					await persistDownloadState(null)
+					savableRef.current = null
+					metaRef.current = null
+					setDownloadProgress(0)
+					setIsPaused(false)
+					const message = `Update file corrupted (${verify.reason}). Please download again.`
+					setError(message)
+					Alert.alert('Download Failed Verification', message, [{ text: 'OK' }])
+					return null
+				}
+				setDownloadProgress(1)
+				await persistDownloadState(null)
+				savableRef.current = null
+				// Rename temp file to final .apk file on successful verification
+				await moveFile(completedUri, fileUri)
+				metaRef.current = null
+				await refreshApkList()
+				// Automatically launch package installer when download is complete
+				await installApkRef.current(fileUri)
+				return fileUri
+			} finally {
+				setIsVerifying(false)
+			}
+		},
+		[persistDownloadState, refreshApkList]
+	)
+	const installApkRef = useRef<(fileUri: string) => Promise<void>>(async () => {})
+	// Install Android APK — validates integrity first to avoid "parsing the package" error
 	const installApk = useCallback(
 		async (fileUri: string) => {
 			if (Platform.OS !== 'android') return
 			log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
+			setIsVerifying(true)
 			try {
 				const match = fileUri.match(/drinaluza-(.+)\.apk/)
 				const version = match ? match[1] : null
-				const isLatest = version && latestReleaseRef.current && version === latestReleaseRef.current.latest_version
-				const expectedSize = isLatest ? latestReleaseRef.current!.size : 0
-				const verify = await verifyFileIntegrity(fileUri, expectedSize)
+				const rel = latestReleaseRef.current
+				const isLatest = version && rel && version === rel.latest_version
+				const verify = await verifyApkFile(fileUri, isLatest ? { expectedSize: rel!.size, digest: rel!.digest } : {})
 				if (!verify.ok) {
 					await deletePath(fileUri).catch(() => {})
 					await refreshApkList()
@@ -209,6 +307,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					[{ text: 'OK' }]
 				)
 				throw new Error(err?.message || 'Failed to launch the Android package installer. Please verify permissions.')
+			} finally {
+				setIsVerifying(false)
 			}
 		},
 		[refreshApkList]
@@ -226,324 +326,329 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		},
 		[refreshApkList]
 	)
-	// Download APK
+	const hasEnoughStorage = useCallback(async (size: number): Promise<boolean> => {
+		const freeSpace = await getFreeDiskStorage()
+		setDeviceFreeStorage(freeSpace)
+		const minRequiredBytes = Math.max(size, (config.updates.minFreeStorageGB || 0.1) * 1024 * 1024 * 1024)
+		if (freeSpace < minRequiredBytes) {
+			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to download and install this update.')
+			return false
+		}
+		return true
+	}, [])
+	// Start a brand-new download (no usable partial file). Shared by
+	// downloadUpdate() and the resume-fallback path.
+	const startFreshDownload = useCallback(
+		async (meta: DownloadMeta): Promise<string | null> => {
+			const tmpUri = tmpUriFor(meta.version)
+			await ensureUpdatesFolder()
+			await deletePath(tmpUri).catch(() => {})
+			const tmpFile = new File(tmpUri)
+			const task = File.createDownloadTask(meta.url, tmpFile, { onProgress: makeOnProgress(meta) })
+			taskRef.current = task
+			metaRef.current = meta
+			savableRef.current = null
+			progressBytesRef.current = { bytesWritten: 0, totalBytes: meta.size }
+			setIsDownloading(true)
+			setIsPaused(false)
+			setError(null)
+			setDownloadProgress(0)
+			await persistDownloadState({ ...meta, status: 'downloading', bytesWritten: 0, totalBytes: meta.size, savable: null })
+			const session = ++sessionRef.current
+			try {
+				const result = await task.downloadAsync()
+				if (session !== sessionRef.current) return null
+				if (taskRef.current === task) taskRef.current = null
+				return await completeTask(result, meta)
+			} catch (err: any) {
+				if (session !== sessionRef.current) return null
+				if (taskRef.current === task) taskRef.current = null
+				if (cancellingRef.current) return null
+				// Network drop (e.g. background stall): keep the partial file and
+				// park as paused so the user can resume instead of restarting.
+				log({ level: 'warn', label: 'UpdatesContext', message: 'Download interrupted, kept partial for resume', error: err })
+				const info = await getFileInfo(tmpUri).catch(() => null)
+				const onDisk = info?.exists ? info.size || 0 : 0
+				if (onDisk > 0) {
+					progressBytesRef.current = { bytesWritten: onDisk, totalBytes: meta.size }
+					setDownloadProgress(meta.size > 0 ? Math.min(1, onDisk / meta.size) : 0)
+					await persistDownloadState({ ...meta, status: 'paused', bytesWritten: onDisk, totalBytes: meta.size, savable: savableRef.current })
+					setIsDownloading(false)
+					setIsPaused(true)
+					setError(err?.message || 'Download interrupted. Tap resume to continue.')
+					return null
+				}
+				setIsDownloading(false)
+				setIsPaused(false)
+				setDownloadProgress(0)
+				await persistDownloadState(null)
+				await deletePath(tmpUri).catch(() => {})
+				setError(err?.message || 'Download failed.')
+				return null
+			}
+		},
+		[makeOnProgress, persistDownloadState, completeTask]
+	)
+	// Download APK (fresh, or resume when a partial file for this version exists)
 	const downloadUpdate = useCallback(async (): Promise<string | null> => {
 		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
 			return null
 		}
-		// Check free storage space before downloading
-		const freeSpace = await getFreeDiskStorage()
-		setDeviceFreeStorage(freeSpace)
-		const minRequiredBytes = Math.max(latestRelease.size, (config.updates.minFreeStorageGB || 0.1) * 1024 * 1024 * 1024)
-		if (freeSpace < minRequiredBytes) {
-			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to download and install this update.')
-			return null
+		if (isDownloadingRef.current) return null
+		// Already paused for this version → resume instead of restarting
+		if (isPausedRef.current && metaRef.current?.version === latestRelease.latest_version) {
+			return await resumeDownloadRef.current()
 		}
-		setIsDownloading(true)
-		setIsPaused(false)
-		resumeDataRef.current = null
-		await removeItem('download_resume_data')
-		await removeItem('download_progress')
-		await setItem('download_status', 'downloading')
-		setDownloadProgress(0)
+		const meta: DownloadMeta = {
+			version: latestRelease.latest_version,
+			url: latestRelease.download_url,
+			size: latestRelease.size,
+			digest: latestRelease.digest
+		}
+		if (!(await hasEnoughStorage(meta.size))) return null
 		await ensureUpdatesFolder()
-		const filename = `drinaluza-${latestRelease.latest_version}.apk`
-		const fileUri = UPDATES_FOLDER + filename
-		const tempFileUri = fileUri + '.tmp'
-		try {
-			// Clean any partial downloads of this exact version
-			await deletePath(tempFileUri)
-			await deletePath(fileUri)
-			const tmpFile = new File(tempFileUri)
-			const onProgress = (data: { bytesWritten: number; totalBytes: number }) => {
-				const progress = data.totalBytes > 0 ? data.bytesWritten / data.totalBytes : 0
-				setDownloadProgress(isNaN(progress) ? 0 : progress)
-			}
-			const downloadResult = await File.downloadFileAsync(latestRelease.download_url, tmpFile, { idempotent: true, onProgress } as any)
-			activeDownloadRef.current = null
-			// Check if we are pausing or cancelling
-			if (isPausingRef.current) {
-				log({ level: 'info', label: 'UpdatesContext', message: 'downloadUpdate: download was paused, exiting early' })
-				return null
-			}
-			if (isCancellingRef.current) {
-				log({ level: 'info', label: 'UpdatesContext', message: 'downloadUpdate: download was cancelled, exiting early' })
-				return null
-			}
-			if (downloadResult && downloadResult.uri) {
-				const verify = await verifyFileIntegrity(downloadResult.uri, latestRelease.size)
-				if (!verify.ok) {
-					await deletePath(downloadResult.uri).catch(() => {})
-					throw new Error(`Download corrupted (${verify.reason}). Please retry.`)
-				}
-				setIsDownloading(false)
-				setDownloadProgress(1)
-				await removeItem('download_resume_data')
-				await removeItem('download_progress')
-				// Rename temp file to final .apk file on successful completion
-				await moveFile(downloadResult.uri, fileUri)
-				await refreshApkList()
-				// Automatically launch package installer when download is complete
-				await installApk(fileUri)
-				return fileUri
-			} else {
-				throw new Error('Download completed with empty or invalid result.')
-			}
-		} catch (err) {
-			if (isPausingRef.current) {
-				setIsDownloading(false)
-				return null
-			}
-			if (isCancellingRef.current) {
-				return null
-			}
-			setIsDownloading(false)
-			setIsPaused(false)
-			setDownloadProgress(0)
-			activeDownloadRef.current = null
-			await removeItem('download_resume_data')
-			await removeItem('download_progress')
-			await removeItem('download_status')
-			// Clean up temp file on failure
-			await deletePath(tempFileUri).catch(() => {})
-			log({ level: 'error', label: 'UpdatesContext', message: 'File download error', error: err })
-			throw err
-		}
-	}, [latestRelease, refreshApkList, installApk])
-	// Pause Download
-	const pauseDownload = useCallback(async () => {
-		if (activeDownloadRef.current && isDownloading && !isPaused) {
-			isPausingRef.current = true
+		const fileUri = finalUriFor(meta.version)
+		const tmpUri = tmpUriFor(meta.version)
+		// A verified final file needs no re-download — install it directly
+		const finalInfo = await getFileInfo(fileUri).catch(() => null)
+		if (finalInfo?.exists && (finalInfo.size || 0) > 0) {
+			setIsVerifying(true)
 			try {
-				const result = await activeDownloadRef.current.pauseAsync()
-				const resumeData = result.resumeData || null
-				resumeDataRef.current = resumeData
-				setIsPaused(true)
-				setIsDownloading(false)
-				if (resumeData) {
-					await setItem('download_status', 'paused')
-					await setItem('download_resume_data', resumeData)
-					await setItem('download_progress', downloadProgress)
+				const verify = await verifyApkFile(fileUri, { expectedSize: meta.size, digest: meta.digest })
+				if (verify.ok) {
+					await refreshApkList()
+					await installApk(fileUri)
+					return fileUri
 				}
-				log({ level: 'info', label: 'UpdatesContext', message: 'Download paused' })
-			} catch (err) {
-				log({ level: 'error', label: 'UpdatesContext', message: 'Failed to pause download', error: err })
 			} finally {
-				isPausingRef.current = false
+				setIsVerifying(false)
 			}
+			await deletePath(fileUri).catch(() => {})
 		}
-	}, [isDownloading, isPaused, downloadProgress])
-	// Resume Download
-	const resumeDownload = useCallback(async (): Promise<string | null> => {
-		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
-			return null
+		// A partial file from a killed session is resumed, not discarded
+		const partialInfo = await getFileInfo(tmpUri).catch(() => null)
+		if (partialInfo?.exists && (partialInfo.size || 0) > 1024) {
+			metaRef.current = meta
+			return await resumeDownloadRef.current()
 		}
-		// Check free storage space before resuming
-		const freeSpace = await getFreeDiskStorage()
-		setDeviceFreeStorage(freeSpace)
-		const minRequiredBytes = Math.max(latestRelease.size, (config.updates.minFreeStorageGB || 0.1) * 1024 * 1024 * 1024)
-		if (freeSpace < minRequiredBytes) {
-			Alert.alert('Insufficient Storage', 'Your device does not have enough free disk space to resume this update.')
-			return null
-		}
-		setIsDownloading(true)
-		setIsPaused(false)
-		await setItem('download_status', 'downloading')
-		await ensureUpdatesFolder()
-		const filename = `drinaluza-${latestRelease.latest_version}.apk`
-		const fileUri = UPDATES_FOLDER + filename
-		const tempFileUri = fileUri + '.tmp'
+		return await startFreshDownload(meta)
+	}, [latestRelease, hasEnoughStorage, refreshApkList, installApk, startFreshDownload])
+	// Pause Download — native task produces resume data, partial file stays
+	const pauseDownload = useCallback(async () => {
+		const task = taskRef.current
+		if (!task || !isDownloadingRef.current || isPausedRef.current) return
 		try {
-			const tmpFile = new File(tempFileUri)
-			const onProgress = (data: { bytesWritten: number; totalBytes: number }) => {
-				const progress = data.totalBytes > 0 ? data.bytesWritten / data.totalBytes : 0
-				setDownloadProgress(isNaN(progress) ? 0 : progress)
+			await task.pauseAsync()
+			const savable = task.savable() as DownloadPauseState
+			savableRef.current = savable
+			const meta = metaRef.current
+			const { bytesWritten, totalBytes } = progressBytesRef.current
+			if (meta) {
+				await persistDownloadState({ ...meta, status: 'paused', bytesWritten, totalBytes, savable })
 			}
-			const downloadResult = await File.downloadFileAsync(latestRelease.download_url, tmpFile, { idempotent: true, onProgress } as any)
-			activeDownloadRef.current = null
-			// Check if we are pausing or cancelling
-			if (isPausingRef.current) {
-				log({ level: 'info', label: 'UpdatesContext', message: 'resumeDownload: download was paused, exiting early' })
-				return null
-			}
-			if (isCancellingRef.current) {
-				log({ level: 'info', label: 'UpdatesContext', message: 'resumeDownload: download was cancelled, exiting early' })
-				return null
-			}
-			if (downloadResult && downloadResult.uri) {
-				const verify = await verifyFileIntegrity(downloadResult.uri, latestRelease.size)
-				if (!verify.ok) {
-					await deletePath(downloadResult.uri).catch(() => {})
-					throw new Error(`Resume corrupted (${verify.reason}). Please retry.`)
-				}
-				setIsDownloading(false)
-				setDownloadProgress(1)
-				resumeDataRef.current = null
-				await removeItem('download_resume_data')
-				await removeItem('download_progress')
-				await removeItem('download_status')
-				await moveFile(downloadResult.uri, fileUri)
-				await refreshApkList()
-				await installApk(fileUri)
-				return fileUri
-			} else {
-				throw new Error('Resume download completed with empty or invalid result.')
-			}
-		} catch (err: any) {
-			if (isPausingRef.current) {
-				setIsDownloading(false)
-				return null
-			}
-			if (isCancellingRef.current) {
-				return null
-			}
+			log({ level: 'info', label: 'UpdatesContext', message: 'Download paused' })
+		} catch (err) {
+			log({ level: 'error', label: 'UpdatesContext', message: 'Failed to pause download', error: err })
+		} finally {
 			setIsDownloading(false)
-			setIsPaused(false)
-			setDownloadProgress(0)
-			activeDownloadRef.current = null
-			await removeItem('download_resume_data')
-			await removeItem('download_progress')
-			await removeItem('download_status')
-			log({ level: 'error', label: 'UpdatesContext', message: 'File resume download error', error: err })
-			throw err
+			setIsPaused(true)
 		}
-	}, [latestRelease, refreshApkList, installApk])
-	// Sync refs for AppState handler
+	}, [persistDownloadState])
+	// Resume Download — live paused task, saved pause state, or on-disk offset
+	const resumeDownload = useCallback(async (): Promise<string | null> => {
+		if (Platform.OS !== 'android') return null
+		if (isDownloadingRef.current) return null
+		// Resolve metadata: live session, latest check, or persisted state
+		let meta = metaRef.current
+		if (!meta && latestReleaseRef.current?.download_url) {
+			const rel = latestReleaseRef.current
+			meta = { version: rel.latest_version, url: rel.download_url, size: rel.size, digest: rel.digest }
+		}
+		if (!meta) {
+			const persisted = await getItem<PersistedDownloadState>(DOWNLOAD_STATE_KEY).catch(() => null)
+			if (!persisted?.url) return null
+			meta = { version: persisted.version, url: persisted.url, size: persisted.size, digest: persisted.digest }
+		}
+		const resolvedMeta = meta
+		if (!(await hasEnoughStorage(resolvedMeta.size))) return null
+		await ensureUpdatesFolder()
+		const tmpUri = tmpUriFor(resolvedMeta.version)
+		setError(null)
+		const session = ++sessionRef.current
+		// 1. Live paused task from this session
+		const liveTask = taskRef.current
+		if (liveTask && isPausedRef.current) {
+			metaRef.current = resolvedMeta
+			setIsDownloading(true)
+			setIsPaused(false)
+			await persistDownloadState({
+				...resolvedMeta,
+				status: 'downloading',
+				bytesWritten: progressBytesRef.current.bytesWritten,
+				totalBytes: progressBytesRef.current.totalBytes,
+				savable: savableRef.current
+			})
+			try {
+				const result = await liveTask.resumeAsync()
+				if (session !== sessionRef.current) return null
+				if (taskRef.current === liveTask) taskRef.current = null
+				return await completeTask(result, resolvedMeta)
+			} catch (err) {
+				if (session !== sessionRef.current) return null
+				if (taskRef.current === liveTask) taskRef.current = null
+				log({ level: 'warn', label: 'UpdatesContext', message: 'Live resume failed, falling back to savable/fresh', error: err })
+			}
+		}
+		// 2. Rebuild from saved pause state, else from the on-disk partial length
+		// (covers app kill: no clean pause ever ran, but bytes survived).
+		const info = await getFileInfo(tmpUri).catch(() => null)
+		const onDisk = info?.exists ? info.size || 0 : 0
+		const persisted = await getItem<PersistedDownloadState>(DOWNLOAD_STATE_KEY).catch(() => null)
+		const savable: DownloadPauseState | null =
+			savableRef.current ?? persisted?.savable ?? (onDisk > 0 ? { url: resolvedMeta.url, fileUri: tmpUri, isDirectory: false, resumeData: String(onDisk) } : null)
+		const TaskClass = getDownloadTaskClass()
+		if (savable && onDisk > 0 && TaskClass) {
+			try {
+				const task = TaskClass.fromSavable(savable, { onProgress: makeOnProgress(resolvedMeta) })
+				taskRef.current = task
+				metaRef.current = resolvedMeta
+				savableRef.current = savable
+				setIsDownloading(true)
+				setIsPaused(false)
+				await persistDownloadState({ ...resolvedMeta, status: 'downloading', bytesWritten: onDisk, totalBytes: resolvedMeta.size, savable })
+				const result = await task.resumeAsync()
+				if (session !== sessionRef.current) return null
+				if (taskRef.current === task) taskRef.current = null
+				return await completeTask(result, resolvedMeta)
+			} catch (err) {
+				if (session !== sessionRef.current) return null
+				if (taskRef.current) {
+					try {
+						taskRef.current.cancel()
+					} catch {}
+					taskRef.current = null
+				}
+				log({ level: 'warn', label: 'UpdatesContext', message: 'Savable resume failed, restarting download', error: err })
+			}
+		}
+		// 3. Nothing resumable (or resume refused) → fresh download
+		await deletePath(tmpUri).catch(() => {})
+		return await startFreshDownload(resolvedMeta)
+	}, [hasEnoughStorage, makeOnProgress, persistDownloadState, completeTask, startFreshDownload])
+	const pauseDownloadRef = useRef(pauseDownload)
+	const resumeDownloadRef = useRef(resumeDownload)
+	// Sync refs for AppState handler and cross-callback resume
 	useEffect(() => {
 		isDownloadingRef.current = isDownloading
 		isPausedRef.current = isPaused
 		latestReleaseRef.current = latestRelease
 		pauseDownloadRef.current = pauseDownload
 		resumeDownloadRef.current = resumeDownload
-	}, [isDownloading, isPaused, latestRelease, pauseDownload, resumeDownload])
-	// Pause download when the app goes to background, resume when it comes back to foreground
+		installApkRef.current = installApk
+	}, [isDownloading, isPaused, latestRelease, pauseDownload, resumeDownload, installApk])
+	// The native transfer keeps running while the app is backgrounded — never
+	// auto-pause. Only snapshot progress so a kill loses nothing.
 	useEffect(() => {
-		const handleAppStateChange = (nextAppState: AppStateStatus) => {
-			if (nextAppState === 'active') {
-				if (isAutoPausedRef.current && !isDownloadingRef.current && isPausedRef.current && resumeDataRef.current && latestReleaseRef.current) {
-					resumeDownloadRef.current()
-				}
-				isAutoPausedRef.current = false
-			} else {
-				if (!isAutoPausedRef.current && isDownloadingRef.current && !isPausedRef.current) {
-					isAutoPausedRef.current = true
-					pauseDownloadRef.current()
-				}
+		const subscription = AppState.addEventListener('change', (nextState) => {
+			if (nextState !== 'active' && isDownloadingRef.current && metaRef.current) {
+				const { bytesWritten, totalBytes } = progressBytesRef.current
+				void persistDownloadState({ ...metaRef.current, status: 'downloading', bytesWritten, totalBytes, savable: savableRef.current })
 			}
-		}
-		const subscription = AppState.addEventListener('change', handleAppStateChange)
+		})
 		return () => subscription.remove()
-	}, [])
+	}, [persistDownloadState])
 	// Cancel Download completely
 	const cancelDownload = useCallback(async () => {
-		isCancellingRef.current = true
+		sessionRef.current++
+		cancellingRef.current = true
 		try {
+			if (taskRef.current) {
+				try {
+					taskRef.current.cancel()
+				} catch {}
+				taskRef.current = null
+			}
+			const meta = metaRef.current
+			if (meta) {
+				await deletePath(tmpUriFor(meta.version)).catch(() => {})
+			}
+			metaRef.current = null
+			savableRef.current = null
+			progressBytesRef.current = { bytesWritten: 0, totalBytes: 0 }
+			await persistDownloadState(null)
 			setIsDownloading(false)
 			setIsPaused(false)
 			setDownloadProgress(0)
-			if (activeDownloadRef.current) {
-				try {
-					await activeDownloadRef.current.cancelAsync()
-				} catch (e) {
-					// Ignore
-				}
-				activeDownloadRef.current = null
-			}
-			resumeDataRef.current = null
-			await removeItem('download_resume_data')
-			await removeItem('download_progress')
-			await removeItem('download_status')
-			if (latestRelease) {
-				const filename = `drinaluza-${latestRelease.latest_version}.apk.tmp`
-				await deletePath(UPDATES_FOLDER + filename).catch(() => {})
-			}
+			setError(null)
 		} finally {
-			isCancellingRef.current = false
+			cancellingRef.current = false
 		}
-	}, [latestRelease])
-	// Cancel download on unmount to prevent resource memory leak
-	useEffect(() => {
-		return () => {
-			if (activeDownloadRef.current) {
-				try {
-					activeDownloadRef.current.cancelAsync()
-				} catch (e) {
-					log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to cancel active download on unmount', error: e })
-				}
-			}
-		}
-	}, [])
-	// Cleanup APK files: keeps up to maxKeep newest valid versions, removes .tmp, corrupted, and older files
-	const cleanupApks = useCallback(async (maxKeep: number = config.updates.maxApkInstallersCount) => {
-		if (Platform.OS === 'web') return
-		try {
-			await ensureUpdatesFolder()
-			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
-			const validApks: { filename: string; version: string }[] = []
-			const downloadStatus = await getItem<string>('download_status')
-			const savedResumeData = await getItem<any>('download_resume_data')
-			const isPausedStatus = downloadStatus === 'paused' || savedResumeData !== null
-			if (!isPausedStatus) {
-				await removeItem('download_resume_data')
-				await removeItem('download_progress')
-				await removeItem('download_status')
-			}
-			for (const file of files) {
-				const filePath = UPDATES_FOLDER + file
-				if (file.endsWith('.tmp')) {
-					if (isPausedStatus) {
-						try {
-							const info = await getFileInfo(filePath)
-							if (!info?.exists || (info.size || 0) < 1024) {
-								log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting empty .tmp ${file} despite paused status` })
+	}, [persistDownloadState])
+	// Cleanup APK files: keeps up to maxKeep newest valid versions, removes .tmp,
+	// corrupted, and older files. Never deletes the partial of an active/paused download.
+	const cleanupApks = useCallback(
+		async (maxKeep: number = config.updates.maxApkInstallersCount) => {
+			if (Platform.OS === 'web') return
+			try {
+				await ensureUpdatesFolder()
+				await Promise.all(LEGACY_DOWNLOAD_KEYS.map((k) => removeItem(k).catch(() => {})))
+				const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
+				const persisted = await getItem<PersistedDownloadState>(DOWNLOAD_STATE_KEY).catch(() => null)
+				const activeTmp = persisted ? `drinaluza-${persisted.version}.apk.tmp` : null
+				const validApks: { filename: string; version: string }[] = []
+				for (const file of files) {
+					const filePath = UPDATES_FOLDER + file
+					if (file.endsWith('.tmp')) {
+						if (activeTmp && file === activeTmp) {
+							try {
+								const info = await getFileInfo(filePath)
+								if (info?.exists && (info.size || 0) > 1024) continue
 								await deletePath(filePath)
-								await removeItem('download_resume_data')
-								await removeItem('download_progress')
-								await removeItem('download_status')
-							}
-						} catch {}
-						continue
-					} else {
+								await persistDownloadState(null)
+								continue
+							} catch {}
+						}
 						log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting incomplete/interrupted download file ${file}` })
 						await deletePath(filePath)
 						continue
 					}
+					if (!file.endsWith('.apk')) {
+						log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting unexpected file ${file}` })
+						await deletePath(filePath)
+						continue
+					}
+					const match = file.match(/drinaluza-(.+)\.apk/)
+					if (!match || match[1] === 'unknown') {
+						log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting unrecognized APK ${file}` })
+						await deletePath(filePath)
+						continue
+					}
+					const info = await getFileInfo(filePath)
+					const apkSize = info?.size || 0
+					if (!info?.exists || apkSize === 0 || apkSize < 1024 * 1024) {
+						log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting empty/corrupted APK ${file} size=${apkSize}` })
+						await deletePath(filePath)
+						continue
+					}
+					validApks.push({ filename: file, version: match[1] })
 				}
-				if (!file.endsWith('.apk')) {
-					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting unexpected file ${file}` })
-					await deletePath(filePath)
-					continue
+				if (validApks.length > 0) {
+					validApks.sort((a, b) => (isVersionGreater(a.version, b.version) ? -1 : isVersionGreater(b.version, a.version) ? 1 : 0))
 				}
-				const match = file.match(/drinaluza-(.+)\.apk/)
-				if (!match || match[1] === 'unknown') {
-					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting unrecognized APK ${file}` })
-					await deletePath(filePath)
-					continue
+				if (validApks.length > maxKeep) {
+					for (let i = maxKeep; i < validApks.length; i++) {
+						const apk = validApks[i]
+						log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting older APK ${apk.filename} (keeping ${maxKeep} newest)` })
+						await deletePath(UPDATES_FOLDER + apk.filename)
+					}
 				}
-				const info = await getFileInfo(filePath)
-				const apkSize = info?.size || 0
-				if (!info?.exists || apkSize === 0 || apkSize < 1024 * 1024) {
-					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting empty/corrupted APK ${file} size=${apkSize}` })
-					await deletePath(filePath)
-					continue
-				}
-				validApks.push({ filename: file, version: match[1] })
+				log({ level: 'info', label: 'UpdatesContext', message: `Cleanup complete. Kept ${validApks.length > 0 ? validApks[0].filename : 'no APKs'}.` })
+			} catch (err) {
+				log({ level: 'warn', label: 'UpdatesContext', message: 'Cleanup failed', error: err })
 			}
-			if (validApks.length > 0) {
-				validApks.sort((a, b) => (isVersionGreater(a.version, b.version) ? -1 : isVersionGreater(b.version, a.version) ? 1 : 0))
-			}
-			if (validApks.length > maxKeep) {
-				for (let i = maxKeep; i < validApks.length; i++) {
-					const apk = validApks[i]
-					log({ level: 'info', label: 'UpdatesContext', message: `Cleanup: deleting older APK ${apk.filename} (keeping ${maxKeep} newest)` })
-					await deletePath(UPDATES_FOLDER + apk.filename)
-				}
-			}
-			log({ level: 'info', label: 'UpdatesContext', message: `Cleanup complete. Kept ${validApks.length > 0 ? validApks[0].filename : 'no APKs'}.` })
-		} catch (err) {
-			log({ level: 'warn', label: 'UpdatesContext', message: 'Cleanup failed', error: err })
-		}
-	}, [])
+		},
+		[persistDownloadState]
+	)
 	// Startup cleanup: respects user updateSettings from storage.
 	const performStartupCleanup = useCallback(async () => {
 		if (Platform.OS === 'web') return
@@ -556,31 +661,52 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			log({ level: 'warn', label: 'UpdatesContext', message: 'Startup cleanup failed', error: err })
 		}
 	}, [cleanupApks])
+	// Restore an interrupted download (paused or killed) so it can be resumed.
+	const restoreInterruptedDownload = useCallback(async () => {
+		if (Platform.OS === 'web') return
+		try {
+			const persisted = await getItem<PersistedDownloadState>(DOWNLOAD_STATE_KEY)
+			if (!persisted?.version || !persisted?.url) return
+			// A finalized installer means the download already finished
+			const finalInfo = await getFileInfo(finalUriFor(persisted.version)).catch(() => null)
+			if (finalInfo?.exists && (finalInfo.size || 0) > 1024 * 1024) {
+				await persistDownloadState(null)
+				return
+			}
+			const partialInfo = await getFileInfo(tmpUriFor(persisted.version)).catch(() => null)
+			const onDisk = partialInfo?.exists ? partialInfo.size || 0 : 0
+			if (onDisk <= 1024) {
+				await persistDownloadState(null)
+				return
+			}
+			metaRef.current = { version: persisted.version, url: persisted.url, size: persisted.size, digest: persisted.digest }
+			savableRef.current = persisted.savable ?? { url: persisted.url, fileUri: tmpUriFor(persisted.version), isDirectory: false, resumeData: String(onDisk) }
+			const total = persisted.totalBytes > 0 ? persisted.totalBytes : persisted.size > 0 ? persisted.size : onDisk
+			const written = Math.min(persisted.bytesWritten > 0 ? persisted.bytesWritten : onDisk, total)
+			progressBytesRef.current = { bytesWritten: written, totalBytes: total }
+			setDownloadProgress(total > 0 ? Math.min(1, written / total) : 0)
+			setIsPaused(true)
+			setIsDownloading(false)
+			// A kill always lands here as resumable-paused, never auto-download
+			await persistDownloadState({ ...persisted, status: 'paused', bytesWritten: written, totalBytes: total, savable: savableRef.current })
+			log({ level: 'info', label: 'UpdatesContext', message: `Restored interrupted download v${persisted.version} at ${written}/${total} bytes` })
+		} catch (e) {
+			log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to restore interrupted download', error: e })
+		}
+	}, [persistDownloadState])
 	// Run startup cleanup then refresh APK list — deferred to prioritize feed rendering
 	useEffect(() => {
 		const init = async () => {
 			await performStartupCleanup()
 			await refreshApkList()
-			try {
-				const savedResumeData = await getItem<any>('download_resume_data')
-				if (savedResumeData) {
-					resumeDataRef.current = typeof savedResumeData === 'string' ? savedResumeData : JSON.stringify(savedResumeData)
-					setIsPaused(true)
-					const savedProgress = await getItem<number>('download_progress')
-					if (savedProgress !== null && !isNaN(savedProgress)) {
-						setDownloadProgress(savedProgress)
-					}
-				}
-			} catch (e) {
-				log({ level: 'warn', label: 'UpdatesContext', message: 'Failed to load saved download resume data', error: e })
-			}
+			await restoreInterruptedDownload()
 		}
 		// Defer heavy FileSystem scans until after feed paints (low priority)
 		const cancel = deferStartup.low(() => {
 			init()
 		})
 		return cancel
-	}, [performStartupCleanup, refreshApkList])
+	}, [performStartupCleanup, refreshApkList, restoreInterruptedDownload])
 	const contextValue = useMemo(
 		() => ({
 			isChecking,
@@ -588,6 +714,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			error,
 			downloadProgress,
 			isDownloading,
+			isVerifying,
 			downloadedApks,
 			deviceFreeStorage,
 			checkForUpdates,
@@ -607,6 +734,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			error,
 			downloadProgress,
 			isDownloading,
+			isVerifying,
 			downloadedApks,
 			deviceFreeStorage,
 			checkForUpdates,

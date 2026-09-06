@@ -8,5 +8,5 @@ export interface HeaderRequestBusinessButtonProps {
 }
 
 export function HeaderRequestBusinessButton({ onPress, size = 38, label = 'Request Business', iconColor }: HeaderRequestBusinessButtonProps) {
-	return <HeaderIconBaseButton icon="briefcase" label={label} onPress={onPress} size={size} iconColor={iconColor} />
+	return <HeaderIconBaseButton icon="briefcase-outline" label={label} onPress={onPress} size={size} iconColor={iconColor} />
 }

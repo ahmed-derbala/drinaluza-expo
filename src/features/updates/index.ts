@@ -1,4 +1,5 @@
 export * from './types'
+export * from './apkIntegrity'
 export * from './UpdatesContext'
 export * from './useUpdates'
 export * from './CurrentVersionCard'

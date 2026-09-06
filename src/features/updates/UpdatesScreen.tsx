@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
 export default function UpdatesScreen() {
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
-	const { isChecking, isDownloading, downloadedApks, checkForUpdates, installApk, deleteApk, refreshApkList, isPaused } = useUpdates()
+	const { isChecking, isDownloading, isVerifying, downloadedApks, checkForUpdates, installApk, deleteApk, refreshApkList, isPaused } = useUpdates()
 
 	useEffect(() => {
 		checkForUpdates()
@@ -117,7 +117,7 @@ export default function UpdatesScreen() {
 					<View style={styles.section}>
 						<View style={styles.apkList}>
 							{sortedApks.map((apk) => (
-								<ApkCard key={apk.filename} apk={apk} onInstall={installApk} onDelete={deleteApk} onShare={handleShareApk} disabledInstall={!isAndroid || isDownloading || isPaused} />
+								<ApkCard key={apk.filename} apk={apk} onInstall={installApk} onDelete={deleteApk} onShare={handleShareApk} disabledInstall={!isAndroid || isDownloading || isPaused || isVerifying} />
 							))}
 						</View>
 					</View>
