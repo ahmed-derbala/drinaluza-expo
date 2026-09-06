@@ -13,6 +13,22 @@ export const isMobile = isAndroid || isIos
 
 export const isNative = !isWeb
 
+/**
+ * Web browser running on an Android device (user agent contains "Android").
+ * Used to offer the Android APK download only where it can be installed.
+ * Always false on native builds and non-Android browsers.
+ */
+export const isWebAndroid = (() => {
+	if (!isWeb) return false
+	try {
+		if (typeof navigator === 'undefined') return false
+		const ua = (navigator as any).userAgentData?.platform ?? navigator.userAgent ?? ''
+		return /android/i.test(String(ua))
+	} catch {
+		return false
+	}
+})()
+
 // Re-export Platform.select for convenience
 export const select = Platform.select
 
@@ -24,6 +40,7 @@ export interface PlatformInfo {
 	isIos: boolean
 	isMobile: boolean
 	isNative: boolean
+	isWebAndroid: boolean
 	isLandscape: boolean
 	width: number
 	height: number
@@ -39,6 +56,7 @@ export const usePlatform = (): PlatformInfo => {
 		isIos,
 		isMobile,
 		isNative,
+		isWebAndroid,
 		isLandscape,
 		width,
 		height

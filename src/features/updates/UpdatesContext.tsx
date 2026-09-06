@@ -13,7 +13,8 @@
  */
 
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
-import { Platform, Alert, AppState } from 'react-native'
+import { Alert, AppState } from 'react-native'
+import { isWeb, isAndroid } from '@platform'
 import { config } from '@/config'
 import { File, ensureDirectory, getUpdatesDirectory, getFileInfo, deletePath, moveFile, getFreeDiskStorage, listDirectory, getContentUri } from '@disk'
 import { log } from '@log'
@@ -45,7 +46,7 @@ const PROGRESS_PERSIST_MIN_MS = 2000
 
 const getUpdatesFolder = (): any | null => getUpdatesDirectory()
 const UPDATES_FOLDER = (() => {
-	if (Platform.OS === 'web') return ''
+	if (isWeb) return ''
 	try {
 		const dir = getUpdatesDirectory()
 		return (dir as any)?.uri ? (dir as any).uri + '/' : ''
@@ -55,7 +56,7 @@ const UPDATES_FOLDER = (() => {
 })()
 // Helper: Ensure the updates directory exists
 const ensureUpdatesFolder = async () => {
-	if (Platform.OS === 'web') return
+	if (isWeb) return
 	await ensureDirectory(getUpdatesFolder())
 }
 
@@ -63,7 +64,7 @@ const tmpUriFor = (version: string): string => `${UPDATES_FOLDER}drinaluza-${ver
 const finalUriFor = (version: string): string => `${UPDATES_FOLDER}drinaluza-${version}.apk`
 
 const getDownloadTaskClass = (): any | null => {
-	if (Platform.OS === 'web') return null
+	if (isWeb) return null
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-require-imports
 		return require('expo-file-system').DownloadTask
@@ -135,7 +136,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const latestReleaseRef = useRef(latestRelease)
 	// Fetch dynamic APK files from local storage on native platforms
 	const refreshApkList = useCallback(async (): Promise<CachedApkMetadata[]> => {
-		if (Platform.OS === 'web') return []
+		if (isWeb) return []
 		try {
 			await ensureUpdatesFolder()
 			const files = listDirectory(getUpdatesFolder()).map((e) => (e instanceof File ? (e as any).name : (e as any).name))
@@ -178,7 +179,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			const result = await checkUpdatesApi(config.updates.checkUrl)
 			setLatestRelease(result)
 			setIsChecking(false)
-			if (Platform.OS !== 'web') {
+			if (!isWeb) {
 				await refreshApkList()
 			}
 			return result
@@ -266,7 +267,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Install Android APK — validates integrity first to avoid "parsing the package" error
 	const installApk = useCallback(
 		async (fileUri: string) => {
-			if (Platform.OS !== 'android') return
+			if (!isAndroid) return
 			log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
 			setIsVerifying(true)
 			try {
@@ -316,7 +317,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// Delete downloaded APK
 	const deleteApk = useCallback(
 		async (fileUri: string) => {
-			if (Platform.OS === 'web') return
+			if (isWeb) return
 			try {
 				await deletePath(fileUri)
 				await refreshApkList()
@@ -391,7 +392,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	)
 	// Download APK (fresh, or resume when a partial file for this version exists)
 	const downloadUpdate = useCallback(async (): Promise<string | null> => {
-		if (Platform.OS !== 'android' || !latestRelease || !latestRelease.download_url) {
+		if (!isAndroid || !latestRelease || !latestRelease.download_url) {
 			return null
 		}
 		if (isDownloadingRef.current) return null
@@ -456,7 +457,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	}, [persistDownloadState])
 	// Resume Download — live paused task, saved pause state, or on-disk offset
 	const resumeDownload = useCallback(async (): Promise<string | null> => {
-		if (Platform.OS !== 'android') return null
+		if (!isAndroid) return null
 		if (isDownloadingRef.current) return null
 		// Resolve metadata: live session, latest check, or persisted state
 		let meta = metaRef.current
@@ -588,7 +589,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	// corrupted, and older files. Never deletes the partial of an active/paused download.
 	const cleanupApks = useCallback(
 		async (maxKeep: number = config.updates.maxApkInstallersCount) => {
-			if (Platform.OS === 'web') return
+			if (isWeb) return
 			try {
 				await ensureUpdatesFolder()
 				await Promise.all(LEGACY_DOWNLOAD_KEYS.map((k) => removeItem(k).catch(() => {})))
@@ -651,7 +652,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	)
 	// Startup cleanup: respects user updateSettings from storage.
 	const performStartupCleanup = useCallback(async () => {
-		if (Platform.OS === 'web') return
+		if (isWeb) return
 		try {
 			await ensureUpdatesFolder()
 			const stored = await getItem<any>('updateSettings')
@@ -663,7 +664,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	}, [cleanupApks])
 	// Restore an interrupted download (paused or killed) so it can be resumed.
 	const restoreInterruptedDownload = useCallback(async () => {
-		if (Platform.OS === 'web') return
+		if (isWeb) return
 		try {
 			const persisted = await getItem<PersistedDownloadState>(DOWNLOAD_STATE_KEY)
 			if (!persisted?.version || !persisted?.url) return

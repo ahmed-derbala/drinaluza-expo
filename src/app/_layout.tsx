@@ -2,7 +2,8 @@ import '@bootstrap'
 import { Stack, usePathname, useRouter } from 'expo-router'
 import { useEffect, useState } from 'react'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
-import { View, Platform } from 'react-native'
+import { View } from 'react-native'
+import { isWeb, isAndroid, isWebAndroid } from '@platform'
 import { GestureHandlerRootView } from 'react-native-gesture-handler'
 import { useUpdates, isVersionGreater, UpdateCheckResult, DownloadAndroidAppModal, DOWNLOAD_APP_MODAL_DISMISSED_KEY, UpdatesProvider } from '@updates'
 import { config } from '@/config'
@@ -42,7 +43,8 @@ function RootLayoutContent() {
 
 		const performStartupCheck = async () => {
 			try {
-				if (Platform.OS === 'web') {
+				// APK download prompt: web browser on Android only
+				if (isWebAndroid) {
 					const isDismissed = await getItem<boolean>(DOWNLOAD_APP_MODAL_DISMISSED_KEY)
 					if (isDismissed) return
 
@@ -52,13 +54,14 @@ function RootLayoutContent() {
 					}
 					return
 				}
+				if (isWeb) return
 
 				const stored = await getItem<{ enabled: boolean }>('updateSettings')
 				const enabled = stored?.enabled ?? true
 				if (!enabled) return
 
 				// 1. Instantly check if there is a downloaded APK ready to install (no network delay)
-				if (Platform.OS === 'android') {
+				if (isAndroid) {
 					const freshApks = await refreshApkList()
 					const installableApk = freshApks.find((apk) => apk.isInstallable)
 					if (installableApk) {
@@ -107,7 +110,7 @@ function RootLayoutContent() {
 
 	return (
 		<>
-			<DownloadAndroidAppModal visible={!!downloadAppRelease} release={downloadAppRelease} onClose={() => setDownloadAppRelease(null)} />
+			<DownloadAndroidAppModal visible={isWebAndroid && !!downloadAppRelease} release={downloadAppRelease} onClose={() => setDownloadAppRelease(null)} />
 			<Stack
 				screenOptions={{
 					contentStyle: {

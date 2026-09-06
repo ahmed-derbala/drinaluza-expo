@@ -67,8 +67,9 @@ const createStyles = (colors: ThemeColors) =>
 			backgroundColor: 'transparent'
 		},
 		chipActive: {
+			borderWidth: 2,
 			borderColor: colors.primary,
-			backgroundColor: colors.primaryContainer
+			backgroundColor: colors.primaryContainer40
 		}
 	})
 

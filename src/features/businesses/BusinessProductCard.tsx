@@ -11,7 +11,8 @@ import { LinearGradient } from 'expo-linear-gradient'
 import { AddToCartButton } from '@buttons/AddToCartButton'
 import { QuantityStepperBlock, PriceBlock } from '@products/blocks'
 import { ProductSpecsBlock } from '@products/specs/ProductSpecsBlock'
-import { getItem, setItem, getToken } from '@storage'
+import { getItem, setItem } from '@storage'
+import { getToken } from '@secure-storage'
 import { toast } from '@ui/toast/Toast'
 
 export interface BusinessProductCardProps {

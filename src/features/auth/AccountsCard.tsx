@@ -2,8 +2,8 @@
  * AccountsCard — saved accounts card for the auth screen.
  *
  * Purpose: list saved accounts with quick-switch and remove actions.
- * The list has a capped height with its own vertical scroll so the
- * sign-in form below stays visible without scrolling the screen.
+ * The list scrolls horizontally so the sign-in form below stays visible
+ * without scrolling the screen.
  * Based on BaseCard, view mode only. Renders nothing when empty.
  */
 import React, { useMemo } from 'react'
@@ -16,14 +16,25 @@ import { SmartMediaView } from '@smart-media'
 import { DeleteButton } from '@buttons'
 import type { SavedAuth } from './auth.api'
 
-const ACCOUNTS_LIST_MAX_HEIGHT = 232
+const ACCOUNT_CARD_WIDTH = 184
 
 const formatLastAccess = (dateStr?: string) => {
 	if (!dateStr) return ''
 	try {
 		const date = new Date(dateStr)
 		if (isNaN(date.getTime())) return ''
-		return `${format(date, 'MMM d, yyyy, h:mm a')} (${formatDistanceToNow(date, { addSuffix: true })})`
+		return format(date, 'MMM d, yyyy, h:mm a')
+	} catch {
+		return ''
+	}
+}
+
+const formatElapsed = (dateStr?: string) => {
+	if (!dateStr) return ''
+	try {
+		const date = new Date(dateStr)
+		if (isNaN(date.getTime())) return ''
+		return formatDistanceToNow(date, { addSuffix: true })
 	} catch {
 		return ''
 	}
@@ -48,7 +59,7 @@ const AccountsCard: React.FC<AccountsCardProps> = ({ savedAccounts, activeSlug, 
 
 	return (
 		<BaseCard title={translate('saved_accounts', 'Saved Accounts')} iconName="people-outline" style={[styles.card, style]}>
-			<ScrollView style={styles.listScroll} contentContainerStyle={styles.list} showsVerticalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
+			<ScrollView horizontal style={styles.listScroll} contentContainerStyle={styles.list} showsHorizontalScrollIndicator={true} nestedScrollEnabled={true} keyboardShouldPersistTaps="handled">
 				{savedAccounts.map((account) => {
 					const isActive = activeSlug === account.slug
 					return (
@@ -62,9 +73,14 @@ const AccountsCard: React.FC<AccountsCardProps> = ({ savedAccounts, activeSlug, 
 										{account.slug}
 									</Text>
 									{account.lastSignIn && (
-										<Text style={[styles.accountAccessTime, { color: colors.textTertiary }]} numberOfLines={2}>
-											{formatLastAccess(account.lastSignIn)}
-										</Text>
+										<>
+											<Text style={[styles.accountAccessTime, { color: colors.textTertiary }]} numberOfLines={1}>
+												{formatLastAccess(account.lastSignIn)}
+											</Text>
+											<Text style={[styles.accountElapsedTime, { color: colors.textTertiary }]} numberOfLines={1}>
+												{formatElapsed(account.lastSignIn)}
+											</Text>
+										</>
 									)}
 								</View>
 							</TouchableOpacity>
@@ -83,35 +99,35 @@ const createStyles = (colors: ThemeColors) =>
 			marginBottom: 20
 		},
 		listScroll: {
-			maxHeight: ACCOUNTS_LIST_MAX_HEIGHT
+			flexGrow: 0
 		},
 		list: {
+			flexDirection: 'row',
 			gap: 10,
-			paddingBottom: 4
+			paddingRight: 4
 		},
 		accountRow: {
-			flexDirection: 'row',
+			width: ACCOUNT_CARD_WIDTH,
 			alignItems: 'center',
-			justifyContent: 'space-between',
 			borderWidth: 1,
-			borderRadius: 12,
-			padding: 10
+			borderRadius: 14,
+			padding: 16,
+			paddingTop: 20
 		},
 		accountRowActive: {
 			borderColor: colors.primary,
 			backgroundColor: `${colors.primary}15`
 		},
 		accountRowClickable: {
-			flex: 1,
-			flexDirection: 'row',
+			width: '100%',
 			alignItems: 'center'
 		},
 		accountAvatar: {
-			width: 40,
-			height: 40,
-			borderRadius: 20,
+			width: 64,
+			height: 64,
+			borderRadius: 32,
 			overflow: 'hidden',
-			borderWidth: 1.5
+			borderWidth: 2
 		},
 		accountAvatarActive: {
 			borderColor: colors.primary
@@ -121,22 +137,34 @@ const createStyles = (colors: ThemeColors) =>
 			height: '100%'
 		},
 		accountInfo: {
-			flex: 1,
-			paddingHorizontal: 12
+			width: '100%',
+			alignItems: 'center',
+			marginTop: 10
 		},
 		accountSlug: {
-			fontSize: 14,
-			fontWeight: '600'
+			fontSize: 16,
+			fontWeight: '700',
+			textAlign: 'center'
 		},
 		accountSlugActive: {
 			color: colors.primary
 		},
 		accountAccessTime: {
-			fontSize: 11,
-			marginTop: 2
+			fontSize: 12,
+			marginTop: 4,
+			textAlign: 'center'
+		},
+		accountElapsedTime: {
+			fontSize: 12,
+			fontWeight: '600',
+			marginTop: 2,
+			textAlign: 'center'
 		},
 		accountRemoveBtn: {
-			padding: 10,
+			position: 'absolute',
+			top: 2,
+			right: 2,
+			padding: 8,
 			alignItems: 'center',
 			justifyContent: 'center'
 		}

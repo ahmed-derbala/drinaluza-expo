@@ -142,7 +142,7 @@ export const SmartKebabMenu: React.FC = () => {
 		return undefined
 	}, [isPaused, isDownloading, downloadProgress, downloadedApks, latestRelease, colors.success, colors.warning, colors.info])
 
-	// Default menu items: /home, /about, /updates, and /settings
+	// Default menu items: /home, /dashboard, /profile, /about, /settings, /updates
 	const defaultItems: SmartKebabMenuItem[] = useMemo(
 		() => [
 			{
@@ -154,6 +154,22 @@ export const SmartKebabMenu: React.FC = () => {
 				}
 			},
 			{
+				key: 'dashboard',
+				label: translate('dashboard', 'Dashboard'),
+				icon: 'grid-outline',
+				onPress: () => {
+					router.push('/(home)/dashboard' as any)
+				}
+			},
+			{
+				key: 'profile',
+				label: translate('profile', 'Profile'),
+				icon: 'person-outline',
+				onPress: () => {
+					router.push('/(home)/profile' as any)
+				}
+			},
+			{
 				key: 'about',
 				label: translate('about', 'About'),
 				icon: 'information-circle-outline',
@@ -162,19 +178,19 @@ export const SmartKebabMenu: React.FC = () => {
 				}
 			},
 			{
-				key: 'updates',
-				label: translate('updates', 'Updates'),
-				icon: 'cloud-download-outline',
-				onPress: () => {
-					router.push('/updates' as any)
-				}
-			},
-			{
 				key: 'settings',
 				label: translate('settings', 'Settings'),
 				icon: 'settings-outline',
 				onPress: () => {
 					router.push('/settings' as any)
+				}
+			},
+			{
+				key: 'updates',
+				label: translate('updates', 'Updates'),
+				icon: 'cloud-download-outline',
+				onPress: () => {
+					router.push('/updates' as any)
 				}
 			}
 		],
@@ -187,6 +203,12 @@ export const SmartKebabMenu: React.FC = () => {
 			const cleanPath = pathname.toLowerCase()
 			if (item.key === 'home') {
 				return !(cleanPath === '/' || cleanPath === '/feed' || cleanPath.endsWith('/feed'))
+			}
+			if (item.key === 'dashboard') {
+				return !(cleanPath === '/dashboard' || cleanPath.endsWith('/dashboard'))
+			}
+			if (item.key === 'profile') {
+				return !(cleanPath === '/profile' || cleanPath.endsWith('/profile'))
 			}
 			if (item.key === 'about') {
 				return !(cleanPath === '/about' || cleanPath.endsWith('/about'))

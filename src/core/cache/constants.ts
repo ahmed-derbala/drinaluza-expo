@@ -3,7 +3,7 @@
  * and filesystem thresholds. Import from here instead of duplicating literals.
  */
 
-import { SECURE_KEYS } from '@storage'
+import { SECURE_KEYS } from '@secure-storage'
 
 // TTL for AsyncStorage cache entries (offline-first layer)
 export const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
@@ -12,7 +12,7 @@ export const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000 // 5 minutes
 export const MEDIA_CACHE_TTL_MS = DEFAULT_CACHE_TTL_MS
 
 // Secure / protected keys that must never be wiped by clearAllCache.
-// Re-uses the same list as `SECURE_KEYS` in `core/storage` to prevent drift.
+// Re-uses the same list as `SECURE_KEYS` in `core/secure-storage` to prevent drift.
 export const PROTECTED_STORAGE_KEYS = SECURE_KEYS
 
 export type ProtectedStorageKey = (typeof PROTECTED_STORAGE_KEYS)[number]

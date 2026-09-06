@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react'
-import { StyleSheet, Text, View, Platform, Share } from 'react-native'
+import { StyleSheet, Text, View, Share } from 'react-native'
+import { isWeb, isAndroid, select } from '@platform'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme, themeColors } from '@theme'
 import { translate } from '@translation'
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
 		justifyContent: 'center',
 		alignItems: 'center',
 		borderWidth: 1,
-		...Platform.select({
+		...select({
 			web: {
 				cursor: 'pointer'
 			} as any
@@ -79,7 +80,7 @@ const styles = StyleSheet.create({
 		flexWrap: 'wrap',
 		gap: 12,
 		marginTop: 10,
-		...Platform.select({
+		...select({
 			web: {
 				paddingBottom: 50
 			} as any
@@ -168,9 +169,6 @@ export const LatestReleaseCard: React.FC = () => {
 	const { colors } = useTheme()
 	const { isChecking, latestRelease, downloadProgress, isDownloading, isVerifying, downloadedApks, deviceFreeStorage, downloadUpdate, isPaused, pauseDownload, resumeDownload, cancelDownload } =
 		useUpdates()
-
-	const isAndroid = Platform.OS === 'android'
-	const isWeb = Platform.OS === 'web'
 
 	const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null)
 	const [remainingTime, setRemainingTime] = useState<number | null>(null)

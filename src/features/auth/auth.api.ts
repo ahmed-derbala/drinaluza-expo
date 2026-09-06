@@ -1,5 +1,6 @@
 import { getApiClient } from '@api'
-import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken, multiRemove, clearStorageExceptSavedAuths } from '@storage'
+import { multiRemove, clearStorageExceptSavedAuths } from '@storage'
+import { secureSetItem, secureGetItem, secureRemoveItem, setToken, getToken, removeToken } from '@secure-storage'
 import { setCacheItem, clearMemoryCache } from '@cache'
 import { log } from '@log'
 import { registerForExpoPush, saveExpoPushTokenInSession } from '@notifications/notifications.api'

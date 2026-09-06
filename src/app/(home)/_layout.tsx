@@ -54,7 +54,14 @@ export default function HomeLayout() {
 							>
 								{state.routes.map((route: any, index: number) => {
 									const { options } = descriptors[route.key]
-									const isFocused = state.index === index
+									// state.index misses nested pages (e.g. /dashboard/personal lives
+									// outside the tabs) and hidden routes, so confirm via pathname.
+									const cleanPath = pathname.toLowerCase()
+									const isPathMatch =
+										(route.name === 'feed' && (cleanPath === '/' || cleanPath.endsWith('/feed'))) ||
+										(route.name === 'dashboard' && cleanPath.includes('/dashboard')) ||
+										(route.name === 'profile' && (cleanPath.endsWith('/profile') || cleanPath.endsWith('/auth')))
+									const isFocused = state.index === index || isPathMatch
 									if (options.isVisible === false) return null
 									const onPress = () => {
 										if (route.name === 'profile' && !isAuthenticated) {

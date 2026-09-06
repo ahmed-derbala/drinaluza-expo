@@ -13,7 +13,7 @@
  * All reads use positioned `FileHandle` reads — no full-file buffering.
  */
 
-import { Platform } from 'react-native'
+import { isWeb } from '@platform'
 import { File } from '@disk'
 import { log } from '@log'
 
@@ -44,7 +44,7 @@ const EOCD_SCAN_BYTES = 22 + 65535 + 16
 
 /** Read `length` bytes at `offset` without loading the whole file. */
 export const readFileChunk = async (fileUri: string, offset: number, length: number): Promise<Uint8Array> => {
-	if (Platform.OS === 'web') throw new Error('file chunk reads are not supported on web')
+	if (isWeb) throw new Error('file chunk reads are not supported on web')
 	let FileMode: any = null
 	try {
 		// eslint-disable-next-line @typescript-eslint/no-require-imports

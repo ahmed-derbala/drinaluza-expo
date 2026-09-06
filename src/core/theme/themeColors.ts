@@ -9,7 +9,7 @@ export const themeColors: ThemeColors = {
 	background75: '#000000BF',
 	background95: '#000000F2',
 	backgroundSecondary: '#050505',
-	border: '#3A506B',
+	border: '#3B82F6',
 	buttonText: '#FFFFFF',
 	buttonText10: '#FFFFFF1A',
 	buttonText20: '#FFFFFF33',

@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from 'react'
-import { StyleSheet, View, Platform, Alert, useWindowDimensions } from 'react-native'
+import { StyleSheet, View, Alert, useWindowDimensions } from 'react-native'
+import { isWeb, isAndroid } from '@platform'
 import * as Sharing from 'expo-sharing'
 import { useTheme } from '@theme'
 import { translate } from '@translation'
@@ -42,12 +43,12 @@ export default function UpdatesScreen() {
 	}, [checkForUpdates])
 
 	useEffect(() => {
-		if (Platform.OS !== 'web') {
+		if (!isWeb) {
 			refreshApkList()
 		}
 	}, [refreshApkList])
 
-	const isAndroid = Platform.OS === 'android'
+	const showAndroidActions = isAndroid
 	const isWide = width > 680
 	const maxContentWidth = 920
 
@@ -90,7 +91,7 @@ export default function UpdatesScreen() {
 					<SmartHeader.RefreshButton
 						key="refresh"
 						onRefresh={async () => {
-							if (Platform.OS === 'web' && typeof window !== 'undefined') {
+							if (isWeb && typeof window !== 'undefined') {
 								;(window as any).location.reload()
 							} else {
 								await checkForUpdates()
@@ -117,7 +118,14 @@ export default function UpdatesScreen() {
 					<View style={styles.section}>
 						<View style={styles.apkList}>
 							{sortedApks.map((apk) => (
-								<ApkCard key={apk.filename} apk={apk} onInstall={installApk} onDelete={deleteApk} onShare={handleShareApk} disabledInstall={!isAndroid || isDownloading || isPaused || isVerifying} />
+								<ApkCard
+									key={apk.filename}
+									apk={apk}
+									onInstall={installApk}
+									onDelete={deleteApk}
+									onShare={handleShareApk}
+									disabledInstall={!showAndroidActions || isDownloading || isPaused || isVerifying}
+								/>
 							))}
 						</View>
 					</View>

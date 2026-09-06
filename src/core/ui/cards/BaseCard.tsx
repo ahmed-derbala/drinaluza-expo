@@ -22,7 +22,7 @@
  * Only pass explicit values to override the standard defaults.
  */
 import React from 'react'
-import { StyleSheet, View, Pressable, Text, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
+import { StyleSheet, View, Pressable, Text, Platform, type StyleProp, type ViewStyle, type TextStyle } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@theme'
 import { EditButton, SaveButton, CancelButton } from '@buttons'
@@ -120,12 +120,25 @@ export function BaseCard({
 	const { padding, minHeight } = resolveSize(size)
 	const borderRadius = borderRadiusProp ?? 16
 	const resolvedBackgroundColor = backgroundColor ?? colors.background
-	const resolvedBorderColor = focused ? colors.focus : (borderColor ?? colors.border)
+
+	const [currentMode, setCurrentMode] = React.useState(mode)
+	React.useEffect(() => {
+		setCurrentMode(mode)
+	}, [mode])
+	const [isHovered, setIsHovered] = React.useState(false)
+
+	const isEditable = currentMode === 'editable'
+	const isEdit = currentMode === 'edit'
+	const isForm = currentMode === 'form'
+	const showHeader = !!title || !!iconName || !!headerRight || isForm || isEdit || isEditable
+	const isPressable = !!onPress && !showHeader
+	const hoverActive = isPressable && isHovered && !disabled
+	const resolvedBorderColor = focused ? colors.focus : hoverActive ? colors.primary : (borderColor ?? colors.border)
 
 	const computedStyle: ViewStyle = {
 		backgroundColor: resolvedBackgroundColor,
 		borderColor: resolvedBorderColor,
-		borderWidth,
+		borderWidth: hoverActive ? 2 : borderWidth,
 		borderRadius,
 		padding,
 		minHeight,
@@ -133,16 +146,6 @@ export function BaseCard({
 	}
 
 	const cardStyles = [styles.baseCard, computedStyle, style]
-
-	const [currentMode, setCurrentMode] = React.useState(mode)
-	React.useEffect(() => {
-		setCurrentMode(mode)
-	}, [mode])
-
-	const isEditable = currentMode === 'editable'
-	const isEdit = currentMode === 'edit'
-	const isForm = currentMode === 'form'
-	const showHeader = !!title || !!iconName || !!headerRight || isForm || isEdit || isEditable
 
 	const notifyPhase = (editing: boolean) => {
 		onPhaseChange?.(editing)
@@ -195,8 +198,17 @@ export function BaseCard({
 
 	if (onPress && !showHeader) {
 		return (
-			<Pressable onPress={onPress} disabled={disabled} style={({ pressed }) => [cardStyles, { opacity: pressed ? activeOpacity : 1 }]} testID={testID} accessibilityRole="button">
+			<Pressable
+				onPress={onPress}
+				disabled={disabled}
+				onHoverIn={() => setIsHovered(true)}
+				onHoverOut={() => setIsHovered(false)}
+				style={({ pressed }) => [cardStyles, { opacity: pressed ? activeOpacity : 1 }, Platform.select({ web: { cursor: 'pointer' } as any })]}
+				testID={testID}
+				accessibilityRole="button"
+			>
 				{cardContent}
+				{hoverActive ? <View style={[styles.hoverTint, { backgroundColor: colors.primaryContainer20, borderRadius }]} pointerEvents="none" /> : null}
 			</Pressable>
 		)
 	}
@@ -238,6 +250,9 @@ const styles = StyleSheet.create({
 	},
 	iconButton: {
 		padding: 4
+	},
+	hoverTint: {
+		...StyleSheet.absoluteFill
 	},
 	content: {}
 })

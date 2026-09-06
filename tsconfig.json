@@ -125,6 +125,12 @@
       "@socketio/*": [
         "src/core/socketio/*"
       ],
+      "@secure-storage": [
+        "src/core/secure-storage"
+      ],
+      "@secure-storage/*": [
+        "src/core/secure-storage/*"
+      ],
       "@storage": [
         "src/core/storage"
       ],

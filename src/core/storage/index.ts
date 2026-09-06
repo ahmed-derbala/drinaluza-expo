@@ -1,83 +1,15 @@
+/**
+ * core/storage — normal (non-sensitive) data persistence.
+ *
+ * AsyncStorage-backed key-value helpers for settings, flags, caches and
+ * other non-sensitive data. Sensitive values (tokens, user data, saved
+ * accounts) belong in `@secure-storage`. Mass-clear helpers span both
+ * backends via `@secure-storage` (one-directional dependency).
+ */
 import AsyncStorage from '@react-native-async-storage/async-storage'
-import * as SecureStore from 'expo-secure-store'
 import { Platform } from 'react-native'
 import { log } from '@log'
-
-// List of all known secure keys used in the app
-export const SECURE_KEYS = ['authToken', 'refreshToken', 'userData', 'user._id', 'user.slug', 'user.settings', 'saved_authentications', 'expoPushToken'] as const
-
-// Secure storage functions
-export const secureSetItem = async (key: string, value: string): Promise<boolean> => {
-	try {
-		if (Platform.OS === 'web') {
-			await AsyncStorage.setItem(key, value)
-		} else {
-			try {
-				await SecureStore.setItemAsync(key, value)
-			} catch (e) {
-				// Fallback to AsyncStorage if SecureStore fails
-				await AsyncStorage.setItem(key, value)
-			}
-		}
-		return true
-	} catch (error) {
-		log({
-			level: 'error',
-			label: 'storage',
-			message: `Error secure-storing item for key: ${key}`,
-			error
-		})
-		return false
-	}
-}
-
-export const secureGetItem = async (key: string): Promise<string | null> => {
-	try {
-		if (Platform.OS === 'web') {
-			return await AsyncStorage.getItem(key)
-		} else {
-			try {
-				const value = await SecureStore.getItemAsync(key)
-				if (value !== null) return value
-				return await AsyncStorage.getItem(key)
-			} catch (e) {
-				return await AsyncStorage.getItem(key)
-			}
-		}
-	} catch (error) {
-		log({
-			level: 'error',
-			label: 'storage',
-			message: `Error secure-getting item for key: ${key}`,
-			error
-		})
-		return null
-	}
-}
-
-export const secureRemoveItem = async (key: string): Promise<boolean> => {
-	try {
-		if (Platform.OS === 'web') {
-			await AsyncStorage.removeItem(key)
-		} else {
-			try {
-				await SecureStore.deleteItemAsync(key)
-				await AsyncStorage.removeItem(key)
-			} catch (e) {
-				await AsyncStorage.removeItem(key)
-			}
-		}
-		return true
-	} catch (error) {
-		log({
-			level: 'error',
-			label: 'storage',
-			message: `Error secure-removing item for key: ${key}`,
-			error
-		})
-		return false
-	}
-}
+import { SECURE_KEYS, secureRemoveItem } from '@secure-storage'
 
 // Regular (non-secure) storage functions
 export const setItem = async (key: string, value: any): Promise<boolean> => {
@@ -180,30 +112,17 @@ export const getItemSize = async (key: string): Promise<number> => {
 	}
 }
 
-// Token management shortcuts
-export const getToken = async (): Promise<string | null> => {
-	return await secureGetItem('authToken')
-}
-
-export const setToken = async (token: string): Promise<boolean> => {
-	return await secureSetItem('authToken', token)
-}
-
-export const removeToken = async (): Promise<boolean> => {
-	return await secureRemoveItem('authToken')
-}
-
-// Mass storage clear functions
+// Mass storage clear functions (span both backends via @secure-storage)
 export const clearAllStorage = async (): Promise<boolean> => {
 	try {
 		// 1. Clear AsyncStorage completely
 		await AsyncStorage.clear()
 
-		// 2. Clear known SecureStore keys
+		// 2. Clear known secure keys
 		if (Platform.OS !== 'web') {
 			for (const key of SECURE_KEYS) {
 				try {
-					await SecureStore.deleteItemAsync(key)
+					await secureRemoveItem(key)
 				} catch (e) {
 					// Ignore failures on individual keys
 				}
@@ -246,12 +165,12 @@ export const clearStorageExceptSavedAuths = async (): Promise<boolean> => {
 		const keysToRemove = allKeys.filter((key) => key !== SAVED_AUTHS_KEY)
 		await AsyncStorage.multiRemove(keysToRemove)
 
-		// 2. Clear SecureStore keys except SAVED_AUTHS_KEY
+		// 2. Clear secure keys except SAVED_AUTHS_KEY
 		if (Platform.OS !== 'web') {
 			for (const key of SECURE_KEYS) {
 				if (key !== SAVED_AUTHS_KEY) {
 					try {
-						await SecureStore.deleteItemAsync(key)
+						await secureRemoveItem(key)
 					} catch (e) {
 						// Ignore failures on individual keys
 					}
