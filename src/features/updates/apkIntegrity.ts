@@ -36,7 +36,9 @@ export interface ApkVerifyProgress {
 }
 
 const MIN_APK_BYTES = 1024 * 1024
-const HASH_CHUNK_BYTES = 4 * 1024 * 1024
+// 2MB chunks: each chunk blocks the JS thread briefly for read+hash,
+// then yields so the UI stays responsive during verification.
+const HASH_CHUNK_BYTES = 2 * 1024 * 1024
 // EOCD record is 22 bytes; it can be preceded by a comment of up to 65535 bytes.
 const EOCD_SCAN_BYTES = 22 + 65535 + 16
 
@@ -136,6 +138,9 @@ const SHA256_K = [
 
 const rotr = (x: number, n: number): number => (x >>> n) | (x << (32 - n))
 
+// Reused message-schedule buffer: avoids ~2M allocations when hashing a ~130MB APK.
+const SHA_W = new Int32Array(64)
+
 /** Minimal incremental SHA-256 (FIPS 180-4) to hash large files in chunks. */
 export class IncrementalSha256 {
 	private h0 = 0x6a09e667
@@ -171,12 +176,29 @@ export class IncrementalSha256 {
 	}
 
 	private compress(): void {
-		const w = new Array<number>(64)
+		const w = SHA_W
 		const blk = this.block
-		for (let i = 0; i < 16; i++) w[i] = (blk[i * 4] << 24) | (blk[i * 4 + 1] << 16) | (blk[i * 4 + 2] << 8) | blk[i * 4 + 3]
+		w[0] = (blk[0] << 24) | (blk[1] << 16) | (blk[2] << 8) | blk[3]
+		w[1] = (blk[4] << 24) | (blk[5] << 16) | (blk[6] << 8) | blk[7]
+		w[2] = (blk[8] << 24) | (blk[9] << 16) | (blk[10] << 8) | blk[11]
+		w[3] = (blk[12] << 24) | (blk[13] << 16) | (blk[14] << 8) | blk[15]
+		w[4] = (blk[16] << 24) | (blk[17] << 16) | (blk[18] << 8) | blk[19]
+		w[5] = (blk[20] << 24) | (blk[21] << 16) | (blk[22] << 8) | blk[23]
+		w[6] = (blk[24] << 24) | (blk[25] << 16) | (blk[26] << 8) | blk[27]
+		w[7] = (blk[28] << 24) | (blk[29] << 16) | (blk[30] << 8) | blk[31]
+		w[8] = (blk[32] << 24) | (blk[33] << 16) | (blk[34] << 8) | blk[35]
+		w[9] = (blk[36] << 24) | (blk[37] << 16) | (blk[38] << 8) | blk[39]
+		w[10] = (blk[40] << 24) | (blk[41] << 16) | (blk[42] << 8) | blk[43]
+		w[11] = (blk[44] << 24) | (blk[45] << 16) | (blk[46] << 8) | blk[47]
+		w[12] = (blk[48] << 24) | (blk[49] << 16) | (blk[50] << 8) | blk[51]
+		w[13] = (blk[52] << 24) | (blk[53] << 16) | (blk[54] << 8) | blk[55]
+		w[14] = (blk[56] << 24) | (blk[57] << 16) | (blk[58] << 8) | blk[59]
+		w[15] = (blk[60] << 24) | (blk[61] << 16) | (blk[62] << 8) | blk[63]
 		for (let i = 16; i < 64; i++) {
-			const s0 = (rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >>> 3)) | 0
-			const s1 = (rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >>> 10)) | 0
+			const x15 = w[i - 15]
+			const x2 = w[i - 2]
+			const s0 = (rotr(x15, 7) ^ rotr(x15, 18) ^ (x15 >>> 3)) | 0
+			const s1 = (rotr(x2, 17) ^ rotr(x2, 19) ^ (x2 >>> 10)) | 0
 			w[i] = (w[i - 16] + s0 + w[i - 7] + s1) | 0
 		}
 		let a = this.h0

@@ -167,8 +167,21 @@ function formatSpeed(speedBytesPerSec: number | null): string {
 
 export const LatestReleaseCard: React.FC = () => {
 	const { colors } = useTheme()
-	const { isChecking, latestRelease, downloadProgress, isDownloading, isVerifying, downloadedApks, deviceFreeStorage, downloadUpdate, isPaused, pauseDownload, resumeDownload, cancelDownload } =
-		useUpdates()
+	const {
+		isChecking,
+		latestRelease,
+		downloadProgress,
+		isDownloading,
+		isVerifying,
+		verifyProgress,
+		downloadedApks,
+		deviceFreeStorage,
+		downloadUpdate,
+		isPaused,
+		pauseDownload,
+		resumeDownload,
+		cancelDownload
+	} = useUpdates()
 
 	const [downloadSpeed, setDownloadSpeed] = useState<number | null>(null)
 	const [remainingTime, setRemainingTime] = useState<number | null>(null)
@@ -305,7 +318,7 @@ export const LatestReleaseCard: React.FC = () => {
 				<View style={styles.progressPanel}>
 					<View style={styles.progressMeta}>
 						<Text style={[styles.progressText, { color: isDownloading ? colors.primary : isPaused ? colors.warning : colors.textSecondary }]} numberOfLines={1} adjustsFontSizeToFit>
-							{isVerifying ? translate('verifying', 'Verifying…') : isDownloading || isPaused ? `${Math.round(downloadProgress * 100)}%` : ''}
+							{isVerifying ? `${translate('verifying', 'Verifying')} ${Math.round(verifyProgress * 100)}%` : isDownloading || isPaused ? `${Math.round(downloadProgress * 100)}%` : ''}
 						</Text>
 						<View style={styles.progressBadges}>
 							<View style={[styles.progressBadge, { backgroundColor: colors.surface, opacity: downloadSpeed === null ? 0 : 1 }]}>

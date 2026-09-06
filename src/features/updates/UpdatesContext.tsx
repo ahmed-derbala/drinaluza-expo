@@ -21,7 +21,7 @@ import { log } from '@log'
 import { getItem, setItem, removeItem } from '@storage'
 import { deferStartup } from '@helpers/defer'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
-import { verifyApkFile } from './apkIntegrity'
+import { verifyApkFile, type ApkIntegrityOptions } from './apkIntegrity'
 import type { DownloadTask, DownloadPauseState, DownloadProgress } from 'expo-file-system'
 
 interface DownloadMeta {
@@ -120,6 +120,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const [downloadProgress, setDownloadProgress] = useState(0)
 	const [isDownloading, setIsDownloading] = useState(false)
 	const [isVerifying, setIsVerifying] = useState(false)
+	const [verifyProgress, setVerifyProgress] = useState(0)
 	const [downloadedApks, setDownloadedApks] = useState<CachedApkMetadata[]>([])
 	const [deviceFreeStorage, setDeviceFreeStorage] = useState(0)
 	const [isPaused, setIsPaused] = useState(false)
@@ -220,6 +221,21 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		},
 		[persistProgressThrottled]
 	)
+	// Integrity gate with live hashing progress (isVerifying + verifyProgress).
+	const verifyWithProgress = useCallback(async (fileUri: string, options: ApkIntegrityOptions) => {
+		setIsVerifying(true)
+		setVerifyProgress(0)
+		try {
+			return await verifyApkFile(fileUri, options, (p) => {
+				if (p.phase === 'digest' && p.totalBytes) {
+					setVerifyProgress(Math.min(1, Math.max(0, (p.bytesHashed ?? 0) / p.totalBytes)))
+				}
+			})
+		} finally {
+			setIsVerifying(false)
+			setVerifyProgress(0)
+		}
+	}, [])
 	// Shared completion tail for downloadAsync()/resumeAsync(): null = paused,
 	// File = fully written → integrity gate → rename → install.
 	const completeTask = useCallback(
@@ -232,36 +248,31 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 			const completedUri = file?.uri ?? tmpUri
 			setIsDownloading(false)
-			setIsVerifying(true)
-			try {
-				const verify = await verifyApkFile(completedUri, { expectedSize: meta.size, digest: meta.digest })
-				if (!verify.ok) {
-					await deletePath(completedUri).catch(() => {})
-					await persistDownloadState(null)
-					savableRef.current = null
-					metaRef.current = null
-					setDownloadProgress(0)
-					setIsPaused(false)
-					const message = `Update file corrupted (${verify.reason}). Please download again.`
-					setError(message)
-					Alert.alert('Download Failed Verification', message, [{ text: 'OK' }])
-					return null
-				}
-				setDownloadProgress(1)
+			const verify = await verifyWithProgress(completedUri, { expectedSize: meta.size, digest: meta.digest })
+			if (!verify.ok) {
+				await deletePath(completedUri).catch(() => {})
 				await persistDownloadState(null)
 				savableRef.current = null
-				// Rename temp file to final .apk file on successful verification
-				await moveFile(completedUri, fileUri)
 				metaRef.current = null
-				await refreshApkList()
-				// Automatically launch package installer when download is complete
-				await installApkRef.current(fileUri)
-				return fileUri
-			} finally {
-				setIsVerifying(false)
+				setDownloadProgress(0)
+				setIsPaused(false)
+				const message = `Update file corrupted (${verify.reason}). Please download again.`
+				setError(message)
+				Alert.alert('Download Failed Verification', message, [{ text: 'OK' }])
+				return null
 			}
+			setDownloadProgress(1)
+			await persistDownloadState(null)
+			savableRef.current = null
+			// Rename temp file to final .apk file on successful verification
+			await moveFile(completedUri, fileUri)
+			metaRef.current = null
+			await refreshApkList()
+			// Automatically launch package installer when download is complete
+			await installApkRef.current(fileUri)
+			return fileUri
 		},
-		[persistDownloadState, refreshApkList]
+		[verifyWithProgress, persistDownloadState, refreshApkList]
 	)
 	const installApkRef = useRef<(fileUri: string) => Promise<void>>(async () => {})
 	// Install Android APK — validates integrity first to avoid "parsing the package" error
@@ -269,13 +280,12 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		async (fileUri: string) => {
 			if (!isAndroid) return
 			log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
-			setIsVerifying(true)
+			const match = fileUri.match(/drinaluza-(.+)\.apk/)
+			const version = match ? match[1] : null
+			const rel = latestReleaseRef.current
+			const isLatest = version && rel && version === rel.latest_version
 			try {
-				const match = fileUri.match(/drinaluza-(.+)\.apk/)
-				const version = match ? match[1] : null
-				const rel = latestReleaseRef.current
-				const isLatest = version && rel && version === rel.latest_version
-				const verify = await verifyApkFile(fileUri, isLatest ? { expectedSize: rel!.size, digest: rel!.digest } : {})
+				const verify = await verifyWithProgress(fileUri, isLatest ? { expectedSize: rel!.size, digest: rel!.digest } : {})
 				if (!verify.ok) {
 					await deletePath(fileUri).catch(() => {})
 					await refreshApkList()
@@ -308,11 +318,9 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 					[{ text: 'OK' }]
 				)
 				throw new Error(err?.message || 'Failed to launch the Android package installer. Please verify permissions.')
-			} finally {
-				setIsVerifying(false)
 			}
 		},
-		[refreshApkList]
+		[verifyWithProgress, refreshApkList]
 	)
 	// Delete downloaded APK
 	const deleteApk = useCallback(
@@ -413,16 +421,11 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		// A verified final file needs no re-download — install it directly
 		const finalInfo = await getFileInfo(fileUri).catch(() => null)
 		if (finalInfo?.exists && (finalInfo.size || 0) > 0) {
-			setIsVerifying(true)
-			try {
-				const verify = await verifyApkFile(fileUri, { expectedSize: meta.size, digest: meta.digest })
-				if (verify.ok) {
-					await refreshApkList()
-					await installApk(fileUri)
-					return fileUri
-				}
-			} finally {
-				setIsVerifying(false)
+			const verify = await verifyWithProgress(fileUri, { expectedSize: meta.size, digest: meta.digest })
+			if (verify.ok) {
+				await refreshApkList()
+				await installApk(fileUri)
+				return fileUri
 			}
 			await deletePath(fileUri).catch(() => {})
 		}
@@ -433,7 +436,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			return await resumeDownloadRef.current()
 		}
 		return await startFreshDownload(meta)
-	}, [latestRelease, hasEnoughStorage, refreshApkList, installApk, startFreshDownload])
+	}, [latestRelease, hasEnoughStorage, refreshApkList, installApk, startFreshDownload, verifyWithProgress])
 	// Pause Download — native task produces resume data, partial file stays
 	const pauseDownload = useCallback(async () => {
 		const task = taskRef.current
@@ -716,6 +719,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			downloadProgress,
 			isDownloading,
 			isVerifying,
+			verifyProgress,
 			downloadedApks,
 			deviceFreeStorage,
 			checkForUpdates,
@@ -736,6 +740,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			downloadProgress,
 			isDownloading,
 			isVerifying,
+			verifyProgress,
 			downloadedApks,
 			deviceFreeStorage,
 			checkForUpdates,
