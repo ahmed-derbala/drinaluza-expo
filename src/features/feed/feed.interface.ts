@@ -34,6 +34,7 @@ interface BusinessLocation {
 	speed?: number
 	deviceTimestamp?: string
 	sharingEnabled?: boolean
+	createdAt?: string
 	updatedAt?: string
 }
 
@@ -74,9 +75,9 @@ interface Price {
 		tnd: number
 		eur?: number | null
 		usd?: number | null
-		updatedAt: string
+		updatedAt?: string
 	}
-	updatedAt: string
+	updatedAt?: string
 }
 
 interface Unit {
@@ -123,6 +124,11 @@ export interface FeedItem {
 		thumbnail?: {
 			url: string
 		}
+		gallery?: Array<{
+			url?: string
+			resource_type?: string
+			mimetype?: string
+		}>
 	}
 	slug: string
 	createdAt: string
@@ -138,6 +144,11 @@ export interface FeedItem {
 			thumbnail: {
 				url: string
 			}
+			gallery?: Array<{
+				url?: string
+				resource_type?: string
+				mimetype?: string
+			}>
 		}
 	}
 	contact?: {
@@ -168,7 +179,7 @@ export interface ProductFeedItem extends FeedItem {
 	name: MultiLang
 	price: Price
 	unit: Unit
-	state: {
+	state?: {
 		code: string
 		updatedAt: string
 	}
@@ -189,10 +200,14 @@ export interface UserFeedItem extends FeedItem {
 
 export interface RawFeedDoc {
 	_id: string
-	targetData: any
-	targetResource: 'products' | 'businesses' | 'users'
-	card: {
-		kind: string
+	slug?: string
+	name?: MultiLang
+	media?: FeedItem['media']
+	card?: {
+		kind?: string
+		purchase?: {
+			allowed?: boolean
+		}
 	}
 	createdAt: string
 	updatedAt: string
