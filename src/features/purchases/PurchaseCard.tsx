@@ -1,6 +1,7 @@
 import React from 'react'
-import { View, Text, StyleSheet } from 'react-native'
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native'
 import { useRouter } from 'expo-router'
+import { Ionicons } from '@expo/vector-icons'
 import { useTheme } from '@theme'
 import { BaseCard } from '@cards/BaseCard'
 import { useUser } from '@contexts'
@@ -123,10 +124,14 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 		if (slug) router.push(`/products/${slug}` as any)
 	}
 
+	const handleOpenDetails = () => {
+		router.push(`/purchases/${item._id}` as any)
+	}
+
 	return (
 		<BaseCard style={styles.card}>
 			<View style={styles.header}>
-				<View style={styles.headerLeft}>
+				<TouchableOpacity style={styles.headerLeft} onPress={handleOpenDetails} activeOpacity={0.7} accessibilityRole="button" accessibilityLabel="Open purchase details">
 					<SmartMediaView media={businessImage} style={[styles.avatar, { borderColor: colors.border }]} />
 					<View style={styles.headerInfo}>
 						<Text style={[styles.businessName, { color: colors.text }]} numberOfLines={1}>
@@ -134,7 +139,8 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 						</Text>
 						<Text style={[styles.orderDate, { color: colors.textSecondary }]}>{orderDate}</Text>
 					</View>
-				</View>
+					<Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
+				</TouchableOpacity>
 				<View style={[styles.statusBadge, { backgroundColor: statusColor + '15' }]}>
 					<Text style={[styles.statusText, { color: statusColor }]}>{statusLabel}</Text>
 				</View>

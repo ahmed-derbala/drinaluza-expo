@@ -1,6 +1,7 @@
 export { HeaderBackButton } from './HeaderBackButton'
 export { HeaderIconBaseButton } from './HeaderIconBaseButton'
 export { HeaderRefreshButton } from './HeaderRefreshButton'
+export { HeaderUpdatesRefreshButton } from './HeaderUpdatesRefreshButton'
 export { HeaderSearchButton } from './HeaderSearchButton'
 export { HeaderCartButton } from './HeaderCartButton'
 export { HeaderQRCodeButton } from './HeaderQRCodeButton'

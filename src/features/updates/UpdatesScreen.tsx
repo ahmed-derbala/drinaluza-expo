@@ -5,6 +5,7 @@ import * as Sharing from 'expo-sharing'
 import { useTheme } from '@theme'
 import { translate } from '@translation'
 import { SmartHeader } from '@smart-header'
+import { HeaderUpdatesRefreshButton } from '@smart-header/buttons'
 import { config } from '@/config'
 import { log } from '@log'
 import { useUpdates } from './useUpdates'
@@ -36,7 +37,7 @@ const styles = StyleSheet.create({
 export default function UpdatesScreen() {
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
-	const { isChecking, isDownloading, isVerifying, downloadedApks, checkForUpdates, installApk, deleteApk, refreshApkList, isPaused } = useUpdates()
+	const { isChecking, isDownloading, downloadedApks, checkForUpdates, installApk, deleteApk, refreshApkList, isPaused } = useUpdates()
 
 	useEffect(() => {
 		checkForUpdates()
@@ -88,7 +89,7 @@ export default function UpdatesScreen() {
 				fallbackRoute="/feed"
 				disableAnimations={true}
 				headerActions={[
-					<SmartHeader.RefreshButton
+					<HeaderUpdatesRefreshButton
 						key="refresh"
 						onRefresh={async () => {
 							if (isWeb && typeof window !== 'undefined') {
@@ -118,14 +119,7 @@ export default function UpdatesScreen() {
 					<View style={styles.section}>
 						<View style={styles.apkList}>
 							{sortedApks.map((apk) => (
-								<ApkCard
-									key={apk.filename}
-									apk={apk}
-									onInstall={installApk}
-									onDelete={deleteApk}
-									onShare={handleShareApk}
-									disabledInstall={!showAndroidActions || isDownloading || isPaused || isVerifying}
-								/>
+								<ApkCard key={apk.filename} apk={apk} onInstall={installApk} onDelete={deleteApk} onShare={handleShareApk} disabledInstall={!showAndroidActions || isDownloading || isPaused} />
 							))}
 						</View>
 					</View>

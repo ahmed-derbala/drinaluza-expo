@@ -23,8 +23,6 @@ export interface UpdatesContextProps {
 	error: string | null
 	downloadProgress: number // 0 to 1
 	isDownloading: boolean
-	isVerifying: boolean // integrity check running before install
-	verifyProgress: number // 0 to 1, hashing progress while verifying
 	downloadedApks: CachedApkMetadata[]
 	deviceFreeStorage: number // bytes
 	checkForUpdates: (manual?: boolean) => Promise<UpdateCheckResult | null>

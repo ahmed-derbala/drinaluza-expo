@@ -113,7 +113,6 @@ export default function PurchaseScreen() {
 		return (
 			<View style={[styles.container, { backgroundColor: colors.background, paddingBottom: insets.bottom }]}>
 				<Stack.Screen options={{ title: translate('error', 'Error') }} />
-				<SmartHeader title={translate('error', 'Error')} fallbackRoute="/purchases" />
 				<ErrorBlock onRetry={() => fetchPurchase(true)} />
 			</View>
 		)
@@ -125,7 +124,7 @@ export default function PurchaseScreen() {
 				options={
 					{
 						title: translate('purchase_details', 'Purchase Details'),
-						subtitle: purchase._id,
+						subtitle: `#${purchase._id.slice(-8)}`,
 						headerActions: [<HeaderRefreshButton key="refresh" onRefresh={onRefresh} isRefreshing={refreshing} />]
 					} as any
 				}

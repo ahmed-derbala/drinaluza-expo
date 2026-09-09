@@ -1,5 +1,5 @@
 /**
- * features/updates/UpdatesContext — check, download (pausable/resumable), verify and install APK updates.
+ * features/updates/UpdatesContext — check, download (pausable/resumable) and install APK updates.
  *
  * Download durability design (expo-file-system `DownloadTask`):
  * - in-app navigation: the task lives in this provider, screens can change freely.
@@ -8,8 +8,7 @@
  * - app killed: the partial `.tmp` file plus persisted state are picked up on
  *   next launch and offered as a paused download; resume re-sends
  *   `Range: bytes=<on-disk-length>-` (server answers 206) or restarts cleanly.
- * - completion gate: exact size + ZIP structure + SHA-256 (release digest)
- *   are verified before the file is renamed to `.apk` and the installer opens.
+ * - on completion the temp file is renamed to `.apk` and the installer opens.
  */
 
 import React, { createContext, useState, useEffect, useCallback, useMemo, useRef } from 'react'
@@ -21,7 +20,6 @@ import { log } from '@log'
 import { getItem, setItem, removeItem } from '@storage'
 import { deferStartup } from '@helpers/defer'
 import { UpdateCheckResult, CachedApkMetadata, UpdatesContextProps } from './types'
-import { verifyApkFile, type ApkIntegrityOptions } from './apkIntegrity'
 import type { DownloadTask, DownloadPauseState, DownloadProgress } from 'expo-file-system'
 
 interface DownloadMeta {
@@ -119,8 +117,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 	const [error, setError] = useState<string | null>(null)
 	const [downloadProgress, setDownloadProgress] = useState(0)
 	const [isDownloading, setIsDownloading] = useState(false)
-	const [isVerifying, setIsVerifying] = useState(false)
-	const [verifyProgress, setVerifyProgress] = useState(0)
 	const [downloadedApks, setDownloadedApks] = useState<CachedApkMetadata[]>([])
 	const [deviceFreeStorage, setDeviceFreeStorage] = useState(0)
 	const [isPaused, setIsPaused] = useState(false)
@@ -221,23 +217,8 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		},
 		[persistProgressThrottled]
 	)
-	// Integrity gate with live hashing progress (isVerifying + verifyProgress).
-	const verifyWithProgress = useCallback(async (fileUri: string, options: ApkIntegrityOptions) => {
-		setIsVerifying(true)
-		setVerifyProgress(0)
-		try {
-			return await verifyApkFile(fileUri, options, (p) => {
-				if (p.phase === 'digest' && p.totalBytes) {
-					setVerifyProgress(Math.min(1, Math.max(0, (p.bytesHashed ?? 0) / p.totalBytes)))
-				}
-			})
-		} finally {
-			setIsVerifying(false)
-			setVerifyProgress(0)
-		}
-	}, [])
 	// Shared completion tail for downloadAsync()/resumeAsync(): null = paused,
-	// File = fully written → integrity gate → rename → install.
+	// File = fully written → rename to final .apk → install.
 	const completeTask = useCallback(
 		async (file: any | null, meta: DownloadMeta): Promise<string | null> => {
 			const tmpUri = tmpUriFor(meta.version)
@@ -248,23 +229,10 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			}
 			const completedUri = file?.uri ?? tmpUri
 			setIsDownloading(false)
-			const verify = await verifyWithProgress(completedUri, { expectedSize: meta.size, digest: meta.digest })
-			if (!verify.ok) {
-				await deletePath(completedUri).catch(() => {})
-				await persistDownloadState(null)
-				savableRef.current = null
-				metaRef.current = null
-				setDownloadProgress(0)
-				setIsPaused(false)
-				const message = `Update file corrupted (${verify.reason}). Please download again.`
-				setError(message)
-				Alert.alert('Download Failed Verification', message, [{ text: 'OK' }])
-				return null
-			}
 			setDownloadProgress(1)
 			await persistDownloadState(null)
 			savableRef.current = null
-			// Rename temp file to final .apk file on successful verification
+			// Rename temp file to final .apk file on successful completion
 			await moveFile(completedUri, fileUri)
 			metaRef.current = null
 			await refreshApkList()
@@ -272,25 +240,15 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			await installApkRef.current(fileUri)
 			return fileUri
 		},
-		[verifyWithProgress, persistDownloadState, refreshApkList]
+		[persistDownloadState, refreshApkList]
 	)
 	const installApkRef = useRef<(fileUri: string) => Promise<void>>(async () => {})
-	// Install Android APK — validates integrity first to avoid "parsing the package" error
+	// Install Android APK via the system package installer
 	const installApk = useCallback(
 		async (fileUri: string) => {
 			if (!isAndroid) return
 			log({ level: 'info', label: 'UpdatesContext', message: `Attempting to install APK from: ${fileUri}` })
-			const match = fileUri.match(/drinaluza-(.+)\.apk/)
-			const version = match ? match[1] : null
-			const rel = latestReleaseRef.current
-			const isLatest = version && rel && version === rel.latest_version
 			try {
-				const verify = await verifyWithProgress(fileUri, isLatest ? { expectedSize: rel!.size, digest: rel!.digest } : {})
-				if (!verify.ok) {
-					await deletePath(fileUri).catch(() => {})
-					await refreshApkList()
-					throw new Error(`APK corrupted (${verify.reason}). Deleted — please download again.`)
-				}
 				const contentUri = getContentUri(fileUri)
 				const { startActivityAsync } = require('expo-intent-launcher')
 				try {
@@ -312,15 +270,13 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 				log({ level: 'error', label: 'UpdatesContext', message: 'Android package installation failed', error: err })
 				Alert.alert(
 					'Installation Failed',
-					err?.message?.includes('corrupted') || err?.message?.includes('incomplete') || err?.message?.includes('not found')
-						? err.message
-						: 'Could not launch the Android package installer. Please ensure you have allowed this app to install unknown apps in your device settings.\n\nError: ' + (err?.message || err),
+					'Could not launch the Android package installer. Please ensure you have allowed this app to install unknown apps in your device settings.\n\nError: ' + (err?.message || err),
 					[{ text: 'OK' }]
 				)
 				throw new Error(err?.message || 'Failed to launch the Android package installer. Please verify permissions.')
 			}
 		},
-		[verifyWithProgress, refreshApkList]
+		[refreshApkList]
 	)
 	// Delete downloaded APK
 	const deleteApk = useCallback(
@@ -418,16 +374,12 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 		await ensureUpdatesFolder()
 		const fileUri = finalUriFor(meta.version)
 		const tmpUri = tmpUriFor(meta.version)
-		// A verified final file needs no re-download — install it directly
+		// An existing final file needs no re-download — install it directly
 		const finalInfo = await getFileInfo(fileUri).catch(() => null)
 		if (finalInfo?.exists && (finalInfo.size || 0) > 0) {
-			const verify = await verifyWithProgress(fileUri, { expectedSize: meta.size, digest: meta.digest })
-			if (verify.ok) {
-				await refreshApkList()
-				await installApk(fileUri)
-				return fileUri
-			}
-			await deletePath(fileUri).catch(() => {})
+			await refreshApkList()
+			await installApk(fileUri)
+			return fileUri
 		}
 		// A partial file from a killed session is resumed, not discarded
 		const partialInfo = await getFileInfo(tmpUri).catch(() => null)
@@ -436,7 +388,7 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			return await resumeDownloadRef.current()
 		}
 		return await startFreshDownload(meta)
-	}, [latestRelease, hasEnoughStorage, refreshApkList, installApk, startFreshDownload, verifyWithProgress])
+	}, [latestRelease, hasEnoughStorage, refreshApkList, installApk, startFreshDownload])
 	// Pause Download — native task produces resume data, partial file stays
 	const pauseDownload = useCallback(async () => {
 		const task = taskRef.current
@@ -718,8 +670,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			error,
 			downloadProgress,
 			isDownloading,
-			isVerifying,
-			verifyProgress,
 			downloadedApks,
 			deviceFreeStorage,
 			checkForUpdates,
@@ -739,8 +689,6 @@ export const UpdatesProvider: React.FC<{ children: React.ReactNode }> = ({ child
 			error,
 			downloadProgress,
 			isDownloading,
-			isVerifying,
-			verifyProgress,
 			downloadedApks,
 			deviceFreeStorage,
 			checkForUpdates,
