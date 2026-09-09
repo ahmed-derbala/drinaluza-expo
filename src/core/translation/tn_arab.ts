@@ -169,7 +169,6 @@ export const tn_arab = {
 	loading: 'قاعد يحمل...',
 	no: 'لا',
 	status_pending_businessconfirmation: 'في انتظار التأكيد',
-	status_confirmed_by_business: 'مؤكد',
 	status_reserved_by_businessfor_pickup_by_customer: 'جاهز للاستلام',
 	status_reservation_expired: 'انتهى الوقت',
 	status_delivering_to_customer: 'في الطريق',

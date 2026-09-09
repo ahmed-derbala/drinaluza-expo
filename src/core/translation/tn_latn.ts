@@ -169,7 +169,6 @@ export const tn_latn = {
 	loading: 'Qa3ed i7amel...',
 	no: 'Le',
 	status_pending_businessconfirmation: 'Testanna fi Moulaha',
-	status_confirmed_by_business: 'Confirmé',
 	status_reserved_by_businessfor_pickup_by_customer: 'Hadra bech thezha',
 	status_reservation_expired: 'Wfa el waqt',
 	status_delivering_to_customer: 'Fi et-triq',
