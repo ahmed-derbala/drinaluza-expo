@@ -104,7 +104,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 				await updateSavedAuthUser(userData.slug, {
 					name: displayName,
 					photoUrl,
-					role: userData.role
+					roles: userData.roles
 				})
 			}
 		} catch (error) {

@@ -1,8 +1,12 @@
 import { getApiClient } from '@api'
 import { OrderResponse } from './orders.interface'
-export const getPurchases = async (status?: string): Promise<OrderResponse> => {
-	const url = status ? `/purchases?status=${status}` : '/purchases'
+export const getPurchases = async (tab?: string): Promise<OrderResponse> => {
+	const url = tab ? `/purchases?tab=${tab}` : '/purchases'
 	const response = await getApiClient().get(url)
+	return response.data
+}
+export const getPurchaseById = async (purchaseId: string) => {
+	const response = await getApiClient().get(`/purchases/${purchaseId}`)
 	return response.data
 }
 const cancelPurchaseAPI = async ({ purchaseId }: { purchaseId: string }) => {

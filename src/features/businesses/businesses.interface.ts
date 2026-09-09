@@ -229,7 +229,7 @@ export interface BusinessCustomerDoc {
 	_id: string
 	customer: {
 		_id: string
-		role: string
+		roles: string[]
 		slug: string
 		name: MultiLang
 		address?: Address

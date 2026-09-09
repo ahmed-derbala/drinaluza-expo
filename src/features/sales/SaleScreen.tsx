@@ -10,7 +10,7 @@ import SaleCard from './SaleCard'
 import Spinner from '@ui/spinner/Spinner'
 import ErrorBlock from '@error/ErrorBlock'
 
-export default function SaleDetailsScreen() {
+export default function SaleScreen() {
 	const { businessSlug, saleId } = useLocalSearchParams<{ businessSlug: string; saleId: string }>()
 	const { colors } = useTheme()
 	const { translate } = useUser()

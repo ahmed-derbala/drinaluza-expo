@@ -1,4 +1,7 @@
 import { themeColors } from '@theme'
+import { translate } from '@translation'
+import { addForbiddenListener } from '@api'
+import { config } from '@/config'
 import React, { createContext, useState, useEffect, useCallback, useRef } from 'react'
 import { TouchableOpacity, Animated, StyleSheet, Platform } from 'react-native'
 import { Ionicons } from '@expo/vector-icons'
@@ -23,6 +26,8 @@ export interface ToastOptions {
 	timeout?: number
 	screen?: string
 	onPress?: () => void
+	/** When true, no sound plays (e.g. error toasts like 403). */
+	silent?: boolean
 }
 
 let showToastRef: ((options: ToastOptions) => void) | null = null
@@ -59,23 +64,25 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 			setOptions(newOptions)
 			setVisible(true)
 
-			try {
-				if (player) {
-					const p: any = player.play?.()
-					if (p && typeof p.catch === 'function') {
-						p.catch((e: any) => {
-							const name = String(e?.name || '')
-							const msg = String(e?.message || e || '')
-							if (name === 'AbortError' || msg.includes('interrupted')) return
-							console.error('Failed to play toast sound:', e)
-						})
+			if (!newOptions.silent && config.notifications.toast.sound.isEnabled) {
+				try {
+					if (player) {
+						const p: any = player.play?.()
+						if (p && typeof p.catch === 'function') {
+							p.catch((e: any) => {
+								const name = String(e?.name || '')
+								const msg = String(e?.message || e || '')
+								if (name === 'AbortError' || msg.includes('interrupted')) return
+								console.error('Failed to play toast sound:', e)
+							})
+						}
 					}
+				} catch (error: any) {
+					const name = String(error?.name || '')
+					const msg = String(error?.message || error || '')
+					if (name === 'AbortError' || msg.includes('interrupted')) return
+					console.error('Failed to play toast sound:', error)
 				}
-			} catch (error: any) {
-				const name = String(error?.name || '')
-				const msg = String(error?.message || error || '')
-				if (name === 'AbortError' || msg.includes('interrupted')) return
-				console.error('Failed to play toast sound:', error)
 			}
 
 			Animated.parallel([
@@ -96,6 +103,22 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
 	useEffect(() => {
 		showToastRef = show
+	}, [show])
+
+	// Global 403 handling: silent access-denied toast (throttled), session untouched.
+	const lastForbiddenToastRef = useRef(0)
+	useEffect(() => {
+		return addForbiddenListener((info) => {
+			const now = Date.now()
+			if (now - lastForbiddenToastRef.current < 4000) return
+			lastForbiddenToastRef.current = now
+			show({
+				title: translate('access_denied_title', 'Access Denied'),
+				content: info.message,
+				borderColor: themeColors.error,
+				silent: true
+			})
+		})
 	}, [show])
 
 	const handlePress = () => {

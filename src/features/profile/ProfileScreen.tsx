@@ -24,6 +24,7 @@ import { MultiLingualCard } from '@languages/MultiLingualCard'
 import Spinner from '@ui/spinner/Spinner'
 import { showAlert } from '@helpers/popup'
 import { requestBusiness } from '@businesses/business.api'
+import { hasRole, displayRole, formatRole, USER_ROLES } from '@users/userRoles'
 import { RequestBusinessCreationModal } from '@businesses/RequestBusinessCreationModal'
 import { useUser } from '@contexts/UserContext'
 import { useScrollHandler } from '@scroll'
@@ -70,6 +71,7 @@ export default function ProfileScreen() {
 	const [imageError, setImageError] = useState(false)
 	const [showBusinessModal, setShowBusinessModal] = useState(false)
 	const [businessLoading, setBusinessLoading] = useState(false)
+	const shownRole = useMemo(() => displayRole(userData?.roles), [userData?.roles])
 	// Sync cached profile into editable state — avoid resetting while user is editing.
 	const isEditingRef = useRef(editMode)
 	isEditingRef.current = editMode
@@ -262,7 +264,7 @@ export default function ProfileScreen() {
 	)
 	const headerActions = useMemo(() => {
 		const actions: any[] = []
-		if (userData?.role === 'customer') {
+		if (!hasRole(userData, USER_ROLES.BUSINESS_OWNER, USER_ROLES.SUPER)) {
 			actions.push(<HeaderRequestBusinessButton key="request-business" onPress={handleRequestBusiness} />)
 		}
 		actions.push(<HeaderAccountSwitchButton key="switch-account" onPress={handleSwitchUser} label={translate('switch_user', 'Switch User Account')} />)
@@ -277,7 +279,7 @@ export default function ProfileScreen() {
 			/>
 		)
 		return actions
-	}, [userData?.role, handleRequestBusiness, handleSwitchUser, refreshProfile, isRefreshing, isOffline, translate])
+	}, [userData?.roles, handleRequestBusiness, handleSwitchUser, refreshProfile, isRefreshing, isOffline, translate])
 	if (isInitialLoading) {
 		return <Spinner />
 	}
@@ -346,16 +348,19 @@ export default function ProfileScreen() {
 								)
 							})()}
 							<View style={styles.roleStateContainer}>
-								<View style={[styles.roleBadge, userData.role === 'business_owner' ? styles.businessOwnerBadge : userData.role === 'super' ? styles.adminBadge : styles.customerBadge]}>
+								<View style={[styles.roleBadge, shownRole === USER_ROLES.BUSINESS_OWNER ? styles.businessOwnerBadge : shownRole === USER_ROLES.SUPER ? styles.adminBadge : styles.customerBadge]}>
 									<Ionicons
-										name={userData.role === 'business_owner' ? 'briefcase-outline' : userData.role === 'super' ? 'shield-checkmark-outline' : 'person-outline'}
+										name={shownRole === USER_ROLES.BUSINESS_OWNER ? 'briefcase-outline' : shownRole === USER_ROLES.SUPER ? 'shield-checkmark-outline' : 'person-outline'}
 										size={14}
-										color={userData.role === 'business_owner' ? colors.primary : userData.role === 'super' ? colors.warning : colors.success}
+										color={shownRole === USER_ROLES.BUSINESS_OWNER ? colors.primary : shownRole === USER_ROLES.SUPER ? colors.warning : colors.success}
 									/>
 									<Text
-										style={[styles.roleBadgeText, userData.role === 'business_owner' ? styles.businessOwnerBadgeText : userData.role === 'super' ? styles.adminBadgeText : styles.customerBadgeText]}
+										style={[
+											styles.roleBadgeText,
+											shownRole === USER_ROLES.BUSINESS_OWNER ? styles.businessOwnerBadgeText : shownRole === USER_ROLES.SUPER ? styles.adminBadgeText : styles.customerBadgeText
+										]}
 									>
-										{userData.role === 'business_owner' ? 'Business Owner' : userData.role === 'super' ? 'Administrator' : 'Customer'}
+										{shownRole === USER_ROLES.BUSINESS_OWNER ? 'Business Owner' : shownRole === USER_ROLES.SUPER ? 'Administrator' : 'Customer'}
 									</Text>
 								</View>
 								{userData.state?.code && <StateBadge stateCode={userData.state.code} />}

@@ -10,12 +10,13 @@ import { OrderItem } from '@orders/orders.interface'
 import { ORDER_STATUSES, orderStatusColors, orderStatusLabels } from '@orders/orders-statuses'
 import { OrderStepTracker, OrderProductCard, OrderProductsCard } from '@orders/components'
 // ─── Constants ────────────────────────────────────────────────────────────────
-const ORDER_STEPS = ['Ordered', 'Confirmed', 'Transit', 'Delivered']
+const ORDER_STEPS = ['Ordered', 'Accepted', 'Preparing', 'Transit', 'Delivered']
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 interface PurchaseCardProps {
 	item: OrderItem
 	onCancel?: (id: string) => void
+	onApprove?: (id: string) => void
 	onMarkReceived?: (id: string) => void
 	onUpdateQuantity?: (productId: string, quantity: number) => void
 	onRemoveProduct?: (productId: string) => void
@@ -23,14 +24,15 @@ interface PurchaseCardProps {
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 function getStepIndex(status: string) {
-	if (status === 'pending_business_confirmation' || status === 'pending_customer_confirmation') return 0
-	if (status === 'confirmed_by_business') return 1
-	if (status === 'reserved_by_business_for_pickup_by_customer' || status === 'delivering_to_customer') return 2
-	if (status === 'delivered_to_customer' || status === 'received_by_customer') return 3
+	if (status === ORDER_STATUSES.PENDING || status === ORDER_STATUSES.ACTION_REQUIRED) return 0
+	if (status === ORDER_STATUSES.ACCEPTED) return 1
+	if (status === ORDER_STATUSES.PREPARING) return 2
+	if (status === ORDER_STATUSES.READY_FOR_PICKUP || status === ORDER_STATUSES.FINDING_COURIER || status === ORDER_STATUSES.COURIER_ASSIGNED || status === ORDER_STATUSES.DELIVERING) return 3
+	if (status === ORDER_STATUSES.DELIVERED) return 4
 	return -1
 }
 
-export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, onMarkReceived, onUpdateQuantity, onRemoveProduct }: PurchaseCardProps) {
+export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, onApprove, onMarkReceived, onUpdateQuantity, onRemoveProduct }: PurchaseCardProps) {
 	const { colors } = useTheme()
 	const { localize, translate, formatPrice } = useUser()
 	const router = useRouter()
@@ -39,9 +41,11 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 	const stepIndex = getStepIndex(item.status)
 	const businessImage = item.business.media?.thumbnail?.url
 	const orderDate = new Date(item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-	const isPending = item.status === ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION || item.status === ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION
-	const canCancel = item.status === 'pending_business_confirmation'
-	const canMarkReceived = item.status === 'delivered_to_customer'
+	const isPending = item.status === ORDER_STATUSES.PENDING
+	const needsAction = item.status === ORDER_STATUSES.ACTION_REQUIRED
+	const canCancel = isPending || needsAction
+	const canApprove = needsAction
+	const canMarkReceived = item.status === ORDER_STATUSES.READY_FOR_PICKUP
 
 	const initialQuantities = React.useMemo(
 		() =>
@@ -158,9 +162,10 @@ export const PurchaseCard = React.memo(function PurchaseCard({ item, onCancel, o
 					<Text style={[styles.totalPrice, { color: colors.primary }]}>{formatPrice(item.price || ({ total: { tnd: 0 } } as any))}</Text>
 				</View>
 			</View>
-			{(canCancel || canMarkReceived) && (
+			{(canCancel || canApprove || canMarkReceived) && (
 				<View style={styles.actionsRow}>
 					{canCancel && <CancelButton onPress={() => onCancel?.(item._id)} />}
+					{canApprove && <IconBaseButton icon="checkmark-circle-outline" label={translate('approve_changes', 'Approve')} onPress={() => onApprove?.(item._id)} variant="success" />}
 					{canMarkReceived && <IconBaseButton icon="checkmark-circle-outline" label={translate('mark_as_received', 'Mark Received')} onPress={() => onMarkReceived?.(item._id)} variant="success" />}
 				</View>
 			)}

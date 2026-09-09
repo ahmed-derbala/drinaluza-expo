@@ -40,7 +40,7 @@ export interface UserProfile {
 	_id: string
 	slug: string
 	name: MultiLang
-	role: string
+	roles: string[]
 	contact?: UserContact
 	address?: Address
 	media?: {

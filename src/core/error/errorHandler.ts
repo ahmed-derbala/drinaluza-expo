@@ -128,6 +128,15 @@ export const parseError = (error: any): ErrorInfo => {
 }
 
 /**
+ * True when the error is an HTTP 403 (authenticated but not permitted).
+ * Render `ForbiddenBlock` instead of `ErrorBlock` in that case.
+ */
+export const isForbidden = (error: any): boolean => {
+	const status = error?.response?.status ?? error?.status ?? error?.statusCode
+	return status === 403
+}
+
+/**
  * Log error details for debugging (only in development)
  */
 export const logError = (error: any, context?: string) => {

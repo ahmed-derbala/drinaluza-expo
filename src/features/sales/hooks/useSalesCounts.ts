@@ -17,33 +17,16 @@ export function useSalesCounts({ businessSlug, customerSlug, productSlug }: UseS
 			})
 			.catch((err) => console.error('Error loading sales counts cache:', err))
 	}, [cacheKey])
-	const refresh = useCallback(
-		async (allSales?: SalesResponse) => {
-			if (!businessSlug) return
-			let allCount: number | undefined
-			if (allSales?.data) {
-				allCount = allSales.data.pagination?.totalDocs ?? allSales.data.docs.length
-			}
-			if (allCount !== undefined) {
-				setCounts((prev) => {
-					const next = { ...prev, all: allCount as number }
-					setCacheItem(cacheKey, next).catch((err) => console.error('Error saving sales counts cache:', err))
-					return next
-				})
-			}
-		},
-		[businessSlug, customerSlug, productSlug, cacheKey]
-	)
-	const setStatusCount = useCallback(
-		(status: string, response: SalesResponse) => {
+	const setTabCount = useCallback(
+		(tab: string, response: SalesResponse) => {
 			const count = response.data.pagination?.totalDocs ?? response.data.docs.length
 			setCounts((prev) => {
-				const next = { ...prev, [status]: count }
+				const next = { ...prev, [tab]: count }
 				setCacheItem(cacheKey, next).catch((err) => console.error('Error saving sales counts cache:', err))
 				return next
 			})
 		},
 		[cacheKey]
 	)
-	return { counts, refresh, setStatusCount, isLoading }
+	return { counts, setTabCount, isLoading }
 }

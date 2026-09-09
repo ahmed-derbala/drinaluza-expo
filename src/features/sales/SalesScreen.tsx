@@ -9,7 +9,7 @@ import { useBackButton } from '@hooks/useBackButton'
 
 import ErrorBlock from '@error/ErrorBlock'
 import Spinner from '@ui/spinner/Spinner'
-import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@orders/orders-statuses'
+import { ORDER_STATUSES, SALES_TABS, orderStatusIcons } from '@orders/orders-statuses'
 import { SmartTabs, SmartTabOption } from '@smart-tabs'
 import { OrderList } from '@orders/components/OrderList'
 import SaleCard from './SaleCard'
@@ -18,50 +18,31 @@ import { usePaginatedSales } from './hooks/usePaginatedSales'
 import { useSalesCounts } from './hooks/useSalesCounts'
 
 const statusOptions: SmartTabOption[] = [
-	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
-	{
-		value: ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION,
-		label: 'Pending',
-		iconName: orderStatusIcons[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]
-	},
-	{
-		value: ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION,
-		label: orderStatusLabels[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION],
-		iconName: orderStatusIcons[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]
-	},
-	{ value: ORDER_STATUSES.CONFIRMED_BY_BUSINESS, label: orderStatusLabels[ORDER_STATUSES.CONFIRMED_BY_BUSINESS], iconName: orderStatusIcons[ORDER_STATUSES.CONFIRMED_BY_BUSINESS] },
-	{
-		value: ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER,
-		label: orderStatusLabels[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER],
-		iconName: orderStatusIcons[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]
-	},
-	{ value: ORDER_STATUSES.DELIVERING_TO_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.DELIVERING_TO_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.DELIVERING_TO_CUSTOMER] },
-	{ value: ORDER_STATUSES.DELIVERED_TO_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.DELIVERED_TO_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.DELIVERED_TO_CUSTOMER] },
-	{ value: ORDER_STATUSES.RECEIVED_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.RECEIVED_BY_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.RECEIVED_BY_CUSTOMER] },
-	{ value: ORDER_STATUSES.RESERVATION_EXPIRED, label: orderStatusLabels[ORDER_STATUSES.RESERVATION_EXPIRED], iconName: orderStatusIcons[ORDER_STATUSES.RESERVATION_EXPIRED] },
-	{ value: ORDER_STATUSES.CANCELLED_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.CANCELLED_BY_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.CANCELLED_BY_CUSTOMER] },
-	{ value: ORDER_STATUSES.CANCELLED_BY_BUSINESS, label: orderStatusLabels[ORDER_STATUSES.CANCELLED_BY_BUSINESS], iconName: orderStatusIcons[ORDER_STATUSES.CANCELLED_BY_BUSINESS] }
+	{ value: SALES_TABS.NEW, label: 'New', iconName: 'sparkles-outline' },
+	{ value: SALES_TABS.PREPARING, label: 'Preparing', iconName: orderStatusIcons[ORDER_STATUSES.PREPARING] },
+	{ value: SALES_TABS.DISPATCH, label: 'Dispatch', iconName: 'send-outline' },
+	{ value: SALES_TABS.HISTORY, label: 'History', iconName: 'archive-outline' }
 ]
 
 export default function SalesScreen() {
-	const { businessSlug, customerSlug, productSlug, status } = useLocalSearchParams<{
+	const { businessSlug, customerSlug, productSlug, tab } = useLocalSearchParams<{
 		businessSlug: string
 		customerSlug?: string
 		productSlug?: string
-		status?: string
+		tab?: string
 	}>()
 	const router = useRouter()
 	const navigation = useNavigation()
 	const { colors } = useTheme()
 	const { width } = useWindowDimensions()
-	const selectedStatus = useMemo(() => {
-		const raw = Array.isArray(status) ? status[0] : status
-		return raw || 'all'
-	}, [status])
+	const selectedTab = useMemo(() => {
+		const raw = Array.isArray(tab) ? tab[0] : tab
+		return raw || SALES_TABS.NEW
+	}, [tab])
 
-	const setSelectedStatus = useCallback(
+	const setSelectedTab = useCallback(
 		(value: string) => {
-			router.setParams({ status: value })
+			router.setParams({ tab: value })
 		},
 		[router]
 	)
@@ -70,9 +51,8 @@ export default function SalesScreen() {
 	const numColumns = width >= 1024 ? 2 : 1
 
 	const {
-		counts: statusCounts,
-		refresh: refreshCounts,
-		setStatusCount,
+		counts: tabCounts,
+		setTabCount,
 		isLoading: countsLoading
 	} = useSalesCounts({
 		businessSlug,
@@ -84,28 +64,19 @@ export default function SalesScreen() {
 		businessSlug,
 		customerSlug,
 		productSlug,
-		status: selectedStatus
+		tab: selectedTab
 	})
 	const hasFocusedRef = useRef(false)
 
 	useEffect(() => {
 		if (!businessSlug || !response) return
-		if (selectedStatus === 'all') {
-			refreshCounts(response)
-		} else {
-			setStatusCount(selectedStatus, response)
-		}
-	}, [businessSlug, selectedStatus, response, refreshCounts, setStatusCount])
+		setTabCount(selectedTab, response)
+	}, [businessSlug, selectedTab, response, setTabCount])
 
 	const handleRefresh = useCallback(async () => {
-		if (selectedStatus === 'all') {
-			const allData = await refresh()
-			if (allData) await refreshCounts(allData)
-		} else {
-			const statusData = await refresh()
-			if (statusData) setStatusCount(selectedStatus, statusData)
-		}
-	}, [selectedStatus, refresh, refreshCounts, setStatusCount])
+		const tabData = await refresh()
+		if (tabData) setTabCount(selectedTab, tabData)
+	}, [selectedTab, refresh, setTabCount])
 
 	useFocusEffect(
 		useCallback(() => {
@@ -113,16 +84,10 @@ export default function SalesScreen() {
 				hasFocusedRef.current = true
 				return
 			}
-			if (selectedStatus === 'all') {
-				refresh().then((allData) => {
-					if (allData) refreshCounts(allData)
-				})
-			} else {
-				refresh().then((statusData) => {
-					if (statusData) setStatusCount(selectedStatus, statusData)
-				})
-			}
-		}, [selectedStatus, refresh, refreshCounts, setStatusCount])
+			refresh().then((tabData) => {
+				if (tabData) setTabCount(selectedTab, tabData)
+			})
+		}, [selectedTab, refresh, setTabCount])
 	)
 
 	const renderItem = useCallback(
@@ -171,10 +136,10 @@ export default function SalesScreen() {
 				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading} />]}
 				headerBottom={
 					<SmartTabs
-						value={selectedStatus}
-						onChange={setSelectedStatus}
+						value={selectedTab}
+						onChange={setSelectedTab}
 						options={statusOptions}
-						counts={statusCounts}
+						counts={tabCounts}
 						activeCount={totalCount}
 						resetKey={[businessSlug, customerSlug, productSlug].filter(Boolean).join('-')}
 						loading={isRefreshing || countsLoading}

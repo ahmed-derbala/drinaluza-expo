@@ -6,7 +6,7 @@ type DashboardUserRef = {
 	_id: string
 	slug: string
 	name: MultiLang
-	role: string
+	roles: string[]
 }
 
 export type DashboardBusinessRef = {

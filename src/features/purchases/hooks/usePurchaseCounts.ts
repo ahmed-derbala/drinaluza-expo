@@ -15,41 +15,31 @@ export function usePurchaseCounts() {
 			})
 			.catch((err) => console.error('Error loading purchase counts cache:', err))
 	}, [cacheKey])
-	const refresh = useCallback(
-		async (user: any, allPurchases?: OrderResponse) => {
-			let allCount: number | undefined
-			if (allPurchases?.data) {
-				allCount = allPurchases.data.pagination?.totalDocs ?? allPurchases.data.docs.length
-			}
-			let cartCount = 0
-			try {
-				const storedCart = await getItem<{ _id: string }[]>('cart')
-				cartCount = storedCart?.length || 0
-			} catch (err) {
-				console.error('Error loading cart count:', err)
-			}
-			setCounts((prev) => {
-				const next = {
-					...prev,
-					...(allCount !== undefined ? { all: allCount } : {}),
-					cart: cartCount
-				}
-				setCacheItem(cacheKey, next).catch((err) => console.error('Error saving purchase counts cache:', err))
-				return next
-			})
-		},
-		[cacheKey]
-	)
-	const setStatusCount = useCallback(
-		(status: string, response: OrderResponse) => {
+	// Refresh the local cart badge count (cart lives in AsyncStorage, not the API).
+	const refresh = useCallback(async () => {
+		let cartCount = 0
+		try {
+			const storedCart = await getItem<{ _id: string }[]>('cart')
+			cartCount = storedCart?.length || 0
+		} catch (err) {
+			console.error('Error loading cart count:', err)
+		}
+		setCounts((prev) => {
+			const next = { ...prev, cart: cartCount }
+			setCacheItem(cacheKey, next).catch((err) => console.error('Error saving purchase counts cache:', err))
+			return next
+		})
+	}, [cacheKey])
+	const setTabCount = useCallback(
+		(tab: string, response: OrderResponse) => {
 			const count = response.data.pagination?.totalDocs ?? response.data.docs.length
 			setCounts((prev) => {
-				const next = { ...prev, [status]: count }
+				const next = { ...prev, [tab]: count }
 				setCacheItem(cacheKey, next).catch((err) => console.error('Error saving purchase counts cache:', err))
 				return next
 			})
 		},
 		[cacheKey]
 	)
-	return { counts, refresh, setStatusCount, isLoading }
+	return { counts, refresh, setTabCount, isLoading }
 }

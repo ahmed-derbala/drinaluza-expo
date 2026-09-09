@@ -7,7 +7,7 @@ import { useBackButton } from '@hooks/useBackButton'
 import { useUser } from '@contexts'
 import ErrorBlock from '@error/ErrorBlock'
 import Spinner from '@ui/spinner/Spinner'
-import { ORDER_STATUSES, orderStatusLabels, orderStatusIcons } from '@orders/orders-statuses'
+import { ORDER_STATUSES, PURCHASE_TABS, orderStatusIcons } from '@orders/orders-statuses'
 import { SmartTabs, SmartTabOption } from '@smart-tabs'
 import { OrderList, BusinessCartGroup } from '@orders/components'
 import { PurchaseCard } from './PurchaseCard'
@@ -23,29 +23,9 @@ import { showConfirm } from '@helpers/popup'
 
 const statusOptions: SmartTabOption[] = [
 	{ value: 'cart', label: 'Cart', iconName: orderStatusIcons.cart },
-	{ value: 'all', label: 'All', iconName: orderStatusIcons.all },
-	{
-		value: ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION,
-		label: 'Pending',
-		iconName: orderStatusIcons[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]
-	},
-	{
-		value: ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION,
-		label: orderStatusLabels[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION],
-		iconName: orderStatusIcons[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]
-	},
-	{ value: ORDER_STATUSES.CONFIRMED_BY_BUSINESS, label: orderStatusLabels[ORDER_STATUSES.CONFIRMED_BY_BUSINESS], iconName: orderStatusIcons[ORDER_STATUSES.CONFIRMED_BY_BUSINESS] },
-	{
-		value: ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER,
-		label: orderStatusLabels[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER],
-		iconName: orderStatusIcons[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]
-	},
-	{ value: ORDER_STATUSES.DELIVERING_TO_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.DELIVERING_TO_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.DELIVERING_TO_CUSTOMER] },
-	{ value: ORDER_STATUSES.DELIVERED_TO_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.DELIVERED_TO_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.DELIVERED_TO_CUSTOMER] },
-	{ value: ORDER_STATUSES.RECEIVED_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.RECEIVED_BY_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.RECEIVED_BY_CUSTOMER] },
-	{ value: ORDER_STATUSES.RESERVATION_EXPIRED, label: orderStatusLabels[ORDER_STATUSES.RESERVATION_EXPIRED], iconName: orderStatusIcons[ORDER_STATUSES.RESERVATION_EXPIRED] },
-	{ value: ORDER_STATUSES.CANCELLED_BY_CUSTOMER, label: orderStatusLabels[ORDER_STATUSES.CANCELLED_BY_CUSTOMER], iconName: orderStatusIcons[ORDER_STATUSES.CANCELLED_BY_CUSTOMER] },
-	{ value: ORDER_STATUSES.CANCELLED_BY_BUSINESS, label: orderStatusLabels[ORDER_STATUSES.CANCELLED_BY_BUSINESS], iconName: orderStatusIcons[ORDER_STATUSES.CANCELLED_BY_BUSINESS] }
+	{ value: PURCHASE_TABS.ACTIVE, label: 'Active', iconName: 'pulse-outline' },
+	{ value: PURCHASE_TABS.ACTION_REQUIRED, label: 'Action Required', iconName: orderStatusIcons[ORDER_STATUSES.ACTION_REQUIRED] },
+	{ value: PURCHASE_TABS.HISTORY, label: 'History', iconName: 'archive-outline' }
 ]
 
 export default function PurchasesScreen() {
@@ -54,28 +34,28 @@ export default function PurchasesScreen() {
 	const { colors } = useTheme()
 	const { translate, user, refreshUser } = useUser()
 	const { width } = useWindowDimensions()
-	const { status } = useLocalSearchParams<{ status?: string }>()
+	const { tab } = useLocalSearchParams<{ tab?: string }>()
 
-	const selectedStatus = useMemo(() => {
-		const raw = Array.isArray(status) ? status[0] : status
+	const selectedTab = useMemo(() => {
+		const raw = Array.isArray(tab) ? tab[0] : tab
 		return raw || 'cart'
-	}, [status])
+	}, [tab])
 
-	const setSelectedStatus = useCallback(
+	const setSelectedTab = useCallback(
 		(value: string) => {
-			router.setParams({ status: value })
+			router.setParams({ tab: value })
 		},
 		[router]
 	)
 	useBackButton()
 
-	const isPurchaseStatus = selectedStatus !== 'cart'
+	const isPurchaseTab = selectedTab !== 'cart'
 	const [confirmGroup, setConfirmGroup] = useState<BusinessCartGroup | null>(null)
 	const isTablet = width >= 768
 	const isDesktop = width >= 1024
 	const numColumns = isDesktop ? 3 : isTablet ? 2 : 1
 
-	const { counts: statusCounts, refresh: refreshCounts, setStatusCount, isLoading: countsLoading } = usePurchaseCounts()
+	const { counts: tabCounts, refresh: refreshCounts, setTabCount, isLoading: countsLoading } = usePurchaseCounts()
 	const { cart, cartGroups, loadCart, updateQuantity, removeItem, checkout, isCheckingOut, refreshCart, isRefreshing: isCartRefreshing } = useCart()
 
 	const {
@@ -85,20 +65,26 @@ export default function PurchasesScreen() {
 		isOffline,
 		refresh
 	} = usePurchasesByStatus({
-		status: selectedStatus,
-		skipInitialFetch: !isPurchaseStatus || !user
+		tab: selectedTab,
+		skipInitialFetch: !isPurchaseTab || !user
 	})
 
 	const isRefreshing = isPurchasesRefreshing || isCartRefreshing
 
+	const refreshAfterStatusChange = useCallback(async () => {
+		if (!user) return
+		const tabData = await refresh()
+		if (tabData) {
+			setTabCount(selectedTab, tabData)
+		}
+	}, [refresh, setTabCount, user, selectedTab])
+
 	useEffect(() => {
 		if (!user || !purchasesResponse) return
-		if (selectedStatus === 'all') {
-			refreshCounts(user, purchasesResponse)
-		} else if (selectedStatus !== 'cart') {
-			setStatusCount(selectedStatus, purchasesResponse)
+		if (selectedTab !== 'cart') {
+			setTabCount(selectedTab, purchasesResponse)
 		}
-	}, [user, selectedStatus, purchasesResponse, refreshCounts, setStatusCount])
+	}, [user, selectedTab, purchasesResponse, setTabCount])
 
 	const purchaseItems = useMemo(() => {
 		if (!purchasesResponse?.data?.docs) return []
@@ -106,75 +92,61 @@ export default function PurchasesScreen() {
 	}, [purchasesResponse])
 
 	const displayData = useMemo(() => {
-		return selectedStatus === 'cart' ? cartGroups : purchaseItems
-	}, [selectedStatus, cartGroups, purchaseItems])
+		return selectedTab === 'cart' ? cartGroups : purchaseItems
+	}, [selectedTab, cartGroups, purchaseItems])
 
 	// usePurchaseCounts' `cart` figure is read from AsyncStorage independently
 	// of useCart's in-memory `cart` state, so it goes stale after any local
 	// cart mutation (add/update/remove/checkout) until the next refresh.
 	// The in-memory `cart` array is always immediately accurate, so it's used
 	// to override the displayed cart count everywhere.
-	const displayCounts = useMemo<Record<string, number>>(() => ({ ...statusCounts, cart: cart.length }), [statusCounts, cart.length])
+	const displayCounts = useMemo<Record<string, number>>(() => ({ ...tabCounts, cart: cart.length }), [tabCounts, cart.length])
 
-	const itemCount = displayCounts[selectedStatus] ?? 0
+	const itemCount = displayCounts[selectedTab] ?? 0
 
 	const activeCount = useMemo(() => {
-		if (selectedStatus === 'cart') return cart.length
+		if (selectedTab === 'cart') return cart.length
 		return purchasesResponse?.data?.pagination?.totalDocs
-	}, [selectedStatus, cart.length, purchasesResponse])
+	}, [selectedTab, cart.length, purchasesResponse])
 
 	const handleRefresh = useCallback(async () => {
-		if (selectedStatus === 'cart') {
+		if (selectedTab === 'cart') {
 			await refreshCart()
 			await loadCart()
-		} else if (selectedStatus === 'all') {
-			await loadCart()
-			if (user) {
-				const allData = await refresh()
-				await refreshCounts(user, allData)
-			} else {
-				await refreshCounts(user)
-			}
 		} else {
 			await loadCart()
 			if (user) {
-				const statusData = await refresh()
-				if (statusData) {
-					setStatusCount(selectedStatus, statusData)
+				const tabData = await refresh()
+				if (tabData) {
+					setTabCount(selectedTab, tabData)
 				}
 			}
 		}
-	}, [selectedStatus, refreshCart, loadCart, user, refreshCounts, setStatusCount, refresh])
+		await refreshCounts()
+	}, [selectedTab, refreshCart, loadCart, user, refreshCounts, setTabCount, refresh])
 
 	// Keep the latest values in a ref so the focus-effect callback below can
 	// stay referentially stable. useFocusEffect re-invokes its callback
 	// whenever its identity changes, even while the screen stays focused —
-	// so if it depended on isPurchaseStatus/refresh directly, switching tabs
+	// so if it depended on isPurchaseTab/refresh directly, switching tabs
 	// (e.g. after checkout) would spuriously re-trigger it and cause
 	// duplicate API calls.
-	const focusStateRef = useRef({ user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh })
+	const focusStateRef = useRef({ user, selectedTab, setTabCount, loadCart, refresh })
 	useEffect(() => {
-		focusStateRef.current = { user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh }
-	}, [user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh])
+		focusStateRef.current = { user, selectedTab, setTabCount, loadCart, refresh }
+	}, [user, selectedTab, setTabCount, loadCart, refresh])
 
 	useFocusEffect(
 		useCallback(() => {
-			const { user, selectedStatus, refreshCounts, setStatusCount, loadCart, refresh } = focusStateRef.current
-			if (selectedStatus === 'cart') {
+			const { user, selectedTab, setTabCount, loadCart, refresh } = focusStateRef.current
+			if (selectedTab === 'cart') {
 				loadCart()
-			} else if (selectedStatus === 'all') {
-				loadCart()
-				if (user) {
-					refresh().then((allData) => refreshCounts(user, allData))
-				} else {
-					refreshCounts(user)
-				}
 			} else {
 				loadCart()
 				if (user) {
-					refresh().then((statusData) => {
-						if (statusData) {
-							setStatusCount(selectedStatus, statusData)
+					refresh().then((tabData) => {
+						if (tabData) {
+							setTabCount(selectedTab, tabData)
 						}
 					})
 				}
@@ -188,14 +160,14 @@ export default function PurchasesScreen() {
 				const result = await checkout(group)
 				if (result.success) {
 					toast.show({ title: translate('success', 'Success'), content: translate('checkout_success', 'Order placed successfully!'), borderColor: themeColors.success })
-					setSelectedStatus(ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION)
+					setSelectedTab(PURCHASE_TABS.ACTIVE)
 				}
 			} catch (err) {
 				console.error('Checkout failed:', err)
 				toast.show({ title: translate('error', 'Error'), content: translate('checkout_failed', 'Failed to place order'), borderColor: themeColors.error })
 			}
 		},
-		[checkout, setSelectedStatus, translate]
+		[checkout, setSelectedTab, translate]
 	)
 
 	const handleCheckout = useCallback(
@@ -222,16 +194,8 @@ export default function PurchasesScreen() {
 		(purchaseId: string) => {
 			showConfirm(translate('cancel_order', 'Cancel Order'), translate('cancel_order_confirm', 'Are you sure you want to cancel this order?'), async () => {
 				try {
-					await updatePurchaseStatus({ purchaseId, status: 'cancelled_by_customer' })
-					if (selectedStatus === 'all') {
-						const allData = await refresh()
-						await refreshCounts(user, allData)
-					} else if (user) {
-						const statusData = await refresh()
-						if (statusData) {
-							setStatusCount(selectedStatus, statusData)
-						}
-					}
+					await updatePurchaseStatus({ purchaseId, status: ORDER_STATUSES.CANCELLED })
+					await refreshAfterStatusChange()
 					toast.show({ title: translate('success', 'Success'), content: translate('cancel_order_success', 'Order cancelled successfully'), borderColor: themeColors.success })
 				} catch (err) {
 					console.error('Failed to cancel order:', err)
@@ -239,29 +203,35 @@ export default function PurchasesScreen() {
 				}
 			})
 		},
-		[refreshCounts, refresh, setStatusCount, translate, user, selectedStatus]
+		[refreshAfterStatusChange, translate]
+	)
+
+	const handleApproveChanges = useCallback(
+		async (purchaseId: string) => {
+			try {
+				await updatePurchaseStatus({ purchaseId, status: ORDER_STATUSES.ACCEPTED })
+				await refreshAfterStatusChange()
+				toast.show({ title: translate('success', 'Success'), content: translate('status_updated', 'Order status updated successfully'), borderColor: themeColors.success })
+			} catch (err) {
+				console.error('Failed to approve order changes:', err)
+				toast.show({ title: translate('error', 'Error'), content: translate('status_update_failed', 'Failed to update order status. Please try again.'), borderColor: themeColors.error })
+			}
+		},
+		[refreshAfterStatusChange, translate]
 	)
 
 	const handleMarkReceived = useCallback(
 		async (purchaseId: string) => {
 			try {
-				await updatePurchaseStatus({ purchaseId, status: 'received_by_customer' })
-				if (selectedStatus === 'all') {
-					const allData = await refresh()
-					await refreshCounts(user, allData)
-				} else if (user) {
-					const statusData = await refresh()
-					if (statusData) {
-						setStatusCount(selectedStatus, statusData)
-					}
-				}
+				await updatePurchaseStatus({ purchaseId, status: ORDER_STATUSES.DELIVERED })
+				await refreshAfterStatusChange()
 				toast.show({ title: translate('success', 'Success'), content: translate('status_updated', 'Order status updated successfully'), borderColor: themeColors.success })
 			} catch (err) {
 				console.error('Failed to update order status:', err)
 				toast.show({ title: translate('error', 'Error'), content: translate('status_update_failed', 'Failed to update order status. Please try again.'), borderColor: themeColors.error })
 			}
 		},
-		[refreshCounts, refresh, setStatusCount, translate, user, selectedStatus]
+		[refreshAfterStatusChange, translate]
 	)
 
 	const renderCartGroup = useCallback(
@@ -276,20 +246,20 @@ export default function PurchasesScreen() {
 	const renderPurchaseItem = useCallback(
 		({ item }: { item: OrderItem }) => (
 			<View style={[numColumns > 1 ? styles.columnItem : styles.fullWidthItem, numColumns > 1 && { paddingHorizontal: 8, marginBottom: 16 }]}>
-				<PurchaseCard item={item} onCancel={handleCancelOrder} onMarkReceived={handleMarkReceived} />
+				<PurchaseCard item={item} onCancel={handleCancelOrder} onApprove={handleApproveChanges} onMarkReceived={handleMarkReceived} />
 			</View>
 		),
-		[numColumns, handleCancelOrder, handleMarkReceived]
+		[numColumns, handleCancelOrder, handleApproveChanges, handleMarkReceived]
 	)
 
 	const renderItem = useCallback(
 		({ item }: { item: any }) => {
-			if (selectedStatus === 'cart') {
+			if (selectedTab === 'cart') {
 				return renderCartGroup({ item })
 			}
 			return renderPurchaseItem({ item })
 		},
-		[selectedStatus, renderCartGroup, renderPurchaseItem]
+		[selectedTab, renderCartGroup, renderPurchaseItem]
 	)
 
 	return (
@@ -306,8 +276,8 @@ export default function PurchasesScreen() {
 				headerActions={[<HeaderRefreshButton key="refresh" onRefresh={handleRefresh} isRefreshing={isRefreshing || countsLoading || isCheckingOut} />]}
 				headerBottom={
 					<SmartTabs
-						value={selectedStatus}
-						onChange={setSelectedStatus}
+						value={selectedTab}
+						onChange={setSelectedTab}
 						options={statusOptions}
 						counts={displayCounts}
 						activeCount={activeCount}

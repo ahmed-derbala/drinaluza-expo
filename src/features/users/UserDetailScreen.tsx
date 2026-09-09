@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons'
 import { LinearGradient } from 'expo-linear-gradient'
 import QRCodeModal from '@ui/qrcode/QRCodeModal'
 import { getStreetString } from '@address'
+import { displayRole, formatRole } from './userRoles'
 export default function UserDetailScreen() {
 	const { userSlug, name: initialNameParam } = useLocalSearchParams<{ userSlug: string; name?: string }>()
 	const { colors } = useTheme()
@@ -82,7 +83,7 @@ export default function UserDetailScreen() {
 					</View>
 					<Text style={[styles.nameText, { color: colors.text }]}>{localize(user.name)}</Text>
 					<View style={[styles.roleBadge, { backgroundColor: colors.primary + '20' }]}>
-						<Text style={[styles.roleText, { color: colors.primary }]}>{user.role.replace('_', ' ').toUpperCase()}</Text>
+						<Text style={[styles.roleText, { color: colors.primary }]}>{formatRole(displayRole(user.roles))}</Text>
 					</View>
 				</View>
 				{/* Contact Information */}

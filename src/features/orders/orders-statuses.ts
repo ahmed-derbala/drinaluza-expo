@@ -1,67 +1,97 @@
 import { themeColors } from '@theme'
 import { translate } from '@translation'
+// Mirrors the backend order lifecycle (ORDER_STATUSES_ALL + PERMITTED_ORDERS_TRANSITIONS).
 export const ORDER_STATUSES = {
-	PENDING_BUSINESS_CONFIRMATION: 'pending_business_confirmation', //active
-	PENDING_CUSTOMER_CONFIRMATION: 'pending_customer_confirmation', //active
-	CONFIRMED_BY_BUSINESS: 'confirmed_by_business', //active
-	RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER: 'reserved_by_business_for_pickup_by_customer', //active
-	RESERVATION_EXPIRED: 'reservation_expired', //done
-	DELIVERING_TO_CUSTOMER: 'delivering_to_customer', //active
-	DELIVERED_TO_CUSTOMER: 'delivered_to_customer', //done
-	RECEIVED_BY_CUSTOMER: 'received_by_customer', //done
-	CANCELLED_BY_CUSTOMER: 'cancelled_by_customer', //cancelled
-	CANCELLED_BY_BUSINESS: 'cancelled_by_business' //cancelled
+	PENDING: 'pending', // Order placed / awaiting business response or catch-weight adjustments
+	ACTION_REQUIRED: 'action_required', // Customer must re-approve modified prices/weights
+	ACCEPTED: 'accepted', // Business accepted order (or customer approved changes)
+	PREPARING: 'preparing', // Seafood being cleaned, weighed, packaged
+	READY_FOR_PICKUP: 'ready_for_pickup', // Self-pickup: packed & awaiting customer at store counter
+	FINDING_COURIER: 'finding_courier', // Courier delivery: searching for/broadcasting to nearby drivers
+	COURIER_ASSIGNED: 'courier_assigned', // Courier accepted & en route to business
+	DELIVERING: 'delivering', // In transit to customer (via courier or business driver)
+	DELIVERED: 'delivered', // Terminal success state
+	CANCELLED: 'cancelled' // Terminal cancelled state
+} as const
+export const ORDER_STATUSES_ALL = Object.values(ORDER_STATUSES)
+export type OrderStatus = (typeof ORDER_STATUSES)[keyof typeof ORDER_STATUSES]
+// Purchase list tabs (mirrors backend PURCHASES_TAB_STATUSES, fetched via ?tab=)
+export const PURCHASE_TABS = {
+	ACTIVE: 'active',
+	ACTION_REQUIRED: 'action_required',
+	HISTORY: 'history'
+} as const
+export type PurchaseTab = (typeof PURCHASE_TABS)[keyof typeof PURCHASE_TABS]
+// Sales list tabs (mirrors backend SALES_TAB_STATUSES, fetched via ?tab=)
+export const SALES_TABS = {
+	NEW: 'new',
+	PREPARING: 'preparing',
+	DISPATCH: 'dispatch',
+	HISTORY: 'history'
+} as const
+export type SalesTab = (typeof SALES_TABS)[keyof typeof SALES_TABS]
+export const orderStatusColors: Record<string, string> = {
+	[ORDER_STATUSES.PENDING]: themeColors.warning,
+	[ORDER_STATUSES.ACTION_REQUIRED]: themeColors.error,
+	[ORDER_STATUSES.ACCEPTED]: themeColors.info,
+	[ORDER_STATUSES.PREPARING]: themeColors.primary,
+	[ORDER_STATUSES.READY_FOR_PICKUP]: themeColors.success,
+	[ORDER_STATUSES.FINDING_COURIER]: themeColors.info,
+	[ORDER_STATUSES.COURIER_ASSIGNED]: themeColors.info,
+	[ORDER_STATUSES.DELIVERING]: themeColors.primary,
+	[ORDER_STATUSES.DELIVERED]: themeColors.success,
+	[ORDER_STATUSES.CANCELLED]: themeColors.textTertiary
 }
-export const orderStatusColors = {
-	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: themeColors.warning, // Orange
-	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: themeColors.warning, // Deep Orange
-	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: themeColors.info, // Blue
-	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: themeColors.primary, // Purple
-	[ORDER_STATUSES.RESERVATION_EXPIRED]: themeColors.textTertiary, // Blue Grey
-	[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: themeColors.primary, // Light Blue
-	[ORDER_STATUSES.DELIVERED_TO_CUSTOMER]: themeColors.success, // Green
-	[ORDER_STATUSES.RECEIVED_BY_CUSTOMER]: themeColors.success, // Light Green
-	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: themeColors.error, // Red
-	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: themeColors.error // Red
-}
-export const orderStatusLabels = {
-	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: translate('pending_businessconfirmation', 'Pending Confirmation'),
-	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: translate('pending_customer_confirmation', 'Pending Customer Confirmation'),
-	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: translate('confirmed_by_business', 'Confirmed'),
-	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: translate('reserved_by_businessfor_pickup_by_customer', 'Ready for Pickup'),
-	[ORDER_STATUSES.RESERVATION_EXPIRED]: translate('reservation_expired', 'Reservation Expired'),
-	[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: translate('delivering_to_customer', 'Delivering'),
-	[ORDER_STATUSES.DELIVERED_TO_CUSTOMER]: translate('delivered_to_customer', 'Delivered'),
-	[ORDER_STATUSES.RECEIVED_BY_CUSTOMER]: translate('received_by_customer', 'Received'),
-	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: translate('cancelled_by_customer', 'Cancelled'),
-	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: translate('cancelled_by_business', 'Cancelled by Business')
+export const orderStatusLabels: Record<string, string> = {
+	[ORDER_STATUSES.PENDING]: translate('status_pending', 'Pending'),
+	[ORDER_STATUSES.ACTION_REQUIRED]: translate('status_action_required', 'Action Required'),
+	[ORDER_STATUSES.ACCEPTED]: translate('status_accepted', 'Accepted'),
+	[ORDER_STATUSES.PREPARING]: translate('status_preparing', 'Preparing'),
+	[ORDER_STATUSES.READY_FOR_PICKUP]: translate('status_ready_for_pickup', 'Ready for Pickup'),
+	[ORDER_STATUSES.FINDING_COURIER]: translate('status_finding_courier', 'Finding Courier'),
+	[ORDER_STATUSES.COURIER_ASSIGNED]: translate('status_courier_assigned', 'Courier Assigned'),
+	[ORDER_STATUSES.DELIVERING]: translate('status_delivering', 'Delivering'),
+	[ORDER_STATUSES.DELIVERED]: translate('status_delivered', 'Delivered'),
+	[ORDER_STATUSES.CANCELLED]: translate('status_cancelled', 'Cancelled')
 }
 export const orderStatusIcons: Record<string, string> = {
 	all: 'list',
 	cart: 'cart-outline',
-	[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: 'time-outline',
-	[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: 'time-outline',
-	[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: 'checkmark-circle-outline',
-	[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: 'bag-outline',
-	[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: 'car-outline',
-	[ORDER_STATUSES.DELIVERED_TO_CUSTOMER]: 'checkmark-done-outline',
-	[ORDER_STATUSES.RECEIVED_BY_CUSTOMER]: 'thumbs-up-outline',
-	[ORDER_STATUSES.RESERVATION_EXPIRED]: 'alert-circle-outline',
-	[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: 'close-circle-outline',
-	[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: 'close-circle-outline'
+	[ORDER_STATUSES.PENDING]: 'time-outline',
+	[ORDER_STATUSES.ACTION_REQUIRED]: 'alert-circle-outline',
+	[ORDER_STATUSES.ACCEPTED]: 'checkmark-circle-outline',
+	[ORDER_STATUSES.PREPARING]: 'restaurant-outline',
+	[ORDER_STATUSES.READY_FOR_PICKUP]: 'bag-outline',
+	[ORDER_STATUSES.FINDING_COURIER]: 'search-outline',
+	[ORDER_STATUSES.COURIER_ASSIGNED]: 'bicycle-outline',
+	[ORDER_STATUSES.DELIVERING]: 'car-outline',
+	[ORDER_STATUSES.DELIVERED]: 'checkmark-done-outline',
+	[ORDER_STATUSES.CANCELLED]: 'close-circle-outline'
 }
-// Get next valid statuses for progression
-const getNextValidStatuses = (currentStatus: string): string[] => {
-	switch (currentStatus) {
-		case ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION:
-			return [ORDER_STATUSES.CONFIRMED_BY_BUSINESS]
-		case ORDER_STATUSES.CONFIRMED_BY_BUSINESS:
-			return [ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER, ORDER_STATUSES.DELIVERING_TO_CUSTOMER]
-		case ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER:
-			return [ORDER_STATUSES.DELIVERED_TO_CUSTOMER]
-		case ORDER_STATUSES.DELIVERING_TO_CUSTOMER:
-			return [ORDER_STATUSES.DELIVERED_TO_CUSTOMER]
-		default:
-			return []
-	}
+export type OrderActor = 'customer' | 'business' | 'courier'
+// Get next valid statuses for progression (mirrors PERMITTED_ORDERS_TRANSITIONS)
+export const ORDER_TRANSITIONS: Record<OrderActor, { from: string; to: string }[]> = {
+	customer: [
+		{ from: ORDER_STATUSES.PENDING, to: ORDER_STATUSES.CANCELLED },
+		{ from: ORDER_STATUSES.ACTION_REQUIRED, to: ORDER_STATUSES.ACCEPTED },
+		{ from: ORDER_STATUSES.ACTION_REQUIRED, to: ORDER_STATUSES.CANCELLED },
+		{ from: ORDER_STATUSES.READY_FOR_PICKUP, to: ORDER_STATUSES.DELIVERED }
+	],
+	business: [
+		{ from: ORDER_STATUSES.PENDING, to: ORDER_STATUSES.ACTION_REQUIRED },
+		{ from: ORDER_STATUSES.PENDING, to: ORDER_STATUSES.ACCEPTED },
+		{ from: ORDER_STATUSES.PENDING, to: ORDER_STATUSES.CANCELLED },
+		{ from: ORDER_STATUSES.ACCEPTED, to: ORDER_STATUSES.PREPARING },
+		{ from: ORDER_STATUSES.PREPARING, to: ORDER_STATUSES.READY_FOR_PICKUP },
+		{ from: ORDER_STATUSES.PREPARING, to: ORDER_STATUSES.FINDING_COURIER },
+		{ from: ORDER_STATUSES.PREPARING, to: ORDER_STATUSES.CANCELLED }
+	],
+	courier: [
+		{ from: ORDER_STATUSES.FINDING_COURIER, to: ORDER_STATUSES.COURIER_ASSIGNED },
+		{ from: ORDER_STATUSES.COURIER_ASSIGNED, to: ORDER_STATUSES.DELIVERING },
+		{ from: ORDER_STATUSES.DELIVERING, to: ORDER_STATUSES.DELIVERED }
+	]
+}
+export const getNextValidStatuses = (currentStatus: string, actor: OrderActor = 'business'): string[] => {
+	return ORDER_TRANSITIONS[actor].filter((t) => t.from === currentStatus).map((t) => t.to)
 }

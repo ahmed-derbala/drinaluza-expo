@@ -4,18 +4,18 @@ import { getPurchases } from './orders.api'
 import { OrderResponse } from './orders.interface'
 
 export interface UsePurchasesByStatusOptions {
-	status?: string
+	tab?: string
 	ttlMs?: number
 	skipInitialFetch?: boolean
 }
 
 export const usePurchasesByStatus = (options: UsePurchasesByStatusOptions) => {
-	const { status, ttlMs, skipInitialFetch } = options
-	const cacheKey = status ? `purchases:${status}` : 'purchases:all'
+	const { tab, ttlMs, skipInitialFetch } = options
+	const cacheKey = tab ? `purchases:tab:${tab}` : 'purchases:all'
 
 	const fetchFn = useCallback(async () => {
-		return await getPurchases(status === 'all' ? undefined : status)
-	}, [status])
+		return await getPurchases(tab)
+	}, [tab])
 
 	return useCacheFirst<OrderResponse>({
 		cacheKey,

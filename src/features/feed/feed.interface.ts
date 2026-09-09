@@ -190,7 +190,7 @@ export interface ProductFeedItem extends FeedItem {
 
 export interface UserFeedItem extends FeedItem {
 	name: MultiLang
-	role: string
+	roles: string[]
 	address: Address
 	state: {
 		code: string

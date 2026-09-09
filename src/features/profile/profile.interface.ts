@@ -67,7 +67,7 @@ export interface UserData {
 	slug: string
 	name: MultiLang
 	email?: string // Deprecated - use contact.email
-	role: string
+	roles: string[]
 	isActive?: boolean
 	state?: UserState
 	phone?: Phone // Deprecated - use contact.phone

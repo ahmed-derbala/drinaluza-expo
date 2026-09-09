@@ -13,7 +13,7 @@ export interface UserRef {
 		tn_latn: string
 		tn_arab: string
 	}
-	role: string
+	roles: string[]
 }
 
 /**

@@ -10,6 +10,33 @@ interface GetApiClientOptions {
 	prefix?: string
 }
 
+export interface ForbiddenInfo {
+	status: number
+	message: string
+	url: string
+}
+
+type ForbiddenHandler = (info: ForbiddenInfo) => void
+const forbiddenHandlers = new Set<ForbiddenHandler>()
+
+/** Subscribe to global 403 events (e.g. ToastProvider shows an access-denied toast). */
+export const addForbiddenListener = (handler: ForbiddenHandler): (() => void) => {
+	forbiddenHandlers.add(handler)
+	return () => {
+		forbiddenHandlers.delete(handler)
+	}
+}
+
+const notifyForbidden = (info: ForbiddenInfo) => {
+	forbiddenHandlers.forEach((handler) => {
+		try {
+			handler(info)
+		} catch (err) {
+			log({ level: 'warn', label: 'api', message: 'Forbidden handler failed', error: err })
+		}
+	})
+}
+
 // Create an API client with the given base URL
 const createApiClient = (baseURL: string): AxiosInstance => {
 	const client = axios.create({
@@ -107,6 +134,17 @@ const createApiClient = (baseURL: string): AxiosInstance => {
 						error: err
 					})
 				}
+			}
+
+			// Handle 403 Forbidden globally: notify listeners (global toast),
+			// keep the session, and still reject so screens can render ForbiddenBlock.
+			if (error.response?.status === 403) {
+				const data = error.response.data as any
+				notifyForbidden({
+					status: 403,
+					message: data?.message || 'You do not have permission to access this resource.',
+					url: error.config?.url || ''
+				})
 			}
 
 			return Promise.reject(error)

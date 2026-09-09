@@ -1,4 +1,4 @@
-import { FeedItem } from './feed.interface'
+import { FeedItem, UserFeedItem } from './feed.interface'
 import { getGeoCoordinates } from '@helpers/maps'
 import { log } from '@log'
 
@@ -22,7 +22,7 @@ export const enrichFeedContacts = async (items: FeedItem[], updateState: (items:
 				}
 			}
 		}
-		if (item.card?.kind === 'user' && item.contact && item.role === 'business_owner') {
+		if (item.card?.kind === 'user' && item.contact && (item as UserFeedItem).roles?.includes('business_owner')) {
 			const ownerSlug = item.slug
 			if (ownerSlug) {
 				localContacts.set(ownerSlug, item.contact)

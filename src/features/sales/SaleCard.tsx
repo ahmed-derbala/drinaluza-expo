@@ -28,7 +28,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const router = useRouter()
 	const [updating, setUpdating] = React.useState(false)
 	const [currentStatus, setCurrentStatus] = React.useState(sale.status)
-	const isPending = currentStatus === statuses.PENDING_BUSINESS_CONFIRMATION
+	const isPending = currentStatus === statuses.PENDING
 
 	const initialQuantities = React.useMemo(
 		() =>
@@ -117,14 +117,15 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 			setUpdating(true)
 			let payloadStatus = newStatus
 			let productsPayload: { _id: string; quantity: number }[] | undefined
-			if (newStatus === statuses.CONFIRMED_BY_BUSINESS && hasQuantityChanges) {
-				payloadStatus = statuses.PENDING_CUSTOMER_CONFIRMATION
+			if (newStatus === statuses.ACCEPTED && hasQuantityChanges) {
+				// Business adjusted catch-weights/prices: customer must re-approve
+				payloadStatus = statuses.ACTION_REQUIRED
 				productsPayload = displayProducts.map((p) => ({
 					_id: p._id ?? p.product._id,
 					quantity: quantities[p._id ?? p.product._id] ?? p.quantity
 				}))
 			}
-			if (newStatus === statuses.CANCELLED_BY_BUSINESS && displayProducts.length !== sale.products.length) {
+			if (newStatus === statuses.CANCELLED && displayProducts.length !== sale.products.length) {
 				productsPayload = displayProducts.map((p) => ({
 					_id: p._id ?? p.product._id,
 					quantity: quantities[p._id ?? p.product._id] ?? p.quantity
@@ -144,27 +145,26 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 	const renderStatusActions = () => {
 		const actions = []
 		switch (currentStatus) {
-			case statuses.PENDING_BUSINESS_CONFIRMATION:
+			case statuses.PENDING:
 				actions.push(
 					{
-						status: statuses.CONFIRMED_BY_BUSINESS,
+						status: statuses.ACCEPTED,
 						label: hasQuantityChanges ? translate('confirm_send', 'Confirm & Send') : translate('confirm', 'Confirm'),
 						icon: 'checkmark-circle-outline',
 						color: colors.success
 					},
-					{ status: statuses.CANCELLED_BY_BUSINESS, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
+					{ status: statuses.CANCELLED, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
 				)
 				break
-			case statuses.CONFIRMED_BY_BUSINESS:
+			case statuses.ACCEPTED:
+				actions.push({ status: statuses.PREPARING, label: translate('prepare', 'Prepare'), icon: 'construct-outline', color: colors.info })
+				break
+			case statuses.PREPARING:
 				actions.push(
-					{ status: statuses.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER, label: translate('ready_for_pickup', 'Ready'), icon: 'storefront-outline', color: colors.info },
-					{ status: statuses.DELIVERING_TO_CUSTOMER, label: translate('start_delivery', 'Deliver'), icon: 'bicycle-outline', color: colors.info },
-					{ status: statuses.CANCELLED_BY_BUSINESS, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
+					{ status: statuses.READY_FOR_PICKUP, label: translate('ready_for_pickup', 'Ready'), icon: 'storefront-outline', color: colors.success },
+					{ status: statuses.FINDING_COURIER, label: translate('find_courier', 'Courier'), icon: 'bicycle-outline', color: colors.info },
+					{ status: statuses.CANCELLED, label: translate('cancel', 'Cancel'), icon: 'close-circle-outline', color: colors.error }
 				)
-				break
-			case statuses.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER:
-			case statuses.DELIVERING_TO_CUSTOMER:
-				actions.push({ status: statuses.DELIVERED_TO_CUSTOMER, label: translate('mark_delivered', 'Delivered'), icon: 'checkmark-circle-outline', color: colors.success })
 				break
 		}
 		if (actions.length === 0) return null
@@ -176,7 +176,7 @@ const SaleCard = ({ sale, onStatusUpdate }: SaleCardProps) => {
 		return (
 			<View style={[styles.actionsBar, { borderTopColor: colors.border }]}>
 				{actions.map((action) =>
-					action.status === statuses.CANCELLED_BY_BUSINESS ? (
+					action.status === statuses.CANCELLED ? (
 						<CancelButton key={action.status} onPress={() => handleStatusUpdate(action.status)} disabled={updating} loading={updating} />
 					) : (
 						<IconBaseButton

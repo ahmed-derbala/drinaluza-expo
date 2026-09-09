@@ -1,5 +1,7 @@
 export { default as ErrorBlock } from './ErrorBlock'
 export type { ErrorBlockProps } from './ErrorBlock'
+export { default as ForbiddenBlock } from './ForbiddenBlock'
+export type { ForbiddenBlockProps } from './ForbiddenBlock'
 export { ErrorBoundaryFallback } from './ErrorBoundaryFallback'
 export type { ErrorBoundaryFallbackProps } from './ErrorBoundaryFallback'
 export * from './errorHandler'

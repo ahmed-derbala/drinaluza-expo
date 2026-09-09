@@ -17,16 +17,16 @@ export default function SaleStatusBadge({ sale, style }: SaleStatusBadgeProps) {
 	const { translate } = useUser()
 	const saleStatusLabels = useMemo<Record<string, string>>(
 		() => ({
-			[ORDER_STATUSES.PENDING_BUSINESS_CONFIRMATION]: translate('sale_status_pending_my_confirmation', 'Pending My Confirmation'),
-			[ORDER_STATUSES.PENDING_CUSTOMER_CONFIRMATION]: translate('sale_status_pending_customer_confirmation', 'Pending Customer Confirmation'),
-			[ORDER_STATUSES.CONFIRMED_BY_BUSINESS]: translate('sale_status_confirmed', 'Confirmed'),
-			[ORDER_STATUSES.RESERVED_BY_BUSINESS_FOR_PICKUP_BY_CUSTOMER]: translate('sale_status_ready_for_pickup', 'Ready for Pickup'),
-			[ORDER_STATUSES.RESERVATION_EXPIRED]: translate('sale_status_reservation_expired', 'Reservation Expired'),
-			[ORDER_STATUSES.DELIVERING_TO_CUSTOMER]: translate('sale_status_delivering', 'Delivering'),
-			[ORDER_STATUSES.DELIVERED_TO_CUSTOMER]: translate('sale_status_delivered', 'Delivered'),
-			[ORDER_STATUSES.RECEIVED_BY_CUSTOMER]: translate('sale_status_received', 'Received'),
-			[ORDER_STATUSES.CANCELLED_BY_CUSTOMER]: translate('sale_status_cancelled_by_customer', 'Cancelled by Customer'),
-			[ORDER_STATUSES.CANCELLED_BY_BUSINESS]: translate('sale_status_cancelled_by_me', 'Cancelled by Me')
+			[ORDER_STATUSES.PENDING]: translate('sale_status_pending', 'Pending'),
+			[ORDER_STATUSES.ACTION_REQUIRED]: translate('sale_status_action_required', 'Action Required'),
+			[ORDER_STATUSES.ACCEPTED]: translate('sale_status_accepted', 'Accepted'),
+			[ORDER_STATUSES.PREPARING]: translate('sale_status_preparing', 'Preparing'),
+			[ORDER_STATUSES.READY_FOR_PICKUP]: translate('sale_status_ready_for_pickup', 'Ready for Pickup'),
+			[ORDER_STATUSES.FINDING_COURIER]: translate('sale_status_finding_courier', 'Finding Courier'),
+			[ORDER_STATUSES.COURIER_ASSIGNED]: translate('sale_status_courier_assigned', 'Courier Assigned'),
+			[ORDER_STATUSES.DELIVERING]: translate('sale_status_delivering', 'Delivering'),
+			[ORDER_STATUSES.DELIVERED]: translate('sale_status_delivered', 'Delivered'),
+			[ORDER_STATUSES.CANCELLED]: translate('sale_status_cancelled', 'Cancelled')
 		}),
 		[translate]
 	)

@@ -42,7 +42,7 @@ export interface SavedAuth {
 	lastSignIn: string
 	name?: any // Can be object {en, tn_arab, etc} or string
 	photoUrl?: string
-	role?: string
+	roles?: string[]
 	needPassword?: boolean
 }
 export const getSavedAuthentications = async (): Promise<SavedAuth[]> => {
@@ -54,7 +54,7 @@ export const saveAuthentication = async (slug: string, token: string, user?: any
 	const filtered = saved.filter((a) => a.slug !== slug)
 	const photoUrl = user?.media?.thumbnail?.url || user?.photoUrl || ''
 	const displayName = user?.name || slug // Keep the full name object if present
-	const role = user?.role || 'customer'
+	const roles = user?.roles ?? ['customer']
 	const updated: SavedAuth[] = [
 		{
 			slug,
@@ -62,14 +62,14 @@ export const saveAuthentication = async (slug: string, token: string, user?: any
 			lastSignIn: new Date().toISOString(),
 			name: displayName,
 			photoUrl,
-			role,
+			roles,
 			needPassword: !!needPassword
 		},
 		...filtered
 	]
 	await secureSetItem(SAVED_AUTHS_KEY, JSON.stringify(updated))
 }
-export const updateSavedAuthUser = async (slug: string, updates: { name?: any; photoUrl?: string; role?: string }) => {
+export const updateSavedAuthUser = async (slug: string, updates: { name?: any; photoUrl?: string; roles?: string[] }) => {
 	try {
 		const saved = await getSavedAuthentications()
 		let updated = false
@@ -146,7 +146,7 @@ interface AuthResponse {
 			slug: string
 			email?: string
 			name?: any
-			role: string
+			roles: string[]
 			[key: string]: any
 		}
 	}
@@ -160,7 +160,7 @@ interface SignInResponse {
 			_id: string
 			slug: string
 			name: any
-			role: string
+			roles: string[]
 			settings?: {
 				language: any
 				currency: string
@@ -440,7 +440,7 @@ export const updateMyProfile = async (data: any) => {
 		await updateSavedAuthUser(user.slug, {
 			name: displayName,
 			photoUrl,
-			role: user.role
+			roles: user.roles
 		})
 	}
 	return response.data

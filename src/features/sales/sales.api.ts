@@ -136,14 +136,14 @@ export interface Sale {
 	__v?: number
 }
 
-export const getSales = async (businessSlug: string, page = 1, limit = 10, status?: string, customerSlug?: string, productSlug?: string): Promise<SalesResponse> => {
+export const getSales = async (businessSlug: string, page = 1, limit = 10, tab?: string, customerSlug?: string, productSlug?: string): Promise<SalesResponse> => {
 	try {
 		const response = await apiClient.get('sales', {
 			params: {
 				businessSlug,
 				page,
 				limit,
-				...(status ? { status } : {}),
+				...(tab ? { tab } : {}),
 				...(customerSlug ? { customerSlug } : {}),
 				...(productSlug ? { productSlug } : {})
 			}

@@ -70,7 +70,7 @@ export default function SearchScreen() {
 	// Determine kind of card based on item attributes (robust parsing helper)
 	const getCardKind = (item: any) => {
 		if (item.card?.kind) return item.card.kind
-		if (item.role || item.contact || item.role === 'customer' || item.role === 'business_owner') return 'user'
+		if (item.roles?.length || item.contact) return 'user'
 		if (item.price || item.unit || item.stock || item.business) return 'product'
 		return 'product'
 	}

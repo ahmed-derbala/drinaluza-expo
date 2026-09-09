@@ -9,10 +9,10 @@ interface UsePaginatedSalesOptions {
 	businessSlug?: string
 	customerSlug?: string
 	productSlug?: string
-	status?: string
+	tab?: string
 }
 
-export function usePaginatedSales({ businessSlug, customerSlug, productSlug, status }: UsePaginatedSalesOptions) {
+export function usePaginatedSales({ businessSlug, customerSlug, productSlug, tab }: UsePaginatedSalesOptions) {
 	const {
 		data: response,
 		isInitialLoading,
@@ -23,7 +23,7 @@ export function usePaginatedSales({ businessSlug, customerSlug, productSlug, sta
 		businessSlug,
 		customerSlug,
 		productSlug,
-		status,
+		tab,
 		skipInitialFetch: !businessSlug
 	})
 
@@ -46,7 +46,7 @@ export function usePaginatedSales({ businessSlug, customerSlug, productSlug, sta
 		const nextPage = currentPage + 1
 		setLoadingMore(true)
 		try {
-			const res = await getSales(businessSlug, nextPage, ITEMS_PER_PAGE, status === 'all' ? undefined : status, customerSlug, productSlug)
+			const res = await getSales(businessSlug, nextPage, ITEMS_PER_PAGE, tab, customerSlug, productSlug)
 			if (res?.data?.docs) {
 				const docs = res.data.docs
 				setExtraSales((prev) => [...prev, ...docs])
@@ -60,7 +60,7 @@ export function usePaginatedSales({ businessSlug, customerSlug, productSlug, sta
 		} finally {
 			setLoadingMore(false)
 		}
-	}, [businessSlug, customerSlug, currentPage, hasMore, loadingMore, productSlug, status])
+	}, [businessSlug, customerSlug, currentPage, hasMore, loadingMore, productSlug, tab])
 
 	const sales = useMemo(() => [...page1Sales, ...extraSales], [page1Sales, extraSales])
 

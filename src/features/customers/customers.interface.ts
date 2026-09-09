@@ -2,7 +2,7 @@ import type { MultiLang, Address } from '@address'
 
 export interface Customer {
 	_id: string
-	role: string
+	roles: string[]
 	slug: string
 	name: MultiLang
 	address?: Address

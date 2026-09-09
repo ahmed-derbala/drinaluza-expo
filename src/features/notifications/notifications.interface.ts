@@ -11,7 +11,7 @@ interface NotificationUser {
 	_id: string
 	slug: string
 	name: LocalizedText
-	role: string
+	roles: string[]
 	updatedAt: string
 }
 
