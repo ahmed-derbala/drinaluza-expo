@@ -71,6 +71,7 @@ export type Business = {
 	contact?: Contact
 	rating?: Rating
 	deliveryRadiusKm?: number
+	kind?: string
 	isActive?: boolean
 	createdAt?: string
 	updatedAt?: string
@@ -178,8 +179,13 @@ export interface Product {
 	specs?: ProductSpecs
 	__v?: number
 }
+export type BusinessViewer = {
+	canEdit: boolean
+	canCreate: boolean
+}
 export type BusinessResponse = {
 	status: number
+	viewer?: BusinessViewer
 	data: Business
 	req: {
 		headers: {
