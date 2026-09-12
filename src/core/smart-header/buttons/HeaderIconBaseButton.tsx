@@ -43,8 +43,8 @@ export function HeaderIconBaseButton({ icon, iconType = 'ionicons', label, onPre
 					{
 						backgroundColor: colors.error,
 						borderColor: colors.surface,
-						top: -Math.round(size * 0.15),
-						right: -Math.round(size * 0.15)
+						top: Math.round(size * 0.05),
+						right: Math.round(size * 0.05)
 					}
 				]}
 			>
