@@ -283,6 +283,9 @@ const styles = StyleSheet.create({
 	},
 	actionsBar: {
 		flexDirection: 'row',
+		justifyContent: 'flex-end',
+		alignItems: 'center',
+		flexWrap: 'wrap',
 		padding: 12,
 		gap: 12,
 		borderTopWidth: 1,
