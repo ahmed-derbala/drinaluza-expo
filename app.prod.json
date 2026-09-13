@@ -33,16 +33,6 @@
       "favicon": "./assets/images/icon.png"
     },
     "plugins": [
-      "expo-font",
-      "expo-router",
-      "expo-asset",
-      "expo-secure-store",
-      "@react-native-community/datetimepicker",
-      "expo-audio",
-      "expo-sharing",
-      "expo-image",
-      "expo-video",
-      "expo-notifications",
       [
         "expo-build-properties",
         {
