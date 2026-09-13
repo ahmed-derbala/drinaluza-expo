@@ -1,0 +1,81 @@
+{
+  "expo": {
+    "name": "drinaluza",
+    "slug": "drinaluza",
+    "version": "1.61.0",
+    "platforms": [
+      "android",
+      "web"
+    ],
+    "orientation": "default",
+    "icon": "./assets/images/icon.png",
+    "scheme": "drinaluza",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#000000",
+    "android": {
+      "backgroundColor": "#000000",
+      "googleServicesFile": "google-services.json",
+      "softwareKeyboardLayoutMode": "resize",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/icon.png",
+        "backgroundColor": "#000000"
+      },
+      "package": "com.ahmedderbala.drinaluza",
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.REQUEST_INSTALL_PACKAGES",
+        "android.permission.POST_NOTIFICATIONS"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "static",
+      "favicon": "./assets/images/icon.png"
+    },
+    "plugins": [
+      "expo-font",
+      "expo-router",
+      "expo-asset",
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      "expo-audio",
+      "expo-sharing",
+      "expo-image",
+      "expo-video",
+      "expo-notifications",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true,
+            "enableBundleCompression": true,
+            "buildArchs": [
+              "arm64-v8a"
+            ],
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libhermes.so",
+                "**/libc++_shared.so"
+              ]
+            }
+          }
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "extra": {
+      "routerRoot": "src",
+      "router": {},
+      "NODE_ENV": "production",
+      "eas": {
+        "projectId": "663c7ecc-f495-4630-9913-c923ef3f8bb2"
+      }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    }
+  }
+}

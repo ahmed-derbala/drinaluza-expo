@@ -158,7 +158,6 @@ Review:
 
 ### Expo
 
-- app.config.js
 - eas.json
 - Metro configuration
 
