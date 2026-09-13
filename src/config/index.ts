@@ -1,15 +1,14 @@
 import packagejson from '../../package.json' with { type: 'json' }
-import Constants from 'expo-constants'
 
 export const config = {
 	app: {
-		env: process.env.EXPO_PUBLIC_APP_ENV || 'local',
+		env: process.env.EXPO_PUBLIC_APP_ENV || 'development',
 		name: packagejson.name,
 		version: packagejson.version,
 		timeout: Number(process.env.EXPO_PUBLIC_TIMEOUT_MS) || 60000
 	},
 	node: {
-		env: process.env.EXPO_PUBLIC_NODE_ENV || 'local'
+		env: process.env.EXPO_PUBLIC_NODE_ENV || 'development'
 	},
 	api: {
 		prefix: '/api',
@@ -24,8 +23,8 @@ export const config = {
 	},
 	updates: {
 		checkUrl: process.env.EXPO_PUBLIC_UPDATES_CHECK_URL || 'https://api.github.com/repos/ahmed-derbala/drinaluza-expo-releases/releases/latest',
-		minFreeStorageGB: Number(process.env.EXPO_PUBLIC_UPDATES_MIN_FREE_STORAGE_GB || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATES_MIN_FREE_STORAGE_GB || 2),
-		maxApkInstallersCount: Number(process.env.EXPO_PUBLIC_UPDATES_MAX_APK_INSTALLERS_COUNT || Constants.expoConfig?.extra?.EXPO_PUBLIC_UPDATES_MAX_APK_INSTALLERS_COUNT || 5)
+		minFreeStorageGB: Number(process.env.EXPO_PUBLIC_UPDATES_MIN_FREE_STORAGE_GB || 2),
+		maxApkInstallersCount: Number(process.env.EXPO_PUBLIC_UPDATES_MAX_APK_INSTALLERS_COUNT || 5)
 	},
 	notifications: {
 		toast: {

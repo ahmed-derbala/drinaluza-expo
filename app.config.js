@@ -1,14 +1,13 @@
-import fs from 'fs';
-const packagejson = JSON.parse(fs.readFileSync('./package.json', 'utf8'));
-
+import { config } from './src/config/index.ts'
 // 1. Check if we are building for development or production
-const IS_DEV = process.env.EXPO_PUBLIC_APP_ENV === 'development';
+const IS_DEV = config.app.env === 'development';
+
 export default {
     expo: {
         // 2. Give the dev app a distinct name so you can tell them apart on your phone
-        name: IS_DEV ? `${packagejson.name}-dev` : packagejson.name,
-        slug: packagejson.name,
-        version: packagejson.version,
+        name: IS_DEV ? `${config.app.name}-dev` : config.app.name,
+        slug: config.app.name,
+        version: config.app.version,
         platforms: [
             "ios",
             "android",
@@ -55,7 +54,6 @@ export default {
         web: {
             bundler: "metro",
             output: "static",
-            //favicon: "./assets/images/favicon.png"
             favicon: IS_DEV ? "./assets/images/icon_dev.png" : "./assets/images/icon.png",
         },
         plugins: [
@@ -75,12 +73,8 @@ export default {
                     android: {
                         usesCleartextTraffic: true,
                         enableProguardInReleaseBuilds: true,
-                        enableShrinkResourcesInReleaseBuilds: true, // removes unused Android resources
-                        ndk: {
-                            abiFilters: [
-                                "arm64-v8a"
-                            ]
-                        },
+                        enableShrinkResourcesInReleaseBuilds: true,
+                        buildArchs: ["arm64-v8a"],
                         packagingOptions: {
                             pickFirst: [
                                 "**/libhermes.so",
@@ -97,7 +91,7 @@ export default {
         extra: {
             routerRoot: "src",
             router: {},
-            NODE_ENV: process.env.EXPO_PUBLIC_NODE_ENV || 'local',
+            NODE_ENV: config.node.env,
             eas: {
                 projectId: "663c7ecc-f495-4630-9913-c923ef3f8bb2"
             }
